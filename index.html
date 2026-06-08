@@ -355,7 +355,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .ps-pstatus{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px;}
 .ps-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
 .ps-dot.available{background:#4CAF50;}
-.ps-dot.allocted{background:#FF9800;}
+.ps-dot.allocated{background:#FF9800;}
 .ps-dot.leave{background:#9E9E9E;}
 .ps-status-bar{height:2px;background:var(--faint);margin-top:4px;border-radius:1px;overflow:hidden;}
 .ps-status-fill{height:100%;border-radius:1px;}
@@ -486,15 +486,23 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
       <div id="view-todo" class="view hidden">
         <div class="todo-view">
           <div class="todo-bar">
-            <div class="person-switcher">
+            <div class="person-switcher" id="ps-dropdown">
               <div class="person-av" id="current-av" style="background:var(--red);">RO</div>
               <span class="person-name" id="current-name">Ronan</span>
               <i class="ti ti-chevron-down" style="font-size:13px;color:var(--muted);margin-left:2px;"></i>
             </div>
+            <div class="ps-menu" id="ps-menu"></div>
+            <div class="person-status-ind">
+              <select id="person-status" onchange="changePersonStatus(this.value)" style="font-size:11px;font-family:var(--font);border:1px solid var(--border);padding:3px 6px;border-radius:2px;background:var(--white);color:var(--ink);cursor:pointer;">
+                <option value="available">Available</option>
+                <option value="allocated">Allocated</option>
+                <option value="leave">On Leave</option>
+              </select>
+            </div>
             <div class="week-nav">
-              <button class="wbtn"><i class="ti ti-chevron-left" style="font-size:13px;"></i></button>
-              <span class="wlabel">Jun 1 – Jun 7</span>
-              <button class="wbtn"><i class="ti ti-chevron-right" style="font-size:13px;"></i></button>
+              <button class="wbtn" id="wbtn-prev"><i class="ti ti-chevron-left" style="font-size:13px;"></i></button>
+              <span class="wlabel" id="week-label">Mon – Sun</span><button class="wbtn" id="wbtn-today" style="margin-left:4px;font-size:11px;padding:4px 8px;">Today</button>
+              <button class="wbtn" id="wbtn-next"><i class="ti ti-chevron-right" style="font-size:13px;"></i></button>
             </div>
             <div class="todo-summary" style="margin-left:16px;">To do: 3h30m &nbsp;·&nbsp; Done: 5h45m</div>
             <div style="margin-left:auto;">
@@ -668,7 +676,11 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
       </div>
       <div class="field"><label>Note (optional)</label><textarea id="td-note" placeholder="Any context…"></textarea></div>
     </div>
-    <div class="modal-ft"><button class="modal-cancel" onclick="closeTodoModal()">Cancel</button><button class="modal-ok" onclick="saveTodo()">Add todo</button></div>
+    <div class="modal-ft">
+                <button class="modal-cancel" id="edit-task-btn" onclick="deleteTodo()" style="display:none;margin-right:auto;border-color:var(--red);color:var(--red);">Delete</button>
+                <button class="modal-cancel" onclick="closeTodoModal()">Cancel</button>
+                <button class="modal-ok" onclick="saveTodo()">Add todo</button>
+              </div>
   </div>
 </div>
 
@@ -753,6 +765,7 @@ const DAYS_DATA={
   }
 };
 let todoData=JSON.parse(JSON.stringify(DAYS_DATA));
+let editingTaskId=null,editingDay=null;const PS_DOT=String.fromCodePoint(0x25CF);const PS_PAV="ps-pav";const PS_PMETA="ps-pmeta";const PS_PNAME="ps-pname";const PS_PSTATUS="ps-pstatus";const PS_DOT="ps-dot";
 const DAY_NAMES=['Monday','Tuesday','Wednesday','Thursday','Friday'];
 const MIN_H=40;
 const MINS_PER_PX=2.5;
@@ -834,13 +847,7 @@ function onDropToDay(e,toDay){
 }
 
 function openEditTodo(t,day){
-  document.getElementById('td-task').value=t.title||'';
-  document.getElementById('td-hours').value=t.hours?formatHrs(t.hours):'';
-  document.getElementById('td-note').value=t.note||'';
-  populateTodoJobSelect(t.job||'');
-  const ds=document.getElementById('td-day');
-  for(let o of ds.options){if(o.text.startsWith(DAY_NAMES[day-1])){o.selected=true;break;}}
-  document.getElementById('todo-modal').classList.add('on');
+  editTask(t,day);
 }
 
 function populateTodoJobSelect(pre){
@@ -865,7 +872,16 @@ function populatePersonSwitcher(){
     const status=personStatus[key]||'available';
     const statusColor=status==='available'?'#4CAF50':status==='allocated'?'#FF9800':'#9E9E9E';
     el.innerHTML=`<div class="ps-pav" style="background:${p.color};">${p.initials}</div><div class="ps-pmeta"><div class="ps-pname">${p.name}</div><div class="ps-pstatus"><span class="ps-dot" style="background:${statusColor};"></span>${status.charAt(0).toUpperCase()+status.slice(1)}</div></div>`;
-    el.onclick=()=>{currentPerson=key;document.getElementById('current-av').style.background=p.color;document.getElementById('current-av').textContent=p.initials;document.getElementById('current-name').textContent=p.name;document.getElementById('person-status').value=personStatus[key]||'available';populatePersonSwitcher();renderTodo();document.getElementById('ps-menu').classList.remove('on');};
+    el.onclick=()=>{
+      currentPerson=key;
+      document.getElementById('current-av').style.background=p.color;
+      document.getElementById('current-av').textContent=p.initials;
+      document.getElementById('current-name').textContent=p.name;
+      document.getElementById('person-status').value=status;
+      populatePersonSwitcher();
+      renderTodo();
+      document.getElementById('ps-menu').classList.remove('on');
+    };
     menu.appendChild(el);
   });
 }
@@ -876,15 +892,105 @@ document.getElementById('ps-dropdown').addEventListener('click',e=>{
 });
 document.addEventListener('click',()=>document.getElementById('ps-menu').classList.remove('on'));
 
+function changePersonStatus(status){
+  personStatus[currentPerson]=status;
+  renderTodo();saveData();
+}
+
+function deleteTodo(){
+  if(!editingTaskId)return;
+  const pData=todoData[currentPerson];
+  const arr=pData[editingDay]||[];
+  const idx=arr.findIndex(t=>t.id===editingTaskId);
+  if(idx!==-1){
+    if(confirm('Delete this task?')){
+      arr.splice(idx,1);
+      closeTodoModal();renderTodo();saveData();
+    }
+  }
+}
+
+function editTask(t,day){
+  editingTaskId=t.id;editingDay=day;
+  document.getElementById('td-task').value=t.title||'';
+  document.getElementById('td-hours').value=t.hours?formatHrs(t.hours):'';
+  document.getElementById('td-note').value=t.note||'';
+  document.getElementById('td-item').value=t.item||'';
+  populateTodoJobSelect(t.job||'');
+  const ds=document.getElementById('td-day');
+  for(let o of ds.options){if(o.text.startsWith(DAY_NAMES[day-1])){o.selected=true;break;}}
+  document.getElementById('todo-modal').classList.add('on');
+  document.getElementById('edit-task-btn').style.display='inline-block';
+  document.querySelector('#todo-modal .modal-hd-title').textContent='Edit task';
+  document.querySelector('#todo-modal .modal-ok').textContent='Save changes';
+}
+
+function toggleTaskDone(taskId){
+  const pData=todoData[currentPerson];
+  for(let d=1;d<=5;d++){
+    const arr=pData[d]||[];
+    const t=arr.find(x=>x.id===taskId);
+    if(t){t.done=!t.done;renderTodo();saveData();return;}
+  }
+}
+
 function toggleWeek(dir){
   weekOffset+=dir;
+  updateWeekLabel();
   renderTodo();
+}
+
+function updateWeekLabel(){
+  const now=new Date();
+  now.setDate(now.getDate()+(weekOffset*7));
+  const dayOfWeek=now.getDay();
+  const diffToMonday=(dayOfWeek+6)%7;
+  const monday=new Date(now);
+  monday.setDate(monday.getDate()-diffToMonday);
+  const sunday=new Date(monday);
+  sunday.setDate(monday.getDate()+6);
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const label=`${months[monday.getMonth()]} ${monday.getDate()} – ${months[sunday.getMonth()]} ${sunday.getDate()}`;
+  document.getElementById('week-label').textContent=label;
+}
+
+function addTeamMember(name){
+  const initials=name.split(' ').map(w=>w[0]).join('').toUpperCase();
+  const colors=['#ED1E24','#6B7FA3','#7B9E87','#C45D5D','#5D88C4','#C4A35D','#5DC48A','#8A5DC4'];
+  const color=colors[Object.keys(people).length%colors.length];
+  people[name.toLowerCase().replace(/\s/g,'')]={name,initials,color,days:[1,2,3,4,5]};
+  personStatus[people[name.toLowerCase().replace(/\s/g,'')].name.toLowerCase().replace(/\s/g,'')]='available';
+  renderTodo();saveData();
+}
+
+function ctxDo(action){
+  document.getElementById('ctx').classList.remove('on');
+  if(action==='checklist'||action==='todo')alert(action==='checklist'?'Checklist modal':'Todo modal — coming next');
+  if(action==='delete'&&ctxTarget){ctxTarget.remove();ctxTarget=null;}
+}
+
+function pctxDo(action){
+  document.getElementById('pctx').classList.remove('on');
+  if(action==='rename'&&pctxTarget){
+    const newName=prompt('Rename phase:',pctxTarget.querySelector('.ph-title').textContent);
+    if(newName){pctxTarget.querySelector('.ph-title').textContent=newName;saveData();}
+  }
+  if(action==='delete'&&pctxTarget){
+    if(confirm('Delete this phase?')){pctxTarget.remove();saveData();}
+  }
+}
+
+function closeFup(yes){
+  document.getElementById('fup').style.display='none';
+  if(yes)openTodoModal(null,5);
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('wbtn-prev')?.addEventListener('click',()=>toggleWeek(-1));
   document.getElementById('wbtn-next')?.addEventListener('click',()=>toggleWeek(1));
-  document.getElementById('wbtn-today')?.addEventListener('click',()=>{weekOffset=0;renderTodo();});
+  document.getElementById('wbtn-today')?.addEventListener('click',()=>{weekOffset=0;updateWeekLabel();renderTodo();});
+  populatePersonSwitcher();
+  updateWeekLabel();
 });
 
 function saveTodo(){
@@ -893,13 +999,31 @@ function saveTodo(){
   const hours=parseFloat(document.getElementById('td-hours').value)||1;
   const job=jobs.find(j=>j.id===jobId);
   const item=document.getElementById('td-item').value;
+  const note=document.getElementById('td-note').value.trim();
   const dayOpt=document.getElementById('td-day').value;
   const dayNum=parseInt(dayOpt)||5;
-  const task={id:'t'+Date.now(),title:name,job:job?`${job.id} ${job.name}`:'',item,hours};
-  if(!todoData[currentPerson][dayNum])todoData[currentPerson][dayNum]=[];
-  todoData[currentPerson][dayNum].push(task);
-  closeTodoModal();renderTodo();saveData();
-  setTimeout(()=>document.getElementById('fup').classList.add('on'),800);
+  if(editingTaskId){
+    const pData=todoData[currentPerson];
+    const arr=pData[editingDay]||[];
+    const idx=arr.findIndex(t=>t.id===editingTaskId);
+    if(idx!==-1){
+      arr[idx].title=name;
+      arr[idx].hours=hours;
+      arr[idx].item=item;
+      arr[idx].note=note;
+      arr[idx].job=job?`${job.id} ${job.name}`:'';
+    }
+  } else {
+    const task={id:'t'+Date.now(),title:name,job:job?`${job.id} ${job.name}`:'',item,hours,note};
+    if(!todoData[currentPerson][dayNum])todoData[currentPerson][dayNum]=[];
+    todoData[currentPerson][dayNum].push(task);
+    setTimeout(()=>document.getElementById('fup').classList.add('on'),800);
+  }
+  closeTodoModal();editingTaskId=null;editingDay=null;
+  document.getElementById('edit-task-btn').style.display='none';
+  document.querySelector('#todo-modal .modal-hd-title').textContent='Add a todo';
+  document.querySelector('#todo-modal .modal-ok').textContent='Add todo';
+  renderTodo();saveData();
 }
 
 function renderJobs(){
