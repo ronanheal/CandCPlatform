@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>C&C Platform</title>
+<title>c&c Platform — v6</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -18,7 +18,8 @@
 }
 body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14px;font-weight:300;overflow:hidden;}
 .app{display:flex;height:100vh;}
-.hidden{display:none !important;}
+
+/* SIDEBAR */
 .sidebar{width:56px;background:var(--black);display:flex;flex-direction:column;align-items:center;padding:18px 0 14px;flex-shrink:0;}
 .s-logo{width:32px;margin-bottom:22px;}
 .s-nav{display:flex;flex-direction:column;gap:2px;flex:1;align-items:center;width:100%;}
@@ -29,7 +30,11 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .s-btn:hover .s-tip{opacity:1;}
 .s-avatar{width:34px;height:34px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;cursor:pointer;border:2px solid #2a2a2a;margin-top:auto;position:relative;}
 .s-avatar:hover .s-tip{opacity:1;}
+
+/* MAIN */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+
+/* TOPBAR */
 .topbar{height:54px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:0;flex-shrink:0;}
 .tb-section{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:400;cursor:pointer;padding:0 16px;height:100%;display:flex;align-items:center;border-bottom:2px solid transparent;transition:all .15s;}
 .tb-section:first-child{padding-left:0;}
@@ -40,809 +45,984 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .tb-btn:hover{opacity:.85;}
 .tb-btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--border);}
 .tb-btn.ghost:hover{border-color:var(--ink);}
+
 .content{flex:1;overflow:hidden;display:flex;flex-direction:column;}
-.page{flex:1;overflow-y:auto;padding:28px 32px;}
-.dash-top{display:flex;align-items:baseline;gap:14px;margin-bottom:24px;}
-.dash-title{font-family:var(--serif);font-size:26px;font-weight:400;}
-.dash-sub{font-size:12px;color:var(--muted);font-weight:400;}
-.dash-week{display:flex;align-items:center;gap:8px;margin-bottom:20px;}
-.dash-week .wi{cursor:pointer;font-size:16px;color:var(--muted);padding:4px 8px;border-radius:3px;border:none;background:none;}
-.dash-week .wi:hover{background:var(--faint);}
-.dash-week .wl{font-size:13px;font-weight:400;min-width:180px;text-align:center;}
-.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;}
-.dash-card{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:18px 20px;cursor:pointer;transition:border-color .15s;}
-.dash-card:hover{border-color:var(--ink);}
-.dash-card .dc-person{font-size:12px;color:var(--muted);margin-bottom:8px;}
-.dash-card .dc-count{font-family:var(--serif);font-size:28px;font-weight:400;line-height:1;}
-.dash-card .dc-label{font-size:11px;color:var(--muted);margin-top:4px;}
-.dash-card.done-card{border-left:3px solid var(--done-ink);}
-.dash-card.done-card .dc-count{color:var(--done-ink);}
-.dash-card.todo-card{border-left:3px solid var(--red);}
-.dash-card.todo-card .dc-count{color:var(--red);}
-.dash-card.half-card{border-left:3px solid #E6A100;}
-.dash-card.half-card .dc-count{color:#E6A100;}
-.task-header{display:flex;align-items:baseline;gap:12px;margin-bottom:16px;}
-.task-header h2{font-family:var(--serif);font-size:22px;font-weight:400;}
-.task-header .th-date{font-size:12px;color:var(--muted);}
-.task-list{display:flex;flex-direction:column;gap:4px;}
-.task-row{display:grid;grid-template-columns:24px 1fr 90px 90px 28px;align-items:center;gap:12px;padding:10px 14px;background:var(--white);border:1px solid var(--border);border-radius:4px;transition:background .15s;}
-.task-row:hover{background:#faf9f7;}
-.task-check{width:20px;height:20px;border-radius:3px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0;}
-.task-check:hover{border-color:var(--ink);}
-.task-check.done{background:var(--done-ink);border-color:var(--done-ink);color:#fff;font-size:11px;}
-.task-name{font-size:13px;font-weight:400;line-height:1.3;}
-.task-name.done{color:var(--muted);text-decoration:line-through;}
-.task-type{font-size:11px;color:var(--muted);}
-.task-status{font-size:11px;font-weight:500;padding:3px 8px;border-radius:3px;text-align:center;}
-.status-done{background:var(--done);color:var(--done-ink);}
-.status-half{background:#FFF3CD;color:#856404;}
-.status-new{background:#F8D7DA;color:var(--red);}
-.task-del{cursor:pointer;color:#ccc;font-size:14px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;}
-.task-row:hover .task-del{opacity:1;}
-.task-del:hover{color:var(--red);}
-.task-add{display:flex;align-items:center;gap:6px;padding:10px 14px;background:none;border:1px dashed var(--border);border-radius:4px;cursor:pointer;color:var(--muted);font-size:12px;margin-top:8px;font-family:var(--font);width:fit-content;transition:all .15s;}
-.task-add:hover{border-color:var(--ink);color:var(--ink);}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:100;}
-.modal{background:var(--white);border-radius:8px;width:420px;max-width:90vw;padding:28px;box-shadow:0 8px 32px rgba(0,0,0,.18);}
-.modal h3{font-family:var(--serif);font-size:18px;margin-bottom:18px;font-weight:400;}
-.modal label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;margin-top:12px;font-weight:400;}
-.modal input,.modal select,.modal textarea{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:13px;outline:none;}
-.modal input:focus,.modal select:focus,.modal textarea:focus{border-color:var(--ink);}
-.modal textarea{resize:vertical;min-height:60px;}
-.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;}
-.modal-actions button{padding:8px 20px;border-radius:3px;font-size:12px;font-family:var(--font);font-weight:400;cursor:pointer;border:1px solid var(--border);background:var(--white);}
-.modal-actions button.primary{background:var(--black);color:var(--white);border-color:var(--black);}
-.modal-actions button.danger{color:var(--red);border-color:var(--red);}
-.report-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;margin-top:20px;}
-.report-card{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:20px;}
-.report-card h4{font-family:var(--serif);font-size:15px;margin-bottom:12px;font-weight:400;}
-.report-bar{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
-.report-bar .rb-label{width:80px;font-size:12px;color:var(--muted);flex-shrink:0;}
-.report-bar .rb-track{flex:1;height:8px;background:var(--faint);border-radius:4px;overflow:hidden;}
-.report-bar .rb-fill{height:100%;border-radius:4px;transition:width .4s;}
-.report-bar .rb-val{width:36px;font-size:12px;text-align:right;font-weight:500;}
-.report-table{width:100%;border-collapse:collapse;margin-top:12px;}
-.report-table th{text-align:left;font-size:11px;color:var(--muted);font-weight:400;padding:6px 8px;border-bottom:1px solid var(--border);}
-.report-table td{font-size:12px;padding:6px 8px;border-bottom:1px solid var(--faint);}
-.report-legend{display:flex;gap:16px;margin-bottom:16px;}
-.report-legend span{font-size:11px;display:flex;align-items:center;gap:4px;}
-.report-legend .dot{width:8px;height:8px;border-radius:50%;}
-.boards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-top:20px;}
-.board-col{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:16px;min-height:300px;}
-.board-col h4{font-size:13px;font-weight:500;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--faint);display:flex;align-items:center;gap:6px;}
-.board-col h4 .bc-count{background:var(--faint);border-radius:10px;padding:1px 8px;font-size:11px;}
-.board-task{background:var(--off);border:1px solid var(--border);border-radius:4px;padding:10px 12px;margin-bottom:8px;cursor:grab;font-size:12px;line-height:1.4;}
-.board-task:hover{border-color:var(--muted);}
-.board-task.dragging{opacity:.5;}
-.board-task .bt-title{font-weight:400;margin-bottom:4px;}
-.board-task .bt-meta{font-size:10px;color:var(--muted);}
-.settings-section{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:20px;margin-bottom:20px;}
-.settings-section h4{font-family:var(--serif);font-size:15px;margin-bottom:14px;font-weight:400;}
-.settings-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
-.settings-row label{width:120px;font-size:12px;color:var(--muted);font-weight:400;}
-.settings-row input,.settings-row select{padding:7px 12px;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:13px;outline:none;flex:1;}
-.settings-row input:focus,.settings-row select:focus{border-color:var(--ink);}
-.settings-actions{display:flex;gap:8px;margin-top:16px;}
-.settings-actions button{padding:7px 16px;border-radius:3px;font-size:12px;font-family:var(--font);cursor:pointer;}
-.settings-actions button.primary{background:var(--black);color:var(--white);border:none;}
-.settings-actions button.ghost{background:none;border:1px solid var(--border);}
-.person-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
-.person-chip{display:flex;align-items:center;gap:6px;background:var(--off);border:1px solid var(--border);border-radius:20px;padding:5px 12px 5px 5px;font-size:12px;}
-.person-chip .pc-dot{width:16px;height:16px;border-radius:50%;}
-.person-chip .pc-remove{cursor:pointer;color:var(--muted);margin-left:2px;}
-.person-chip .pc-remove:hover{color:var(--red);}
-.add-person-row{display:flex;gap:8px;margin-top:10px;}
-.add-person-row input{padding:6px 10px;border:1px solid var(--border);border-radius:4px;font-family:var(--font);font-size:12px;flex:1;outline:none;}
-.add-person-row button{padding:6px 14px;background:var(--black);color:var(--white);border:none;border-radius:3px;font-size:12px;font-family:var(--font);cursor:pointer;}
-.cal-nav{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
-.cal-nav button{background:none;border:1px solid var(--border);border-radius:4px;width:32px;height:32px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
-.cal-nav button:hover{border-color:var(--ink);}
-.cal-nav .cal-title{font-family:var(--serif);font-size:18px;font-weight:400;}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
-.cal-day-header{background:var(--white);padding:8px;text-align:center;font-size:11px;color:var(--muted);font-weight:400;}
-.cal-day{background:var(--white);min-height:80px;padding:6px;font-size:11px;}
-.cal-day.today{background:#FFF8F0;}
-.cal-day .cal-date{font-weight:500;margin-bottom:4px;}
-.cal-day .cal-task{font-size:10px;padding:2px 4px;border-radius:2px;margin-bottom:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.toast{position:fixed;bottom:20px;right:20px;background:var(--black);color:var(--white);padding:10px 20px;border-radius:4px;font-size:12px;z-index:200;opacity:0;transform:translateY(10px);transition:all .2s;pointer-events:none;}
-.toast.show{opacity:1;transform:translateY(0);}
+.view{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+
+/* DASHBOARD */
+.dash-scroll{flex:1;overflow-y:auto;padding:32px 32px 60px;}
+.dash-greeting{font-family:var(--serif);font-size:30px;font-weight:400;font-style:italic;color:var(--ink);line-height:1.2;margin-bottom:4px;}
+.dash-date{font-size:12px;color:var(--muted);letter-spacing:.06em;}
+.dash-rule{width:48px;height:2px;background:var(--red);margin:16px 0 28px;}
+.kpi-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:32px;}
+.kpi{background:var(--white);border:1px solid var(--border);padding:18px 20px;}
+.kpi-label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.kpi-val{font-family:var(--serif);font-size:26px;font-weight:400;color:var(--ink);}
+.kpi-sub{font-size:12px;color:var(--muted);margin-top:4px;}
+.kpi-bar{height:2px;background:var(--faint);margin-top:14px;}
+.kpi-bar-fill{height:100%;}
+.section-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.team-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.team-card{background:var(--white);border:1px solid var(--border);padding:0;overflow:hidden;cursor:pointer;transition:border-color .15s;}
+.team-card:hover{border-color:var(--ink);}
+.tc-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.tc-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:#fff;flex-shrink:0;}
+.tc-name{font-size:14px;font-weight:400;}
+.tc-meta{font-size:11px;color:var(--muted);margin-left:auto;}
+.tc-timeline{padding:10px 16px 14px;display:flex;flex-direction:column;gap:4px;}
+.tc-block{border-radius:2px;padding:5px 8px;font-size:12px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tc-block.todo{background:var(--off);border:1px solid var(--border);color:var(--ink);}
+.tc-block.done{background:var(--done);color:var(--done-ink);border:1px solid #A5D6A7;}
+.tc-block.urgent{background:#FDECEA;border:1px solid #FFCDD2;color:#B71C1C;}
+.tc-footer{padding:10px 16px;border-top:1px solid var(--border);display:flex;gap:16px;}
+.tc-stat{font-size:11px;color:var(--muted);}
+.tc-stat span{color:var(--ink);font-weight:400;}
+.alert-list{display:flex;flex-direction:column;gap:8px;}
+.alert{background:var(--white);border:1px solid var(--border);border-left:3px solid var(--red);padding:12px 16px;display:flex;align-items:center;gap:12px;font-size:13px;}
+.alert-job{font-weight:400;}
+.alert-detail{font-size:12px;color:var(--muted);margin-top:2px;}
+.my-todos{background:var(--white);border:1px solid var(--border);}
+.my-todo-item{padding:12px 16px;border-bottom:1px solid var(--faint);display:flex;align-items:center;gap:12px;font-size:13px;cursor:pointer;}
+.my-todo-item:last-child{border-bottom:none;}
+.my-todo-item:hover{background:var(--off);}
+.todo-check{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.todo-check.done-c{background:var(--done);border-color:#A5D6A7;}
+.todo-meta{font-size:11px;color:var(--muted);margin-left:auto;white-space:nowrap;}
+
+/* TODO VIEW */
+.todo-view{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.todo-bar{padding:14px 24px;border-bottom:1px solid var(--border);background:var(--white);display:flex;align-items:center;gap:16px;flex-shrink:0;}
+.person-switcher{display:flex;align-items:center;gap:8px;cursor:pointer;}
+.person-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#fff;}
+.person-name{font-size:15px;font-weight:400;}
+.week-nav{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.wbtn{background:transparent;border:1px solid var(--border);padding:5px 8px;cursor:pointer;font-family:var(--font);font-size:13px;display:flex;align-items:center;border-radius:2px;}
+.wbtn:hover{border-color:var(--ink);}
+.wlabel{font-size:13px;font-weight:400;min-width:120px;text-align:center;}
+.todo-summary{font-size:12px;color:var(--muted);}
+.todo-body{flex:1;display:flex;overflow:hidden;}
+.day-cols{flex:1;display:flex;overflow-x:auto;}
+.day-col{flex:0 0 0;min-width:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:flex-basis .2s;}
+.day-col.workday{flex:1;}
+.day-col.today .day-head{border-top:2px solid var(--red);}
+.day-head{padding:10px 14px 8px;border-bottom:1px solid var(--border);background:var(--white);flex-shrink:0;}
+.day-name{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.day-num{font-size:20px;font-weight:400;color:var(--ink);line-height:1.1;}
+.day-num.today-red{color:var(--red);}
+.day-log-btn{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:2px;margin-top:4px;}
+.day-log-btn:hover{color:var(--red);}
+.day-tasks{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;}
+.task-block{background:var(--white);border:1px solid var(--border);padding:8px 10px;cursor:grab;transition:border-color .15s;position:relative;min-height:36px;overflow:hidden;}
+.task-block:hover{border-color:var(--ink);}
+.task-block.done-b{background:var(--done);border-color:#A5D6A7;}
+.task-block.urgent-b{border-left:3px solid var(--red);}
+.task-block.dragging-b{opacity:.3;cursor:grabbing;}
+.task-b-title{font-size:13px;font-weight:400;line-height:1.3;margin-bottom:2px;}
+.task-b-job{font-size:11px;color:var(--muted);}
+.task-b-hours{position:absolute;bottom:6px;right:8px;font-size:10px;color:var(--muted);letter-spacing:.04em;}
+.task-b-done-label{position:absolute;bottom:6px;right:8px;font-size:10px;color:var(--done-ink);letter-spacing:.04em;font-weight:400;}
+
+/* JOBS */
+.jobs-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.jobs-toolbar{padding:16px 28px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.jobs-search{position:relative;flex:0 0 240px;}
+.jobs-search i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:15px;}
+.jobs-search input{width:100%;background:var(--off);border:1px solid var(--border);padding:7px 10px 7px 32px;font-size:13px;font-family:var(--font);font-weight:300;color:var(--ink);outline:none;border-radius:2px;}
+.jobs-search input:focus{border-color:var(--ink);background:var(--white);}
+.filter-btn{background:transparent;border:1px solid var(--border);padding:6px 12px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:5px;border-radius:2px;}
+.filter-btn:hover{border-color:var(--ink);color:var(--ink);}
+.jobs-count{margin-left:auto;font-size:12px;color:var(--muted);}
+.jobs-table-wrap{flex:1;overflow-y:auto;}
+.jobs-table{width:100%;border-collapse:collapse;}
+.jobs-table thead th{background:var(--white);border-bottom:1px solid var(--border);padding:10px 18px;font-size:10px;font-weight:400;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:left;position:sticky;top:0;z-index:2;}
+.jobs-table tbody tr{border-bottom:1px solid var(--faint);cursor:pointer;transition:background .1s;}
+.jobs-table tbody tr:hover{background:var(--white);}
+.jobs-table td{padding:14px 18px;vertical-align:middle;}
+.job-num-name{display:flex;align-items:baseline;gap:8px;}
+.job-num{font-size:11px;color:var(--muted);font-weight:300;}
+.job-name{font-size:14px;font-weight:400;}
+.job-co{font-size:12px;color:var(--muted);}
+.bbar-wrap{display:flex;flex-direction:column;gap:3px;min-width:130px;}
+.bbar-nums{display:flex;justify-content:space-between;font-size:12px;}
+.bbar-of{color:var(--muted);}
+.bbar-track{height:2px;background:var(--faint);}
+.bbar-fill{height:100%;}.bfok{background:#4CAF50;}.bfwarn{background:#FF9800;}.bfbad{background:var(--red);}
+.status-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;border-radius:2px;}
+.sp-ip{background:#E8F5E9;color:#2E7D32;}.sp-new{background:#FDECEA;color:#B71C1C;}.sp-co{background:var(--faint);color:var(--muted);}
+
+/* JOB DETAIL */
+.detail-view{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.detail-head{padding:0 28px;background:var(--white);border-bottom:1px solid var(--border);flex-shrink:0;}
+.detail-back{padding:14px 0 0;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px;cursor:pointer;width:fit-content;letter-spacing:.04em;}
+.detail-back:hover{color:var(--ink);}
+.detail-title-row{display:flex;align-items:flex-end;gap:16px;padding:10px 0 0;}
+.detail-title{font-family:var(--serif);font-size:24px;font-weight:400;flex:1;line-height:1.2;}
+.detail-actions{display:flex;gap:8px;}
+.d-action{background:transparent;border:1px solid var(--border);padding:7px 13px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:5px;color:var(--ink);border-radius:2px;transition:all .15s;}
+.d-action:hover{border-color:var(--ink);}
+.d-action.primary{background:var(--black);color:var(--white);border-color:var(--black);}
+.detail-meta-line{font-size:12px;color:var(--muted);padding:6px 0;display:flex;align-items:center;gap:12px;}
+.d-av{width:22px;height:22px;border-radius:50%;font-size:8px;font-weight:500;color:#fff;display:flex;align-items:center;justify-content:center;margin-left:-5px;border:2px solid var(--white);}
+.d-av:first-child{margin-left:0;}
+.labels-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding-bottom:8px;}
+.label-chip{display:inline-flex;align-items:center;gap:3px;background:var(--off);border:1px solid var(--border);padding:2px 7px 2px 8px;font-size:11px;color:var(--ink);border-radius:2px;}
+.label-chip button{background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;line-height:1;padding:0;}
+.label-chip button:hover{color:var(--red);}
+.label-add-btn{background:transparent;border:1px dashed var(--border);border-radius:2px;padding:2px 8px;font-size:11px;color:var(--muted);cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:3px;}
+.label-add-btn:hover{border-color:var(--ink);color:var(--ink);}
+.detail-tabs{display:flex;}
+.d-tab{padding:8px 16px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
+.d-tab.on{color:var(--ink);border-bottom-color:var(--red);}
+.stats-strip{display:flex;padding:16px 28px;border-bottom:1px solid var(--border);background:var(--off);flex-shrink:0;}
+.stat-b{flex:1;padding:0 20px;border-right:1px solid var(--border);}
+.stat-b:first-child{padding-left:0;}.stat-b:last-child{border-right:none;}
+.stat-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.stat-val{font-family:var(--serif);font-size:20px;font-weight:400;}.stat-of{font-size:13px;color:var(--muted);}
+.stat-bar{height:2px;background:var(--faint);margin-top:8px;}.stat-bar-fill{height:100%;}
+.plan-area{flex:1;overflow-y:auto;padding:0 28px 50px;}
+.plan-actions{display:flex;gap:7px;padding:14px 0 10px;}
+.p-btn{background:var(--white);border:1px solid var(--border);padding:6px 12px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:4px;color:var(--ink);border-radius:2px;transition:all .15s;}
+.p-btn:hover{border-color:var(--ink);}
+.phase{margin-bottom:4px;}
+.phase-head{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--ink);color:var(--white);cursor:pointer;user-select:none;}
+.ph-chv{font-size:14px;color:#555;transition:transform .2s;}
+.ph-n{font-size:13px;font-weight:400;letter-spacing:.02em;flex:1;}
+.ph-cnt{font-size:11px;color:#666;display:none;}
+.ph-inf{display:flex;gap:12px;align-items:center;margin-left:auto;}
+.ph-meta{font-size:11px;color:#888;white-space:nowrap;}
+.ph-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.ph-dot.c{background:#4CAF50;}.ph-dot.p{background:var(--red);}
+.ph-mb{font-size:14px;color:#555;cursor:pointer;padding:2px 4px;border-radius:2px;display:flex;}
+.ph-mb:hover{color:#fff;background:#333;}
+.phase.collapsed .ph-chv{transform:rotate(-90deg);}
+.phase.collapsed .ph-cnt{display:inline;}
+.phase.collapsed .ph-meta{display:none;}
+.phase.collapsed .items-t,.phase.collapsed .add-i-row{display:none;}
+.items-t{width:100%;border-collapse:collapse;border:1px solid var(--border);border-top:none;}
+.items-t thead th{background:var(--off);border-bottom:1px solid var(--border);padding:7px 10px;font-size:10px;font-weight:400;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;}
+.items-t tbody tr{border-bottom:1px solid var(--faint);cursor:grab;transition:background .1s;}
+.items-t tbody tr:last-child{border-bottom:none;}
+.items-t tbody tr:hover{background:var(--off);}
+.items-t tbody tr.dragging{opacity:.3;}
+.items-t td{padding:10px 10px;font-size:13px;vertical-align:middle;}
+.i-name{font-weight:400;font-size:14px;}
+.i-hrs{font-size:12px;text-align:right;}.i-hrs-over{color:var(--red);}
+.i-rate{font-size:12px;color:var(--muted);text-align:right;}
+.i-sell{text-align:right;font-size:12px;}.i-sof{color:var(--muted);font-size:11px;}
+.i-badge{padding:2px 7px;border-radius:2px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;}
+.ib-c{background:#E8F5E9;color:#2E7D32;}.ib-p{background:#FDECEA;color:#B71C1C;}
+.add-i-row{padding:8px 10px;font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-top:none;background:var(--white);}
+.add-i-row:hover{color:var(--red);}
+.add-form-row{background:var(--off);border-bottom:1px solid var(--border);}
+.add-form-row td{padding:8px 10px;}
+.i-sel,.i-hi{font-size:12px;font-family:var(--font);border:1px solid var(--border);padding:5px 8px;background:var(--white);color:var(--ink);outline:none;border-radius:2px;}
+.i-sel{width:100%;}.i-sel:focus,.i-hi:focus{border-color:var(--ink);}
+.i-hi{width:72px;text-align:right;}
+.save-b{background:var(--ink);color:#fff;border:none;padding:5px 11px;font-size:11px;font-family:var(--font);border-radius:2px;cursor:pointer;}
+.cancel-b{background:transparent;border:1px solid var(--border);padding:5px 11px;font-size:11px;font-family:var(--font);border-radius:2px;cursor:pointer;color:var(--muted);}
+.exp-sec{margin-top:4px;margin-bottom:4px;}
+.exp-head{display:flex;align-items:center;gap:9px;padding:10px 14px;background:#2a2a2a;color:var(--white);cursor:pointer;}
+.exp-t{width:100%;border-collapse:collapse;border:1px solid var(--border);border-top:none;}
+.exp-t thead th{background:var(--off);border-bottom:1px solid var(--border);padding:7px 10px;font-size:10px;font-weight:400;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;}
+.exp-t td{padding:10px 10px;font-size:12px;vertical-align:middle;}
+.exp-badg{padding:2px 7px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;border-radius:2px;background:#FFF3E0;color:#E65100;}
+.add-e-row{padding:8px 10px;font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-top:none;background:var(--white);}
+.add-e-row:hover{color:var(--red);}
+.exp-sec.collapsed .exp-t,.exp-sec.collapsed .add-e-row{display:none;}
+.exp-sec.collapsed .exp-chv{transform:rotate(-90deg);}
+.ph-add{display:flex;align-items:center;gap:5px;padding:10px 0;font-size:12px;color:var(--muted);cursor:pointer;}
+.ph-add:hover{color:var(--red);}
+.act-feed{flex:1;overflow-y:auto;padding:24px 28px;}
+.act-row{display:flex;gap:12px;margin-bottom:14px;}
+.act-text{font-size:13px;line-height:1.5;}
+.act-time{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* REPORTING */
+.report-scroll{flex:1;overflow-y:auto;padding:32px;}
+.report-head{font-family:var(--serif);font-size:28px;font-style:italic;margin-bottom:4px;}
+.report-sub{font-size:12px;color:var(--muted);margin-bottom:8px;}
+.coming-note{background:var(--off);border:1px dashed var(--border);padding:16px 20px;font-size:13px;color:var(--muted);margin-bottom:24px;display:flex;align-items:center;gap:8px;}
+.r-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.r-card{background:var(--white);border:1px solid var(--border);padding:20px;}
+.r-card-t{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.r-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;font-size:13px;}
+.r-label{flex:1;}
+.r-bar{flex:0 0 90px;height:3px;background:var(--faint);}
+.r-bfill{height:100%;background:var(--red);}
+.r-val{min-width:44px;text-align:right;font-size:12px;color:var(--muted);}
+.r-big{font-family:var(--serif);font-size:28px;font-weight:400;margin-bottom:4px;}
+
+/* BOARDS */
+.boards-scroll{flex:1;overflow-y:auto;padding:32px;}
+.boards-head{font-family:var(--serif);font-size:28px;font-style:italic;margin-bottom:4px;}
+.boards-sub{font-size:12px;color:var(--muted);margin-bottom:8px;}
+.boards-cols{display:flex;gap:14px;overflow-x:auto;padding-bottom:14px;}
+.board-col{flex:0 0 200px;}
+.board-col-h{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--border);}
+.board-card{background:var(--white);border:1px solid var(--border);padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .15s;font-size:13px;}
+.board-card:hover{border-color:var(--ink);}
+.board-card.over-b{border-left:3px solid var(--red);}
+.bc-name{font-weight:400;margin-bottom:3px;}
+.bc-client{font-size:11px;color:var(--muted);}
+
+/* CTX MENUS */
+.ctx,.pctx{position:fixed;background:var(--white);border:1px solid var(--border);border-radius:3px;box-shadow:0 4px 20px rgba(0,0,0,.1);z-index:500;min-width:195px;padding:4px 0;display:none;}
+.ctx.on,.pctx.on{display:block;}
+.ctx-r,.pctx-r{padding:8px 14px;font-size:13px;display:flex;align-items:center;gap:9px;cursor:pointer;color:var(--ink);}
+.ctx-r:hover,.pctx-r:hover{background:var(--off);}
+.ctx-r i,.pctx-r i{font-size:15px;color:var(--muted);}
+.ctx-r.danger,.pctx-r.danger{color:var(--red);}.ctx-r.danger i,.pctx-r.danger i{color:var(--red);}
+.ctx-sep{height:1px;background:var(--border);margin:3px 0;}
+
+/* MODALS */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:800;display:none;align-items:center;justify-content:center;}
+.modal-bg.on{display:flex;}
+.modal{background:var(--white);border-radius:3px;width:480px;max-width:96vw;overflow:hidden;}
+.modal-hd{background:var(--ink);color:var(--white);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;}
+.modal-hd-title{font-family:var(--serif);font-size:18px;font-weight:400;font-style:italic;}
+.modal-x{background:none;border:none;color:#666;font-size:18px;cursor:pointer;}
+.modal-x:hover{color:#fff;}
+.modal-bd{padding:22px 24px;}
+.field{margin-bottom:15px;}
+.field label{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.field input,.field select,.field textarea{width:100%;background:var(--off);border:1px solid var(--border);border-radius:2px;padding:8px 10px;font-size:13px;font-family:var(--font);font-weight:300;color:var(--ink);outline:none;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--ink);background:var(--white);}
+.field textarea{resize:vertical;min-height:65px;}
+.field-row{display:flex;gap:12px;}
+.field-row .field{flex:1;}
+.tog-row{display:flex;border:1px solid var(--border);border-radius:2px;overflow:hidden;}
+.tog{flex:1;padding:8px;font-size:12px;text-align:center;cursor:pointer;font-family:var(--font);border:none;background:var(--off);color:var(--muted);transition:all .15s;}
+.tog.on{background:var(--ink);color:var(--white);}
+.modal-ft{padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+.modal-cancel{background:transparent;border:1px solid var(--border);border-radius:2px;padding:7px 15px;font-size:12px;font-family:var(--font);cursor:pointer;color:var(--muted);}
+.modal-cancel:hover{border-color:var(--ink);color:var(--ink);}
+.modal-ok{background:var(--ink);border:none;border-radius:2px;padding:7px 17px;font-size:12px;font-family:var(--font);color:var(--white);cursor:pointer;}
+.modal-ok:hover{opacity:.85;}
+
+/* INVOICE MODAL */
+.inv-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:800;display:none;align-items:center;justify-content:center;}
+.inv-bg.on{display:flex;}
+.inv-modal{background:var(--white);width:640px;max-width:95vw;max-height:88vh;border-radius:3px;overflow:hidden;display:flex;flex-direction:column;}
+.inv-top{background:var(--ink);color:var(--white);padding:16px 22px;display:flex;align-items:center;gap:10px;}
+.inv-top-t{font-family:var(--serif);font-size:16px;font-style:italic;flex:1;}
+.inv-act{background:var(--red);color:#fff;border:none;padding:6px 13px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-family:var(--font);cursor:pointer;border-radius:2px;}
+.inv-act.sec{background:#333;}
+.inv-x{background:none;border:none;color:#777;font-size:18px;cursor:pointer;}
+.inv-x:hover{color:#fff;}
+.inv-body{flex:1;overflow-y:auto;padding:28px 32px;}
+.inv-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+.inv-ml{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;}
+.inv-mv{font-size:13px;}
+.inv-job-title{font-family:var(--serif);font-size:20px;font-weight:400;margin-bottom:22px;}
+.inv-sec{margin-bottom:18px;}
+.inv-sec-h{background:var(--ink);color:#fff;padding:8px 13px;font-size:12px;font-weight:400;letter-spacing:.02em;}
+.inv-line{display:flex;padding:8px 13px;border-bottom:1px solid var(--faint);font-size:13px;}
+.inv-line:last-child{border-bottom:none;}
+.inv-ln{flex:1;}
+.inv-lv{min-width:80px;text-align:right;}
+.inv-sub{display:flex;padding:8px 13px;background:var(--off);font-size:13px;border:1px solid var(--border);border-top:none;}
+.inv-sub-l{flex:1;font-weight:400;}
+.inv-tot{border-top:1.5px solid var(--ink);padding:14px 13px;display:flex;justify-content:flex-end;gap:28px;font-size:14px;}
+.inv-tot-l{color:var(--muted);}
+
+/* FOLLOW-UP */
+.fup{position:fixed;bottom:24px;right:24px;z-index:950;display:none;}
+.fup.on{display:block;}
+.fup-card{background:var(--white);border-radius:3px;width:320px;box-shadow:0 4px 20px rgba(0,0,0,.15);overflow:hidden;border:1px solid var(--border);}
+.fup-hd{background:var(--ink);color:#fff;padding:12px 16px;font-size:13px;display:flex;align-items:center;gap:7px;}
+.fup-bd{padding:13px 16px;font-size:13px;line-height:1.5;color:var(--ink);}
+.fup-ft{padding:10px 16px;display:flex;gap:7px;border-top:1px solid var(--border);}
+.fup-y{background:var(--ink);color:#fff;border:none;padding:6px 12px;font-size:11px;font-family:var(--font);border-radius:2px;cursor:pointer;}
+.fup-n{background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 12px;font-size:11px;font-family:var(--font);border-radius:2px;cursor:pointer;}
+
+.hidden{display:none!important;}
+
+/* CHANGELOG banner */
+.changelog{background:var(--ink);color:#ccc;font-size:11px;padding:6px 16px;text-align:center;letter-spacing:.04em;flex-shrink:0;}
+.changelog strong{color:var(--white);}
+
+/* Person switcher dropdown */
+.ps-dropdown{position:relative;}
+.ps-menu{position:absolute;top:100%;left:0;background:var(--white);border:1px solid var(--border);border-radius:3px;box-shadow:0 4px 20px rgba(0,0,0,.1);z-index:300;min-width:180px;padding:4px 0;display:none;margin-top:4px;}
+.ps-menu.on{display:block;}
+.ps-person{padding:8px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;transition:background .1s;}
+.ps-person:hover{background:var(--off);}
+.ps-person.on-p{background:var(--off);font-weight:400;}
+.ps-pav{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#fff;flex-shrink:0;}
+.ps-pmeta{display:flex;flex-direction:column;line-height:1.3;}
+.ps-pname{font-size:13px;font-weight:400;}
+.ps-pstatus{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px;}
+.ps-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
+.ps-dot.available{background:#4CAF50;}
+.ps-dot.allocted{background:#FF9800;}
+.ps-dot.leave{background:#9E9E9E;}
+.ps-status-bar{height:2px;background:var(--faint);margin-top:4px;border-radius:1px;overflow:hidden;}
+.ps-status-fill{height:100%;border-radius:1px;}
+
+/* Allocation indicator in day header */
+.day-allocation{font-size:10px;color:var(--muted);margin-top:2px;}
+.day-allocation-bar{height:2px;background:var(--faint);margin-top:3px;border-radius:1px;overflow:hidden;}
+.day-allocation-fill{height:100%;border-radius:1px;}
+
+/* Task status badge */
+.task-status{font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:1px 5px;border-radius:2px;position:absolute;top:6px;right:8px;}
+.task-status.inprogress{background:#FFF3E0;color:#E65100;}
+.task-status.todo{background:var(--off);color:var(--muted);}
+.task-status.done-s{background:var(--done);color:var(--done-ink);}
+
+/* Quick add row */
+.quick-add{padding:6px 14px;border-top:1px solid var(--border);background:var(--white);display:none;}
+.quick-add.on{display:flex;align-items:center;gap:8px;}
+.quick-add input{flex:1;background:var(--off);border:1px solid var(--border);padding:5px 8px;font-size:12px;font-family:var(--font);outline:none;border-radius:2px;}
+.quick-add input:focus{border-color:var(--ink);}
+.quick-add button{background:var(--red);color:#fff;border:none;padding:5px 10px;font-size:11px;font-family:var(--font);cursor:pointer;border-radius:2px;}
+.quick-add .qa-cancel{background:transparent;color:var(--muted);border:1px solid var(--border);}
+
+/* Status filter bar */
+.status-filter{display:flex;gap:6px;margin-left:16px;}
+.sf-btn{padding:4px 10px;font-size:11px;border:1px solid var(--border);border-radius:2px;cursor:pointer;background:var(--white);font-family:var(--font);color:var(--muted);transition:all .15s;}
+.sf-btn:hover{border-color:var(--ink);color:var(--ink);}
+.sf-btn.on{background:var(--ink);color:var(--white);border-color:var(--ink);}
+
+/* Task reorder handles */
+.task-reorder-handle{cursor:grab;color:var(--border);font-size:12px;margin-right:4px;}
+.task-block.dragging-task{opacity:.4;transform:rotate(2deg);}
+.task-block.drag-over{border-top:2px solid var(--red);}
+
+/* Day drop zone highlight */
+.day-col.drop-highlight{background:#FFF8E1;}
+
+/* Person status indicator in todo bar */
+.person-status-ind{margin-left:12px;display:flex;align-items:center;gap:6px;}
+.psi-select{background:transparent;border:1px solid var(--border);padding:4px 8px;font-size:11px;font-family:var(--font);border-radius:2px;cursor:pointer;color:var(--muted);}
+.psi-select:focus{border-color:var(--ink);color:var(--ink);}
+
 </style>
 </head>
 <body>
 <div class="app">
-<div class="sidebar">
-<div class="s-logo"><svg viewBox="0 0 32 32"><text x="4" y="24" font-size="22" font-weight="600" fill="#ED1E24" font-family="serif">C</text></svg></div>
-<div class="s-nav">
-<div class="s-btn on" data-view="dashboard"><i class="ti ti-layout-dashboard"></i><span class="s-tip">Dashboard</span></div>
-<div class="s-btn" data-view="todo"><i class="ti ti-clipboard-check"></i><span class="s-tip">Todo</span></div>
-<div class="s-btn" data-view="boards"><i class="ti ti-columns"></i><span class="s-tip">Boards</span></div>
-<div class="s-btn" data-view="calendar"><i class="ti ti-calendar"></i><span class="s-tip">Calendar</span></div>
-<div class="s-btn" data-view="reports"><i class="ti ti-chart-bar"></i><span class="s-tip">Reports</span></div>
-<div class="s-btn" data-view="settings"><i class="ti ti-settings"></i><span class="s-tip">Settings</span></div>
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <svg class="s-logo" viewBox="0 0 621.5 266.3" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M546.7,26.9c14.2,0,24.7,10,28.4,37.9c0.5,9.5,5.3,16.9,14.2,16.9c13.2,0,32.1-12.6,32.1-29.5c0-25.3-25.3-44.8-63.7-44.8c-59,0-104.6,43.4-127.1,95c-12.6,28.9-20,62.7-16.6,94.2c2.1,19.5,9.9,39.1,24.9,51.7c-19.3,2.3-53.8-15.3-81.8-42.5c23.2-21.6,41.8-48,54.4-77c3.7-8.6,8.7-21.6,3.4-30.6c-4.2-7.2-14.6-6.8-21.4-4.2c-16,6.2-14.5,22.1-17.5,36.2c-4.8,23.3-13.2,46.3-29.7,63.9c-25.3-26.5-45.7-55.3-58.5-78.6c43.3-17.2,72.8-28.1,72.8-67c0-31.3-27.9-48.5-58-48.5c-35.7,0-67.3,26-67.3,70.2c0,15.5,4.3,30.7,11.9,44.1c-15.8,4.9-31.1,11.9-43.7,22.8c-13.9,12.1-24,28.8-35.2,43.3c-18,23.3-45.6,57.7-79.3,53.3c-31-4-35.8-37-35.8-62.8c0-64.2,35.8-145.3,80-145.3c14.2,0,24.7,10,28.4,37.9c0.5,9.5,5.3,16.8,14.2,16.8c13.2,0,32.1-12.6,32.1-29.5c0-25.3-25.2-44.8-63.7-44.8C54.2,6.2,0,102,0,181.5c0,59,34.7,80.6,71.6,80.6c37.2,0,76.4-13.5,108.2-56.8c4.6,29.1,28.5,55.4,72.6,55.4c29.7,0,51.3-8.4,77.4-30.5c0,0,11.3,8.7,12.4,9.5c19.4,12.8,42.6,19.4,65.3,22.9c25.4,3.9,51.4,5,77,2.5c0.3,0,0.5-0.1,0.8-0.1c23.3-2.4,46.9-7.5,67.2-20c19.5-12,35.3-29.2,47.6-48.4c3.3-5.1,2.4-11.9-2.1-16.1c-2.9-2.7-7.5-2.2-9.9,1c-11.6,15.7-27.3,32.4-44.7,43c-10.9,6.7-22.5,10.9-34.2,10.9c-35.3,0-42.7-29.5-42.7-63.2C466.7,108,502.5,26.9,546.7,26.9z M299.7,15.6c18.9,0,26.9,13.2,26.9,28.1c0,29.3-21.6,49.3-45.7,60.1c-8-12.4-13.2-30.9-13.2-45.3C267.7,32.9,283.3,15.6,299.7,15.6z M269.7,238.6c-31.7,0-52.1-23.7-52.1-50.5c0-38.5,30.9-57.3,37.7-58.1c18,30.9,38.1,62.1,63.7,89.8C305.3,231,290.5,238.6,269.7,238.6z"/></svg>
+    <div class="s-nav">
+      <div class="s-btn on" id="snav-dashboard" onclick="navTo('dashboard')"><i class="ti ti-grid-dots"></i><span class="s-tip">Dashboard</span></div>
+      <div class="s-btn" id="snav-todo" onclick="navTo('todo')"><i class="ti ti-checklist"></i><span class="s-tip">To Do</span></div>
+      <div class="s-btn" id="snav-jobs" onclick="navTo('jobs')"><i class="ti ti-briefcase"></i><span class="s-tip">Jobs</span></div>
+      <div class="s-btn" id="snav-reporting" onclick="navTo('reporting')"><i class="ti ti-chart-bar"></i><span class="s-tip">Reporting</span></div>
+      <div class="s-btn" id="snav-boards" onclick="navTo('boards')"><i class="ti ti-layout-kanban"></i><span class="s-tip">Priority Boards</span></div>
+      <div class="s-btn" style="margin-top:auto;"><i class="ti ti-settings"></i><span class="s-tip">Settings</span></div>
+    </div>
+    <div class="s-avatar">RO<span class="s-tip">Ronan</span></div>
+  </div>
+
+  <div class="main">
+    <div class="changelog">
+      <strong>v6</strong> &nbsp;·&nbsp; Editorial redesign &nbsp;·&nbsp; Timeline todo view (proportional blocks, drag between days, option+drag to duplicate) &nbsp;·&nbsp; Manager dashboard with team day view &nbsp;·&nbsp; Job numbers without brackets &nbsp;·&nbsp; Reporting &amp; boards flagged as phase 2
+    </div>
+    <div class="topbar hidden" id="topbar">
+      <div class="tb-section on">Jobs</div>
+      <div class="tb-section">Time</div>
+      <div class="tb-section">Expenses</div>
+      <div class="tb-section">Quotes</div>
+      <div class="tb-section">Invoices</div>
+      <div class="tb-right"><button class="tb-btn" onclick="openCreateJob()">+ Create Job</button></div>
+    </div>
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div id="view-dashboard" class="view">
+        <div class="dash-scroll">
+          <div style="margin-bottom:32px;">
+            <div class="dash-greeting">Good morning, Ronan.</div>
+            <div class="dash-date">Friday · 6 June 2026 · Week 23</div>
+            <div class="dash-rule"></div>
+          </div>
+          <div class="kpi-row">
+            <div class="kpi"><div class="kpi-label">Billable this week</div><div class="kpi-val">18h 20m</div><div class="kpi-sub">of 30h target</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:61%;background:#4CAF50;"></div></div></div>
+            <div class="kpi"><div class="kpi-label">Non-billable</div><div class="kpi-val">6h 45m</div><div class="kpi-sub">internal &amp; admin</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:23%;background:#FF9800;"></div></div></div>
+            <div class="kpi"><div class="kpi-label">My tasks today</div><div class="kpi-val">4</div><div class="kpi-sub">1 urgent, 2 unscheduled</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:40%;background:var(--red);"></div></div></div>
+          </div>
+          <div class="section-label" style="margin-bottom:12px;">Your day</div>
+          <div class="my-todos" style="margin-bottom:28px;">
+            <div class="my-todo-item"><div class="todo-check"></div><div><div>Carcass Poster Amends</div><div style="font-size:11px;color:var(--muted);">6752 SFF Brand Guidelines · Design &amp; Artwork · 1h30m</div></div><div class="todo-meta">Due today</div></div>
+            <div class="my-todo-item"><div class="todo-check" style="border-color:var(--red);"></div><div><div>Send v1 by EOP to Maya</div><div style="font-size:11px;color:var(--muted);">6752 SFF Brand Guidelines · Design &amp; Artwork · 2h</div></div><div class="todo-meta" style="color:var(--red);">Urgent</div></div>
+            <div class="my-todo-item"><div class="todo-check"></div><div><div>Friday WIP</div><div style="font-size:11px;color:var(--muted);">House · Briefing &amp; coordination · 1h</div></div><div class="todo-meta">Today</div></div>
+            <div class="my-todo-item"><div class="todo-check done-c"><i class="ti ti-check" style="font-size:9px;color:var(--done-ink);"></i></div><div style="opacity:.5;"><div style="text-decoration:line-through;">Email on progressing website work</div><div style="font-size:11px;color:var(--muted);">The Links · Briefing</div></div><div class="todo-meta" style="opacity:.5;">Done 9:14am</div></div>
+          </div>
+          <div class="section-label" style="margin-bottom:14px;">Team · today</div>
+          <div class="team-grid">
+            <div class="team-card" onclick="viewTeamTodo('bee')">
+              <div class="tc-head"><div class="tc-av" style="background:#6B7FA3;">BE</div><div><div class="tc-name">Bianca</div></div><div class="tc-meta">5h booked · 3h to go</div></div>
+              <div class="tc-timeline">
+                <div class="tc-block done">Harker Herbals WIP — 1h</div>
+                <div class="tc-block done">Client check-in call — 30m</div>
+                <div class="tc-block todo">Amazon GA deep dive — 2h</div>
+                <div class="tc-block todo">Comms back to client — 1h</div>
+                <div class="tc-block urgent">Budget actuals for May — 1h30m</div>
+              </div>
+              <div class="tc-footer"><div class="tc-stat">Done <span>1h30m</span></div><div class="tc-stat">Remaining <span>3h30m</span></div><div class="tc-stat" style="margin-left:auto;color:var(--red);font-size:11px;">1 urgent</div></div>
+            </div>
+            <div class="team-card" onclick="viewTeamTodo('jb')">
+              <div class="tc-head"><div class="tc-av" style="background:#7B9E87;">JB</div><div><div class="tc-name">JB</div></div><div class="tc-meta">4h booked · 4h to go</div></div>
+              <div class="tc-timeline">
+                <div class="tc-block done">SFF LinkedIn content — 1h</div>
+                <div class="tc-block todo">NPF AU Bundle push copy — 2h</div>
+                <div class="tc-block todo">Formthotics induction — 1h</div>
+                <div class="tc-block todo">Performance wip — 1h</div>
+              </div>
+              <div class="tc-footer"><div class="tc-stat">Done <span>1h</span></div><div class="tc-stat">Remaining <span>3h</span></div><div class="tc-stat" style="margin-left:auto;font-size:11px;color:var(--muted);">On track</div></div>
+            </div>
+          </div>
+          <div style="margin-top:28px;" class="section-label" style="margin-bottom:14px;">Over budget</div>
+          <div class="alert-list">
+            <div class="alert"><i class="ti ti-alert-triangle" style="color:var(--red);font-size:16px;flex-shrink:0;"></i><div><div class="alert-job">6544 SFF Honest Campaign</div><div class="alert-detail">Design &amp; Artwork $449 over sell · consider scope change</div></div></div>
+            <div class="alert"><i class="ti ti-alert-triangle" style="color:var(--red);font-size:16px;flex-shrink:0;"></i><div><div class="alert-job">6690 Boyd April Retainer</div><div class="alert-detail">$1,566 over budget · invoice raised but hours continue</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TODO -->
+      <div id="view-todo" class="view hidden">
+        <div class="todo-view">
+          <div class="todo-bar">
+            <div class="person-switcher">
+              <div class="person-av" id="current-av" style="background:var(--red);">RO</div>
+              <span class="person-name" id="current-name">Ronan</span>
+              <i class="ti ti-chevron-down" style="font-size:13px;color:var(--muted);margin-left:2px;"></i>
+            </div>
+            <div class="week-nav">
+              <button class="wbtn"><i class="ti ti-chevron-left" style="font-size:13px;"></i></button>
+              <span class="wlabel">Jun 1 – Jun 7</span>
+              <button class="wbtn"><i class="ti ti-chevron-right" style="font-size:13px;"></i></button>
+            </div>
+            <div class="todo-summary" style="margin-left:16px;">To do: 3h30m &nbsp;·&nbsp; Done: 5h45m</div>
+            <div style="margin-left:auto;">
+              <button class="tb-btn ghost" onclick="openTodoModal(null,5)" style="font-size:11px;padding:6px 12px;">+ Add task</button>
+            </div>
+          </div>
+          <div class="todo-body">
+            <div class="day-cols" id="day-cols"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- JOBS -->
+      <div id="view-jobs" class="view hidden">
+        <div class="jobs-wrap">
+          <div class="jobs-toolbar">
+            <div class="jobs-search"><i class="ti ti-search"></i><input placeholder="Search jobs…"/></div>
+            <button class="filter-btn"><i class="ti ti-building" style="font-size:13px"></i> Company</button>
+            <button class="filter-btn"><i class="ti ti-filter" style="font-size:13px"></i> Status</button>
+            <label class="filter-btn" style="cursor:pointer;"><input type="checkbox" checked style="margin-right:5px;accent-color:var(--red)"/> Hide archived</label>
+            <span class="jobs-count" id="jobs-count">1 job · NZD</span>
+          </div>
+          <div class="jobs-table-wrap">
+            <table class="jobs-table">
+              <thead><tr><th style="width:32px;"></th><th>Job</th><th>Company</th><th>Budget</th><th>Hours</th><th>Due</th><th>Status</th></tr></thead>
+              <tbody id="jobs-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- JOB DETAIL -->
+      <div id="view-detail" class="view hidden">
+        <div class="detail-view">
+          <div class="detail-head">
+            <div class="detail-back" onclick="navTo('jobs')"><i class="ti ti-arrow-left" style="font-size:12px"></i> Jobs</div>
+            <div class="detail-title-row">
+              <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;" id="d-meta-line"></div><div class="detail-title" id="d-title-text">—</div></div>
+              <div class="detail-actions">
+                <button class="d-action" onclick="openTodoModal(activeJobId,5)"><i class="ti ti-checklist" style="font-size:13px"></i> Add todo</button>
+                <button class="d-action" onclick="openInvoice()"><i class="ti ti-file-invoice" style="font-size:13px"></i> Invoice</button>
+                <button class="d-action primary" onclick="openCreateJob()"><i class="ti ti-plus" style="font-size:13px"></i> New job</button>
+              </div>
+            </div>
+            <div class="detail-meta-line">
+              <div style="display:flex;"><div class="d-av" style="background:#7B9E87;">CA</div><div class="d-av" style="background:#6B7FA3;">JC</div><div class="d-av" style="background:#C4956A;">CM</div><div class="d-av" style="background:#555;font-size:13px;cursor:pointer;">+</div></div>
+              <span id="d-hours-sell" style="margin-left:8px;font-size:12px;color:var(--muted);"></span>
+            </div>
+            <div class="labels-row" id="labels-row">
+              <div class="label-add-btn" onclick="addLabel()"><i class="ti ti-plus" style="font-size:11px"></i> Add label</div>
+            </div>
+            <div class="detail-tabs">
+              <div class="d-tab on" onclick="switchDTab(this,'plan')">Job plan</div>
+              <div class="d-tab" onclick="switchDTab(this,'activity')">Activity</div>
+            </div>
+          </div>
+          <div id="dtab-plan" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+            <div class="stats-strip" id="d-stats"></div>
+            <div class="plan-area">
+              <div class="plan-actions">
+                <button class="p-btn" onclick="showAddItemForm(null)"><i class="ti ti-plus" style="font-size:12px"></i> Add item</button>
+                <button class="p-btn"><i class="ti ti-currency-dollar" style="font-size:12px"></i> Add expense</button>
+                <button class="p-btn" onclick="addPhase()"><i class="ti ti-layout-rows" style="font-size:12px"></i> New phase</button>
+              </div>
+              <div id="phases-wrap"></div>
+              <div class="exp-sec" id="exp-wrap">
+                <div class="exp-head" onclick="toggleExp()"><i class="ti ti-chevron-down ph-chv exp-chv"></i><span style="font-size:13px;font-weight:400;flex:1;letter-spacing:.02em;">Expenses</span><span style="font-size:11px;color:#888;">$0 / $200</span></div>
+                <table class="exp-t"><thead><tr><th>Expense</th><th style="width:100px;">Date</th><th style="width:55px;">Qty</th><th style="width:85px;">Cost</th><th style="width:65px;">Markup</th><th style="width:85px;">Sell</th><th style="width:80px;text-align:right;">Total</th><th style="width:75px;text-align:right;">Status</th></tr></thead>
+                <tbody><tr><td>Disbursements</td><td style="font-size:12px;color:var(--muted);">28 May 26</td><td style="font-size:12px;">1 NZD</td><td style="font-size:12px;">$0</td><td style="font-size:12px;color:var(--muted);">—</td><td style="font-size:12px;">$100</td><td style="text-align:right;font-size:12px;">$100</td><td style="text-align:right;"><span class="exp-badg">Draft</span></td></tr></tbody></table>
+                <div class="add-e-row"><i class="ti ti-plus" style="font-size:11px"></i> Add expense</div>
+              </div>
+              <div class="ph-add" onclick="addPhase()"><i class="ti ti-plus" style="font-size:13px"></i> New phase</div>
+            </div>
+          </div>
+          <div id="dtab-activity" class="act-feed hidden">
+            <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:18px;">Activity</div>
+            <div class="act-row"><div class="d-av" style="background:#7B9E87;flex-shrink:0;">CA</div><div><div class="act-text">Logged <strong style="font-weight:500;">15h 45m</strong> on Creative Direction — Doc Layout Stage 2</div><div class="act-time">Today, 9:14am</div></div></div>
+            <div class="act-row"><div class="d-av" style="background:#6B7FA3;flex-shrink:0;">JC</div><div><div class="act-text">Logged <strong style="font-weight:500;">31h 20m</strong> on Design &amp; Artwork — Doc Layout Stage 2</div><div class="act-time">Yesterday, 5:22pm</div></div></div>
+            <div class="act-row"><div class="d-av" style="background:#C4956A;flex-shrink:0;">CM</div><div><div class="act-text">Added phase <strong style="font-weight:500;">Doc Layout: Stage 2</strong></div><div class="act-time">2 Jun, 11:05am</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- REPORTING -->
+      <div id="view-reporting" class="view hidden">
+        <div class="report-scroll">
+          <div class="report-head">Reporting</div>
+          <div class="report-sub">June 2026 · All clients</div>
+          <div class="dash-rule" style="margin:14px 0 20px;"></div>
+          <div class="coming-note"><i class="ti ti-tools" style="font-size:16px;color:var(--muted);"></i> This section will be built out further in a future phase — charts, date ranges, per-client exports, and team utilisation reports are all planned.</div>
+          <div class="r-grid">
+            <div class="r-card"><div class="r-card-t">Billable hours by person</div><div class="r-row"><span class="r-label">Ronan</span><div class="r-bar"><div class="r-bfill" style="width:82%"></div></div><span class="r-val">82%</span></div><div class="r-row"><span class="r-label">Bianca</span><div class="r-bar"><div class="r-bfill" style="width:71%"></div></div><span class="r-val">71%</span></div><div class="r-row"><span class="r-label">JB</span><div class="r-bar"><div class="r-bfill" style="width:68%"></div></div><span class="r-val">68%</span></div><div class="r-row"><span class="r-label">Harry</span><div class="r-bar"><div class="r-bfill" style="width:55%"></div></div><span class="r-val">55%</span></div></div>
+            <div class="r-card"><div class="r-card-t">Hours by client (June)</div><div class="r-row"><span class="r-label">Silver Fern Farms</span><div class="r-bar"><div class="r-bfill" style="width:90%"></div></div><span class="r-val">143h</span></div><div class="r-row"><span class="r-label">Avalanche Coffee</span><div class="r-bar"><div class="r-bfill" style="width:52%"></div></div><span class="r-val">84h</span></div><div class="r-row"><span class="r-label">Formthotics</span><div class="r-bar"><div class="r-bfill" style="width:38%"></div></div><span class="r-val">62h</span></div><div class="r-row"><span class="r-label">Dairyworks</span><div class="r-bar"><div class="r-bfill" style="width:24%"></div></div><span class="r-val">38h</span></div></div>
+            <div class="r-card"><div class="r-card-t">Jobs over budget</div><div class="r-row"><span class="r-label">6544 SFF Honest</span><div class="r-bar"><div class="r-bfill" style="width:100%"></div></div><span class="r-val" style="color:var(--red);">+$449</span></div><div class="r-row"><span class="r-label">6690 Boyd Retainer</span><div class="r-bar"><div class="r-bfill" style="width:100%"></div></div><span class="r-val" style="color:var(--red);">+$1,566</span></div></div>
+            <div class="r-card"><div class="r-card-t">Revenue invoiced (NZD)</div><div class="r-big">$318,217</div><div style="font-size:12px;color:var(--muted);">of $597,292 quoted</div><div class="kpi-bar" style="margin-top:14px;"><div class="kpi-bar-fill" style="width:53%;background:#4CAF50;"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOARDS -->
+      <div id="view-boards" class="view hidden">
+        <div class="boards-scroll">
+          <div class="boards-head">Priority boards</div>
+          <div class="boards-sub">WIP across all clients</div>
+          <div class="dash-rule" style="margin:14px 0 20px;"></div>
+          <div class="coming-note"><i class="ti ti-tools" style="font-size:16px;color:var(--muted);"></i> Full drag-and-drop board functionality, campaign lead assignment, and client filtering to be built out further — this is a structural preview.</div>
+          <div class="boards-cols">
+            <div class="board-col"><div class="board-col-h">Briefed</div><div class="board-card over-b"><div class="bc-name">SFF 2026 Influencer Content</div><div class="bc-client">Silver Fern Farms</div></div><div class="board-card"><div class="bc-name">Matcha Foils &amp; Pack</div><div class="bc-client">Avalanche Coffee</div></div></div>
+            <div class="board-col"><div class="board-col-h">In progress</div><div class="board-card" onclick="openJobDetail('6752')"><div class="bc-name">SFF Brand Guidelines</div><div class="bc-client">Silver Fern Farms · 6752</div></div><div class="board-card"><div class="bc-name">Deer Packaging</div><div class="bc-client">Carboland Limited</div></div><div class="board-card over-b"><div class="bc-name">Boyd April Retainer</div><div class="bc-client" style="color:var(--red);">Over budget</div></div></div>
+            <div class="board-col"><div class="board-col-h">In review</div><div class="board-card"><div class="bc-name">B Corp Plan &amp; Toolkit</div><div class="bc-client">Natural Pet Food Group</div></div></div>
+            <div class="board-col"><div class="board-col-h">Approved</div><div class="board-card"><div class="bc-name">99% SF Chocolate 26 Pack</div><div class="bc-client">Avalanche Coffee</div></div></div>
+            <div class="board-col"><div class="board-col-h">Complete</div><div class="board-card" style="opacity:.55;"><div class="bc-name">SFF Honest Campaign</div><div class="bc-client">Silver Fern Farms</div></div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
 </div>
-<div class="s-avatar" id="avatarBtn">S<span class="s-tip">Settings</span></div>
+
+<!-- CTX MENUS -->
+<div class="ctx" id="ctx">
+  <div class="ctx-r" onclick="ctxDo('member')"><i class="ti ti-user-plus"></i> Add team member</div>
+  <div class="ctx-r" onclick="ctxDo('checklist')"><i class="ti ti-checklist"></i> Add checklist item</div>
+  <div class="ctx-r" onclick="ctxDo('todo')"><i class="ti ti-calendar-plus"></i> Add todo for item</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-r danger" onclick="ctxDo('delete')"><i class="ti ti-trash"></i> Delete item</div>
 </div>
-<div class="main">
-<div class="topbar">
-<div class="tb-section" id="tbProject">C&C Platform</div>
-<div class="tb-section" id="tbWeek">Week of Jun 8</div>
-<div class="tb-right">
-<button class="tb-btn ghost" id="btnImport" style="display:none">Import</button>
-<button class="tb-btn ghost" id="btnExport" style="display:none">Export</button>
+<div class="pctx" id="pctx">
+  <div class="pctx-r" onclick="pctxDo('rename')"><i class="ti ti-pencil"></i> Rename phase</div>
+  <div class="pctx-r" onclick="pctxDo('additem')"><i class="ti ti-plus"></i> Add item</div>
+  <div class="pctx-r" onclick="pctxDo('complete')"><i class="ti ti-check"></i> Toggle complete</div>
+  <div class="ctx-sep"></div>
+  <div class="pctx-r danger" onclick="pctxDo('delete')"><i class="ti ti-trash"></i> Delete phase</div>
 </div>
+
+<!-- CREATE JOB MODAL -->
+<div class="modal-bg" id="create-modal">
+  <div class="modal">
+    <div class="modal-hd"><span class="modal-hd-title">Create a new job</span><button class="modal-x" onclick="closeCreateJob()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd">
+      <div class="field"><label>Job name</label><input type="text" id="nj-name" placeholder="e.g. SFF Brand Guidelines"/></div>
+      <div class="field-row">
+        <div class="field"><label>Company</label><select id="nj-co"><option value="">Select…</option><option>Silver Fern Farms</option><option>Avalanche Coffee Limited</option><option>Formthotics</option><option>Natural Pet Food Group</option><option>Dairyworks</option><option>Carboland Limited</option><option>Boyd Visuals</option></select></div>
+        <div class="field"><label>Contact (optional)</label><input type="text" placeholder="Name…"/></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Job number</label><input type="text" id="nj-num" readonly style="color:var(--muted);"/></div>
+        <div class="field"><label>PO number (optional)</label><input type="text" placeholder="Enter PO…"/></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Billable</label><div class="tog-row"><button class="tog on" onclick="setTog(this)">Billable</button><button class="tog" onclick="setTog(this)">Non-billable</button></div></div>
+        <div class="field"><label>Rate card</label><select><option>Standard</option><option>Premium</option><option>Retainer</option></select></div>
+      </div>
+    </div>
+    <div class="modal-ft"><button class="modal-cancel" onclick="closeCreateJob()">Cancel</button><button class="modal-ok" onclick="createJob()">Create and plan</button></div>
+  </div>
 </div>
-<div class="content">
-<div class="page" id="view-dashboard">
-<div class="dash-top"><h1 class="dash-title">Dashboard</h1><span class="dash-sub" id="dashSub"></span></div>
-<div class="dash-week"><button class="wi" id="weekPrev">&#9664;</button><div class="wl" id="weekLabel"></div><button class="wi" id="weekNext">&#9654;</button></div>
-<div class="dash-grid" id="dashGrid"></div>
+
+<!-- ADD TODO MODAL -->
+<div class="modal-bg" id="todo-modal">
+  <div class="modal">
+    <div class="modal-hd"><span class="modal-hd-title">Add a todo</span><button class="modal-x" onclick="closeTodoModal()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd">
+      <div class="field"><label>Task</label><input type="text" id="td-task" placeholder="What needs doing?"/></div>
+      <div class="field"><label>Job</label><select id="td-job"><option value="">— Personal / no job —</option></select></div>
+      <div class="field"><label>Item type</label><select id="td-item"><option>Creative Direction</option><option>Design &amp; Artwork</option><option>Briefing &amp; coordination</option><option>Copywriting</option><option>Video Editing</option><option>Proofing &amp; spell check</option></select></div>
+      <div class="field-row">
+        <div class="field"><label>Day</label><select id="td-day"><option>Monday 1</option><option>Tuesday 2</option><option>Wednesday 3</option><option>Thursday 4</option><option selected>Friday 5 (Today)</option></select></div>
+        <div class="field"><label>Hours</label><input type="text" id="td-hours" placeholder="e.g. 2h"/></div>
+      </div>
+      <div class="field"><label>Note (optional)</label><textarea id="td-note" placeholder="Any context…"></textarea></div>
+    </div>
+    <div class="modal-ft"><button class="modal-cancel" onclick="closeTodoModal()">Cancel</button><button class="modal-ok" onclick="saveTodo()">Add todo</button></div>
+  </div>
 </div>
-<div class="page hidden" id="view-todo">
-<div class="task-header"><h2 id="todoTitle">Tasks</h2><span class="th-date" id="todoDate"></span></div>
-<div class="dash-week" id="todoWeekNav"><button class="wi" id="todoWeekPrev">&#9664;</button><div class="wl" id="todoWeekLabel"></div><button class="wi" id="todoWeekNext">&#9654;</button></div>
-<div class="task-list" id="taskList"></div>
-<button class="task-add" id="btnAddTask"><i class="ti ti-plus"></i> Add Task</button>
+
+<!-- INVOICE MODAL -->
+<div class="inv-bg" id="inv-modal">
+  <div class="inv-modal">
+    <div class="inv-top"><span class="inv-top-t">Invoice — 6752 SFF Brand Guidelines</span><button class="inv-act sec" style="margin-right:7px;">Reorder</button><button class="inv-act" onclick="alert('Pushed to Xero ✓')">Copy to Xero</button><button class="inv-x" onclick="closeInvoice()"><i class="ti ti-x"></i></button></div>
+    <div class="inv-body">
+      <div class="inv-meta-grid"><div><div class="inv-ml">Job number</div><div class="inv-mv">6752</div></div><div><div class="inv-ml">Issued</div><div class="inv-mv">6 Jun 2026</div></div><div><div class="inv-ml">PO number</div><div class="inv-mv">PO009091</div></div><div><div class="inv-ml">Due</div><div class="inv-mv">26 Jun 2026 · 20 days</div></div><div><div class="inv-ml">Client</div><div class="inv-mv">Silver Fern Farms</div></div><div><div class="inv-ml">Reference</div><div class="inv-mv">6752 SFF 2026</div></div></div>
+      <div class="inv-job-title">6752 SFF Brand Guidelines</div>
+      <div class="inv-sec"><div class="inv-sec-h">Briefing + Brand Discovery</div><div class="inv-line"><span class="inv-ln">Creative Direction</span><span class="inv-lv">$1,050.00</span></div><div class="inv-line"><span class="inv-ln">Design &amp; Artwork</span><span class="inv-lv">$975.00</span></div><div class="inv-line"><span class="inv-ln">Briefing &amp; coordination</span><span class="inv-lv">$1,350.00</span></div><div class="inv-sub"><span class="inv-sub-l">Subtotal</span><span>$3,375.00</span></div></div>
+      <div class="inv-sec"><div class="inv-sec-h">Doc Layout: Stage 2</div><div class="inv-line"><span class="inv-ln">Creative Direction</span><span class="inv-lv">$3,200.00</span></div><div class="inv-line"><span class="inv-ln">Copywriting</span><span class="inv-lv">$1,500.00</span></div><div class="inv-line"><span class="inv-ln">Design &amp; Artwork</span><span class="inv-lv">$6,000.00</span></div><div class="inv-line"><span class="inv-ln">Briefing &amp; coordination</span><span class="inv-lv">$1,500.00</span></div><div class="inv-sub"><span class="inv-sub-l">Subtotal</span><span>$12,200.00</span></div></div>
+      <div class="inv-sec"><div class="inv-sec-h">Expenses</div><div class="inv-line"><span class="inv-ln">Disbursements</span><span class="inv-lv">$100.00</span></div><div class="inv-sub"><span class="inv-sub-l">Subtotal</span><span>$100.00</span></div></div>
+      <div class="inv-tot"><span class="inv-tot-l">Subtotal ex GST</span><span>$15,675.00</span></div>
+      <div class="inv-tot" style="border-top:none;padding-top:0;"><span class="inv-tot-l">GST 15%</span><span>$2,351.25</span></div>
+      <div class="inv-tot" style="font-size:16px;"><span>Total inc GST</span><span style="font-weight:500;">$18,026.25</span></div>
+    </div>
+  </div>
 </div>
-<div class="page hidden" id="view-boards">
-<h1 class="dash-title" style="margin-bottom:16px">Boards</h1>
-<div class="boards-grid" id="boardsGrid"></div>
+
+<!-- FOLLOW-UP -->
+<div class="fup" id="fup">
+  <div class="fup-card">
+    <div class="fup-hd"><i class="ti ti-bell" style="color:var(--red);font-size:15px;"></i> Follow-up?</div>
+    <div class="fup-bd">You just added a task. Do you need a follow-up — e.g. final artwork or client delivery?</div>
+    <div class="fup-ft"><button class="fup-y" onclick="closeFup(true)">Yes, add one</button><button class="fup-n" onclick="closeFup(false)">No thanks</button></div>
+  </div>
 </div>
-<div class="page hidden" id="view-calendar">
-<h1 class="dash-title" style="margin-bottom:16px">Calendar</h1>
-<div class="cal-nav"><button id="calPrev">&#9664;</button><div class="cal-title" id="calTitle"></div><button id="calNext">&#9654;</button></div>
-<div class="cal-grid" id="calGrid"></div>
-</div>
-<div class="page hidden" id="view-reports">
-<h1 class="dash-title" style="margin-bottom:16px">Reports</h1>
-<div class="report-grid" id="reportGrid"></div>
-</div>
-<div class="page hidden" id="view-settings">
-<h1 class="dash-title" style="margin-bottom:16px">Settings</h1>
-<div class="settings-section">
-<h4>Week Configuration</h4>
-<div class="settings-row"><label>Week Start</label><select id="weekStart"><option value="mon">Monday</option><option value="sun">Sunday</option></select></div>
-<div class="settings-row"><label>Default Hours</label><input type="number" id="defaultHours" value="8" min="1" max="24"></div>
-</div>
-<div class="settings-section">
-<h4>People</h4>
-<div class="person-list" id="personList"></div>
-<div class="add-person-row"><input type="text" id="newPersonName" placeholder="Name"><input type="color" id="newPersonColor" value="#ED1E24" style="width:40px;padding:2px;border:1px solid var(--border);border-radius:4px;"><button onclick="addPerson()">Add</button></div>
-</div>
-<div class="settings-section">
-<h4>Data</h4>
-<div class="settings-actions">
-<button class="primary" onclick="saveData()">Save to LocalStorage</button>
-<button class="ghost" onclick="exportData()">Export JSON</button>
-<button class="ghost" onclick="document.getElementById('importFile').click()">Import JSON</button>
-<input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
-<button class="ghost" style="color:var(--red);border-color:var(--red)" onclick="resetData()">Reset All</button>
-</div>
-</div>
-<div class="settings-section">
-<h4>About</h4>
-<p style="font-size:12px;color:var(--muted);line-height:1.6;">C&C Platform v1.0 — Task &amp; Communication Manager</p>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div id="modalContainer"></div>
-<div class="toast" id="toast"></div>
+
 <script>
-// DATA MODEL
-const DEFAULTS = {
-  people: [
-    { id: 'p1', name: 'Helen', color: '#ED1E24' },
-    { id: 'p2', name: 'Sam', color: '#2196F3' },
-    { id: 'p3', name: 'Jordan', color: '#FF9800' }
-  ],
-  projects: [
-    { id: 'proj1', name: 'C&C Platform', people: ['p1','p2','p3'] }
-  ],
-  weeks: {},
-  settings: { weekStart: 'mon', defaultHours: 8 }
+const LINE_ITEMS=['Creative Direction','Design & Artwork','Briefing & coordination','Copywriting','Video Editing','Proofing & spell check','Artwork & file despatch','Contingency','Shot listing','Website build'];
+let jobCounter=6953,activeJobId=null,activeLabels=[],ctxTarget=null,pctxTarget=null,dragSrc=null;
+let jobs=[{id:'6752',name:'SFF Brand Guidelines',company:'Silver Fern Farms',budget:'$13,625',budgetTotal:'$23,125',bPct:59,hours:'85h',hoursTotal:'143h',hPct:59,status:'inplay',billable:true,labels:['May','June','July','APPROVED']}];
+const SFF_PHASES=[
+  {id:'p1',name:'Briefing + Brand Discovery',status:'complete',items:[
+    {id:'i1',name:'Creative Direction',hours:'7h',rate:'$150',used:'$1,050',total:'$1,050',status:'complete'},
+    {id:'i2',name:'Design & Artwork',hours:'6h45m',rate:'$150',used:'$1,013',total:'$975',status:'complete',over:true},
+    {id:'i3',name:'Briefing & coordination',hours:'8h45m',rate:'$150',used:'$1,313',total:'$1,350',status:'complete'}
+  ]},
+  {id:'p2',name:'Executional Updates: Stage 1',status:'inplay',items:[
+    {id:'i4',name:'Creative Direction',hours:'1h15m',rate:'$200',used:'$250',total:'$3,000',status:'inplay'},
+    {id:'i5',name:'Design & Artwork',hours:'0h',rate:'$150',used:'$0',total:'$2,100',status:'inplay'},
+    {id:'i6',name:'Briefing & coordination',hours:'6h50m',rate:'$150',used:'$1,025',total:'$2,250',status:'inplay'}
+  ]},
+  {id:'p3',name:'Doc Layout: Stage 2',status:'inplay',items:[
+    {id:'i7',name:'Creative Direction',hours:'15h45m',rate:'$200',used:'$3,150',total:'$3,200',status:'inplay'},
+    {id:'i8',name:'Copywriting',hours:'0h25m',rate:'$150',used:'$63',total:'$1,500',status:'inplay'},
+    {id:'i9',name:'Design & Artwork',hours:'31h20m',rate:'$150',used:'$4,700',total:'$6,000',status:'inplay'},
+    {id:'i10',name:'Briefing & coordination',hours:'7h05m',rate:'$150',used:'$1,063',total:'$1,500',status:'inplay'}
+  ]}
+];
+let phases=JSON.parse(JSON.stringify(SFF_PHASES));
+const people={
+  ro:{name:'Ronan',initials:'RO',color:'#ED1E24',days:[1,2,3,4,5]},
+  bee:{name:'Bianca',initials:'BE',color:'#6B7FA3',days:[1,2,3,4,5]},
+  jb:{name:'JB',initials:'JB',color:'#7B9E87',days:[1,2,3,4,5]}
 };
+let currentPerson='ro';
+let personStatus={ro:'available',bee:'available',jb:'allocated'};
+let weekOffset=0;
+const DAYS_DATA={
+  ro:{
+    1:[{id:'t1',title:'Public Holiday',job:'',item:'Leave',hours:8,done:true}],
+    2:[{id:'t2',title:'Send v1 by EOP to Maya',job:'6752 SFF Brand Guidelines',item:'Design & Artwork',hours:2,urgent:true},{id:'t3',title:'Monday WIP',job:'House',item:'Briefing',hours:1},{id:'t4',title:'Carcass Poster Amends',job:'6752 SFF Brand Guidelines',item:'Design & Artwork',hours:1.5}],
+    3:[{id:'t5',title:'Wednesday WIP',job:'House',item:'Briefing',hours:1,done:true},{id:'t6',title:'Working through guideline amends',job:'6752 SFF Brand Guidelines',item:'Design & Artwork',hours:3},{id:'t7',title:'Trade Deck Amends',job:'',item:'',hours:1}],
+    4:[{id:'t8',title:'Crest Amends',job:'',item:'',hours:1,done:true},{id:'t9',title:'Replotting the Master Plan Map',job:'6922 The Links',item:'Website build',hours:2.17}],
+    5:[{id:'t10',title:'Friday WIP',job:'House',item:'Briefing',hours:1},{id:'t11',title:'C&C streamline discussion',job:'6774 House',item:'Briefing',hours:1,urgent:true},{id:'t12',title:'Sourcing last couple images',job:'6752 SFF Brand Guidelines',item:'Design & Artwork',hours:1.5}]
+  },
+  bee:{
+    1:[],
+    2:[{id:'b1',title:'Amazon GA deep dive',job:'',item:'',hours:2,done:true},{id:'b2',title:'Tuesday team WIP',job:'House',item:'Briefing',hours:1}],
+    3:[{id:'b3',title:'Wednesday WIP',job:'House',item:'Briefing',hours:1,done:true},{id:'b4',title:'Finishing report to share',job:'',item:'',hours:2},{id:'b5',title:'Client WIP',job:'',item:'',hours:1}],
+    4:[{id:'b6',title:'Billing support',job:'',item:'',hours:0.5},{id:'b7',title:'PR Google',job:'',item:'',hours:1},{id:'b8',title:'Team delegations',job:'',item:'',hours:1.5}],
+    5:[{id:'b9',title:'Updates to report',job:'',item:'',hours:1.5},{id:'b10',title:'Friday WIP',job:'House',item:'Briefing',hours:1},{id:'b11',title:'Budget actuals for May',job:'',item:'',hours:1.5,urgent:true}]
+  },
+  jb:{
+    1:[],
+    2:[{id:'j1',title:'Implementing copy feedback',job:'',item:'',hours:2,done:true},{id:'j2',title:'Comms back to client',job:'',item:'',hours:1}],
+    3:[{id:'j3',title:'Wednesday WIP',job:'House',item:'Briefing',hours:1,done:true},{id:'j4',title:'SFF LinkedIn content',job:'6752 SFF Brand Guidelines',item:'Copywriting',hours:2}],
+    4:[{id:'j5',title:'NPF AU Bundle push',job:'',item:'Copywriting',hours:2},{id:'j6',title:'Formthotics induction',job:'',item:'',hours:1}],
+    5:[{id:'j7',title:'Friday WIP',job:'House',item:'Briefing',hours:1},{id:'j8',title:'Performance WIP',job:'',item:'',hours:1.5}]
+  }
+};
+let todoData=JSON.parse(JSON.stringify(DAYS_DATA));
+const DAY_NAMES=['Monday','Tuesday','Wednesday','Thursday','Friday'];
+const MIN_H=40;
+const MINS_PER_PX=2.5;
 
-let data, currentView = 'dashboard', currentProject = 'proj1', currentWeek = getWeekKey(new Date());
-let todoPerson = null;
+function navTo(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.add('hidden'));
+  document.querySelectorAll('.s-btn[id]').forEach(el=>el.classList.remove('on'));
+  const ve=document.getElementById('view-'+v);if(ve)ve.classList.remove('hidden');
+  const ne=document.getElementById('snav-'+v);if(ne)ne.classList.add('on');
+  document.getElementById('topbar').classList.toggle('hidden',v!=='jobs'&&v!=='detail');
+  if(v==='todo')renderTodo();saveData();
+  if(v==='jobs')renderJobs();
+}
+function viewTeamTodo(p){currentPerson=p;navTo('todo');}
 
-function getWeekKey(d, weekStart) {
-  weekStart = weekStart || (data && data.settings ? data.settings.weekStart : 'mon');
-  const dt = new Date(d);
-  const day = dt.getDay();
-  const diff = day === 0 ? (weekStart === 'sun' ? 0 : -6) : (day - (weekStart === 'sun' ? 7 : 1));
-  dt.setDate(dt.getDate() - diff);
-  dt.setHours(0,0,0,0);
-  return dt.toISOString().slice(0,10);
+function renderTodo(){
+  const p=people[currentPerson];
+  document.getElementById('current-av').textContent=p.initials;
+  document.getElementById('current-av').style.background=p.color;
+  document.getElementById('current-name').textContent=p.name;
+  const wrap=document.getElementById('day-cols');wrap.innerHTML='';
+  const data=todoData[currentPerson]||{};
+  [1,2,3,4,5].forEach((d,i)=>{
+    const isWork=people[currentPerson].days.includes(d);
+    const isToday=d===5;
+    const col=document.createElement('div');
+    col.className='day-col'+(isWork?' workday':'')+(isToday?' today':'');
+    col.dataset.day=d;
+    col.innerHTML=`<div class="day-head"><div class="day-name">${DAY_NAMES[i]}</div><div class="day-num ${isToday?'today-red':''}">${d}</div>${isWork?`<div class="day-log-btn" onclick="openTodoModal(null,${d})"><i class="ti ti-plus" style="font-size:10px"></i> Log task</div>`:''}</div><div class="day-tasks" id="dtasks-${d}"></div>`;
+    wrap.appendChild(col);
+    if(!isWork)return;
+    const tasks=data[d]||[];
+    const tc=document.getElementById('dtasks-'+d);
+    tasks.forEach(t=>{tc.appendChild(createTaskBlock(t,d));});
+    tc.addEventListener('dragover',e=>e.preventDefault());
+    tc.addEventListener('drop',e=>onDropToDay(e,d));
+  });
 }
 
-function getWeekDates(key) {
-  const start = new Date(key + 'T00:00:00');
-  const ws = data && data.settings ? data.settings.weekStart : 'mon';
-  const end = new Date(start);
-  end.setDate(end.getDate() + 6);
-  return { start, end };
+function blockHeight(hrs){return Math.max(MIN_H,Math.round((hrs*60)/MINS_PER_PX));}
+function formatHrs(h){if(!h)return'';const m=Math.round(h*60);const hh=Math.floor(m/60);const mm=m%60;return hh&&mm?`${hh}h ${mm}m`:hh?`${hh}h`:`${mm}m`;}
+
+function createTaskBlock(t,day){
+  const block=document.createElement('div');
+  const h=blockHeight(t.hours||1);
+  block.className='task-block'+(t.done?' done-b':'')+(t.urgent&&!t.done?' urgent-b':'');
+  block.style.height=h+'px';
+  block.draggable=true;
+  block.dataset.taskId=t.id;block.dataset.day=day;
+  const hLabel=t.hours?formatHrs(t.hours):'';
+  block.innerHTML=`<div class="task-b-title">${t.title}</div>${t.job?`<div class="task-b-job">${t.job}</div>`:''}${t.done?`<div class="task-b-done-label"><i class="ti ti-check" style="font-size:10px"></i> Done</div>`:hLabel?`<div class="task-b-hours">${hLabel}</div>`:''}`;
+  block.addEventListener('click',()=>openEditTodo(t,day));
+  block.addEventListener('dragstart',e=>{dragSrc=block;block.classList.add('dragging-b');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',JSON.stringify({taskId:t.id,fromDay:day}));});
+  block.addEventListener('dragend',()=>block.classList.remove('dragging-b'));
+  return block;
 }
 
-function weekLabel(key) {
-  const { start, end } = getWeekDates(key);
-  const opts = { month: 'short', day: 'numeric' };
-  return start.toISOString().slice(0,10) === end.toISOString().slice(0,10)
-    ? start.toLocaleDateString('en-GB', opts)
-    : start.toLocaleDateString('en-GB', opts) + ' \u2013 ' + end.toLocaleDateString('en-GB', opts);
-}
-
-function weekLabelFull(key) {
-  const { start, end } = getWeekDates(key);
-  return start.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) + ' \u2013 ' + end.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-}
-
-function getWeekTasks(weekKey) {
-  const wk = (data && data.weeks) ? data.weeks[weekKey] : null;
-  if (!wk) return [];
-  return (wk.tasks || []).filter(t => t.projectId === currentProject);
-}
-
-function getWeekData(weekKey) {
-  const wk = data.weeks[weekKey] || {};
-  const tasks = (wk.tasks || []).filter(t => t.projectId === currentProject);
-  return { tasks, done: tasks.filter(t => t.status === 'done').length, new: tasks.filter(t => t.status === 'new').length, half: tasks.filter(t => t.status === 'half').length };
-}
-
-// PERSISTENCE
-function loadData() {
-  try {
-    const saved = localStorage.getItem('cc_platform_data');
-    if (saved) {
-      data = JSON.parse(saved);
-      if (!data.weeks) data.weeks = {};
-      if (!data.settings) data.settings = { weekStart: 'mon', defaultHours: 8 };
-      if (!data.people) data.people = DEFAULTS.people;
-      if (!data.projects) data.projects = DEFAULTS.projects;
+function onDropToDay(e,toDay){
+  e.preventDefault();
+  try{
+    const data=JSON.parse(e.dataTransfer.getData('text/plain'));
+    const{taskId,fromDay}=data;
+    const pData=todoData[currentPerson];
+    const fromArr=pData[fromDay]||[];
+    const idx=fromArr.findIndex(t=>t.id===taskId);
+    if(idx===-1)return;
+    const task=fromArr[idx];
+    if(e.altKey){
+      const clone={...task,id:'t'+Date.now()};
+      if(!pData[toDay])pData[toDay]=[];
+      pData[toDay].push(clone);
     } else {
-      data = JSON.parse(JSON.stringify(DEFAULTS));
-      saveData();
+      fromArr.splice(idx,1);
+      if(!pData[toDay])pData[toDay]=[];
+      pData[toDay].push(task);
     }
-  } catch(e) {
-    data = JSON.parse(JSON.stringify(DEFAULTS));
-    saveData();
-  }
-  currentWeek = getWeekKey(new Date());
+    renderTodo();
+  }catch(err){}
 }
 
-function saveData() {
-  localStorage.setItem('cc_platform_data', JSON.stringify(data));
-  renderAll();
+function openEditTodo(t,day){
+  document.getElementById('td-task').value=t.title||'';
+  document.getElementById('td-hours').value=t.hours?formatHrs(t.hours):'';
+  document.getElementById('td-note').value=t.note||'';
+  populateTodoJobSelect(t.job||'');
+  const ds=document.getElementById('td-day');
+  for(let o of ds.options){if(o.text.startsWith(DAY_NAMES[day-1])){o.selected=true;break;}}
+  document.getElementById('todo-modal').classList.add('on');
 }
 
-function resetData() {
-  if (confirm('Reset all data? This cannot be undone.')) {
-    data = JSON.parse(JSON.stringify(DEFAULTS));
-    saveData();
-    showToast('Data reset');
-  }
+function populateTodoJobSelect(pre){
+  const sel=document.getElementById('td-job');
+  sel.innerHTML='<option value="">— Personal / no job —</option>';
+  jobs.forEach(j=>{const o=document.createElement('option');o.value=j.id;o.textContent=`${j.id} ${j.name}`;if(pre&&pre.includes(j.id))o.selected=true;sel.appendChild(o);});
 }
-
-function exportData() {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'cc-platform-' + new Date().toISOString().slice(0,10) + '.json';
-  a.click();
-  showToast('Exported');
+function openTodoModal(jobId,day){
+  document.getElementById('td-task').value='';document.getElementById('td-hours').value='';document.getElementById('td-note').value='';
+  populateTodoJobSelect(jobId);
+  if(jobId){const sel=document.getElementById('td-job');for(let o of sel.options){if(o.value===jobId){o.selected=true;break;}}}
+  document.getElementById('todo-modal').classList.add('on');
+  setTimeout(()=>document.getElementById('td-task').focus(),50);
 }
-
-function importData(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const imported = JSON.parse(e.target.result);
-      data = imported;
-      saveData();
-      showToast('Imported');
-    } catch(err) {
-      showToast('Import failed: invalid JSON');
-    }
-  };
-  reader.readAsText(file);
-}
-
-// NAVIGATION
-function switchView(view) {
-  currentView = view;
-  document.querySelectorAll('.s-btn').forEach(b => b.classList.toggle('on', b.dataset.view === view));
-  document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-  const page = document.getElementById('view-' + view);
-  if (page) page.classList.remove('hidden');
-  renderAll();
-}
-
-document.querySelectorAll('.s-btn').forEach(btn => {
-  btn.addEventListener('click', () => switchView(btn.dataset.view));
-});
-
-document.getElementById('avatarBtn').addEventListener('click', () => switchView('settings'));
-
-// RENDERING
-function renderAll() {
-  renderTopbar();
-  if (currentView === 'dashboard') renderDashboard();
-  else if (currentView === 'todo') renderTodo();
-  else if (currentView === 'boards') renderBoards();
-  else if (currentView === 'calendar') renderCalendar();
-  else if (currentView === 'reports') renderReports();
-  else if (currentView === 'settings') renderSettings();
-}
-
-function renderTopbar() {
-  document.getElementById('tbWeek').textContent = 'Week of ' + weekLabel(currentWeek);
-}
-
-function renderDashboard() {
-  const wd = getWeekData(currentWeek);
-  const total = wd.done + wd.new + wd.half;
-  document.getElementById('dashSub').textContent = total === 0 ? 'No tasks this week' : total + ' task' + (total !== 1 ? 's' : '');
-  document.getElementById('weekLabel').textContent = weekLabel(currentWeek);
-  const grid = document.getElementById('dashGrid');
-  grid.innerHTML = '';
-
-  const cards = [
-    { label: 'Done', count: wd.done, cls: 'done-card' },
-    { label: 'In Progress', count: wd.half, cls: 'half-card' },
-    { label: 'New', count: wd.new, cls: 'todo-card' }
-  ];
-  cards.forEach(c => {
-    const div = document.createElement('div');
-    div.className = 'dash-card ' + c.cls;
-    div.innerHTML = '<div class="dc-count">' + c.count + '</div><div class="dc-label">' + c.label + '</div>';
-    grid.appendChild(div);
-  });
-
-  const proj = data.projects.find(p => p.id === currentProject);
-  if (proj && proj.people) {
-    proj.people.forEach(pid => {
-      const person = data.people.find(p => p.id === pid);
-      if (!person) return;
-      const pTasks = getWeekTasks(currentWeek).filter(t => t.assignedTo === pid);
-      const pDone = pTasks.filter(t => t.status === 'done').length;
-      const pTotal = pTasks.length;
-      const div = document.createElement('div');
-      div.className = 'dash-card';
-      div.innerHTML = '<div class="dc-person">' + escHtml(person.name) + '</div><div class="dc-count">' + pDone + '/' + pTotal + '</div><div class="dc-label">completed</div>';
-      div.addEventListener('click', () => {
-        todoPerson = pid;
-        switchView('todo');
-      });
-      grid.appendChild(div);
-    });
-  }
-}
-
-function renderTodo() {
-  const tasks = getWeekTasks(currentWeek);
-  const proj = data.projects.find(p => p.id === currentProject);
-  let filtered = tasks;
-  let title = 'All Tasks';
-  if (todoPerson) {
-    const person = data.people.find(p => p.id === todoPerson);
-    filtered = tasks.filter(t => t.assignedTo === todoPerson);
-    title = person ? person.name + '\'s Tasks' : 'Tasks';
-  }
-  document.getElementById('todoTitle').textContent = title;
-  document.getElementById('todoDate').textContent = weekLabel(currentWeek);
-  document.getElementById('todoWeekLabel').textContent = weekLabel(currentWeek);
-
-  const list = document.getElementById('taskList');
-  list.innerHTML = '';
-  filtered.sort((a, b) => {
-    const order = { done: 0, half: 1, new: 2 };
-    return (order[a.status] || 2) - (order[b.status] || 2);
-  });
-
-  if (filtered.length === 0) {
-    list.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px;">No tasks this week. Click "Add Task" to create one.</div>';
-    return;
-  }
-
-  filtered.forEach(task => {
-    const person = data.people.find(p => p.id === task.assignedTo);
-    const row = document.createElement('div');
-    row.className = 'task-row';
-    const statusClass = 'status-' + (task.status || 'new');
-    const statusLabel = (task.status || 'new').charAt(0).toUpperCase() + (task.status || 'new').slice(1);
-    row.innerHTML = '<div class="task-check' + (task.status === 'done' ? ' done' : '') + '" data-id="' + task.id + '">' + (task.status === 'done' ? '<i class="ti ti-check"></i>' : '') + '</div>' +
-      '<div class="task-name' + (task.status === 'done' ? ' done' : '') + '">' + escHtml(task.name) + '</div>' +
-      '<div class="task-type">' + (person ? person.name : 'Unassigned') + '</div>' +
-      '<div class="task-status ' + statusClass + '">' + statusLabel + '</div>' +
-      '<div class="task-del" data-id="' + task.id + '"><i class="ti ti-trash"></i></div>';
-
-    row.querySelector('.task-check').addEventListener('click', () => cycleStatus(task));
-    row.querySelector('.task-del').addEventListener('click', () => deleteTask(task.id));
-    list.appendChild(row);
+function closeTodoModal(){document.getElementById('todo-modal').classList.remove('on');}
+function populatePersonSwitcher(){
+  const menu=document.getElementById('ps-menu');menu.innerHTML='';
+  Object.keys(people).forEach(key=>{
+    const p=people[key];
+    const el=document.createElement('div');
+    el.className='ps-person'+(key===currentPerson?' on-p':'');
+    const status=personStatus[key]||'available';
+    const statusColor=status==='available'?'#4CAF50':status==='allocated'?'#FF9800':'#9E9E9E';
+    el.innerHTML=`<div class="ps-pav" style="background:${p.color};">${p.initials}</div><div class="ps-pmeta"><div class="ps-pname">${p.name}</div><div class="ps-pstatus"><span class="ps-dot" style="background:${statusColor};"></span>${status.charAt(0).toUpperCase()+status.slice(1)}</div></div>`;
+    el.onclick=()=>{currentPerson=key;document.getElementById('current-av').style.background=p.color;document.getElementById('current-av').textContent=p.initials;document.getElementById('current-name').textContent=p.name;document.getElementById('person-status').value=personStatus[key]||'available';populatePersonSwitcher();renderTodo();document.getElementById('ps-menu').classList.remove('on');};
+    menu.appendChild(el);
   });
 }
 
-function renderBoards() {
-  const tasks = getWeekTasks(currentWeek);
-  const proj = data.projects.find(p => p.id === currentProject);
-  const grid = document.getElementById('boardsGrid');
-  grid.innerHTML = '';
+document.getElementById('ps-dropdown').addEventListener('click',e=>{
+  e.stopPropagation();
+  document.getElementById('ps-menu').classList.toggle('on');
+});
+document.addEventListener('click',()=>document.getElementById('ps-menu').classList.remove('on'));
 
-  const cols = [
-    { title: 'New', status: 'new', color: 'var(--red)' },
-    { title: 'In Progress', status: 'half', color: '#E6A100' },
-    { title: 'Done', status: 'done', color: 'var(--done-ink)' }
-  ];
+function toggleWeek(dir){
+  weekOffset+=dir;
+  renderTodo();
+}
 
-  const people = (proj && proj.people) || data.people.map(p => p.id);
-  people.forEach(pid => {
-    const person = data.people.find(p => p.id === pid);
-    if (!person) return;
-    cols.forEach(col => {
-      const colTasks = tasks.filter(t => t.assignedTo === pid && t.status === col.status);
-      const colDiv = document.createElement('div');
-      colDiv.className = 'board-col';
-      colDiv.innerHTML = '<h4><span style="color:' + col.color + '">&#9679;</span> ' + escHtml(person.name) + ' <span class="bc-count">' + colTasks.length + '</span></h4>';
-      colTasks.forEach(task => {
-        const t = document.createElement('div');
-        t.className = 'board-task';
-        t.draggable = true;
-        t.innerHTML = '<div class="bt-title">' + escHtml(task.name) + '</div><div class="bt-meta">' + (task.type || 'Task') + ' \u2014 ' + col.title + '</div>';
-        t.addEventListener('dragstart', (e) => {
-          e.dataTransfer.setData('text/plain', JSON.stringify({ taskId: task.id, fromStatus: col.status, personId: pid }));
-          t.classList.add('dragging');
-        });
-        t.addEventListener('dragend', () => t.classList.remove('dragging'));
-        colDiv.appendChild(t);
-      });
-      colDiv.addEventListener('dragover', (e) => e.preventDefault());
-      colDiv.addEventListener('drop', (e) => {
-        e.preventDefault();
-        try {
-          const info = JSON.parse(e.dataTransfer.getData('text/plain'));
-          const task = (data.weeks[currentWeek] || {}).tasks.find(t => t.id === info.taskId);
-          if (task && task.assignedTo === info.personId) {
-            task.status = col.status;
-            saveData();
-          }
-        } catch(err) {}
-      });
-      grid.appendChild(colDiv);
-    });
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('wbtn-prev')?.addEventListener('click',()=>toggleWeek(-1));
+  document.getElementById('wbtn-next')?.addEventListener('click',()=>toggleWeek(1));
+  document.getElementById('wbtn-today')?.addEventListener('click',()=>{weekOffset=0;renderTodo();});
+});
+
+function saveTodo(){
+  const name=document.getElementById('td-task').value.trim();if(!name)return;
+  const jobId=document.getElementById('td-job').value;
+  const hours=parseFloat(document.getElementById('td-hours').value)||1;
+  const job=jobs.find(j=>j.id===jobId);
+  const item=document.getElementById('td-item').value;
+  const dayOpt=document.getElementById('td-day').value;
+  const dayNum=parseInt(dayOpt)||5;
+  const task={id:'t'+Date.now(),title:name,job:job?`${job.id} ${job.name}`:'',item,hours};
+  if(!todoData[currentPerson][dayNum])todoData[currentPerson][dayNum]=[];
+  todoData[currentPerson][dayNum].push(task);
+  closeTodoModal();renderTodo();saveData();
+  setTimeout(()=>document.getElementById('fup').classList.add('on'),800);
+}
+
+function renderJobs(){
+  const tbody=document.getElementById('jobs-tbody');tbody.innerHTML='';
+  jobs.forEach(j=>{
+    const sc=j.status==='inplay'?'sp-ip':j.status==='new'?'sp-new':'sp-co';
+    const sl=j.status==='inplay'?'In Play':j.status==='new'?'New':'Complete';
+    const tr=document.createElement('tr');tr.onclick=()=>openJobDetail(j.id);
+    tr.innerHTML=`<td><input type="checkbox" onclick="event.stopPropagation()"/></td>
+      <td><div class="job-num-name"><span class="job-num">${j.id}</span><span class="job-name">${j.name}</span></div></td>
+      <td><span class="job-co">${j.company}</span></td>
+      <td><div class="bbar-wrap"><div class="bbar-nums"><span>${j.budget||'$0'}</span><span class="bbar-of">/ ${j.budgetTotal||'—'}</span></div><div class="bbar-track"><div class="bbar-fill bfok" style="width:${j.bPct||0}%"></div></div></div></td>
+      <td><div class="bbar-wrap"><div class="bbar-nums"><span>${j.hours||'0h'}</span><span class="bbar-of">/ ${j.hoursTotal||'—'}</span></div><div class="bbar-track"><div class="bbar-fill bfok" style="width:${j.hPct||0}%"></div></div></div></td>
+      <td><span style="font-size:12px;color:var(--muted);">—</span></td>
+      <td><span class="status-pill ${sc}">${sl}</span></td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('jobs-count').textContent=`${jobs.length} job${jobs.length!==1?'s':''} · NZD`;
+}
+
+function openJobDetail(id){
+  activeJobId=id;const j=jobs.find(x=>x.id===id);
+  const isNew=!j.budget||j.budget==='$0';
+  document.getElementById('d-meta-line').textContent=`${j.id} · ${j.company} · ${j.billable?'Billable':'Non-billable'}`;
+  document.getElementById('d-title-text').textContent=j.name;
+  document.getElementById('d-hours-sell').textContent=isNew?'No hours logged yet':`${j.hours} used / ${j.hoursTotal} planned · ${j.budget} sell`;
+  activeLabels=j.labels?[...j.labels]:[];
+  renderLabels();
+  phases=isNew?[]:JSON.parse(JSON.stringify(SFF_PHASES));
+  renderStats(j,isNew);renderPhases();
+  document.querySelectorAll('.view').forEach(el=>el.classList.add('hidden'));
+  document.getElementById('view-detail').classList.remove('hidden');
+  document.getElementById('topbar').classList.remove('hidden');
+  switchDTab(document.querySelector('.d-tab'),'plan');
+}
+
+function renderStats(j,isNew){
+  const s=document.getElementById('d-stats');
+  if(isNew){s.innerHTML='<div class="stat-b"><div class="stat-label">Time used / planned</div><div class="stat-val">0h <span class="stat-of">/ —</span></div></div><div class="stat-b"><div class="stat-label">Sell used / planned</div><div class="stat-val">$0 <span class="stat-of">/ —</span></div></div><div class="stat-b"><div class="stat-label">Budget from quote</div><div class="stat-val">—</div></div><div class="stat-b"><div class="stat-label">Invoiced</div><div class="stat-val">—</div></div><div class="stat-b"><div class="stat-label">Expenses</div><div class="stat-val">$0</div></div>';return;}
+  s.innerHTML='<div class="stat-b"><div class="stat-label">Time used / planned</div><div class="stat-val">85h <span class="stat-of">/ 143h</span></div><div class="stat-bar"><div class="stat-bar-fill" style="width:59%;background:#4CAF50;"></div></div></div><div class="stat-b"><div class="stat-label">Sell used / planned</div><div class="stat-val">$13,625 <span class="stat-of">/ $23,125</span></div><div class="stat-bar"><div class="stat-bar-fill" style="width:59%;background:#4CAF50;"></div></div></div><div class="stat-b"><div class="stat-label">Budget from quote</div><div class="stat-val">$23,075</div><div style="font-size:10px;color:var(--muted);margin-top:5px;letter-spacing:.05em;">BILLABLE</div></div><div class="stat-b"><div class="stat-label">Invoiced ex tax</div><div class="stat-val">$23,075 <span class="stat-of">issued</span></div><div class="stat-bar"><div class="stat-bar-fill" style="width:100%;background:#FF9800;"></div></div></div><div class="stat-b"><div class="stat-label">Expenses</div><div class="stat-val">$0 <span class="stat-of">/ $200</span></div></div>';
+}
+
+function switchDTab(el,tab){
+  document.querySelectorAll('.d-tab').forEach(t=>t.classList.remove('on'));if(el)el.classList.add('on');
+  document.getElementById('dtab-plan').style.display=tab==='plan'?'flex':'none';
+  document.getElementById('dtab-activity').classList.toggle('hidden',tab!=='activity');
+}
+
+function renderLabels(){
+  const row=document.getElementById('labels-row');
+  const addBtn=row.querySelector('.label-add-btn');
+  row.querySelectorAll('.label-chip').forEach(el=>el.remove());
+  activeLabels.forEach(l=>{
+    const el=document.createElement('div');el.className='label-chip';
+    el.innerHTML=`${l} <button onclick="removeLabel('${l}')"><i class="ti ti-x" style="font-size:10px"></i></button>`;
+    row.insertBefore(el,addBtn);
   });
 }
+function addLabel(){const lbl=prompt('Add label:');if(lbl&&lbl.trim()&&!activeLabels.includes(lbl.trim())){activeLabels.push(lbl.trim());renderLabels();}}
+function removeLabel(l){activeLabels=activeLabels.filter(x=>x!==l);renderLabels();}
 
-function renderCalendar() {
-  const now = new Date();
-  const month = now.getMonth();
-  const year = now.getFullYear();
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const startOffset = (firstDay.getDay() + 6) % 7;
-
-  document.getElementById('calTitle').textContent = firstDay.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-
-  const grid = document.getElementById('calGrid');
-  grid.innerHTML = '';
-  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  days.forEach(d => {
-    const h = document.createElement('div');
-    h.className = 'cal-day-header';
-    h.textContent = d;
-    grid.appendChild(h);
-  });
-
-  for (let i = 0; i < startOffset; i++) {
-    const empty = document.createElement('div');
-    empty.className = 'cal-day';
-    grid.appendChild(empty);
-  }
-
-  const weekTasks = getWeekTasks(currentWeek);
-
-  for (let day = 1; day <= lastDay.getDate(); day++) {
-    const d = document.createElement('div');
-    d.className = 'cal-day';
-    if (day === now.getDate() && month === now.getMonth() && year === now.getFullYear()) {
-      d.classList.add('today');
-    }
-    d.innerHTML = '<div class="cal-date">' + day + '</div>';
-
-    if (weekTasks.length > 0 && day <= 5) {
-      const taskIndex = (day - 1) % weekTasks.length;
-      const task = weekTasks[taskIndex];
-      const person = data.people.find(p => p.id === task.assignedTo);
-      const span = document.createElement('div');
-      span.className = 'cal-task';
-      span.style.background = person ? person.color + '22' : '#eee';
-      span.style.color = person ? person.color : '#666';
-      span.style.borderLeft = '2px solid ' + (person ? person.color : '#ccc');
-      span.textContent = task.name;
-      span.title = task.name;
-      d.appendChild(span);
-    }
-
-    grid.appendChild(d);
-  }
-}
-
-function renderReports() {
-  const tasks = getWeekTasks(currentWeek);
-  const proj = data.projects.find(p => p.id === currentProject);
-  const grid = document.getElementById('reportGrid');
-  grid.innerHTML = '';
-
-  const total = tasks.length;
-  const done = tasks.filter(t => t.status === 'done').length;
-  const half = tasks.filter(t => t.status === 'half').length;
-  const newT = tasks.filter(t => t.status === 'new').length;
-  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-
-  const pCard = document.createElement('div');
-  pCard.className = 'report-card';
-  pCard.innerHTML = '<h4>Week Progress</h4><div style="margin-bottom:16px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span>' + pct + '% complete</span><span>' + done + '/' + total + '</span></div><div style="height:10px;background:var(--faint);border-radius:5px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:var(--done-ink);border-radius:5px;transition:width .5s"></div></div></div>' +
-    '<div class="report-legend"><span><span class="dot" style="background:var(--done-ink)"></span> Done (' + done + ')</span><span><span class="dot" style="background:#E6A100"></span> In Progress (' + half + ')</span><span><span class="dot" style="background:var(--red)"></span> New (' + newT + ')</span></div>';
-  grid.appendChild(pCard);
-
-  const bCard = document.createElement('div');
-  bCard.className = 'report-card';
-  bCard.innerHTML = '<h4>By Person</h4>';
-  if (proj && proj.people && proj.people.length > 0) {
-    proj.people.forEach(pid => {
-      const person = data.people.find(p => p.id === pid);
-      if (!person) return;
-      const pTasks = tasks.filter(t => t.assignedTo === pid);
-      const pDone = pTasks.filter(t => t.status === 'done').length;
-      const pPct = pTasks.length > 0 ? Math.round((pDone / pTasks.length) * 100) : 0;
-      bCard.innerHTML += '<div class="report-bar"><div class="rb-label">' + escHtml(person.name) + '</div><div class="rb-track"><div class="rb-fill" style="width:' + pPct + '%;background:' + person.color + '"></div></div><div class="rb-val">' + pPct + '%</div></div>';
-    });
-  } else {
-    bCard.innerHTML += '<div style="font-size:12px;color:var(--muted)">No people assigned</div>';
-  }
-  grid.appendChild(bCard);
-
-  const tCard = document.createElement('div');
-  tCard.className = 'report-card';
-  tCard.innerHTML = '<h4>All Tasks</h4><table class="report-table"><thead><tr><th>Task</th><th>Person</th><th>Status</th></tr></thead><tbody>';
-  tasks.forEach(task => {
-    const person = data.people.find(p => p.id === task.assignedTo);
-    const statusClass = 'status-' + (task.status || 'new');
-    const statusLabel = (task.status || 'new').charAt(0).toUpperCase() + (task.status || 'new').slice(1);
-    tCard.innerHTML += '<tr><td>' + escHtml(task.name) + '</td><td>' + (person ? person.name : '\u2014') + '</td><td><span class="' + statusClass + '" style="display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px">' + statusLabel + '</span></td></tr>';
-  });
-  tCard.innerHTML += '</tbody></table>';
-  grid.appendChild(tCard);
-}
-
-function renderSettings() {
-  document.getElementById('weekStart').value = (data.settings && data.settings.weekStart) || 'mon';
-  document.getElementById('defaultHours').value = (data.settings && data.settings.defaultHours) || 8;
-
-  const list = document.getElementById('personList');
-  list.innerHTML = '';
-  data.people.forEach(person => {
-    const chip = document.createElement('div');
-    chip.className = 'person-chip';
-    chip.innerHTML = '<span class="pc-dot" style="background:' + person.color + '"></span>' + escHtml(person.name) + '<span class="pc-remove" data-id="' + person.id + '">\u2715;</span>';
-    chip.querySelector('.pc-remove').addEventListener('click', () => removePerson(person.id));
-    list.appendChild(chip);
+function renderPhases(){
+  const c=document.getElementById('phases-wrap');c.innerHTML='';
+  phases.forEach(ph=>{
+    const el=document.createElement('div');el.className='phase';el.id='pw_'+ph.id;
+    const sell=pSell(ph);const hrs=pHrs(ph);const cnt=ph.items.length;
+    el.innerHTML=`<div class="phase-head" onclick="togglePhase('${ph.id}')"><i class="ti ti-chevron-down ph-chv"></i><span class="ph-n">${ph.name}</span><span class="ph-cnt">${cnt} item${cnt!==1?'s':''}</span><div class="ph-inf"><span class="ph-meta">${hrs} · ${sell}</span><div class="ph-dot ${ph.status==='complete'?'c':'p'}"></div><i class="ti ti-dots ph-mb" onclick="showPctx(event,'${ph.id}')"></i></div></div><table class="items-t" id="it_${ph.id}"><thead><tr><th style="width:22px;"></th><th>Item</th><th style="width:100px;text-align:right;">Hours</th><th style="width:80px;text-align:right;">Rate</th><th style="width:150px;text-align:right;">Sell</th><th style="width:85px;text-align:right;">Status</th><th style="width:26px;"></th></tr></thead><tbody id="ib_${ph.id}"></tbody></table><div class="add-i-row" onclick="showAddItemForm('${ph.id}')"><i class="ti ti-plus" style="font-size:11px"></i> Add item</div>`;
+    c.appendChild(el);renderItems(ph.id);
   });
 }
-
-// ACTIONS
-function cycleStatus(task) {
-  const flow = { new: 'half', half: 'done', done: 'new' };
-  task.status = flow[task.status] || 'half';
-  saveData();
+function pHrs(ph){let m=0;ph.items.forEach(i=>{const x=i.hours.match(/(\d+)h(?:(\d+)m)?/);if(x)m+=parseInt(x[1])*60+(parseInt(x[2])||0);});return m>=60?`${Math.floor(m/60)}h${m%60?m%60+'m':''}`:(m||0)+'m';}
+function pSell(ph){const u=ph.items.reduce((a,i)=>a+parseInt((i.used||'0').replace(/[$,]/g,'')||0),0);const t=ph.items.reduce((a,i)=>a+parseInt((i.total||'0').replace(/[$,]/g,'')||0),0);return`$${u.toLocaleString()} / $${t.toLocaleString()}`;}
+function renderItems(phId){
+  const ph=phases.find(p=>p.id===phId);const tbody=document.getElementById('ib_'+phId);tbody.innerHTML='';
+  ph.items.forEach(item=>{
+    const tr=document.createElement('tr');tr.id='item_'+item.id;tr.draggable=true;tr.dataset.itemId=item.id;tr.dataset.phId=phId;
+    tr.innerHTML=`<td><i class="ti ti-grip-vertical" style="color:var(--border);font-size:13px;cursor:grab;"></i></td><td class="i-name">${item.name}</td><td class="i-hrs ${item.over?'i-hrs-over':''}">${item.hours}</td><td class="i-rate">${item.rate}</td><td class="i-sell">${item.used} <span class="i-sof">/ ${item.total}</span></td><td style="text-align:right"><span class="i-badge ${item.status==='complete'?'ib-c':'ib-p'}">${item.status==='complete'?'Complete':'In Play'}</span></td><td><i class="ti ti-dots" style="font-size:14px;color:var(--muted);cursor:pointer;" onclick="showCtx(event,'${item.id}','${phId}')"></i></td>`;
+    tr.addEventListener('dragstart',e=>{dragSrc=tr;tr.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+    tr.addEventListener('dragover',e=>e.preventDefault());
+    tr.addEventListener('drop',e=>{e.stopPropagation();if(dragSrc===tr)return;const sp=phases.find(p=>p.id===dragSrc.dataset.phId);const tp=phases.find(p=>p.id===tr.dataset.phId);const si=sp.items.findIndex(i=>i.id===dragSrc.dataset.itemId);const ti=tp.items.findIndex(i=>i.id===tr.dataset.itemId);const[mv]=sp.items.splice(si,1);tp.items.splice(ti,0,mv);renderPhases();});
+    tr.addEventListener('dragend',()=>document.querySelectorAll('.dragging').forEach(el=>el.classList.remove('dragging')));
+    tbody.appendChild(tr);
+  });
 }
-
-function deleteTask(id) {
-  if (!confirm('Delete this task?')) return;
-  if (data.weeks[currentWeek] && data.weeks[currentWeek].tasks) {
-    data.weeks[currentWeek].tasks = data.weeks[currentWeek].tasks.filter(t => t.id !== id);
-  }
-  saveData();
+function togglePhase(id){document.getElementById('pw_'+id).classList.toggle('collapsed');}
+function showAddItemForm(phId){
+  if(!phId)phId=phases[0]?.id;if(!phId)return;
+  document.querySelectorAll('.add-form-row').forEach(r=>r.remove());
+  const tbody=document.getElementById('ib_'+phId);
+  const tr=document.createElement('tr');tr.className='add-form-row';
+  tr.innerHTML=`<td></td><td><select class="i-sel" id="ni-n"><option value="">Select item…</option>${LINE_ITEMS.map(l=>`<option>${l}</option>`).join('')}</select></td><td><input class="i-hi" placeholder="0h" id="ni-h"/></td><td><input class="i-hi" placeholder="$150" id="ni-r" style="width:62px;"/></td><td colspan="2"></td><td><div style="display:flex;gap:4px;"><button class="save-b" onclick="saveItem('${phId}')">Add</button><button class="cancel-b" onclick="this.closest('tr').remove()">x</button></div></td>`;
+  tbody.appendChild(tr);document.getElementById('ni-n').focus();
 }
-
-function addTask(name, assignedTo, type) {
-  if (!name.trim()) return;
-  if (!data.weeks[currentWeek]) {
-    data.weeks[currentWeek] = { tasks: [] };
-  }
-  const task = {
-    id: 't' + Date.now(),
-    name: name.trim(),
-    assignedTo: assignedTo || (data.people[0] && data.people[0].id) || '',
-    status: 'new',
-    type: type || 'Task',
-    projectId: currentProject,
-    createdAt: new Date().toISOString()
-  };
-  data.weeks[currentWeek].tasks.push(task);
-  saveData();
+function saveItem(phId){
+  const name=document.getElementById('ni-n').value;if(!name)return;
+  const hours=document.getElementById('ni-h').value||'0h';const rate=document.getElementById('ni-r').value||'$150';
+  const ph=phases.find(p=>p.id===phId);ph.items.push({id:'i'+Date.now(),name,hours,rate,used:'$0',total:'$0',status:'inplay'});
+  renderPhases();setTimeout(()=>document.getElementById('fup').classList.add('on'),700);
 }
-
-function editTask(id, name, assignedTo, type) {
-  if (!name.trim()) return;
-  const tasks = getWeekTasks(currentWeek);
-  const task = tasks.find(t => t.id === id);
-  if (task) {
-    task.name = name.trim();
-    task.assignedTo = assignedTo;
-    task.type = type || 'Task';
-    saveData();
-  }
+function addPhase(){phases.push({id:'p'+Date.now(),name:'New Phase',status:'inplay',items:[]});renderPhases();}
+function showCtx(e,itemId,phId){e.stopPropagation();ctxTarget={itemId,phId};const m=document.getElementById('ctx');m.style.cssText=`left:${Math.min(e.clientX,window.innerWidth-205)}px;top:${Math.min(e.clientY,window.innerHeight-230)}px;`;m.classList.add('on');}
+function ctxDo(a){document.getElementById('ctx').classList.remove('on');if(!ctxTarget)return;if(a==='delete'){const ph=phases.find(p=>p.id===ctxTarget.phId);ph.items=ph.items.filter(i=>i.id!==ctxTarget.itemId);renderPhases();}else if(a==='todo')openTodoModal(activeJobId,5);}
+function showPctx(e,phId){e.stopPropagation();pctxTarget=phId;const m=document.getElementById('pctx');m.style.cssText=`left:${Math.min(e.clientX,window.innerWidth-200)}px;top:${Math.min(e.clientY,window.innerHeight-170)}px;`;m.classList.add('on');}
+function pctxDo(a){document.getElementById('pctx').classList.remove('on');if(!pctxTarget)return;if(a==='delete'){if(confirm('Delete this phase?')){phases=phases.filter(p=>p.id!==pctxTarget);renderPhases();}}else if(a==='additem')showAddItemForm(pctxTarget);else if(a==='rename'){const ph=phases.find(p=>p.id===pctxTarget);const n=prompt('Rename phase:',ph.name);if(n?.trim()){ph.name=n.trim();renderPhases();}}else if(a==='complete'){const ph=phases.find(p=>p.id===pctxTarget);ph.status=ph.status==='complete'?'inplay':'complete';renderPhases();}}
+function toggleExp(){const w=document.getElementById('exp-wrap');w.classList.toggle('collapsed');const ch=w.querySelector('.exp-chv');if(ch)ch.style.transform=w.classList.contains('collapsed')?'rotate(-90deg)':'';}
+function openCreateJob(){jobCounter++;document.getElementById('nj-num').value=jobCounter;document.getElementById('nj-name').value='';document.getElementById('create-modal').classList.add('on');setTimeout(()=>document.getElementById('nj-name').focus(),50);}
+function closeCreateJob(){document.getElementById('create-modal').classList.remove('on');}
+function setTog(el){el.closest('.tog-row').querySelectorAll('.tog').forEach(t=>t.classList.remove('on'));el.classList.add('on');}
+function createJob(){
+  const name=document.getElementById('nj-name').value.trim();if(!name){document.getElementById('nj-name').focus();return;}
+  const company=document.getElementById('nj-co').value||'Unassigned';
+  const billable=document.querySelector('.tog.on')?.textContent==='Billable';
+  jobs.unshift({id:String(jobCounter),name,company,budget:'$0',budgetTotal:'—',bPct:0,hours:'0h',hoursTotal:'—',hPct:0,status:'new',billable,labels:[]});
+  closeCreateJob();renderJobs();openJobDetail(String(jobCounter));
 }
+function openInvoice(){document.getElementById('inv-modal').classList.add('on');}
+function closeInvoice(){document.getElementById('inv-modal').classList.remove('on');}
+function closeFup(add){document.getElementById('fup').classList.remove('on');if(add)openTodoModal(activeJobId,5);}
 
-function addPerson() {
-  const nameEl = document.getElementById('newPersonName');
-  const colorEl = document.getElementById('newPersonColor');
-  const name = nameEl.value.trim();
-  if (!name) return;
-  const id = 'p' + Date.now();
-  data.people.push({ id, name, color: colorEl.value });
-  nameEl.value = '';
-  saveData();
-  showToast('Added ' + name);
-}
+document.addEventListener('click',()=>{document.getElementById('ctx').classList.remove('on');document.getElementById('pctx').classList.remove('on');});
+['create-modal','todo-modal','inv-modal'].forEach(id=>{document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id))document.getElementById(id).classList.remove('on');});});
 
-function removePerson(id) {
-  const person = data.people.find(p => p.id === id);
-  if (!person) return;
-  if (!confirm('Remove ' + person.name + '?')) return;
-  data.people = data.people.filter(p => p.id !== id);
-  const proj = data.projects.find(p => p.id === currentProject);
-  if (proj) proj.people = (proj.people || []).filter(pid => pid !== id);
-  saveData();
-  showToast('Removed ' + person.name);
-}
-
-// WEEK NAV
-document.getElementById('weekPrev').addEventListener('click', () => {
-  const d = new Date(currentWeek + 'T00:00:00');
-  d.setDate(d.getDate() - 7);
-  currentWeek = getWeekKey(d);
-  renderAll();
-});
-
-document.getElementById('weekNext').addEventListener('click', () => {
-  const d = new Date(currentWeek + 'T00:00:00');
-  d.setDate(d.getDate() + 7);
-  currentWeek = getWeekKey(d);
-  renderAll();
-});
-
-document.getElementById('todoWeekPrev').addEventListener('click', () => {
-  const d = new Date(currentWeek + 'T00:00:00');
-  d.setDate(d.getDate() - 7);
-  currentWeek = getWeekKey(d);
-  renderAll();
-});
-
-document.getElementById('todoWeekNext').addEventListener('click', () => {
-  const d = new Date(currentWeek + 'T00:00:00');
-  d.setDate(d.getDate() + 7);
-  currentWeek = getWeekKey(d);
-  renderAll();
-});
-
-// CALENDAR NAV
-document.getElementById('calPrev').addEventListener('click', () => {
-  const now = new Date();
-  now.setMonth(now.getMonth() - 1);
-  currentWeek = getWeekKey(now);
-  renderAll();
-});
-document.getElementById('calNext').addEventListener('click', () => {
-  const now = new Date();
-  now.setMonth(now.getMonth() + 1);
-  currentWeek = getWeekKey(now);
-  renderAll();
-});
-
-// SETTINGS SAVE
-document.getElementById('weekStart').addEventListener('change', function() {
-  data.settings.weekStart = this.value;
-  saveData();
-  showToast('Settings saved');
-});
-
-document.getElementById('defaultHours').addEventListener('change', function() {
-  data.settings.defaultHours = parseInt(this.value) || 8;
-  saveData();
-  showToast('Settings saved');
-});
-
-document.getElementById('btnExport').addEventListener('click', exportData);
-document.getElementById('btnImport').addEventListener('click', () => document.getElementById('importFile').click());
-
-// MODAL
-function showAddTaskModal() {
-  const peopleOptions = data.people.map(p => '<option value="' + p.id + '"' + (todoPerson === p.id ? ' selected' : '') + '>' + p.name + '</option>').join('');
-  document.getElementById('modalContainer').innerHTML =
-    '<div class="modal-overlay" onclick="if(event.target===this)this.innerHTML=\'\'"><div class="modal"><h3>Add Task</h3>' +
-    '<label>Task Name</label><input type="text" id="modalTaskName" placeholder="e.g. Review design mockups">' +
-    '<label>Assign To</label><select id="modalTaskPerson">' + peopleOptions + '</select>' +
-    '<label>Type</label><select id="modalTaskType"><option value="Task">Task</option><option value="Meeting">Meeting</option><option value="Review">Review</option><option value="Research">Research</option></select>' +
-    '<div class="modal-actions"><button onclick="this.closest(\'.modal-overlay\').innerHTML=\'\'">Cancel</button><button class="primary" onclick="submitAddTask()">Add Task</button></div></div></div>';
-  setTimeout(() => { const el = document.getElementById('modalTaskName'); if (el) el.focus(); }, 100);
-}
-
-function submitAddTask() {
-  const name = document.getElementById('modalTaskName').value;
-  const person = document.getElementById('modalTaskPerson').value;
-  const type = document.getElementById('modalTaskType').value;
-  addTask(name, person, type);
-  document.getElementById('modalContainer').innerHTML = '';
-  showToast('Task added');
-}
-
-function showEditTaskModal(task) {
-  const peopleOptions = data.people.map(p => '<option value="' + p.id + '"' + (task.assignedTo === p.id ? ' selected' : '') + '>' + p.name + '</option>').join('');
-  const safeName = escAttr(task.name);
-  document.getElementById('modalContainer').innerHTML =
-    '<div class="modal-overlay" onclick="if(event.target===this)this.innerHTML=\'\'"><div class="modal"><h3>Edit Task</h3>' +
-    '<label>Task Name</label><input type="text" id="modalTaskName" value="' + safeName + '">' +
-    '<label>Assign To</label><select id="modalTaskPerson">' + peopleOptions + '</select>' +
-    '<label>Type</label><select id="modalTaskType"><option value="Task"' + (task.type === 'Task' ? ' selected' : '') + '>Task</option><option value="Meeting"' + (task.type === 'Meeting' ? ' selected' : '') + '>Meeting</option><option value="Review"' + (task.type === 'Review' ? ' selected' : '') + '>Review</option><option value="Research"' + (task.type === 'Research' ? ' selected' : '') + '>Research</option></select>' +
-    '<div class="modal-actions"><button onclick="this.closest(\'.modal-overlay\').innerHTML=\'\'">Cancel</button><button class="primary" onclick="submitEditTask(\'' + task.id + '\')">Save</button><button class="danger" onclick="deleteTask(\'' + task.id + '\');document.getElementById(\'modalContainer\').innerHTML=\'\'">Delete</button></div></div></div>';
-}
-
-function submitEditTask(id) {
-  const name = document.getElementById('modalTaskName').value;
-  const person = document.getElementById('modalTaskPerson').value;
-  const type = document.getElementById('modalTaskType').value;
-  editTask(id, name, person, type);
-  document.getElementById('modalContainer').innerHTML = '';
-  showToast('Task updated');
-}
-
-// Double-click task to edit
-document.addEventListener('dblclick', (e) => {
-  const row = e.target.closest('.task-row');
-  if (row) {
-    const id = row.querySelector('.task-check').dataset.id;
-    const tasks = getWeekTasks(currentWeek);
-    const task = tasks.find(t => t.id === id);
-    if (task) showEditTaskModal(task);
-  }
-});
-
-document.getElementById('btnAddTask').addEventListener('click', showAddTaskModal);
-
-// KEYBOARD
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    document.getElementById('modalContainer').innerHTML = '';
-  }
-  if (e.key === 'n' && !e.target.matches('input,select,textarea')) {
-    if (currentView === 'todo') showAddTaskModal();
-  }
-});
-
-// UTILITIES
-function escHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
-
-function escAttr(str) {
-  return str.replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function showToast(msg) {
-  const toast = document.getElementById('toast');
-  toast.textContent = msg;
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 2000);
-}
-
-// INIT
-loadData();
-renderAll();
+navTo('dashboard');
 </script>
 </body>
 </html>
