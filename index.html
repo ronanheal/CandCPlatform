@@ -197,7 +197,206 @@ navTo=function(v){
     setTimeout(renderReporting,50);
   }
   saveData();
-};</script>
+};
+// ============ BOARDS ENGINE ============
+const BOARD_COLUMNS=['briefed','inprogress','review','approved','complete'];
+const COLUMN_LABELS={briefed:'Briefed',inprogress:'In Progress',review:'In Review',approved:'Approved',complete:'Complete'};
+
+// Boards data - linked to jobs
+let boardsData={};
+function initBoardsData(){
+  // Initialize from jobs
+  boardsData={};
+  BOARD_COLUMNS.forEach(col=>boardsData[col]=[]);
+  jobs.forEach(j=>{
+    let status='inprogress';
+    if(j.status==='new')status='briefed';
+    if(j.status==='complete')status='complete';
+    if(!boardsData[status])boardsData[status]=[];
+    boardsData[status].push({
+      jobId:j.id,
+      title:j.name,
+      client:j.company,
+      overBudget:(j.bPct||0)>100,
+      budgetPct:j.bPct||0,
+      hoursUsed:j.hours||'0h',
+      hoursTotal:j.hoursTotal||'—',
+      lead:'ro',
+      tags:j.labels?j.labels.slice(0,3):[]
+    });
+  });
+  // Ensure all columns have arrays
+  BOARD_COLUMNS.forEach(col=>{if(!boardsData[col])boardsData[col]=[];});
+}
+
+function renderBoards(){
+  const clientFilter=document.getElementById('b-client-filter').value;
+  const columnFilter=document.getElementById('b-column-filter').value;
+  const container=document.getElementById('boards-cols');
+  container.innerHTML='';
+  
+  // Update client filter
+  const clients=[...new Set(jobs.map(j=>j.company))];
+  const clientSel=document.getElementById('b-client-filter');
+  const currentClient=clientSel.value;
+  clientSel.innerHTML='<option value="all">All Clients</option>';
+  clients.forEach(c=>{
+    const o=document.createElement('option');o.value=c;o.textContent=c;
+    if(c===currentClient)o.selected=true;
+    clientSel.appendChild(o);
+  });
+  
+  BOARD_COLUMNS.forEach(status=>{
+    if(columnFilter!=='all'&&columnFilter!==status)return;
+    const col=document.createElement('div');
+    col.className='board-col';
+    col.dataset.status=status;
+    
+    const items=(boardsData[status]||[]).filter(item=>{
+      if(clientFilter!=='all')return item.client===clientFilter;
+      return true;
+    });
+    
+    col.innerHTML=`<div class="board-col-h"><span>${COLUMN_LABELS[status]}</span><span class="col-count">${items.length}</span></div>`;
+    
+    items.forEach(item=>{
+      const card=document.createElement('div');
+      card.className='board-card'+(item.overBudget?' over-b':'');
+      card.draggable=true;
+      card.dataset.jobId=item.jobId;
+      
+      const lead=people[item.lead];
+      let tagsHTML='';
+      if(item.tags.length){
+        tagsHTML='<div class="bc-meta">';
+        item.tags.forEach(tag=>{
+          tagsHTML+=`<span class="bc-tag">${tag}</span>`;
+        });
+        if(item.overBudget)tagsHTML+='<span class="bc-tag budget-over">Over Budget</span>';
+        tagsHTML+='</div>';
+      }
+      
+      card.innerHTML=`<div class="bc-name">${item.title}</div><div class="bc-client">${item.client}${item.jobId?' · '+item.jobId:''}</div>${item.overBudget?'<div class="bc-client" style="color:var(--red);">'+item.hoursUsed+' / '+item.hoursTotal+' (Budget '+item.budgetPct+'%)</div>':'<div class="bc-client">'+item.hoursUsed+' / '+item.hoursTotal+'</div>'}${tagsHTML}<div class="bc-lead"><div class="bc-lead-avatar" style="background:${lead?lead.color:'#999'};">${lead?lead.initials:'?'}</div><span>${lead?lead.name:item.lead}</span></div>`;
+      
+      // Click to open job detail
+      card.addEventListener('click',()=>{
+        openJobDetail(item.jobId);
+      });
+      
+      // Drag events
+      card.addEventListener('dragstart',e=>{
+        e.dataTransfer.setData('text/plain',JSON.stringify({
+          jobId:item.jobId,
+          fromStatus:status
+        }));
+        e.dataTransfer.effectAllowed='move';
+        card.classList.add('dragging-b');
+      });
+      
+      card.addEventListener('dragend',()=>{
+        card.classList.remove('dragging-b');
+      });
+      
+      col.appendChild(card);
+    });
+    
+    // Drop zone
+    col.addEventListener('dragover',e=>{
+      e.preventDefault();
+      e.dataTransfer.dropEffect='move';
+      col.style.borderColor='#ED1E24';
+    });
+    
+    col.addEventListener('dragleave',e=>{
+      col.style.borderColor='';
+    });
+    
+    col.addEventListener('drop',e=>{
+      e.preventDefault();
+      col.style.borderColor='';
+      try{
+        const data=JSON.parse(e.dataTransfer.getData('text/plain'));
+        const{jobId,fromStatus}=data;
+        
+        // Find and move the item
+        const fromItems=(boardsData[fromStatus]||[]).filter(i=>i.jobId===jobId);
+        if(fromItems.length===0)return;
+        
+        const item=fromItems[0];
+        
+        // Remove from source
+        boardsData[fromStatus]=boardsData[fromStatus].filter(i=>i.jobId!==jobId);
+        
+        // Add to destination
+        if(!boardsData[status])boardsData[status]=[];
+        boardsData[status].push(item);
+        
+        // Update job status if applicable
+        const job=jobs.find(j=>j.id===jobId);
+        if(job){
+          if(status==='briefed')job.status='new';
+          else if(status==='complete')job.status='complete';
+          else job.status='inplay';
+        }
+        
+        renderBoards();
+        saveData();
+      }catch(err){
+        console.error('Board drop error:',err);
+      }
+    });
+    
+    container.appendChild(col);
+  });
+  
+  saveData();
+}
+
+function showAddBoardItem(){
+  const title=prompt('Item name:');
+  if(!title)return;
+  const client=prompt('Client:','Silver Fern Farms');
+  const jobId=prompt('Job ID (optional):','');
+  const lead=prompt('Lead person (ro=Ronan, bee=Bianca, jb=JB):','ro');
+  
+  const newItem={
+    jobId:jobId||'custom_'+Date.now(),
+    title:title,
+    client:client||'Internal',
+    overBudget:false,
+    budgetPct:0,
+    hoursUsed:'0h',
+    hoursTotal:'—',
+    lead:lead||'ro',
+    tags:[]
+  };
+  
+  boardsData.briefed.push(newItem);
+  renderBoards();
+}
+
+// Override navTo to include boards
+const _origNavTo2=navTo;
+navTo=function(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.add('hidden'));
+  document.querySelectorAll('.s-btn[id]').forEach(el=>el.classList.remove('on'));
+  const ve=document.getElementById('view-'+v);if(ve)ve.classList.remove('hidden');
+  const ne=document.getElementById('snav-'+v);if(ne)ne.classList.add('on');
+  document.getElementById('topbar').classList.toggle('hidden',v!=='jobs'&&v!=='detail');
+  if(v==='todo')renderTodo();
+  if(v==='jobs')renderJobs();
+  if(v==='reporting'){
+    initReportingSelects();
+    wireReportingFilters();
+    setTimeout(renderReporting,50);
+  }
+  if(v==='boards'){
+    initBoardsData();
+    setTimeout(renderBoards,50);
+  }
+  saveData();
+};
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -475,6 +674,25 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 
 /* BOARDS */
 .boards-scroll{flex:1;overflow-y:auto;padding:32px;}
+/* BOARDS - enhanced */
+.board-col{background:var(--off);border:1px solid var(--border);border-radius:4px;padding:12px;min-width:220px;flex:1;max-width:300px;display:flex;flex-direction:column;}
+.board-col-h{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.board-col-h .col-count{background:var(--white);border:1px solid var(--border);padding:2px 8px;border-radius:10px;font-size:10px;}
+.board-card{background:var(--white);border:1px solid var(--border);border-radius:4px;padding:12px;margin-bottom:8px;cursor:pointer;transition:all .15s;position:relative;}
+.board-card:hover{border-color:#ccc;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.board-card.dragging-b{opacity:.4;transform:rotate(2deg);}
+.board-card.over-b{border-left:3px solid var(--red);}
+.bc-name{font-size:13px;font-weight:500;margin-bottom:4px;}
+.bc-client{font-size:11px;color:var(--muted);}
+.bc-meta{display:flex;gap:6px;margin-top:8px;}
+.bc-tag{font-size:9px;padding:2px 6px;border-radius:2px;background:var(--off);color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+.bc-tag.budget-over{background:var(--red);color:white;}
+.bc-tag.urgent{background:#FF9800;color:white;}
+.bc-lead{font-size:10px;margin-top:6px;display:flex;align-items:center;gap:4px;}
+.bc-lead-avatar{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:8px;font-weight:500;}
+.board-col[data-status="complete"] .board-card{opacity:.6;}
+.board-col[data-status="complete"] .board-card:hover{opacity:.8;}
+
 .boards-head{font-family:var(--serif);font-size:28px;font-style:italic;margin-bottom:4px;}
 .boards-sub{font-size:12px;color:var(--muted);margin-bottom:8px;}
 .boards-cols{display:flex;gap:14px;overflow-x:auto;padding-bottom:14px;}
@@ -863,16 +1081,29 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
       <div id="view-boards" class="view hidden">
         <div class="boards-scroll">
           <div class="boards-head">Priority boards</div>
-          <div class="boards-sub">WIP across all clients</div>
+          <div class="boards-sub">Campaigns &amp; projects across all clients</div>
           <div class="dash-rule" style="margin:14px 0 20px;"></div>
-          <div class="coming-note"><i class="ti ti-tools" style="font-size:16px;color:var(--muted);"></i> Full drag-and-drop board functionality, campaign lead assignment, and client filtering to be built out further — this is a structural preview.</div>
-          <div class="boards-cols">
-            <div class="board-col"><div class="board-col-h">Briefed</div><div class="board-card over-b"><div class="bc-name">SFF 2026 Influencer Content</div><div class="bc-client">Silver Fern Farms</div></div><div class="board-card"><div class="bc-name">Matcha Foils &amp; Pack</div><div class="bc-client">Avalanche Coffee</div></div></div>
-            <div class="board-col"><div class="board-col-h">In progress</div><div class="board-card" onclick="openJobDetail('6752')"><div class="bc-name">SFF Brand Guidelines</div><div class="bc-client">Silver Fern Farms · 6752</div></div><div class="board-card"><div class="bc-name">Deer Packaging</div><div class="bc-client">Carboland Limited</div></div><div class="board-card over-b"><div class="bc-name">Boyd April Retainer</div><div class="bc-client" style="color:var(--red);">Over budget</div></div></div>
-            <div class="board-col"><div class="board-col-h">In review</div><div class="board-card"><div class="bc-name">B Corp Plan &amp; Toolkit</div><div class="bc-client">Natural Pet Food Group</div></div></div>
-            <div class="board-col"><div class="board-col-h">Approved</div><div class="board-card"><div class="bc-name">99% SF Chocolate 26 Pack</div><div class="bc-client">Avalanche Coffee</div></div></div>
-            <div class="board-col"><div class="board-col-h">Complete</div><div class="board-card" style="opacity:.55;"><div class="bc-name">SFF Honest Campaign</div><div class="bc-client">Silver Fern Farms</div></div></div>
+
+          <!-- BOARD CONTROLS -->
+          <div class="r-filter-row" style="margin-bottom:16px;">
+            <label>Client</label>
+            <select id="b-client-filter" onchange="renderBoards()">
+              <option value="all">All Clients</option>
+            </select>
+            <label>Column</label>
+            <select id="b-column-filter" onchange="renderBoards()">
+              <option value="all">All Columns</option>
+              <option value="briefed">Briefed</option>
+              <option value="inprogress">In Progress</option>
+              <option value="review">In Review</option>
+              <option value="approved">Approved</option>
+              <option value="complete">Complete</option>
+            </select>
+            <button class="r-export-btn" onclick="showAddBoardItem()" style="margin-left:0;">+ Add item</button>
           </div>
+
+          <!-- BOARDS -->
+          <div class="boards-cols" id="boards-cols"></div>
         </div>
       </div>
 
@@ -1594,6 +1825,205 @@ navTo=function(v){
     setTimeout(renderReporting,50);
   }
   saveData();
-};</script>
+};
+// ============ BOARDS ENGINE ============
+const BOARD_COLUMNS=['briefed','inprogress','review','approved','complete'];
+const COLUMN_LABELS={briefed:'Briefed',inprogress:'In Progress',review:'In Review',approved:'Approved',complete:'Complete'};
+
+// Boards data - linked to jobs
+let boardsData={};
+function initBoardsData(){
+  // Initialize from jobs
+  boardsData={};
+  BOARD_COLUMNS.forEach(col=>boardsData[col]=[]);
+  jobs.forEach(j=>{
+    let status='inprogress';
+    if(j.status==='new')status='briefed';
+    if(j.status==='complete')status='complete';
+    if(!boardsData[status])boardsData[status]=[];
+    boardsData[status].push({
+      jobId:j.id,
+      title:j.name,
+      client:j.company,
+      overBudget:(j.bPct||0)>100,
+      budgetPct:j.bPct||0,
+      hoursUsed:j.hours||'0h',
+      hoursTotal:j.hoursTotal||'—',
+      lead:'ro',
+      tags:j.labels?j.labels.slice(0,3):[]
+    });
+  });
+  // Ensure all columns have arrays
+  BOARD_COLUMNS.forEach(col=>{if(!boardsData[col])boardsData[col]=[];});
+}
+
+function renderBoards(){
+  const clientFilter=document.getElementById('b-client-filter').value;
+  const columnFilter=document.getElementById('b-column-filter').value;
+  const container=document.getElementById('boards-cols');
+  container.innerHTML='';
+  
+  // Update client filter
+  const clients=[...new Set(jobs.map(j=>j.company))];
+  const clientSel=document.getElementById('b-client-filter');
+  const currentClient=clientSel.value;
+  clientSel.innerHTML='<option value="all">All Clients</option>';
+  clients.forEach(c=>{
+    const o=document.createElement('option');o.value=c;o.textContent=c;
+    if(c===currentClient)o.selected=true;
+    clientSel.appendChild(o);
+  });
+  
+  BOARD_COLUMNS.forEach(status=>{
+    if(columnFilter!=='all'&&columnFilter!==status)return;
+    const col=document.createElement('div');
+    col.className='board-col';
+    col.dataset.status=status;
+    
+    const items=(boardsData[status]||[]).filter(item=>{
+      if(clientFilter!=='all')return item.client===clientFilter;
+      return true;
+    });
+    
+    col.innerHTML=`<div class="board-col-h"><span>${COLUMN_LABELS[status]}</span><span class="col-count">${items.length}</span></div>`;
+    
+    items.forEach(item=>{
+      const card=document.createElement('div');
+      card.className='board-card'+(item.overBudget?' over-b':'');
+      card.draggable=true;
+      card.dataset.jobId=item.jobId;
+      
+      const lead=people[item.lead];
+      let tagsHTML='';
+      if(item.tags.length){
+        tagsHTML='<div class="bc-meta">';
+        item.tags.forEach(tag=>{
+          tagsHTML+=`<span class="bc-tag">${tag}</span>`;
+        });
+        if(item.overBudget)tagsHTML+='<span class="bc-tag budget-over">Over Budget</span>';
+        tagsHTML+='</div>';
+      }
+      
+      card.innerHTML=`<div class="bc-name">${item.title}</div><div class="bc-client">${item.client}${item.jobId?' · '+item.jobId:''}</div>${item.overBudget?'<div class="bc-client" style="color:var(--red);">'+item.hoursUsed+' / '+item.hoursTotal+' (Budget '+item.budgetPct+'%)</div>':'<div class="bc-client">'+item.hoursUsed+' / '+item.hoursTotal+'</div>'}${tagsHTML}<div class="bc-lead"><div class="bc-lead-avatar" style="background:${lead?lead.color:'#999'};">${lead?lead.initials:'?'}</div><span>${lead?lead.name:item.lead}</span></div>`;
+      
+      // Click to open job detail
+      card.addEventListener('click',()=>{
+        openJobDetail(item.jobId);
+      });
+      
+      // Drag events
+      card.addEventListener('dragstart',e=>{
+        e.dataTransfer.setData('text/plain',JSON.stringify({
+          jobId:item.jobId,
+          fromStatus:status
+        }));
+        e.dataTransfer.effectAllowed='move';
+        card.classList.add('dragging-b');
+      });
+      
+      card.addEventListener('dragend',()=>{
+        card.classList.remove('dragging-b');
+      });
+      
+      col.appendChild(card);
+    });
+    
+    // Drop zone
+    col.addEventListener('dragover',e=>{
+      e.preventDefault();
+      e.dataTransfer.dropEffect='move';
+      col.style.borderColor='#ED1E24';
+    });
+    
+    col.addEventListener('dragleave',e=>{
+      col.style.borderColor='';
+    });
+    
+    col.addEventListener('drop',e=>{
+      e.preventDefault();
+      col.style.borderColor='';
+      try{
+        const data=JSON.parse(e.dataTransfer.getData('text/plain'));
+        const{jobId,fromStatus}=data;
+        
+        // Find and move the item
+        const fromItems=(boardsData[fromStatus]||[]).filter(i=>i.jobId===jobId);
+        if(fromItems.length===0)return;
+        
+        const item=fromItems[0];
+        
+        // Remove from source
+        boardsData[fromStatus]=boardsData[fromStatus].filter(i=>i.jobId!==jobId);
+        
+        // Add to destination
+        if(!boardsData[status])boardsData[status]=[];
+        boardsData[status].push(item);
+        
+        // Update job status if applicable
+        const job=jobs.find(j=>j.id===jobId);
+        if(job){
+          if(status==='briefed')job.status='new';
+          else if(status==='complete')job.status='complete';
+          else job.status='inplay';
+        }
+        
+        renderBoards();
+        saveData();
+      }catch(err){
+        console.error('Board drop error:',err);
+      }
+    });
+    
+    container.appendChild(col);
+  });
+  
+  saveData();
+}
+
+function showAddBoardItem(){
+  const title=prompt('Item name:');
+  if(!title)return;
+  const client=prompt('Client:','Silver Fern Farms');
+  const jobId=prompt('Job ID (optional):','');
+  const lead=prompt('Lead person (ro=Ronan, bee=Bianca, jb=JB):','ro');
+  
+  const newItem={
+    jobId:jobId||'custom_'+Date.now(),
+    title:title,
+    client:client||'Internal',
+    overBudget:false,
+    budgetPct:0,
+    hoursUsed:'0h',
+    hoursTotal:'—',
+    lead:lead||'ro',
+    tags:[]
+  };
+  
+  boardsData.briefed.push(newItem);
+  renderBoards();
+}
+
+// Override navTo to include boards
+const _origNavTo2=navTo;
+navTo=function(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.add('hidden'));
+  document.querySelectorAll('.s-btn[id]').forEach(el=>el.classList.remove('on'));
+  const ve=document.getElementById('view-'+v);if(ve)ve.classList.remove('hidden');
+  const ne=document.getElementById('snav-'+v);if(ne)ne.classList.add('on');
+  document.getElementById('topbar').classList.toggle('hidden',v!=='jobs'&&v!=='detail');
+  if(v==='todo')renderTodo();
+  if(v==='jobs')renderJobs();
+  if(v==='reporting'){
+    initReportingSelects();
+    wireReportingFilters();
+    setTimeout(renderReporting,50);
+  }
+  if(v==='boards'){
+    initBoardsData();
+    setTimeout(renderBoards,50);
+  }
+  saveData();
+};
+</script>
 </body>
 </html>
