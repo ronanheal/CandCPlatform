@@ -7,7 +7,197 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js">
+// ============ REPORTING ENGINE ============
+let chartByPerson=null,chartByDay=null,chartByJob=null,chartByBudget=null;
+
+function initReportingSelects(){
+  const ps=document.getElementById('r-person');
+  const js=document.getElementById('r-job');
+  ps.innerHTML='<option value="all">All People</option>';
+  Object.keys(people).forEach(k=>{
+    const o=document.createElement('option');o.value=k;o.textContent=people[k].name;
+    ps.appendChild(o);
+  });
+  js.innerHTML='<option value="all">All Jobs</option>';
+  jobs.forEach(j=>{
+    const o=document.createElement('option');o.value=j.id;o.textContent=`${j.name} (${j.id})`;
+    js.appendChild(o);
+  });
+}
+
+function getFilteredTasks(){
+  const period=document.getElementById('r-period').value;
+  const person=document.getElementById('r-person').value;
+  const jobFilter=document.getElementById('r-job').value;
+  let tasks=[];
+  const now=new Date();
+  let cutoff=0;
+  if(period==='week')cutoff=now-7*86400000;
+  else if(period==='2weeks')cutoff=now-14*86400000;
+  else if(period==='month')cutoff=now-30*86400000;
+  else if(period==='quarter')cutoff=now-90*86400000;
+  
+  Object.keys(todoData).forEach(pKey=>{
+    if(person!=='all'&&pKey!==person)return;
+    const days=todoData[pKey];
+    for(let d=1;d<=5;d++){
+      const dayTasks=days[d]||[];
+      dayTasks.forEach(t=>{
+        // filter by job
+        if(jobFilter!=='all'){
+          const jobMatch=t.job?t.job.includes(jobFilter):false;
+          if(!jobMatch)return;
+        }
+        tasks.push({...t, person:pKey, personName:people[pKey]?.name||pKey, day:d, date:d});
+      });
+    }
+  });
+  return tasks;
+}
+
+function fmtHrs(h){if(!h||h===0)return'0h';const m=Math.round(h*60);const hh=Math.floor(m/60);const mm=m%60;return hh&&mm?`${hh}h ${mm}m`:hh?`${hh}h`:`${mm}m`;}
+
+function renderReporting(){
+  const tasks=getFilteredTasks();
+  updateWeekLabel();
+  
+  // Update subtitle
+  const personSel=document.getElementById('r-person');
+  const periodSel=document.getElementById('r-period');
+  const jobSel=document.getElementById('r-job');
+  const personLabel=personSel.value==='all'?'All People':people[personSel.value]?.name||personSel.value;
+  document.getElementById('r-sub').textContent=`${personLabel} · ${periodSel.value==='week'?'This Week':periodSel.value==='2weeks'?'Last 2 Weeks':periodSel.value==='month'?'This Month':periodSel.value==='quarter'?'This Quarter':'All Time'}`;
+
+  // Person totals
+  const personTotals={};
+  let grandTotal=0;
+  tasks.forEach(t=>{
+    if(!personTotals[t.person])personTotals[t.person]={hours:0,name:people[t.person]?.name||t.person,color:people[t.person]?.color||'#999'};
+    personTotals[t.person].hours+=t.hours||0;
+    grandTotal+=t.hours||0;
+  });
+  
+  const ptEl=document.getElementById('r-person-totals');
+  ptEl.innerHTML='';
+  Object.keys(personTotals).forEach(pk=>{
+    const pt=personTotals[pk];
+    const utilPct=Math.min(100,Math.round((pt.hours/100)*100));
+    ptEl.innerHTML+=`<div class="r-p-card"><div class="r-p-name">${pt.name}</div><div class="r-p-hours" style="color:${pt.color}">${fmtHrs(pt.hours)}</div><div class="r-p-util">${utilPct}% utilised</div><div class="r-p-bar"><div class="r-p-bar-fill" style="width:${utilPct}%;background:${pt.color};"></div></div></div>`;
+  });
+
+  // Chart: Hours by Person
+  const pLabels=Object.keys(personTotals).map(k=>personTotals[k].name);
+  const pHours=Object.values(personTotals).map(v=>v.hours);
+  const pColors=Object.values(personTotals).map(v=>v.color);
+  destroyChart(chartByPerson);
+  chartByPerson=new Chart(document.getElementById('chart-by-person'),{
+    type:'bar',
+    data:{labels:pLabels,data:pHours,backgroundColor:pColors,hoverBackgroundColor:pColors.map(c=>c+'cc')},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:'#f0f0f0'},ticks:{callback:v=>fmtHrs(v)}}}}
+  });
+
+  // Chart: Hours by Day
+  const dayTotals={};
+  tasks.forEach(t=>{dayTotals[t.day]=(dayTotals[t.day]||0)+(t.hours||0);});
+  const dayLabels=['Mon','Tue','Wed','Thu','Fri'];
+  const dayData=[1,2,3,4,5].map(d=>dayTotals[d]||0);
+  destroyChart(chartByDay);
+  chartByDay=new Chart(document.getElementById('chart-by-day'),{
+    type:'bar',
+    data:{labels:dayLabels,data:dayData,backgroundColor:'#ED1E24',hoverBackgroundColor:'#ED1E24cc'},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:'#f0f0f0'},ticks:{callback:v=>fmtHrs(v)}}}}
+  });
+
+  // Chart: Hours by Job
+  const jobTotals={};
+  tasks.forEach(t=>{
+    const job=t.job||'Personal';
+    jobTotals[job]=(jobTotals[job]||0)+(t.hours||0);
+  });
+  const jobLabels=Object.keys(jobTotals);
+  const jobHours=Object.values(jobTotals);
+  const jobPalette=['#ED1E24','#6B7FA3','#7B9E87','#C45D5D','#5D88C4','#C4A35D','#5DC48A','#8A5DC4'];
+  destroyChart(chartByJob);
+  chartByJob=new Chart(document.getElementById('chart-by-job'),{
+    type:'doughnut',
+    data:{labels:jobLabels,data:jobHours,backgroundColor:jobPalette.slice(0,jobLabels.length),hoverOffset:6},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},padding:10}}}}
+  });
+
+  // Chart: Budget usage by job
+  const budgetData=jobs.filter(j=>j.budgetTotal).slice(0,8).map(j=>({
+    name:j.name,usedPct:j.bPct||0,overBudget:j.bPct>100
+  }));
+  destroyChart(chartByBudget);
+  chartByBudget=new Chart(document.getElementById('chart-by-budget'),{
+    type:'bar',
+    data:{
+      labels:budgetData.map(b=>b.name.length>20?b.name.slice(0,20)+'…':b.name),
+      datasets:[{label:'Budget Used %',data:budgetData.map(b=>b.usedPct),
+        backgroundColor:budgetData.map(b=>b.overBudget?'#ED1E24':'#4CAF50'),
+        hoverBackgroundColor:budgetData.map(b=>b.overBudget?'#ED1E24cc':'#4CAF50cc')}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:120,grid:{color:'#f0f0f0'},ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}
+  });
+
+  // Data table
+  const tbody=document.getElementById('r-table-body');
+  tbody.innerHTML='';
+  tasks.forEach(t=>{
+    const tr=document.createElement('tr');
+    const doneBadge=t.done?'<span style="color:var(--done-ink);"><i class="ti ti-check"></i> Done</span>':'<span style="color:var(--muted);">Pending</span>';
+    tr.innerHTML=`<td><strong>${people[t.person]?.name||t.person}</strong></td><td>${t.title}</td><td style="font-size:12px;color:var(--muted);">${t.job||'—'}</td><td style="font-size:12px;color:var(--muted);">${t.item||'—'}</td><td style="text-align:right;font-weight:500;">${fmtHrs(t.hours)}</td><td>${doneBadge}</td><td>${t.urgent&&!t.done?'<span style="color:var(--red);"><i class="ti ti-alert-circle"></i></span>':'</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('r-task-count').textContent=`${tasks.length} task${tasks.length!==1?'s':''}`;
+  document.getElementById('r-total-hours').innerHTML=`<strong>${fmtHrs(grandTotal)}</strong>`;
+  
+  saveData();
+}
+
+function destroyChart(c){if(c){c.destroy();c=null;}}
+
+function exportReport(){
+  const tasks=getFilteredTasks();
+  if(tasks.length===0){alert('No data to export.');return;}
+  let csv='Person,Task,Job,Item,Hours,Status,Day
+';
+  tasks.forEach(t=>{
+    csv+=`${people[t.person]?.name||t.person},"${t.title}","${t.job||''}","${t.item||''}",${t.hours},${t.done?'Done':'Pending'},${t.day}
+`;
+  });
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`report_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();URL.revokeObjectURL(url);
+}
+
+// Wire up filter listeners
+function wireReportingFilters(){
+  document.getElementById('r-period').addEventListener('change',renderReporting);
+  document.getElementById('r-person').addEventListener('change',renderReporting);
+  document.getElementById('r-job').addEventListener('change',renderReporting);
+}
+
+// Override navTo to also render reporting when switching to it
+const _origNavTo=navTo;
+navTo=function(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.add('hidden'));
+  document.querySelectorAll('.s-btn[id]').forEach(el=>el.classList.remove('on'));
+  const ve=document.getElementById('view-'+v);if(ve)ve.classList.remove('hidden');
+  const ne=document.getElementById('snav-'+v);if(ne)ne.classList.add('on');
+  document.getElementById('topbar').classList.toggle('hidden',v!=='jobs'&&v!=='detail');
+  if(v==='todo')renderTodo();
+  if(v==='jobs')renderJobs();
+  if(v==='reporting'){
+    initReportingSelects();
+    wireReportingFilters();
+    setTimeout(renderReporting,50);
+  }
+  saveData();
+};</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -248,6 +438,36 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .r-card-t{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
 .r-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;font-size:13px;}
 .r-label{flex:1;}
+
+/* REPORTING - chart.js tables */
+.r-date-filter{display:flex;gap:8px;margin-bottom:24px;align-items:center;}
+.r-date-filter select,.r-date-filter input{padding:6px 10px;border:1px solid var(--border);border-radius:3px;font-family:var(--font);font-size:12px;background:var(--white);}
+.r-date-filter select{cursor:pointer;}
+.r-chart-row{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;}
+.r-chart-card{background:var(--white);border:1px solid var(--border);padding:20px;}
+.r-chart-h{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+.r-chart-wrap{position:relative;height:260px;}
+.r-table-wrap{background:var(--white);border:1px solid var(--border);overflow:hidden;}
+.r-table-h{padding:14px 20px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.r-table{width:100%;border-collapse:collapse;}
+.r-table th{text-align:left;padding:8px 16px;font-size:11px;color:var(--muted);font-weight:400;border-bottom:1px solid var(--border);letter-spacing:.05em;text-transform:uppercase;}
+.r-table td{padding:8px 16px;font-size:13px;border-bottom:1px solid var(--faint);}
+.r-table tr:last-child td{border-bottom:none;}
+.r-table tr:hover td{background:var(--off);}
+.r-total-row td{font-weight:500;border-top:2px solid var(--border);}
+.r-person-total{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+.r-p-card{background:var(--white);border:1px solid var(--border);padding:20px;text-align:center;}
+.r-p-name{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.r-p-hours{font-size:24px;font-weight:500;margin-bottom:4px;}
+.r-p-util{font-size:12px;color:var(--muted);}
+.r-p-bar{margin-top:10px;height:4px;background:var(--faint);border-radius:2px;overflow:hidden;}
+.r-p-bar-fill{height:100%;border-radius:2px;}
+.r-filter-row{display:flex;gap:12px;margin-bottom:20px;align-items:center;flex-wrap:wrap;}
+.r-filter-row label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+.r-filter-row select,.r-filter-row input{padding:6px 10px;border:1px solid var(--border);border-radius:3px;font-family:var(--font);font-size:12px;background:var(--white);}
+.r-export-btn{background:var(--black);color:var(--white);border:none;padding:7px 14px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-family:var(--font);cursor:pointer;border-radius:2px;margin-left:auto;}
+.r-export-btn:hover{opacity:.85;}
+
 .r-bar{flex:0 0 90px;height:3px;background:var(--faint);}
 .r-bfill{height:100%;background:var(--red);}
 .r-val{min-width:44px;text-align:right;font-size:12px;color:var(--muted);}
@@ -590,14 +810,51 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
       <div id="view-reporting" class="view hidden">
         <div class="report-scroll">
           <div class="report-head">Reporting</div>
-          <div class="report-sub">June 2026 · All clients</div>
+          <div class="report-sub" id="r-sub">All time · All people</div>
           <div class="dash-rule" style="margin:14px 0 20px;"></div>
-          <div class="coming-note"><i class="ti ti-tools" style="font-size:16px;color:var(--muted);"></i> This section will be built out further in a future phase — charts, date ranges, per-client exports, and team utilisation reports are all planned.</div>
-          <div class="r-grid">
-            <div class="r-card"><div class="r-card-t">Billable hours by person</div><div class="r-row"><span class="r-label">Ronan</span><div class="r-bar"><div class="r-bfill" style="width:82%"></div></div><span class="r-val">82%</span></div><div class="r-row"><span class="r-label">Bianca</span><div class="r-bar"><div class="r-bfill" style="width:71%"></div></div><span class="r-val">71%</span></div><div class="r-row"><span class="r-label">JB</span><div class="r-bar"><div class="r-bfill" style="width:68%"></div></div><span class="r-val">68%</span></div><div class="r-row"><span class="r-label">Harry</span><div class="r-bar"><div class="r-bfill" style="width:55%"></div></div><span class="r-val">55%</span></div></div>
-            <div class="r-card"><div class="r-card-t">Hours by client (June)</div><div class="r-row"><span class="r-label">Silver Fern Farms</span><div class="r-bar"><div class="r-bfill" style="width:90%"></div></div><span class="r-val">143h</span></div><div class="r-row"><span class="r-label">Avalanche Coffee</span><div class="r-bar"><div class="r-bfill" style="width:52%"></div></div><span class="r-val">84h</span></div><div class="r-row"><span class="r-label">Formthotics</span><div class="r-bar"><div class="r-bfill" style="width:38%"></div></div><span class="r-val">62h</span></div><div class="r-row"><span class="r-label">Dairyworks</span><div class="r-bar"><div class="r-bfill" style="width:24%"></div></div><span class="r-val">38h</span></div></div>
-            <div class="r-card"><div class="r-card-t">Jobs over budget</div><div class="r-row"><span class="r-label">6544 SFF Honest</span><div class="r-bar"><div class="r-bfill" style="width:100%"></div></div><span class="r-val" style="color:var(--red);">+$449</span></div><div class="r-row"><span class="r-label">6690 Boyd Retainer</span><div class="r-bar"><div class="r-bfill" style="width:100%"></div></div><span class="r-val" style="color:var(--red);">+$1,566</span></div></div>
-            <div class="r-card"><div class="r-card-t">Revenue invoiced (NZD)</div><div class="r-big">$318,217</div><div style="font-size:12px;color:var(--muted);">of $597,292 quoted</div><div class="kpi-bar" style="margin-top:14px;"><div class="kpi-bar-fill" style="width:53%;background:#4CAF50;"></div></div></div>
+
+          <!-- FILTERS -->
+          <div class="r-filter-row">
+            <label>Period</label>
+            <select id="r-period">
+              <option value="week">This Week</option>
+              <option value="2weeks">Last 2 Weeks</option>
+              <option value="month">This Month</option>
+              <option value="quarter">This Quarter</option>
+              <option value="all" selected>All Time</option>
+            </select>
+            <label>Person</label>
+            <select id="r-person">
+              <option value="all">All People</option>
+            </select>
+            <label>Job</label>
+            <select id="r-job">
+              <option value="all">All Jobs</option>
+            </select>
+            <button class="r-export-btn" onclick="exportReport()">Export CSV</button>
+          </div>
+
+          <!-- PERSON TOTALS -->
+          <div class="r-person-total" id="r-person-totals"></div>
+
+          <!-- CHARTS -->
+          <div class="r-chart-row">
+            <div class="r-chart-card"><div class="r-chart-h">Hours by Person</div><div class="r-chart-wrap"><canvas id="chart-by-person"></canvas></div></div>
+            <div class="r-chart-card"><div class="r-chart-h">Hours by Day of Week</div><div class="r-chart-wrap"><canvas id="chart-by-day"></canvas></div></div>
+          </div>
+          <div class="r-chart-row">
+            <div class="r-chart-card"><div class="r-chart-h">Hours by Job</div><div class="r-chart-wrap"><canvas id="chart-by-job"></canvas></div></div>
+            <div class="r-chart-card"><div class="r-chart-h">Budget Usage by Job</div><div class="r-chart-wrap"><canvas id="chart-by-budget"></canvas></div></div>
+          </div>
+
+          <!-- DATA TABLE -->
+          <div class="r-table-wrap">
+            <div class="r-table-h"><span>Task Breakdown</span><span id="r-task-count">0 tasks</span></div>
+            <table class="r-table">
+              <thead><tr><th>Person</th><th>Task</th><th>Job</th><th>Item</th><th>Hours</th><th>Status</th><th>Done</th></tr></thead>
+              <tbody id="r-table-body"></tbody>
+              <tfoot><tr class="r-total-row"><td colspan="4" style="text-align:right;"><strong>TOTAL</strong></td><td id="r-total-hours" style="text-align:right;"><strong>0h</strong></td><td colspan="2"></td></tr></tfoot>
+            </table>
           </div>
         </div>
       </div>
@@ -1147,6 +1404,196 @@ document.addEventListener('click',()=>{document.getElementById('ctx').classList.
 ['create-modal','todo-modal','inv-modal'].forEach(id=>{document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id))document.getElementById(id).classList.remove('on');});});
 
 navTo('dashboard');
-</script>
+
+// ============ REPORTING ENGINE ============
+let chartByPerson=null,chartByDay=null,chartByJob=null,chartByBudget=null;
+
+function initReportingSelects(){
+  const ps=document.getElementById('r-person');
+  const js=document.getElementById('r-job');
+  ps.innerHTML='<option value="all">All People</option>';
+  Object.keys(people).forEach(k=>{
+    const o=document.createElement('option');o.value=k;o.textContent=people[k].name;
+    ps.appendChild(o);
+  });
+  js.innerHTML='<option value="all">All Jobs</option>';
+  jobs.forEach(j=>{
+    const o=document.createElement('option');o.value=j.id;o.textContent=`${j.name} (${j.id})`;
+    js.appendChild(o);
+  });
+}
+
+function getFilteredTasks(){
+  const period=document.getElementById('r-period').value;
+  const person=document.getElementById('r-person').value;
+  const jobFilter=document.getElementById('r-job').value;
+  let tasks=[];
+  const now=new Date();
+  let cutoff=0;
+  if(period==='week')cutoff=now-7*86400000;
+  else if(period==='2weeks')cutoff=now-14*86400000;
+  else if(period==='month')cutoff=now-30*86400000;
+  else if(period==='quarter')cutoff=now-90*86400000;
+  
+  Object.keys(todoData).forEach(pKey=>{
+    if(person!=='all'&&pKey!==person)return;
+    const days=todoData[pKey];
+    for(let d=1;d<=5;d++){
+      const dayTasks=days[d]||[];
+      dayTasks.forEach(t=>{
+        // filter by job
+        if(jobFilter!=='all'){
+          const jobMatch=t.job?t.job.includes(jobFilter):false;
+          if(!jobMatch)return;
+        }
+        tasks.push({...t, person:pKey, personName:people[pKey]?.name||pKey, day:d, date:d});
+      });
+    }
+  });
+  return tasks;
+}
+
+function fmtHrs(h){if(!h||h===0)return'0h';const m=Math.round(h*60);const hh=Math.floor(m/60);const mm=m%60;return hh&&mm?`${hh}h ${mm}m`:hh?`${hh}h`:`${mm}m`;}
+
+function renderReporting(){
+  const tasks=getFilteredTasks();
+  updateWeekLabel();
+  
+  // Update subtitle
+  const personSel=document.getElementById('r-person');
+  const periodSel=document.getElementById('r-period');
+  const jobSel=document.getElementById('r-job');
+  const personLabel=personSel.value==='all'?'All People':people[personSel.value]?.name||personSel.value;
+  document.getElementById('r-sub').textContent=`${personLabel} · ${periodSel.value==='week'?'This Week':periodSel.value==='2weeks'?'Last 2 Weeks':periodSel.value==='month'?'This Month':periodSel.value==='quarter'?'This Quarter':'All Time'}`;
+
+  // Person totals
+  const personTotals={};
+  let grandTotal=0;
+  tasks.forEach(t=>{
+    if(!personTotals[t.person])personTotals[t.person]={hours:0,name:people[t.person]?.name||t.person,color:people[t.person]?.color||'#999'};
+    personTotals[t.person].hours+=t.hours||0;
+    grandTotal+=t.hours||0;
+  });
+  
+  const ptEl=document.getElementById('r-person-totals');
+  ptEl.innerHTML='';
+  Object.keys(personTotals).forEach(pk=>{
+    const pt=personTotals[pk];
+    const utilPct=Math.min(100,Math.round((pt.hours/100)*100));
+    ptEl.innerHTML+=`<div class="r-p-card"><div class="r-p-name">${pt.name}</div><div class="r-p-hours" style="color:${pt.color}">${fmtHrs(pt.hours)}</div><div class="r-p-util">${utilPct}% utilised</div><div class="r-p-bar"><div class="r-p-bar-fill" style="width:${utilPct}%;background:${pt.color};"></div></div></div>`;
+  });
+
+  // Chart: Hours by Person
+  const pLabels=Object.keys(personTotals).map(k=>personTotals[k].name);
+  const pHours=Object.values(personTotals).map(v=>v.hours);
+  const pColors=Object.values(personTotals).map(v=>v.color);
+  destroyChart(chartByPerson);
+  chartByPerson=new Chart(document.getElementById('chart-by-person'),{
+    type:'bar',
+    data:{labels:pLabels,data:pHours,backgroundColor:pColors,hoverBackgroundColor:pColors.map(c=>c+'cc')},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:'#f0f0f0'},ticks:{callback:v=>fmtHrs(v)}}}}
+  });
+
+  // Chart: Hours by Day
+  const dayTotals={};
+  tasks.forEach(t=>{dayTotals[t.day]=(dayTotals[t.day]||0)+(t.hours||0);});
+  const dayLabels=['Mon','Tue','Wed','Thu','Fri'];
+  const dayData=[1,2,3,4,5].map(d=>dayTotals[d]||0);
+  destroyChart(chartByDay);
+  chartByDay=new Chart(document.getElementById('chart-by-day'),{
+    type:'bar',
+    data:{labels:dayLabels,data:dayData,backgroundColor:'#ED1E24',hoverBackgroundColor:'#ED1E24cc'},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:'#f0f0f0'},ticks:{callback:v=>fmtHrs(v)}}}}
+  });
+
+  // Chart: Hours by Job
+  const jobTotals={};
+  tasks.forEach(t=>{
+    const job=t.job||'Personal';
+    jobTotals[job]=(jobTotals[job]||0)+(t.hours||0);
+  });
+  const jobLabels=Object.keys(jobTotals);
+  const jobHours=Object.values(jobTotals);
+  const jobPalette=['#ED1E24','#6B7FA3','#7B9E87','#C45D5D','#5D88C4','#C4A35D','#5DC48A','#8A5DC4'];
+  destroyChart(chartByJob);
+  chartByJob=new Chart(document.getElementById('chart-by-job'),{
+    type:'doughnut',
+    data:{labels:jobLabels,data:jobHours,backgroundColor:jobPalette.slice(0,jobLabels.length),hoverOffset:6},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},padding:10}}}}
+  });
+
+  // Chart: Budget usage by job
+  const budgetData=jobs.filter(j=>j.budgetTotal).slice(0,8).map(j=>({
+    name:j.name,usedPct:j.bPct||0,overBudget:j.bPct>100
+  }));
+  destroyChart(chartByBudget);
+  chartByBudget=new Chart(document.getElementById('chart-by-budget'),{
+    type:'bar',
+    data:{
+      labels:budgetData.map(b=>b.name.length>20?b.name.slice(0,20)+'…':b.name),
+      datasets:[{label:'Budget Used %',data:budgetData.map(b=>b.usedPct),
+        backgroundColor:budgetData.map(b=>b.overBudget?'#ED1E24':'#4CAF50'),
+        hoverBackgroundColor:budgetData.map(b=>b.overBudget?'#ED1E24cc':'#4CAF50cc')}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:120,grid:{color:'#f0f0f0'},ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}
+  });
+
+  // Data table
+  const tbody=document.getElementById('r-table-body');
+  tbody.innerHTML='';
+  tasks.forEach(t=>{
+    const tr=document.createElement('tr');
+    const doneBadge=t.done?'<span style="color:var(--done-ink);"><i class="ti ti-check"></i> Done</span>':'<span style="color:var(--muted);">Pending</span>';
+    tr.innerHTML=`<td><strong>${people[t.person]?.name||t.person}</strong></td><td>${t.title}</td><td style="font-size:12px;color:var(--muted);">${t.job||'—'}</td><td style="font-size:12px;color:var(--muted);">${t.item||'—'}</td><td style="text-align:right;font-weight:500;">${fmtHrs(t.hours)}</td><td>${doneBadge}</td><td>${t.urgent&&!t.done?'<span style="color:var(--red);"><i class="ti ti-alert-circle"></i></span>':'</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('r-task-count').textContent=`${tasks.length} task${tasks.length!==1?'s':''}`;
+  document.getElementById('r-total-hours').innerHTML=`<strong>${fmtHrs(grandTotal)}</strong>`;
+  
+  saveData();
+}
+
+function destroyChart(c){if(c){c.destroy();c=null;}}
+
+function exportReport(){
+  const tasks=getFilteredTasks();
+  if(tasks.length===0){alert('No data to export.');return;}
+  let csv='Person,Task,Job,Item,Hours,Status,Day
+';
+  tasks.forEach(t=>{
+    csv+=`${people[t.person]?.name||t.person},"${t.title}","${t.job||''}","${t.item||''}",${t.hours},${t.done?'Done':'Pending'},${t.day}
+`;
+  });
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`report_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();URL.revokeObjectURL(url);
+}
+
+// Wire up filter listeners
+function wireReportingFilters(){
+  document.getElementById('r-period').addEventListener('change',renderReporting);
+  document.getElementById('r-person').addEventListener('change',renderReporting);
+  document.getElementById('r-job').addEventListener('change',renderReporting);
+}
+
+// Override navTo to also render reporting when switching to it
+const _origNavTo=navTo;
+navTo=function(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.add('hidden'));
+  document.querySelectorAll('.s-btn[id]').forEach(el=>el.classList.remove('on'));
+  const ve=document.getElementById('view-'+v);if(ve)ve.classList.remove('hidden');
+  const ne=document.getElementById('snav-'+v);if(ne)ne.classList.add('on');
+  document.getElementById('topbar').classList.toggle('hidden',v!=='jobs'&&v!=='detail');
+  if(v==='todo')renderTodo();
+  if(v==='jobs')renderJobs();
+  if(v==='reporting'){
+    initReportingSelects();
+    wireReportingFilters();
+    setTimeout(renderReporting,50);
+  }
+  saveData();
+};</script>
 </body>
 </html>
