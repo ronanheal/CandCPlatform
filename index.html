@@ -528,9 +528,10 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .sidebar{width:56px;background:var(--black);display:flex;flex-direction:column;align-items:center;padding:18px 0 14px;flex-shrink:0;}
 .s-logo{width:32px;margin-bottom:22px;}
 .s-nav{display:flex;flex-direction:column;gap:2px;flex:1;align-items:center;width:100%;}
-.s-btn{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:4px;cursor:pointer;color:#444;font-size:18px;position:relative;transition:color .15s;}
-.s-btn:hover{color:#ccc;}
-.s-btn.on{color:var(--red);}
+.s-btn{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;color:#4a4a4a;font-size:18px;position:relative;transition:all .15s;}
+.s-btn:hover{color:#fff;background:rgba(255,255,255,.1);}
+.s-btn.on{color:var(--red);background:rgba(237,30,36,.15);}
+.s-btn.on:hover{color:var(--red);background:rgba(237,30,36,.22);}
 .s-tip{position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);background:#1a1a1a;color:#ddd;font-size:11px;padding:4px 9px;border-radius:3px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;z-index:99;border:1px solid #2a2a2a;font-family:var(--font);}
 .s-btn:hover .s-tip{opacity:1;}
 .s-avatar{width:34px;height:34px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;cursor:pointer;border:2px solid #2a2a2a;margin-top:auto;position:relative;}
@@ -961,7 +962,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:800;display:none;align-items:center;justify-content:center;}
 .modal-bg.on{display:flex;}
 /* Legacy modal (create job etc) */
-.modal{background:var(--white);border-radius:3px;width:480px;max-width:96vw;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.18);}
+.modal{background:var(--white);border-radius:3px;width:600px;max-width:96vw;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.18);}
 .modal-hd{background:var(--ink);color:var(--white);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;}
 .modal-hd-title{font-family:var(--serif);font-size:18px;font-weight:400;font-style:italic;}
 .modal-x{background:none;border:none;color:#666;font-size:18px;cursor:pointer;}
@@ -980,7 +981,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .modal-ok{background:var(--ink);border:none;border-radius:2px;padding:7px 17px;font-size:12px;font-family:var(--font);color:var(--white);cursor:pointer;}
 .modal-ok:hover{opacity:.85;}
 /* ── Streamtime-style todo modal ── */
-.tm-modal{background:#fff;border-radius:4px;width:500px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 48px rgba(0,0,0,.22);}
+.tm-modal{background:#fff;border-radius:4px;width:580px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 48px rgba(0,0,0,.22);}
 .tm-hd{display:flex;align-items:center;padding:13px 18px;border-bottom:1px solid var(--border);background:var(--off);gap:10px;}
 .tm-hd-personal{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;}
 .tm-hd-personal input{accent-color:var(--red);cursor:pointer;}
@@ -1014,8 +1015,8 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .tm-ft{padding:12px 24px 14px;border-top:1px solid var(--border);display:flex;align-items:center;}
 .tm-btn-cancel{background:transparent;border:none;padding:7px 0;font-size:13px;font-family:var(--font);cursor:pointer;color:var(--muted);}
 .tm-btn-cancel:hover{color:var(--ink);}
-.tm-btn-delete{background:transparent;border:none;padding:7px 0;font-size:13px;font-family:var(--font);cursor:pointer;color:var(--muted);margin-left:20px;display:none;}
-.tm-btn-delete:hover{color:var(--red);}
+.tm-btn-delete{background:transparent;border:1px solid var(--border);border-radius:3px;padding:7px 14px;font-size:12px;font-family:var(--font);cursor:pointer;color:var(--muted);margin-left:12px;display:none;transition:all .12s;}
+.tm-btn-delete:hover{color:var(--red);border-color:var(--red);background:#FFF5F5;}
 .tm-btn-save{margin-left:auto;background:var(--ink);color:#fff;border:none;border-radius:20px;padding:8px 18px;font-size:13px;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:400;}
 .tm-btn-save:hover{opacity:.85;}
 /* Person-viewing banner */
@@ -1389,10 +1390,10 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
 .tm-repeat-config{background:var(--off);border:1px solid var(--border);border-radius:3px;padding:12px 14px;margin-top:6px;display:none;}
 .tm-repeat-config.on{display:block;}
 /* Billable choice selector */
-.bill-choice-row{display:flex;gap:8px;margin-top:4px;}
-.bill-choice{display:flex;align-items:center;gap:8px;flex:1;border:2px solid var(--border);border-radius:4px;padding:10px 12px;cursor:pointer;transition:all .15s;background:var(--white);}
-.bill-choice:hover{border-color:#aaa;}
-.bill-choice.on{border-color:var(--ink);background:var(--off);}
+.bill-choice-row{display:flex;gap:10px;margin-top:4px;}
+.bill-choice{display:flex;align-items:center;gap:10px;flex:1;border:2px solid var(--border);border-radius:6px;padding:14px 16px;cursor:pointer;transition:all .15s;background:var(--white);}
+.bill-choice:hover{border-color:#999;}
+.bill-choice.on{border-color:var(--ink);background:var(--off);box-shadow:0 0 0 1px var(--ink);}
 .bc-choice-title{font-size:12px;font-weight:500;line-height:1.2;}
 .bc-choice-sub{font-size:10px;color:var(--muted);line-height:1.3;}
 /* Workflow stage selector */
@@ -1402,34 +1403,42 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
 .wf-stage-btn:hover{background:var(--off);color:var(--ink);}
 .wf-stage-btn.on{background:var(--ink);color:#fff;}
 /* Calendar / Drawer todo view */
-.todo-cal-wrap{display:flex;flex-direction:column;height:100%;overflow:hidden;}
-.todo-cal-body{flex:1;display:flex;overflow:hidden;}
-.cal-time-axis{width:40px;flex-shrink:0;padding-top:40px;border-right:1px solid var(--border);}
-.cal-time-slot{height:60px;display:flex;align-items:flex-start;justify-content:flex-end;padding-right:6px;font-size:9px;color:var(--muted);letter-spacing:.03em;}
+.todo-cal-wrap{display:flex;flex-direction:column;width:100%;height:100%;overflow:hidden;}
+.cal-filter-bar{display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--white);flex-shrink:0;}
+.cal-filter-label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500;}
+.cal-filter-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;cursor:pointer;color:var(--muted);background:var(--white);transition:all .12s;font-family:var(--font);}
+.cal-filter-chip:hover{border-color:#999;color:var(--ink);}
+.cal-filter-chip.on{background:var(--ink);border-color:var(--ink);color:#fff;}
+.todo-cal-body{flex:1;display:flex;overflow:hidden;min-height:0;}
+.cal-time-axis{width:48px;flex-shrink:0;padding-top:44px;border-right:1px solid var(--border);}
+.cal-time-slot{height:60px;display:flex;align-items:flex-start;justify-content:flex-end;padding-right:8px;font-size:9px;color:var(--muted);letter-spacing:.03em;}
 .cal-day-cols{flex:1;display:flex;overflow-x:auto;}
-.cal-day-col{flex:1;min-width:120px;border-right:1px solid var(--border);display:flex;flex-direction:column;position:relative;}
-.cal-day-head{height:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--white);}
+.cal-day-col{flex:1;min-width:130px;border-right:1px solid var(--border);display:flex;flex-direction:column;position:relative;}
+.cal-day-head{height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--white);}
 .cal-day-head.today{border-top:3px solid var(--red);}
-.cal-day-head-name{font-size:10px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;}
-.cal-day-head-num{font-size:16px;font-weight:400;line-height:1;}
-.cal-day-head-num.today-red{color:var(--red);font-weight:500;}
-.cal-slots{flex:1;position:relative;overflow:hidden;}
+.cal-day-head-name{font-size:9px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;}
+.cal-day-head-num{font-size:18px;font-weight:400;line-height:1.1;}
+.cal-day-head-num.today-red{color:var(--red);font-weight:600;}
+.cal-slots{flex:1;position:relative;overflow-y:auto;overflow-x:hidden;}
 .cal-slot-line{position:absolute;left:0;right:0;border-top:1px solid var(--faint,#f0eeea);pointer-events:none;}
-.cal-slot-line.half{border-top-style:dashed;opacity:.5;}
-.cal-task-block{position:absolute;left:4px;right:4px;border-radius:3px;padding:3px 6px;font-size:11px;overflow:hidden;cursor:pointer;border:1px solid rgba(0,0,0,.08);transition:box-shadow .12s;}
-.cal-task-block:hover{box-shadow:0 2px 8px rgba(0,0,0,.12);}
-.cal-task-block.done-c{opacity:.45;}
-.cal-task-block .ctb-title{font-size:11px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.cal-task-block .ctb-hrs{font-size:9px;opacity:.7;}
+.cal-slot-line.half{border-top-style:dashed;opacity:.4;}
+.cal-task-block{position:absolute;left:4px;right:4px;border-radius:4px;padding:4px 7px;font-size:11px;overflow:hidden;cursor:grab;border:1px solid rgba(0,0,0,.1);transition:box-shadow .12s,opacity .12s;}
+.cal-task-block:hover{box-shadow:0 2px 8px rgba(0,0,0,.14);}
+.cal-task-block:active{cursor:grabbing;opacity:.85;}
+.cal-task-block .ctb-title{font-size:11px;font-weight:500;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cal-task-block .ctb-hrs{font-size:9px;opacity:.7;margin-top:1px;}
+.cal-task-block .ctb-job{font-size:9px;opacity:.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 /* Completed drawer */
-.todo-drawer{flex-shrink:0;border-top:2px solid var(--border);background:var(--white);transition:height .25s ease;}
-.todo-drawer-handle{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;user-select:none;}
-.todo-drawer-label{font-size:11px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);flex:1;}
-.todo-drawer-count{font-size:10px;background:var(--border);color:var(--ink);padding:1px 7px;border-radius:10px;}
-.todo-drawer-body{overflow-y:auto;padding:8px 12px 16px;}
-.drawer-task-chip{display:inline-flex;align-items:center;gap:6px;background:var(--off);border:1px solid var(--border);border-radius:3px;padding:4px 8px;margin:2px;font-size:11px;cursor:pointer;}
-.drawer-task-chip:hover{border-color:#aaa;}
-.drawer-task-chip .dtc-done{color:#4CAF50;font-size:11px;}
+.todo-drawer{flex-shrink:0;border-top:3px solid var(--border);background:var(--white);transition:all .2s ease;}
+.todo-drawer.drag-over{border-top-color:#4CAF50;background:#f0faf0;}
+.todo-drawer-handle{display:flex;align-items:center;gap:10px;padding:12px 20px;cursor:pointer;user-select:none;}
+.todo-drawer-label{font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);flex:1;}
+.todo-drawer-count{font-size:11px;background:var(--border);color:var(--ink);padding:2px 8px;border-radius:10px;font-weight:500;}
+.todo-drawer-hint{font-size:10px;color:var(--muted);font-style:italic;}
+.todo-drawer-body{overflow-y:auto;padding:10px 16px 20px;max-height:220px;}
+.drawer-task-chip{display:inline-flex;align-items:center;gap:6px;background:var(--off);border:1px solid var(--border);border-radius:4px;padding:5px 10px;margin:3px;font-size:11px;cursor:pointer;transition:all .12s;}
+.drawer-task-chip:hover{border-color:#4CAF50;background:#f4fff4;}
+.drawer-task-chip .dtc-done{color:#4CAF50;font-size:12px;}
 /* Toggle view btn */
 .todo-view-toggle{display:flex;align-items:center;gap:2px;background:var(--off);border:1px solid var(--border);border-radius:3px;padding:2px;}
 .tvt-btn{background:none;border:none;padding:3px 8px;border-radius:2px;cursor:pointer;font-size:11px;font-family:var(--font);color:var(--muted);transition:all .12s;}
@@ -1471,7 +1480,6 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
       <div class="s-btn" id="snav-jobs" onclick="navTo('jobs')"><i class="ti ti-briefcase"></i><span class="s-tip">Jobs</span></div>
       <div class="s-btn" id="snav-reporting" onclick="navTo('reporting')"><i class="ti ti-chart-bar"></i><span class="s-tip">Reporting</span></div>
       <div class="s-btn" id="snav-boards" onclick="navTo('boards')"><i class="ti ti-layout-kanban"></i><span class="s-tip">Boards</span></div>
-      <div class="s-btn" id="snav-calendar" onclick="navTo('calendar')"><i class="ti ti-calendar"></i><span class="s-tip">Calendar</span></div>
       <div class="s-btn" id="snav-settings" style="margin-top:auto;" onclick="navTo('settings')"><i class="ti ti-settings"></i><span class="s-tip">Settings</span></div>
     </div>
     <div class="s-avatar">RO<span class="s-tip">Ronan</span></div>
@@ -2161,8 +2169,22 @@ const people={
 };
 let currentPerson='ro';
 const MY_PERSON='ro'; // the logged-in user
-const APP_VERSION='1.3.0';
+const APP_VERSION='1.7.0';
 const CHANGELOG=[
+  {version:'1.7.0',date:'9 Jun 2026',title:'Calendar view, boards, job plan hours & polish',items:[
+    'New: Calendar view for todo — filter by type, drag tasks to "done" drawer',
+    'Calendar: completed tasks drawer with drag-to-complete support',
+    'Calendar: filter chips (Personal / Job tasks / Urgent only / Time toggle)',
+    'Boards: Add column now lets you choose Generic, Client, or Person type',
+    'Boards: Client column auto-fills with all active jobs for that client',
+    'Job plan: Logged / Planned hours column — shows hours from completed todos vs. plan',
+    'Job plan: Workflow badge is now clickable to advance Quote → Live → Invoiced',
+    'Expenses: completely rebuilt form with live sell-price preview',
+    'Task cards: content responds live as you resize (title → hours → job → note)',
+    'Delete task button now has a clear visual style in the task modal',
+    'Sidebar: nicer hover states; removed duplicate Calendar nav item',
+    'Modals: wider across the board for more comfortable editing',
+  ]},
   {version:'1.3.0',date:'9 Jun 2026',title:'Job plans, reporting & repeat tasks',items:[
     'Fixed: job plans now open correctly from any job in the list',
     'Fixed: reporting charts now display data correctly (Chart.js data structure corrected)',
@@ -2412,8 +2434,24 @@ function setTodoView(mode){
 }
 // ── Calendar + Drawer view ─────────────────────────────────────────────────
 const CAL_HOURS=10; // 8am–6pm
-const CAL_PX_PER_HOUR=60;
+const CAL_PX_PER_HOUR=64;
 const CAL_START_HOUR=8;
+// Calendar filter state
+let _calFilterUrgentOnly=false;
+let _calFilterPersonal=true;
+let _calFilterJob=true;
+let _calShowHours=true;
+let _calDragTaskId=null;
+let _calDragTaskDay=null;
+
+function toggleCalFilter(key){
+  if(key==='urgent'){_calFilterUrgentOnly=!_calFilterUrgentOnly;}
+  else if(key==='personal'){_calFilterPersonal=!_calFilterPersonal;}
+  else if(key==='job'){_calFilterJob=!_calFilterJob;}
+  else if(key==='hours'){_calShowHours=!_calShowHours;}
+  renderTodoCalendar();
+}
+
 function renderTodoCalendar(){
   const p=people[currentPerson];
   document.getElementById('current-av').textContent=p.initials;
@@ -2426,18 +2464,33 @@ function renderTodoCalendar(){
     if(currentPerson!==MY_PERSON){document.getElementById('todo-banner-text').textContent=`You're viewing ${p.name}'s To Do list.`;banner.classList.remove('hidden');}
     else banner.classList.add('hidden');
   }
-
   const data=getWeekData(currentPerson);
   const _dow=new Date().getDay();const todayDayNum=_dow===0?0:_dow;
   const weekMon=new Date();const _wd=(weekMon.getDay()+6)%7;
   weekMon.setDate(weekMon.getDate()-_wd+(weekOffset*7));weekMon.setHours(0,0,0,0);
 
-  // Collect ALL tasks — active in calendar, done in drawer
-  const activeTasks=[];const doneTasks=[];
-  [1,2,3,4,5].forEach(d=>{(data[d]||[]).forEach(t=>{if(t.done)doneTasks.push({...t,day:d});else activeTasks.push({...t,day:d});});});
+  // Collect tasks
+  let allActive=[];const doneTasks=[];
+  [1,2,3,4,5].forEach(d=>{(data[d]||[]).forEach(t=>{
+    if(t.done)doneTasks.push({...t,day:d});
+    else allActive.push({...t,day:d});
+  });});
+  // Apply filters
+  if(_calFilterUrgentOnly)allActive=allActive.filter(t=>t.urgent);
+  if(!_calFilterPersonal)allActive=allActive.filter(t=>!t.personal);
+  if(!_calFilterJob)allActive=allActive.filter(t=>t.personal||!t.job);
 
-  // Build calendar HTML
+  // Build filter bar
   let calHtml=`<div class="todo-cal-wrap">
+    <div class="cal-filter-bar">
+      <span class="cal-filter-label">Show:</span>
+      <button class="cal-filter-chip${_calFilterPersonal?' on':''}" onclick="toggleCalFilter('personal')"><i class="ti ti-user" style="font-size:10px;"></i> Personal</button>
+      <button class="cal-filter-chip${_calFilterJob?' on':''}" onclick="toggleCalFilter('job')"><i class="ti ti-briefcase" style="font-size:10px;"></i> Job tasks</button>
+      <button class="cal-filter-chip${_calFilterUrgentOnly?' on':''}" onclick="toggleCalFilter('urgent')"><i class="ti ti-alert-circle" style="font-size:10px;color:var(--red);"></i> Urgent only</button>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+        <button class="cal-filter-chip${_calShowHours?' on':''}" onclick="toggleCalFilter('hours')" title="Show hours on tasks"><i class="ti ti-clock" style="font-size:10px;"></i> Time</button>
+      </div>
+    </div>
     <div class="todo-cal-body">
       <div class="cal-time-axis">`;
   for(let h=0;h<CAL_HOURS;h++){
@@ -2451,60 +2504,67 @@ function renderTodoCalendar(){
     const isToday=weekOffset===0&&d===todayDayNum;
     const colDate=new Date(weekMon);colDate.setDate(weekMon.getDate()+(d-1));
     const calDate=colDate.getDate();
-    const dayActive=activeTasks.filter(t=>t.day===d);
-    // Position tasks: stack them if no explicit time, each task gets hours*px tall
-    let slotCursor=0; // px from top
+    const dayActive=allActive.filter(t=>t.day===d);
+    let slotCursor=0;
+    const totalCalH=CAL_HOURS*CAL_PX_PER_HOUR;
     const taskBlocks=dayActive.map(t=>{
       const h=t.hours||1;
       const topPx=slotCursor;
-      const heightPx=Math.max(24,h*CAL_PX_PER_HOUR);
-      slotCursor+=heightPx+2;
-      const jobIdM=t.job?t.job.match(/^(\d+)/):null;
-      const jid=jobIdM?jobIdM[1]:null;
-      const bg=t.urgent?'#FDECEA':t.personal?'#EDE7F6':'#F0F4FF';
-      const border=t.urgent?'#FFCDD2':t.personal?'#CE93D8':'#90CAF9';
-      return`<div class="cal-task-block" style="top:${topPx}px;height:${heightPx}px;background:${bg};border-color:${border};" onclick="openEditTodoById('${t.id}',${d})">
+      const heightPx=Math.max(26,h*CAL_PX_PER_HOUR);
+      slotCursor+=heightPx+3;
+      const bg=t.urgent?'#FDECEA':t.personal?'#EDE7F6':'#EFF4FF';
+      const border=t.urgent?'var(--red)':t.personal?'#9C6FD6':'#6B9EE8';
+      const showJob=heightPx>52&&!t.personal&&t.job;
+      const jobName=showJob?t.job.replace(/^\d+\s+/,'').slice(0,22):'';
+      return`<div class="cal-task-block"
+        style="top:${topPx}px;height:${heightPx}px;background:${bg};border-color:${border};"
+        draggable="true"
+        ondragstart="calDragStart(event,'${t.id}',${d})"
+        ondragend="calDragEnd(event)"
+        onclick="openEditTodoById('${t.id}',${d})">
         <div class="ctb-title">${t.title}</div>
-        ${heightPx>36?`<div class="ctb-hrs">${t.hours?formatHrs(t.hours):''}</div>`:''}
+        ${_calShowHours&&heightPx>36?`<div class="ctb-hrs">${t.hours?formatHrs(t.hours):''}</div>`:''}
+        ${showJob?`<div class="ctb-job">${jobName}</div>`:''}
       </div>`;
     }).join('');
-    // Slot lines
     let slotLines='';
-    for(let h=0;h<CAL_HOURS;h++){slotLines+=`<div class="cal-slot-line" style="top:${h*CAL_PX_PER_HOUR}px;"></div><div class="cal-slot-line half" style="top:${h*CAL_PX_PER_HOUR+30}px;"></div>`;}
-    calHtml+=`<div class="cal-day-col" style="${!isWork?'opacity:.4;pointer-events:none;':''}">
+    for(let h=0;h<CAL_HOURS;h++){slotLines+=`<div class="cal-slot-line" style="top:${h*CAL_PX_PER_HOUR}px;"></div><div class="cal-slot-line half" style="top:${h*CAL_PX_PER_HOUR+32}px;"></div>`;}
+    calHtml+=`<div class="cal-day-col" style="${!isWork?'opacity:.35;pointer-events:none;':''}">
       <div class="cal-day-head${isToday?' today':''}">
         <div class="cal-day-head-name">${DAY_NAMES[i]}</div>
         <div class="cal-day-head-num${isToday?' today-red':''}">${calDate}</div>
       </div>
-      <div class="cal-slots" style="height:${CAL_HOURS*CAL_PX_PER_HOUR}px;overflow-y:auto;" ondragover="event.preventDefault()" ondrop="onDropToSection(event,${d},false)">
+      <div class="cal-slots" style="height:${totalCalH}px;" ondragover="event.preventDefault()" ondrop="onDropToSection(event,${d},false)">
         ${slotLines}${taskBlocks}
-        <div style="position:absolute;bottom:4px;right:4px;">
-          <button style="background:none;border:1px solid var(--border);border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;" onclick="event.stopPropagation();openTodoModal(null,${d})" title="Add task">+</button>
+        <div style="position:absolute;bottom:6px;right:6px;opacity:0;" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0">
+          <button style="background:var(--white);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.12);" onclick="event.stopPropagation();openTodoModal(null,${d})" title="Add task">+</button>
         </div>
       </div>
     </div>`;
   });
   calHtml+=`</div></div>`;
 
-  // Drawer for completed tasks
+  // Completed drawer — droppable, with prominent drop zone
   const doneCount=doneTasks.length;
-  calHtml+=`<div class="todo-drawer" id="todo-drawer">
+  calHtml+=`<div class="todo-drawer" id="todo-drawer"
+    ondragover="calDragOverDrawer(event)"
+    ondragleave="calDragLeaveDrawer(event)"
+    ondrop="calDropToDrawer(event)">
     <div class="todo-drawer-handle" onclick="toggleDrawer()">
-      <i class="ti ti-archive" style="font-size:13px;color:var(--muted);"></i>
-      <span class="todo-drawer-label">Completed</span>
+      <i class="ti ti-archive" style="font-size:14px;color:var(--muted);"></i>
+      <span class="todo-drawer-label">Completed this week</span>
       <span class="todo-drawer-count">${doneCount}</span>
-      <i class="ti ${_drawerOpen?'ti-chevron-down':'ti-chevron-up'}" style="font-size:11px;color:var(--muted);"></i>
+      <span class="todo-drawer-hint">↓ drag here to mark done</span>
+      <i class="ti ${_drawerOpen?'ti-chevron-down':'ti-chevron-up'}" id="drawer-icon" style="font-size:12px;color:var(--muted);margin-left:4px;"></i>
     </div>
     <div class="todo-drawer-body" id="drawer-body" style="display:${_drawerOpen?'block':'none'};">
-      ${doneCount===0?'<div style="font-size:12px;color:var(--muted);padding:8px 4px;">No completed tasks this week.</div>'
-        :doneTasks.map(t=>{
-          return`<div class="drawer-task-chip" onclick="openEditTodoById('${t.id}',${t.day})">
+      ${doneCount===0?'<div style="font-size:12px;color:var(--muted);padding:4px;">No completed tasks yet. Drag tasks here or tick them done.</div>'
+        :doneTasks.map(t=>`<div class="drawer-task-chip" onclick="openEditTodoById('${t.id}',${t.day})">
             <i class="ti ti-circle-check dtc-done"></i>
-            <span>${t.title}</span>
-            ${t.hours?`<span style="font-size:10px;color:var(--muted);">${formatHrs(t.hours)}</span>`:''}
-            <span style="font-size:10px;color:var(--muted);">${DAY_NAMES[t.day-1]||''}</span>
-          </div>`;
-        }).join('')}
+            <span style="font-weight:500;">${t.title}</span>
+            ${_calShowHours&&t.hours?`<span style="font-size:10px;color:var(--muted);">${formatHrs(t.hours)}</span>`:''}
+            <span style="font-size:10px;color:var(--muted);background:var(--border);padding:1px 6px;border-radius:8px;">${DAY_NAMES[t.day-1]||''}</span>
+          </div>`).join('')}
     </div>
   </div>`;
   calHtml+=`</div>`; // end todo-cal-wrap
@@ -2514,9 +2574,42 @@ function renderTodoCalendar(){
 function toggleDrawer(){
   _drawerOpen=!_drawerOpen;
   const body=document.getElementById('drawer-body');
-  const icon=document.querySelector('.todo-drawer-handle .ti');
+  const icon=document.getElementById('drawer-icon');
   if(body)body.style.display=_drawerOpen?'block':'none';
   if(icon){icon.className=_drawerOpen?'ti ti-chevron-down':'ti ti-chevron-up';}
+}
+function calDragStart(event,taskId,day){
+  _calDragTaskId=taskId;_calDragTaskDay=day;
+  event.dataTransfer.effectAllowed='move';
+  event.target.style.opacity='0.5';
+}
+function calDragEnd(event){
+  event.target.style.opacity='';
+  _calDragTaskId=null;_calDragTaskDay=null;
+  document.getElementById('todo-drawer')?.classList.remove('drag-over');
+}
+function calDragOverDrawer(event){
+  event.preventDefault();
+  event.dataTransfer.dropEffect='move';
+  document.getElementById('todo-drawer')?.classList.add('drag-over');
+}
+function calDragLeaveDrawer(event){
+  // Only remove if leaving the drawer itself
+  if(!event.currentTarget.contains(event.relatedTarget)){
+    document.getElementById('todo-drawer')?.classList.remove('drag-over');
+  }
+}
+function calDropToDrawer(event){
+  event.preventDefault();
+  document.getElementById('todo-drawer')?.classList.remove('drag-over');
+  const tid=_calDragTaskId;const tday=_calDragTaskDay;
+  if(!tid)return;
+  const wd=getWeekData(currentPerson);
+  const arr=wd[tday]||[];
+  const task=arr.find(t=>t.id===tid);
+  if(task){task.done=true;saveData();}
+  _calDragTaskId=null;_calDragTaskDay=null;
+  renderTodoCalendar();
 }
 
 function positionGlobalDivider(){
@@ -2744,14 +2837,29 @@ function createTaskCard(t,day,isDone){
     let curHours=startHours;
     const onMove=ev=>{
       if(Math.abs(ev.clientY-startY)>2)_wasResized=true;
-      // Bottom edge: drag down = bigger; top edge: drag up = bigger
       const dy=atBottom?(ev.clientY-startY):(startY-ev.clientY);
       const newH=Math.max(40,startH+dy);
       const _px=Math.max(24,(todoSplitPx||360)/8);
       curHours=Math.max(0.25,Math.min(8,Math.round((newH/_px)*4)/4));
-      card.style.height=taskCardHeight(curHours)+'px';
+      const newCardH=taskCardHeight(curHours);
+      card.style.height=newCardH+'px';
+      // Responsive content: update visibility based on new height
       const hrsEl=document.getElementById('hrs-'+t.id);
-      if(hrsEl)hrsEl.textContent=formatHrs(curHours);
+      const _tiny2=newCardH<44;const _small2=newCardH<68;const _med2=newCardH<95;
+      // Title size
+      const titleEl=card.querySelector('.tc-title');
+      if(titleEl)titleEl.style.fontSize=_tiny2?'11px':'';
+      // Icon
+      const iconEl=card.querySelector('.tc-icon');
+      if(iconEl)iconEl.style.display=_tiny2?'none':'';
+      // Hours badge
+      if(hrsEl){hrsEl.style.display=(_tiny2||!showHours)?'none':'';hrsEl.textContent=formatHrs(curHours);}
+      // Meta row
+      const metaEl=card.querySelector('.tc-meta');
+      if(metaEl)metaEl.style.display=(_tiny2||_small2)?'none':'';
+      // Note
+      const noteEl=card.querySelector('.tc-note');
+      if(noteEl)noteEl.style.display=(_tiny2||_small2||_med2)?'none':'';
     };
     const onUp=()=>{
       document.removeEventListener('mousemove',onMove);
@@ -3609,7 +3717,7 @@ function openJobDetail(id){
   const isNew=!j.budget||j.budget==='$0';
   const wfLabel=j.workflowStatus==='quote'?'Quote':j.workflowStatus==='invoiced'?'Invoiced':'Live job';
   const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
-  document.getElementById('d-meta-line').innerHTML=`${j.id} · ${j.company} · ${j.billable?'Billable':'Non-billable'} &nbsp;<span class="wf-badge ${wfCls}">${wfLabel}</span>`;
+  document.getElementById('d-meta-line').innerHTML=`${j.id} · ${j.company} · ${j.billable?'Billable':'Non-billable'} &nbsp;<span class="wf-badge ${wfCls}" style="cursor:pointer;user-select:none;" title="Click to advance workflow stage" onclick="advanceWorkflow('${id}')">${wfLabel} <i class="ti ti-arrow-right" style="font-size:9px;vertical-align:middle;"></i></span>`;
   document.getElementById('d-title-text').textContent=j.name;
   document.getElementById('d-hours-sell').textContent=isNew?'No hours logged yet':`${j.hours} used / ${j.hoursTotal} planned · ${j.budget} sell`;
   activeLabels=j.labels?[...j.labels]:[];
@@ -3784,7 +3892,7 @@ function renderPhases(){
     const el=document.createElement('div');el.className='phase';el.id='pw_'+ph.id;
     const sell=pSell(ph);const hrs=pHrs(ph);const cnt=ph.items.length;
     const statusIcon=ph.status==='complete'?'<i class="ti ti-circle-check" style="color:#4CAF50;font-size:13px;"></i>':'<i class="ti ti-circle-dot" style="color:#ED1E24;font-size:13px;"></i>';
-    el.innerHTML=`<div class="phase-head" onclick="togglePhase('${ph.id}')"><i class="ti ti-chevron-down ph-chv"></i><span class="ph-n">${ph.name}</span><span class="ph-cnt">${cnt} item${cnt!==1?'s':''}</span><div class="ph-inf"><span class="ph-meta">${hrs} · ${sell}</span>${statusIcon}<i class="ti ti-dots ph-mb" onclick="showPctx(event,'${ph.id}')"></i></div></div><table class="items-t" id="it_${ph.id}"><thead><tr><th style="width:22px;"></th><th>Item</th><th style="width:90px;text-align:right;">Hours</th><th style="width:75px;text-align:right;">Rate</th><th style="width:160px;text-align:right;">Sell</th><th style="width:90px;text-align:right;">Status</th><th style="width:26px;"></th></tr></thead><tbody id="ib_${ph.id}"></tbody></table><div class="add-i-row" onclick="showAddItemForm('${ph.id}')"><i class="ti ti-plus" style="font-size:11px"></i> Add item</div>`;
+    el.innerHTML=`<div class="phase-head" onclick="togglePhase('${ph.id}')"><i class="ti ti-chevron-down ph-chv"></i><span class="ph-n">${ph.name}</span><span class="ph-cnt">${cnt} item${cnt!==1?'s':''}</span><div class="ph-inf"><span class="ph-meta">${hrs} · ${sell}</span>${statusIcon}<i class="ti ti-dots ph-mb" onclick="showPctx(event,'${ph.id}')"></i></div></div><table class="items-t" id="it_${ph.id}"><thead><tr><th style="width:22px;"></th><th>Item</th><th style="width:90px;text-align:right;">Planned</th><th style="width:75px;text-align:right;">Rate</th><th style="width:160px;text-align:right;" title="Logged hours / Planned hours">Logged / Plan</th><th style="width:90px;text-align:right;">Status</th><th style="width:26px;"></th></tr></thead><tbody id="ib_${ph.id}"></tbody></table><div class="add-i-row" onclick="showAddItemForm('${ph.id}')"><i class="ti ti-plus" style="font-size:11px"></i> Add item</div>`;
     c.appendChild(el);renderItems(ph.id);
   });
 }
@@ -3799,7 +3907,25 @@ function renderItems(phId){
     const iCls=item.status==='complete'?'ib-c':'ib-p';
     const iLbl=item.status==='complete'?'Complete':'Open';
     const noteIcon=item.note?`<i class="ti ti-note" style="font-size:11px;color:var(--muted);margin-left:5px;" title="${item.note.replace(/"/g,'&quot;')}"></i>`:'';
-    tr.innerHTML=`<td><i class="ti ti-grip-vertical" style="color:var(--border);font-size:13px;cursor:grab;"></i></td><td class="i-name"><span class="item-editable" title="Click to rename" onclick="inlineEditItem(event,'${item.id}','${phId}','name')">${item.name}</span>${noteIcon}</td><td class="i-hrs ${item.over?'i-hrs-over':''}" style="text-align:right;"><span class="item-editable" title="Click to edit hours" onclick="inlineEditItem(event,'${item.id}','${phId}','hours')">${item.hours}</span></td><td class="i-rate" style="font-size:12px;color:var(--muted);text-align:right;"><span class="item-editable" title="Click to edit rate" onclick="inlineEditItem(event,'${item.id}','${phId}','rate')">${item.rate}</span></td><td class="i-sell"><span style="font-weight:400;">${item.used}</span> <span class="i-sof">/ ${item.total}</span></td><td style="text-align:right"><span class="i-badge ${iCls}" style="cursor:pointer;" title="Click to toggle" onclick="toggleItemStatus('${item.id}','${phId}',event)">${iLbl}</span></td><td><i class="ti ti-dots" style="font-size:14px;color:var(--muted);cursor:pointer;" onclick="showCtx(event,'${item.id}','${phId}')"></i></td>`;
+    // Compute logged hours from todos for this item
+    let _loggedH=0;
+    Object.keys(todoData).forEach(pKey=>{
+      const pd=todoData[pKey];if(!pd)return;
+      Object.keys(pd).forEach(wk=>{
+        const wd=pd[wk];if(!wd)return;
+        [1,2,3,4,5].forEach(d=>{
+          (wd[d]||[]).forEach(tt=>{
+            const jmatch=tt.jobId===activeJobId||(tt.job&&activeJobId&&tt.job.includes(activeJobId));
+            const imatch=(tt.item||'').trim().toLowerCase()===(item.name||'').trim().toLowerCase();
+            if(jmatch&&imatch&&tt.done)_loggedH+=tt.hours||0;
+          });
+        });
+      });
+    });
+    const _loggedStr=_loggedH>0?formatHrs(_loggedH):'—';
+    const _plannedH=parseHrsInput(item.hours)||0;
+    const _overLogged=_loggedH>_plannedH&&_plannedH>0;
+    tr.innerHTML=`<td><i class="ti ti-grip-vertical" style="color:var(--border);font-size:13px;cursor:grab;"></i></td><td class="i-name"><span class="item-editable" title="Click to rename" onclick="inlineEditItem(event,'${item.id}','${phId}','name')">${item.name}</span>${noteIcon}</td><td class="i-hrs ${item.over?'i-hrs-over':''}" style="text-align:right;"><span class="item-editable" title="Click to edit hours" onclick="inlineEditItem(event,'${item.id}','${phId}','hours')">${item.hours}</span></td><td class="i-rate" style="font-size:12px;color:var(--muted);text-align:right;"><span class="item-editable" title="Click to edit rate" onclick="inlineEditItem(event,'${item.id}','${phId}','rate')">${item.rate}</span></td><td class="i-sell"><span style="font-weight:500;color:${_overLogged?'var(--red)':'inherit'}" title="Hours logged from completed todos">${_loggedStr}</span><span class="i-sof" title="Planned hours"> / ${item.hours}</span></td><td style="text-align:right"><span class="i-badge ${iCls}" style="cursor:pointer;" title="Click to toggle" onclick="toggleItemStatus('${item.id}','${phId}',event)">${iLbl}</span></td><td><i class="ti ti-dots" style="font-size:14px;color:var(--muted);cursor:pointer;" onclick="showCtx(event,'${item.id}','${phId}')"></i></td>`;
     tr.addEventListener('dragstart',e=>{dragSrc=tr;tr.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
     tr.addEventListener('dragover',e=>e.preventDefault());
     tr.addEventListener('drop',e=>{e.stopPropagation();if(dragSrc===tr)return;const sp=phases.find(p=>p.id===dragSrc.dataset.phId);const tp=phases.find(p=>p.id===tr.dataset.phId);const si=sp.items.findIndex(i=>i.id===dragSrc.dataset.itemId);const ti=tp.items.findIndex(i=>i.id===tr.dataset.itemId);const[mv]=sp.items.splice(si,1);tp.items.splice(ti,0,mv);renderPhases();});
@@ -3936,45 +4062,87 @@ function showPctx(e,phId){e.stopPropagation();pctxTarget=phId;const m=document.g
 function pctxDo(a){document.getElementById('pctx').classList.remove('on');if(!pctxTarget)return;if(a==='delete'){if(confirm('Delete this phase?')){phases=phases.filter(p=>p.id!==pctxTarget);renderPhases();}}else if(a==='additem')showAddItemForm(pctxTarget);else if(a==='rename'){const ph=phases.find(p=>p.id===pctxTarget);const n=prompt('Rename phase:',ph.name);if(n?.trim()){ph.name=n.trim();renderPhases();}}else if(a==='complete'){const ph=phases.find(p=>p.id===pctxTarget);ph.status=ph.status==='complete'?'open':'complete';renderPhases();}}
 function toggleExp(){const w=document.getElementById('exp-wrap');w.classList.toggle('collapsed');const ch=w.querySelector('.exp-chv');if(ch)ch.style.transform=w.classList.contains('collapsed')?'rotate(-90deg)':'';}
 function showAddExpenseForm(){
-  // Show a simple inline expense modal
+  const _jid=activeJobId;
+  if(!_jid){alert('Please open a job first.');return;}
+  const j=jobs.find(x=>x.id===_jid);
+  if(!j){alert('Job not found.');return;}
+  // Remove any existing expense modal
+  document.getElementById('exp-modal')?.remove();
   const modal=document.createElement('div');
   modal.className='modal-bg on';
-  modal.innerHTML=`<div class="modal" style="max-width:440px;">
-    <div class="modal-hd"><span class="modal-hd-title">Add expense</span><button class="modal-x" onclick="this.closest('.modal-bg').remove()"><i class="ti ti-x"></i></button></div>
+  modal.id='exp-modal';
+  modal.innerHTML=`<div class="modal" style="max-width:520px;">
+    <div class="modal-hd">
+      <span class="modal-hd-title">Add expense — <span style="font-weight:400;color:var(--muted);">${j.name}</span></span>
+      <button class="modal-x" onclick="document.getElementById('exp-modal').remove()"><i class="ti ti-x"></i></button>
+    </div>
     <div class="modal-bd">
-      <div class="field"><label>Description</label><input id="exp-desc" class="form-inp" placeholder="e.g. Photography, Print, Software" style="width:100%;"></div>
+      <div class="field"><label>Description *</label><input id="exp-desc" class="form-inp" placeholder="e.g. Photography, Print, Software subscription" style="width:100%;" autofocus></div>
       <div class="field-row">
-        <div class="field"><label>Cost (ex. markup)</label><input id="exp-cost" class="form-inp" placeholder="$0.00" style="width:100%;"></div>
-        <div class="field"><label>Markup %</label><input id="exp-markup" class="form-inp" placeholder="20" style="width:100%;"></div>
+        <div class="field" style="flex:2;">
+          <label>Cost (ex. markup)</label>
+          <input id="exp-cost" class="form-inp" placeholder="0.00" style="width:100%;" oninput="_calcExpSell()">
+        </div>
+        <div class="field" style="flex:1;">
+          <label>Markup %</label>
+          <input id="exp-markup" class="form-inp" placeholder="20" value="20" style="width:100%;" oninput="_calcExpSell()">
+        </div>
+        <div class="field" style="flex:1;">
+          <label>Qty</label>
+          <input id="exp-qty" class="form-inp" value="1" style="width:100%;" oninput="_calcExpSell()">
+        </div>
       </div>
       <div class="field-row">
-        <div class="field"><label>Qty</label><input id="exp-qty" class="form-inp" value="1" style="width:100%;"></div>
-        <div class="field"><label>Date</label><input id="exp-date" class="form-inp" type="date" style="width:100%;"></div>
+        <div class="field" style="flex:1;"><label>Date</label><input id="exp-date" class="form-inp" type="date" value="${new Date().toISOString().split('T')[0]}" style="width:100%;"></div>
+        <div class="field" style="flex:1;"><label>Supplier (optional)</label><input id="exp-supplier" class="form-inp" placeholder="e.g. Adobe, Getty Images" style="width:100%;"></div>
+      </div>
+      <div id="exp-sell-preview" style="background:var(--off);border:1px solid var(--border);border-radius:3px;padding:10px 14px;margin-top:4px;font-size:12px;color:var(--muted);">
+        Sell price will appear here
       </div>
     </div>
     <div class="modal-ft">
-      <button class="modal-cancel" onclick="this.closest('.modal-bg').remove()">Cancel</button>
-      <button class="modal-save" onclick="saveExpense()">Add expense</button>
+      <button class="modal-cancel" onclick="document.getElementById('exp-modal').remove()">Cancel</button>
+      <button class="modal-save" onclick="saveExpense('${_jid}')">Add expense</button>
     </div>
   </div>`;
   document.body.appendChild(modal);
+  setTimeout(()=>document.getElementById('exp-desc')?.focus(),50);
 }
-function saveExpense(){
-  const desc=document.getElementById('exp-desc')?.value.trim();
-  const cost=parseFloat(document.getElementById('exp-cost')?.value.replace(/[$,]/g,''))||0;
+function _calcExpSell(){
+  const cost=parseFloat(document.getElementById('exp-cost')?.value)||0;
   const markup=parseFloat(document.getElementById('exp-markup')?.value)||0;
   const qty=parseFloat(document.getElementById('exp-qty')?.value)||1;
-  const date=document.getElementById('exp-date')?.value;
+  const sell=cost*(1+markup/100);
+  const total=sell*qty;
+  const prev=document.getElementById('exp-sell-preview');
+  if(prev){
+    if(cost>0){
+      prev.innerHTML=`<strong style="color:var(--ink);">Sell: $${sell.toFixed(2)} per unit · Total: $${total.toFixed(2)}</strong>${markup>0?` <span style="color:var(--muted);">(${markup}% markup on $${cost.toFixed(2)})</span>`:''}`;
+    } else {
+      prev.textContent='Enter a cost to see sell price';
+    }
+  }
+}
+function saveExpense(jid){
+  const _jid=jid||activeJobId;
+  if(!_jid){alert('Job not found.');return;}
+  const modal=document.getElementById('exp-modal');
+  const desc=(modal?.querySelector('#exp-desc')||document.getElementById('exp-desc'))?.value.trim();
+  const cost=parseFloat((modal?.querySelector('#exp-cost')||document.getElementById('exp-cost'))?.value.replace(/[$,]/g,''))||0;
+  const markup=parseFloat((modal?.querySelector('#exp-markup')||document.getElementById('exp-markup'))?.value)||0;
+  const qty=parseFloat((modal?.querySelector('#exp-qty')||document.getElementById('exp-qty'))?.value)||1;
+  const date=(modal?.querySelector('#exp-date')||document.getElementById('exp-date'))?.value;
+  const supplier=(modal?.querySelector('#exp-supplier')||document.getElementById('exp-supplier'))?.value.trim()||'';
   if(!desc){alert('Please add a description.');return;}
-  const sell=cost*(1+markup/100)*qty;
-  if(!activeJobId)return;
-  const j=jobs.find(x=>x.id===activeJobId);
-  if(!j)return;
+  if(cost<=0){alert('Please enter a cost.');return;}
+  const sell=cost*(1+markup/100);
+  const j=jobs.find(x=>x.id===_jid);
+  if(!j){alert('Job not found.');return;}
   if(!j.expenses)j.expenses=[];
-  j.expenses.push({id:'e'+Date.now(),desc,cost,markup,qty,date:date||new Date().toISOString().split('T')[0],sell,status:'draft'});
-  logActivity(activeJobId,MY_PERSON,'expense_add',`Added expense <strong>${desc}</strong> — $${sell.toLocaleString()} sell`);
+  j.expenses.push({id:'e'+Date.now(),desc,cost,markup,qty,date:date||new Date().toISOString().split('T')[0],sell,total:sell*qty,supplier,status:'draft'});
+  logActivity(_jid,MY_PERSON,'expense_add',`Added expense <strong>${desc}</strong> — $${(sell*qty).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} sell`);
   saveData();
-  document.querySelector('.modal-bg.on')?.remove();
+  document.getElementById('exp-modal')?.remove();
   renderExpenses();
 }
 function renderExpenses(){
@@ -5227,16 +5395,79 @@ function deleteCol(boardId,colId){
   const el=document.getElementById('col-'+colId);if(el)el.remove();
 }
 function addColumn(boardId){
+  // Show column type picker
   const b=boardsList.find(x=>x.id===boardId);if(!b)return;
-  const col={id:'c'+Date.now(),name:'New column',cards:[]};
+  document.getElementById('add-col-modal')?.remove();
+  const modal=document.createElement('div');
+  modal.className='modal-bg on';modal.id='add-col-modal';
+  const clients=[...new Set(jobs.map(j=>j.company))].filter(Boolean);
+  const clientOpts=clients.map(c=>`<option value="${c}">${c}</option>`).join('');
+  const personOpts=Object.keys(people).map(k=>`<option value="${k}">${people[k].name}</option>`).join('');
+  modal.innerHTML=`<div class="modal" style="max-width:440px;">
+    <div class="modal-hd"><span class="modal-hd-title">Add column</span><button class="modal-x" onclick="document.getElementById('add-col-modal').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd">
+      <div class="field"><label>Column name</label><input id="acol-name" class="form-inp" placeholder="e.g. In Progress" style="width:100%;"></div>
+      <div class="field"><label>Column type</label>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <div class="bill-choice on" id="acol-t-generic" onclick="selectAcolType('generic')" style="flex:1;padding:10px 12px;">
+            <i class="ti ti-layout-columns" style="font-size:15px;"></i>
+            <div><div class="bc-choice-title">Generic</div><div class="bc-choice-sub">Add any cards manually</div></div>
+          </div>
+          <div class="bill-choice" id="acol-t-client" onclick="selectAcolType('client')" style="flex:1;padding:10px 12px;">
+            <i class="ti ti-building" style="font-size:15px;"></i>
+            <div><div class="bc-choice-title">Client</div><div class="bc-choice-sub">Auto-fills with client jobs</div></div>
+          </div>
+          <div class="bill-choice" id="acol-t-person" onclick="selectAcolType('person')" style="flex:1;padding:10px 12px;">
+            <i class="ti ti-user" style="font-size:15px;"></i>
+            <div><div class="bc-choice-title">Person</div><div class="bc-choice-sub">Team member view</div></div>
+          </div>
+        </div>
+        <input type="hidden" id="acol-type" value="generic">
+      </div>
+      <div id="acol-client-row" class="field" style="display:none;"><label>Client</label><select id="acol-client" class="cc-select" style="width:100%;"><option value="">Select client…</option>${clientOpts}</select></div>
+      <div id="acol-person-row" class="field" style="display:none;"><label>Person</label><select id="acol-person" class="cc-select" style="width:100%;"><option value="">Select person…</option>${personOpts}</select></div>
+    </div>
+    <div class="modal-ft">
+      <button class="modal-cancel" onclick="document.getElementById('add-col-modal').remove()">Cancel</button>
+      <button class="modal-save" onclick="confirmAddColumn('${boardId}')">Add column</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  setTimeout(()=>document.getElementById('acol-name')?.focus(),50);
+}
+function selectAcolType(type){
+  document.getElementById('acol-type').value=type;
+  ['generic','client','person'].forEach(t=>{document.getElementById('acol-t-'+t)?.classList.toggle('on',t===type);});
+  document.getElementById('acol-client-row').style.display=type==='client'?'':'none';
+  document.getElementById('acol-person-row').style.display=type==='person'?'':'none';
+}
+function confirmAddColumn(boardId){
+  const b=boardsList.find(x=>x.id===boardId);if(!b)return;
+  const name=(document.getElementById('acol-name')?.value.trim())||'New column';
+  const type=document.getElementById('acol-type')?.value||'generic';
+  const col={id:'c'+Date.now(),name,type,cards:[]};
+  if(type==='client'){
+    const cv=document.getElementById('acol-client')?.value;
+    if(!cv){alert('Please select a client.');return;}
+    col.clientFilter=cv;
+    col.name=col.name||cv;
+    // Auto-add client card
+    col.cards.push({id:'cc'+Date.now(),type:'client',clientRef:cv});
+  }
+  if(type==='person'){
+    const pv=document.getElementById('acol-person')?.value;
+    if(!pv){alert('Please select a person.');return;}
+    col.personFilter=pv;
+    col.name=col.name||people[pv]?.name||pv;
+    col.cards.push({id:'pc'+Date.now(),type:'person',personRef:pv});
+  }
   b.columns.push(col);saveBoardsData();
+  document.getElementById('add-col-modal')?.remove();
   const wrap=document.getElementById('bdet-cols-'+boardId);
   if(wrap){
     const addBtn=wrap.querySelector('.bdet-add-col-btn');
     const tmp=document.createElement('div');tmp.innerHTML=buildCustomCol(b,col);
     wrap.insertBefore(tmp.firstElementChild,addBtn);
-    const inp=document.getElementById('col-'+col.id)?.querySelector('.bdet-col-name');
-    if(inp){inp.focus();inp.select();}
   }
 }
 function deleteCard(boardId,colId,cardId){
