@@ -1388,6 +1388,52 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
 .tm-repeat-btn.on{background:var(--off);}
 .tm-repeat-config{background:var(--off);border:1px solid var(--border);border-radius:3px;padding:12px 14px;margin-top:6px;display:none;}
 .tm-repeat-config.on{display:block;}
+/* Billable choice selector */
+.bill-choice-row{display:flex;gap:8px;margin-top:4px;}
+.bill-choice{display:flex;align-items:center;gap:8px;flex:1;border:2px solid var(--border);border-radius:4px;padding:10px 12px;cursor:pointer;transition:all .15s;background:var(--white);}
+.bill-choice:hover{border-color:#aaa;}
+.bill-choice.on{border-color:var(--ink);background:var(--off);}
+.bc-choice-title{font-size:12px;font-weight:500;line-height:1.2;}
+.bc-choice-sub{font-size:10px;color:var(--muted);line-height:1.3;}
+/* Workflow stage selector */
+.wf-choice-row{display:flex;gap:0;margin-top:4px;border:1px solid var(--border);border-radius:3px;overflow:hidden;}
+.wf-stage-btn{flex:1;background:var(--white);border:none;border-right:1px solid var(--border);padding:7px 6px;font-size:11px;font-family:var(--font);cursor:pointer;color:var(--muted);transition:all .12s;}
+.wf-stage-btn:last-child{border-right:none;}
+.wf-stage-btn:hover{background:var(--off);color:var(--ink);}
+.wf-stage-btn.on{background:var(--ink);color:#fff;}
+/* Calendar / Drawer todo view */
+.todo-cal-wrap{display:flex;flex-direction:column;height:100%;overflow:hidden;}
+.todo-cal-body{flex:1;display:flex;overflow:hidden;}
+.cal-time-axis{width:40px;flex-shrink:0;padding-top:40px;border-right:1px solid var(--border);}
+.cal-time-slot{height:60px;display:flex;align-items:flex-start;justify-content:flex-end;padding-right:6px;font-size:9px;color:var(--muted);letter-spacing:.03em;}
+.cal-day-cols{flex:1;display:flex;overflow-x:auto;}
+.cal-day-col{flex:1;min-width:120px;border-right:1px solid var(--border);display:flex;flex-direction:column;position:relative;}
+.cal-day-head{height:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--white);}
+.cal-day-head.today{border-top:3px solid var(--red);}
+.cal-day-head-name{font-size:10px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;}
+.cal-day-head-num{font-size:16px;font-weight:400;line-height:1;}
+.cal-day-head-num.today-red{color:var(--red);font-weight:500;}
+.cal-slots{flex:1;position:relative;overflow:hidden;}
+.cal-slot-line{position:absolute;left:0;right:0;border-top:1px solid var(--faint,#f0eeea);pointer-events:none;}
+.cal-slot-line.half{border-top-style:dashed;opacity:.5;}
+.cal-task-block{position:absolute;left:4px;right:4px;border-radius:3px;padding:3px 6px;font-size:11px;overflow:hidden;cursor:pointer;border:1px solid rgba(0,0,0,.08);transition:box-shadow .12s;}
+.cal-task-block:hover{box-shadow:0 2px 8px rgba(0,0,0,.12);}
+.cal-task-block.done-c{opacity:.45;}
+.cal-task-block .ctb-title{font-size:11px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cal-task-block .ctb-hrs{font-size:9px;opacity:.7;}
+/* Completed drawer */
+.todo-drawer{flex-shrink:0;border-top:2px solid var(--border);background:var(--white);transition:height .25s ease;}
+.todo-drawer-handle{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;user-select:none;}
+.todo-drawer-label{font-size:11px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);flex:1;}
+.todo-drawer-count{font-size:10px;background:var(--border);color:var(--ink);padding:1px 7px;border-radius:10px;}
+.todo-drawer-body{overflow-y:auto;padding:8px 12px 16px;}
+.drawer-task-chip{display:inline-flex;align-items:center;gap:6px;background:var(--off);border:1px solid var(--border);border-radius:3px;padding:4px 8px;margin:2px;font-size:11px;cursor:pointer;}
+.drawer-task-chip:hover{border-color:#aaa;}
+.drawer-task-chip .dtc-done{color:#4CAF50;font-size:11px;}
+/* Toggle view btn */
+.todo-view-toggle{display:flex;align-items:center;gap:2px;background:var(--off);border:1px solid var(--border);border-radius:3px;padding:2px;}
+.tvt-btn{background:none;border:none;padding:3px 8px;border-radius:2px;cursor:pointer;font-size:11px;font-family:var(--font);color:var(--muted);transition:all .12s;}
+.tvt-btn.on{background:var(--white);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08);}
 .rep-end-chip{background:var(--off);border:1px solid var(--border);border-radius:20px;padding:3px 12px;font-size:11px;font-family:var(--font);color:var(--muted);cursor:pointer;transition:all .12s;}
 .rep-end-chip:hover{border-color:var(--ink);color:var(--ink);}
 .rep-end-chip.on{background:var(--ink);border-color:var(--ink);color:#fff;}
@@ -1467,6 +1513,11 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
             </div>
             <div class="todo-summary" style="margin-left:16px;">To do: 3h30m &nbsp;·&nbsp; Done: 5h45m</div>
             <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+              <!-- View toggle: List vs Calendar+Drawer -->
+              <div class="todo-view-toggle" id="todo-view-toggle">
+                <button class="tvt-btn on" id="tvt-list" onclick="setTodoView('list')" title="List view"><i class="ti ti-layout-list" style="font-size:12px;"></i></button>
+                <button class="tvt-btn" id="tvt-cal" onclick="setTodoView('calendar')" title="Calendar view"><i class="ti ti-calendar-week" style="font-size:12px;"></i></button>
+              </div>
               <button class="wbtn" id="vsp-btn" title="View settings" onclick="toggleVSP(event)" style="padding:5px 7px;"><i class="ti ti-adjustments-horizontal" style="font-size:13px;pointer-events:none;"></i></button>
               <button class="tb-btn ghost" onclick="openTodoModal(null,5)" style="font-size:11px;padding:6px 12px;">+ Add task</button>
             </div>
@@ -1520,7 +1571,7 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
             <div class="time-head-bar">
               <div><div class="dash-greeting" style="font-size:22px;">Time</div><div class="dash-date" id="time-sub-lbl">All time · All people</div></div>
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                <button class="d-action" id="time-collapse-btn" onclick="toggleTimeCollapse()" style="margin-right:4px;"><i class="ti ti-layout-sidebar-right-collapse" id="time-collapse-icon" style="font-size:13px;"></i> <span id="time-collapse-lbl">Compact</span></button>
+
                 <select class="cc-select" id="tf-person" onchange="renderTime()"><option value="all">All people</option></select>
                 <select class="cc-select" id="tf-client" onchange="renderTime()"><option value="all">All clients</option></select>
                 <select class="cc-select" id="tf-job" onchange="renderTime()"><option value="all">All jobs</option></select>
@@ -1859,17 +1910,30 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
         <div class="field"><label>Job number</label><input type="text" id="nj-num" readonly style="color:var(--muted);"/></div>
         <div class="field"><label>PO number (optional)</label><input type="text" placeholder="Enter PO…"/></div>
       </div>
-      <div class="field-row">
-        <div class="field"><label>Billable</label><div class="tog-row"><button class="tog on" onclick="setTog(this)">Billable</button><button class="tog" onclick="setTog(this)">Non-billable</button></div></div>
-        <div class="field"><label>Rate card</label><select><option>Standard</option><option>Premium</option><option>Retainer</option></select></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>Workflow stage</label>
-          <select id="nj-workflow" class="cc-select" style="width:100%;">
-            <option value="quote">Quote</option>
-            <option value="live" selected>Live job</option>
-            <option value="invoiced">Invoiced</option>
-          </select>
+      <div class="field-row" style="gap:16px;">
+        <div class="field" style="flex:1;">
+          <label>Billing type</label>
+          <div class="bill-choice-row">
+            <div class="bill-choice on" id="bc-billable" onclick="selectBillChoice('billable')">
+              <i class="ti ti-currency-dollar" style="font-size:16px;color:var(--ink);"></i>
+              <div><div class="bc-choice-title">Billable</div><div class="bc-choice-sub">Charged to client</div></div>
+            </div>
+            <div class="bill-choice" id="bc-nonbillable" onclick="selectBillChoice('nonbillable')">
+              <i class="ti ti-heart" style="font-size:16px;color:var(--muted);"></i>
+              <div><div class="bc-choice-title">Non-billable</div><div class="bc-choice-sub">Internal / pro bono</div></div>
+            </div>
+          </div>
+          <input type="hidden" id="nj-billable" value="billable">
+        </div>
+        <div class="field" style="flex:1;">
+          <label>Workflow stage</label>
+          <div class="wf-choice-row">
+            <button type="button" class="wf-stage-btn on" data-val="quote" onclick="selectWfChoice(this)">Quote</button>
+            <button type="button" class="wf-stage-btn" data-val="live" onclick="selectWfChoice(this)">Live job</button>
+            <button type="button" class="wf-stage-btn" data-val="invoiced" onclick="selectWfChoice(this)">Invoiced</button>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;" id="wf-stage-hint">Quote → a job plan is ready and priced, waiting for client sign-off</div>
+          <input type="hidden" id="nj-workflow" value="quote">
         </div>
       </div>
     </div>
@@ -2337,6 +2401,123 @@ function initInvoicesClientFilter(){
 function viewTeamTodo(p){currentPerson=p;navTo('todo');}
 
 let todoSplitPx=Math.round((window.innerHeight-120)*.72),isDivDrag=false,divDragStartY=0,divDragStartPx=0;
+let _todoViewMode='list'; // 'list' | 'calendar'
+let _drawerOpen=false;
+function setTodoView(mode){
+  _todoViewMode=mode;
+  document.getElementById('tvt-list')?.classList.toggle('on',mode==='list');
+  document.getElementById('tvt-cal')?.classList.toggle('on',mode==='calendar');
+  if(mode==='list')renderTodo();
+  else renderTodoCalendar();
+}
+// ── Calendar + Drawer view ─────────────────────────────────────────────────
+const CAL_HOURS=10; // 8am–6pm
+const CAL_PX_PER_HOUR=60;
+const CAL_START_HOUR=8;
+function renderTodoCalendar(){
+  const p=people[currentPerson];
+  document.getElementById('current-av').textContent=p.initials;
+  document.getElementById('current-av').style.background=p.color;
+  document.getElementById('current-name').textContent=p.name;
+  const wrap=document.getElementById('day-cols');
+  // Update banner
+  const banner=document.getElementById('todo-banner');
+  if(banner){
+    if(currentPerson!==MY_PERSON){document.getElementById('todo-banner-text').textContent=`You're viewing ${p.name}'s To Do list.`;banner.classList.remove('hidden');}
+    else banner.classList.add('hidden');
+  }
+
+  const data=getWeekData(currentPerson);
+  const _dow=new Date().getDay();const todayDayNum=_dow===0?0:_dow;
+  const weekMon=new Date();const _wd=(weekMon.getDay()+6)%7;
+  weekMon.setDate(weekMon.getDate()-_wd+(weekOffset*7));weekMon.setHours(0,0,0,0);
+
+  // Collect ALL tasks — active in calendar, done in drawer
+  const activeTasks=[];const doneTasks=[];
+  [1,2,3,4,5].forEach(d=>{(data[d]||[]).forEach(t=>{if(t.done)doneTasks.push({...t,day:d});else activeTasks.push({...t,day:d});});});
+
+  // Build calendar HTML
+  let calHtml=`<div class="todo-cal-wrap">
+    <div class="todo-cal-body">
+      <div class="cal-time-axis">`;
+  for(let h=0;h<CAL_HOURS;h++){
+    const hr=CAL_START_HOUR+h;
+    calHtml+=`<div class="cal-time-slot">${hr}:00</div>`;
+  }
+  calHtml+=`</div><div class="cal-day-cols" id="cal-day-cols">`;
+
+  [1,2,3,4,5].forEach((d,i)=>{
+    const isWork=people[currentPerson].days.includes(d);
+    const isToday=weekOffset===0&&d===todayDayNum;
+    const colDate=new Date(weekMon);colDate.setDate(weekMon.getDate()+(d-1));
+    const calDate=colDate.getDate();
+    const dayActive=activeTasks.filter(t=>t.day===d);
+    // Position tasks: stack them if no explicit time, each task gets hours*px tall
+    let slotCursor=0; // px from top
+    const taskBlocks=dayActive.map(t=>{
+      const h=t.hours||1;
+      const topPx=slotCursor;
+      const heightPx=Math.max(24,h*CAL_PX_PER_HOUR);
+      slotCursor+=heightPx+2;
+      const jobIdM=t.job?t.job.match(/^(\d+)/):null;
+      const jid=jobIdM?jobIdM[1]:null;
+      const bg=t.urgent?'#FDECEA':t.personal?'#EDE7F6':'#F0F4FF';
+      const border=t.urgent?'#FFCDD2':t.personal?'#CE93D8':'#90CAF9';
+      return`<div class="cal-task-block" style="top:${topPx}px;height:${heightPx}px;background:${bg};border-color:${border};" onclick="openEditTodoById('${t.id}',${d})">
+        <div class="ctb-title">${t.title}</div>
+        ${heightPx>36?`<div class="ctb-hrs">${t.hours?formatHrs(t.hours):''}</div>`:''}
+      </div>`;
+    }).join('');
+    // Slot lines
+    let slotLines='';
+    for(let h=0;h<CAL_HOURS;h++){slotLines+=`<div class="cal-slot-line" style="top:${h*CAL_PX_PER_HOUR}px;"></div><div class="cal-slot-line half" style="top:${h*CAL_PX_PER_HOUR+30}px;"></div>`;}
+    calHtml+=`<div class="cal-day-col" style="${!isWork?'opacity:.4;pointer-events:none;':''}">
+      <div class="cal-day-head${isToday?' today':''}">
+        <div class="cal-day-head-name">${DAY_NAMES[i]}</div>
+        <div class="cal-day-head-num${isToday?' today-red':''}">${calDate}</div>
+      </div>
+      <div class="cal-slots" style="height:${CAL_HOURS*CAL_PX_PER_HOUR}px;overflow-y:auto;" ondragover="event.preventDefault()" ondrop="onDropToSection(event,${d},false)">
+        ${slotLines}${taskBlocks}
+        <div style="position:absolute;bottom:4px;right:4px;">
+          <button style="background:none;border:1px solid var(--border);border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;" onclick="event.stopPropagation();openTodoModal(null,${d})" title="Add task">+</button>
+        </div>
+      </div>
+    </div>`;
+  });
+  calHtml+=`</div></div>`;
+
+  // Drawer for completed tasks
+  const doneCount=doneTasks.length;
+  calHtml+=`<div class="todo-drawer" id="todo-drawer">
+    <div class="todo-drawer-handle" onclick="toggleDrawer()">
+      <i class="ti ti-archive" style="font-size:13px;color:var(--muted);"></i>
+      <span class="todo-drawer-label">Completed</span>
+      <span class="todo-drawer-count">${doneCount}</span>
+      <i class="ti ${_drawerOpen?'ti-chevron-down':'ti-chevron-up'}" style="font-size:11px;color:var(--muted);"></i>
+    </div>
+    <div class="todo-drawer-body" id="drawer-body" style="display:${_drawerOpen?'block':'none'};">
+      ${doneCount===0?'<div style="font-size:12px;color:var(--muted);padding:8px 4px;">No completed tasks this week.</div>'
+        :doneTasks.map(t=>{
+          return`<div class="drawer-task-chip" onclick="openEditTodoById('${t.id}',${t.day})">
+            <i class="ti ti-circle-check dtc-done"></i>
+            <span>${t.title}</span>
+            ${t.hours?`<span style="font-size:10px;color:var(--muted);">${formatHrs(t.hours)}</span>`:''}
+            <span style="font-size:10px;color:var(--muted);">${DAY_NAMES[t.day-1]||''}</span>
+          </div>`;
+        }).join('')}
+    </div>
+  </div>`;
+  calHtml+=`</div>`; // end todo-cal-wrap
+
+  wrap.innerHTML=calHtml;
+}
+function toggleDrawer(){
+  _drawerOpen=!_drawerOpen;
+  const body=document.getElementById('drawer-body');
+  const icon=document.querySelector('.todo-drawer-handle .ti');
+  if(body)body.style.display=_drawerOpen?'block':'none';
+  if(icon){icon.className=_drawerOpen?'ti ti-chevron-down':'ti ti-chevron-up';}
+}
 
 function positionGlobalDivider(){
   const gd=document.getElementById('global-divider');
@@ -2349,6 +2530,7 @@ function positionGlobalDivider(){
 function switchBackToMe(){currentPerson=MY_PERSON;renderTodo();}
 
 function renderTodo(){
+  if(_todoViewMode==='calendar'){renderTodoCalendar();return;}
   const p=people[currentPerson];
   document.getElementById('current-av').textContent=p.initials;
   document.getElementById('current-av').style.background=p.color;
@@ -2474,7 +2656,12 @@ function formatHrs(h){if(!h||h===0)return'';const m=Math.round(h*60);const hh=Ma
 
 const ITEM_ICONS={'Creative Direction':'ti-palette','Design & Artwork':'ti-pencil','Briefing & coordination':'ti-clipboard-list','Copywriting':'ti-writing','Video Editing':'ti-video','Proofing & spell check':'ti-eye','Artwork & file despatch':'ti-send','Contingency':'ti-alert-circle','Shot listing':'ti-camera','Website build':'ti-code','Leave':'ti-sun','Briefing':'ti-clipboard-list'};
 
-function taskCardHeight(hours){return hours?Math.max(56,Math.round(52+(hours*20))):56;}
+function taskCardHeight(hours){
+  if(!hours)return 56;
+  // Scale proportionally: 8h fills the todo column height
+  const pxPerHr=Math.max(24,(todoSplitPx||360)/8);
+  return Math.max(40,Math.round(hours*pxPerHr));
+}
 
 function createTaskCard(t,day,isDone){
   const card=document.createElement('div');
@@ -2497,18 +2684,24 @@ function createTaskCard(t,day,isDone){
   const metaJob=showJob&&t.job;
   const metaItem=showItem&&t.item;
 
+  // Show/hide content based on card height
+  const _ch=t.hours?taskCardHeight(t.hours):56;
+  const _tiny=_ch<44;   // title only, tiny text
+  const _small=_ch<68;  // title + hours
+  const _med=_ch<95;    // + job/item
+
   card.innerHTML=`
     <div class="tc-top">
-      <span class="tc-icon">${icon}</span>
-      <span class="tc-title">${t.title}</span>
-      ${showHours&&hrsLabel?`<span class="tc-hrs" id="hrs-${t.id}">${hrsLabel}</span>`:`<span class="tc-hrs" id="hrs-${t.id}" style="display:none;"></span>`}
+      ${_tiny?'':`<span class="tc-icon">${icon}</span>`}
+      <span class="tc-title" style="${_tiny?'font-size:11px;line-height:1.2;':''}">${t.title}</span>
+      ${!_tiny&&showHours&&hrsLabel?`<span class="tc-hrs" id="hrs-${t.id}">${hrsLabel}</span>`:`<span class="tc-hrs" id="hrs-${t.id}" style="display:none;"></span>`}
     </div>
-    ${(metaJob||metaItem)?`<div class="tc-meta">
+    ${(!_tiny&&!_small&&(metaJob||metaItem))?`<div class="tc-meta">
       ${metaJob?`<span class="tc-job${jobIdNum?' clickable':''}" data-jid="${jobIdNum||''}">${t.job}</span>`:''}
       ${metaJob&&metaItem?'<span class="tc-sep"></span>':''}
       ${metaItem?`<span class="tc-item-tag">${t.item}</span>`:''}
     </div>`:''}
-    ${showNote&&t.note?`<div class="tc-note">${t.note}</div>`:''}`;
+    ${(!_tiny&&!_small&&!_med&&showNote&&t.note)?`<div class="tc-note">${t.note}</div>`:''}`;
 
   const jEl=card.querySelector('.tc-job.clickable');
   if(jEl)jEl.addEventListener('click',e=>{e.stopPropagation();openJobDetail(jEl.dataset.jid);});
@@ -2554,7 +2747,8 @@ function createTaskCard(t,day,isDone){
       // Bottom edge: drag down = bigger; top edge: drag up = bigger
       const dy=atBottom?(ev.clientY-startY):(startY-ev.clientY);
       const newH=Math.max(40,startH+dy);
-      curHours=Math.max(0.25,Math.round(((newH-52)/20)*4)/4);
+      const _px=Math.max(24,(todoSplitPx||360)/8);
+      curHours=Math.max(0.25,Math.min(8,Math.round((newH/_px)*4)/4));
       card.style.height=taskCardHeight(curHours)+'px';
       const hrsEl=document.getElementById('hrs-'+t.id);
       if(hrsEl)hrsEl.textContent=formatHrs(curHours);
@@ -2644,8 +2838,11 @@ function onDropToSection(e,toDay,markDone){
   }catch(err){}
 }
 
-function openEditTodo(t,day){
-  editTask(t,day);
+function openEditTodo(t,day){editTask(t,day);}
+function openEditTodoById(id,day){
+  const wd=getWeekData(currentPerson);
+  const t=(wd[day]||[]).find(x=>x.id===id);
+  if(t)editTask(t,day);
 }
 
 function populateTodoJobSelect(pre){
@@ -3618,7 +3815,9 @@ function renderItems(phId){
         const wd=pd[wk];
         [1,2,3,4,5].forEach(d=>{
           (wd[d]||[]).forEach(t=>{
-            if(t.note&&t.note.trim()&&t.jobId===activeJobId&&(t.item||'').trim().toLowerCase()===(item.name||'').trim().toLowerCase()){
+            const jobMatch=t.jobId===activeJobId||(t.job&&activeJobId&&t.job.includes(activeJobId));
+            const itemMatch=(t.item||'').trim().toLowerCase()===(item.name||'').trim().toLowerCase();
+            if(t.note&&t.note.trim()&&jobMatch&&itemMatch){
               linkedTaskNotes.push({note:t.note.trim(),person:pKey,title:t.title||'Task'});
             }
           });
@@ -3801,12 +4000,40 @@ function cycleExpenseStatus(id){
 }
 function openCreateJob(){jobCounter++;document.getElementById('nj-num').value=jobCounter;document.getElementById('nj-name').value='';document.getElementById('create-modal').classList.add('on');setTimeout(()=>document.getElementById('nj-name').focus(),50);}
 function closeCreateJob(){document.getElementById('create-modal').classList.remove('on');}
+// ── Job creation helpers ──────────────────────────────────────────────────────
+function selectBillChoice(val){
+  document.getElementById('nj-billable').value=val;
+  document.getElementById('bc-billable').classList.toggle('on',val==='billable');
+  document.getElementById('bc-nonbillable').classList.toggle('on',val==='nonbillable');
+}
+function selectWfChoice(btn){
+  document.querySelectorAll('.wf-stage-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('nj-workflow').value=btn.dataset.val;
+  const hints={quote:'Quote — job plan ready, waiting for client sign-off',live:'Live job — client approved, work in progress',invoiced:'Invoiced — work complete, invoice sent'};
+  const h=document.getElementById('wf-stage-hint');
+  if(h)h.textContent=hints[btn.dataset.val]||'';
+}
+// ── Workflow advance in job detail ────────────────────────────────────────────
+function advanceWorkflow(jobId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  const seq=['quote','live','invoiced'];
+  const cur=j.workflowStatus||'quote';
+  const next=seq[(seq.indexOf(cur)+1)%seq.length];
+  const labels={quote:'Quote',live:'Live job',invoiced:'Invoiced'};
+  if(confirm(`Move "${j.name}" from ${labels[cur]} → ${labels[next]}?`)){
+    j.workflowStatus=next;
+    logActivity(jobId,MY_PERSON,'workflow_change',`Moved to <strong>${labels[next]}</strong>`);
+    saveData();
+    openJobDetail(jobId); // re-render header
+  }
+}
 function setTog(el){el.closest('.tog-row').querySelectorAll('.tog').forEach(t=>t.classList.remove('on'));el.classList.add('on');}
 function createJob(){
   const name=document.getElementById('nj-name').value.trim();if(!name){document.getElementById('nj-name').focus();return;}
   const company=document.getElementById('nj-co').value||'Unassigned';
-  const billable=document.querySelector('.tog.on')?.textContent==='Billable';
-  const wf=document.getElementById('nj-workflow')?.value||'live';
+  const billable=document.getElementById('nj-billable')?.value!=='nonbillable';
+  const wf=document.getElementById('nj-workflow')?.value||'quote';
   jobs.unshift({id:String(jobCounter),name,company,budget:'$0',budgetTotal:'—',bPct:0,hours:'0h',hoursTotal:'—',hPct:0,status:'new',billable,labels:[],workflowStatus:wf});
   closeCreateJob();renderJobs();openJobDetail(String(jobCounter));
 }
@@ -4908,13 +5135,7 @@ function buildCustomCard(b,col,card){
   }
   if(card.type==='client'){
     const clientJobs=jobs.filter(j=>j.company===card.clientRef&&j.status!=='complete');
-    const jobRows=clientJobs.map(j=>{
-      const pct=j.bPct||0;const over=pct>100;
-      return`<div class="client-job-row" onclick="openJobDetail('${j.id}')">
-        <div class="client-job-name">${j.name}<span style="color:var(--muted);margin-left:5px;font-size:10px;">${j.id}</span></div>
-        <div class="client-job-bar"><div class="client-job-bar-fill" style="width:${Math.min(pct,100)}%;background:${over?'var(--red)':'var(--ink)'};" title="${pct}%"></div></div>
-      </div>`;
-    }).join('')||`<div style="padding:8px 12px;font-size:11px;color:var(--muted);">No active jobs</div>`;
+    const jobRows=clientJobs.map(j=>_richJobCard(j,window._expandedBoardCards?.[j.id])).join('')||`<div style="padding:12px;font-size:11px;color:var(--muted);">No active jobs</div>`;
     return`<div class="client-card" id="ccard-${card.id}">
       <button class="client-card-del bdet-card-del" style="opacity:0;" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0" title="Remove" onclick="deleteCard('${b.id}','${col.id}','${card.id}')"><i class="ti ti-x"></i></button>
       <div class="client-card-head"><i class="ti ti-building" style="font-size:13px;color:var(--muted);"></i><span class="client-card-name">${card.clientRef}</span><span class="client-card-count">${clientJobs.length} active</span></div>
