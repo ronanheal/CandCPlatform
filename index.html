@@ -40,18 +40,22 @@ function getFilteredTasks(){
   
   Object.keys(todoData).forEach(pKey=>{
     if(person!=='all'&&pKey!==person)return;
-    const days=todoData[pKey];
-    for(let d=1;d<=5;d++){
-      const dayTasks=days[d]||[];
-      dayTasks.forEach(t=>{
-        // filter by job
-        if(jobFilter!=='all'){
-          const jobMatch=t.job?t.job.includes(jobFilter):false;
-          if(!jobMatch)return;
-        }
-        tasks.push({...t, person:pKey, personName:people[pKey]?.name||pKey, day:d, date:d});
-      });
-    }
+    const personData=todoData[pKey];
+    if(!personData)return;
+    Object.keys(personData).forEach(weekKey=>{
+      const weekDays=personData[weekKey];
+      if(!weekDays||typeof weekDays!=='object')return;
+      for(let d=1;d<=5;d++){
+        const dayTasks=weekDays[d]||[];
+        dayTasks.forEach(t=>{
+          if(jobFilter!=='all'){
+            const jobMatch=t.job?t.job.includes(jobFilter):false;
+            if(!jobMatch)return;
+          }
+          tasks.push({...t,person:pKey,personName:people[pKey]?.name||pKey,day:d,weekKey});
+        });
+      }
+    });
   });
   return tasks;
 }
@@ -755,7 +759,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 /* Split layout */
 .todo-body{position:relative;}
 .day-todo-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-.day-todo{overflow-y:auto;padding:6px 7px;display:flex;flex-direction:column;gap:4px;min-height:32px;flex:none;}
+.day-todo{overflow-y:auto;padding:6px 7px;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;min-height:32px;flex:none;}
 .day-todo.drop-hi{background:#fffdf5;}
 .day-done{overflow-y:auto;padding:6px 7px;display:flex;flex-direction:column;gap:4px;background:var(--off);flex:1;}
 .day-done.drop-hi{background:#f0fef4;}
@@ -769,14 +773,13 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .day-cap{display:flex;align-items:center;gap:7px;margin-top:4px;}
 .day-cap-bar{flex:1;height:3px;background:var(--faint);border-radius:1px;display:flex;overflow:hidden;}
 .dcb-todo{height:100%;background:var(--ink);transition:width .2s;}
-.dcb-done{height:100%;background:#A5D6A7;transition:width .2s;}
+.dcb-nbill-todo{height:100%;background:#CBD5E1;transition:width .2s;}
+.dcb-done{height:100%;background:#4CAF50;transition:width .2s;}
+.dcb-nbill-done{height:100%;background:#A5D6A7;transition:width .2s;}
 .day-cap-info{font-size:10px;color:var(--muted);white-space:nowrap;}
 .day-cap-info.over{color:var(--red);font-weight:500;}
 /* Resize handle */
-.tc-resize{height:8px;margin:3px -10px -8px;cursor:ns-resize;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.tc-resize::after{content:'';width:20px;height:2px;background:var(--faint);border-radius:1px;transition:background .15s;}
-.task-card:hover .tc-resize::after{background:var(--border);}
-.task-card.resizing{cursor:ns-resize;user-select:none;}
+.task-card.resizing{cursor:ns-resize !important;user-select:none;}
 /* Task cards */
 .task-card{background:var(--white);border:1px solid var(--border);padding:8px 10px;cursor:pointer;transition:border-color .15s;user-select:none;}
 .task-card:hover{border-color:#aaa;}
@@ -1163,10 +1166,13 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 /* Day drop zone highlight */
 .day-col.drop-highlight{background:#FFF8E1;}
 
-/* Person status indicator in todo bar */
-.person-status-ind{margin-left:12px;display:flex;align-items:center;gap:6px;}
-.psi-select{background:transparent;border:1px solid var(--border);padding:4px 8px;font-size:11px;font-family:var(--font);border-radius:2px;cursor:pointer;color:var(--muted);}
-.psi-select:focus{border-color:var(--ink);color:var(--ink);}
+/* Task tooltip */
+.task-tooltip{position:fixed;background:var(--ink);color:#ccc;padding:10px 14px;font-size:12px;border-radius:3px;z-index:2000;pointer-events:none;display:none;max-width:260px;box-shadow:0 4px 24px rgba(0,0,0,.22);line-height:1.5;}
+.task-tooltip.on{display:block;}
+.tt-title{color:#fff;font-weight:500;margin-bottom:6px;font-size:13px;line-height:1.3;}
+.tt-row{display:flex;gap:8px;margin-top:2px;font-size:11px;}
+.tt-label{color:#666;min-width:44px;flex-shrink:0;}
+.tt-urgent{color:var(--red);font-size:10px;margin-left:4px;letter-spacing:.04em;text-transform:uppercase;}
 
 </style>
 </head>
@@ -1189,7 +1195,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 
   <div class="main">
     <div class="changelog">
-      <strong>v7</strong> &nbsp;·&nbsp; Streamtime-style todo view — todo/done split with draggable divider &nbsp;·&nbsp; Drag tasks to mark done, drag between days &nbsp;·&nbsp; Task cards with job links &nbsp;·&nbsp; localStorage persistence
+      <strong>v8</strong> &nbsp;·&nbsp; Per-week task storage — weeks are independent &nbsp;·&nbsp; Tasks anchored to divider line &nbsp;·&nbsp; Edge resize on task cards &nbsp;·&nbsp; Hover tooltip showing job/item/billable status &nbsp;·&nbsp; Billable vs non-billable capacity bar &nbsp;·&nbsp; Calendar week picker &nbsp;·&nbsp; Follow-up reminder when marking done
     </div>
     <div class="topbar hidden" id="topbar">
       <div class="tb-section on">Jobs</div>
@@ -1263,16 +1269,12 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
               <i class="ti ti-chevron-down" style="font-size:13px;color:var(--muted);margin-left:2px;"></i>
             </div>
             <div class="ps-menu" id="ps-menu"></div>
-            <div class="person-status-ind">
-              <select id="person-status" onchange="changePersonStatus(this.value)" style="font-size:11px;font-family:var(--font);border:1px solid var(--border);padding:3px 6px;border-radius:2px;background:var(--white);color:var(--ink);cursor:pointer;">
-                <option value="available">Available</option>
-                <option value="allocated">Allocated</option>
-                <option value="leave">On Leave</option>
-              </select>
-            </div>
             <div class="week-nav">
               <button class="wbtn" id="wbtn-prev"><i class="ti ti-chevron-left" style="font-size:13px;"></i></button>
-              <span class="wlabel" id="week-label">Mon – Sun</span><button class="wbtn" id="wbtn-today" style="margin-left:4px;font-size:11px;padding:4px 8px;">Today</button>
+              <span class="wlabel" id="week-label">Mon – Sun</span>
+              <button class="wbtn" id="wbtn-today" style="margin-left:4px;font-size:11px;padding:4px 8px;">Today</button>
+              <button class="wbtn" id="wbtn-cal" title="Pick a week" style="padding:5px 7px;"><i class="ti ti-calendar" style="font-size:13px;"></i></button>
+              <input type="week" id="week-picker" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;" onchange="goToWeek(this.value)">
               <button class="wbtn" id="wbtn-next"><i class="ti ti-chevron-right" style="font-size:13px;"></i></button>
             </div>
             <div class="todo-summary" style="margin-left:16px;">To do: 3h30m &nbsp;·&nbsp; Done: 5h45m</div>
@@ -1542,6 +1544,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 </div>
 
 <!-- FOLLOW-UP -->
+<div id="task-tooltip" class="task-tooltip"></div>
 <div class="fup" id="fup">
   <div class="fup-card">
     <div class="fup-hd"><i class="ti ti-bell" style="color:var(--red);font-size:15px;"></i> Follow-up?</div>
@@ -1609,6 +1612,46 @@ let editingTaskId=null,editingDay=null;
 function saveData(){try{localStorage.setItem('cc_todo',JSON.stringify(todoData));localStorage.setItem('cc_jobs',JSON.stringify(jobs));}catch(e){}}
 function loadData(){try{const t=localStorage.getItem('cc_todo');if(t)todoData=JSON.parse(t);const j=localStorage.getItem('cc_jobs');if(j)jobs=JSON.parse(j);}catch(e){}}
 loadData();
+
+// Week-keyed data helpers
+function getWeekKey(offset){
+  if(offset===undefined)offset=weekOffset;
+  const d=new Date();
+  const dow=(d.getDay()+6)%7; // 0=Mon
+  d.setDate(d.getDate()-dow+(offset*7));
+  d.setHours(0,0,0,0);
+  return d.toISOString().split('T')[0];
+}
+function getWeekData(person,offset){
+  if(offset===undefined)offset=weekOffset;
+  const k=getWeekKey(offset);
+  if(!todoData[person])todoData[person]={};
+  if(!todoData[person][k])todoData[person][k]={1:[],2:[],3:[],4:[],5:[]};
+  return todoData[person][k];
+}
+function migrateTodoData(){
+  // Old format: todoData[person][1..5] = tasks[]
+  // New format: todoData[person]['YYYY-MM-DD'][1..5] = tasks[]
+  const k0=getWeekKey(0);
+  Object.keys(todoData).forEach(pk=>{
+    const d=todoData[pk];
+    if(!d)return;
+    if(Array.isArray(d[1])){
+      const m={};m[k0]={};
+      for(let i=1;i<=5;i++)m[k0][i]=d[i]||[];
+      todoData[pk]=m;
+    }
+  });
+  saveData();
+}
+migrateTodoData();
+function taskIsBillable(task){
+  if(!task.job)return false;
+  const m=task.job.match(/^(\d+)/);
+  if(!m)return false;
+  const j=jobs.find(x=>x.id===m[1]);
+  return j?j.billable!==false:false;
+}
 const DAY_NAMES=['Monday','Tuesday','Wednesday','Thursday','Friday'];
 
 function navTo(v){
@@ -1642,7 +1685,7 @@ function renderTodo(){
   document.getElementById('current-av').style.background=p.color;
   document.getElementById('current-name').textContent=p.name;
   const wrap=document.getElementById('day-cols');wrap.innerHTML='';
-  const data=todoData[currentPerson]||{};
+  const data=getWeekData(currentPerson);
 
   // Week totals for summary bar
   let totalTodoH=0,totalDoneH=0;
@@ -1654,9 +1697,15 @@ function renderTodo(){
   const todayDayNum=_dow===0?0:_dow;
   const DAY_CAP=8;
 
+  // Build week date numbers for header display
+  const weekMon=new Date();const _wd=(weekMon.getDay()+6)%7;
+  weekMon.setDate(weekMon.getDate()-_wd+(weekOffset*7));weekMon.setHours(0,0,0,0);
+
   [1,2,3,4,5].forEach((d,i)=>{
     const isWork=people[currentPerson].days.includes(d);
-    const isToday=d===todayDayNum;
+    const colDate=new Date(weekMon);colDate.setDate(weekMon.getDate()+(d-1));
+    const isToday=weekOffset===0&&d===todayDayNum;
+    const calDate=colDate.getDate();
     const tasks=data[d]||[];
     const todoTasks=tasks.filter(t=>!t.done);
     const doneTasks=tasks.filter(t=>t.done);
@@ -1664,8 +1713,16 @@ function renderTodo(){
     const dayDoneH=doneTasks.reduce((s,t)=>s+(t.hours||0),0);
     const dayTotalH=dayTodoH+dayDoneH;
     const isOver=dayTotalH>DAY_CAP;
-    const todoW=Math.min(100,Math.round((dayTodoH/DAY_CAP)*100));
-    const doneW=Math.min(100-todoW,Math.round((dayDoneH/DAY_CAP)*100));
+
+    // Billable split for capacity bar
+    const billTodo=todoTasks.filter(taskIsBillable).reduce((s,t)=>s+(t.hours||0),0);
+    const nbillTodo=Math.max(0,dayTodoH-billTodo);
+    const billDone=doneTasks.filter(taskIsBillable).reduce((s,t)=>s+(t.hours||0),0);
+    const nbillDone=Math.max(0,dayDoneH-billDone);
+    const bTodoW=Math.min(100,Math.round((billTodo/DAY_CAP)*100));
+    const nTodoW=Math.min(100-bTodoW,Math.round((nbillTodo/DAY_CAP)*100));
+    const bDoneW=Math.min(100,Math.round((billDone/DAY_CAP)*100));
+    const nDoneW=Math.min(100-bDoneW,Math.round((nbillDone/DAY_CAP)*100));
 
     const col=document.createElement('div');
     col.className='day-col'+(isWork?' workday':'')+(isToday?' today':'');
@@ -1674,13 +1731,13 @@ function renderTodo(){
     let capHTML='';
     if(isWork){
       const label=dayTotalH>0?(isOver?`<span class="day-cap-info over">${formatHrs(dayTotalH)} / 8h · OVER</span>`:`<span class="day-cap-info">${formatHrs(dayTodoH)||'0h'} to do · ${formatHrs(dayDoneH)||'0h'} done</span>`):'<span class="day-cap-info">No tasks</span>';
-      capHTML=`<div class="day-cap">${label}<div class="day-cap-bar"><div class="dcb-done" style="width:${doneW}%;"></div><div class="dcb-todo" style="width:${todoW}%;${isOver?'background:var(--red);':''}"></div></div></div>`;
+      capHTML=`<div class="day-cap">${label}<div class="day-cap-bar"><div class="dcb-done" style="width:${bDoneW}%;"></div><div class="dcb-nbill-done" style="width:${nDoneW}%;"></div><div class="dcb-todo" style="width:${bTodoW}%;${isOver?'background:var(--red);':''}"></div><div class="dcb-nbill-todo" style="width:${nTodoW}%;${isOver?'background:var(--red);opacity:.6':''}"></div></div></div>`;
     }
 
     col.innerHTML=`
       <div class="day-head">
         <div class="day-head-row">
-          <div><div class="day-name">${DAY_NAMES[i]}</div><div class="day-num ${isToday?'today-red':''}">${d}</div></div>
+          <div><div class="day-name">${DAY_NAMES[i]}</div><div class="day-num ${isToday?'today-red':''}">${calDate}</div></div>
           ${isWork?`<button class="day-add-btn" onclick="openTodoModal(null,${d})"><i class="ti ti-plus" style="font-size:9px"></i> Add New</button>`:''}
         </div>
         ${capHTML}
@@ -1696,6 +1753,8 @@ function renderTodo(){
     const doneEl=document.getElementById('ddone-'+d);
 
     todoTasks.forEach(t=>todoEl.appendChild(createTaskCard(t,d,false)));
+    // Anchor todo tasks to the divider line: scroll to bottom so newest task is nearest the line
+    todoEl.scrollTop=todoEl.scrollHeight;
     if(doneTasks.length===0)doneEl.innerHTML='<div class="day-done-empty">—</div>';
     else doneTasks.forEach(t=>doneEl.appendChild(createTaskCard(t,d,true)));
 
@@ -1763,33 +1822,47 @@ function createTaskCard(t,day,isDone){
       ${t.job&&t.item?'<span class="tc-sep"></span>':''}
       ${t.item?`<span class="tc-item-tag">${t.item}</span>`:''}
     </div>`:''}
-    ${t.note?`<div class="tc-note">${t.note}</div>`:''}
-    <div class="tc-resize" title="Drag to adjust hours"></div>`;
+    ${t.note?`<div class="tc-note">${t.note}</div>`:''}`;
 
   const jEl=card.querySelector('.tc-job.clickable');
   if(jEl)jEl.addEventListener('click',e=>{e.stopPropagation();openJobDetail(jEl.dataset.jid);});
-  card.addEventListener('click',e=>{if(!e.target.closest('.tc-resize'))openEditTodo(t,day);});
+
+  // Track whether a resize drag happened (to prevent click opening modal)
+  let _wasResized=false;
+
+  card.addEventListener('click',e=>{
+    if(_wasResized){_wasResized=false;return;}
+    if(!e.target.closest('.tc-job.clickable'))openEditTodo(t,day);
+  });
   card.addEventListener('dragstart',e=>{
-    if(e.target.closest('.tc-resize')){e.preventDefault();return;}
+    if(card.classList.contains('resizing')){e.preventDefault();return;}
     dragSrc=card;card.classList.add('dragging-c');
     e.dataTransfer.effectAllowed='move';
     e.dataTransfer.setData('text/plain',JSON.stringify({taskId:t.id,fromDay:day}));
   });
   card.addEventListener('dragend',()=>{card.classList.remove('dragging-c');document.querySelectorAll('.drop-hi,.div-drop-hi').forEach(el=>el.classList.remove('drop-hi','div-drop-hi'));});
 
-  // Resize handle — drag to change hours
-  const resizeHandle=card.querySelector('.tc-resize');
-  resizeHandle.addEventListener('mousedown',e=>{
+  // Edge resize: bottom 7px of card = resize zone
+  const EDGE=7;
+  card.addEventListener('mousemove',e=>{
+    if(card.classList.contains('resizing'))return;
+    const rect=card.getBoundingClientRect();
+    card.style.cursor=e.clientY>=rect.bottom-EDGE?'ns-resize':'pointer';
+  });
+  card.addEventListener('mouseleave',()=>{if(!card.classList.contains('resizing'))card.style.cursor='';});
+
+  card.addEventListener('mousedown',e=>{
+    const rect=card.getBoundingClientRect();
+    if(e.clientY<rect.bottom-EDGE)return; // not the bottom edge
     e.preventDefault();e.stopPropagation();
+    hideTodoTooltip();
+    _wasResized=false;
     card.classList.add('resizing');card.draggable=false;
-    const startY=e.clientY;
-    const startH=card.offsetHeight;
-    const startHours=t.hours||1;
+    const startY=e.clientY,startH=card.offsetHeight,startHours=t.hours||1;
     let curHours=startHours;
     const onMove=ev=>{
-      const dy=ev.clientY-startY;
-      const newH=Math.max(40,startH+dy);
-      // Snap to 0.25h steps; 20px per hour
+      if(Math.abs(ev.clientY-startY)>2)_wasResized=true;
+      const newH=Math.max(40,startH+(ev.clientY-startY));
       curHours=Math.max(0.25,Math.round(((newH-52)/20)*4)/4);
       card.style.height=taskCardHeight(curHours)+'px';
       const hrsEl=document.getElementById('hrs-'+t.id);
@@ -1800,14 +1873,14 @@ function createTaskCard(t,day,isDone){
       document.removeEventListener('mouseup',onUp);
       card.classList.remove('resizing');card.draggable=true;
       if(curHours!==startHours){
-        const arr=todoData[currentPerson][day]||[];
+        const wd=getWeekData(currentPerson);
+        const arr=wd[day]||[];
         const task=arr.find(x=>x.id===t.id);
-        if(task){task.hours=curHours;saveData();}
-        // Update header capacity without full re-render
+        if(task){task.hours=curHours;t.hours=curHours;saveData();}
         renderTodoHeader(day);
         const sumEl=document.querySelector('.todo-summary');
         let wTodo=0,wDone=0;
-        [1,2,3,4,5].forEach(d=>{(todoData[currentPerson][d]||[]).forEach(x=>{if(x.done)wDone+=x.hours||0;else wTodo+=x.hours||0;});});
+        [1,2,3,4,5].forEach(d=>{(getWeekData(currentPerson)[d]||[]).forEach(x=>{if(x.done)wDone+=x.hours||0;else wTodo+=x.hours||0;});});
         if(sumEl)sumEl.textContent=`To do: ${formatHrs(wTodo)||'0h'} · Done: ${formatHrs(wDone)||'0h'}`;
       }
     };
@@ -1815,24 +1888,36 @@ function createTaskCard(t,day,isDone){
     document.addEventListener('mouseup',onUp);
   });
 
+  // Tooltip on hover
+  card.addEventListener('mouseenter',e=>{if(!card.classList.contains('resizing'))showTodoTooltip(t,e.clientX,e.clientY);});
+  card.addEventListener('mousemove',e=>{if(!card.classList.contains('resizing'))moveTodoTooltip(e.clientX,e.clientY);});
+  card.addEventListener('mouseleave',hideTodoTooltip);
+
   return card;
 }
 
 // Re-render just a day header's capacity bar without full re-render
 function renderTodoHeader(day){
-  const tasks=todoData[currentPerson][day]||[];
-  const todoH=tasks.filter(t=>!t.done).reduce((s,t)=>s+(t.hours||0),0);
-  const doneH=tasks.filter(t=>t.done).reduce((s,t)=>s+(t.hours||0),0);
+  const wd=getWeekData(currentPerson);
+  const tasks=wd[day]||[];
+  const todoTasks=tasks.filter(t=>!t.done);
+  const doneTasks=tasks.filter(t=>t.done);
+  const todoH=todoTasks.reduce((s,t)=>s+(t.hours||0),0);
+  const doneH=doneTasks.reduce((s,t)=>s+(t.hours||0),0);
   const total=todoH+doneH;
   const isOver=total>8;
-  const todoW=Math.min(100,Math.round((todoH/8)*100));
-  const doneW=Math.min(100-todoW,Math.round((doneH/8)*100));
+  const billTodo=todoTasks.filter(taskIsBillable).reduce((s,t)=>s+(t.hours||0),0);
+  const nbillTodo=Math.max(0,todoH-billTodo);
+  const billDone=doneTasks.filter(taskIsBillable).reduce((s,t)=>s+(t.hours||0),0);
+  const nbillDone=Math.max(0,doneH-billDone);
+  const bTW=Math.min(100,Math.round((billTodo/8)*100));const nTW=Math.min(100-bTW,Math.round((nbillTodo/8)*100));
+  const bDW=Math.min(100,Math.round((billDone/8)*100));const nDW=Math.min(100-bDW,Math.round((nbillDone/8)*100));
   const col=document.querySelector(`.day-col[data-day="${day}"]`);
   if(!col)return;
   const cap=col.querySelector('.day-cap');
   if(!cap)return;
   const label=total>0?(isOver?`<span class="day-cap-info over">${formatHrs(total)} / 8h · OVER</span>`:`<span class="day-cap-info">${formatHrs(todoH)||'0h'} to do · ${formatHrs(doneH)||'0h'} done</span>`):'<span class="day-cap-info">No tasks</span>';
-  cap.innerHTML=`${label}<div class="day-cap-bar"><div class="dcb-done" style="width:${doneW}%;"></div><div class="dcb-todo" style="width:${todoW}%;${isOver?'background:var(--red);':''}"></div></div>`;
+  cap.innerHTML=`${label}<div class="day-cap-bar"><div class="dcb-done" style="width:${bDW}%;"></div><div class="dcb-nbill-done" style="width:${nDW}%;"></div><div class="dcb-todo" style="width:${bTW}%;${isOver?'background:var(--red);':''}"></div><div class="dcb-nbill-todo" style="width:${nTW}%;${isOver?'background:var(--red);opacity:.6':''}"></div></div>`;
 }
 
 function onDropToSection(e,toDay,markDone){
@@ -1841,20 +1926,25 @@ function onDropToSection(e,toDay,markDone){
   try{
     const data=JSON.parse(e.dataTransfer.getData('text/plain'));
     const{taskId,fromDay}=data;
-    const pData=todoData[currentPerson];
-    const fromArr=pData[fromDay]||[];
+    const wd=getWeekData(currentPerson);
+    const fromArr=wd[fromDay]||[];
     const idx=fromArr.findIndex(t=>t.id===taskId);
     if(idx===-1)return;
     const task=fromArr[idx];
+    const wasAlreadyDone=task.done;
     if(e.altKey){
       const clone={...task,id:'t'+Date.now(),done:markDone};
-      if(!pData[toDay])pData[toDay]=[];
-      pData[toDay].push(clone);
+      if(!wd[toDay])wd[toDay]=[];
+      wd[toDay].push(clone);
     } else {
       fromArr.splice(idx,1);
       task.done=markDone;
-      if(!pData[toDay])pData[toDay]=[];
-      pData[toDay].push(task);
+      if(!wd[toDay])wd[toDay]=[];
+      wd[toDay].push(task);
+    }
+    // Trigger follow-up prompt when marking a task as done
+    if(markDone&&!wasAlreadyDone){
+      setTimeout(()=>document.getElementById('fup').classList.add('on'),800);
     }
     renderTodo();saveData();
   }catch(err){}
@@ -1891,7 +1981,6 @@ function populatePersonSwitcher(){
       document.getElementById('current-av').style.background=p.color;
       document.getElementById('current-av').textContent=p.initials;
       document.getElementById('current-name').textContent=p.name;
-      document.getElementById('person-status').value=status;
       populatePersonSwitcher();
       renderTodo();
       document.getElementById('ps-menu').classList.remove('on');
@@ -1913,8 +2002,8 @@ function changePersonStatus(status){
 
 function deleteTodo(){
   if(!editingTaskId)return;
-  const pData=todoData[currentPerson];
-  const arr=pData[editingDay]||[];
+  const wd=getWeekData(currentPerson);
+  const arr=wd[editingDay]||[];
   const idx=arr.findIndex(t=>t.id===editingTaskId);
   if(idx!==-1){
     if(confirm('Delete this task?')){
@@ -1940,11 +2029,15 @@ function editTask(t,day){
 }
 
 function toggleTaskDone(taskId){
-  const pData=todoData[currentPerson];
+  const wd=getWeekData(currentPerson);
   for(let d=1;d<=5;d++){
-    const arr=pData[d]||[];
+    const arr=wd[d]||[];
     const t=arr.find(x=>x.id===taskId);
-    if(t){t.done=!t.done;renderTodo();saveData();return;}
+    if(t){
+      t.done=!t.done;
+      if(t.done)setTimeout(()=>document.getElementById('fup').classList.add('on'),800);
+      renderTodo();saveData();return;
+    }
   }
 }
 
@@ -1995,14 +2088,72 @@ function pctxDo(action){
 }
 
 function closeFup(yes){
-  document.getElementById('fup').style.display='none';
+  document.getElementById('fup').classList.remove('on');
   if(yes)openTodoModal(null,5);
+}
+
+// Task card tooltip
+function showTodoTooltip(t,x,y){
+  const tt=document.getElementById('task-tooltip');if(!tt)return;
+  const statusTxt=t.done?'Done':'To do';
+  const urgentBadge=t.urgent&&!t.done?'<span class="tt-urgent"> · Urgent</span>':'';
+  const billable=taskIsBillable(t);
+  const billTxt=t.job?(billable?'Billable':'Non-billable'):'Internal';
+  tt.innerHTML=`
+    <div class="tt-title">${t.title}${urgentBadge}</div>
+    ${t.job?`<div class="tt-row"><span class="tt-label">Job</span><span>${t.job}</span></div>`:''}
+    ${t.item?`<div class="tt-row"><span class="tt-label">Item</span><span>${t.item}</span></div>`:''}
+    <div class="tt-row"><span class="tt-label">Hours</span><span>${t.hours?formatHrs(t.hours):'—'}</span></div>
+    <div class="tt-row"><span class="tt-label">Status</span><span>${statusTxt} · ${billTxt}</span></div>
+    ${t.note?`<div class="tt-row" style="margin-top:4px;padding-top:4px;border-top:1px solid #333;"><span style="color:#999;">${t.note}</span></div>`:''}`;
+  tt.classList.add('on');
+  moveTodoTooltip(x,y);
+}
+function moveTodoTooltip(x,y){
+  const tt=document.getElementById('task-tooltip');
+  if(!tt||!tt.classList.contains('on'))return;
+  const off=16;
+  tt.style.left=(x+off)+'px';tt.style.top=(y+off)+'px';
+  const r=tt.getBoundingClientRect();
+  if(r.right>window.innerWidth-8)tt.style.left=(x-r.width-off)+'px';
+  if(r.bottom>window.innerHeight-8)tt.style.top=(y-r.height-off)+'px';
+}
+function hideTodoTooltip(){
+  const tt=document.getElementById('task-tooltip');if(tt)tt.classList.remove('on');
+}
+
+// Jump to a specific week via the date picker
+function goToWeek(v){
+  if(!v)return;
+  const parts=v.split('-W');if(parts.length<2)return;
+  const yr=parseInt(parts[0]),wk=parseInt(parts[1]);
+  const jan4=new Date(yr,0,4);
+  const jan4dow=(jan4.getDay()+6)%7;
+  const targetMon=new Date(jan4.getTime()-jan4dow*86400000+(wk-1)*7*86400000);
+  const now=new Date();
+  const nowdow=(now.getDay()+6)%7;
+  const todayMon=new Date(now);todayMon.setDate(now.getDate()-nowdow);todayMon.setHours(0,0,0,0);
+  weekOffset=Math.round((targetMon-todayMon)/(7*86400000));
+  updateWeekLabel();renderTodo();
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('wbtn-prev')?.addEventListener('click',()=>toggleWeek(-1));
   document.getElementById('wbtn-next')?.addEventListener('click',()=>toggleWeek(1));
   document.getElementById('wbtn-today')?.addEventListener('click',()=>{weekOffset=0;updateWeekLabel();renderTodo();});
+  document.getElementById('wbtn-cal')?.addEventListener('click',()=>{
+    const pk=document.getElementById('week-picker');
+    if(!pk)return;
+    // Pre-fill the picker with current week
+    const d=new Date();const dow=(d.getDay()+6)%7;
+    d.setDate(d.getDate()-dow+(weekOffset*7));
+    const yr=d.getFullYear();
+    // Calculate ISO week number
+    const jan1=new Date(yr,0,1);const jan1dow=(jan1.getDay()+6)%7;
+    const isoWk=Math.ceil((((d-jan1)/86400000)+jan1dow+1)/7);
+    pk.value=`${yr}-W${String(isoWk).padStart(2,'0')}`;
+    pk.showPicker();
+  });
   populatePersonSwitcher();
   updateWeekLabel();
 });
@@ -2028,9 +2179,9 @@ function saveTodo(){
   const note=document.getElementById('td-note').value.trim();
   const dayOpt=document.getElementById('td-day').value;
   const dayNum=parseInt(dayOpt)||5;
+  const wd=getWeekData(currentPerson);
   if(editingTaskId){
-    const pData=todoData[currentPerson];
-    const arr=pData[editingDay]||[];
+    const arr=wd[editingDay]||[];
     const idx=arr.findIndex(t=>t.id===editingTaskId);
     if(idx!==-1){
       arr[idx].title=name;
@@ -2041,8 +2192,8 @@ function saveTodo(){
     }
   } else {
     const task={id:'t'+Date.now(),title:name,job:job?`${job.id} ${job.name}`:'',item,hours,note};
-    if(!todoData[currentPerson][dayNum])todoData[currentPerson][dayNum]=[];
-    todoData[currentPerson][dayNum].push(task);
+    if(!wd[dayNum])wd[dayNum]=[];
+    wd[dayNum].push(task);
     setTimeout(()=>document.getElementById('fup').classList.add('on'),800);
   }
   closeTodoModal();editingTaskId=null;editingDay=null;
@@ -2167,8 +2318,6 @@ function createJob(){
 }
 function openInvoice(){document.getElementById('inv-modal').classList.add('on');}
 function closeInvoice(){document.getElementById('inv-modal').classList.remove('on');}
-function closeFup(add){document.getElementById('fup').classList.remove('on');if(add)openTodoModal(activeJobId,5);}
-
 document.addEventListener('click',()=>{document.getElementById('ctx').classList.remove('on');document.getElementById('pctx').classList.remove('on');});
 ['create-modal','todo-modal','inv-modal'].forEach(id=>{document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id))document.getElementById(id).classList.remove('on');});});
 
@@ -2206,18 +2355,22 @@ function getFilteredTasks(){
   
   Object.keys(todoData).forEach(pKey=>{
     if(person!=='all'&&pKey!==person)return;
-    const days=todoData[pKey];
-    for(let d=1;d<=5;d++){
-      const dayTasks=days[d]||[];
-      dayTasks.forEach(t=>{
-        // filter by job
-        if(jobFilter!=='all'){
-          const jobMatch=t.job?t.job.includes(jobFilter):false;
-          if(!jobMatch)return;
-        }
-        tasks.push({...t, person:pKey, personName:people[pKey]?.name||pKey, day:d, date:d});
-      });
-    }
+    const personData=todoData[pKey];
+    if(!personData)return;
+    Object.keys(personData).forEach(weekKey=>{
+      const weekDays=personData[weekKey];
+      if(!weekDays||typeof weekDays!=='object')return;
+      for(let d=1;d<=5;d++){
+        const dayTasks=weekDays[d]||[];
+        dayTasks.forEach(t=>{
+          if(jobFilter!=='all'){
+            const jobMatch=t.job?t.job.includes(jobFilter):false;
+            if(!jobMatch)return;
+          }
+          tasks.push({...t,person:pKey,personName:people[pKey]?.name||pKey,day:d,weekKey});
+        });
+      }
+    });
   });
   return tasks;
 }
