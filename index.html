@@ -146,34 +146,39 @@ function renderReporting(){
   });
 
   // Data table
-  const tbody=document.getElementById('r-table-body');
-  tbody.innerHTML='';
-  tasks.forEach(t=>{
-    const tr=document.createElement('tr');
-    const doneBadge=t.done?'<span style="color:var(--done-ink);"><i class="ti ti-check"></i> Done</span>':'<span style="color:var(--muted);">Pending</span>';
-    tr.innerHTML=`<td><strong>${people[t.person]?.name||t.person}</strong></td><td>${t.title}</td><td style="font-size:12px;color:var(--muted);">${t.job||'—'}</td><td style="font-size:12px;color:var(--muted);">${t.item||'—'}</td><td style="text-align:right;font-weight:500;">${fmtHrs(t.hours)}</td><td>${doneBadge}</td><td>${t.urgent&&!t.done?'<span style="color:var(--red);"><i class="ti ti-alert-circle"></i></span>':''}</td>`;
-    tbody.appendChild(tr);
-  });
-  document.getElementById('r-task-count').textContent=`${tasks.length} task${tasks.length!==1?'s':''}`;
-  document.getElementById('r-total-hours').innerHTML=`<strong>${fmtHrs(grandTotal)}</strong>`;
-  
+  const tbody=document.getElementById('r-tbody');
+  if(tbody){
+    const dayNames=['','Mon','Tue','Wed','Thu','Fri'];
+    tbody.innerHTML=tasks.length===0
+      ?'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;">No tasks in this period.</td></tr>'
+      :tasks.map(t=>{
+        const done=t.done?`<span style="color:#2E7D32;font-size:11px;">✓ Done</span>`:`<span style="color:var(--muted);font-size:11px;">Pending</span>`;
+        const urgent=t.urgent&&!t.done?` <i class="ti ti-alert-circle" style="color:var(--red);font-size:11px;"></i>`:'';
+        return`<tr>
+          <td>${t.title||'—'}${urgent}</td>
+          <td style="font-size:12px;color:var(--muted);">${people[t.person]?.name||t.person}</td>
+          <td style="font-size:12px;color:var(--muted);">${t.job||'Personal'}</td>
+          <td style="font-size:12px;color:var(--muted);">${dayNames[t.day]||'—'}</td>
+          <td style="font-weight:500;">${fmtHrs(t.hours||0)}</td>
+          <td>${done}</td>
+        </tr>`;
+      }).join('');
+  }
   saveData();
 }
 
-function destroyChart(c){if(c){c.destroy();c=null;}}
+function destroyChart(c){if(c&&typeof c.destroy==='function'){try{c.destroy();}catch(e){}}return null;}
 
-function exportReport(){
+function exportReportingCSV(){
   const tasks=getFilteredTasks();
   if(tasks.length===0){alert('No data to export.');return;}
   let csv='Person,Task,Job,Item,Hours,Status,Day\n';
   tasks.forEach(t=>{
-    csv+=`${people[t.person]?.name||t.person},"${t.title}","${t.job||''}","${t.item||''}",${t.hours},${t.done?'Done':'Pending'},${t.day}
-`;
+    csv+=`${people[t.person]?.name||t.person},"${(t.title||'').replace(/"/g,'""')}","${(t.job||'').replace(/"/g,'""')}","${(t.item||'').replace(/"/g,'""')}",${fmtHrs(t.hours||0)},${t.done?'Done':'Pending'},${['','Mon','Tue','Wed','Thu','Fri'][t.day]||t.day}\n`;
   });
   const blob=new Blob([csv],{type:'text/csv'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download=`report_${new Date().toISOString().slice(0,10)}.csv`;
+  const a=document.createElement('a');a.href=url;a.download=`report_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();URL.revokeObjectURL(url);
 }
 
@@ -1303,6 +1308,8 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
 .clients-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
 .client-card-full{background:var(--white);border:1px solid var(--border);border-radius:4px;padding:20px;cursor:pointer;transition:box-shadow .15s,border-color .15s;}
 .client-card-full:hover{box-shadow:0 2px 8px rgba(0,0,0,.07);border-color:#ccc;}
+.cd-job-row{background:var(--white);border:1px solid var(--border);padding:14px 16px;margin-bottom:8px;cursor:pointer;border-radius:2px;transition:box-shadow .12s,border-color .12s;}
+.cd-job-row:hover{box-shadow:0 2px 8px rgba(0,0,0,.06);border-color:#ccc;}
 .ccf-name{font-family:var(--serif);font-size:16px;font-weight:400;margin-bottom:4px;}
 .ccf-contact{font-size:12px;color:var(--muted);margin-bottom:12px;}
 .ccf-meta{display:flex;gap:16px;font-size:11px;color:var(--muted);}
@@ -1347,6 +1354,20 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
 .rep-end-chip{background:var(--off);border:1px solid var(--border);border-radius:20px;padding:3px 12px;font-size:11px;font-family:var(--font);color:var(--muted);cursor:pointer;transition:all .12s;}
 .rep-end-chip:hover{border-color:var(--ink);color:var(--ink);}
 .rep-end-chip.on{background:var(--ink);border-color:var(--ink);color:#fff;}
+/* Mini calendar in todo modal */
+.mini-cal-wrap{background:var(--white);border:1px solid var(--border);border-radius:4px;padding:10px;margin-top:4px;margin-bottom:8px;}
+.mini-cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.mini-cal-nav-btn{background:none;border:none;padding:4px 6px;cursor:pointer;color:var(--ink);border-radius:3px;font-family:var(--font);}
+.mini-cal-nav-btn:hover{background:var(--off);}
+.mini-cal-month{font-size:12px;font-weight:500;color:var(--ink);}
+.mini-cal-days-hd{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:10px;color:var(--muted);letter-spacing:.04em;margin-bottom:4px;}
+.mini-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.mc-day{text-align:center;font-size:11px;padding:4px 2px;border-radius:3px;cursor:pointer;color:var(--ink);}
+.mc-day:hover:not(.mc-empty):not(.mc-weekend){background:var(--off);}
+.mc-day.mc-today{font-weight:600;color:var(--red);}
+.mc-day.mc-sel{background:var(--ink);color:#fff!important;border-radius:3px;}
+.mc-day.mc-weekend{color:var(--muted);cursor:default;opacity:.45;}
+.mc-day.mc-empty{cursor:default;}
 /* Item inline edit */
 .item-editable{cursor:pointer;border-radius:2px;padding:1px 4px;transition:background .1s;}
 .item-editable:hover{background:var(--off);}
@@ -1462,6 +1483,7 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
             <div class="time-head-bar">
               <div><div class="dash-greeting" style="font-size:22px;">Time</div><div class="dash-date" id="time-sub-lbl">All time · All people</div></div>
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <button class="d-action" id="time-collapse-btn" onclick="toggleTimeCollapse()" style="margin-right:4px;"><i class="ti ti-layout-sidebar-right-collapse" id="time-collapse-icon" style="font-size:13px;"></i> <span id="time-collapse-lbl">Compact</span></button>
                 <select class="cc-select" id="tf-person" onchange="renderTime()"><option value="all">All people</option></select>
                 <select class="cc-select" id="tf-client" onchange="renderTime()"><option value="all">All clients</option></select>
                 <select class="cc-select" id="tf-job" onchange="renderTime()"><option value="all">All jobs</option></select>
@@ -1539,7 +1561,28 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
         </div>
         <!-- CLIENTS panel -->
         <div id="jt-clients" class="jt-panel" style="display:none;">
-          <div class="clients-wrap" id="clients-wrap"><!-- populated by renderClients() --></div>
+          <!-- Clients list view -->
+          <div id="clients-list-view" class="clients-wrap" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+            <div id="clients-wrap" style="flex:1;overflow-y:auto;padding:24px 28px 40px;"><!-- populated by renderClients() --></div>
+          </div>
+          <!-- Client detail view (hidden by default) -->
+          <div id="client-detail-view" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+            <div style="flex-shrink:0;padding:14px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;">
+              <button class="detail-back" onclick="closeClientDetail()"><i class="ti ti-arrow-left" style="font-size:12px;"></i> Clients</button>
+              <div style="flex:1;">
+                <div id="cd-view-name" style="font-family:var(--serif);font-size:20px;font-weight:400;"></div>
+                <div id="cd-view-meta" style="font-size:11px;color:var(--muted);margin-top:1px;"></div>
+              </div>
+              <button class="d-action" onclick="openNewJobForClient()"><i class="ti ti-plus" style="font-size:12px;"></i> New job</button>
+            </div>
+            <!-- Client info strip -->
+            <div id="cd-info-strip" style="flex-shrink:0;display:flex;gap:16px;padding:12px 28px;border-bottom:1px solid var(--border);flex-wrap:wrap;"></div>
+            <!-- Client jobs table -->
+            <div style="flex:1;overflow-y:auto;padding:24px 28px 40px;">
+              <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Jobs</div>
+              <div id="cd-jobs-list"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1577,21 +1620,68 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
             <div class="plan-area">
               <div class="plan-actions">
                 <button class="p-btn" onclick="showAddItemForm(null)"><i class="ti ti-plus" style="font-size:12px"></i> Add item</button>
-                <button class="p-btn"><i class="ti ti-currency-dollar" style="font-size:12px"></i> Add expense</button>
                 <button class="p-btn" onclick="addPhase()"><i class="ti ti-layout-rows" style="font-size:12px"></i> New phase</button>
               </div>
               <div id="phases-wrap"></div>
-              <div class="exp-sec" id="exp-wrap">
-                <div class="exp-head" onclick="toggleExp()"><i class="ti ti-chevron-down ph-chv exp-chv"></i><span style="font-size:13px;font-weight:400;flex:1;letter-spacing:.02em;">Expenses</span><span style="font-size:11px;color:#888;">$0 / $200</span></div>
-                <table class="exp-t"><thead><tr><th>Expense</th><th style="width:100px;">Date</th><th style="width:55px;">Qty</th><th style="width:85px;">Cost</th><th style="width:65px;">Markup</th><th style="width:85px;">Sell</th><th style="width:80px;text-align:right;">Total</th><th style="width:75px;text-align:right;">Status</th></tr></thead>
-                <tbody><tr><td>Disbursements</td><td style="font-size:12px;color:var(--muted);">28 May 26</td><td style="font-size:12px;">1 NZD</td><td style="font-size:12px;">$0</td><td style="font-size:12px;color:var(--muted);">—</td><td style="font-size:12px;">$100</td><td style="text-align:right;font-size:12px;">$100</td><td style="text-align:right;"><span class="exp-badg">Draft</span></td></tr></tbody></table>
-                <div class="add-e-row"><i class="ti ti-plus" style="font-size:11px"></i> Add expense</div>
-              </div>
+              <div class="exp-sec" id="exp-wrap" style="display:none;"></div>
               <div class="ph-add" onclick="addPhase()"><i class="ti ti-plus" style="font-size:13px"></i> New phase</div>
             </div>
           </div>
           <div id="dtab-quote" class="hidden" style="flex:1;overflow-y:auto;padding:24px 24px 50px;"></div>
           <div id="dtab-activity" class="act-feed hidden"></div>
+        </div>
+      </div>
+      <!-- REPORTING -->
+      <div id="view-reporting" class="view hidden">
+        <div class="r-filter-row" style="padding:14px 28px 10px;border-bottom:1px solid var(--border);flex-shrink:0;gap:10px;display:flex;align-items:center;flex-wrap:wrap;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-family:var(--serif);font-size:20px;font-weight:400;">Reporting</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:1px;" id="r-sub">All People · This Month</div>
+          </div>
+          <select class="filter-btn cc-select" id="r-period" style="min-width:130px;">
+            <option value="week">This week</option>
+            <option value="2weeks">Last 2 weeks</option>
+            <option value="month" selected>This month</option>
+            <option value="quarter">This quarter</option>
+            <option value="all">All time</option>
+          </select>
+          <select class="filter-btn cc-select" id="r-person" style="min-width:120px;">
+            <option value="all">All people</option>
+          </select>
+          <select class="filter-btn cc-select" id="r-job" style="min-width:140px;">
+            <option value="all">All jobs</option>
+          </select>
+          <button class="d-action" onclick="exportReportingCSV()"><i class="ti ti-download" style="font-size:12px"></i> CSV</button>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:24px 28px 40px;">
+          <!-- Person totals strip -->
+          <div class="r-person-total" id="r-person-totals"></div>
+          <!-- Charts row -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+            <div class="r-chart-card">
+              <div class="r-chart-label">Hours by person</div>
+              <div style="height:180px;"><canvas id="chart-by-person"></canvas></div>
+            </div>
+            <div class="r-chart-card">
+              <div class="r-chart-label">Hours by day</div>
+              <div style="height:180px;"><canvas id="chart-by-day"></canvas></div>
+            </div>
+            <div class="r-chart-card">
+              <div class="r-chart-label">Hours by job</div>
+              <div style="height:180px;"><canvas id="chart-by-job"></canvas></div>
+            </div>
+            <div class="r-chart-card">
+              <div class="r-chart-label">Budget used by job</div>
+              <div style="height:180px;"><canvas id="chart-by-budget"></canvas></div>
+            </div>
+          </div>
+          <!-- Task table -->
+          <div class="r-table-wrap">
+            <table class="r-table" id="r-table">
+              <thead><tr><th>Task</th><th>Person</th><th>Job</th><th>Day</th><th>Hours</th><th>Billable</th></tr></thead>
+              <tbody id="r-tbody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
       <!-- BOARDS -->
@@ -1828,7 +1918,7 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
       </div>
       <!-- Date display + Repeat row -->
       <div class="tm-date-repeat-row">
-        <button class="tm-date-btn" onclick="openDatePicker()" id="td-date-display">
+        <button class="tm-date-btn" onclick="toggleMiniCal()" id="td-date-display">
           <i class="ti ti-calendar" style="font-size:14px;"></i>
           <span id="td-date-label">—</span>
         </button>
@@ -1864,6 +1954,18 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
           <input type="date" id="td-rep-end-date" class="tm-hours-inp" style="width:140px;font-size:12px;">
         </div>
         <div id="rep-preview" style="font-size:11px;color:var(--muted);margin-top:4px;"></div>
+      </div>
+      <!-- Mini calendar popover -->
+      <div class="mini-cal-wrap" id="td-mini-cal" style="display:none;">
+        <div class="mini-cal-nav">
+          <button class="mini-cal-nav-btn" onclick="miniCalNav(-1)"><i class="ti ti-chevron-left"></i></button>
+          <span class="mini-cal-month" id="mc-month-lbl">—</span>
+          <button class="mini-cal-nav-btn" onclick="miniCalNav(1)"><i class="ti ti-chevron-right"></i></button>
+        </div>
+        <div class="mini-cal-days-hd">
+          <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+        </div>
+        <div class="mini-cal-grid" id="mc-grid"></div>
       </div>
       <!-- Timestamps (edit mode only) -->
       <div id="td-timestamps" style="display:none;">
@@ -2015,7 +2117,17 @@ let todoData=(function(){
   return td;
 })();
 let editingTaskId=null,editingDay=null;
-function saveData(){try{localStorage.setItem('cc_todo',JSON.stringify(todoData));localStorage.setItem('cc_jobs',JSON.stringify(jobs));}catch(e){}}
+function saveData(){
+  try{
+    // Persist phases back to the active job before saving
+    if(activeJobId&&phases&&phases.length){
+      const j=jobs.find(x=>x.id===activeJobId);
+      if(j)j.phases=JSON.parse(JSON.stringify(phases));
+    }
+    localStorage.setItem('cc_todo',JSON.stringify(todoData));
+    localStorage.setItem('cc_jobs',JSON.stringify(jobs));
+  }catch(e){}
+}
 function loadData(){
   try{
     const t=localStorage.getItem('cc_todo');
@@ -2511,9 +2623,31 @@ function updateJobLabel(){
   const jobId=sel.value;
   if(jobId){
     const j=jobs.find(x=>x.id===jobId);
-    lbl.textContent=j?`Job for ${j.company}`:'Job';
+    lbl.textContent=j?`Item (from ${j.company} job plan)`:'Item';
   } else {
-    lbl.textContent='Job';
+    lbl.textContent='Item';
+  }
+  // Sync item datalist from the selected job's plan phases
+  const dl=document.getElementById('item-datalist');
+  if(!dl)return;
+  dl.innerHTML='';
+  if(jobId){
+    // Use the in-memory phases if this is the active job, else look at stored job items
+    const j=jobs.find(x=>x.id===jobId);
+    let itemNames=[];
+    // If this is the currently open job, use live phases array
+    const srcPhases=(jobId===activeJobId&&phases&&phases.length)?phases:(j?.phases||[]);
+    srcPhases.forEach(ph=>{
+      (ph.items||[]).forEach(it=>{
+        const nm=(it.name||'').trim();
+        if(nm&&!itemNames.includes(nm))itemNames.push(nm);
+      });
+    });
+    // Fallback: if no stored phases, use SFF_PHASES names as suggestions
+    if(!itemNames.length&&window.SFF_PHASES){
+      SFF_PHASES.forEach(ph=>{(ph.items||[]).forEach(it=>{const nm=(it.name||'').trim();if(nm&&!itemNames.includes(nm))itemNames.push(nm);});});
+    }
+    itemNames.forEach(nm=>{const opt=document.createElement('option');opt.value=nm;dl.appendChild(opt);});
   }
 }
 
@@ -2544,32 +2678,66 @@ function _updateDateLabel(){
   const lbl=document.getElementById('td-date-label');
   if(lbl)lbl.textContent=`${DAYS[dow2]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
 }
-function openDatePicker(){
-  // Use a hidden date input
-  let inp=document.getElementById('_td-date-picker');
-  if(!inp){inp=document.createElement('input');inp.type='date';inp.id='_td-date-picker';inp.style.cssText='position:fixed;bottom:0;left:0;opacity:0.001;width:1px;height:1px;z-index:-1;';document.body.appendChild(inp);
-    inp.addEventListener('change',function(){
-      const sel=new Date(this.value+'T00:00:00');
-      // Compute weekOffset + dayNum from selected date
-      const today=new Date();const todayDow=(today.getDay()+6)%7;
-      today.setDate(today.getDate()-todayDow);today.setHours(0,0,0,0);
-      const selDow=(sel.getDay()+6)%7; // 0=Mon
-      const selMon=new Date(sel);selMon.setDate(sel.getDate()-selDow);selMon.setHours(0,0,0,0);
-      const diffDays=(selMon-today)/(1000*60*60*24);
-      weekOffset=Math.round(diffDays/7);
-      const dayN=selDow+1; // 1=Mon…5=Fri
-      const ds=document.getElementById('td-day');
-      if(ds)for(let o of ds.options){if(parseInt(o.value)===dayN){o.selected=true;break;}}
-      _updateDateLabel();
-    });
-  }
-  // Set current value
+// ── Mini calendar in todo modal ──────────────────────────────────────────────
+let _mcYear=null,_mcMonth=null;
+function _getModalDate(){
   const dayNum=parseInt(document.getElementById('td-day')?.value)||5;
   const d=new Date();const dow=(d.getDay()+6)%7;
   d.setDate(d.getDate()-dow+(weekOffset*7)+(dayNum-1));d.setHours(0,0,0,0);
-  inp.value=d.toISOString().split('T')[0];
-  try{inp.showPicker();}catch(e){inp.focus();inp.click();}
+  return d;
 }
+function toggleMiniCal(){
+  const wrap=document.getElementById('td-mini-cal');
+  if(!wrap)return;
+  if(wrap.style.display!=='none'){wrap.style.display='none';return;}
+  // Init to current modal date
+  const d=_getModalDate();
+  _mcYear=d.getFullYear();_mcMonth=d.getMonth();
+  renderMiniCal();
+  wrap.style.display='block';
+}
+function miniCalNav(dir){_mcMonth+=dir;if(_mcMonth>11){_mcMonth=0;_mcYear++;}else if(_mcMonth<0){_mcMonth=11;_mcYear--;}renderMiniCal();}
+function renderMiniCal(){
+  const selDate=_getModalDate();
+  const today=new Date();today.setHours(0,0,0,0);
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('mc-month-lbl').textContent=`${months[_mcMonth]} ${_mcYear}`;
+  const grid=document.getElementById('mc-grid');grid.innerHTML='';
+  // First day of month (Mon-based offset)
+  const firstDay=new Date(_mcYear,_mcMonth,1);
+  const startOffset=(firstDay.getDay()+6)%7; // 0=Mon
+  const daysInMonth=new Date(_mcYear,_mcMonth+1,0).getDate();
+  for(let i=0;i<startOffset;i++){const el=document.createElement('div');el.className='mc-day mc-empty';grid.appendChild(el);}
+  for(let d=1;d<=daysInMonth;d++){
+    const el=document.createElement('div');
+    const thisDate=new Date(_mcYear,_mcMonth,d);
+    const dow=thisDate.getDay(); // 0=Sun,6=Sat
+    const isWknd=dow===0||dow===6;
+    const isSel=thisDate.toDateString()===selDate.toDateString();
+    const isToday=thisDate.toDateString()===today.toDateString();
+    el.className='mc-day'+(isWknd?' mc-weekend':'')+(isSel?' mc-sel':'')+(isToday&&!isSel?' mc-today':'');
+    el.textContent=d;
+    if(!isWknd){
+      el.onclick=()=>miniCalSelectDate(thisDate);
+    }
+    grid.appendChild(el);
+  }
+}
+function miniCalSelectDate(date){
+  // Convert date to weekOffset + dayNum
+  const todayMon=new Date();const tdow=(todayMon.getDay()+6)%7;todayMon.setDate(todayMon.getDate()-tdow);todayMon.setHours(0,0,0,0);
+  const selDow=(date.getDay()+6)%7; // 0=Mon
+  const selMon=new Date(date);selMon.setDate(date.getDate()-selDow);selMon.setHours(0,0,0,0);
+  const diffDays=(selMon-todayMon)/(1000*60*60*24);
+  weekOffset=Math.round(diffDays/7);
+  const dayN=selDow+1;
+  const ds=document.getElementById('td-day');
+  if(ds)for(let o of ds.options){if(parseInt(o.value)===dayN){o.selected=true;break;}}
+  _updateDateLabel();
+  renderMiniCal(); // refresh to show new selection
+  setTimeout(()=>{document.getElementById('td-mini-cal').style.display='none';},200);
+}
+function openDatePicker(){toggleMiniCal();} // keep old name working
 let _repeatEndMode='never'; // 'never'|'after'|'date'
 function toggleRepeatSection(){
   const cfg=document.getElementById('td-repeat-config');
@@ -2664,6 +2832,7 @@ function openTodoModal(jobId,day){
 }
 function closeTodoModal(){
   document.getElementById('todo-modal').classList.remove('on');
+  const mc=document.getElementById('td-mini-cal');if(mc)mc.style.display='none';
   editingTaskId=null;editingDay=null;
 }
 function renderPSMenu(query){
@@ -3214,7 +3383,13 @@ function openJobDetail(id){
   if(notesRow&&notesInp){notesRow.style.display='';notesInp.value=j.notes||'';}
   if(!j.activity)j.activity=[];
   if(!j.invNum)j.invNum=null;
-  phases=isNew?[]:JSON.parse(JSON.stringify(SFF_PHASES));
+  // Load phases from stored job, or use SFF_PHASES as default for new jobs
+  if(j.phases&&j.phases.length){
+    phases=JSON.parse(JSON.stringify(j.phases));
+  } else {
+    phases=isNew?[]:JSON.parse(JSON.stringify(SFF_PHASES));
+    if(j)j.phases=JSON.parse(JSON.stringify(phases));
+  }
   renderStats(j,isNew);renderPhases();
   document.querySelectorAll('.view').forEach(el=>el.classList.add('hidden'));
   document.getElementById('view-detail').classList.remove('hidden');
@@ -3626,31 +3801,72 @@ function renderClients(){
     </div>`;
 }
 
+let _activeClientId=null;
 function openClientDetail(id){
   const c=clientsData.find(x=>x.id===id);if(!c)return;
-  const jobsForClient=jobs.filter(j=>j.company===c.name);
-  const modal=document.createElement('div');
-  modal.className='modal-bg on';
-  modal.id='client-detail-modal';
-  modal.innerHTML=`
-    <div class="modal" style="max-width:560px;">
-      <div class="modal-hd"><span class="modal-hd-title">${c.name}</span><button class="modal-x" onclick="this.closest('.modal-bg').remove()"><i class="ti ti-x"></i></button></div>
-      <div class="modal-bd">
-        <div class="field-row">
-          <div class="field"><label>Contact name</label><input id="cd-contact" class="form-inp" value="${c.contact||''}" placeholder="Full name" oninput="updateClientField('${c.id}','contact',this.value)" style="width:100%;"></div>
-          <div class="field"><label>Email</label><input id="cd-email" class="form-inp" value="${c.email||''}" placeholder="email@company.com" oninput="updateClientField('${c.id}','email',this.value)" style="width:100%;"></div>
+  _activeClientId=id;
+  const clientJobs=jobs.filter(j=>j.company===c.name);
+  const totalHrs=clientJobs.reduce((a,j)=>a+(parseFloat((j.hours||'0').replace(/[^\d.]/g,''))||0),0);
+  const totalBudget=clientJobs.reduce((a,j)=>a+(parseFloat((j.budgetTotal||'0').replace(/[$,]/g,''))||0),0);
+  // Populate header
+  document.getElementById('cd-view-name').textContent=c.name;
+  document.getElementById('cd-view-meta').textContent=`${clientJobs.length} job${clientJobs.length!==1?'s':''} · ${clientJobs.filter(j=>j.status!=='complete').length} active`;
+  // Info strip: editable fields
+  document.getElementById('cd-info-strip').innerHTML=`
+    <div style="flex:1;min-width:160px;">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Contact</div>
+      <input class="form-inp" style="width:100%;font-size:12px;padding:4px 8px;" value="${c.contact||''}" placeholder="Contact name" oninput="updateClientField('${c.id}','contact',this.value)">
+    </div>
+    <div style="flex:1;min-width:160px;">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Email</div>
+      <input class="form-inp" style="width:100%;font-size:12px;padding:4px 8px;" value="${c.email||''}" placeholder="email@company.com" oninput="updateClientField('${c.id}','email',this.value)">
+    </div>
+    <div style="flex:1;min-width:120px;">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Phone</div>
+      <input class="form-inp" style="width:100%;font-size:12px;padding:4px 8px;" value="${c.phone||''}" placeholder="+64 …" oninput="updateClientField('${c.id}','phone',this.value)">
+    </div>
+    <div style="min-width:80px;text-align:center;">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Total budget</div>
+      <div style="font-size:16px;font-weight:500;">$${totalBudget.toLocaleString()}</div>
+    </div>
+  `;
+  // Jobs list
+  const jobsList=document.getElementById('cd-jobs-list');
+  jobsList.innerHTML=clientJobs.length===0?`<div style="font-size:13px;color:var(--muted);padding:24px 0;">No jobs yet for this client.</div>`
+    :clientJobs.map(j=>{
+      const wfLabel=j.workflowStatus==='quote'?'Quote':j.workflowStatus==='invoiced'?'Invoiced':'Live job';
+      const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
+      const hPct=j.hPct||0;
+      return`<div class="cd-job-row" onclick="openJobDetail('${j.id}')">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <span class="job-num">${j.id}</span>
+          <span style="flex:1;font-size:13px;font-weight:400;">${j.name}</span>
+          <span class="wf-badge ${wfCls}">${wfLabel}</span>
+          ${j.billable?'<span style="font-size:10px;background:#E8F5E9;color:#2E7D32;padding:2px 6px;border-radius:10px;">Billable</span>':''}
         </div>
-        <div class="field-row">
-          <div class="field"><label>Phone</label><input id="cd-phone" class="form-inp" value="${c.phone||''}" placeholder="+64 …" oninput="updateClientField('${c.id}','phone',this.value)" style="width:100%;"></div>
+        <div style="display:flex;align-items:center;gap:16px;">
+          <div style="flex:1;background:var(--off);border-radius:2px;height:3px;overflow:hidden;">
+            <div style="height:100%;width:${hPct}%;background:${hPct>90?'var(--red)':'var(--ink)'};border-radius:2px;"></div>
+          </div>
+          <span style="font-size:11px;color:var(--muted);white-space:nowrap;">${j.hours||'0h'} / ${j.hoursTotal||'—'}</span>
+          <span style="font-size:11px;color:var(--muted);white-space:nowrap;">${j.budget||'—'}</span>
         </div>
-        <div class="field"><label>Notes</label><textarea class="form-inp" rows="3" style="width:100%;resize:vertical;" oninput="updateClientField('${c.id}','notes',this.value)">${c.notes||''}</textarea></div>
-        <div style="margin-top:20px;"><div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Jobs (${jobsForClient.length})</div>
-          ${jobsForClient.length?jobsForClient.map(j=>`<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="this.closest('.modal-bg').remove();openJobDetail('${j.id}')"><span class="job-num">${j.id}</span><span style="flex:1;font-size:13px;">${j.name}</span><span class="wf-badge wf-${j.workflowStatus||'live'}">${j.workflowStatus||'live'}</span></div>`).join(''):'<div style="font-size:12px;color:var(--muted);">No jobs yet.</div>'}
-        </div>
-      </div>
-      <div class="modal-ft"><button class="modal-cancel" onclick="this.closest('.modal-bg').remove()">Close</button></div>
-    </div>`;
-  document.body.appendChild(modal);
+      </div>`;
+    }).join('');
+  // Switch views
+  document.getElementById('clients-list-view').style.display='none';
+  document.getElementById('client-detail-view').style.display='flex';
+}
+function closeClientDetail(){
+  _activeClientId=null;
+  document.getElementById('client-detail-view').style.display='none';
+  document.getElementById('clients-list-view').style.display='flex';
+}
+function openNewJobForClient(){
+  // Navigate to jobs tab and pre-fill company
+  // For now just switch to jobs tab
+  closeClientDetail();
+  switchJobsTab('jobs');
 }
 
 function updateClientField(id,field,val){
@@ -3763,6 +3979,38 @@ document.addEventListener('click',()=>{document.getElementById('ctx').classList.
 // ═══════════════════════════════════════════════════════════════
 //  TIME VIEW
 // ═══════════════════════════════════════════════════════════════
+let _timeCollapsed=false;
+function toggleTimeCollapse(){
+  _timeCollapsed=!_timeCollapsed;
+  const statsStrip=document.getElementById('time-stats-strip');
+  const tableWrap=document.querySelector('#jt-time .time-table-wrap');
+  const filters=document.querySelector('#jt-time .time-head-bar > div:last-child');
+  const lbl=document.getElementById('time-collapse-lbl');
+  const icon=document.getElementById('time-collapse-icon');
+  if(_timeCollapsed){
+    // Compact: hide filters + stats, show summary only
+    if(statsStrip)statsStrip.style.display='none';
+    if(tableWrap){tableWrap.style.display='none';}
+    if(filters){filters.querySelectorAll('select').forEach(s=>s.style.display='none');}
+    if(lbl)lbl.textContent='Expand';
+    if(icon)icon.className='ti ti-layout-sidebar-right-expand';
+    // Show compact summary bar
+    let sumBar=document.getElementById('time-compact-bar');
+    if(!sumBar){sumBar=document.createElement('div');sumBar.id='time-compact-bar';sumBar.style.cssText='padding:12px 32px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);';document.querySelector('#jt-time .time-wrap').appendChild(sumBar);}
+    const totalHrs=_lastTimeTasks?_lastTimeTasks.reduce((a,t)=>a+(t.hours||0),0):0;
+    sumBar.textContent=`${_lastTimeTasks?.length||0} entries · ${fmtHrs(totalHrs)} total — click Expand to see details`;
+    sumBar.style.display='block';
+  } else {
+    if(statsStrip)statsStrip.style.display='';
+    if(tableWrap)tableWrap.style.display='';
+    if(filters){filters.querySelectorAll('select').forEach(s=>s.style.display='');}
+    if(lbl)lbl.textContent='Compact';
+    if(icon)icon.className='ti ti-layout-sidebar-right-collapse';
+    const sumBar=document.getElementById('time-compact-bar');
+    if(sumBar)sumBar.style.display='none';
+  }
+}
+let _lastTimeTasks=null;
 function initTimeFilters(){
   // Populate person filter
   const pSel=document.getElementById('tf-person');
@@ -3838,6 +4086,7 @@ function renderTime(){
   const billFilter=document.getElementById('tf-bill')?.value||'all';
 
   let entries=_getTimeEntries();
+  _lastTimeTasks=entries;
   // Date range
   entries=_filterByRange(entries,range);
   // Person
@@ -4243,34 +4492,39 @@ function renderReporting(){
   });
 
   // Data table
-  const tbody=document.getElementById('r-table-body');
-  tbody.innerHTML='';
-  tasks.forEach(t=>{
-    const tr=document.createElement('tr');
-    const doneBadge=t.done?'<span style="color:var(--done-ink);"><i class="ti ti-check"></i> Done</span>':'<span style="color:var(--muted);">Pending</span>';
-    tr.innerHTML=`<td><strong>${people[t.person]?.name||t.person}</strong></td><td>${t.title}</td><td style="font-size:12px;color:var(--muted);">${t.job||'—'}</td><td style="font-size:12px;color:var(--muted);">${t.item||'—'}</td><td style="text-align:right;font-weight:500;">${fmtHrs(t.hours)}</td><td>${doneBadge}</td><td>${t.urgent&&!t.done?'<span style="color:var(--red);"><i class="ti ti-alert-circle"></i></span>':''}</td>`;
-    tbody.appendChild(tr);
-  });
-  document.getElementById('r-task-count').textContent=`${tasks.length} task${tasks.length!==1?'s':''}`;
-  document.getElementById('r-total-hours').innerHTML=`<strong>${fmtHrs(grandTotal)}</strong>`;
-  
+  const tbody=document.getElementById('r-tbody');
+  if(tbody){
+    const dayNames=['','Mon','Tue','Wed','Thu','Fri'];
+    tbody.innerHTML=tasks.length===0
+      ?'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;">No tasks in this period.</td></tr>'
+      :tasks.map(t=>{
+        const done=t.done?`<span style="color:#2E7D32;font-size:11px;">✓ Done</span>`:`<span style="color:var(--muted);font-size:11px;">Pending</span>`;
+        const urgent=t.urgent&&!t.done?` <i class="ti ti-alert-circle" style="color:var(--red);font-size:11px;"></i>`:'';
+        return`<tr>
+          <td>${t.title||'—'}${urgent}</td>
+          <td style="font-size:12px;color:var(--muted);">${people[t.person]?.name||t.person}</td>
+          <td style="font-size:12px;color:var(--muted);">${t.job||'Personal'}</td>
+          <td style="font-size:12px;color:var(--muted);">${dayNames[t.day]||'—'}</td>
+          <td style="font-weight:500;">${fmtHrs(t.hours||0)}</td>
+          <td>${done}</td>
+        </tr>`;
+      }).join('');
+  }
   saveData();
 }
 
-function destroyChart(c){if(c){c.destroy();c=null;}}
+function destroyChart(c){if(c&&typeof c.destroy==='function'){try{c.destroy();}catch(e){}}return null;}
 
-function exportReport(){
+function exportReportingCSV(){
   const tasks=getFilteredTasks();
   if(tasks.length===0){alert('No data to export.');return;}
   let csv='Person,Task,Job,Item,Hours,Status,Day\n';
   tasks.forEach(t=>{
-    csv+=`${people[t.person]?.name||t.person},"${t.title}","${t.job||''}","${t.item||''}",${t.hours},${t.done?'Done':'Pending'},${t.day}
-`;
+    csv+=`${people[t.person]?.name||t.person},"${(t.title||'').replace(/"/g,'""')}","${(t.job||'').replace(/"/g,'""')}","${(t.item||'').replace(/"/g,'""')}",${fmtHrs(t.hours||0)},${t.done?'Done':'Pending'},${['','Mon','Tue','Wed','Thu','Fri'][t.day]||t.day}\n`;
   });
   const blob=new Blob([csv],{type:'text/csv'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download=`report_${new Date().toISOString().slice(0,10)}.csv`;
+  const a=document.createElement('a');a.href=url;a.download=`report_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();URL.revokeObjectURL(url);
 }
 
