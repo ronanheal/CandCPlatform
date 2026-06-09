@@ -147,7 +147,7 @@ function renderReporting(){
   tasks.forEach(t=>{
     const tr=document.createElement('tr');
     const doneBadge=t.done?'<span style="color:var(--done-ink);"><i class="ti ti-check"></i> Done</span>':'<span style="color:var(--muted);">Pending</span>';
-    tr.innerHTML=`<td><strong>${people[t.person]?.name||t.person}</strong></td><td>${t.title}</td><td style="font-size:12px;color:var(--muted);">${t.job||'—'}</td><td style="font-size:12px;color:var(--muted);">${t.item||'—'}</td><td style="text-align:right;font-weight:500;">${fmtHrs(t.hours)}</td><td>${doneBadge}</td><td>${t.urgent&&!t.done?'<span style="color:var(--red);"><i class="ti ti-alert-circle"></i></span>':'</td>`;
+    tr.innerHTML=`<td><strong>${people[t.person]?.name||t.person}</strong></td><td>${t.title}</td><td style="font-size:12px;color:var(--muted);">${t.job||'—'}</td><td style="font-size:12px;color:var(--muted);">${t.item||'—'}</td><td style="text-align:right;font-weight:500;">${fmtHrs(t.hours)}</td><td>${doneBadge}</td><td>${t.urgent&&!t.done?'<span style="color:var(--red);"><i class="ti ti-alert-circle"></i></span>':''}</td>`;
     tbody.appendChild(tr);
   });
   document.getElementById('r-task-count').textContent=`${tasks.length} task${tasks.length!==1?'s':''}`;
@@ -161,8 +161,7 @@ function destroyChart(c){if(c){c.destroy();c=null;}}
 function exportReport(){
   const tasks=getFilteredTasks();
   if(tasks.length===0){alert('No data to export.');return;}
-  let csv='Person,Task,Job,Item,Hours,Status,Day
-';
+  let csv='Person,Task,Job,Item,Hours,Status,Day\n';
   tasks.forEach(t=>{
     csv+=`${people[t.person]?.name||t.person},"${t.title}","${t.job||''}","${t.item||''}",${t.hours},${t.done?'Done':'Pending'},${t.day}
 `;
@@ -2201,7 +2200,7 @@ function renderReporting(){
   tasks.forEach(t=>{
     const tr=document.createElement('tr');
     const doneBadge=t.done?'<span style="color:var(--done-ink);"><i class="ti ti-check"></i> Done</span>':'<span style="color:var(--muted);">Pending</span>';
-    tr.innerHTML=`<td><strong>${people[t.person]?.name||t.person}</strong></td><td>${t.title}</td><td style="font-size:12px;color:var(--muted);">${t.job||'—'}</td><td style="font-size:12px;color:var(--muted);">${t.item||'—'}</td><td style="text-align:right;font-weight:500;">${fmtHrs(t.hours)}</td><td>${doneBadge}</td><td>${t.urgent&&!t.done?'<span style="color:var(--red);"><i class="ti ti-alert-circle"></i></span>':'</td>`;
+    tr.innerHTML=`<td><strong>${people[t.person]?.name||t.person}</strong></td><td>${t.title}</td><td style="font-size:12px;color:var(--muted);">${t.job||'—'}</td><td style="font-size:12px;color:var(--muted);">${t.item||'—'}</td><td style="text-align:right;font-weight:500;">${fmtHrs(t.hours)}</td><td>${doneBadge}</td><td>${t.urgent&&!t.done?'<span style="color:var(--red);"><i class="ti ti-alert-circle"></i></span>':''}</td>`;
     tbody.appendChild(tr);
   });
   document.getElementById('r-task-count').textContent=`${tasks.length} task${tasks.length!==1?'s':''}`;
@@ -2215,8 +2214,7 @@ function destroyChart(c){if(c){c.destroy();c=null;}}
 function exportReport(){
   const tasks=getFilteredTasks();
   if(tasks.length===0){alert('No data to export.');return;}
-  let csv='Person,Task,Job,Item,Hours,Status,Day
-';
+  let csv='Person,Task,Job,Item,Hours,Status,Day\n';
   tasks.forEach(t=>{
     csv+=`${people[t.person]?.name||t.person},"${t.title}","${t.job||''}","${t.item||''}",${t.hours},${t.done?'Done':'Pending'},${t.day}
 `;
