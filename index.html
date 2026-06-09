@@ -1310,6 +1310,43 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
 .client-card-full:hover{box-shadow:0 2px 8px rgba(0,0,0,.07);border-color:#ccc;}
 .cd-job-row{background:var(--white);border:1px solid var(--border);padding:14px 16px;margin-bottom:8px;cursor:pointer;border-radius:2px;transition:box-shadow .12s,border-color .12s;}
 .cd-job-row:hover{box-shadow:0 2px 8px rgba(0,0,0,.06);border-color:#ccc;}
+/* Task notes in job plan */
+.item-task-notes{margin-top:10px;border-top:1px solid var(--border);padding-top:8px;}
+.item-task-note{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--faint,#f4f3f1);}
+.item-task-note:last-child{border-bottom:none;}
+.itn-av{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:10px;color:#fff;font-weight:500;flex-shrink:0;margin-top:1px;}
+.itn-body{flex:1;min-width:0;}
+.itn-title{font-size:11px;font-weight:500;color:var(--ink);margin-bottom:1px;}
+.itn-text{font-size:12px;color:var(--muted);line-height:1.4;}
+/* Time table note rows */
+.te-note-row{font-size:11px;color:var(--muted);padding:3px 16px 6px 36px;display:flex;align-items:flex-start;gap:5px;line-height:1.4;}
+.te-note-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--muted);margin-left:5px;vertical-align:middle;}
+/* Rich board job cards */
+.bc-rich{cursor:pointer;transition:box-shadow .15s,border-color .15s;}
+.bc-rich:hover{border-color:#bbb;box-shadow:0 3px 12px rgba(0,0,0,.08);}
+.bc-header-row{display:flex;align-items:center;gap:6px;margin-top:3px;margin-bottom:6px;}
+.bc-id{font-size:10px;color:var(--muted);}
+.bc-bill-dot{width:6px;height:6px;border-radius:50%;background:#4CAF50;display:inline-block;}
+.bc-labels{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px;}
+.bc-lbl{font-size:9px;padding:1px 6px;background:var(--off);border:1px solid var(--border);border-radius:10px;color:var(--muted);letter-spacing:.02em;}
+.bc-members-row{display:flex;gap:3px;margin-bottom:8px;}
+.bc-av{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:9px;color:#fff;font-weight:600;}
+.bc-av-sm{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;font-size:8px;color:#fff;font-weight:600;flex-shrink:0;}
+.bc-bars{display:flex;flex-direction:column;gap:4px;}
+.bc-bar-row{display:flex;align-items:center;gap:6px;}
+.bc-bar-lbl{font-size:9px;color:var(--muted);width:38px;flex-shrink:0;letter-spacing:.02em;text-transform:uppercase;}
+.bc-bar-track{flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
+.bc-bar-fill{height:100%;border-radius:2px;transition:width .3s;}
+.bc-bar-val{font-size:9px;color:var(--muted);width:28px;text-align:right;flex-shrink:0;}
+.bc-expanded{border-top:1px solid var(--border);margin-top:10px;padding-top:8px;}
+.bc-section-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:5px;}
+.bc-task-row{display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--faint,#f4f3f1);}
+.bc-task-row:last-of-type{border-bottom:none;}
+.bc-task-title{flex:1;font-size:11px;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bc-task-hrs{font-size:10px;color:var(--muted);flex-shrink:0;}
+.bc-no-tasks{font-size:11px;color:var(--muted);padding:4px 0;}
+.bc-open-btn{margin-top:8px;width:100%;background:var(--off);border:1px solid var(--border);padding:5px 10px;font-size:11px;font-family:var(--font);cursor:pointer;border-radius:2px;color:var(--ink);transition:background .12s;}
+.bc-open-btn:hover{background:var(--border);}
 .ccf-name{font-family:var(--serif);font-size:16px;font-weight:400;margin-bottom:4px;}
 .ccf-contact{font-size:12px;color:var(--muted);margin-bottom:12px;}
 .ccf-meta{display:flex;gap:16px;font-size:11px;color:var(--muted);}
@@ -1874,7 +1911,7 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
           <option value="">— Personal / no job —</option>
         </select>
         <div class="tm-lbl" style="margin-top:16px;">Item</div>
-        <input list="item-datalist" class="tm-field-sel" id="td-item" placeholder="Select or type an item…" autocomplete="off">
+        <input list="item-datalist" class="tm-field-sel" id="td-item" placeholder="Select or type an item…" autocomplete="off" onchange="updateJobLabel()" onblur="updateJobLabel()">
         <datalist id="item-datalist">
           <option>Creative Direction</option>
           <option>Design &amp; Artwork</option>
@@ -2626,6 +2663,18 @@ function updateJobLabel(){
     lbl.textContent=j?`Item (from ${j.company} job plan)`:'Item';
   } else {
     lbl.textContent='Item';
+  }
+  // Pre-fill note from job plan item if note field is empty
+  const itemVal=(document.getElementById('td-item')?.value||'').trim();
+  if(jobId&&itemVal){
+    const j=jobs.find(x=>x.id===jobId);
+    const srcPhases=(jobId===activeJobId&&phases&&phases.length)?phases:(j?.phases||[]);
+    let matchNote='';
+    srcPhases.forEach(ph=>{(ph.items||[]).forEach(it=>{if((it.name||'').trim().toLowerCase()===itemVal.toLowerCase()&&it.note){matchNote=it.note;}});});
+    if(matchNote){
+      const noteInp=document.getElementById('td-note');
+      if(noteInp&&!noteInp.value.trim()){noteInp.value=matchNote;}
+    }
   }
   // Sync item datalist from the selected job's plan phases
   const dl=document.getElementById('item-datalist');
@@ -3390,7 +3439,7 @@ function openJobDetail(id){
     phases=isNew?[]:JSON.parse(JSON.stringify(SFF_PHASES));
     if(j)j.phases=JSON.parse(JSON.stringify(phases));
   }
-  renderStats(j,isNew);renderPhases();
+  renderStats(j,isNew);renderPhases();renderExpenses();
   document.querySelectorAll('.view').forEach(el=>el.classList.add('hidden'));
   document.getElementById('view-detail').classList.remove('hidden');
   switchDTab(document.querySelector('.d-tab'),'plan');
@@ -3559,10 +3608,37 @@ function renderItems(phId){
     tr.addEventListener('drop',e=>{e.stopPropagation();if(dragSrc===tr)return;const sp=phases.find(p=>p.id===dragSrc.dataset.phId);const tp=phases.find(p=>p.id===tr.dataset.phId);const si=sp.items.findIndex(i=>i.id===dragSrc.dataset.itemId);const ti=tp.items.findIndex(i=>i.id===tr.dataset.itemId);const[mv]=sp.items.splice(si,1);tp.items.splice(ti,0,mv);renderPhases();});
     tr.addEventListener('dragend',()=>document.querySelectorAll('.dragging').forEach(el=>el.classList.remove('dragging')));
     tbody.appendChild(tr);
-    // Note row — always render (hidden if empty, shown if has content or currently editing)
+    // Note row — item-level note + task notes pulled from todos
     const nr=document.createElement('tr');nr.className='item-note-row';nr.id='note_'+item.id;
-    nr.style.display=item.note?'':'none';
-    nr.innerHTML=`<td colspan="${COLS}"><div class="item-note-wrap"><span class="item-note-lbl">Note</span><textarea class="item-note-inp" rows="1" placeholder="Add a note for this item — it will carry through to any todos booked against it…" onchange="saveItemNote('${item.id}','${phId}',this.value)" oninput="autoResizeNote(this)">${item.note||''}</textarea></div></td>`;
+    // Find all tasks linked to this item across all people/weeks
+    const linkedTaskNotes=[];
+    Object.keys(todoData).forEach(pKey=>{
+      const pd=todoData[pKey];
+      Object.keys(pd).forEach(wk=>{
+        const wd=pd[wk];
+        [1,2,3,4,5].forEach(d=>{
+          (wd[d]||[]).forEach(t=>{
+            if(t.note&&t.note.trim()&&t.jobId===activeJobId&&(t.item||'').trim().toLowerCase()===(item.name||'').trim().toLowerCase()){
+              linkedTaskNotes.push({note:t.note.trim(),person:pKey,title:t.title||'Task'});
+            }
+          });
+        });
+      });
+    });
+    const hasContent=item.note||linkedTaskNotes.length>0;
+    nr.style.display=hasContent?'':'none';
+    let taskNotesHTML='';
+    if(linkedTaskNotes.length>0){
+      taskNotesHTML=`<div class="item-task-notes">`+linkedTaskNotes.map(tn=>{
+        const p=people[tn.person];
+        return`<div class="item-task-note"><span class="itn-av" style="background:${p?.color||'#999'}">${p?.initials||'?'}</span><div class="itn-body"><div class="itn-title">${tn.title}</div><div class="itn-text">${tn.note}</div></div></div>`;
+      }).join('')+`</div>`;
+    }
+    nr.innerHTML=`<td colspan="${COLS}"><div class="item-note-wrap">
+      <span class="item-note-lbl">Note <span style="font-weight:400;color:var(--muted);">(carries to todos)</span></span>
+      <textarea class="item-note-inp" rows="1" placeholder="Add a note — it pre-fills when a todo is created for this item…" onchange="saveItemNote('${item.id}','${phId}',this.value)" oninput="autoResizeNote(this)">${item.note||''}</textarea>
+      ${taskNotesHTML}
+    </div></td>`;
     tbody.appendChild(nr);
   });
 }
@@ -3660,6 +3736,69 @@ function ctxDo(a){
 function showPctx(e,phId){e.stopPropagation();pctxTarget=phId;const m=document.getElementById('pctx');m.style.cssText=`left:${Math.min(e.clientX,window.innerWidth-200)}px;top:${Math.min(e.clientY,window.innerHeight-170)}px;`;m.classList.add('on');}
 function pctxDo(a){document.getElementById('pctx').classList.remove('on');if(!pctxTarget)return;if(a==='delete'){if(confirm('Delete this phase?')){phases=phases.filter(p=>p.id!==pctxTarget);renderPhases();}}else if(a==='additem')showAddItemForm(pctxTarget);else if(a==='rename'){const ph=phases.find(p=>p.id===pctxTarget);const n=prompt('Rename phase:',ph.name);if(n?.trim()){ph.name=n.trim();renderPhases();}}else if(a==='complete'){const ph=phases.find(p=>p.id===pctxTarget);ph.status=ph.status==='complete'?'open':'complete';renderPhases();}}
 function toggleExp(){const w=document.getElementById('exp-wrap');w.classList.toggle('collapsed');const ch=w.querySelector('.exp-chv');if(ch)ch.style.transform=w.classList.contains('collapsed')?'rotate(-90deg)':'';}
+function showAddExpenseForm(){
+  // Show a simple inline expense modal
+  const modal=document.createElement('div');
+  modal.className='modal-bg on';
+  modal.innerHTML=`<div class="modal" style="max-width:440px;">
+    <div class="modal-hd"><span class="modal-hd-title">Add expense</span><button class="modal-x" onclick="this.closest('.modal-bg').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd">
+      <div class="field"><label>Description</label><input id="exp-desc" class="form-inp" placeholder="e.g. Photography, Print, Software" style="width:100%;"></div>
+      <div class="field-row">
+        <div class="field"><label>Cost (ex. markup)</label><input id="exp-cost" class="form-inp" placeholder="$0.00" style="width:100%;"></div>
+        <div class="field"><label>Markup %</label><input id="exp-markup" class="form-inp" placeholder="20" style="width:100%;"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Qty</label><input id="exp-qty" class="form-inp" value="1" style="width:100%;"></div>
+        <div class="field"><label>Date</label><input id="exp-date" class="form-inp" type="date" style="width:100%;"></div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="modal-cancel" onclick="this.closest('.modal-bg').remove()">Cancel</button>
+      <button class="modal-save" onclick="saveExpense()">Add expense</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+function saveExpense(){
+  const desc=document.getElementById('exp-desc')?.value.trim();
+  const cost=parseFloat(document.getElementById('exp-cost')?.value.replace(/[$,]/g,''))||0;
+  const markup=parseFloat(document.getElementById('exp-markup')?.value)||0;
+  const qty=parseFloat(document.getElementById('exp-qty')?.value)||1;
+  const date=document.getElementById('exp-date')?.value;
+  if(!desc){alert('Please add a description.');return;}
+  const sell=cost*(1+markup/100)*qty;
+  if(!activeJobId)return;
+  const j=jobs.find(x=>x.id===activeJobId);
+  if(!j)return;
+  if(!j.expenses)j.expenses=[];
+  j.expenses.push({id:'e'+Date.now(),desc,cost,markup,qty,date:date||new Date().toISOString().split('T')[0],sell,status:'draft'});
+  logActivity(activeJobId,MY_PERSON,'expense_add',`Added expense <strong>${desc}</strong> — $${sell.toLocaleString()} sell`);
+  saveData();
+  document.querySelector('.modal-bg.on')?.remove();
+  renderExpenses();
+}
+function renderExpenses(){
+  const j=jobs.find(x=>x.id===activeJobId);
+  const wrap=document.getElementById('exp-wrap');
+  if(!wrap||!j)return;
+  const exps=j.expenses||[];
+  if(!exps.length){wrap.style.display='none';return;}
+  wrap.style.display='';
+  const total=exps.reduce((a,e)=>a+(e.sell||0),0);
+  wrap.innerHTML=`<div class="exp-head" onclick="toggleExp()"><i class="ti ti-chevron-down ph-chv exp-chv"></i><span style="font-size:13px;font-weight:400;flex:1;letter-spacing:.02em;">Expenses (${exps.length})</span><span style="font-size:11px;color:#888;">$${total.toLocaleString()} sell</span></div>
+  <table class="exp-t"><thead><tr><th>Expense</th><th style="width:100px;">Date</th><th style="width:55px;">Qty</th><th style="width:85px;">Cost</th><th style="width:65px;">Markup</th><th style="width:85px;">Sell</th><th style="width:80px;text-align:right;">Total</th><th style="width:75px;text-align:right;">Status</th></tr></thead>
+  <tbody>${exps.map(e=>`<tr><td>${e.desc}</td><td style="font-size:12px;color:var(--muted);">${e.date?new Date(e.date+'T00:00:00').toLocaleDateString('en-NZ',{day:'numeric',month:'short',year:'2-digit'}):'-'}</td><td style="font-size:12px;">${e.qty}</td><td style="font-size:12px;">$${e.cost.toLocaleString()}</td><td style="font-size:12px;color:var(--muted);">${e.markup?e.markup+'%':'—'}</td><td style="font-size:12px;">$${Math.round(e.cost*(1+e.markup/100)).toLocaleString()}</td><td style="text-align:right;font-size:12px;">$${Math.round(e.sell*e.qty).toLocaleString()}</td><td style="text-align:right;"><span class="exp-badg" style="cursor:pointer;" onclick="cycleExpenseStatus('${e.id}')">${e.status||'Draft'}</span></td></tr>`).join('')}</tbody></table>
+  <div class="add-e-row" onclick="showAddExpenseForm()"><i class="ti ti-plus" style="font-size:11px"></i> Add expense</div>`;
+}
+function cycleExpenseStatus(id){
+  const j=jobs.find(x=>x.id===activeJobId);if(!j)return;
+  const e=j.expenses?.find(x=>x.id===id);if(!e)return;
+  const states=['draft','approved','invoiced'];
+  const idx=states.indexOf(e.status||'draft');
+  e.status=states[(idx+1)%states.length];
+  saveData();renderExpenses();
+}
 function openCreateJob(){jobCounter++;document.getElementById('nj-num').value=jobCounter;document.getElementById('nj-name').value='';document.getElementById('create-modal').classList.add('on');setTimeout(()=>document.getElementById('nj-name').focus(),50);}
 function closeCreateJob(){document.getElementById('create-modal').classList.remove('on');}
 function setTog(el){el.closest('.tog-row').querySelectorAll('.tog').forEach(t=>t.classList.remove('on'));el.classList.add('on');}
@@ -4143,29 +4282,39 @@ function renderTime(){
   const byPerson={};
   entries.forEach(e=>{if(!byPerson[e.personKey])byPerson[e.personKey]=[];byPerson[e.personKey].push(e);});
 
+  // Track collapsed groups in module scope
+  if(!window._timeCollapsedGroups)window._timeCollapsedGroups={};
   Object.keys(byPerson).forEach(pKey=>{
     const p=people[pKey]||{name:pKey,color:'#999',initials:'?'};
     const pEntries=byPerson[pKey];
     const pTotal=pEntries.reduce((s,e)=>s+e.hours,0);
     const pBill=pEntries.filter(e=>e.done&&e.billable).reduce((s,e)=>s+e.hours,0);
-    rows+=`<tr class="time-group-row"><td colspan="7">
+    const isCollapsed=window._timeCollapsedGroups[pKey];
+    const chevron=isCollapsed?'ti-chevron-right':'ti-chevron-down';
+    rows+=`<tr class="time-group-row" style="cursor:pointer;" onclick="toggleTimeGroup('${pKey}')"><td colspan="7">
       <span class="time-av" style="background:${p.color};">${p.initials}</span>
-      ${p.name} &nbsp;·&nbsp; ${fmtH(pTotal)} total &nbsp;·&nbsp; ${fmtH(pBill)} billable
+      <strong>${p.name}</strong> &nbsp;<span style="color:var(--muted);font-weight:400;">${fmtH(pTotal)} total · ${fmtH(pBill)} billable · ${pEntries.length} entries</span>
+      <i class="ti ${chevron}" style="float:right;font-size:11px;color:var(--muted);margin-top:2px;"></i>
     </td></tr>`;
-    pEntries.forEach(e=>{
-      const j=e.jobId?jobs.find(x=>x.id===e.jobId):null;
-      const jobStr=j?`<span style="color:var(--muted);font-size:11px;margin-right:4px;">${j.id}</span>${j.name}`:'<span style="color:var(--muted);">—</span>';
-      const statusStr=e.done?'<span style="color:#4CAF50;font-size:11px;">Done</span>':'<span style="color:var(--muted);font-size:11px;">Planned</span>';
-      rows+=`<tr>
-        <td style="color:var(--muted);font-size:11px;"></td>
-        <td>${jobStr}</td>
-        <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.title||'<span style="color:var(--muted);">Untitled</span>'}</td>
-        <td style="color:var(--muted);font-size:12px;white-space:nowrap;">${fmtDate(e.date)}</td>
-        <td style="text-align:right;font-variant-numeric:tabular-nums;">${fmtH(e.hours)}</td>
-        <td>${e.billable?'<span class="t-bill">Billable</span>':'<span class="t-nobill">Non-billable</span>'}</td>
-        <td>${statusStr}</td>
-      </tr>`;
-    });
+    if(!isCollapsed){
+      pEntries.forEach(e=>{
+        const j=e.jobId?jobs.find(x=>x.id===e.jobId):null;
+        const jobStr=j?`<span style="color:var(--muted);font-size:11px;margin-right:4px;">${j.id}</span>${j.name}`:'<span style="color:var(--muted);">—</span>';
+        const statusStr=e.done?'<span style="color:#4CAF50;font-size:11px;">Done</span>':'<span style="color:var(--muted);font-size:11px;">Planned</span>';
+        rows+=`<tr class="time-entry-row tg-${pKey}">
+          <td style="color:var(--muted);font-size:11px;"></td>
+          <td>${jobStr}</td>
+          <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.title||'<span style="color:var(--muted);">Untitled</span>'}${e.note?`<span class="te-note-dot" title="${e.note.replace(/"/g,'&quot;')}"></span>`:''}</td>
+          <td style="color:var(--muted);font-size:12px;white-space:nowrap;">${fmtDate(e.date)}</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums;">${fmtH(e.hours)}</td>
+          <td>${e.billable?'<span class="t-bill">Billable</span>':'<span class="t-nobill">Non-billable</span>'}</td>
+          <td>${statusStr}</td>
+        </tr>`;
+        if(e.note){
+          rows+=`<tr class="tg-${pKey}"><td colspan="7"><div class="te-note-row"><i class="ti ti-note" style="font-size:11px;"></i> ${e.note}</div></td></tr>`;
+        }
+      });
+    }
   });
   tbody.innerHTML=rows;
 }
@@ -4173,6 +4322,11 @@ function fmtH(h){
   if(!h)return'0h';
   const hh=Math.floor(h);const mm=Math.round((h-hh)*60);
   return mm?`${hh}h ${mm}m`:`${hh}h`;
+}
+function toggleTimeGroup(pKey){
+  if(!window._timeCollapsedGroups)window._timeCollapsedGroups={};
+  window._timeCollapsedGroups[pKey]=!window._timeCollapsedGroups[pKey];
+  renderTime();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -4595,6 +4749,56 @@ function openBoard(id){
 function closeBoardDetail(){activeBoardId=null;renderBoardsList();}
 
 // ── Client board ────────────────────────────────────────────────────────────
+function _richJobCard(j,expanded){
+  const pct=j.bPct||0;const over=pct>100;
+  const hPct=j.hPct||0;const hOver=hPct>100;
+  const wfLabel=j.workflowStatus==='quote'?'Quote':j.workflowStatus==='invoiced'?'Invoiced':'Live';
+  const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
+  const memberAvatars=(j.members||['ro']).map(k=>{const p=people[k];return p?`<span class="bc-av" style="background:${p.color};">${p.initials}</span>`:''}).join('');
+  const labels=(j.labels||[]).slice(0,3).map(l=>`<span class="bc-lbl">${l}</span>`).join('');
+  // Active tasks this week across all people
+  const activeTasks=[];
+  Object.keys(todoData).forEach(pKey=>{
+    const wd=getWeekData(pKey,0);
+    [1,2,3,4,5].forEach(d=>{(wd[d]||[]).forEach(t=>{if((t.jobId===j.id||t.job?.includes(j.id))&&!t.done)activeTasks.push({...t,person:pKey});});});
+  });
+  const expandedHTML=expanded?`<div class="bc-expanded">
+    ${activeTasks.length?`<div class="bc-section-lbl">This week (${activeTasks.length})</div>`+activeTasks.slice(0,5).map(t=>{const p=people[t.person];return`<div class="bc-task-row"><span class="bc-av-sm" style="background:${p?.color||'#999'}">${p?.initials||'?'}</span><span class="bc-task-title">${t.title||'Task'}</span><span class="bc-task-hrs">${t.hours||''}</span></div>`;}).join('')+'':'<div class="bc-no-tasks">No open tasks this week</div>'}
+    <button class="bc-open-btn" onclick="event.stopPropagation();openJobDetail('${j.id}')"><i class="ti ti-arrow-up-right" style="font-size:11px;"></i> Open job plan</button>
+  </div>`:'';
+  return`<div class="bdet-card bc-rich${expanded?' bc-expanded-card':''}" id="bc-${j.id}" style="${over?'border-left:3px solid var(--red);':''}" onclick="toggleBoardCard('${j.id}')">
+    <button class="bdet-card-del" onclick="event.stopPropagation();" title="Options"><i class="ti ti-dots"></i></button>
+    <div class="bc-name">${j.name}</div>
+    <div class="bc-header-row">
+      <span class="bc-id">${j.id}</span>
+      <span class="wf-badge ${wfCls}" style="font-size:9px;">${wfLabel}</span>
+      ${j.billable?'<span class="bc-bill-dot" title="Billable"></span>':''}
+    </div>
+    ${labels?`<div class="bc-labels">${labels}</div>`:''}
+    <div class="bc-members-row">${memberAvatars}</div>
+    <div class="bc-bars">
+      <div class="bc-bar-row">
+        <span class="bc-bar-lbl">Hours</span>
+        <div class="bc-bar-track"><div class="bc-bar-fill" style="width:${Math.min(hPct,100)}%;background:${hOver?'var(--red)':'var(--ink)'}"></div></div>
+        <span class="bc-bar-val" style="color:${hOver?'var(--red)':'var(--muted)'}">${j.hours||'0h'}</span>
+      </div>
+      <div class="bc-bar-row">
+        <span class="bc-bar-lbl">Budget</span>
+        <div class="bc-bar-track"><div class="bc-bar-fill" style="width:${Math.min(pct,100)}%;background:${over?'var(--red)':'#4CAF50'}"></div></div>
+        <span class="bc-bar-val" style="color:${over?'var(--red)':'var(--muted)'}">${pct}%</span>
+      </div>
+    </div>
+    ${expandedHTML}
+  </div>`;
+}
+if(!window._expandedBoardCards)window._expandedBoardCards={};
+function toggleBoardCard(jobId){
+  if(!window._expandedBoardCards)window._expandedBoardCards={};
+  window._expandedBoardCards[jobId]=!window._expandedBoardCards[jobId];
+  // Re-render just this card
+  const el=document.getElementById('bc-'+jobId);
+  if(el){const j=jobs.find(x=>x.id===jobId);if(j){const newCard=document.createElement('div');newCard.innerHTML=_richJobCard(j,window._expandedBoardCards[jobId]);el.replaceWith(newCard.firstChild);}}
+}
 function renderClientBoard(b,body){
   const boardJobs=jobs.filter(j=>j.company===b.clientFilter);
   const COLS={briefed:'Briefed',inprogress:'In Progress',review:'In Review',approved:'Approved',complete:'Complete'};
@@ -4602,20 +4806,13 @@ function renderClientBoard(b,body){
   const buckets={};colKeys.forEach(k=>buckets[k]=[]);
   boardJobs.forEach(j=>{
     let k='inprogress';
-    if(j.status==='new')k='briefed';
+    if(j.workflowStatus==='quote')k='briefed';
+    else if(j.workflowStatus==='invoiced')k='complete';
     else if(j.status==='complete')k='complete';
     buckets[k].push(j);
   });
   const colsHTML=colKeys.map(k=>{
-    const cards=buckets[k].map(j=>{
-      const pct=j.bPct||0;const over=pct>100;
-      return`<div class="bdet-card" style="${over?'border-left:3px solid var(--red);':''}" onclick="openJobDetail('${j.id}')">
-        <div class="bc-name">${j.name}</div>
-        <div class="bc-client">${j.id} · ${j.company}</div>
-        <div style="margin-top:8px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;"><div style="height:3px;background:${over?'var(--red)':'var(--ink)'};width:${Math.min(pct,100)}%;"></div></div>
-        <div style="font-size:10px;color:${over?'var(--red)':'var(--muted)'};margin-top:3px;">${j.hours||'0h'} / ${j.hoursTotal||'—'} · ${pct}%</div>
-      </div>`;
-    }).join('');
+    const cards=buckets[k].map(j=>_richJobCard(j,window._expandedBoardCards?.[j.id])).join('');
     return`<div class="bdet-col">
       <div class="bdet-col-h"><span class="bdet-col-name" style="cursor:default;">${COLS[k]}</span><span class="bdet-col-count">${buckets[k].length}</span></div>
       <div class="bdet-col-cards">${cards||'<div style="font-size:11px;color:var(--muted);padding:8px 2px;">No jobs here</div>'}</div>
@@ -4688,11 +4885,18 @@ function buildCustomCard(b,col,card){
   const del=`<button class="bdet-card-del" title="Remove" onclick="deleteCard('${b.id}','${col.id}','${card.id}')"><i class="ti ti-x"></i></button>`;
   if(card.type==='job'){
     const j=jobs.find(x=>x.id===card.jobRef);if(!j)return'';
-    const pct=j.bPct||0;const over=pct>100;
-    return`<div class="bdet-card" style="${over?'border-left:3px solid var(--red);':''}" onclick="openJobDetail('${j.id}')">${del}
+    const pct=j.bPct||0;const over=pct>100;const hPct=j.hPct||0;const hOver=hPct>100;
+    const wfLabel=j.workflowStatus==='quote'?'Quote':j.workflowStatus==='invoiced'?'Invoiced':'Live';
+    const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
+    const memberAvatars=(j.members||['ro']).map(k=>{const p=people[k];return p?`<span class="bc-av" style="background:${p.color};">${p.initials}</span>`:''}).join('');
+    return`<div class="bdet-card bc-rich" id="bc-${j.id}" style="${over?'border-left:3px solid var(--red);':''}" onclick="toggleBoardCard('${j.id}')">${del}
       <div class="bc-name">${j.name}</div>
-      <div class="bc-client">${j.company} · ${j.id}</div>
-      <div style="margin-top:8px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;"><div style="height:3px;background:${over?'var(--red)':'var(--ink)'};width:${Math.min(pct,100)}%;"></div></div>
+      <div class="bc-header-row"><span class="bc-id">${j.id}</span><span class="wf-badge ${wfCls}" style="font-size:9px;">${wfLabel}</span></div>
+      <div class="bc-members-row">${memberAvatars}</div>
+      <div class="bc-bars">
+        <div class="bc-bar-row"><span class="bc-bar-lbl">Hours</span><div class="bc-bar-track"><div class="bc-bar-fill" style="width:${Math.min(hPct,100)}%;background:${hOver?'var(--red)':'var(--ink)'}"></div></div><span class="bc-bar-val">${j.hours||'0h'}</span></div>
+        <div class="bc-bar-row"><span class="bc-bar-lbl">Budget</span><div class="bc-bar-track"><div class="bc-bar-fill" style="width:${Math.min(pct,100)}%;background:${over?'var(--red)':'#4CAF50'}"></div></div><span class="bc-bar-val">${pct}%</span></div>
+      </div>
     </div>`;
   }
   if(card.type==='person'){
