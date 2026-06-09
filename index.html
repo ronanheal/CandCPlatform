@@ -761,7 +761,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .day-todo-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .day-todo{overflow-y:auto;padding:6px 7px;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;min-height:32px;flex:none;}
 .day-todo.drop-hi{background:#fffdf5;}
-.day-done{overflow-y:auto;padding:6px 7px;display:flex;flex-direction:column;gap:4px;background:var(--off);flex:1;}
+.day-done{overflow-y:auto;padding:26px 7px 6px;display:flex;flex-direction:column;gap:4px;background:var(--off);flex:1;}
 .day-done.drop-hi{background:#f0fef4;}
 .day-done-empty{padding:6px 0;font-size:11px;color:var(--border);text-align:center;}
 /* Global done divider */
@@ -814,10 +814,10 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .jobs-table{width:100%;border-collapse:collapse;}
 .jobs-table thead th{background:var(--white);border-bottom:1px solid var(--border);padding:10px 18px;font-size:10px;font-weight:400;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:left;position:sticky;top:0;z-index:2;}
 .jobs-table tbody tr{border-bottom:1px solid var(--faint);cursor:pointer;transition:background .1s;}
-.jobs-table tbody tr:hover{background:var(--white);}
-.jobs-table td{padding:14px 18px;vertical-align:middle;}
+.jobs-table tbody tr:hover{background:var(--off);}
+.jobs-table td{padding:13px 18px;vertical-align:middle;}
 .job-num-name{display:flex;align-items:baseline;gap:8px;}
-.job-num{font-size:11px;color:var(--muted);font-weight:300;}
+.job-num{font-size:11px;color:var(--muted);font-weight:300;letter-spacing:.03em;}
 .job-name{font-size:14px;font-weight:400;}
 .job-co{font-size:12px;color:var(--muted);}
 .bbar-wrap{display:flex;flex-direction:column;gap:3px;min-width:130px;}
@@ -888,7 +888,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .i-rate{font-size:12px;color:var(--muted);text-align:right;}
 .i-sell{text-align:right;font-size:12px;}.i-sof{color:var(--muted);font-size:11px;}
 .i-badge{padding:2px 7px;border-radius:2px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;}
-.ib-c{background:#E8F5E9;color:#2E7D32;}.ib-p{background:#FDECEA;color:#B71C1C;}
+.ib-c{background:#E8F5E9;color:#2E7D32;}.ib-p{background:#EEF2FF;color:#3730A3;}
 .add-i-row{padding:8px 10px;font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-top:none;background:var(--white);}
 .add-i-row:hover{color:var(--red);}
 .add-form-row{background:var(--off);border-bottom:1px solid var(--border);}
@@ -1002,9 +1002,11 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .ctx-sep{height:1px;background:var(--border);margin:3px 0;}
 
 /* MODALS */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:800;display:none;align-items:center;justify-content:center;}
+/* Generic modal backdrop (shared) */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:800;display:none;align-items:flex-start;justify-content:center;padding-top:48px;}
 .modal-bg.on{display:flex;}
-.modal{background:var(--white);border-radius:3px;width:480px;max-width:96vw;overflow:hidden;}
+/* Legacy modal (create job etc) */
+.modal{background:var(--white);border-radius:3px;width:480px;max-width:96vw;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.18);}
 .modal-hd{background:var(--ink);color:var(--white);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;}
 .modal-hd-title{font-family:var(--serif);font-size:18px;font-weight:400;font-style:italic;}
 .modal-x{background:none;border:none;color:#666;font-size:18px;cursor:pointer;}
@@ -1017,14 +1019,55 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .field textarea{resize:vertical;min-height:65px;}
 .field-row{display:flex;gap:12px;}
 .field-row .field{flex:1;}
-.tog-row{display:flex;border:1px solid var(--border);border-radius:2px;overflow:hidden;}
-.tog{flex:1;padding:8px;font-size:12px;text-align:center;cursor:pointer;font-family:var(--font);border:none;background:var(--off);color:var(--muted);transition:all .15s;}
-.tog.on{background:var(--ink);color:var(--white);}
 .modal-ft{padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
 .modal-cancel{background:transparent;border:1px solid var(--border);border-radius:2px;padding:7px 15px;font-size:12px;font-family:var(--font);cursor:pointer;color:var(--muted);}
 .modal-cancel:hover{border-color:var(--ink);color:var(--ink);}
 .modal-ok{background:var(--ink);border:none;border-radius:2px;padding:7px 17px;font-size:12px;font-family:var(--font);color:var(--white);cursor:pointer;}
 .modal-ok:hover{opacity:.85;}
+/* ── Streamtime-style todo modal ── */
+.tm-modal{background:#fff;border-radius:4px;width:500px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 48px rgba(0,0,0,.22);}
+.tm-hd{display:flex;align-items:center;padding:13px 18px;border-bottom:1px solid var(--border);background:var(--off);gap:10px;}
+.tm-hd-personal{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;}
+.tm-hd-personal input{accent-color:var(--red);cursor:pointer;}
+.tm-hd-title{flex:1;text-align:center;font-size:13px;font-weight:500;color:var(--ink);}
+.tm-x{background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:2px;display:flex;align-items:center;justify-content:center;}
+.tm-x:hover{color:var(--ink);}
+.tm-bd{padding:20px 24px 8px;}
+.tm-title-inp{width:100%;border:none;border-bottom:1.5px solid var(--border);padding:2px 0 10px;font-size:17px;font-family:var(--font);font-weight:400;color:var(--ink);outline:none;background:transparent;margin-bottom:20px;}
+.tm-title-inp:focus{border-bottom-color:var(--ink);}
+.tm-title-inp::placeholder{color:var(--border);}
+.tm-person-row{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
+.tm-pav{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:500;flex-shrink:0;}
+.tm-pname{font-size:13px;color:var(--ink);}
+.tm-lbl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.tm-field-sel{width:100%;border:none;border-bottom:1px solid var(--border);padding:6px 0;font-size:14px;font-family:var(--font);color:var(--ink);background:transparent;outline:none;margin-bottom:4px;cursor:pointer;}
+.tm-field-sel:focus{border-bottom-color:var(--ink);}
+.tm-note-area{background:var(--off);border:1px solid var(--border);border-radius:3px;padding:10px 12px;font-size:13px;font-family:var(--font);color:var(--ink);width:100%;box-sizing:border-box;resize:vertical;min-height:60px;outline:none;margin-top:12px;line-height:1.55;}
+.tm-note-area:focus{border-color:var(--ink);}
+.tm-urgent-row{display:flex;align-items:center;gap:7px;margin-top:10px;padding:6px 0;}
+.tm-urgent-lbl{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--muted);}
+.tm-urgent-lbl input{accent-color:var(--red);cursor:pointer;}
+.tm-urgent-lbl.on{color:var(--red);}
+.tm-dash{border:none;border-top:1px dashed var(--border);margin:16px 0;}
+.tm-2col{display:flex;gap:28px;}
+.tm-col-lbl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:4px;}
+.tm-hours-inp{font-size:22px;font-weight:300;color:var(--ink);border:none;border-bottom:1px solid var(--border);width:110px;padding:2px 0;background:transparent;font-family:var(--font);outline:none;}
+.tm-hours-inp:focus{border-bottom-color:var(--ink);}
+.tm-day-sel{font-size:14px;font-family:var(--font);border:none;border-bottom:1px solid var(--border);padding:4px 0;background:transparent;outline:none;color:var(--ink);cursor:pointer;}
+.tm-meta{font-size:11px;color:var(--muted);line-height:1.8;}
+.tm-meta strong{color:var(--ink);font-weight:500;}
+.tm-ft{padding:12px 24px 14px;border-top:1px solid var(--border);display:flex;align-items:center;}
+.tm-btn-cancel{background:transparent;border:none;padding:7px 0;font-size:13px;font-family:var(--font);cursor:pointer;color:var(--muted);}
+.tm-btn-cancel:hover{color:var(--ink);}
+.tm-btn-delete{background:transparent;border:none;padding:7px 0;font-size:13px;font-family:var(--font);cursor:pointer;color:var(--muted);margin-left:20px;display:none;}
+.tm-btn-delete:hover{color:var(--red);}
+.tm-btn-save{margin-left:auto;background:var(--ink);color:#fff;border:none;border-radius:20px;padding:8px 18px;font-size:13px;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:400;}
+.tm-btn-save:hover{opacity:.85;}
+/* Person-viewing banner */
+.todo-banner{background:#1a1a1a;color:#aaa;padding:7px 24px;display:flex;align-items:center;gap:10px;font-size:12px;flex-shrink:0;}
+.todo-banner.hidden{display:none;}
+.todo-banner-switch{background:transparent;border:1px solid #444;color:#aaa;padding:3px 10px;font-size:11px;font-family:var(--font);border-radius:2px;cursor:pointer;margin-left:auto;}
+.todo-banner-switch:hover{border-color:#888;color:#fff;}
 
 /* INVOICE MODAL */
 .inv-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:800;display:none;align-items:center;justify-content:center;}
@@ -1194,9 +1237,6 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
   </div>
 
   <div class="main">
-    <div class="changelog">
-      <strong>v8</strong> &nbsp;·&nbsp; Per-week task storage — weeks are independent &nbsp;·&nbsp; Tasks anchored to divider line &nbsp;·&nbsp; Edge resize on task cards &nbsp;·&nbsp; Hover tooltip showing job/item/billable status &nbsp;·&nbsp; Billable vs non-billable capacity bar &nbsp;·&nbsp; Calendar week picker &nbsp;·&nbsp; Follow-up reminder when marking done
-    </div>
     <div class="topbar hidden" id="topbar">
       <div class="tb-section on">Jobs</div>
       <div class="tb-section">Time</div>
@@ -1262,19 +1302,26 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
       <!-- TODO -->
       <div id="view-todo" class="view hidden">
         <div class="todo-view">
+          <div class="todo-banner hidden" id="todo-banner">
+            <i class="ti ti-eye" style="font-size:13px;"></i>
+            <span id="todo-banner-text">You're viewing someone's To Do list.</span>
+            <button class="todo-banner-switch" onclick="switchBackToMe()">Switch back to yours</button>
+          </div>
           <div class="todo-bar">
             <div class="person-switcher" id="ps-dropdown">
               <div class="person-av" id="current-av" style="background:var(--red);">RO</div>
               <span class="person-name" id="current-name">Ronan</span>
               <i class="ti ti-chevron-down" style="font-size:13px;color:var(--muted);margin-left:2px;"></i>
+              <div class="ps-menu" id="ps-menu"></div>
             </div>
-            <div class="ps-menu" id="ps-menu"></div>
             <div class="week-nav">
               <button class="wbtn" id="wbtn-prev"><i class="ti ti-chevron-left" style="font-size:13px;"></i></button>
               <span class="wlabel" id="week-label">Mon – Sun</span>
               <button class="wbtn" id="wbtn-today" style="margin-left:4px;font-size:11px;padding:4px 8px;">Today</button>
-              <button class="wbtn" id="wbtn-cal" title="Pick a week" style="padding:5px 7px;"><i class="ti ti-calendar" style="font-size:13px;"></i></button>
-              <input type="week" id="week-picker" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;" onchange="goToWeek(this.value)">
+              <button class="wbtn" id="wbtn-cal" title="Pick a week" style="padding:5px 7px;position:relative;overflow:hidden;">
+                <i class="ti ti-calendar" style="font-size:13px;pointer-events:none;"></i>
+                <input type="week" id="week-picker" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" onchange="goToWeek(this.value)">
+              </button>
               <button class="wbtn" id="wbtn-next"><i class="ti ti-chevron-right" style="font-size:13px;"></i></button>
             </div>
             <div class="todo-summary" style="margin-left:16px;">To do: 3h30m &nbsp;·&nbsp; Done: 5h45m</div>
@@ -1292,11 +1339,16 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
       <div id="view-jobs" class="view hidden">
         <div class="jobs-wrap">
           <div class="jobs-toolbar">
-            <div class="jobs-search"><i class="ti ti-search"></i><input placeholder="Search jobs…"/></div>
-            <button class="filter-btn"><i class="ti ti-building" style="font-size:13px"></i> Company</button>
-            <button class="filter-btn"><i class="ti ti-filter" style="font-size:13px"></i> Status</button>
-            <label class="filter-btn" style="cursor:pointer;"><input type="checkbox" checked style="margin-right:5px;accent-color:var(--red)"/> Hide archived</label>
+            <div class="jobs-search"><i class="ti ti-search"></i><input id="jobs-search-inp" placeholder="Search jobs…" oninput="filterJobs(this.value)"/></div>
+            <select class="filter-btn" id="jobs-status-filter" onchange="renderJobs()" style="cursor:pointer;">
+              <option value="all">All statuses</option>
+              <option value="inplay">In Play</option>
+              <option value="new">New</option>
+              <option value="complete">Complete</option>
+            </select>
+            <label class="filter-btn" style="cursor:pointer;"><input type="checkbox" id="jobs-hide-archived" checked style="margin-right:5px;accent-color:var(--red)" onchange="renderJobs()"/> Hide archived</label>
             <span class="jobs-count" id="jobs-count">1 job · NZD</span>
+            <button class="d-action primary" style="margin-left:auto;" onclick="openCreateJob()"><i class="ti ti-plus" style="font-size:13px"></i> New job</button>
           </div>
           <div class="jobs-table-wrap">
             <table class="jobs-table">
@@ -1506,23 +1558,84 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 
 <!-- ADD TODO MODAL -->
 <div class="modal-bg" id="todo-modal">
-  <div class="modal">
-    <div class="modal-hd"><span class="modal-hd-title">Add a todo</span><button class="modal-x" onclick="closeTodoModal()"><i class="ti ti-x"></i></button></div>
-    <div class="modal-bd">
-      <div class="field"><label>Task</label><input type="text" id="td-task" placeholder="What needs doing?"/></div>
-      <div class="field"><label>Job</label><select id="td-job"><option value="">— Personal / no job —</option></select></div>
-      <div class="field"><label>Item type</label><select id="td-item"><option>Creative Direction</option><option>Design &amp; Artwork</option><option>Briefing &amp; coordination</option><option>Copywriting</option><option>Video Editing</option><option>Proofing &amp; spell check</option></select></div>
-      <div class="field-row">
-        <div class="field"><label>Day</label><select id="td-day"><option>Monday 1</option><option>Tuesday 2</option><option>Wednesday 3</option><option>Thursday 4</option><option selected>Friday 5 (Today)</option></select></div>
-        <div class="field"><label>Hours</label><input type="text" id="td-hours" placeholder="e.g. 2h"/></div>
-      </div>
-      <div class="field"><label>Note (optional)</label><textarea id="td-note" placeholder="Any context…"></textarea></div>
+  <div class="tm-modal">
+    <!-- Header -->
+    <div class="tm-hd">
+      <label class="tm-hd-personal"><input type="checkbox" id="td-personal"><span>Personal</span></label>
+      <div class="tm-hd-title" id="td-modal-title">Add a task</div>
+      <button class="tm-x" onclick="closeTodoModal()"><i class="ti ti-x"></i></button>
     </div>
-    <div class="modal-ft">
-                <button class="modal-cancel" id="edit-task-btn" onclick="deleteTodo()" style="display:none;margin-right:auto;border-color:var(--red);color:var(--red);">Delete</button>
-                <button class="modal-cancel" onclick="closeTodoModal()">Cancel</button>
-                <button class="modal-ok" onclick="saveTodo()">Add todo</button>
-              </div>
+    <!-- Body -->
+    <div class="tm-bd">
+      <input type="text" class="tm-title-inp" id="td-task" placeholder="What needs doing?">
+      <!-- Person row -->
+      <div class="tm-person-row">
+        <div class="tm-pav" id="td-pav" style="background:var(--red);">RO</div>
+        <span class="tm-pname" id="td-pname">Ronan</span>
+      </div>
+      <!-- Job -->
+      <div class="tm-lbl" id="td-job-lbl">Job</div>
+      <select class="tm-field-sel" id="td-job" onchange="updateJobLabel()">
+        <option value="">— Personal / no job —</option>
+      </select>
+      <!-- Item -->
+      <div class="tm-lbl" style="margin-top:16px;">Item</div>
+      <select class="tm-field-sel" id="td-item">
+        <option value="">— No item type —</option>
+        <option>Creative Direction</option>
+        <option>Design &amp; Artwork</option>
+        <option>Briefing &amp; coordination</option>
+        <option>Copywriting</option>
+        <option>Video Editing</option>
+        <option>Proofing &amp; spell check</option>
+        <option>Artwork &amp; file despatch</option>
+        <option>Contingency</option>
+        <option>Shot listing</option>
+        <option>Website build</option>
+      </select>
+      <!-- Note -->
+      <textarea class="tm-note-area" id="td-note" placeholder="Notes, due dates, context…"></textarea>
+      <!-- Urgent toggle -->
+      <div class="tm-urgent-row">
+        <label class="tm-urgent-lbl" id="td-urgent-lbl">
+          <input type="checkbox" id="td-urgent">
+          <i class="ti ti-alert-circle" style="font-size:13px;"></i>
+          Mark as urgent
+        </label>
+      </div>
+      <hr class="tm-dash">
+      <!-- Hours + Day -->
+      <div class="tm-2col" style="margin-bottom:16px;">
+        <div>
+          <div class="tm-col-lbl">Scheduled</div>
+          <input class="tm-hours-inp" type="text" id="td-hours" placeholder="e.g. 2h">
+        </div>
+        <div style="flex:1;">
+          <div class="tm-col-lbl">Day</div>
+          <select class="tm-day-sel" id="td-day">
+            <option value="1">Monday</option>
+            <option value="2">Tuesday</option>
+            <option value="3">Wednesday</option>
+            <option value="4">Thursday</option>
+            <option value="5" selected>Friday</option>
+          </select>
+        </div>
+      </div>
+      <!-- Timestamps (edit mode only) -->
+      <div id="td-timestamps" style="display:none;">
+        <hr class="tm-dash">
+        <div class="tm-meta" id="td-ts-text"></div>
+      </div>
+    </div>
+    <!-- Footer -->
+    <div class="tm-ft">
+      <button class="tm-btn-cancel" onclick="closeTodoModal()">Cancel</button>
+      <button class="tm-btn-delete" id="edit-task-btn" onclick="deleteTodo()">Delete</button>
+      <button class="tm-btn-save" onclick="saveTodo()">
+        <span id="td-save-lbl">Add task</span>
+        <i class="ti ti-chevron-down" style="font-size:11px;"></i>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -1548,7 +1661,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 <div class="fup" id="fup">
   <div class="fup-card">
     <div class="fup-hd"><i class="ti ti-bell" style="color:var(--red);font-size:15px;"></i> Follow-up?</div>
-    <div class="fup-bd">You just added a task. Do you need a follow-up — e.g. final artwork or client delivery?</div>
+    <div class="fup-bd" id="fup-bd">Do you need to add more time to this job?</div>
     <div class="fup-ft"><button class="fup-y" onclick="closeFup(true)">Yes, add one</button><button class="fup-n" onclick="closeFup(false)">No thanks</button></div>
   </div>
 </div>
@@ -1582,6 +1695,8 @@ const people={
   jb:{name:'JB',initials:'JB',color:'#7B9E87',days:[1,2,3,4,5]}
 };
 let currentPerson='ro';
+const MY_PERSON='ro'; // the logged-in user
+let _fupTask=null;    // task that triggered the follow-up prompt
 let personStatus={ro:'available',bee:'available',jb:'allocated'};
 let weekOffset=0;
 const DAYS_DATA={
@@ -1679,11 +1794,23 @@ function positionGlobalDivider(){
   gd.style.top=(headH+todoSplitPx)+'px';
 }
 
+function switchBackToMe(){currentPerson=MY_PERSON;renderTodo();}
+
 function renderTodo(){
   const p=people[currentPerson];
   document.getElementById('current-av').textContent=p.initials;
   document.getElementById('current-av').style.background=p.color;
   document.getElementById('current-name').textContent=p.name;
+  // Person-viewing banner
+  const banner=document.getElementById('todo-banner');
+  if(banner){
+    if(currentPerson!==MY_PERSON){
+      document.getElementById('todo-banner-text').textContent=`You're viewing ${p.name}'s To Do list.`;
+      banner.classList.remove('hidden');
+    } else {
+      banner.classList.add('hidden');
+    }
+  }
   const wrap=document.getElementById('day-cols');wrap.innerHTML='';
   const data=getWeekData(currentPerson);
 
@@ -1842,18 +1969,21 @@ function createTaskCard(t,day,isDone){
   });
   card.addEventListener('dragend',()=>{card.classList.remove('dragging-c');document.querySelectorAll('.drop-hi,.div-drop-hi').forEach(el=>el.classList.remove('drop-hi','div-drop-hi'));});
 
-  // Edge resize: bottom 7px of card = resize zone
+  // Edge resize: top or bottom 7px = resize zone
   const EDGE=7;
   card.addEventListener('mousemove',e=>{
     if(card.classList.contains('resizing'))return;
     const rect=card.getBoundingClientRect();
-    card.style.cursor=e.clientY>=rect.bottom-EDGE?'ns-resize':'pointer';
+    const atEdge=e.clientY>=rect.bottom-EDGE||e.clientY<=rect.top+EDGE;
+    card.style.cursor=atEdge?'ns-resize':'pointer';
   });
   card.addEventListener('mouseleave',()=>{if(!card.classList.contains('resizing'))card.style.cursor='';});
 
   card.addEventListener('mousedown',e=>{
     const rect=card.getBoundingClientRect();
-    if(e.clientY<rect.bottom-EDGE)return; // not the bottom edge
+    const atBottom=e.clientY>=rect.bottom-EDGE;
+    const atTop=e.clientY<=rect.top+EDGE;
+    if(!atBottom&&!atTop)return; // not an edge
     e.preventDefault();e.stopPropagation();
     hideTodoTooltip();
     _wasResized=false;
@@ -1862,7 +1992,9 @@ function createTaskCard(t,day,isDone){
     let curHours=startHours;
     const onMove=ev=>{
       if(Math.abs(ev.clientY-startY)>2)_wasResized=true;
-      const newH=Math.max(40,startH+(ev.clientY-startY));
+      // Bottom edge: drag down = bigger; top edge: drag up = bigger
+      const dy=atBottom?(ev.clientY-startY):(startY-ev.clientY);
+      const newH=Math.max(40,startH+dy);
       curHours=Math.max(0.25,Math.round(((newH-52)/20)*4)/4);
       card.style.height=taskCardHeight(curHours)+'px';
       const hrsEl=document.getElementById('hrs-'+t.id);
@@ -1944,6 +2076,9 @@ function onDropToSection(e,toDay,markDone){
     }
     // Trigger follow-up prompt when marking a task as done
     if(markDone&&!wasAlreadyDone){
+      _fupTask=task;
+      const bd=document.getElementById('fup-bd');
+      if(bd)bd.textContent=task.job?`Done! Need to add more time to ${task.job}?`:'Done! Need to add a follow-up task?';
       setTimeout(()=>document.getElementById('fup').classList.add('on'),800);
     }
     renderTodo();saveData();
@@ -1959,14 +2094,51 @@ function populateTodoJobSelect(pre){
   sel.innerHTML='<option value="">— Personal / no job —</option>';
   jobs.forEach(j=>{const o=document.createElement('option');o.value=j.id;o.textContent=`${j.id} ${j.name}`;if(pre&&pre.includes(j.id))o.selected=true;sel.appendChild(o);});
 }
+function updateJobLabel(){
+  const sel=document.getElementById('td-job');
+  const lbl=document.getElementById('td-job-lbl');
+  if(!sel||!lbl)return;
+  const jobId=sel.value;
+  if(jobId){
+    const j=jobs.find(x=>x.id===jobId);
+    lbl.textContent=j?`Job for ${j.company}`:'Job';
+  } else {
+    lbl.textContent='Job';
+  }
+}
+function _resetTodoModal(day){
+  editingTaskId=null;editingDay=null;
+  const p=people[currentPerson];
+  document.getElementById('td-task').value='';
+  document.getElementById('td-hours').value='';
+  document.getElementById('td-note').value='';
+  document.getElementById('td-urgent').checked=false;
+  document.getElementById('td-personal').checked=false;
+  document.getElementById('td-urgent-lbl').classList.remove('on');
+  document.getElementById('td-modal-title').textContent='Add a task';
+  document.getElementById('td-save-lbl').textContent='Add task';
+  document.getElementById('edit-task-btn').style.display='none';
+  document.getElementById('td-timestamps').style.display='none';
+  document.getElementById('td-pav').textContent=p.initials;
+  document.getElementById('td-pav').style.background=p.color;
+  document.getElementById('td-pname').textContent=p.name;
+  // Set day
+  const ds=document.getElementById('td-day');
+  if(ds)for(let o of ds.options){if(parseInt(o.value)===(day||5)){o.selected=true;break;}}
+  updateJobLabel();
+}
 function openTodoModal(jobId,day){
-  document.getElementById('td-task').value='';document.getElementById('td-hours').value='';document.getElementById('td-note').value='';
+  _resetTodoModal(day||5);
   populateTodoJobSelect(jobId);
   if(jobId){const sel=document.getElementById('td-job');for(let o of sel.options){if(o.value===jobId){o.selected=true;break;}}}
+  updateJobLabel();
   document.getElementById('todo-modal').classList.add('on');
   setTimeout(()=>document.getElementById('td-task').focus(),50);
 }
-function closeTodoModal(){document.getElementById('todo-modal').classList.remove('on');}
+function closeTodoModal(){
+  document.getElementById('todo-modal').classList.remove('on');
+  editingTaskId=null;editingDay=null;
+}
 function populatePersonSwitcher(){
   const menu=document.getElementById('ps-menu');menu.innerHTML='';
   Object.keys(people).forEach(key=>{
@@ -2014,18 +2186,27 @@ function deleteTodo(){
 }
 
 function editTask(t,day){
+  _resetTodoModal(day);
   editingTaskId=t.id;editingDay=day;
   document.getElementById('td-task').value=t.title||'';
   document.getElementById('td-hours').value=t.hours?formatHrs(t.hours):'';
   document.getElementById('td-note').value=t.note||'';
-  document.getElementById('td-item').value=t.item||'';
+  document.getElementById('td-urgent').checked=!!t.urgent;
+  if(t.urgent)document.getElementById('td-urgent-lbl').classList.add('on');
+  document.getElementById('td-personal').checked=!!t.personal;
   populateTodoJobSelect(t.job||'');
-  const ds=document.getElementById('td-day');
-  for(let o of ds.options){if(o.text.startsWith(DAY_NAMES[day-1])){o.selected=true;break;}}
+  document.getElementById('td-item').value=t.item||'';
+  updateJobLabel();
+  // timestamps
+  const now=new Date();
+  const dateStr=`${now.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][now.getMonth()]} ${now.getFullYear()}`;
+  document.getElementById('td-ts-text').innerHTML=`Created by <strong>${people[currentPerson]?.name||'you'}</strong> · ${dateStr}<br>Last modified by <strong>${people[currentPerson]?.name||'you'}</strong> · just now`;
+  document.getElementById('td-timestamps').style.display='';
+  document.getElementById('td-modal-title').textContent='Edit task';
+  document.getElementById('td-save-lbl').textContent='Save changes';
+  document.getElementById('edit-task-btn').style.display='';
   document.getElementById('todo-modal').classList.add('on');
-  document.getElementById('edit-task-btn').style.display='inline-block';
-  document.querySelector('#todo-modal .modal-hd-title').textContent='Edit task';
-  document.querySelector('#todo-modal .modal-ok').textContent='Save changes';
+  setTimeout(()=>document.getElementById('td-task').focus(),50);
 }
 
 function toggleTaskDone(taskId){
@@ -2035,7 +2216,7 @@ function toggleTaskDone(taskId){
     const t=arr.find(x=>x.id===taskId);
     if(t){
       t.done=!t.done;
-      if(t.done)setTimeout(()=>document.getElementById('fup').classList.add('on'),800);
+      if(t.done){_fupTask=t;setTimeout(()=>document.getElementById('fup').classList.add('on'),800);}
       renderTodo();saveData();return;
     }
   }
@@ -2089,7 +2270,18 @@ function pctxDo(action){
 
 function closeFup(yes){
   document.getElementById('fup').classList.remove('on');
-  if(yes)openTodoModal(null,5);
+  if(yes){
+    const t=_fupTask;
+    const jobId=t&&t.job?(t.job.match(/^(\d+)/)||[])[1]:null;
+    const day=t?editingDay||5:5;
+    openTodoModal(jobId,day);
+    // Pre-fill item type too
+    if(t&&t.item){
+      const si=document.getElementById('td-item');
+      if(si)si.value=t.item;
+    }
+  }
+  _fupTask=null;
 }
 
 // Task card tooltip
@@ -2141,18 +2333,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('wbtn-prev')?.addEventListener('click',()=>toggleWeek(-1));
   document.getElementById('wbtn-next')?.addEventListener('click',()=>toggleWeek(1));
   document.getElementById('wbtn-today')?.addEventListener('click',()=>{weekOffset=0;updateWeekLabel();renderTodo();});
-  document.getElementById('wbtn-cal')?.addEventListener('click',()=>{
-    const pk=document.getElementById('week-picker');
-    if(!pk)return;
-    // Pre-fill the picker with current week
-    const d=new Date();const dow=(d.getDay()+6)%7;
-    d.setDate(d.getDate()-dow+(weekOffset*7));
-    const yr=d.getFullYear();
-    // Calculate ISO week number
-    const jan1=new Date(yr,0,1);const jan1dow=(jan1.getDay()+6)%7;
-    const isoWk=Math.ceil((((d-jan1)/86400000)+jan1dow+1)/7);
-    pk.value=`${yr}-W${String(isoWk).padStart(2,'0')}`;
-    pk.showPicker();
+  // td-urgent live label
+  document.getElementById('td-urgent')?.addEventListener('change',e=>{
+    document.getElementById('td-urgent-lbl')?.classList.toggle('on',e.target.checked);
   });
   populatePersonSwitcher();
   updateWeekLabel();
@@ -2173,52 +2356,69 @@ document.addEventListener('mouseup',()=>{
 function saveTodo(){
   const name=document.getElementById('td-task').value.trim();if(!name)return;
   const jobId=document.getElementById('td-job').value;
-  const hours=parseFloat(document.getElementById('td-hours').value)||1;
+  const hoursRaw=document.getElementById('td-hours').value.trim();
+  const hours=hoursRaw?parseHrsInput(hoursRaw):1;
   const job=jobs.find(j=>j.id===jobId);
   const item=document.getElementById('td-item').value;
   const note=document.getElementById('td-note').value.trim();
-  const dayOpt=document.getElementById('td-day').value;
-  const dayNum=parseInt(dayOpt)||5;
+  const dayNum=parseInt(document.getElementById('td-day').value)||5;
+  const urgent=document.getElementById('td-urgent').checked;
+  const personal=document.getElementById('td-personal').checked;
   const wd=getWeekData(currentPerson);
   if(editingTaskId){
     const arr=wd[editingDay]||[];
     const idx=arr.findIndex(t=>t.id===editingTaskId);
     if(idx!==-1){
-      arr[idx].title=name;
-      arr[idx].hours=hours;
-      arr[idx].item=item;
-      arr[idx].note=note;
-      arr[idx].job=job?`${job.id} ${job.name}`:'';
+      Object.assign(arr[idx],{title:name,hours,item,note,urgent,personal,job:job?`${job.id} ${job.name}`:''});
     }
   } else {
-    const task={id:'t'+Date.now(),title:name,job:job?`${job.id} ${job.name}`:'',item,hours,note};
+    const task={id:'t'+Date.now(),title:name,job:job?`${job.id} ${job.name}`:'',item,hours,note,urgent,personal};
     if(!wd[dayNum])wd[dayNum]=[];
     wd[dayNum].push(task);
+    _fupTask=null; // new task follow-up doesn't pre-fill
     setTimeout(()=>document.getElementById('fup').classList.add('on'),800);
   }
-  closeTodoModal();editingTaskId=null;editingDay=null;
-  document.getElementById('edit-task-btn').style.display='none';
-  document.querySelector('#todo-modal .modal-hd-title').textContent='Add a todo';
-  document.querySelector('#todo-modal .modal-ok').textContent='Add todo';
+  closeTodoModal();
   renderTodo();saveData();
 }
+// Parse hours input like "2h", "1h30m", "1.5", "90m"
+function parseHrsInput(s){
+  s=s.trim().toLowerCase();
+  const hm=s.match(/^(\d+(?:\.\d+)?)\s*h(?:\s*(\d+)\s*m?)?$/);
+  if(hm)return parseFloat(hm[1])+(hm[2]?parseInt(hm[2])/60:0);
+  const m=s.match(/^(\d+)\s*m$/);if(m)return parseInt(m[1])/60;
+  const n=parseFloat(s);return isNaN(n)?1:n;
+}
 
+let _jobSearch='';
+function filterJobs(q){_jobSearch=(q||'').toLowerCase();renderJobs();}
 function renderJobs(){
   const tbody=document.getElementById('jobs-tbody');tbody.innerHTML='';
+  const statusFilter=(document.getElementById('jobs-status-filter')?.value)||'all';
+  const q=_jobSearch;
+  let shown=0;
   jobs.forEach(j=>{
+    if(statusFilter!=='all'&&j.status!==statusFilter)return;
+    if(q&&!(`${j.id} ${j.name} ${j.company}`).toLowerCase().includes(q))return;
+    shown++;
     const sc=j.status==='inplay'?'sp-ip':j.status==='new'?'sp-new':'sp-co';
     const sl=j.status==='inplay'?'In Play':j.status==='new'?'New':'Complete';
+    const bPct=j.bPct||0;
+    const hPct=j.hPct||0;
+    const bCol=bPct>=100?'var(--red)':bPct>=80?'#FF9800':'#4CAF50';
+    const hCol=hPct>=100?'var(--red)':hPct>=80?'#FF9800':'#4CAF50';
+    const billDot=j.billable===false?'<span style="width:6px;height:6px;border-radius:50%;background:#CBD5E1;display:inline-block;margin-right:5px;" title="Non-billable"></span>':'<span style="width:6px;height:6px;border-radius:50%;background:#4CAF50;display:inline-block;margin-right:5px;" title="Billable"></span>';
     const tr=document.createElement('tr');tr.onclick=()=>openJobDetail(j.id);
-    tr.innerHTML=`<td><input type="checkbox" onclick="event.stopPropagation()"/></td>
+    tr.innerHTML=`<td style="width:32px;"><input type="checkbox" onclick="event.stopPropagation()"/></td>
       <td><div class="job-num-name"><span class="job-num">${j.id}</span><span class="job-name">${j.name}</span></div></td>
-      <td><span class="job-co">${j.company}</span></td>
-      <td><div class="bbar-wrap"><div class="bbar-nums"><span>${j.budget||'$0'}</span><span class="bbar-of">/ ${j.budgetTotal||'—'}</span></div><div class="bbar-track"><div class="bbar-fill bfok" style="width:${j.bPct||0}%"></div></div></div></td>
-      <td><div class="bbar-wrap"><div class="bbar-nums"><span>${j.hours||'0h'}</span><span class="bbar-of">/ ${j.hoursTotal||'—'}</span></div><div class="bbar-track"><div class="bbar-fill bfok" style="width:${j.hPct||0}%"></div></div></div></td>
+      <td><span class="job-co">${billDot}${j.company}</span></td>
+      <td><div class="bbar-wrap"><div class="bbar-nums"><span style="font-weight:400;">${j.budget||'$0'}</span><span class="bbar-of">/ ${j.budgetTotal||'—'}</span></div><div class="bbar-track"><div class="bbar-fill" style="width:${bPct}%;background:${bCol};"></div></div></div></td>
+      <td><div class="bbar-wrap"><div class="bbar-nums"><span style="font-weight:400;">${j.hours||'0h'}</span><span class="bbar-of">/ ${j.hoursTotal||'—'}</span></div><div class="bbar-track"><div class="bbar-fill" style="width:${hPct}%;background:${hCol};"></div></div></div></td>
       <td><span style="font-size:12px;color:var(--muted);">—</span></td>
       <td><span class="status-pill ${sc}">${sl}</span></td>`;
     tbody.appendChild(tr);
   });
-  document.getElementById('jobs-count').textContent=`${jobs.length} job${jobs.length!==1?'s':''} · NZD`;
+  document.getElementById('jobs-count').textContent=`${shown} job${shown!==1?'s':''} · NZD`;
 }
 
 function openJobDetail(id){
@@ -2237,10 +2437,21 @@ function openJobDetail(id){
   switchDTab(document.querySelector('.d-tab'),'plan');
 }
 
+function _statBlock(label,val,sub,pct,col){
+  const bar=pct!=null?`<div class="stat-bar" style="margin-top:8px;"><div class="stat-bar-fill" style="width:${Math.min(100,pct)}%;background:${col||'#4CAF50'};"></div></div>`:'';
+  const subHtml=sub?`<div style="font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:.05em;">${sub}</div>`:'';
+  return`<div class="stat-b"><div class="stat-label">${label}</div><div class="stat-val">${val}</div>${subHtml}${bar}</div>`;
+}
 function renderStats(j,isNew){
   const s=document.getElementById('d-stats');
-  if(isNew){s.innerHTML='<div class="stat-b"><div class="stat-label">Time used / planned</div><div class="stat-val">0h <span class="stat-of">/ —</span></div></div><div class="stat-b"><div class="stat-label">Sell used / planned</div><div class="stat-val">$0 <span class="stat-of">/ —</span></div></div><div class="stat-b"><div class="stat-label">Budget from quote</div><div class="stat-val">—</div></div><div class="stat-b"><div class="stat-label">Invoiced</div><div class="stat-val">—</div></div><div class="stat-b"><div class="stat-label">Expenses</div><div class="stat-val">$0</div></div>';return;}
-  s.innerHTML='<div class="stat-b"><div class="stat-label">Time used / planned</div><div class="stat-val">85h <span class="stat-of">/ 143h</span></div><div class="stat-bar"><div class="stat-bar-fill" style="width:59%;background:#4CAF50;"></div></div></div><div class="stat-b"><div class="stat-label">Sell used / planned</div><div class="stat-val">$13,625 <span class="stat-of">/ $23,125</span></div><div class="stat-bar"><div class="stat-bar-fill" style="width:59%;background:#4CAF50;"></div></div></div><div class="stat-b"><div class="stat-label">Budget from quote</div><div class="stat-val">$23,075</div><div style="font-size:10px;color:var(--muted);margin-top:5px;letter-spacing:.05em;">BILLABLE</div></div><div class="stat-b"><div class="stat-label">Invoiced ex tax</div><div class="stat-val">$23,075 <span class="stat-of">issued</span></div><div class="stat-bar"><div class="stat-bar-fill" style="width:100%;background:#FF9800;"></div></div></div><div class="stat-b"><div class="stat-label">Expenses</div><div class="stat-val">$0 <span class="stat-of">/ $200</span></div></div>';
+  if(isNew){
+    s.innerHTML=_statBlock('Time used / planned','0h <span class="stat-of">/ —</span>',null,null)+_statBlock('Sell used / planned','$0 <span class="stat-of">/ —</span>',null,null)+_statBlock('Budget from quote','—',j.billable!==false?'BILLABLE':'NON-BILLABLE',null)+_statBlock('Invoiced ex GST','—',null,null)+_statBlock('Expenses','$0 <span class="stat-of">/ —</span>',null,null);
+    return;
+  }
+  const hPct=j.hPct||0;const bPct=j.bPct||0;
+  const hCol=hPct>=100?'var(--red)':hPct>=80?'#FF9800':'#4CAF50';
+  const bCol=bPct>=100?'var(--red)':bPct>=80?'#FF9800':'#4CAF50';
+  s.innerHTML=_statBlock('Time used / planned',`${j.hours} <span class="stat-of">/ ${j.hoursTotal}</span>`,`${hPct}% of plan`,hPct,hCol)+_statBlock('Sell used / planned',`${j.budget} <span class="stat-of">/ ${j.budgetTotal}</span>`,`${bPct}% of plan`,bPct,bCol)+_statBlock('Budget from quote',j.budgetTotal||'—',j.billable!==false?'BILLABLE':'NON-BILLABLE',null)+_statBlock('Invoiced ex GST',`${j.budgetTotal} <span class="stat-of" style="color:#4CAF50;">issued</span>`,'100% invoiced',100,'#FF9800')+_statBlock('Expenses','$100 <span class="stat-of">/ $200</span>','50% of budget',50,'#4CAF50');
 }
 
 function switchDTab(el,tab){
@@ -2267,7 +2478,8 @@ function renderPhases(){
   phases.forEach(ph=>{
     const el=document.createElement('div');el.className='phase';el.id='pw_'+ph.id;
     const sell=pSell(ph);const hrs=pHrs(ph);const cnt=ph.items.length;
-    el.innerHTML=`<div class="phase-head" onclick="togglePhase('${ph.id}')"><i class="ti ti-chevron-down ph-chv"></i><span class="ph-n">${ph.name}</span><span class="ph-cnt">${cnt} item${cnt!==1?'s':''}</span><div class="ph-inf"><span class="ph-meta">${hrs} · ${sell}</span><div class="ph-dot ${ph.status==='complete'?'c':'p'}"></div><i class="ti ti-dots ph-mb" onclick="showPctx(event,'${ph.id}')"></i></div></div><table class="items-t" id="it_${ph.id}"><thead><tr><th style="width:22px;"></th><th>Item</th><th style="width:100px;text-align:right;">Hours</th><th style="width:80px;text-align:right;">Rate</th><th style="width:150px;text-align:right;">Sell</th><th style="width:85px;text-align:right;">Status</th><th style="width:26px;"></th></tr></thead><tbody id="ib_${ph.id}"></tbody></table><div class="add-i-row" onclick="showAddItemForm('${ph.id}')"><i class="ti ti-plus" style="font-size:11px"></i> Add item</div>`;
+    const statusIcon=ph.status==='complete'?'<i class="ti ti-circle-check" style="color:#4CAF50;font-size:13px;"></i>':'<i class="ti ti-circle-dot" style="color:#ED1E24;font-size:13px;"></i>';
+    el.innerHTML=`<div class="phase-head" onclick="togglePhase('${ph.id}')"><i class="ti ti-chevron-down ph-chv"></i><span class="ph-n">${ph.name}</span><span class="ph-cnt">${cnt} item${cnt!==1?'s':''}</span><div class="ph-inf"><span class="ph-meta">${hrs} · ${sell}</span>${statusIcon}<i class="ti ti-dots ph-mb" onclick="showPctx(event,'${ph.id}')"></i></div></div><table class="items-t" id="it_${ph.id}"><thead><tr><th style="width:22px;"></th><th>Item</th><th style="width:90px;text-align:right;">Hours</th><th style="width:75px;text-align:right;">Rate</th><th style="width:160px;text-align:right;">Sell</th><th style="width:90px;text-align:right;">Status</th><th style="width:26px;"></th></tr></thead><tbody id="ib_${ph.id}"></tbody></table><div class="add-i-row" onclick="showAddItemForm('${ph.id}')"><i class="ti ti-plus" style="font-size:11px"></i> Add item</div>`;
     c.appendChild(el);renderItems(ph.id);
   });
 }
@@ -2277,7 +2489,9 @@ function renderItems(phId){
   const ph=phases.find(p=>p.id===phId);const tbody=document.getElementById('ib_'+phId);tbody.innerHTML='';
   ph.items.forEach(item=>{
     const tr=document.createElement('tr');tr.id='item_'+item.id;tr.draggable=true;tr.dataset.itemId=item.id;tr.dataset.phId=phId;
-    tr.innerHTML=`<td><i class="ti ti-grip-vertical" style="color:var(--border);font-size:13px;cursor:grab;"></i></td><td class="i-name">${item.name}</td><td class="i-hrs ${item.over?'i-hrs-over':''}">${item.hours}</td><td class="i-rate">${item.rate}</td><td class="i-sell">${item.used} <span class="i-sof">/ ${item.total}</span></td><td style="text-align:right"><span class="i-badge ${item.status==='complete'?'ib-c':'ib-p'}">${item.status==='complete'?'Complete':'In Play'}</span></td><td><i class="ti ti-dots" style="font-size:14px;color:var(--muted);cursor:pointer;" onclick="showCtx(event,'${item.id}','${phId}')"></i></td>`;
+    const iCls=item.status==='complete'?'ib-c':'ib-p';
+    const iLbl=item.status==='complete'?'Complete':'In play';
+    tr.innerHTML=`<td><i class="ti ti-grip-vertical" style="color:var(--border);font-size:13px;cursor:grab;"></i></td><td class="i-name">${item.name}</td><td class="i-hrs ${item.over?'i-hrs-over':''}">${item.hours}</td><td class="i-rate" style="font-size:12px;color:var(--muted);">${item.rate}</td><td class="i-sell"><span style="font-weight:400;">${item.used}</span> <span class="i-sof">/ ${item.total}</span></td><td style="text-align:right"><span class="i-badge ${iCls}" style="cursor:pointer;" title="Click to toggle" onclick="toggleItemStatus('${item.id}','${phId}',event)">${iLbl}</span></td><td><i class="ti ti-dots" style="font-size:14px;color:var(--muted);cursor:pointer;" onclick="showCtx(event,'${item.id}','${phId}')"></i></td>`;
     tr.addEventListener('dragstart',e=>{dragSrc=tr;tr.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
     tr.addEventListener('dragover',e=>e.preventDefault());
     tr.addEventListener('drop',e=>{e.stopPropagation();if(dragSrc===tr)return;const sp=phases.find(p=>p.id===dragSrc.dataset.phId);const tp=phases.find(p=>p.id===tr.dataset.phId);const si=sp.items.findIndex(i=>i.id===dragSrc.dataset.itemId);const ti=tp.items.findIndex(i=>i.id===tr.dataset.itemId);const[mv]=sp.items.splice(si,1);tp.items.splice(ti,0,mv);renderPhases();});
@@ -2286,6 +2500,13 @@ function renderItems(phId){
   });
 }
 function togglePhase(id){document.getElementById('pw_'+id).classList.toggle('collapsed');}
+function toggleItemStatus(itemId,phId,e){
+  e&&e.stopPropagation();
+  const ph=phases.find(p=>p.id===phId);if(!ph)return;
+  const item=ph.items.find(i=>i.id===itemId);if(!item)return;
+  item.status=item.status==='complete'?'inplay':'complete';
+  renderPhases();saveData();
+}
 function showAddItemForm(phId){
   if(!phId)phId=phases[0]?.id;if(!phId)return;
   document.querySelectorAll('.add-form-row').forEach(r=>r.remove());
