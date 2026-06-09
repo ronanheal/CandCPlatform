@@ -729,6 +729,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .my-todo-item:hover{background:var(--off);}
 .todo-check{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;}
 .todo-check.done-c{background:var(--done);border-color:#A5D6A7;}
+.todo-check.urg-c{border-color:var(--red);}
 .todo-meta{font-size:11px;color:var(--muted);margin-left:auto;white-space:nowrap;}
 
 /* TODO VIEW */
@@ -802,7 +803,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 
 /* JOBS */
 .jobs-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-.jobs-toolbar{padding:16px 28px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.jobs-toolbar{padding:12px 24px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
 .jobs-search{position:relative;flex:0 0 240px;}
 .jobs-search i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:15px;}
 .jobs-search input{width:100%;background:var(--off);border:1px solid var(--border);padding:7px 10px 7px 32px;font-size:13px;font-family:var(--font);font-weight:300;color:var(--ink);outline:none;border-radius:2px;}
@@ -830,7 +831,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 
 /* JOB DETAIL */
 .detail-view{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-.detail-head{padding:0 28px;background:var(--white);border-bottom:1px solid var(--border);flex-shrink:0;}
+.detail-head{padding:0 24px;background:var(--white);border-bottom:1px solid var(--border);flex-shrink:0;}
 .detail-back{padding:14px 0 0;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px;cursor:pointer;width:fit-content;letter-spacing:.04em;}
 .detail-back:hover{color:var(--ink);}
 .detail-title-row{display:flex;align-items:flex-end;gap:16px;padding:10px 0 0;}
@@ -851,13 +852,13 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .detail-tabs{display:flex;}
 .d-tab{padding:8px 16px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
 .d-tab.on{color:var(--ink);border-bottom-color:var(--red);}
-.stats-strip{display:flex;padding:16px 28px;border-bottom:1px solid var(--border);background:var(--off);flex-shrink:0;}
+.stats-strip{display:flex;padding:16px 24px;border-bottom:1px solid var(--border);background:var(--off);flex-shrink:0;}
 .stat-b{flex:1;padding:0 20px;border-right:1px solid var(--border);}
 .stat-b:first-child{padding-left:0;}.stat-b:last-child{border-right:none;}
 .stat-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
 .stat-val{font-family:var(--serif);font-size:20px;font-weight:400;}.stat-of{font-size:13px;color:var(--muted);}
 .stat-bar{height:2px;background:var(--faint);margin-top:8px;}.stat-bar-fill{height:100%;}
-.plan-area{flex:1;overflow-y:auto;padding:0 28px 50px;}
+.plan-area{flex:1;overflow-y:auto;padding:0 24px 50px;}
 .plan-actions{display:flex;gap:7px;padding:14px 0 10px;}
 .p-btn{background:var(--white);border:1px solid var(--border);padding:6px 12px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:4px;color:var(--ink);border-radius:2px;transition:all .15s;}
 .p-btn:hover{border-color:var(--ink);}
@@ -1003,7 +1004,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 
 /* MODALS */
 /* Generic modal backdrop (shared) */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:800;display:none;align-items:flex-start;justify-content:center;padding-top:48px;}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:800;display:none;align-items:center;justify-content:center;}
 .modal-bg.on{display:flex;}
 /* Legacy modal (create job etc) */
 .modal{background:var(--white);border-radius:3px;width:480px;max-width:96vw;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.18);}
@@ -1113,8 +1114,42 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 
 /* Person switcher dropdown */
 .ps-dropdown{position:relative;}
-.ps-menu{position:absolute;top:100%;left:0;background:var(--white);border:1px solid var(--border);border-radius:3px;box-shadow:0 4px 20px rgba(0,0,0,.1);z-index:300;min-width:180px;padding:4px 0;display:none;margin-top:4px;}
+.ps-menu{position:fixed;background:var(--white);border:1px solid var(--border);border-radius:3px;box-shadow:0 6px 24px rgba(0,0,0,.12);z-index:900;min-width:240px;padding:4px 0;display:none;}
 .ps-menu.on{display:block;}
+.ps-search-wrap{padding:8px 12px 6px;border-bottom:1px solid var(--border);}
+.ps-search-inp{width:100%;border:1px solid var(--border);border-radius:3px;padding:5px 9px;font-size:12px;font-family:var(--font);outline:none;background:var(--off);}
+.ps-search-inp:focus{border-color:var(--ink);}
+.ps-co-hd{padding:6px 12px 3px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+/* Calendar popup */
+.cal-popup{position:fixed;background:var(--white);border:1px solid var(--border);border-radius:4px;box-shadow:0 6px 24px rgba(0,0,0,.12);z-index:900;width:256px;display:none;padding:0;}
+.cal-popup.on{display:block;}
+.cal-pop-nav-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px 8px;border-bottom:1px solid var(--border);}
+.cal-pop-month-lbl{font-size:13px;font-weight:500;color:var(--ink);}
+.cal-pop-nav-btn{background:none;border:1px solid var(--border);border-radius:2px;cursor:pointer;padding:3px 7px;font-size:13px;color:var(--ink);line-height:1;}
+.cal-pop-nav-btn:hover{border-color:var(--ink);}
+.cal-pop-day-hd{display:grid;grid-template-columns:repeat(7,1fr);padding:6px 8px 2px;gap:0;}
+.cal-pop-day-hd span{font-size:10px;text-align:center;color:var(--muted);letter-spacing:.04em;font-weight:500;}
+.cal-pop-grid{display:grid;grid-template-columns:repeat(7,1fr);padding:4px 8px 8px;gap:2px;}
+.cal-pop-day{background:none;border:none;border-radius:2px;padding:4px 0;font-size:12px;cursor:pointer;text-align:center;font-family:var(--font);color:var(--ink);}
+.cal-pop-day:hover{background:var(--off);}
+.cal-pop-day.other-mo{color:var(--muted);}
+.cal-pop-day.cal-today{background:var(--ink);color:#fff;border-radius:50%;font-weight:500;}
+.cal-pop-day.cal-today:hover{background:#333;}
+.cal-pop-day.cal-sel-week{background:var(--off);border-radius:2px;}
+.cal-pop-day.cal-sel-week.cal-today{background:var(--ink);color:#fff;}
+.cal-pop-footer{padding:8px 12px;border-top:1px solid var(--border);}
+.cal-pop-this-week{background:none;border:1px solid var(--border);border-radius:2px;padding:5px 10px;font-size:11px;font-family:var(--font);cursor:pointer;color:var(--ink);width:100%;}
+.cal-pop-this-week:hover{border-color:var(--ink);}
+/* View settings panel */
+.vsp{position:fixed;background:var(--white);border:1px solid var(--border);border-radius:4px;box-shadow:0 6px 24px rgba(0,0,0,.12);z-index:900;width:220px;display:none;padding:0;}
+.vsp.on{display:block;}
+.vsp-title{padding:10px 14px 8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);}
+.vsp-item{display:flex;align-items:center;padding:8px 14px;gap:10px;cursor:grab;}
+.vsp-item:hover{background:var(--off);}
+.vsp-item label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);cursor:pointer;flex:1;}
+.vsp-item label input[type=checkbox]{accent-color:var(--ink);}
+.vsp-grip{font-size:14px;color:var(--border);flex-shrink:0;cursor:grab;}
+.vsp-item.dragging{opacity:.4;}
 .ps-person{padding:8px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;transition:background .1s;}
 .ps-person:hover{background:var(--off);}
 .ps-person.on-p{background:var(--off);font-weight:400;}
@@ -1249,53 +1284,8 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 
       <!-- DASHBOARD -->
       <div id="view-dashboard" class="view">
-        <div class="dash-scroll">
-          <div style="margin-bottom:32px;">
-            <div class="dash-greeting">Good morning, Ronan.</div>
-            <div class="dash-date">Friday · 6 June 2026 · Week 23</div>
-            <div class="dash-rule"></div>
-          </div>
-          <div class="kpi-row">
-            <div class="kpi"><div class="kpi-label">Billable this week</div><div class="kpi-val">18h 20m</div><div class="kpi-sub">of 30h target</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:61%;background:#4CAF50;"></div></div></div>
-            <div class="kpi"><div class="kpi-label">Non-billable</div><div class="kpi-val">6h 45m</div><div class="kpi-sub">internal &amp; admin</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:23%;background:#FF9800;"></div></div></div>
-            <div class="kpi"><div class="kpi-label">My tasks today</div><div class="kpi-val">4</div><div class="kpi-sub">1 urgent, 2 unscheduled</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:40%;background:var(--red);"></div></div></div>
-          </div>
-          <div class="section-label" style="margin-bottom:12px;">Your day</div>
-          <div class="my-todos" style="margin-bottom:28px;">
-            <div class="my-todo-item"><div class="todo-check"></div><div><div>Carcass Poster Amends</div><div style="font-size:11px;color:var(--muted);">6752 SFF Brand Guidelines · Design &amp; Artwork · 1h30m</div></div><div class="todo-meta">Due today</div></div>
-            <div class="my-todo-item"><div class="todo-check" style="border-color:var(--red);"></div><div><div>Send v1 by EOP to Maya</div><div style="font-size:11px;color:var(--muted);">6752 SFF Brand Guidelines · Design &amp; Artwork · 2h</div></div><div class="todo-meta" style="color:var(--red);">Urgent</div></div>
-            <div class="my-todo-item"><div class="todo-check"></div><div><div>Friday WIP</div><div style="font-size:11px;color:var(--muted);">House · Briefing &amp; coordination · 1h</div></div><div class="todo-meta">Today</div></div>
-            <div class="my-todo-item"><div class="todo-check done-c"><i class="ti ti-check" style="font-size:9px;color:var(--done-ink);"></i></div><div style="opacity:.5;"><div style="text-decoration:line-through;">Email on progressing website work</div><div style="font-size:11px;color:var(--muted);">The Links · Briefing</div></div><div class="todo-meta" style="opacity:.5;">Done 9:14am</div></div>
-          </div>
-          <div class="section-label" style="margin-bottom:14px;">Team · today</div>
-          <div class="team-grid">
-            <div class="team-card" onclick="viewTeamTodo('bee')">
-              <div class="tc-head"><div class="tc-av" style="background:#6B7FA3;">BE</div><div><div class="tc-name">Bianca</div></div><div class="tc-meta">5h booked · 3h to go</div></div>
-              <div class="tc-timeline">
-                <div class="tc-block done">Harker Herbals WIP — 1h</div>
-                <div class="tc-block done">Client check-in call — 30m</div>
-                <div class="tc-block todo">Amazon GA deep dive — 2h</div>
-                <div class="tc-block todo">Comms back to client — 1h</div>
-                <div class="tc-block urgent">Budget actuals for May — 1h30m</div>
-              </div>
-              <div class="tc-footer"><div class="tc-stat">Done <span>1h30m</span></div><div class="tc-stat">Remaining <span>3h30m</span></div><div class="tc-stat" style="margin-left:auto;color:var(--red);font-size:11px;">1 urgent</div></div>
-            </div>
-            <div class="team-card" onclick="viewTeamTodo('jb')">
-              <div class="tc-head"><div class="tc-av" style="background:#7B9E87;">JB</div><div><div class="tc-name">JB</div></div><div class="tc-meta">4h booked · 4h to go</div></div>
-              <div class="tc-timeline">
-                <div class="tc-block done">SFF LinkedIn content — 1h</div>
-                <div class="tc-block todo">NPF AU Bundle push copy — 2h</div>
-                <div class="tc-block todo">Formthotics induction — 1h</div>
-                <div class="tc-block todo">Performance wip — 1h</div>
-              </div>
-              <div class="tc-footer"><div class="tc-stat">Done <span>1h</span></div><div class="tc-stat">Remaining <span>3h</span></div><div class="tc-stat" style="margin-left:auto;font-size:11px;color:var(--muted);">On track</div></div>
-            </div>
-          </div>
-          <div style="margin-top:28px;" class="section-label" style="margin-bottom:14px;">Over budget</div>
-          <div class="alert-list">
-            <div class="alert"><i class="ti ti-alert-triangle" style="color:var(--red);font-size:16px;flex-shrink:0;"></i><div><div class="alert-job">6544 SFF Honest Campaign</div><div class="alert-detail">Design &amp; Artwork $449 over sell · consider scope change</div></div></div>
-            <div class="alert"><i class="ti ti-alert-triangle" style="color:var(--red);font-size:16px;flex-shrink:0;"></i><div><div class="alert-job">6690 Boyd April Retainer</div><div class="alert-detail">$1,566 over budget · invoice raised but hours continue</div></div></div>
-          </div>
+        <div class="dash-scroll" id="dash-scroll">
+          <!-- Populated by renderDashboard() -->
         </div>
       </div>
 
@@ -1318,14 +1308,14 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
               <button class="wbtn" id="wbtn-prev"><i class="ti ti-chevron-left" style="font-size:13px;"></i></button>
               <span class="wlabel" id="week-label">Mon – Sun</span>
               <button class="wbtn" id="wbtn-today" style="margin-left:4px;font-size:11px;padding:4px 8px;">Today</button>
-              <button class="wbtn" id="wbtn-cal" title="Pick a week" style="padding:5px 7px;position:relative;overflow:hidden;">
+              <button class="wbtn" id="wbtn-cal" title="Pick a week" style="padding:5px 7px;" onclick="toggleCalPopup(event)">
                 <i class="ti ti-calendar" style="font-size:13px;pointer-events:none;"></i>
-                <input type="week" id="week-picker" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" onchange="goToWeek(this.value)">
               </button>
               <button class="wbtn" id="wbtn-next"><i class="ti ti-chevron-right" style="font-size:13px;"></i></button>
             </div>
             <div class="todo-summary" style="margin-left:16px;">To do: 3h30m &nbsp;·&nbsp; Done: 5h45m</div>
-            <div style="margin-left:auto;">
+            <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+              <button class="wbtn" id="vsp-btn" title="View settings" onclick="toggleVSP(event)" style="padding:5px 7px;"><i class="ti ti-adjustments-horizontal" style="font-size:13px;pointer-events:none;"></i></button>
               <button class="tb-btn ghost" onclick="openTodoModal(null,5)" style="font-size:11px;padding:6px 12px;">+ Add task</button>
             </div>
           </div>
@@ -1381,6 +1371,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
             </div>
             <div class="detail-tabs">
               <div class="d-tab on" onclick="switchDTab(this,'plan')">Job plan</div>
+              <div class="d-tab" onclick="switchDTab(this,'quote')">Quote</div>
               <div class="d-tab" onclick="switchDTab(this,'activity')">Activity</div>
             </div>
           </div>
@@ -1402,6 +1393,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
               <div class="ph-add" onclick="addPhase()"><i class="ti ti-plus" style="font-size:13px"></i> New phase</div>
             </div>
           </div>
+          <div id="dtab-quote" class="hidden" style="flex:1;overflow-y:auto;padding:24px 24px 50px;"></div>
           <div id="dtab-activity" class="act-feed hidden">
             <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:18px;">Activity</div>
             <div class="act-row"><div class="d-av" style="background:#7B9E87;flex-shrink:0;">CA</div><div><div class="act-text">Logged <strong style="font-weight:500;">15h 45m</strong> on Creative Direction — Doc Layout Stage 2</div><div class="act-time">Today, 9:14am</div></div></div>
@@ -1690,9 +1682,9 @@ const SFF_PHASES=[
 ];
 let phases=JSON.parse(JSON.stringify(SFF_PHASES));
 const people={
-  ro:{name:'Ronan',initials:'RO',color:'#ED1E24',days:[1,2,3,4,5]},
-  bee:{name:'Bianca',initials:'BE',color:'#6B7FA3',days:[1,2,3,4,5]},
-  jb:{name:'JB',initials:'JB',color:'#7B9E87',days:[1,2,3,4,5]}
+  ro:{name:'Ronan',initials:'RO',color:'#ED1E24',days:[1,2,3,4,5],role:'Creative Director'},
+  bee:{name:'Bianca',initials:'BE',color:'#6B7FA3',days:[1,2,3,4,5],role:'Account Manager'},
+  jb:{name:'JB',initials:'JB',color:'#7B9E87',days:[1,2,3,4,5],role:'Copywriter'}
 };
 let currentPerson='ro';
 const MY_PERSON='ro'; // the logged-in user
@@ -1769,12 +1761,84 @@ function taskIsBillable(task){
 }
 const DAY_NAMES=['Monday','Tuesday','Wednesday','Thursday','Friday'];
 
+function getWeekNum(d){const jan1=new Date(d.getFullYear(),0,1);const days=Math.floor((d-jan1)/(86400000));return Math.ceil((days+jan1.getDay()+1)/7);}
+// ---- DASHBOARD ----
+function renderDashboard(){
+  const wrap=document.getElementById('dash-scroll');if(!wrap)return;
+  const now=new Date();
+  const dayNames=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const hr=now.getHours();
+  const greetStr=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
+  const dateStr=`${dayNames[now.getDay()]} · ${now.getDate()} ${monthNames[now.getMonth()]} ${now.getFullYear()} · Week ${getWeekNum(now)}`;
+  const p=people[MY_PERSON];
+  // Calc week hours
+  const wd=getWeekData(MY_PERSON,0);
+  let billH=0,nbillH=0;
+  [1,2,3,4,5].forEach(d=>(wd[d]||[]).forEach(t=>{
+    if(t.done){if(taskIsBillable(t))billH+=t.hours||0;else nbillH+=t.hours||0;}
+  }));
+  // Today's tasks
+  const todayDow=(now.getDay()||7);// 1=Mon..5=Fri
+  const todayTasks=(wd[todayDow]||[]);
+  const todayTodo=todayTasks.filter(t=>!t.done);
+  const todayDone=todayTasks.filter(t=>t.done);
+  const urgentCount=todayTodo.filter(t=>t.urgent).length;
+  const totalTarget=30;
+  const billPct=Math.min(100,Math.round(billH/totalTarget*100));
+  const nbillPct=Math.min(100,Math.round(nbillH/8*100));
+  // Today's task rows
+  const todoRows=[...todayDone,...todayTodo].map(t=>{
+    const isDone=t.done;const isUrgent=t.urgent&&!isDone;
+    const metaArr=[];if(t.job)metaArr.push(t.job);if(t.item)metaArr.push(t.item);if(t.hours)metaArr.push(formatHrs(t.hours));
+    return`<div class="my-todo-item" onclick="navTo('todo')">
+      <div class="todo-check${isDone?' done-c':isUrgent?' urg-c':''}">${isDone?'<i class="ti ti-check" style="font-size:9px;color:var(--done-ink);"></i>':''}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="${isDone?'text-decoration:line-through;opacity:.5;':''}font-size:13px;">${t.title}</div>
+        ${metaArr.length?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${metaArr.join(' · ')}</div>`:''}
+      </div>
+      ${isUrgent?`<div class="todo-meta" style="color:var(--red);flex-shrink:0;">Urgent</div>`:''}
+    </div>`;
+  }).join('');
+  // Team cards
+  const teamHTML=Object.keys(people).filter(k=>k!==MY_PERSON).map(k=>{
+    const tp=people[k];const twd=getWeekData(k,0);const ttasks=(twd[todayDow]||[]);
+    const tdone=ttasks.filter(t=>t.done);const ttodo=ttasks.filter(t=>!t.done);
+    const doneH=tdone.reduce((s,t)=>s+(t.hours||0),0);const todoH=ttodo.reduce((s,t)=>s+(t.hours||0),0);
+    const taskBlocks=ttasks.slice(0,5).map(t=>`<div class="tc-block ${t.done?'done':t.urgent?'urgent':'todo'}">${t.title}${t.hours?' — '+formatHrs(t.hours):''}</div>`).join('');
+    const urgCnt=ttodo.filter(t=>t.urgent).length;
+    return`<div class="team-card" onclick="viewTeamTodo('${k}')">
+      <div class="tc-head"><div class="tc-av" style="background:${tp.color};">${tp.initials}</div><div><div class="tc-name">${tp.name}</div></div><div class="tc-meta">${formatHrs(todoH+doneH)||'0h'} booked</div></div>
+      <div class="tc-timeline">${taskBlocks||'<div style="font-size:12px;color:var(--muted);padding:4px 0;">No tasks today</div>'}</div>
+      <div class="tc-footer"><div class="tc-stat">Done <span>${formatHrs(doneH)||'0h'}</span></div><div class="tc-stat">To do <span>${formatHrs(todoH)||'0h'}</span></div>${urgCnt?`<div class="tc-stat" style="margin-left:auto;color:var(--red);font-size:11px;">${urgCnt} urgent</div>`:'<div class="tc-stat" style="margin-left:auto;font-size:11px;color:var(--muted);">On track</div>'}</div>
+    </div>`;
+  }).join('');
+  // Over budget alerts
+  const alerts=jobs.filter(j=>(j.bPct||0)>=100||((j.hPct||0)>=100)).map(j=>`<div class="alert"><i class="ti ti-alert-triangle" style="color:var(--red);font-size:16px;flex-shrink:0;"></i><div><div class="alert-job">${j.id} ${j.name}</div><div class="alert-detail">${(j.bPct||0)>=100?`Budget ${j.bPct}% used · over sell`:`Hours ${j.hPct}% of plan`}</div></div></div>`).join('');
+  wrap.innerHTML=`
+    <div style="margin-bottom:28px;">
+      <div class="dash-greeting">${greetStr}, ${p?.name||'Ronan'}.</div>
+      <div class="dash-date">${dateStr}</div>
+      <div class="dash-rule"></div>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-label">Billable this week</div><div class="kpi-val">${formatHrs(billH)||'0h'}</div><div class="kpi-sub">of ${totalTarget}h target</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${billPct}%;background:${billPct>=100?'var(--red)':billPct>=80?'#FF9800':'#4CAF50'};"></div></div></div>
+      <div class="kpi"><div class="kpi-label">Non-billable</div><div class="kpi-val">${formatHrs(nbillH)||'0h'}</div><div class="kpi-sub">internal & admin</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${nbillPct}%;background:#FF9800;"></div></div></div>
+      <div class="kpi"><div class="kpi-label">My tasks today</div><div class="kpi-val">${todayTodo.length}</div><div class="kpi-sub">${urgentCount?urgentCount+' urgent · ':''}${todayDone.length} done</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${todayTasks.length?Math.round(todayDone.length/todayTasks.length*100):0}%;background:var(--red);"></div></div></div>
+    </div>
+    <div class="section-label" style="margin-bottom:12px;">Your day</div>
+    <div class="my-todos" style="margin-bottom:28px;">${todoRows||'<div class="my-todo-item" style="color:var(--muted);font-size:13px;"><i class="ti ti-sun" style="font-size:16px;margin-right:10px;"></i>No tasks scheduled today.</div>'}</div>
+    ${teamHTML?`<div class="section-label" style="margin-bottom:14px;">Team · today</div><div class="team-grid">${teamHTML}</div>`:''}
+    ${alerts?`<div style="margin-top:28px;" class="section-label" style="margin-bottom:14px;">Over budget</div><div class="alert-list">${alerts}</div>`:''}
+  `;
+}
 function navTo(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.add('hidden'));
   document.querySelectorAll('.s-btn[id]').forEach(el=>el.classList.remove('on'));
   const ve=document.getElementById('view-'+v);if(ve)ve.classList.remove('hidden');
   const ne=document.getElementById('snav-'+v);if(ne)ne.classList.add('on');
   document.getElementById('topbar').classList.toggle('hidden',v!=='jobs'&&v!=='detail');
+  if(v==='dashboard')renderDashboard();
   if(v==='todo')renderTodo();
   if(v==='jobs')renderJobs();
   if(v==='reporting'){initReportingSelects();wireReportingFilters();setTimeout(renderReporting,50);}
@@ -1784,7 +1848,7 @@ function navTo(v){
 }
 function viewTeamTodo(p){currentPerson=p;navTo('todo');}
 
-let todoSplitPx=260,isDivDrag=false,divDragStartY=0,divDragStartPx=0;
+let todoSplitPx=Math.round((window.innerHeight-120)*.72),isDivDrag=false,divDragStartY=0,divDragStartPx=0;
 
 function positionGlobalDivider(){
   const gd=document.getElementById('global-divider');
@@ -1938,18 +2002,25 @@ function createTaskCard(t,day,isDone){
   const jobIdNum=jobIdMatch?jobIdMatch[1]:null;
   const hasJobOrItem=t.job||t.item;
 
+  const showHours=getCS('showHours');
+  const showJob=getCS('showJob');
+  const showItem=getCS('showItem');
+  const showNote=getCS('showNote');
+  const metaJob=showJob&&t.job;
+  const metaItem=showItem&&t.item;
+
   card.innerHTML=`
     <div class="tc-top">
       <span class="tc-icon">${icon}</span>
       <span class="tc-title">${t.title}</span>
-      ${hrsLabel?`<span class="tc-hrs" id="hrs-${t.id}">${hrsLabel}</span>`:'<span class="tc-hrs" id="hrs-${t.id}"></span>'}
+      ${showHours&&hrsLabel?`<span class="tc-hrs" id="hrs-${t.id}">${hrsLabel}</span>`:`<span class="tc-hrs" id="hrs-${t.id}" style="display:none;"></span>`}
     </div>
-    ${hasJobOrItem?`<div class="tc-meta">
-      ${t.job?`<span class="tc-job${jobIdNum?' clickable':''}" data-jid="${jobIdNum||''}">${t.job}</span>`:''}
-      ${t.job&&t.item?'<span class="tc-sep"></span>':''}
-      ${t.item?`<span class="tc-item-tag">${t.item}</span>`:''}
+    ${(metaJob||metaItem)?`<div class="tc-meta">
+      ${metaJob?`<span class="tc-job${jobIdNum?' clickable':''}" data-jid="${jobIdNum||''}">${t.job}</span>`:''}
+      ${metaJob&&metaItem?'<span class="tc-sep"></span>':''}
+      ${metaItem?`<span class="tc-item-tag">${t.item}</span>`:''}
     </div>`:''}
-    ${t.note?`<div class="tc-note">${t.note}</div>`:''}`;
+    ${showNote&&t.note?`<div class="tc-note">${t.note}</div>`:''}`;
 
   const jEl=card.querySelector('.tc-job.clickable');
   if(jEl)jEl.addEventListener('click',e=>{e.stopPropagation();openJobDetail(jEl.dataset.jid);});
@@ -2139,33 +2210,54 @@ function closeTodoModal(){
   document.getElementById('todo-modal').classList.remove('on');
   editingTaskId=null;editingDay=null;
 }
-function populatePersonSwitcher(){
-  const menu=document.getElementById('ps-menu');menu.innerHTML='';
+function renderPSMenu(query){
+  const menu=document.getElementById('ps-menu');
+  const list=menu.querySelector('.ps-person-list')||menu;
+  // Clear existing person rows only
+  menu.querySelectorAll('.ps-person,.ps-co-hd').forEach(el=>el.remove());
+  const q=(query||'').toLowerCase();
+  const hd=document.createElement('div');hd.className='ps-co-hd';hd.textContent='Content & Co';menu.appendChild(hd);
   Object.keys(people).forEach(key=>{
     const p=people[key];
+    if(q&&!p.name.toLowerCase().includes(q)&&!(p.role||'').toLowerCase().includes(q))return;
     const el=document.createElement('div');
     el.className='ps-person'+(key===currentPerson?' on-p':'');
-    const status=personStatus[key]||'available';
-    const statusColor=status==='available'?'#4CAF50':status==='allocated'?'#FF9800':'#9E9E9E';
-    el.innerHTML=`<div class="ps-pav" style="background:${p.color};">${p.initials}</div><div class="ps-pmeta"><div class="ps-pname">${p.name}</div><div class="ps-pstatus"><span class="ps-dot" style="background:${statusColor};"></span>${status.charAt(0).toUpperCase()+status.slice(1)}</div></div>`;
+    const role=p.role||'Team member';
+    el.innerHTML=`<div class="ps-pav" style="background:${p.color};width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#fff;flex-shrink:0;">${p.initials}</div><div class="ps-pmeta"><div class="ps-pname">${p.name}</div><div class="ps-pstatus" style="font-size:11px;color:var(--muted);">${role}</div></div>`;
     el.onclick=()=>{
       currentPerson=key;
       document.getElementById('current-av').style.background=p.color;
       document.getElementById('current-av').textContent=p.initials;
       document.getElementById('current-name').textContent=p.name;
-      populatePersonSwitcher();
       renderTodo();
       document.getElementById('ps-menu').classList.remove('on');
     };
     menu.appendChild(el);
   });
 }
+function populatePersonSwitcher(){
+  const menu=document.getElementById('ps-menu');
+  menu.innerHTML='<div class="ps-search-wrap"><input class="ps-search-inp" id="ps-search" placeholder="Search by name or role…" oninput="renderPSMenu(this.value)"></div>';
+  renderPSMenu('');
+}
 
 document.getElementById('ps-dropdown').addEventListener('click',e=>{
   e.stopPropagation();
-  document.getElementById('ps-menu').classList.toggle('on');
+  const menu=document.getElementById('ps-menu');
+  const rect=document.getElementById('ps-dropdown').getBoundingClientRect();
+  menu.style.top=(rect.bottom+4)+'px';
+  menu.style.left=rect.left+'px';
+  menu.classList.toggle('on');
+  if(menu.classList.contains('on')){
+    setTimeout(()=>{const s=document.getElementById('ps-search');if(s)s.focus();},50);
+  }
 });
-document.addEventListener('click',()=>document.getElementById('ps-menu').classList.remove('on'));
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#ps-dropdown')&&!e.target.closest('#ps-menu')){
+    const menu=document.getElementById('ps-menu');
+    if(menu)menu.classList.remove('on');
+  }
+});
 
 function changePersonStatus(status){
   personStatus[currentPerson]=status;
@@ -2314,7 +2406,115 @@ function hideTodoTooltip(){
   const tt=document.getElementById('task-tooltip');if(tt)tt.classList.remove('on');
 }
 
-// Jump to a specific week via the date picker
+// ---- CALENDAR POPUP ----
+let _calPopDate=new Date();
+function toggleCalPopup(e){
+  e&&e.stopPropagation();
+  const popup=document.getElementById('cal-popup');
+  const btn=document.getElementById('wbtn-cal');
+  const rect=btn.getBoundingClientRect();
+  if(popup.classList.contains('on')){popup.classList.remove('on');return;}
+  popup.style.top=(rect.bottom+4)+'px';
+  // Position to the left of button to avoid going off screen
+  let left=rect.right-256;if(left<8)left=8;
+  popup.style.left=left+'px';
+  _calPopDate=new Date();
+  renderCalPopup();
+  popup.classList.add('on');
+}
+function calPopNav(dir){
+  _calPopDate.setMonth(_calPopDate.getMonth()+dir);
+  renderCalPopup();
+}
+function goToCurrentWeek(){
+  weekOffset=0;updateWeekLabel();renderTodo();
+  document.getElementById('cal-popup').classList.remove('on');
+}
+function renderCalPopup(){
+  const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-pop-month-lbl').textContent=`${MONTHS[_calPopDate.getMonth()]} ${_calPopDate.getFullYear()}`;
+  const grid=document.getElementById('cal-pop-grid');grid.innerHTML='';
+  const yr=_calPopDate.getFullYear(),mo=_calPopDate.getMonth();
+  const firstDow=(new Date(yr,mo,1).getDay()+6)%7;
+  const daysInMonth=new Date(yr,mo+1,0).getDate();
+  const prevDays=new Date(yr,mo,0).getDate();
+  const today=new Date();today.setHours(0,0,0,0);
+  // Current week's Monday
+  const selMon=new Date(today);selMon.setDate(today.getDate()-(today.getDay()+6)%7+weekOffset*7);selMon.setHours(0,0,0,0);
+  const totalCells=Math.ceil((firstDow+daysInMonth)/7)*7;
+  for(let i=0;i<totalCells;i++){
+    let date;const btn=document.createElement('button');btn.className='cal-pop-day';
+    if(i<firstDow){date=new Date(yr,mo-1,prevDays-firstDow+i+1);btn.classList.add('other-mo');}
+    else if(i-firstDow>=daysInMonth){date=new Date(yr,mo+1,i-firstDow-daysInMonth+1);btn.classList.add('other-mo');}
+    else date=new Date(yr,mo,i-firstDow+1);
+    btn.textContent=date.getDate();
+    if(date.getTime()===today.getTime())btn.classList.add('cal-today');
+    const dateMon=new Date(date);dateMon.setDate(date.getDate()-(date.getDay()+6)%7);dateMon.setHours(0,0,0,0);
+    if(dateMon.getTime()===selMon.getTime())btn.classList.add('cal-sel-week');
+    btn.addEventListener('click',()=>{
+      const clickMon=new Date(date);clickMon.setDate(date.getDate()-(date.getDay()+6)%7);clickMon.setHours(0,0,0,0);
+      const todayMon=new Date(today);todayMon.setDate(today.getDate()-(today.getDay()+6)%7);todayMon.setHours(0,0,0,0);
+      weekOffset=Math.round((clickMon-todayMon)/(7*86400000));
+      updateWeekLabel();renderTodo();
+      document.getElementById('cal-popup').classList.remove('on');
+    });
+    grid.appendChild(btn);
+  }
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#cal-popup')&&!e.target.closest('#wbtn-cal'))
+    document.getElementById('cal-popup')?.classList.remove('on');
+});
+
+// ---- VIEW SETTINGS PANEL ----
+const VSP_DEFAULTS=[
+  {key:'showNote',label:'Notes',on:true},
+  {key:'showJob',label:'Job name',on:true},
+  {key:'showItem',label:'Item name',on:true},
+  {key:'showHours',label:'Hours',on:true},
+];
+let cardSettings=JSON.parse(localStorage.getItem('cc_card_settings')||'null')||VSP_DEFAULTS.map(x=>({...x}));
+function saveCardSettings(){localStorage.setItem('cc_card_settings',JSON.stringify(cardSettings));}
+function getCS(key){const s=cardSettings.find(x=>x.key===key);return s?s.on:true;}
+function toggleVSP(e){
+  e&&e.stopPropagation();
+  const panel=document.getElementById('vsp');
+  const btn=document.getElementById('vsp-btn');
+  const rect=btn.getBoundingClientRect();
+  if(panel.classList.contains('on')){panel.classList.remove('on');return;}
+  panel.style.top=(rect.bottom+4)+'px';
+  let left=rect.right-220;if(left<8)left=8;
+  panel.style.left=left+'px';
+  renderVSP();panel.classList.add('on');
+}
+function renderVSP(){
+  const list=document.getElementById('vsp-list');list.innerHTML='';
+  cardSettings.forEach((s,i)=>{
+    const row=document.createElement('div');row.className='vsp-item';row.draggable=true;row.dataset.idx=i;
+    row.innerHTML=`<i class="ti ti-grip-dots-vertical vsp-grip"></i><label><input type="checkbox" ${s.on?'checked':''} onchange="vspToggle(${i})"> ${s.label}</label>`;
+    row.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',i);row.classList.add('dragging');});
+    row.addEventListener('dragover',e=>e.preventDefault());
+    row.addEventListener('drop',e=>{
+      e.stopPropagation();
+      const from=parseInt(e.dataTransfer.getData('text/plain'));const to=i;
+      if(from===to)return;
+      const[mv]=cardSettings.splice(from,1);cardSettings.splice(to,0,mv);
+      saveCardSettings();renderVSP();renderTodo();
+    });
+    row.addEventListener('dragend',()=>row.classList.remove('dragging'));
+    list.appendChild(row);
+  });
+}
+function vspToggle(i){
+  cardSettings[i].on=!cardSettings[i].on;
+  saveCardSettings();renderTodo();renderVSP();
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#vsp')&&!e.target.closest('#vsp-btn'))
+    document.getElementById('vsp')?.classList.remove('on');
+});
+
+// Jump to a specific week via the date picker (legacy - keep for compatibility)
 function goToWeek(v){
   if(!v)return;
   const parts=v.split('-W');if(parts.length<2)return;
@@ -2457,7 +2657,69 @@ function renderStats(j,isNew){
 function switchDTab(el,tab){
   document.querySelectorAll('.d-tab').forEach(t=>t.classList.remove('on'));if(el)el.classList.add('on');
   document.getElementById('dtab-plan').style.display=tab==='plan'?'flex':'none';
+  document.getElementById('dtab-quote').classList.toggle('hidden',tab!=='quote');
   document.getElementById('dtab-activity').classList.toggle('hidden',tab!=='activity');
+  if(tab==='quote')renderQuoteTab();
+}
+function renderQuoteTab(){
+  const j=jobs.find(x=>x.id===activeJobId);if(!j)return;
+  const wrap=document.getElementById('dtab-quote');
+  // Build quote from phases
+  let totalSell=0,totalHours=0;
+  const rows=phases.map(ph=>{
+    const phSell=ph.items.reduce((s,i)=>s+parseInt((i.total||'0').replace(/[$,]/g,'')||0),0);
+    const phHrsMin=ph.items.reduce((s,i)=>{const x=(i.hours||'0h').match(/(\d+)h(?:(\d+)m)?/);return s+(x?parseInt(x[1])*60+(parseInt(x[2])||0):0);},0);
+    totalSell+=phSell;totalHours+=phHrsMin;
+    const phHrsStr=phHrsMin>=60?`${Math.floor(phHrsMin/60)}h${phHrsMin%60?phHrsMin%60+'m':''}`:'0h';
+    const itemRows=ph.items.map(i=>`<tr style="border-bottom:1px solid var(--faint);">
+      <td style="padding:7px 12px;font-size:12px;padding-left:28px;color:var(--muted);">${i.name}</td>
+      <td style="padding:7px 12px;font-size:12px;text-align:right;color:var(--muted);">${i.hours}</td>
+      <td style="padding:7px 12px;font-size:12px;text-align:right;color:var(--muted);">${i.rate}</td>
+      <td style="padding:7px 12px;font-size:12px;text-align:right;">${i.total}</td>
+    </tr>`).join('');
+    return`<tr style="background:var(--off);border-bottom:1px solid var(--border);">
+      <td style="padding:9px 12px;font-size:13px;font-weight:500;">${ph.name}</td>
+      <td style="padding:9px 12px;font-size:12px;text-align:right;">${phHrsStr}</td>
+      <td></td>
+      <td style="padding:9px 12px;font-size:13px;font-weight:500;text-align:right;">$${phSell.toLocaleString()}</td>
+    </tr>${itemRows}`;
+  }).join('');
+  const totalHrsStr=totalHours>=60?`${Math.floor(totalHours/60)}h${totalHours%60?totalHours%60+'m':''}`:'0h';
+  wrap.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <div style="font-family:var(--serif);font-size:22px;font-weight:400;margin-bottom:2px;">Quote</div>
+        <div style="font-size:12px;color:var(--muted);">${j.id} · ${j.name} · ${j.company}</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <select class="filter-btn" id="q-status" style="font-size:12px;cursor:pointer;">
+          <option value="draft">Draft</option>
+          <option value="sent">Sent</option>
+          <option value="approved" selected>Approved</option>
+          <option value="declined">Declined</option>
+        </select>
+        <button class="d-action primary" onclick="alert('Quote PDF export coming soon.')"><i class="ti ti-download" style="font-size:12px"></i> Export PDF</button>
+      </div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:3px;overflow:hidden;">
+      <thead><tr style="border-bottom:2px solid var(--border);">
+        <th style="padding:10px 12px;font-size:11px;letter-spacing:.08em;text-align:left;font-weight:500;color:var(--muted);">PHASE / ITEM</th>
+        <th style="padding:10px 12px;font-size:11px;letter-spacing:.08em;text-align:right;font-weight:500;color:var(--muted);">HOURS</th>
+        <th style="padding:10px 12px;font-size:11px;letter-spacing:.08em;text-align:right;font-weight:500;color:var(--muted);">RATE</th>
+        <th style="padding:10px 12px;font-size:11px;letter-spacing:.08em;text-align:right;font-weight:500;color:var(--muted);">SELL</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr style="border-top:2px solid var(--border);background:var(--off);">
+        <td style="padding:12px;font-size:13px;font-weight:500;">Total</td>
+        <td style="padding:12px;font-size:13px;font-weight:500;text-align:right;">${totalHrsStr}</td>
+        <td></td>
+        <td style="padding:12px;font-size:15px;font-weight:500;text-align:right;font-family:var(--serif);">$${totalSell.toLocaleString()}</td>
+      </tr></tfoot>
+    </table>
+    <div style="margin-top:16px;padding:14px 16px;background:var(--off);border:1px solid var(--border);border-radius:3px;">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:.06em;text-transform:uppercase;">Quote notes</div>
+      <textarea id="q-notes" style="width:100%;border:none;background:transparent;font-family:var(--font);font-size:13px;resize:none;outline:none;min-height:60px;color:var(--ink);" placeholder="Add notes to appear on the quote…"></textarea>
+    </div>`;
 }
 
 function renderLabels(){
@@ -2490,7 +2752,7 @@ function renderItems(phId){
   ph.items.forEach(item=>{
     const tr=document.createElement('tr');tr.id='item_'+item.id;tr.draggable=true;tr.dataset.itemId=item.id;tr.dataset.phId=phId;
     const iCls=item.status==='complete'?'ib-c':'ib-p';
-    const iLbl=item.status==='complete'?'Complete':'In play';
+    const iLbl=item.status==='complete'?'Complete':'Open';
     tr.innerHTML=`<td><i class="ti ti-grip-vertical" style="color:var(--border);font-size:13px;cursor:grab;"></i></td><td class="i-name">${item.name}</td><td class="i-hrs ${item.over?'i-hrs-over':''}">${item.hours}</td><td class="i-rate" style="font-size:12px;color:var(--muted);">${item.rate}</td><td class="i-sell"><span style="font-weight:400;">${item.used}</span> <span class="i-sof">/ ${item.total}</span></td><td style="text-align:right"><span class="i-badge ${iCls}" style="cursor:pointer;" title="Click to toggle" onclick="toggleItemStatus('${item.id}','${phId}',event)">${iLbl}</span></td><td><i class="ti ti-dots" style="font-size:14px;color:var(--muted);cursor:pointer;" onclick="showCtx(event,'${item.id}','${phId}')"></i></td>`;
     tr.addEventListener('dragstart',e=>{dragSrc=tr;tr.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
     tr.addEventListener('dragover',e=>e.preventDefault());
@@ -2504,7 +2766,7 @@ function toggleItemStatus(itemId,phId,e){
   e&&e.stopPropagation();
   const ph=phases.find(p=>p.id===phId);if(!ph)return;
   const item=ph.items.find(i=>i.id===itemId);if(!item)return;
-  item.status=item.status==='complete'?'inplay':'complete';
+  item.status=item.status==='complete'?'open':'complete';
   renderPhases();saveData();
 }
 function showAddItemForm(phId){
@@ -2946,5 +3208,23 @@ function renderCalendarSimple(){
   body.appendChild(grid);
 }
 </script>
+<!-- Calendar popup -->
+<div id="cal-popup" class="cal-popup">
+  <div class="cal-pop-nav-row">
+    <button class="cal-pop-nav-btn" onclick="calPopNav(-1)"><i class="ti ti-chevron-left" style="font-size:11px;pointer-events:none;"></i></button>
+    <span class="cal-pop-month-lbl" id="cal-pop-month-lbl">June 2026</span>
+    <button class="cal-pop-nav-btn" onclick="calPopNav(1)"><i class="ti ti-chevron-right" style="font-size:11px;pointer-events:none;"></i></button>
+  </div>
+  <div class="cal-pop-day-hd"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+  <div class="cal-pop-grid" id="cal-pop-grid"></div>
+  <div class="cal-pop-footer">
+    <button class="cal-pop-this-week" onclick="goToCurrentWeek()">↩ Show this week</button>
+  </div>
+</div>
+<!-- View settings panel -->
+<div id="vsp" class="vsp">
+  <div class="vsp-title">View settings</div>
+  <div class="vsp-list" id="vsp-list"></div>
+</div>
 </body>
 </html>
