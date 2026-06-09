@@ -656,7 +656,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 
 /* JOBS */
 .jobs-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-.jobs-toolbar{padding:12px 24px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.jobs-toolbar{padding:12px 24px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .jobs-search{position:relative;flex:0 0 240px;}
 .jobs-search i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:15px;}
 .jobs-search input{width:100%;background:var(--off);border:1px solid var(--border);padding:7px 10px 7px 32px;font-size:13px;font-family:var(--font);font-weight:300;color:var(--ink);outline:none;border-radius:2px;}
@@ -1260,6 +1260,51 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .tt-label{color:#666;min-width:44px;flex-shrink:0;}
 .tt-urgent{color:var(--red);font-size:10px;margin-left:4px;letter-spacing:.04em;text-transform:uppercase;}
 
+/* ── Jobs sub-nav ─────────────────────────────────────────── */
+.jobs-subnav{display:flex;align-items:center;gap:2px;padding:0 28px;border-bottom:2px solid var(--border);flex-shrink:0;background:var(--white);}
+.jsn-tab{padding:14px 16px 12px;font-size:12px;font-weight:400;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .12s,border-color .12s;}
+.jsn-tab:hover{color:var(--ink);}
+.jsn-tab.on{color:var(--ink);border-bottom-color:var(--ink);font-weight:500;}
+.jt-panel{display:flex;flex-direction:column;flex:1;overflow:hidden;}
+.jt-panel.scroll{overflow-y:auto;}
+/* ── Global restyled select (.cc-select) ──────────────────── */
+.cc-select{appearance:none;-webkit-appearance:none;background:var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center;border:1px solid var(--border);padding:7px 28px 7px 12px;font-size:12px;font-family:var(--font);color:var(--ink);cursor:pointer;border-radius:3px;outline:none;transition:border-color .12s;}
+.cc-select:hover{border-color:#aaa;}
+.cc-select:focus{border-color:var(--ink);}
+/* Apply cc-select style to all filter-btn selects too */
+select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center;padding-right:28px;text-transform:none;letter-spacing:0;font-size:12px;color:var(--ink);}
+/* ── Workflow status badges ────────────────────────────────── */
+.wf-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500;letter-spacing:.05em;text-transform:uppercase;}
+.wf-quote{background:#F0F4FF;color:#4A6FA5;}
+.wf-live{background:#E8F5E9;color:#2E7D32;}
+.wf-invoiced{background:#FFF3E0;color:#E65100;}
+/* ── Clients panel ────────────────────────────────────────── */
+.clients-wrap{padding:28px 32px;overflow-y:auto;}
+.clients-toolbar{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
+.clients-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+.client-card-full{background:var(--white);border:1px solid var(--border);border-radius:4px;padding:20px;cursor:pointer;transition:box-shadow .15s,border-color .15s;}
+.client-card-full:hover{box-shadow:0 2px 8px rgba(0,0,0,.07);border-color:#ccc;}
+.ccf-name{font-family:var(--serif);font-size:16px;font-weight:400;margin-bottom:4px;}
+.ccf-contact{font-size:12px;color:var(--muted);margin-bottom:12px;}
+.ccf-meta{display:flex;gap:16px;font-size:11px;color:var(--muted);}
+.ccf-meta strong{color:var(--ink);font-weight:500;}
+.client-add-card{border:1px dashed var(--border);border-radius:4px;padding:20px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--muted);cursor:pointer;transition:border-color .12s,color .12s;}
+.client-add-card:hover{border-color:var(--ink);color:var(--ink);}
+/* ── Todo modal assign ────────────────────────────────────── */
+.tm-assign-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border);border-radius:3px;cursor:pointer;position:relative;user-select:none;margin-bottom:0;}
+.tm-assign-row:hover{border-color:#aaa;}
+.tm-assign-chevron{margin-left:auto;color:var(--muted);}
+.tm-assign-menu{position:absolute;top:calc(100% + 4px);left:0;width:200px;background:var(--white);border:1px solid var(--border);border-radius:4px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:400;display:none;padding:4px 0;}
+.tm-assign-menu.open{display:block;}
+.tm-assign-opt{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;font-size:13px;}
+.tm-assign-opt:hover{background:var(--off);}
+.tm-assign-opt .tao-av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff;}
+/* ── Label input restyle ──────────────────────────────────── */
+.label-inp-styled{background:transparent;border:none;border-bottom:1px solid var(--border);padding:3px 6px;font-size:12px;font-family:var(--font);outline:none;min-width:120px;color:var(--ink);}
+.label-inp-styled:focus{border-bottom-color:var(--ink);}
+/* ── Jobs toolbar update ──────────────────────────────────── */
+.jobs-toolbar{display:flex;align-items:center;gap:10px;padding:14px 28px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;}
+
 </style>
 </head>
 <body>
@@ -1271,9 +1316,6 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
       <div class="s-btn on" id="snav-dashboard" onclick="navTo('dashboard')"><i class="ti ti-grid-dots"></i><span class="s-tip">Dashboard</span></div>
       <div class="s-btn" id="snav-todo" onclick="navTo('todo')"><i class="ti ti-checklist"></i><span class="s-tip">To Do</span></div>
       <div class="s-btn" id="snav-jobs" onclick="navTo('jobs')"><i class="ti ti-briefcase"></i><span class="s-tip">Jobs</span></div>
-      <div class="s-btn" id="snav-time" onclick="navTo('time')"><i class="ti ti-clock-hour-4"></i><span class="s-tip">Time</span></div>
-      <div class="s-btn" id="snav-quotes" onclick="navTo('quotes')"><i class="ti ti-file-description"></i><span class="s-tip">Quotes</span></div>
-      <div class="s-btn" id="snav-invoices" onclick="navTo('invoices')"><i class="ti ti-file-invoice"></i><span class="s-tip">Invoices</span></div>
       <div class="s-btn" id="snav-reporting" onclick="navTo('reporting')"><i class="ti ti-chart-bar"></i><span class="s-tip">Reporting</span></div>
       <div class="s-btn" id="snav-boards" onclick="navTo('boards')"><i class="ti ti-layout-kanban"></i><span class="s-tip">Boards</span></div>
       <div class="s-btn" id="snav-calendar" onclick="navTo('calendar')"><i class="ti ti-calendar"></i><span class="s-tip">Calendar</span></div>
@@ -1283,14 +1325,6 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
   </div>
 
   <div class="main">
-    <div class="topbar hidden" id="topbar">
-      <div class="tb-section on">Jobs</div>
-      <div class="tb-section">Time</div>
-      <div class="tb-section">Expenses</div>
-      <div class="tb-section">Quotes</div>
-      <div class="tb-section">Invoices</div>
-      <div class="tb-right"><button class="tb-btn" onclick="openCreateJob()">+ Create Job</button></div>
-    </div>
     <div class="content">
 
       <!-- DASHBOARD -->
@@ -1338,206 +1372,125 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 
       <!-- JOBS -->
       <div id="view-jobs" class="view hidden">
-        <div class="jobs-wrap">
+        <div class="jobs-subnav">
+          <div class="jsn-tab on" data-tab="jobs" onclick="switchJobsTab('jobs')">Jobs</div>
+          <div class="jsn-tab" data-tab="time" onclick="switchJobsTab('time')">Time</div>
+          <div class="jsn-tab" data-tab="expenses" onclick="switchJobsTab('expenses')">Expenses</div>
+          <div class="jsn-tab" data-tab="quotes" onclick="switchJobsTab('quotes')">Quotes</div>
+          <div class="jsn-tab" data-tab="invoices" onclick="switchJobsTab('invoices')">Invoices</div>
+          <div class="jsn-tab" data-tab="clients" onclick="switchJobsTab('clients')">Clients</div>
+          <button class="d-action primary" style="margin-left:auto;" onclick="openCreateJob()"><i class="ti ti-plus" style="font-size:13px"></i> New job</button>
+        </div>
+        <!-- JOBS panel -->
+        <div id="jt-jobs" class="jt-panel" style="display:flex;">
           <div class="jobs-toolbar">
             <div class="jobs-search"><i class="ti ti-search"></i><input id="jobs-search-inp" placeholder="Search jobs…" oninput="filterJobs(this.value)"/></div>
-            <select class="filter-btn" id="jobs-status-filter" onchange="renderJobs()" style="cursor:pointer;">
+            <select class="cc-select" id="jobs-status-filter" onchange="renderJobs()">
               <option value="all">All statuses</option>
               <option value="inplay">In Play</option>
               <option value="new">New</option>
               <option value="complete">Complete</option>
             </select>
+            <select class="cc-select" id="jobs-wf-filter" onchange="renderJobs()">
+              <option value="all">All workflow</option>
+              <option value="quote">Quote</option>
+              <option value="live">Live job</option>
+              <option value="invoiced">Invoiced</option>
+            </select>
             <label class="filter-btn" style="cursor:pointer;"><input type="checkbox" id="jobs-hide-archived" checked style="margin-right:5px;accent-color:var(--red)" onchange="renderJobs()"/> Hide archived</label>
             <span class="jobs-count" id="jobs-count">1 job · NZD</span>
-            <button class="d-action primary" style="margin-left:auto;" onclick="openCreateJob()"><i class="ti ti-plus" style="font-size:13px"></i> New job</button>
           </div>
           <div class="jobs-table-wrap">
             <table class="jobs-table">
-              <thead><tr><th style="width:32px;"></th><th>Job</th><th>Company</th><th>Budget</th><th>Hours</th><th>Labels / Progress</th><th>Status</th></tr></thead>
+              <thead><tr><th style="width:32px;"></th><th>Job</th><th>Company</th><th>Budget</th><th>Hours</th><th>Labels / Progress</th><th>Workflow</th><th>Status</th></tr></thead>
               <tbody id="jobs-tbody"></tbody>
             </table>
           </div>
         </div>
-      </div>
-
-      <!-- JOB DETAIL -->
-      <div id="view-detail" class="view hidden">
-        <div class="detail-view">
-          <div class="detail-head">
-            <div class="detail-back" onclick="navTo('jobs')"><i class="ti ti-arrow-left" style="font-size:12px"></i> Jobs</div>
-            <div class="detail-title-row">
-              <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;" id="d-meta-line"></div><div class="detail-title" id="d-title-text">—</div></div>
-              <div class="detail-actions">
-                <button class="d-action" onclick="openTodoModal(activeJobId,5)"><i class="ti ti-checklist" style="font-size:13px"></i> Add todo</button>
-                <button class="d-action" onclick="openInvoice()"><i class="ti ti-file-invoice" style="font-size:13px"></i> Invoice</button>
-                <button class="d-action primary" onclick="openCreateJob()"><i class="ti ti-plus" style="font-size:13px"></i> New job</button>
+        <!-- TIME panel -->
+        <div id="jt-time" class="jt-panel" style="display:none;">
+          <div class="time-wrap">
+            <div class="time-head-bar">
+              <div><div class="dash-greeting" style="font-size:22px;">Time</div><div class="dash-date" id="time-sub-lbl">All time · All people</div></div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <select class="cc-select" id="tf-person" onchange="renderTime()"><option value="all">All people</option></select>
+                <select class="cc-select" id="tf-client" onchange="renderTime()"><option value="all">All clients</option></select>
+                <select class="cc-select" id="tf-job" onchange="renderTime()"><option value="all">All jobs</option></select>
+                <select class="cc-select" id="tf-range" onchange="renderTime()">
+                  <option value="all">All time</option>
+                  <option value="thisweek">This week</option>
+                  <option value="lastweek">Last week</option>
+                  <option value="thismonth">This month</option>
+                  <option value="lastmonth">Last month</option>
+                  <option value="thisquarter">This quarter</option>
+                  <option value="thisyear">This year</option>
+                </select>
+                <select class="cc-select" id="tf-bill" onchange="renderTime()">
+                  <option value="all">All types</option>
+                  <option value="billable">Billable only</option>
+                  <option value="nonbillable">Non-billable only</option>
+                </select>
               </div>
             </div>
-            <div class="detail-meta-line">
-              <div style="display:flex;"><div class="d-av" style="background:#7B9E87;">CA</div><div class="d-av" style="background:#6B7FA3;">JC</div><div class="d-av" style="background:#C4956A;">CM</div><div class="d-av" style="background:#555;font-size:13px;cursor:pointer;">+</div></div>
-              <span id="d-hours-sell" style="margin-left:8px;font-size:12px;color:var(--muted);"></span>
+            <div class="time-stats-strip" id="time-stats-strip"></div>
+            <div class="dash-rule" style="margin:0 32px 0;"></div>
+            <div class="time-table-wrap">
+              <table class="time-table">
+                <thead><tr>
+                  <th>Person</th><th>Job</th><th>Task</th><th>Date</th><th style="text-align:right;">Hours</th><th>Type</th><th>Status</th>
+                </tr></thead>
+                <tbody id="time-tbody"></tbody>
+              </table>
+              <div id="time-empty" style="display:none;padding:40px 32px;font-size:13px;color:var(--muted);">No time entries match the current filters.</div>
             </div>
-            <div class="labels-row" id="labels-row">
-              <div class="label-add-btn" onclick="addLabel()"><i class="ti ti-plus" style="font-size:11px"></i> Add label</div>
-            </div>
-            <div id="job-notes-row" style="padding:0 0 10px;display:none;">
-              <textarea id="job-notes-inp" placeholder="Add a brief or notes for this job…" style="width:100%;border:none;border-top:1px solid var(--border);background:var(--off);font-family:var(--font);font-size:12px;color:var(--ink);resize:none;outline:none;padding:8px 0 4px;line-height:1.5;" rows="2" oninput="updateJobNotes(this.value)"></textarea>
-            </div>
-            <div class="detail-tabs">
-              <div class="d-tab on" onclick="switchDTab(this,'plan')">Job plan</div>
-              <div class="d-tab" onclick="switchDTab(this,'quote')">Quote</div>
-              <div class="d-tab" onclick="switchDTab(this,'activity')">Activity</div>
-            </div>
-          </div>
-          <div id="dtab-plan" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
-            <div class="stats-strip" id="d-stats"></div>
-            <div class="plan-area">
-              <div class="plan-actions">
-                <button class="p-btn" onclick="showAddItemForm(null)"><i class="ti ti-plus" style="font-size:12px"></i> Add item</button>
-                <button class="p-btn"><i class="ti ti-currency-dollar" style="font-size:12px"></i> Add expense</button>
-                <button class="p-btn" onclick="addPhase()"><i class="ti ti-layout-rows" style="font-size:12px"></i> New phase</button>
-              </div>
-              <div id="phases-wrap"></div>
-              <div class="exp-sec" id="exp-wrap">
-                <div class="exp-head" onclick="toggleExp()"><i class="ti ti-chevron-down ph-chv exp-chv"></i><span style="font-size:13px;font-weight:400;flex:1;letter-spacing:.02em;">Expenses</span><span style="font-size:11px;color:#888;">$0 / $200</span></div>
-                <table class="exp-t"><thead><tr><th>Expense</th><th style="width:100px;">Date</th><th style="width:55px;">Qty</th><th style="width:85px;">Cost</th><th style="width:65px;">Markup</th><th style="width:85px;">Sell</th><th style="width:80px;text-align:right;">Total</th><th style="width:75px;text-align:right;">Status</th></tr></thead>
-                <tbody><tr><td>Disbursements</td><td style="font-size:12px;color:var(--muted);">28 May 26</td><td style="font-size:12px;">1 NZD</td><td style="font-size:12px;">$0</td><td style="font-size:12px;color:var(--muted);">—</td><td style="font-size:12px;">$100</td><td style="text-align:right;font-size:12px;">$100</td><td style="text-align:right;"><span class="exp-badg">Draft</span></td></tr></tbody></table>
-                <div class="add-e-row"><i class="ti ti-plus" style="font-size:11px"></i> Add expense</div>
-              </div>
-              <div class="ph-add" onclick="addPhase()"><i class="ti ti-plus" style="font-size:13px"></i> New phase</div>
-            </div>
-          </div>
-          <div id="dtab-quote" class="hidden" style="flex:1;overflow-y:auto;padding:24px 24px 50px;"></div>
-          <div id="dtab-activity" class="act-feed hidden"></div>
-        </div>
-      </div>
-
-      <!-- REPORTING -->
-      <div id="view-reporting" class="view hidden">
-        <div class="report-scroll">
-          <div class="report-head">Reporting</div>
-          <div class="report-sub" id="r-sub">All time · All people</div>
-          <div class="dash-rule" style="margin:14px 0 20px;"></div>
-
-          <!-- FILTERS -->
-          <div class="r-filter-row">
-            <label>Period</label>
-            <select id="r-period">
-              <option value="week">This Week</option>
-              <option value="2weeks">Last 2 Weeks</option>
-              <option value="month">This Month</option>
-              <option value="quarter">This Quarter</option>
-              <option value="all" selected>All Time</option>
-            </select>
-            <label>Person</label>
-            <select id="r-person">
-              <option value="all">All People</option>
-            </select>
-            <label>Job</label>
-            <select id="r-job">
-              <option value="all">All Jobs</option>
-            </select>
-            <button class="r-export-btn" onclick="exportReport()">Export CSV</button>
-          </div>
-
-          <!-- PERSON TOTALS -->
-          <div class="r-person-total" id="r-person-totals"></div>
-
-          <!-- CHARTS -->
-          <div class="r-chart-row">
-            <div class="r-chart-card"><div class="r-chart-h">Hours by Person</div><div class="r-chart-wrap"><canvas id="chart-by-person"></canvas></div></div>
-            <div class="r-chart-card"><div class="r-chart-h">Hours by Day of Week</div><div class="r-chart-wrap"><canvas id="chart-by-day"></canvas></div></div>
-          </div>
-          <div class="r-chart-row">
-            <div class="r-chart-card"><div class="r-chart-h">Hours by Job</div><div class="r-chart-wrap"><canvas id="chart-by-job"></canvas></div></div>
-            <div class="r-chart-card"><div class="r-chart-h">Budget Usage by Job</div><div class="r-chart-wrap"><canvas id="chart-by-budget"></canvas></div></div>
-          </div>
-
-          <!-- DATA TABLE -->
-          <div class="r-table-wrap">
-            <div class="r-table-h"><span>Task Breakdown</span><span id="r-task-count">0 tasks</span></div>
-            <table class="r-table">
-              <thead><tr><th>Person</th><th>Task</th><th>Job</th><th>Item</th><th>Hours</th><th>Status</th><th>Done</th></tr></thead>
-              <tbody id="r-table-body"></tbody>
-              <tfoot><tr class="r-total-row"><td colspan="4" style="text-align:right;"><strong>TOTAL</strong></td><td id="r-total-hours" style="text-align:right;"><strong>0h</strong></td><td colspan="2"></td></tr></tfoot>
-            </table>
           </div>
         </div>
-      </div>
-
-      <!-- TIME -->
-      <div id="view-time" class="view hidden">
-        <div class="time-wrap">
-          <div class="time-head-bar">
-            <div><div class="dash-greeting" style="font-size:22px;">Time</div><div class="dash-date" id="time-sub-lbl">All time · All people</div></div>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-              <select class="filter-btn" id="tf-person" onchange="renderTime()"><option value="all">All people</option></select>
-              <select class="filter-btn" id="tf-client" onchange="renderTime()"><option value="all">All clients</option></select>
-              <select class="filter-btn" id="tf-job" onchange="renderTime()"><option value="all">All jobs</option></select>
-              <select class="filter-btn" id="tf-range" onchange="renderTime()">
-                <option value="all">All time</option>
-                <option value="thisweek">This week</option>
-                <option value="lastweek">Last week</option>
-                <option value="thismonth">This month</option>
-                <option value="lastmonth">Last month</option>
-                <option value="thisquarter">This quarter</option>
-                <option value="thisyear">This year</option>
+        <!-- EXPENSES panel -->
+        <div id="jt-expenses" class="jt-panel" style="display:none;">
+          <div style="padding:80px 40px;text-align:center;color:var(--muted);font-size:13px;">
+            <i class="ti ti-receipt" style="font-size:42px;display:block;margin-bottom:16px;opacity:.35;"></i>
+            <div style="font-size:15px;color:var(--ink);margin-bottom:6px;">Expense tracking</div>
+            Expenses per job are managed within the job plan. A cross-job expenses view is coming soon.
+          </div>
+        </div>
+        <!-- QUOTES panel -->
+        <div id="jt-quotes" class="jt-panel" style="display:none;">
+          <div class="qinv-wrap">
+            <div class="qinv-toolbar">
+              <div class="jobs-search"><i class="ti ti-search"></i><input id="quotes-search-inp" placeholder="Search quotes…" oninput="renderQuotes(this.value)"/></div>
+              <select class="cc-select" id="quotes-status" onchange="renderQuotes()">
+                <option value="all">All statuses</option>
+                <option value="draft">Draft</option>
+                <option value="sent">Sent</option>
+                <option value="approved">Approved</option>
               </select>
-              <select class="filter-btn" id="tf-bill" onchange="renderTime()">
-                <option value="all">All types</option>
-                <option value="billable">Billable only</option>
-                <option value="nonbillable">Non-billable only</option>
-              </select>
+              <select class="cc-select" id="quotes-client" onchange="renderQuotes()"><option value="all">All clients</option></select>
+              <span class="jobs-count" id="quotes-count"></span>
             </div>
-          </div>
-          <div class="time-stats-strip" id="time-stats-strip"></div>
-          <div class="dash-rule" style="margin:0 32px 0;"></div>
-          <div class="time-table-wrap">
-            <table class="time-table">
-              <thead><tr>
-                <th>Person</th><th>Job</th><th>Task</th><th>Date</th><th style="text-align:right;">Hours</th><th>Type</th><th>Status</th>
-              </tr></thead>
-              <tbody id="time-tbody"></tbody>
-            </table>
-            <div id="time-empty" style="display:none;padding:40px 32px;font-size:13px;color:var(--muted);">No time entries match the current filters.</div>
+            <div id="quotes-list"></div>
           </div>
         </div>
-      </div>
-
-      <!-- QUOTES -->
-      <div id="view-quotes" class="view hidden">
-        <div class="qinv-wrap">
-          <div class="qinv-toolbar">
-            <div class="jobs-search"><i class="ti ti-search"></i><input id="quotes-search-inp" placeholder="Search quotes…" oninput="renderQuotes(this.value)"/></div>
-            <select class="filter-btn" id="quotes-status" onchange="renderQuotes()">
-              <option value="all">All statuses</option>
-              <option value="draft">Draft</option>
-              <option value="sent">Sent</option>
-              <option value="approved">Approved</option>
-            </select>
-            <select class="filter-btn" id="quotes-client" onchange="renderQuotes()"><option value="all">All clients</option></select>
-            <span class="jobs-count" id="quotes-count"></span>
+        <!-- INVOICES panel -->
+        <div id="jt-invoices" class="jt-panel" style="display:none;">
+          <div class="qinv-wrap">
+            <div class="qinv-toolbar">
+              <div class="jobs-search"><i class="ti ti-search"></i><input id="invoices-search-inp" placeholder="Search invoices…" oninput="renderInvoices(this.value)"/></div>
+              <select class="cc-select" id="invoices-status" onchange="renderInvoices()">
+                <option value="all">All statuses</option>
+                <option value="draft">Draft</option>
+                <option value="sent">Sent</option>
+                <option value="paid">Paid</option>
+              </select>
+              <select class="cc-select" id="invoices-client" onchange="renderInvoices()"><option value="all">All clients</option></select>
+              <span class="jobs-count" id="invoices-count"></span>
+              <span class="jobs-count" id="invoices-total" style="margin-left:auto;font-size:13px;font-weight:400;"></span>
+            </div>
+            <div id="invoices-list"></div>
           </div>
-          <div id="quotes-list"></div>
         </div>
-      </div>
-
-      <!-- INVOICES -->
-      <div id="view-invoices" class="view hidden">
-        <div class="qinv-wrap">
-          <div class="qinv-toolbar">
-            <div class="jobs-search"><i class="ti ti-search"></i><input id="invoices-search-inp" placeholder="Search invoices…" oninput="renderInvoices(this.value)"/></div>
-            <select class="filter-btn" id="invoices-status" onchange="renderInvoices()">
-              <option value="all">All statuses</option>
-              <option value="draft">Draft</option>
-              <option value="sent">Sent</option>
-              <option value="paid">Paid</option>
-            </select>
-            <select class="filter-btn" id="invoices-client" onchange="renderInvoices()"><option value="all">All clients</option></select>
-            <span class="jobs-count" id="invoices-count"></span>
-            <span class="jobs-count" id="invoices-total" style="margin-left:auto;font-size:13px;font-weight:400;"></span>
-          </div>
-          <div id="invoices-list"></div>
+        <!-- CLIENTS panel -->
+        <div id="jt-clients" class="jt-panel" style="display:none;">
+          <div class="clients-wrap" id="clients-wrap"><!-- populated by renderClients() --></div>
         </div>
       </div>
 
@@ -1683,6 +1636,15 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
         <div class="field"><label>Billable</label><div class="tog-row"><button class="tog on" onclick="setTog(this)">Billable</button><button class="tog" onclick="setTog(this)">Non-billable</button></div></div>
         <div class="field"><label>Rate card</label><select><option>Standard</option><option>Premium</option><option>Retainer</option></select></div>
       </div>
+      <div class="field-row">
+        <div class="field"><label>Workflow stage</label>
+          <select id="nj-workflow" class="cc-select" style="width:100%;">
+            <option value="quote">Quote</option>
+            <option value="live" selected>Live job</option>
+            <option value="invoiced">Invoiced</option>
+          </select>
+        </div>
+      </div>
     </div>
     <div class="modal-ft"><button class="modal-cancel" onclick="closeCreateJob()">Cancel</button><button class="modal-ok" onclick="createJob()">Create and plan</button></div>
   </div>
@@ -1700,20 +1662,23 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
     <!-- Body -->
     <div class="tm-bd">
       <input type="text" class="tm-title-inp" id="td-task" placeholder="What needs doing?">
-      <!-- Person row -->
-      <div class="tm-person-row">
+      <!-- Assign to -->
+      <div class="tm-lbl">Assigned to</div>
+      <div class="tm-assign-row" id="tm-assign-row" onclick="openTodoAssignMenu()">
         <div class="tm-pav" id="td-pav" style="background:var(--red);">RO</div>
         <span class="tm-pname" id="td-pname">Ronan</span>
+        <div class="tm-assign-chevron"><i class="ti ti-chevron-down" style="font-size:11px;"></i></div>
+        <div class="tm-assign-menu" id="tm-assign-menu"></div>
       </div>
       <!-- Job -->
-      <div class="tm-lbl" id="td-job-lbl">Job</div>
+      <div class="tm-lbl" id="td-job-lbl" style="margin-top:16px;">Job</div>
       <select class="tm-field-sel" id="td-job" onchange="updateJobLabel()">
         <option value="">— Personal / no job —</option>
       </select>
       <!-- Item -->
       <div class="tm-lbl" style="margin-top:16px;">Item</div>
-      <select class="tm-field-sel" id="td-item">
-        <option value="">— No item type —</option>
+      <input list="item-datalist" class="tm-field-sel" id="td-item" placeholder="Select or type an item…" autocomplete="off">
+      <datalist id="item-datalist">
         <option>Creative Direction</option>
         <option>Design &amp; Artwork</option>
         <option>Briefing &amp; coordination</option>
@@ -1724,7 +1689,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
         <option>Contingency</option>
         <option>Shot listing</option>
         <option>Website build</option>
-      </select>
+      </datalist>
       <!-- Note -->
       <textarea class="tm-note-area" id="td-note" placeholder="Notes, due dates, context…"></textarea>
       <!-- Urgent toggle -->
@@ -1834,31 +1799,59 @@ let personStatus={ro:'available',bee:'available',jb:'allocated'};
 let weekOffset=0;
 const DAYS_DATA={
   ro:{
-    1:[{id:'t1',title:'Public Holiday',job:'',item:'Leave',hours:8,done:true}],
-    2:[{id:'t2',title:'Send v1 by EOP to Maya',job:'6752 SFF Brand Guidelines',item:'Design & Artwork',hours:2,urgent:true},{id:'t3',title:'Monday WIP',job:'House',item:'Briefing',hours:1},{id:'t4',title:'Carcass Poster Amends',job:'6752 SFF Brand Guidelines',item:'Design & Artwork',hours:1.5}],
-    3:[{id:'t5',title:'Wednesday WIP',job:'House',item:'Briefing',hours:1,done:true},{id:'t6',title:'Working through guideline amends',job:'6752 SFF Brand Guidelines',item:'Design & Artwork',hours:3},{id:'t7',title:'Trade Deck Amends',job:'',item:'',hours:1}],
-    4:[{id:'t8',title:'Crest Amends',job:'',item:'',hours:1,done:true},{id:'t9',title:'Replotting the Master Plan Map',job:'6922 The Links',item:'Website build',hours:2.17}],
-    5:[{id:'t10',title:'Friday WIP',job:'House',item:'Briefing',hours:1},{id:'t11',title:'C&C streamline discussion',job:'6774 House',item:'Briefing',hours:1,urgent:true},{id:'t12',title:'Sourcing last couple images',job:'6752 SFF Brand Guidelines',item:'Design & Artwork',hours:1.5}]
+    1:[{id:'t1',title:'Public Holiday',job:'',item:'Leave',hours:8,done:true,billable:false}],
+    2:[{id:'t2',title:'Send v1 by EOP to Maya',job:'6752 SFF Brand Guidelines',jobId:'6752',item:'Design & Artwork',hours:2,done:true,urgent:true,billable:true},{id:'t3',title:'Monday WIP',job:'House',item:'Briefing',hours:1,done:true,billable:false},{id:'t4',title:'Carcass Poster Amends',job:'6752 SFF Brand Guidelines',jobId:'6752',item:'Design & Artwork',hours:1.5,done:false,billable:true}],
+    3:[{id:'t5',title:'Wednesday WIP',job:'House',item:'Briefing',hours:1,done:true,billable:false},{id:'t6',title:'Working through guideline amends',job:'6752 SFF Brand Guidelines',jobId:'6752',item:'Design & Artwork',hours:3,done:true,billable:true},{id:'t7',title:'Trade Deck Amends',job:'',item:'',hours:1,done:false,billable:false}],
+    4:[{id:'t8',title:'Crest Amends',job:'',item:'',hours:1,done:true,billable:false},{id:'t9',title:'Replotting the Master Plan Map',job:'6922 The Links',item:'Website build',hours:2.17,done:false,billable:true}],
+    5:[{id:'t10',title:'Friday WIP',job:'House',item:'Briefing',hours:1,done:false,billable:false},{id:'t11',title:'C&C streamline discussion',job:'6774 House',item:'Briefing',hours:1,done:false,urgent:true,billable:false},{id:'t12',title:'Sourcing last couple images',job:'6752 SFF Brand Guidelines',jobId:'6752',item:'Design & Artwork',hours:1.5,done:false,billable:true}]
   },
   bee:{
     1:[],
-    2:[{id:'b1',title:'Amazon GA deep dive',job:'',item:'',hours:2,done:true},{id:'b2',title:'Tuesday team WIP',job:'House',item:'Briefing',hours:1}],
-    3:[{id:'b3',title:'Wednesday WIP',job:'House',item:'Briefing',hours:1,done:true},{id:'b4',title:'Finishing report to share',job:'',item:'',hours:2},{id:'b5',title:'Client WIP',job:'',item:'',hours:1}],
-    4:[{id:'b6',title:'Billing support',job:'',item:'',hours:0.5},{id:'b7',title:'PR Google',job:'',item:'',hours:1},{id:'b8',title:'Team delegations',job:'',item:'',hours:1.5}],
-    5:[{id:'b9',title:'Updates to report',job:'',item:'',hours:1.5},{id:'b10',title:'Friday WIP',job:'House',item:'Briefing',hours:1},{id:'b11',title:'Budget actuals for May',job:'',item:'',hours:1.5,urgent:true}]
+    2:[{id:'b1',title:'Amazon GA deep dive',job:'',item:'',hours:2,done:true,billable:false},{id:'b2',title:'Tuesday team WIP',job:'House',item:'Briefing',hours:1,done:false,billable:false}],
+    3:[{id:'b3',title:'Wednesday WIP',job:'House',item:'Briefing',hours:1,done:true,billable:false},{id:'b4',title:'Finishing report to share',job:'',item:'',hours:2,done:false,billable:false},{id:'b5',title:'Client WIP',job:'',item:'',hours:1,done:false,billable:false}],
+    4:[{id:'b6',title:'Billing support',job:'',item:'',hours:0.5,done:true,billable:false},{id:'b7',title:'PR Google',job:'',item:'',hours:1,done:false,billable:false},{id:'b8',title:'Team delegations',job:'',item:'',hours:1.5,done:false,billable:false}],
+    5:[{id:'b9',title:'Updates to report',job:'',item:'',hours:1.5,done:true,billable:false},{id:'b10',title:'Friday WIP',job:'House',item:'Briefing',hours:1,done:false,billable:false},{id:'b11',title:'Budget actuals for May',job:'',item:'',hours:1.5,done:false,urgent:true,billable:false}]
   },
   jb:{
     1:[],
-    2:[{id:'j1',title:'Implementing copy feedback',job:'',item:'',hours:2,done:true},{id:'j2',title:'Comms back to client',job:'',item:'',hours:1}],
-    3:[{id:'j3',title:'Wednesday WIP',job:'House',item:'Briefing',hours:1,done:true},{id:'j4',title:'SFF LinkedIn content',job:'6752 SFF Brand Guidelines',item:'Copywriting',hours:2}],
-    4:[{id:'j5',title:'NPF AU Bundle push',job:'',item:'Copywriting',hours:2},{id:'j6',title:'Formthotics induction',job:'',item:'',hours:1}],
-    5:[{id:'j7',title:'Friday WIP',job:'House',item:'Briefing',hours:1},{id:'j8',title:'Performance WIP',job:'',item:'',hours:1.5}]
+    2:[{id:'j1',title:'Implementing copy feedback',job:'',item:'',hours:2,done:true,billable:true},{id:'j2',title:'Comms back to client',job:'',item:'',hours:1,done:false,billable:false}],
+    3:[{id:'j3',title:'Wednesday WIP',job:'House',item:'Briefing',hours:1,done:true,billable:false},{id:'j4',title:'SFF LinkedIn content',job:'6752 SFF Brand Guidelines',jobId:'6752',item:'Copywriting',hours:2,done:false,billable:true}],
+    4:[{id:'j5',title:'NPF AU Bundle push',job:'',item:'Copywriting',hours:2,done:true,billable:true},{id:'j6',title:'Formthotics induction',job:'',item:'',hours:1,done:false,billable:false}],
+    5:[{id:'j7',title:'Friday WIP',job:'House',item:'Briefing',hours:1,done:false,billable:false},{id:'j8',title:'Performance WIP',job:'',item:'',hours:1.5,done:true,billable:false}]
   }
 };
-let todoData=JSON.parse(JSON.stringify(DAYS_DATA));
+// Wrap DAYS_DATA in current week key for proper week-keyed storage
+let todoData=(function(){
+  const d=new Date();const dow=(d.getDay()+6)%7;d.setDate(d.getDate()-dow);d.setHours(0,0,0,0);
+  const wk=d.toISOString().split('T')[0];
+  const td={};
+  Object.keys(DAYS_DATA).forEach(person=>{td[person]={};td[person][wk]=JSON.parse(JSON.stringify(DAYS_DATA[person]));});
+  return td;
+})();
 let editingTaskId=null,editingDay=null;
 function saveData(){try{localStorage.setItem('cc_todo',JSON.stringify(todoData));localStorage.setItem('cc_jobs',JSON.stringify(jobs));}catch(e){}}
-function loadData(){try{const t=localStorage.getItem('cc_todo');if(t)todoData=JSON.parse(t);const j=localStorage.getItem('cc_jobs');if(j)jobs=JSON.parse(j);}catch(e){}}
+function loadData(){
+  try{
+    const t=localStorage.getItem('cc_todo');
+    if(t){
+      const loaded=JSON.parse(t);
+      // Migrate old flat format {person:{1:[...],2:[...]}} → week-keyed format
+      const d=new Date();const dow=(d.getDay()+6)%7;d.setDate(d.getDate()-dow);d.setHours(0,0,0,0);
+      const wk=d.toISOString().split('T')[0];
+      let migrated=false;
+      Object.keys(loaded).forEach(person=>{
+        const personData=loaded[person];
+        // If keys are 1-5 (flat format), wrap in current week key
+        const keys=Object.keys(personData);
+        if(keys.length>0&&keys.every(k=>/^[1-5]$/.test(k))){
+          loaded[person]={};loaded[person][wk]=personData;migrated=true;
+        }
+      });
+      todoData=loaded;
+    }
+    const j=localStorage.getItem('cc_jobs');if(j)jobs=JSON.parse(j);
+  }catch(e){}
+}
 loadData();
 
 // Week-keyed data helpers
@@ -1979,7 +1972,6 @@ function navTo(v){
   document.querySelectorAll('.s-btn[id]').forEach(el=>el.classList.remove('on'));
   const ve=document.getElementById('view-'+v);if(ve)ve.classList.remove('hidden');
   const ne=document.getElementById('snav-'+v);if(ne)ne.classList.add('on');
-  document.getElementById('topbar').classList.toggle('hidden',v!=='jobs'&&v!=='detail');
   if(v==='dashboard')renderDashboard();
   if(v==='todo')renderTodo();
   if(v==='jobs')renderJobs();
@@ -1987,10 +1979,25 @@ function navTo(v){
   if(v==='boards'){initBoardsData();setTimeout(renderBoards,50);}
   if(v==='calendar')initCalendar();
   if(v==='settings')renderSettings();
-  if(v==='time'){initTimeFilters();renderTime();}
-  if(v==='quotes')renderQuotes();
-  if(v==='invoices')renderInvoices();
   saveData();
+}
+function switchJobsTab(tab){
+  document.querySelectorAll('.jsn-tab').forEach(el=>el.classList.toggle('on',el.dataset.tab===tab));
+  document.querySelectorAll('.jt-panel').forEach(el=>el.style.display='none');
+  const panel=document.getElementById('jt-'+tab);
+  if(panel){panel.style.display='flex';panel.style.flexDirection='column';}
+  if(tab==='time'){initTimeFilters();renderTime();}
+  if(tab==='quotes'){initQuotesClientFilter();renderQuotes();}
+  if(tab==='invoices'){initInvoicesClientFilter();renderInvoices();}
+  if(tab==='clients')renderClients();
+}
+function initQuotesClientFilter(){
+  const cSel=document.getElementById('quotes-client');
+  if(cSel){const cs=[...new Set(jobs.map(j=>j.company))].sort();cSel.innerHTML='<option value="all">All clients</option>'+cs.map(c=>`<option value="${c}">${c}</option>`).join('');}
+}
+function initInvoicesClientFilter(){
+  const cSel=document.getElementById('invoices-client');
+  if(cSel){const cs=[...new Set(jobs.map(j=>j.company))].sort();cSel.innerHTML='<option value="all">All clients</option>'+cs.map(c=>`<option value="${c}">${c}</option>`).join('');}
 }
 function viewTeamTodo(p){currentPerson=p;navTo('todo');}
 
@@ -2325,10 +2332,12 @@ function updateJobLabel(){
 }
 function _resetTodoModal(day){
   editingTaskId=null;editingDay=null;
+  _todoAssignTo=currentPerson;
   const p=people[currentPerson];
   document.getElementById('td-task').value='';
   document.getElementById('td-hours').value='';
   document.getElementById('td-note').value='';
+  document.getElementById('td-item').value='';
   document.getElementById('td-urgent').checked=false;
   document.getElementById('td-personal').checked=false;
   document.getElementById('td-urgent-lbl').classList.remove('on');
@@ -2681,6 +2690,32 @@ document.addEventListener('mouseup',()=>{
   if(isDivDrag){isDivDrag=false;document.body.style.cursor='';document.body.style.userSelect='';}
 });
 
+// Track who the task is assigned to in the modal
+let _todoAssignTo = MY_PERSON;
+function openTodoAssignMenu(){
+  const menu=document.getElementById('tm-assign-menu');
+  if(menu.classList.contains('open')){menu.classList.remove('open');return;}
+  menu.innerHTML='';
+  Object.keys(people).forEach(key=>{
+    const p=people[key];
+    const div=document.createElement('div');
+    div.className='tm-assign-opt';
+    div.innerHTML=`<div class="tao-av" style="background:${p.color};">${p.initials}</div><span>${p.name}</span>${key===_todoAssignTo?'<i class="ti ti-check" style="margin-left:auto;font-size:11px;color:var(--red);"></i>':''}`;
+    div.onclick=()=>{
+      _todoAssignTo=key;
+      document.getElementById('td-pav').style.background=p.color;
+      document.getElementById('td-pav').textContent=p.initials;
+      document.getElementById('td-pname').textContent=p.name;
+      menu.classList.remove('open');
+    };
+    menu.appendChild(div);
+  });
+  menu.classList.add('open');
+}
+document.addEventListener('click',e=>{
+  const menu=document.getElementById('tm-assign-menu');
+  if(menu&&!e.target.closest('#tm-assign-row'))menu.classList.remove('open');
+});
 function saveTodo(){
   const name=document.getElementById('td-task').value.trim();if(!name)return;
   const jobId=document.getElementById('td-job').value;
@@ -2692,18 +2727,27 @@ function saveTodo(){
   const dayNum=parseInt(document.getElementById('td-day').value)||5;
   const urgent=document.getElementById('td-urgent').checked;
   const personal=document.getElementById('td-personal').checked;
-  const wd=getWeekData(currentPerson);
+  const targetPerson=_todoAssignTo||currentPerson;
+  const wd=getWeekData(targetPerson);
   if(editingTaskId){
-    const arr=wd[editingDay]||[];
+    // If reassigned, move task
+    const oldWd=getWeekData(currentPerson);
+    const arr=oldWd[editingDay]||[];
     const idx=arr.findIndex(t=>t.id===editingTaskId);
     if(idx!==-1){
-      Object.assign(arr[idx],{title:name,hours,item,note,urgent,personal,job:job?`${job.id} ${job.name}`:''});
+      if(targetPerson!==currentPerson){
+        const task=arr.splice(idx,1)[0];
+        Object.assign(task,{title:name,hours,item,note,urgent,personal,job:job?`${job.id} ${job.name}`:''});
+        if(!wd[dayNum])wd[dayNum]=[];wd[dayNum].push(task);
+      } else {
+        Object.assign(arr[idx],{title:name,hours,item,note,urgent,personal,job:job?`${job.id} ${job.name}`:''});
+      }
     }
   } else {
-    const task={id:'t'+Date.now(),title:name,job:job?`${job.id} ${job.name}`:'',item,hours,note,urgent,personal};
+    const task={id:'t'+Date.now(),title:name,job:job?`${job.id} ${job.name}`:'',jobId:jobId||null,item,hours,note,urgent,personal};
     if(!wd[dayNum])wd[dayNum]=[];
     wd[dayNum].push(task);
-    _fupTask=null; // new task follow-up doesn't pre-fill
+    _fupTask=null;
     setTimeout(()=>document.getElementById('fup').classList.add('on'),800);
   }
   closeTodoModal();
@@ -2723,10 +2767,13 @@ function filterJobs(q){_jobSearch=(q||'').toLowerCase();renderJobs();}
 function renderJobs(){
   const tbody=document.getElementById('jobs-tbody');tbody.innerHTML='';
   const statusFilter=(document.getElementById('jobs-status-filter')?.value)||'all';
+  const wfFilter=(document.getElementById('jobs-wf-filter')?.value)||'all';
   const q=_jobSearch;
   let shown=0;
   jobs.forEach(j=>{
     if(statusFilter!=='all'&&j.status!==statusFilter)return;
+    const jWf=j.workflowStatus||'live';
+    if(wfFilter!=='all'&&jWf!==wfFilter)return;
     if(q&&!(`${j.id} ${j.name} ${j.company}`).toLowerCase().includes(q))return;
     shown++;
     const sc=j.status==='inplay'?'sp-ip':j.status==='new'?'sp-new':'sp-co';
@@ -2737,11 +2784,12 @@ function renderJobs(){
     const billDot=j.billable===false?'<span style="width:6px;height:6px;border-radius:50%;background:#CBD5E1;display:inline-block;margin-right:5px;" title="Non-billable"></span>':'<span style="width:6px;height:6px;border-radius:50%;background:#4CAF50;display:inline-block;margin-right:5px;" title="Billable"></span>';
     const labels=(j.labels||[]).slice(0,3).map(l=>`<span class="job-label-pip">${l}</span>`).join('');
     const notePrev=j.notes?`<div class="job-notes-preview" title="${j.notes.replace(/"/g,'&quot;')}">${j.notes}</div>`:'';
-    // Phase completion progress
     const jPhases=j.id===activeJobId?phases:[];
     const totalItems=jPhases.reduce((s,p)=>s+p.items.length,0);
     const doneItems=jPhases.reduce((s,p)=>s+p.items.filter(i=>i.status==='complete').length,0);
     const progHTML=totalItems>0?`<div class="job-prog-row"><div class="job-prog-bar"><div class="job-prog-fill" style="width:${Math.round(doneItems/totalItems*100)}%;background:#4CAF50;"></div></div><span>${doneItems}/${totalItems}</span></div>`:'';
+    const wfLabel=jWf==='quote'?'Quote':jWf==='invoiced'?'Invoiced':'Live job';
+    const wfCls=jWf==='quote'?'wf-quote':jWf==='invoiced'?'wf-invoiced':'wf-live';
     const tr=document.createElement('tr');tr.onclick=()=>openJobDetail(j.id);
     tr.innerHTML=`
       <td style="width:32px;"><input type="checkbox" onclick="event.stopPropagation()"/></td>
@@ -2765,6 +2813,7 @@ function renderJobs(){
         </div>
       </td>
       <td><div class="job-labels-cell">${labels||'<span style="font-size:12px;color:var(--muted);">—</span>'}</div>${progHTML}</td>
+      <td><span class="wf-badge ${wfCls}">${wfLabel}</span></td>
       <td><span class="status-pill ${sc}">${sl}</span></td>`;
     tbody.appendChild(tr);
   });
@@ -2789,7 +2838,6 @@ function openJobDetail(id){
   renderStats(j,isNew);renderPhases();
   document.querySelectorAll('.view').forEach(el=>el.classList.add('hidden'));
   document.getElementById('view-detail').classList.remove('hidden');
-  document.getElementById('topbar').classList.remove('hidden');
   switchDTab(document.querySelector('.d-tab'),'plan');
 }
 function updateJobNotes(val){
@@ -2965,7 +3013,7 @@ function showAddItemForm(phId){
   document.querySelectorAll('.add-form-row').forEach(r=>r.remove());
   const tbody=document.getElementById('ib_'+phId);
   const tr=document.createElement('tr');tr.className='add-form-row';
-  tr.innerHTML=`<td></td><td><select class="i-sel" id="ni-n"><option value="">Select item…</option>${LINE_ITEMS.map(l=>`<option>${l}</option>`).join('')}</select></td><td><input class="i-hi" placeholder="0h" id="ni-h"/></td><td><input class="i-hi" placeholder="$150" id="ni-r" style="width:62px;"/></td><td colspan="2"></td><td><div style="display:flex;gap:4px;"><button class="save-b" onclick="saveItem('${phId}')">Add</button><button class="cancel-b" onclick="this.closest('tr').remove()">x</button></div></td>`;
+  tr.innerHTML=`<td></td><td><input list="li-datalist" class="i-sel" id="ni-n" placeholder="Item name or type…" autocomplete="off" style="min-width:180px;"><datalist id="li-datalist">${LINE_ITEMS.map(l=>`<option>${l}</option>`).join('')}</datalist></td><td><input class="i-hi" placeholder="0h" id="ni-h"/></td><td><input class="i-hi" placeholder="$150" id="ni-r" style="width:62px;"/></td><td colspan="2"></td><td><div style="display:flex;gap:4px;"><button class="save-b" onclick="saveItem('${phId}')">Add</button><button class="cancel-b" onclick="this.closest('tr').remove()">x</button></div></td>`;
   tbody.appendChild(tr);document.getElementById('ni-n').focus();
 }
 function saveItem(phId){
@@ -3004,7 +3052,8 @@ function createJob(){
   const name=document.getElementById('nj-name').value.trim();if(!name){document.getElementById('nj-name').focus();return;}
   const company=document.getElementById('nj-co').value||'Unassigned';
   const billable=document.querySelector('.tog.on')?.textContent==='Billable';
-  jobs.unshift({id:String(jobCounter),name,company,budget:'$0',budgetTotal:'—',bPct:0,hours:'0h',hoursTotal:'—',hPct:0,status:'new',billable,labels:[]});
+  const wf=document.getElementById('nj-workflow')?.value||'live';
+  jobs.unshift({id:String(jobCounter),name,company,budget:'$0',budgetTotal:'—',bPct:0,hours:'0h',hoursTotal:'—',hPct:0,status:'new',billable,labels:[],workflowStatus:wf});
   closeCreateJob();renderJobs();openJobDetail(String(jobCounter));
 }
 // ---- ACTIVITY LOGGING ----
@@ -3091,6 +3140,114 @@ function copyInvoiceToXero(){
   navigator.clipboard.writeText(rows.join('\n')).then(()=>alert('Xero CSV copied to clipboard ✓'));
 }
 
+
+// ═══════════════════════════════════════════════════════════════
+//  CLIENTS VIEW
+// ═══════════════════════════════════════════════════════════════
+let clientsData = JSON.parse(localStorage.getItem('cc_clients')||'[]');
+function saveClientsData(){localStorage.setItem('cc_clients',JSON.stringify(clientsData));}
+
+function renderClients(){
+  const wrap=document.getElementById('clients-wrap');
+  if(!wrap)return;
+  // Build merged list: all unique companies from jobs + stored client records
+  const fromJobs=[...new Set(jobs.map(j=>j.company).filter(Boolean))];
+  fromJobs.forEach(co=>{
+    if(!clientsData.find(c=>c.name===co)){
+      clientsData.push({id:'cl'+Date.now()+Math.random().toString(36).slice(2),name:co,contact:'',email:'',phone:'',notes:''});
+      saveClientsData();
+    }
+  });
+  const search=(document.getElementById('clients-search-inp')?.value||'').toLowerCase();
+  const filtered=clientsData.filter(c=>!search||c.name.toLowerCase().includes(search));
+  // Count jobs per client
+  function jobCount(name){return jobs.filter(j=>j.company===name).length;}
+  function activeJobCount(name){return jobs.filter(j=>j.company===name&&j.status!=='complete').length;}
+
+  wrap.innerHTML=`
+    <div class="clients-toolbar">
+      <div class="jobs-search"><i class="ti ti-search"></i><input id="clients-search-inp" placeholder="Search clients…" oninput="renderClients()"/></div>
+      <button class="d-action primary" onclick="openNewClientModal()"><i class="ti ti-plus" style="font-size:12px;"></i> Add client</button>
+    </div>
+    <div class="clients-grid">
+      ${filtered.map(c=>`
+        <div class="client-card-full" onclick="openClientDetail('${c.id}')">
+          <div class="ccf-name">${c.name}</div>
+          <div class="ccf-contact">${c.contact||'<span style="color:#bbb;">No contact added</span>'}</div>
+          <div class="ccf-meta">
+            <span><strong>${jobCount(c.name)}</strong> jobs</span>
+            <span><strong>${activeJobCount(c.name)}</strong> active</span>
+            ${c.email?`<span>${c.email}</span>`:''}
+          </div>
+        </div>`).join('')}
+      <div class="client-add-card" onclick="openNewClientModal()">
+        <i class="ti ti-plus"></i> Add new client
+      </div>
+    </div>`;
+}
+
+function openClientDetail(id){
+  const c=clientsData.find(x=>x.id===id);if(!c)return;
+  const jobsForClient=jobs.filter(j=>j.company===c.name);
+  const modal=document.createElement('div');
+  modal.className='modal-bg on';
+  modal.id='client-detail-modal';
+  modal.innerHTML=`
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-hd"><span class="modal-hd-title">${c.name}</span><button class="modal-x" onclick="this.closest('.modal-bg').remove()"><i class="ti ti-x"></i></button></div>
+      <div class="modal-bd">
+        <div class="field-row">
+          <div class="field"><label>Contact name</label><input id="cd-contact" class="form-inp" value="${c.contact||''}" placeholder="Full name" oninput="updateClientField('${c.id}','contact',this.value)" style="width:100%;"></div>
+          <div class="field"><label>Email</label><input id="cd-email" class="form-inp" value="${c.email||''}" placeholder="email@company.com" oninput="updateClientField('${c.id}','email',this.value)" style="width:100%;"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Phone</label><input id="cd-phone" class="form-inp" value="${c.phone||''}" placeholder="+64 …" oninput="updateClientField('${c.id}','phone',this.value)" style="width:100%;"></div>
+        </div>
+        <div class="field"><label>Notes</label><textarea class="form-inp" rows="3" style="width:100%;resize:vertical;" oninput="updateClientField('${c.id}','notes',this.value)">${c.notes||''}</textarea></div>
+        <div style="margin-top:20px;"><div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Jobs (${jobsForClient.length})</div>
+          ${jobsForClient.length?jobsForClient.map(j=>`<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="this.closest('.modal-bg').remove();openJobDetail('${j.id}')"><span class="job-num">${j.id}</span><span style="flex:1;font-size:13px;">${j.name}</span><span class="wf-badge wf-${j.workflowStatus||'live'}">${j.workflowStatus||'live'}</span></div>`).join(''):'<div style="font-size:12px;color:var(--muted);">No jobs yet.</div>'}
+        </div>
+      </div>
+      <div class="modal-ft"><button class="modal-cancel" onclick="this.closest('.modal-bg').remove()">Close</button></div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function updateClientField(id,field,val){
+  const c=clientsData.find(x=>x.id===id);if(!c)return;
+  c[field]=val;saveClientsData();
+}
+
+function openNewClientModal(){
+  const modal=document.createElement('div');
+  modal.className='modal-bg on';
+  modal.innerHTML=`
+    <div class="modal">
+      <div class="modal-hd"><span class="modal-hd-title">Add new client</span><button class="modal-x" onclick="this.closest('.modal-bg').remove()"><i class="ti ti-x"></i></button></div>
+      <div class="modal-bd">
+        <div class="field"><label>Company name</label><input id="nc-name" class="form-inp" placeholder="e.g. Acme Ltd" style="width:100%;"></div>
+        <div class="field-row">
+          <div class="field"><label>Contact name</label><input id="nc-contact" class="form-inp" placeholder="Full name" style="width:100%;"></div>
+          <div class="field"><label>Email</label><input id="nc-email" class="form-inp" placeholder="email@co.nz" style="width:100%;"></div>
+        </div>
+        <div class="field"><label>Phone</label><input id="nc-phone" class="form-inp" placeholder="+64 …" style="width:100%;"></div>
+      </div>
+      <div class="modal-ft"><button class="modal-cancel" onclick="this.closest('.modal-bg').remove()">Cancel</button><button class="modal-ok" onclick="saveNewClient(this)">Add client</button></div>
+    </div>`;
+  document.body.appendChild(modal);
+  setTimeout(()=>document.getElementById('nc-name').focus(),50);
+}
+
+function saveNewClient(btn){
+  const name=document.getElementById('nc-name').value.trim();if(!name)return;
+  clientsData.push({id:'cl'+Date.now(),name,contact:document.getElementById('nc-contact').value.trim(),email:document.getElementById('nc-email').value.trim(),phone:document.getElementById('nc-phone').value.trim(),notes:''});
+  saveClientsData();
+  btn.closest('.modal-bg').remove();
+  renderClients();
+  // Also update the company dropdown in create job modal
+  const njco=document.getElementById('nj-co');
+  if(njco&&![...njco.options].find(o=>o.value===name)){const o=document.createElement('option');o.value=name;o.textContent=name;njco.appendChild(o);}
+}
 // ---- SETTINGS / TEAM MANAGEMENT ----
 function renderSettings(){
   const wrap=document.getElementById('settings-scroll');if(!wrap)return;
@@ -3187,11 +3344,14 @@ function _getTimeEntries(){
         const tasks=personWeeks[weekKey][dayNum]||[];
         const taskDate=new Date(weekMon);taskDate.setDate(weekMon.getDate()+(dayNum-1));
         tasks.forEach(t=>{
+          // Resolve jobId from t.jobId or parse from t.job string
+          let jId=t.jobId||null;
+          if(!jId&&t.job){const m=t.job.match(/^(\d+)/);if(m)jId=m[1];}
           entries.push({
             personKey,personName:p.name,personColor:p.color,personInitials:p.initials,
             weekKey,dayNum,date:new Date(taskDate),
-            title:t.title||'',hours:parseHrsInput(t.hours||'0')||0,
-            jobId:t.jobId||null,done:!!t.done,billable:taskIsBillable(t),
+            title:t.title||'',hours:(typeof t.hours==='number'?t.hours:parseHrsInput(t.hours||'0'))||0,
+            jobId:jId,done:!!t.done,billable:taskIsBillable(t),
             note:t.note||''
           });
         });
