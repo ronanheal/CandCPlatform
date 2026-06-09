@@ -395,9 +395,10 @@ function initCalendar() {
   // Populate person filter
   const sel = document.getElementById('cal-person-filter');
   if (sel && sel.options.length <= 1) {
-    people.forEach((p, i) => {
+    Object.keys(people).forEach((key, i) => {
+      const p = people[key];
       const opt = document.createElement('option');
-      opt.value = i;
+      opt.value = key;
       opt.textContent = p.name;
       sel.appendChild(opt);
     });
@@ -608,29 +609,21 @@ function calRenderMonthView(label, body) {
 
 function calGetTodosForDay(date) {
   const todos = [];
-  const dateStr = date.toISOString().split('T')[0];
-  
-  // Get todos from todoData for all people
-  people.forEach((p, personIdx) => {
-    if (calPersonFilter !== 'all' && parseInt(calPersonFilter) !== personIdx) return;
-    
-    const personData = todoData[personIdx] || {};
-    // Check each day key (1-5 for work days)
-    Object.keys(personData).forEach(dayKey => {
-      // dayKey is like "Mon", "Tue" etc. - we need to match by actual date
-      const dayMap = {1: 1, 2: 2, 3: 3, 4: 4, 5: 5};
-      const dayOfWeek = date.getDay();
-      const mappedDay = dayOfWeek === 0 ? 0 : dayOfWeek; // 0=Sun, 1=Mon, etc.
-      
-      // Match the day - todoData uses 1-5 for Mon-Fri
-      if (dayKey === String(mappedDay)) {
-        (personData[dayKey] || []).forEach(t => {
-          todos.push({...t, person: personIdx, personName: p.name});
-        });
-      }
+  const dayOfWeek = date.getDay(); // 0=Sun,1=Mon..5=Fri,6=Sat
+  const mappedDay = dayOfWeek === 0 ? 0 : dayOfWeek;
+  if (mappedDay < 1 || mappedDay > 5) return todos;
+  const weekMon = new Date(date);
+  weekMon.setDate(date.getDate() - (date.getDay() + 6) % 7);
+  weekMon.setHours(0, 0, 0, 0);
+  const weekKey = weekMon.toISOString().split('T')[0];
+  Object.keys(people).forEach(key => {
+    const p = people[key];
+    if (calPersonFilter !== 'all' && calPersonFilter !== key) return;
+    const weekData = (todoData[key] || {})[weekKey] || {};
+    (weekData[mappedDay] || []).forEach(t => {
+      todos.push({...t, personKey: key, personName: p.name, personColor: p.color, personInitials: p.initials});
     });
   });
-  
   return todos;
 }
 
@@ -1661,23 +1654,23 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 <script>
 const LINE_ITEMS=['Creative Direction','Design & Artwork','Briefing & coordination','Copywriting','Video Editing','Proofing & spell check','Artwork & file despatch','Contingency','Shot listing','Website build'];
 let jobCounter=6953,activeJobId=null,activeLabels=[],ctxTarget=null,pctxTarget=null,dragSrc=null;
-let jobs=[{id:'6752',name:'SFF Brand Guidelines',company:'Silver Fern Farms',budget:'$13,625',budgetTotal:'$23,125',bPct:59,hours:'85h',hoursTotal:'143h',hPct:59,status:'inplay',billable:true,labels:['May','June','July','APPROVED']}];
+let jobs=[{id:'6752',name:'SFF Brand Guidelines',company:'Silver Fern Farms',budget:'$13,625',budgetTotal:'$23,125',bPct:59,hours:'85h',hoursTotal:'143h',hPct:59,status:'open',billable:true,labels:['May','June','July','APPROVED']}];
 const SFF_PHASES=[
   {id:'p1',name:'Briefing + Brand Discovery',status:'complete',items:[
     {id:'i1',name:'Creative Direction',hours:'7h',rate:'$150',used:'$1,050',total:'$1,050',status:'complete'},
     {id:'i2',name:'Design & Artwork',hours:'6h45m',rate:'$150',used:'$1,013',total:'$975',status:'complete',over:true},
     {id:'i3',name:'Briefing & coordination',hours:'8h45m',rate:'$150',used:'$1,313',total:'$1,350',status:'complete'}
   ]},
-  {id:'p2',name:'Executional Updates: Stage 1',status:'inplay',items:[
-    {id:'i4',name:'Creative Direction',hours:'1h15m',rate:'$200',used:'$250',total:'$3,000',status:'inplay'},
-    {id:'i5',name:'Design & Artwork',hours:'0h',rate:'$150',used:'$0',total:'$2,100',status:'inplay'},
-    {id:'i6',name:'Briefing & coordination',hours:'6h50m',rate:'$150',used:'$1,025',total:'$2,250',status:'inplay'}
+  {id:'p2',name:'Executional Updates: Stage 1',status:'open',items:[
+    {id:'i4',name:'Creative Direction',hours:'1h15m',rate:'$200',used:'$250',total:'$3,000',status:'open'},
+    {id:'i5',name:'Design & Artwork',hours:'0h',rate:'$150',used:'$0',total:'$2,100',status:'open'},
+    {id:'i6',name:'Briefing & coordination',hours:'6h50m',rate:'$150',used:'$1,025',total:'$2,250',status:'open'}
   ]},
-  {id:'p3',name:'Doc Layout: Stage 2',status:'inplay',items:[
-    {id:'i7',name:'Creative Direction',hours:'15h45m',rate:'$200',used:'$3,150',total:'$3,200',status:'inplay'},
-    {id:'i8',name:'Copywriting',hours:'0h25m',rate:'$150',used:'$63',total:'$1,500',status:'inplay'},
-    {id:'i9',name:'Design & Artwork',hours:'31h20m',rate:'$150',used:'$4,700',total:'$6,000',status:'inplay'},
-    {id:'i10',name:'Briefing & coordination',hours:'7h05m',rate:'$150',used:'$1,063',total:'$1,500',status:'inplay'}
+  {id:'p3',name:'Doc Layout: Stage 2',status:'open',items:[
+    {id:'i7',name:'Creative Direction',hours:'15h45m',rate:'$200',used:'$3,150',total:'$3,200',status:'open'},
+    {id:'i8',name:'Copywriting',hours:'0h25m',rate:'$150',used:'$63',total:'$1,500',status:'open'},
+    {id:'i9',name:'Design & Artwork',hours:'31h20m',rate:'$150',used:'$4,700',total:'$6,000',status:'open'},
+    {id:'i10',name:'Briefing & coordination',hours:'7h05m',rate:'$150',used:'$1,063',total:'$1,500',status:'open'}
   ]}
 ];
 let phases=JSON.parse(JSON.stringify(SFF_PHASES));
@@ -1778,9 +1771,10 @@ function renderDashboard(){
   [1,2,3,4,5].forEach(d=>(wd[d]||[]).forEach(t=>{
     if(t.done){if(taskIsBillable(t))billH+=t.hours||0;else nbillH+=t.hours||0;}
   }));
-  // Today's tasks
-  const todayDow=(now.getDay()||7);// 1=Mon..5=Fri
-  const todayTasks=(wd[todayDow]||[]);
+  // Today's tasks — getDay() returns 0=Sun,1=Mon..5=Fri,6=Sat; todoData uses keys 1-5
+  const _todayRaw=now.getDay();
+  const todayDow=(_todayRaw>=1&&_todayRaw<=5)?_todayRaw:0; // 0 = weekend/no tasks
+  const todayTasks=(todayDow>0?(wd[todayDow]||[]):[]);
   const todayTodo=todayTasks.filter(t=>!t.done);
   const todayDone=todayTasks.filter(t=>t.done);
   const urgentCount=todayTodo.filter(t=>t.urgent).length;
@@ -2212,7 +2206,6 @@ function closeTodoModal(){
 }
 function renderPSMenu(query){
   const menu=document.getElementById('ps-menu');
-  const list=menu.querySelector('.ps-person-list')||menu;
   // Clear existing person rows only
   menu.querySelectorAll('.ps-person,.ps-co-hd').forEach(el=>el.remove());
   const q=(query||'').toLowerCase();
@@ -2341,23 +2334,6 @@ function addTeamMember(name){
   people[name.toLowerCase().replace(/\s/g,'')]={name,initials,color,days:[1,2,3,4,5]};
   personStatus[people[name.toLowerCase().replace(/\s/g,'')].name.toLowerCase().replace(/\s/g,'')]='available';
   renderTodo();saveData();
-}
-
-function ctxDo(action){
-  document.getElementById('ctx').classList.remove('on');
-  if(action==='checklist'||action==='todo')alert(action==='checklist'?'Checklist modal':'Todo modal — coming next');
-  if(action==='delete'&&ctxTarget){ctxTarget.remove();ctxTarget=null;}
-}
-
-function pctxDo(action){
-  document.getElementById('pctx').classList.remove('on');
-  if(action==='rename'&&pctxTarget){
-    const newName=prompt('Rename phase:',pctxTarget.querySelector('.ph-title').textContent);
-    if(newName){pctxTarget.querySelector('.ph-title').textContent=newName;saveData();}
-  }
-  if(action==='delete'&&pctxTarget){
-    if(confirm('Delete this phase?')){pctxTarget.remove();saveData();}
-  }
 }
 
 function closeFup(yes){
@@ -2780,14 +2756,14 @@ function showAddItemForm(phId){
 function saveItem(phId){
   const name=document.getElementById('ni-n').value;if(!name)return;
   const hours=document.getElementById('ni-h').value||'0h';const rate=document.getElementById('ni-r').value||'$150';
-  const ph=phases.find(p=>p.id===phId);ph.items.push({id:'i'+Date.now(),name,hours,rate,used:'$0',total:'$0',status:'inplay'});
+  const ph=phases.find(p=>p.id===phId);ph.items.push({id:'i'+Date.now(),name,hours,rate,used:'$0',total:'$0',status:'open'});
   renderPhases();setTimeout(()=>document.getElementById('fup').classList.add('on'),700);
 }
-function addPhase(){phases.push({id:'p'+Date.now(),name:'New Phase',status:'inplay',items:[]});renderPhases();}
+function addPhase(){phases.push({id:'p'+Date.now(),name:'New Phase',status:'open',items:[]});renderPhases();}
 function showCtx(e,itemId,phId){e.stopPropagation();ctxTarget={itemId,phId};const m=document.getElementById('ctx');m.style.cssText=`left:${Math.min(e.clientX,window.innerWidth-205)}px;top:${Math.min(e.clientY,window.innerHeight-230)}px;`;m.classList.add('on');}
 function ctxDo(a){document.getElementById('ctx').classList.remove('on');if(!ctxTarget)return;if(a==='delete'){const ph=phases.find(p=>p.id===ctxTarget.phId);ph.items=ph.items.filter(i=>i.id!==ctxTarget.itemId);renderPhases();}else if(a==='todo')openTodoModal(activeJobId,5);}
 function showPctx(e,phId){e.stopPropagation();pctxTarget=phId;const m=document.getElementById('pctx');m.style.cssText=`left:${Math.min(e.clientX,window.innerWidth-200)}px;top:${Math.min(e.clientY,window.innerHeight-170)}px;`;m.classList.add('on');}
-function pctxDo(a){document.getElementById('pctx').classList.remove('on');if(!pctxTarget)return;if(a==='delete'){if(confirm('Delete this phase?')){phases=phases.filter(p=>p.id!==pctxTarget);renderPhases();}}else if(a==='additem')showAddItemForm(pctxTarget);else if(a==='rename'){const ph=phases.find(p=>p.id===pctxTarget);const n=prompt('Rename phase:',ph.name);if(n?.trim()){ph.name=n.trim();renderPhases();}}else if(a==='complete'){const ph=phases.find(p=>p.id===pctxTarget);ph.status=ph.status==='complete'?'inplay':'complete';renderPhases();}}
+function pctxDo(a){document.getElementById('pctx').classList.remove('on');if(!pctxTarget)return;if(a==='delete'){if(confirm('Delete this phase?')){phases=phases.filter(p=>p.id!==pctxTarget);renderPhases();}}else if(a==='additem')showAddItemForm(pctxTarget);else if(a==='rename'){const ph=phases.find(p=>p.id===pctxTarget);const n=prompt('Rename phase:',ph.name);if(n?.trim()){ph.name=n.trim();renderPhases();}}else if(a==='complete'){const ph=phases.find(p=>p.id===pctxTarget);ph.status=ph.status==='complete'?'open':'complete';renderPhases();}}
 function toggleExp(){const w=document.getElementById('exp-wrap');w.classList.toggle('collapsed');const ch=w.querySelector('.exp-chv');if(ch)ch.style.transform=w.classList.contains('collapsed')?'rotate(-90deg)':'';}
 function openCreateJob(){jobCounter++;document.getElementById('nj-num').value=jobCounter;document.getElementById('nj-name').value='';document.getElementById('create-modal').classList.add('on');setTimeout(()=>document.getElementById('nj-name').focus(),50);}
 function closeCreateJob(){document.getElementById('create-modal').classList.remove('on');}
