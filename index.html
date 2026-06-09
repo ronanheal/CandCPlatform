@@ -613,7 +613,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .day-col{flex:0 0 0;min-width:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
 .day-col.workday{flex:1;}
 .day-col.today .day-head{border-top:3px solid var(--red);}
-.day-head{padding:8px 12px 7px;border-bottom:1px solid var(--border);background:var(--white);flex-shrink:0;}
+.day-head{padding:8px 8px 6px;border-bottom:1px solid var(--border);background:var(--white);flex-shrink:0;}
 .day-head-row{display:flex;align-items:center;justify-content:space-between;gap:6px;}
 .day-name{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
 .day-num{font-size:20px;font-weight:400;color:var(--ink);line-height:1.1;}
@@ -652,7 +652,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .task-card.done-c{background:var(--done);border-color:#b2dfb2;}
 .task-card.urgent-c{border-left:3px solid var(--red);}
 .task-card.dragging-c{opacity:.2;}
-.task-card.drop-above{border-top:2px solid var(--red);}
+.task-card.drop-above{border-top:2px solid var(--red);margin-top:2px;}
 .tc-top{display:flex;align-items:flex-start;gap:6px;}
 .tc-icon{font-size:12px;flex-shrink:0;line-height:1.5;width:16px;text-align:center;}
 .tc-title{font-size:13px;font-weight:400;line-height:1.35;flex:1;color:var(--ink);}
@@ -697,8 +697,9 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 /* JOB DETAIL */
 .detail-view{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .detail-head{padding:0 24px;background:var(--white);border-bottom:1px solid var(--border);flex-shrink:0;}
-.detail-back{padding:14px 0 0;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px;cursor:pointer;width:fit-content;letter-spacing:.04em;}
-.detail-back:hover{color:var(--ink);}
+.detail-back{padding:5px 10px;margin:12px 0 0;font-size:11px;color:var(--muted);display:inline-flex;align-items:center;gap:4px;cursor:pointer;letter-spacing:.05em;background:var(--off);border:1px solid var(--border);border-radius:20px;width:fit-content;text-decoration:none;font-family:var(--font);line-height:1;}
+button.detail-back{outline:none;}
+.detail-back:hover{color:var(--ink);border-color:#aaa;background:#eeecea;}
 .detail-title-row{display:flex;align-items:flex-end;gap:16px;padding:10px 0 0;}
 .detail-title{font-family:var(--serif);font-size:24px;font-weight:400;flex:1;line-height:1.2;}
 .detail-actions{display:flex;gap:8px;}
@@ -858,7 +859,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .boards-head{font-family:var(--serif);font-size:28px;font-style:italic;margin-bottom:4px;}
 .boards-sub{font-size:12px;color:var(--muted);margin-bottom:8px;}
 .boards-cols{display:flex;gap:16px;overflow-x:auto;padding-bottom:14px;}
-.board-col{flex:0 0 280px;}
+.board-col{flex:0 0 320px;}
 .board-col-h{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--border);}
 .board-card{background:var(--white);border:1px solid var(--border);padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .15s,box-shadow .15s;font-size:13px;}
 .board-card:hover{border-color:#aaa;box-shadow:0 2px 8px rgba(0,0,0,.06);}
@@ -902,7 +903,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .cb-create-btn:hover{opacity:.85;}
 /* ── Board detail ── */
 .bdet-cols{display:flex;gap:14px;overflow-x:auto;padding-bottom:24px;align-items:flex-start;}
-.bdet-col{background:var(--off);border:1px solid var(--border);padding:0;min-width:240px;width:240px;flex-shrink:0;display:flex;flex-direction:column;max-height:calc(100vh - 160px);}
+.bdet-col{background:var(--off);border:1px solid var(--border);padding:0;min-width:300px;width:300px;flex-shrink:0;display:flex;flex-direction:column;max-height:calc(100vh - 160px);}
 .bdet-col-h{display:flex;align-items:center;gap:6px;padding:10px 12px 10px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--off);}
 .bdet-col-name{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);font-weight:400;flex:1;cursor:text;padding:2px 0;border:none;background:transparent;outline:none;font-family:var(--font);}
 .bdet-col-name:focus{background:var(--white);padding:2px 4px;letter-spacing:0;text-transform:none;font-size:12px;}
@@ -2216,7 +2217,7 @@ const people={
 };
 let currentPerson='ro';
 const MY_PERSON='ro'; // the logged-in user
-const APP_VERSION='1.9.0';
+const APP_VERSION='1.9.1';
 const CHANGELOG=[
   {version:'1.9.0',date:'10 Jun 2026',title:'Stats fix, quote redesign, Create dropdown, calendar improvements',items:[
     'Job plan stats: compute live from phases (hours, sell, logged) — no more stale $0',
@@ -2886,11 +2887,11 @@ function renderTodo(){
     if(doneTasks.length===0)doneEl.innerHTML='<div class="day-done-empty">—</div>';
     else doneTasks.forEach(t=>doneEl.appendChild(createTaskCard(t,d,true)));
 
-    todoEl.addEventListener('dragover',e=>{e.preventDefault();todoEl.classList.add('drop-hi');});
-    todoEl.addEventListener('dragleave',()=>todoEl.classList.remove('drop-hi'));
+    todoEl.addEventListener('dragover',e=>{e.preventDefault();todoEl.classList.add('drop-hi');_highlightDropTarget(e,todoEl);});
+    todoEl.addEventListener('dragleave',e=>{if(!todoEl.contains(e.relatedTarget)){todoEl.classList.remove('drop-hi');_clearDropIndicators();}});
     todoEl.addEventListener('drop',e=>onDropToSection(e,d,false));
-    doneEl.addEventListener('dragover',e=>{e.preventDefault();doneEl.classList.add('drop-hi');});
-    doneEl.addEventListener('dragleave',()=>doneEl.classList.remove('drop-hi'));
+    doneEl.addEventListener('dragover',e=>{e.preventDefault();doneEl.classList.add('drop-hi');_highlightDropTarget(e,doneEl);});
+    doneEl.addEventListener('dragleave',e=>{if(!doneEl.contains(e.relatedTarget)){doneEl.classList.remove('drop-hi');_clearDropIndicators();}});
     doneEl.addEventListener('drop',e=>onDropToSection(e,d,true));
   });
 
@@ -2986,7 +2987,12 @@ function createTaskCard(t,day,isDone){
     e.dataTransfer.effectAllowed='move';
     e.dataTransfer.setData('text/plain',JSON.stringify({taskId:t.id,fromDay:day}));
   });
-  card.addEventListener('dragend',()=>{card.classList.remove('dragging-c');document.querySelectorAll('.drop-hi,.div-drop-hi').forEach(el=>el.classList.remove('drop-hi','div-drop-hi'));});
+  card.addEventListener('dragend',()=>{card.classList.remove('dragging-c');_clearDropIndicators();document.querySelectorAll('.drop-hi,.div-drop-hi').forEach(el=>el.classList.remove('drop-hi','div-drop-hi'));});
+  card.addEventListener('dragover',e=>{
+    e.preventDefault();e.stopPropagation();
+    const parent=card.closest('.day-todo,.day-done');
+    if(parent)_highlightDropTarget(e,parent);
+  });
 
   // Edge resize: top or bottom 7px = resize zone
   const EDGE=7;
@@ -3176,8 +3182,22 @@ function renderTodoHeader(day){
   cap.innerHTML=`${label}<div class="day-cap-bar"><div class="dcb-done" style="width:${bDW}%;"></div><div class="dcb-nbill-done" style="width:${nDW}%;"></div><div class="dcb-todo" style="width:${bTW}%;${isOver?'background:var(--red);':''}"></div><div class="dcb-nbill-todo" style="width:${nTW}%;${isOver?'background:var(--red);opacity:.6':''}"></div></div>`;
 }
 
+// Drop indicator helpers
+function _highlightDropTarget(e,container){
+  _clearDropIndicators();
+  const cards=[...container.querySelectorAll('.task-card:not(.dragging-c)')];
+  let inserted=false;
+  for(const card of cards){
+    const rect=card.getBoundingClientRect();
+    if(e.clientY<rect.top+rect.height/2){card.classList.add('drop-above');inserted=true;break;}
+  }
+  if(!inserted&&cards.length)cards[cards.length-1].classList.remove('drop-above');
+}
+function _clearDropIndicators(){document.querySelectorAll('.drop-above').forEach(el=>el.classList.remove('drop-above'));}
+
 function onDropToSection(e,toDay,markDone){
   e.preventDefault();e.stopPropagation();
+  _clearDropIndicators();
   document.querySelectorAll('.drop-hi,.div-drop-hi').forEach(el=>el.classList.remove('drop-hi','div-drop-hi'));
   try{
     const data=JSON.parse(e.dataTransfer.getData('text/plain'));
@@ -3188,15 +3208,29 @@ function onDropToSection(e,toDay,markDone){
     if(idx===-1)return;
     const task=fromArr[idx];
     const wasAlreadyDone=task.done;
+    // Find insertion index from DOM drop-above indicator
+    const sectionEl=document.getElementById(markDone?'ddone-'+toDay:'dtodo-'+toDay);
+    let insertIdx=-1;
+    if(sectionEl){
+      const toArr=wd[toDay]||[];
+      const cards=[...sectionEl.querySelectorAll('.task-card')];
+      const aboveCard=cards.find(c=>c.classList.contains('drop-above'));
+      if(aboveCard){
+        const aboveId=aboveCard.dataset.taskId;
+        const targetArr=wd[toDay]||[];
+        insertIdx=targetArr.findIndex(t=>t.id===aboveId);
+      }
+    }
     if(e.altKey){
       const clone={...task,id:'t'+Date.now(),done:markDone};
       if(!wd[toDay])wd[toDay]=[];
-      wd[toDay].push(clone);
+      if(insertIdx>=0)wd[toDay].splice(insertIdx,0,clone);else wd[toDay].push(clone);
     } else {
       fromArr.splice(idx,1);
       task.done=markDone;
       if(!wd[toDay])wd[toDay]=[];
-      wd[toDay].push(task);
+      if(fromDay===toDay&&insertIdx>idx)insertIdx--;
+      if(insertIdx>=0)wd[toDay].splice(insertIdx,0,task);else wd[toDay].push(task);
     }
     // Trigger follow-up prompt when marking a task as done
     if(markDone&&!wasAlreadyDone){
@@ -3932,7 +3966,8 @@ function renderJobs(){
     shown++;
     const sc=j.status==='inplay'?'sp-ip':j.status==='new'?'sp-new':'sp-co';
     const sl=j.status==='inplay'?'In Play':j.status==='new'?'New':'Complete';
-    const bPct=j.bPct||0;const hPct=j.hPct||0;
+    computeJobStats(j);
+    const bPct=j._bPct||0;const hPct=j._hPct||0;
     const bCol=bPct>=100?'var(--red)':bPct>=80?'#FF9800':'#4CAF50';
     const hCol=hPct>=100?'var(--red)':hPct>=80?'#FF9800':'#4CAF50';
     const billDot=j.billable===false?'<span style="width:6px;height:6px;border-radius:50%;background:#CBD5E1;display:inline-block;margin-right:5px;" title="Non-billable"></span>':'<span style="width:6px;height:6px;border-radius:50%;background:#4CAF50;display:inline-block;margin-right:5px;" title="Billable"></span>';
@@ -3954,14 +3989,14 @@ function renderJobs(){
       <td><span class="job-co">${billDot}${j.company}</span></td>
       <td>
         <div class="bbar-wrap">
-          <div class="bbar-nums"><span style="font-weight:400;color:${bPct>=100?'var(--red)':'inherit'}">${j.budget||'$0'}</span><span class="bbar-of">/ ${j.budgetTotal||'—'}</span></div>
+          <div class="bbar-nums"><span style="font-weight:400;color:${bPct>=100?'var(--red)':'inherit'}">$${(j._sellUsed||0).toLocaleString()}</span><span class="bbar-of">/ $${(j._plannedSell||0).toLocaleString()}</span></div>
           <div class="bbar-track"><div class="bbar-fill" style="width:${Math.min(bPct,100)}%;background:${bCol};"></div></div>
           <div style="font-size:10px;color:${bPct>=100?'var(--red)':'var(--muted)'};">${bPct}%</div>
         </div>
       </td>
       <td>
         <div class="bbar-wrap">
-          <div class="bbar-nums"><span style="font-weight:400;color:${hPct>=100?'var(--red)':'inherit'}">${j.hours||'0h'}</span><span class="bbar-of">/ ${j.hoursTotal||'—'}</span></div>
+          <div class="bbar-nums"><span style="font-weight:400;color:${hPct>=100?'var(--red)':'inherit'}">${j._loggedH||'0h'}</span><span class="bbar-of">/ ${j._plannedH||'—'}</span></div>
           <div class="bbar-track"><div class="bbar-fill" style="width:${Math.min(hPct,100)}%;background:${hCol};"></div></div>
           <div style="font-size:10px;color:${hPct>=100?'var(--red)':'var(--muted)'};">${hPct}%</div>
         </div>
@@ -4206,25 +4241,19 @@ function _statBlock(label,val,sub,pct,col){
   const subHtml=sub?`<div style="font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:.05em;">${sub}</div>`:'';
   return`<div class="stat-b"><div class="stat-label">${label}</div><div class="stat-val">${val}</div>${subHtml}${bar}</div>`;
 }
-function renderStats(j){
-  const s=document.getElementById('d-stats');
-  // Compute live from phases
-  const phArr=j.phases||phases||[];
-  let plannedMins=0, plannedSell=0;
+// Core stats computation — used by renderStats() AND renderJobs()
+function computeJobStats(j){
+  const phArr=j.id===activeJobId?(j.phases||phases||[]):(j.phases||[]);
+  let plannedMins=0,plannedSell=0;
   phArr.forEach(ph=>{
     (ph.items||[]).forEach(item=>{
       const h=parseHrsInput(item.hours||'0h');
       plannedMins+=Math.round(h*60);
-      // Use explicit total if set, otherwise derive from hours × rate
       let itemSell=parseInt((item.total||'$0').replace(/[$,]/g,'')||0);
-      if(itemSell===0&&h>0){
-        const r=parseInt((item.rate||'$150').replace(/[$,]/g,''))||150;
-        itemSell=Math.round(h*r);
-      }
+      if(itemSell===0&&h>0){const r=parseInt((item.rate||'$150').replace(/[$,]/g,''))||150;itemSell=Math.round(h*r);}
       plannedSell+=itemSell;
     });
   });
-  // Logged hours from completed todos linked to this job
   let loggedMins=0;
   Object.keys(todoData).forEach(pKey=>{
     const pd=todoData[pKey];if(!pd)return;
@@ -4238,16 +4267,23 @@ function renderStats(j){
       });
     });
   });
-  // Sell used: proportional to hours logged vs planned
   const sellUsed=plannedMins>0?Math.round((loggedMins/plannedMins)*plannedSell):0;
-  // Expenses
   const expUsed=(j.expenses||[]).reduce((a,e)=>a+(parseFloat(e.sell||e.total||0)||0),0);
-  // Format
   const fmtH=m=>m>=60?`${Math.floor(m/60)}h${m%60?m%60+'m':''}`:(m>0?m+'m':'0h');
-  const logStr=fmtH(loggedMins);
-  const planStr=plannedMins>0?fmtH(plannedMins):'—';
   const hPct=plannedMins>0?Math.round((loggedMins/plannedMins)*100):0;
   const bPct=plannedSell>0?Math.round((sellUsed/plannedSell)*100):0;
+  // Write back to job so jobs list can use them
+  j._loggedH=fmtH(loggedMins);j._plannedH=plannedMins>0?fmtH(plannedMins):'—';
+  j._sellUsed=sellUsed;j._plannedSell=plannedSell;
+  j._hPct=hPct;j._bPct=bPct;j._expUsed=expUsed;
+  return{plannedMins,plannedSell,loggedMins,sellUsed,expUsed,hPct,bPct,fmtH};
+}
+
+function renderStats(j){
+  const s=document.getElementById('d-stats');
+  const{plannedMins,plannedSell,loggedMins,sellUsed,expUsed,hPct,bPct,fmtH}=computeJobStats(j);
+  const logStr=fmtH(loggedMins);
+  const planStr=plannedMins>0?fmtH(plannedMins):'—';
   const hCol=hPct>=100?'var(--red)':hPct>=80?'#FF9800':'#4CAF50';
   const bCol=bPct>=100?'var(--red)':bPct>=80?'#FF9800':'#4CAF50';
   const billLabel=j.billable!==false?'BILLABLE':'NON-BILLABLE';
@@ -4478,7 +4514,7 @@ function renderPhases(){
     const el=document.createElement('div');el.className='phase';el.id='pw_'+ph.id;
     const sell=pSell(ph);const hrs=pHrs(ph);const cnt=ph.items.length;
     const statusIcon=ph.status==='complete'?'<i class="ti ti-circle-check" style="color:#4CAF50;font-size:13px;"></i>':'<i class="ti ti-circle-dot" style="color:#ED1E24;font-size:13px;"></i>';
-    el.innerHTML=`<div class="phase-head" onclick="togglePhase('${ph.id}')"><i class="ti ti-chevron-down ph-chv"></i><span class="ph-n">${ph.name}</span><span class="ph-cnt">${cnt} item${cnt!==1?'s':''}</span><div class="ph-inf"><span class="ph-meta">${hrs} · ${sell}</span>${statusIcon}<i class="ti ti-dots ph-mb" onclick="showPctx(event,'${ph.id}')"></i></div></div><table class="items-t" id="it_${ph.id}"><thead><tr><th style="width:22px;"></th><th>Item</th><th style="width:120px;text-align:right;" title="Logged (done todos) / Planned hours">Hours</th><th style="width:75px;text-align:right;">Rate</th><th style="width:140px;text-align:right;">Sell</th><th style="width:90px;text-align:right;">Status</th><th style="width:26px;"></th></tr></thead><tbody id="ib_${ph.id}"></tbody></table><div class="plan-row-actions"><div class="add-i-row" onclick="showAddItemForm('${ph.id}')"><i class="ti ti-plus" style="font-size:11px"></i> Add item</div><div class="add-i-row" style="border-left:1px solid var(--border);" onclick="showAddExpenseInline()"><i class="ti ti-receipt" style="font-size:11px"></i> Add expense</div></div>`;
+    el.innerHTML=`<div class="phase-head" onclick="togglePhase('${ph.id}')"><i class="ti ti-chevron-down ph-chv"></i><span class="ph-n">${ph.name}</span><span class="ph-cnt">${cnt} item${cnt!==1?'s':''}</span><div class="ph-inf"><span class="ph-meta">${hrs} · ${sell}</span>${statusIcon}<i class="ti ti-dots ph-mb" onclick="showPctx(event,'${ph.id}')"></i></div></div><table class="items-t" id="it_${ph.id}"><thead><tr><th style="width:22px;"></th><th>Item</th><th style="width:120px;text-align:right;" title="Logged (done todos) / Planned hours">Hours</th><th style="width:75px;text-align:right;">Rate</th><th style="width:140px;text-align:right;">Sell</th><th style="width:90px;text-align:right;">Status</th><th style="width:26px;"></th></tr></thead><tbody id="ib_${ph.id}"></tbody></table><div class="plan-row-actions"><div class="add-i-row" onclick="showAddItemForm('${ph.id}')"><i class="ti ti-plus" style="font-size:11px"></i> Add item</div><div class="add-i-row" style="border-left:1px solid var(--border);" onclick="showAddExpenseInline('${ph.id}')"><i class="ti ti-receipt" style="font-size:11px"></i> Add expense</div></div>`;
     c.appendChild(el);renderItems(ph.id);
   });
 }
@@ -4584,6 +4620,10 @@ function inlineEditItem(e,itemId,phId,field){
         item.total='$'+(h*r).toLocaleString();
       }
       saveData();
+      if(field==='hours'||field==='rate'){
+        const jj=jobs.find(x=>x.id===activeJobId);
+        if(jj){jj.phases=JSON.parse(JSON.stringify(phases));renderStats(jj);}
+      }
     }
     renderPhases();
   }
@@ -4638,42 +4678,45 @@ function saveItem(phId){
   logActivity(activeJobId,MY_PERSON,'item_add',`Added <strong>${name}</strong> to <strong>${ph.name}</strong>`);
   renderPhases();saveData();setTimeout(()=>document.getElementById('fup').classList.add('on'),700);
 }
-function showAddExpenseInline(){
+function showAddExpenseInline(afterPhaseId){
   if(!activeJobId)return;
-  // Show inline expense form below the phases area
   document.querySelectorAll('.add-exp-form-row').forEach(r=>r.remove());
-  const wrap=document.getElementById('phases-wrap');
   const row=document.createElement('div');row.className='add-exp-form-row';
-  row.style.cssText='background:var(--white);border:1px solid var(--border);border-radius:3px;padding:12px 16px;margin-top:8px;';
-  row.innerHTML=`<div style="font-size:11px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Add Expense</div>
-    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+  row.style.cssText='background:var(--off);border:1px solid var(--border);border-radius:3px;padding:12px 16px;margin-top:4px;';
+  row.innerHTML=`<div style="font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Add Expense</div>
+    <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
       <div style="flex:2;min-width:160px;">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Description *</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em;">Description *</div>
         <input list="exp-datalist" class="form-inp" id="ei-desc" placeholder="e.g. Photography, Print…" autocomplete="off" style="width:100%;">
         <datalist id="exp-datalist">${EXPENSE_ITEMS.map(e=>`<option>${e}</option>`).join('')}</datalist>
       </div>
       <div style="flex:1;min-width:80px;">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Cost</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em;">Cost</div>
         <input class="form-inp" id="ei-cost" placeholder="0.00" type="number" min="0" step="0.01" style="width:100%;" oninput="_calcInlineExp()">
       </div>
       <div style="flex:1;min-width:60px;">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Markup %</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em;">Markup %</div>
         <input class="form-inp" id="ei-markup" placeholder="20" value="20" type="number" min="0" style="width:100%;" oninput="_calcInlineExp()">
       </div>
       <div style="flex:1;min-width:50px;">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Qty</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em;">Qty</div>
         <input class="form-inp" id="ei-qty" value="1" type="number" min="1" style="width:100%;" oninput="_calcInlineExp()">
       </div>
       <div style="flex:1;min-width:80px;">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Sell (auto)</div>
-        <div id="ei-sell-preview" style="font-size:12px;font-weight:500;color:var(--ink);padding:7px 0;">—</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em;">Sell</div>
+        <div id="ei-sell-preview" style="font-size:13px;font-weight:500;color:var(--ink);padding:7px 0;">—</div>
       </div>
       <div style="display:flex;gap:6px;align-items:center;padding-bottom:2px;">
         <button class="save-b" onclick="saveExpenseInline()">Add</button>
         <button class="cancel-b" onclick="this.closest('.add-exp-form-row').remove()">Cancel</button>
       </div>
     </div>`;
-  wrap.appendChild(row);
+  // Insert after the clicked phase, or at end of phases-wrap
+  if(afterPhaseId){
+    const phEl=document.getElementById('pw_'+afterPhaseId);
+    if(phEl){phEl.insertAdjacentElement('afterend',row);document.getElementById('ei-desc')?.focus();return;}
+  }
+  document.getElementById('phases-wrap').appendChild(row);
   document.getElementById('ei-desc')?.focus();
 }
 function _calcInlineExp(){
@@ -6013,7 +6056,7 @@ function renderPeopleBoard(b,body){
       <div class="pboard-head">
         <div style="width:44px;height:44px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:#fff;flex-shrink:0;">${p.initials}</div>
         <div style="flex:1;min-width:0;"><div style="font-size:15px;line-height:1.3;">${p.name}</div><div style="font-size:11px;color:var(--muted);">${p.role||'Team member'}</div></div>
-        <button class="d-action" style="flex-shrink:0;" onclick="currentPerson='${key}';navTo('todo')">Week view</button>
+        <button class="d-action" style="flex-shrink:0;" onclick="event.stopPropagation();currentPerson='${key}';navTo('todo')"><i class="ti ti-checklist" style="font-size:12px;"></i> Week view</button>
       </div>
       <div class="pboard-stats">
         <div class="pboard-stat"><div class="ps-val">${totalH}h</div><div class="ps-lbl">Planned</div></div>
@@ -6034,7 +6077,7 @@ function savePboardNote(boardId,personKey,val){
 
 // ── Custom board ────────────────────────────────────────────────────────────
 function renderCustomBoard(b,body){
-  if(!b.columns||b.columns.length===0)b.columns=[{id:'c1',name:'To Do',cards:[]},{id:'c2',name:'In Progress',cards:[]},{id:'c3',name:'Done',cards:[]}];
+  if(!b.columns||b.columns.length===0){const ts=Date.now();b.columns=[{id:'c'+ts+'1',name:'To Do',cards:[]},{id:'c'+ts+'2',name:'In Progress',cards:[]},{id:'c'+ts+'3',name:'Done',cards:[]}];saveBoardsData();}
   const colsHTML=b.columns.map(col=>buildCustomCol(b,col)).join('');
   body.innerHTML=`<div class="bdet-cols" id="bdet-cols-${b.id}">${colsHTML}<button class="bdet-add-col-btn" onclick="addColumn('${b.id}')"><i class="ti ti-plus" style="font-size:12px;"></i> Add column</button></div>`;
 }
@@ -6080,7 +6123,7 @@ function buildCustomCard(b,col,card){
     [1,2,3,4,5].forEach(d=>{(wd[d]||[]).forEach(tt=>{wTasks++;if(tt.done)wDone++;if(tt.urgent&&!tt.done)wUrgent++;wHours+=tt.hours||0;});});
     const utilPct=Math.min(100,Math.round((wHours/40)*100));
     const activeTasks=wTasks-wDone;
-    return`<div class="bdet-card bc-person-card">${del}
+    return`<div class="bdet-card bc-person-card" style="cursor:pointer;" onclick="currentPerson='${card.personRef}';navTo('todo')" title="Open ${p.name}'s todo">${del}
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
         <div style="width:40px;height:40px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;flex-shrink:0;font-weight:500;">${p.initials}</div>
         <div>
@@ -6315,7 +6358,7 @@ function saveNewBoard(){
   const name=document.getElementById('nb-name').value.trim();if(!name)return;
   const b={id:'b'+Date.now(),name,type:newBoardType};
   if(newBoardType==='client')b.clientFilter=document.getElementById('nb-client').value;
-  if(newBoardType==='custom')b.columns=[{id:'c1',name:'To Do',cards:[]},{id:'c2',name:'In Progress',cards:[]},{id:'c3',name:'Done',cards:[]}];
+  if(newBoardType==='custom'){const ts=Date.now();b.columns=[{id:'c'+ts+'1',name:'To Do',cards:[]},{id:'c'+ts+'2',name:'In Progress',cards:[]},{id:'c'+ts+'3',name:'Done',cards:[]}];}
   if(newBoardType==='people')b.notes={};
   boardsList.push(b);saveBoardsData();closeCreateBoard();renderBoardsList();
   setTimeout(()=>openBoard(b.id),100);
