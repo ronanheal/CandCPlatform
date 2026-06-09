@@ -1438,6 +1438,9 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
 .cal-task-block .ctb-hrs{font-size:9px;opacity:.7;margin-top:1px;}
 .cal-task-block .ctb-job{font-size:9px;opacity:.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 /* Item picker dropdown in task modal */
+.i-todo-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 4px;opacity:0;transition:opacity .1s;vertical-align:middle;margin-left:4px;border-radius:3px;}
+tr:hover .i-todo-btn{opacity:1;}
+.i-todo-btn:hover{color:var(--red);background:var(--off);}
 .td-item-btn{display:flex;align-items:center;width:100%;cursor:pointer;border:1px solid var(--border);background:var(--white);padding:9px 10px;font-family:var(--font);font-size:13px;font-weight:300;color:var(--ink);outline:none;}
 .td-item-btn:hover{border-color:#aaa;}
 .item-pick-dd{display:none;position:absolute;left:0;right:0;top:100%;z-index:400;background:var(--white);border:1px solid var(--border);box-shadow:0 6px 24px rgba(0,0,0,.13);max-height:240px;overflow-y:auto;margin-top:2px;}
@@ -2230,7 +2233,7 @@ const people={
 };
 let currentPerson='ro';
 const MY_PERSON='ro'; // the logged-in user
-const APP_VERSION='1.9.2';
+const APP_VERSION='1.9.3';
 const CHANGELOG=[
   {version:'1.9.0',date:'10 Jun 2026',title:'Stats fix, quote redesign, Create dropdown, calendar improvements',items:[
     'Job plan stats: compute live from phases (hours, sell, logged) — no more stale $0',
@@ -2742,7 +2745,7 @@ function _calResizeEnd(e){
   const task=arr.find(t=>t.id===_calResizeTaskId);
   if(task){
     task.hours=Math.round(newH*4)/4;
-    saveData();
+    saveData();_refreshJobStats();
   }
   _calResizeTaskId=null;_calResizeDay=null;
   renderTodoCalendar();
@@ -3145,7 +3148,7 @@ function toggleTaskDone(t,day){
   const wd=getWeekData(currentPerson);
   const arr=wd[day]||[];
   const task=arr.find(x=>x.id===t.id);
-  if(task){task.done=!task.done;saveData();renderTodo();toast(task.done?'Marked done':'Marked undone',task.done?'success':'info');}
+  if(task){task.done=!task.done;saveData();renderTodo();_refreshJobStats();toast(task.done?'Marked done':'Marked undone',task.done?'success':'info');}
 }
 function deleteTodoById(id,day){
   const wd=getWeekData(currentPerson);
@@ -3153,7 +3156,7 @@ function deleteTodoById(id,day){
   const idx=arr.findIndex(t=>t.id===id);
   if(idx===-1)return;
   arr.splice(idx,1);
-  saveData();renderTodo();toast('Task deleted');
+  saveData();renderTodo();_refreshJobStats();toast('Task deleted');
 }
 function reassignTask(t,fromDay,toPersonKey){
   const wd=getWeekData(currentPerson);
@@ -3627,7 +3630,7 @@ function deleteTodo(){
   const idx=arr.findIndex(t=>t.id===editingTaskId);
   if(idx!==-1){
     arr.splice(idx,1);
-    closeTodoModal();renderTodo();saveData();
+    closeTodoModal();renderTodo();saveData();_refreshJobStats();
     toast('Task deleted');
   }
 }
@@ -3665,7 +3668,7 @@ function toggleTaskDone(taskId){
     if(t){
       t.done=!t.done;
       if(t.done){_fupTask=t;setTimeout(()=>document.getElementById('fup').classList.add('on'),800);}
-      renderTodo();saveData();return;
+      renderTodo();saveData();_refreshJobStats();return;
     }
   }
 }
@@ -4022,7 +4025,7 @@ function saveTodo(){
     }
   }
   closeTodoModal();
-  renderTodo();saveData();
+  renderTodo();saveData();_refreshJobStats();
 }
 // Parse hours input like "2h", "1h30m", "1.5", "90m"
 function parseHrsInput(s){
@@ -4324,6 +4327,19 @@ function _statBlock(label,val,sub,pct,col){
   const subHtml=sub?`<div style="font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:.05em;">${sub}</div>`:'';
   return`<div class="stat-b"><div class="stat-label">${label}</div><div class="stat-val">${val}</div>${subHtml}${bar}</div>`;
 }
+// Live stats refresh — called after any task save/toggle to keep job plan in sync
+function _refreshJobStats(){
+  if(!activeJobId)return;
+  const j=jobs.find(x=>x.id===activeJobId);
+  if(!j)return;
+  // Sync in-memory phases back to job object so computeJobStats sees latest
+  if(phases&&phases.length)j.phases=JSON.parse(JSON.stringify(phases));
+  renderStats(j);
+  // If the job plan tab is currently visible, refresh per-item logged hours too
+  const planEl=document.getElementById('dtab-plan');
+  if(planEl&&planEl.style.display!=='none')renderPhases();
+}
+
 // Core stats computation — used by renderStats() AND renderJobs()
 function computeJobStats(j){
   const phArr=j.id===activeJobId?(j.phases||phases||[]):(j.phases||[]);
@@ -4631,7 +4647,7 @@ function renderItems(phId){
     const _plannedH=parseHrsInput(item.hours)||0;
     const _overLogged=_loggedH>_plannedH&&_plannedH>0;
     tr.innerHTML=`<td><i class="ti ti-grip-vertical" style="color:var(--border);font-size:13px;cursor:grab;"></i></td>
-<td class="i-name"><span class="item-editable" title="Click to rename" onclick="inlineEditItem(event,'${item.id}','${phId}','name')">${item.name}</span>${noteIcon}</td>
+<td class="i-name"><span class="item-editable" title="Click to rename" onclick="inlineEditItem(event,'${item.id}','${phId}','name')">${item.name}</span>${noteIcon}<button class="i-todo-btn" title="Add todo for this item" onclick="event.stopPropagation();ctxTarget={itemId:'${item.id}',phId:'${phId}'};ctxDo('todo')"><i class="ti ti-calendar-plus"></i></button></td>
 <td class="i-hrs ${_overLogged?'i-hrs-over':''}" style="text-align:right;white-space:nowrap;">
   <span style="font-weight:500;color:${_overLogged?'var(--red)':'inherit'}" title="Hours logged from completed todos">${_loggedStr}</span>
   <span class="i-sof"> / </span>
@@ -4836,25 +4852,31 @@ function ctxDo(a){
   const item=ph?.items.find(i=>i.id===ctxTarget.itemId);
   if(a==='delete'){ph.items=ph.items.filter(i=>i.id!==ctxTarget.itemId);renderPhases();}
   else if(a==='todo'){
-    // Open todo modal pre-filled with item name and note
+    // Open todo modal pre-filled with item name, note, and job
     openTodoModal(activeJobId,5);
     setTimeout(()=>{
-      const inp=document.getElementById('td-title');
-      if(inp&&item&&!inp.value)inp.value=item.name;
-      const noteInp=document.getElementById('td-note');
-      if(noteInp&&item?.note&&!noteInp.value)noteInp.value=item.note;
-    },50);
+      if(item){
+        // Pre-fill task title with item name
+        const taskInp=document.getElementById('td-task');
+        if(taskInp&&!taskInp.value)taskInp.value=item.name;
+        // Select the item in the new picker
+        selectItemFromPicker(item.name,item.id,item.note||'');
+        // Pre-fill note
+        const noteInp=document.getElementById('td-note');
+        if(noteInp&&item.note&&!noteInp.value)noteInp.value=item.note;
+      }
+    },80);
   }
   else if(a==='note'){toggleItemNote(ctxTarget.itemId);}
 }
 function showPctx(e,phId){e.stopPropagation();pctxTarget=phId;const m=document.getElementById('pctx');m.style.cssText=`left:${Math.min(e.clientX,window.innerWidth-200)}px;top:${Math.min(e.clientY,window.innerHeight-170)}px;`;m.classList.add('on');}
-function pctxDo(a){document.getElementById('pctx').classList.remove('on');if(!pctxTarget)return;if(a==='delete'){if(confirm('Delete this phase?')){phases=phases.filter(p=>p.id!==pctxTarget);renderPhases();}}else if(a==='additem')showAddItemForm(pctxTarget);else if(a==='rename'){const ph=phases.find(p=>p.id===pctxTarget);const n=prompt('Rename phase:',ph.name);if(n?.trim()){ph.name=n.trim();renderPhases();}}else if(a==='complete'){const ph=phases.find(p=>p.id===pctxTarget);ph.status=ph.status==='complete'?'open':'complete';renderPhases();}}
+function pctxDo(a){document.getElementById('pctx').classList.remove('on');if(!pctxTarget)return;if(a==='delete'){ccConfirm('Delete this phase and all its items?',()=>{phases=phases.filter(p=>p.id!==pctxTarget);renderPhases();saveData();},'Delete',true);}else if(a==='additem')showAddItemForm(pctxTarget);else if(a==='rename'){const ph=phases.find(p=>p.id===pctxTarget);const n=prompt('Rename phase:',ph.name);if(n?.trim()){ph.name=n.trim();renderPhases();saveData();}}else if(a==='complete'){const ph=phases.find(p=>p.id===pctxTarget);ph.status=ph.status==='complete'?'open':'complete';renderPhases();saveData();}}
 function toggleExp(){const w=document.getElementById('exp-wrap');w.classList.toggle('collapsed');const ch=w.querySelector('.exp-chv');if(ch)ch.style.transform=w.classList.contains('collapsed')?'rotate(-90deg)':'';}
 function showAddExpenseForm(){
   const _jid=activeJobId;
-  if(!_jid){alert('Please open a job first.');return;}
+  if(!_jid){toast('Please open a job first','error');return;}
   const j=jobs.find(x=>x.id===_jid);
-  if(!j){alert('Job not found.');return;}
+  if(!j){toast('Job not found','error');return;}
   // Remove any existing expense modal
   document.getElementById('exp-modal')?.remove();
   const modal=document.createElement('div');
@@ -4922,11 +4944,11 @@ function saveExpense(jid){
   const qty=parseFloat((modal?.querySelector('#exp-qty')||document.getElementById('exp-qty'))?.value)||1;
   const date=(modal?.querySelector('#exp-date')||document.getElementById('exp-date'))?.value;
   const supplier=(modal?.querySelector('#exp-supplier')||document.getElementById('exp-supplier'))?.value.trim()||'';
-  if(!desc){alert('Please add a description.');return;}
-  if(cost<=0){alert('Please enter a cost.');return;}
+  if(!desc){toast('Please add a description','error');return;}
+  if(cost<=0){toast('Please enter a cost','error');return;}
   const sell=cost*(1+markup/100);
   const j=jobs.find(x=>x.id===_jid);
-  if(!j){alert('Job not found.');return;}
+  if(!j){toast('Job not found','error');return;}
   if(!j.expenses)j.expenses=[];
   j.expenses.push({id:'e'+Date.now(),desc,cost,markup,qty,date:date||new Date().toISOString().split('T')[0],sell,total:sell*qty,supplier,status:'draft'});
   logActivity(_jid,MY_PERSON,'expense_add',`Added expense <strong>${desc}</strong> — $${(sell*qty).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} sell`);
@@ -6192,7 +6214,7 @@ function buildCustomCol(b,col){
 
 function buildCustomCard(b,col,card){
   const dragAttrs=`draggable="true" ondragstart="cardDragStart(event,'${b.id}','${col.id}','${card.id}')" ondragend="cardDragEnd(event)"`;
-  const del=`<button class="bdet-card-del" title="Remove" onclick="event.stopPropagation();deleteCard('${b.id}','${col.id}','${card.id}')"><i class="ti ti-x"></i></button>`;
+  const del=`<button class="bdet-card-del" draggable="false" title="Remove" onclick="event.stopPropagation();deleteCard('${b.id}','${col.id}','${card.id}')"><i class="ti ti-x"></i></button>`;
   if(card.type==='job'){
     const j=jobs.find(x=>x.id===card.jobRef);if(!j)return'';
     computeJobStats(j);
@@ -6255,7 +6277,7 @@ function buildCustomCard(b,col,card){
       </div>`;
     }).join('')||`<div style="padding:4px 0 8px;font-size:11px;color:var(--muted);">No active jobs</div>`;
     return`<div class="client-card" id="ccard-${card.id}" data-card-id="${card.id}" ${dragAttrs}>
-      <button class="client-card-del bdet-card-del" style="opacity:0;" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0" title="Remove" onclick="event.stopPropagation();deleteCard('${b.id}','${col.id}','${card.id}')"><i class="ti ti-x"></i></button>
+      <button class="client-card-del bdet-card-del" draggable="false" style="opacity:0;" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0" title="Remove" onclick="event.stopPropagation();deleteCard('${b.id}','${col.id}','${card.id}')"><i class="ti ti-x"></i></button>
       <div class="client-card-head"><i class="ti ti-building" style="font-size:13px;color:var(--muted);"></i><span class="client-card-name">${card.clientRef}</span><span class="client-card-count">${clientJobs.length} active</span></div>
       <div style="padding:8px 10px 2px;">${jobRows}</div>
     </div>`;
@@ -6425,13 +6447,10 @@ function deleteCard(boardId,colId,cardId){
   const b=boardsList.find(x=>x.id===boardId);if(!b)return;
   const col=b.columns.find(c=>c.id===colId);if(!col)return;
   col.cards=col.cards.filter(c=>c.id!==cardId);saveBoardsData();
-  // Try specific ID first, then scan
-  const byId=document.getElementById('ncard-'+cardId)||document.getElementById('ccard-'+cardId);
-  if(byId){byId.remove();}else{
-    const wrap=document.getElementById('cards-'+colId);
-    if(wrap)wrap.querySelectorAll('.bdet-card,.client-card').forEach(el=>{
-      if(el.innerHTML.includes("'"+cardId+"'"))el.remove();
-    });
+  // Re-render the column cards area
+  const cardsEl=document.getElementById('cards-'+colId);
+  if(cardsEl){
+    cardsEl.innerHTML=(col.cards||[]).map(card=>buildCustomCard(b,col,card)).join('');
   }
   const colEl=document.getElementById('col-'+colId);
   if(colEl){const badge=colEl.querySelector('.bdet-col-count');if(badge)badge.textContent=col.cards.length;}
@@ -6559,8 +6578,7 @@ function saveNewBoard(){
   setTimeout(()=>openBoard(b.id),100);
 }
 function deleteBoard(id){
-  if(!confirm('Delete this board?'))return;
-  boardsList=boardsList.filter(b=>b.id!==id);saveBoardsData();renderBoardsList();
+  ccConfirm('Delete this board?',()=>{boardsList=boardsList.filter(b=>b.id!==id);saveBoardsData();renderBoardsList();},'Delete',true);
 }
 function showAddBoardItem(){openCreateBoard();}
 
