@@ -842,37 +842,96 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .board-card.over-b{border-left:3px solid var(--red);}
 .bc-name{font-weight:400;margin-bottom:3px;}
 .bc-client{font-size:11px;color:var(--muted);}
-/* Boards redesign */
+/* ── Boards landing ── */
 .boards-list-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
-.board-list-card{background:var(--white);border:1px solid var(--border);padding:20px 20px 16px;cursor:pointer;transition:border-color .15s;position:relative;}
-.board-list-card:hover{border-color:var(--ink);}
-.board-list-card .blc-type{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:5px;}
-.board-list-card .blc-name{font-family:var(--serif);font-size:18px;font-weight:400;margin-bottom:6px;}
+.board-list-card{background:var(--white);border:1px solid var(--border);padding:0;cursor:pointer;transition:border-color .15s,box-shadow .15s;position:relative;overflow:hidden;}
+.board-list-card:hover{border-color:var(--ink);box-shadow:0 4px 16px rgba(0,0,0,.07);}
+.blc-stripe{height:4px;width:100%;}
+.blc-body{padding:18px 18px 14px;}
+.board-list-card .blc-type{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:5px;}
+.board-list-card .blc-name{font-family:var(--serif);font-size:20px;font-weight:400;margin-bottom:8px;line-height:1.2;}
 .board-list-card .blc-count{font-size:12px;color:var(--muted);}
-.board-list-card .blc-del{position:absolute;top:10px;right:10px;background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;font-size:14px;opacity:0;transition:opacity .1s;}
+.board-list-card .blc-del{position:absolute;top:14px;right:12px;background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;font-size:14px;opacity:0;transition:opacity .1s;z-index:2;}
 .board-list-card:hover .blc-del{opacity:1;}
-.board-type-opt{flex:1;border:1px solid var(--border);padding:12px 10px;text-align:center;cursor:pointer;font-size:13px;transition:all .15s;}
-.board-type-opt i{font-size:20px;display:block;margin-bottom:6px;}
-.board-type-opt.on{border-color:var(--ink);background:var(--ink);color:#fff;}
-.board-type-opt.on div{color:#fff !important;}
-/* Board detail views */
-.bdet-cols{display:flex;gap:14px;overflow-x:auto;padding-bottom:14px;}
-.bdet-col{background:var(--off);border:1px solid var(--border);padding:12px;min-width:220px;flex:1;max-width:320px;display:flex;flex-direction:column;}
-.bdet-col-h{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
-.bdet-card{background:var(--white);border:1px solid var(--border);padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .15s;font-size:13px;}
-.bdet-card:hover{border-color:var(--ink);}
-.bdet-card .bc-name{font-weight:400;margin-bottom:3px;}
+/* ── Create board modal ── */
+.cb-overlay{position:fixed;inset:0;background:rgba(13,13,13,.6);backdrop-filter:blur(2px);z-index:900;display:none;align-items:center;justify-content:center;}
+.cb-overlay.on{display:flex;}
+.cb-modal{display:flex;background:var(--white);width:760px;max-width:96vw;max-height:90vh;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.22);}
+.cb-modal-left{width:280px;flex-shrink:0;background:var(--ink);color:#fff;padding:36px 28px;display:flex;flex-direction:column;}
+.cb-modal-eyebrow{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:10px;}
+.cb-modal-heading{font-family:var(--serif);font-size:26px;font-weight:400;line-height:1.2;margin-bottom:28px;color:#fff;}
+.cb-type-list{display:flex;flex-direction:column;gap:4px;margin-top:auto;}
+.cb-type-item{display:flex;align-items:flex-start;gap:12px;padding:12px;border:1px solid rgba(255,255,255,.12);cursor:pointer;transition:all .15s;border-radius:2px;}
+.cb-type-item:hover{background:rgba(255,255,255,.07);}
+.cb-type-item.on{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.5);}
+.cb-type-icon{font-size:18px;color:rgba(255,255,255,.7);flex-shrink:0;margin-top:1px;}
+.cb-type-item.on .cb-type-icon{color:#fff;}
+.cb-type-name{font-size:13px;font-weight:400;color:#fff;margin-bottom:3px;}
+.cb-type-desc{font-size:11px;color:rgba(255,255,255,.5);line-height:1.5;}
+.cb-type-item.on .cb-type-desc{color:rgba(255,255,255,.7);}
+.cb-modal-right{flex:1;padding:36px 32px;position:relative;display:flex;flex-direction:column;}
+.cb-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px;line-height:1;}
+.cb-close:hover{color:var(--ink);}
+.cb-form{margin-top:32px;flex:1;display:flex;flex-direction:column;}
+.cb-name-inp{font-family:var(--serif);font-size:22px;font-weight:400;border:none;border-bottom:2px solid var(--border);background:transparent;outline:none;padding:6px 0;border-radius:0;color:var(--ink);}
+.cb-name-inp:focus{border-bottom-color:var(--ink);}
+.cb-create-btn{margin-top:auto;background:var(--ink);color:#fff;border:none;padding:13px 24px;font-size:13px;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:8px;transition:opacity .15s;}
+.cb-create-btn:hover{opacity:.85;}
+/* ── Board detail ── */
+.bdet-cols{display:flex;gap:14px;overflow-x:auto;padding-bottom:24px;align-items:flex-start;}
+.bdet-col{background:var(--off);border:1px solid var(--border);padding:0;min-width:240px;width:240px;flex-shrink:0;display:flex;flex-direction:column;max-height:calc(100vh - 160px);}
+.bdet-col-h{display:flex;align-items:center;gap:6px;padding:10px 12px 10px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--off);}
+.bdet-col-name{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);font-weight:400;flex:1;cursor:text;padding:2px 0;border:none;background:transparent;outline:none;font-family:var(--font);}
+.bdet-col-name:focus{background:var(--white);padding:2px 4px;letter-spacing:0;text-transform:none;font-size:12px;}
+.bdet-col-count{font-size:10px;color:var(--muted);background:var(--border);padding:2px 7px;border-radius:10px;flex-shrink:0;}
+.bdet-col-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px;opacity:0;transition:opacity .1s;flex-shrink:0;}
+.bdet-col:hover .bdet-col-del{opacity:1;}
+.bdet-col-cards{flex:1;overflow-y:auto;padding:10px 10px 0;}
+.bdet-card{background:var(--white);border:1px solid var(--border);padding:12px 12px 10px;margin-bottom:8px;transition:border-color .15s,box-shadow .15s;font-size:13px;position:relative;}
+.bdet-card:hover{border-color:#bbb;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.bdet-card-del{position:absolute;top:6px;right:6px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 3px;opacity:0;transition:opacity .1s;line-height:1;}
+.bdet-card:hover .bdet-card-del{opacity:1;}
+.bdet-card .bc-name{font-weight:400;margin-bottom:3px;padding-right:18px;line-height:1.4;}
 .bdet-card .bc-client{font-size:11px;color:var(--muted);}
-/* People board */
-.pboard-lane{background:var(--off);border:1px solid var(--border);padding:18px;margin-bottom:14px;}
-.pboard-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
-.pboard-stats{display:flex;gap:24px;margin-bottom:14px;flex-wrap:wrap;}
-.pboard-stat{min-width:80px;}
-.pboard-stat .ps-val{font-size:20px;font-family:var(--serif);}
-.pboard-stat .ps-lbl{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-top:2px;}
-.pboard-note{border:none;background:transparent;width:100%;font-family:var(--font);font-size:12px;color:var(--ink);resize:none;outline:none;border-top:1px solid var(--border);padding-top:10px;margin-top:4px;}
-/* Note card in custom board */
-.note-card-inp{border:none;background:transparent;width:100%;font-family:var(--font);font-size:13px;color:var(--ink);resize:none;outline:none;min-height:60px;}
+.bdet-col-footer{padding:8px 10px 10px;flex-shrink:0;}
+.bdet-add-btn{display:flex;align-items:center;gap:6px;width:100%;border:1px dashed var(--border);background:none;padding:8px 10px;font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s;font-family:var(--font);}
+.bdet-add-btn:hover{background:var(--white);border-color:#bbb;color:var(--ink);}
+.bdet-add-col-btn{display:flex;align-items:center;gap:6px;border:1px dashed var(--border);background:var(--off);padding:10px 14px;font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s;font-family:var(--font);white-space:nowrap;align-self:flex-start;flex-shrink:0;margin-top:0;min-width:44px;}
+.bdet-add-col-btn:hover{background:var(--white);border-color:#bbb;color:var(--ink);}
+/* ── Add card menu ── */
+.add-card-menu{position:fixed;background:var(--white);border:1px solid var(--border);box-shadow:0 8px 28px rgba(0,0,0,.14);z-index:1050;min-width:160px;display:none;padding:4px 0;}
+.add-card-menu.on{display:block;}
+.add-card-opt{padding:9px 16px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:10px;color:var(--ink);}
+.add-card-opt:hover{background:var(--off);}
+.add-card-opt i{font-size:14px;color:var(--muted);}
+/* ── Client card (expanded) ── */
+.client-card{background:var(--white);border:1px solid var(--border);padding:0;margin-bottom:8px;position:relative;}
+.client-card-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border);cursor:default;}
+.client-card-name{font-size:13px;font-weight:400;flex:1;}
+.client-card-count{font-size:10px;color:var(--muted);}
+.client-card-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px;opacity:0;transition:opacity .1s;}
+.client-card:hover .client-card-del{opacity:1;}
+.client-job-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--faint,#f0eeea);cursor:pointer;transition:background .1s;}
+.client-job-row:last-child{border-bottom:none;}
+.client-job-row:hover{background:var(--off);}
+.client-job-name{font-size:12px;flex:1;}
+.client-job-bar{height:3px;background:var(--border);border-radius:2px;width:60px;flex-shrink:0;}
+.client-job-bar-fill{height:3px;border-radius:2px;}
+/* ── People board ── */
+.pboard-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;}
+.pboard-lane{background:var(--white);border:1px solid var(--border);padding:0;overflow:hidden;}
+.pboard-head{display:flex;align-items:center;gap:14px;padding:18px 18px 14px;border-bottom:1px solid var(--border);}
+.pboard-stats{display:flex;gap:0;border-bottom:1px solid var(--border);}
+.pboard-stat{flex:1;padding:14px 16px;border-right:1px solid var(--border);}
+.pboard-stat:last-child{border-right:none;}
+.pboard-stat .ps-val{font-size:22px;font-family:var(--serif);font-weight:400;}
+.pboard-stat .ps-lbl{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-top:3px;}
+.pboard-note{border:none;background:transparent;width:100%;font-family:var(--font);font-size:12px;color:var(--ink);resize:none;outline:none;padding:14px 18px;line-height:1.6;min-height:56px;}
+/* ── Card picker modal ── */
+.card-picker-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;transition:background .1s;font-size:13px;}
+.card-picker-item:hover{background:var(--off);}
+/* ── Note card in custom board ── */
+.note-card-inp{border:none;background:transparent;width:100%;font-family:var(--font);font-size:13px;color:var(--ink);resize:none;outline:none;min-height:64px;line-height:1.6;}
 
 /* CTX MENUS */
 .ctx,.pctx{position:fixed;background:var(--white);border:1px solid var(--border);border-radius:3px;box-shadow:0 4px 20px rgba(0,0,0,.1);z-index:500;min-width:195px;padding:4px 0;display:none;}
@@ -1364,21 +1423,59 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
         </div>
       </div>
       <!-- CREATE BOARD MODAL -->
-      <div class="modal-bg" id="create-board-modal" onclick="if(event.target===this)closeCreateBoard()">
-        <div class="modal-box" style="width:380px;">
-          <div class="modal-head"><span>New Board</span><button class="modal-x" onclick="closeCreateBoard()"><i class="ti ti-x"></i></button></div>
-          <div style="padding:20px;">
-            <div style="margin-bottom:14px;"><label class="form-label">Board name</label><input id="nb-name" class="form-inp" placeholder="e.g. Silver Fern Farms" style="width:100%;"></div>
-            <div style="margin-bottom:20px;"><label class="form-label">Type</label>
-              <div style="display:flex;gap:8px;margin-top:6px;">
-                <div class="board-type-opt on" onclick="selectBoardType('client',this)" data-type="client"><i class="ti ti-building"></i><div>Client</div><div style="font-size:10px;color:var(--muted);">Auto-pull jobs</div></div>
-                <div class="board-type-opt" onclick="selectBoardType('people',this)" data-type="people"><i class="ti ti-users"></i><div>People</div><div style="font-size:10px;color:var(--muted);">Team overview</div></div>
-                <div class="board-type-opt" onclick="selectBoardType('custom',this)" data-type="custom"><i class="ti ti-layout-kanban"></i><div>Custom</div><div style="font-size:10px;color:var(--muted);">Freeform board</div></div>
+      <!-- CREATE BOARD MODAL -->
+      <div class="cb-overlay" id="create-board-modal" onclick="if(event.target===this)closeCreateBoard()">
+        <div class="cb-modal">
+          <div class="cb-modal-left">
+            <div class="cb-modal-eyebrow">New board</div>
+            <div class="cb-modal-heading">What kind<br>of board?</div>
+            <div class="cb-type-list" id="cb-type-list">
+              <div class="cb-type-item on" onclick="selectBoardType('client',this)" data-type="client">
+                <div class="cb-type-icon"><i class="ti ti-building"></i></div>
+                <div class="cb-type-text"><div class="cb-type-name">Client board</div><div class="cb-type-desc">Auto-pulls all active jobs for a company. Updates as jobs are added.</div></div>
+              </div>
+              <div class="cb-type-item" onclick="selectBoardType('people',this)" data-type="people">
+                <div class="cb-type-icon"><i class="ti ti-users"></i></div>
+                <div class="cb-type-text"><div class="cb-type-name">People board</div><div class="cb-type-desc">One lane per team member with this-week stats and custom notes.</div></div>
+              </div>
+              <div class="cb-type-item" onclick="selectBoardType('custom',this)" data-type="custom">
+                <div class="cb-type-icon"><i class="ti ti-layout-kanban"></i></div>
+                <div class="cb-type-text"><div class="cb-type-name">Custom board</div><div class="cb-type-desc">Freeform kanban. Add note cards, jobs, clients, or people to any column.</div></div>
               </div>
             </div>
-            <div id="nb-client-row" style="margin-bottom:14px;"><label class="form-label">Client / Company</label><select id="nb-client" class="filter-btn" style="width:100%;font-size:13px;"></select></div>
-            <button class="d-action primary" onclick="saveNewBoard()" style="width:100%;justify-content:center;padding:10px;">Create Board</button>
           </div>
+          <div class="cb-modal-right">
+            <button class="cb-close" onclick="closeCreateBoard()"><i class="ti ti-x"></i></button>
+            <div class="cb-form">
+              <label class="form-label">Board name</label>
+              <input id="nb-name" class="form-inp cb-name-inp" placeholder="e.g. Silver Fern Farms" style="width:100%;margin-bottom:20px;">
+              <div id="nb-client-row">
+                <label class="form-label">Client / Company</label>
+                <select id="nb-client" class="form-inp" style="width:100%;margin-bottom:20px;"></select>
+              </div>
+              <div id="nb-custom-desc" style="display:none;padding:12px;background:var(--off);border:1px solid var(--border);margin-bottom:20px;font-size:12px;color:var(--muted);line-height:1.6;">
+                You'll get 3 starter columns: <strong>To Do</strong>, <strong>In Progress</strong>, <strong>Done</strong>. You can rename, add, and remove columns after creating.
+              </div>
+              <button class="cb-create-btn" onclick="saveNewBoard()">
+                <i class="ti ti-plus" style="font-size:13px;"></i> Create board
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- ADD CARD PICKER (positioned by JS) -->
+      <div class="add-card-menu" id="add-card-menu">
+        <div class="add-card-opt" onclick="addCardFromMenu('note')"><i class="ti ti-note"></i> Note</div>
+        <div class="add-card-opt" onclick="addCardFromMenu('job')"><i class="ti ti-briefcase"></i> Job</div>
+        <div class="add-card-opt" onclick="addCardFromMenu('client')"><i class="ti ti-building"></i> Client</div>
+        <div class="add-card-opt" onclick="addCardFromMenu('person')"><i class="ti ti-user"></i> Person</div>
+      </div>
+      <!-- CARD PICKER MODALS (shared) -->
+      <div class="cb-overlay" id="card-picker-modal" onclick="if(event.target===this)closeCardPicker()" style="z-index:1100;">
+        <div class="modal-box" style="width:340px;">
+          <div class="modal-head"><span id="card-picker-title">Pick a job</span><button class="modal-x" onclick="closeCardPicker()"><i class="ti ti-x"></i></button></div>
+          <div style="padding:12px 16px 4px;"><input id="card-picker-search" class="form-inp" placeholder="Search…" style="width:100%;" oninput="filterCardPicker(this.value)"></div>
+          <div id="card-picker-list" style="max-height:300px;overflow-y:auto;padding:8px 0;"></div>
         </div>
       </div>
 
@@ -3034,6 +3131,7 @@ function saveBoardsData(){localStorage.setItem('cc_boards',JSON.stringify(boards
 function initBoardsData(){boardsData={briefed:[],inprogress:[],review:[],approved:[],complete:[]};}
 function renderBoards(){renderBoardsList();}
 
+// ── Board list ──────────────────────────────────────────────────────────────
 function renderBoardsList(){
   const landing=document.getElementById('boards-landing');
   const det=document.getElementById('board-detail');
@@ -3041,8 +3139,9 @@ function renderBoardsList(){
   if(det)det.style.display='none';
   const grid=document.getElementById('boards-list-grid');
   if(!grid)return;
+  const stripeColor={client:'var(--red)',people:'#6B7FA3',custom:'#7B9E87'};
   if(boardsList.length===0){
-    grid.innerHTML='<div style="color:var(--muted);font-size:13px;padding:40px 0;">No boards yet. Create your first board to get started.</div>';
+    grid.innerHTML='<div style="color:var(--muted);font-size:13px;padding:40px 0;grid-column:1/-1;">No boards yet — hit <strong>New board</strong> to create your first one.</div>';
     return;
   }
   grid.className='boards-list-grid';
@@ -3051,13 +3150,17 @@ function renderBoardsList(){
     const typeLabels={client:'Client board',people:'People board',custom:'Custom board'};
     let count='';
     if(b.type==='client'){const n=jobs.filter(j=>j.company===b.clientFilter&&j.status!=='complete').length;count=`${n} active job${n!==1?'s':''}`;}
-    else if(b.type==='people'){const n=Object.keys(b.notes||{}).length||Object.keys(people).length;count=`${n} team member${n!==1?'s':''}`;}
+    else if(b.type==='people'){const n=Object.keys(people).length;count=`${n} team member${n!==1?'s':''}`;}
     else{const n=(b.columns||[]).reduce((s,c)=>s+(c.cards||[]).length,0);count=`${n} card${n!==1?'s':''}`;}
+    const stripe=stripeColor[b.type]||'var(--muted)';
     return`<div class="board-list-card" onclick="openBoard('${b.id}')">
       <button class="blc-del" onclick="event.stopPropagation();deleteBoard('${b.id}')"><i class="ti ti-trash"></i></button>
-      <div class="blc-type"><i class="ti ${typeIcons[b.type]||'ti-layout-kanban'}"></i>${typeLabels[b.type]||b.type}</div>
-      <div class="blc-name">${b.name}</div>
-      <div class="blc-count">${count}</div>
+      <div class="blc-stripe" style="background:${stripe};"></div>
+      <div class="blc-body">
+        <div class="blc-type"><i class="ti ${typeIcons[b.type]||'ti-layout-kanban'}"></i>${typeLabels[b.type]||b.type}</div>
+        <div class="blc-name">${b.name}</div>
+        <div class="blc-count">${count}</div>
+      </div>
     </div>`;
   }).join('');
 }
@@ -3065,10 +3168,8 @@ function renderBoardsList(){
 function openBoard(id){
   activeBoardId=id;
   const b=boardsList.find(x=>x.id===id);if(!b)return;
-  const landing=document.getElementById('boards-landing');
-  const det=document.getElementById('board-detail');
-  if(landing)landing.style.display='none';
-  if(det)det.style.display='flex';
+  document.getElementById('boards-landing').style.display='none';
+  const det=document.getElementById('board-detail');det.style.display='flex';
   document.getElementById('bd-title').textContent=b.name;
   const typeLabels={client:'Client',people:'People',custom:'Custom'};
   document.getElementById('bd-type-badge').textContent=typeLabels[b.type]||b.type;
@@ -3077,9 +3178,9 @@ function openBoard(id){
   else if(b.type==='people')renderPeopleBoard(b,body);
   else renderCustomBoard(b,body);
 }
-
 function closeBoardDetail(){activeBoardId=null;renderBoardsList();}
 
+// ── Client board ────────────────────────────────────────────────────────────
 function renderClientBoard(b,body){
   const boardJobs=jobs.filter(j=>j.company===b.clientFilter);
   const COLS={briefed:'Briefed',inprogress:'In Progress',review:'In Review',approved:'Approved',complete:'Complete'};
@@ -3087,86 +3188,232 @@ function renderClientBoard(b,body){
   const buckets={};colKeys.forEach(k=>buckets[k]=[]);
   boardJobs.forEach(j=>{
     let k='inprogress';
-    if(j.status='new')k='briefed';
+    if(j.status==='new')k='briefed';
     else if(j.status==='complete')k='complete';
     buckets[k].push(j);
   });
-  body.innerHTML=`<div class="bdet-cols">${colKeys.map(k=>`
-    <div class="bdet-col">
-      <div class="bdet-col-h"><span>${COLS[k]}</span><span class="col-count">${buckets[k].length}</span></div>
-      ${buckets[k].map(j=>{
-        const pct=j.bPct||0;const over=pct>100;
-        return`<div class="bdet-card"${over?' style="border-left:3px solid var(--red);"':''}  onclick="openJobDetail('${j.id}')">
-          <div class="bc-name">${j.name}</div>
-          <div class="bc-client">${j.id} · ${j.company}</div>
-          <div style="margin-top:8px;height:3px;background:var(--border);border-radius:2px;"><div style="height:3px;background:${over?'var(--red)':'var(--ink)'};border-radius:2px;width:${Math.min(pct,100)}%;"></div></div>
-          <div style="font-size:10px;color:${over?'var(--red)':'var(--muted)'};margin-top:3px;">${j.hours||'0h'} / ${j.hoursTotal||'—'} · ${pct}%</div>
-        </div>`;
-      }).join('')}
-    </div>`).join('')}</div>`;
+  const colsHTML=colKeys.map(k=>{
+    const cards=buckets[k].map(j=>{
+      const pct=j.bPct||0;const over=pct>100;
+      return`<div class="bdet-card" style="${over?'border-left:3px solid var(--red);':''}" onclick="openJobDetail('${j.id}')">
+        <div class="bc-name">${j.name}</div>
+        <div class="bc-client">${j.id} · ${j.company}</div>
+        <div style="margin-top:8px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;"><div style="height:3px;background:${over?'var(--red)':'var(--ink)'};width:${Math.min(pct,100)}%;"></div></div>
+        <div style="font-size:10px;color:${over?'var(--red)':'var(--muted)'};margin-top:3px;">${j.hours||'0h'} / ${j.hoursTotal||'—'} · ${pct}%</div>
+      </div>`;
+    }).join('');
+    return`<div class="bdet-col">
+      <div class="bdet-col-h"><span class="bdet-col-name" style="cursor:default;">${COLS[k]}</span><span class="bdet-col-count">${buckets[k].length}</span></div>
+      <div class="bdet-col-cards">${cards||'<div style="font-size:11px;color:var(--muted);padding:8px 2px;">No jobs here</div>'}</div>
+    </div>`;
+  }).join('');
+  body.innerHTML=`<div class="bdet-cols">${colsHTML}</div>`;
 }
 
+// ── People board ────────────────────────────────────────────────────────────
 function renderPeopleBoard(b,body){
   if(!b.notes)b.notes={};
-  const rows=Object.keys(people).map(key=>{
+  const lanes=Object.keys(people).map(key=>{
     const p=people[key];
     const wd=getWeekData(key,0);
-    let totalH=0,doneH=0,todoCount=0,doneCount=0;
-    [1,2,3,4,5].forEach(d=>{
-      (wd[d]||[]).forEach(t=>{
-        const h=parseHrsInput(t.hours||'0')||0;totalH+=h;
-        if(t.done){doneH+=h;doneCount++;}else todoCount++;
-      });
-    });
-    const allTasks=Object.keys(wd).flatMap(d=>(wd[d]||[]));
-    const billH=allTasks.filter(t=>t.done&&taskIsBillable(t)).reduce((s,t)=>s+(parseHrsInput(t.hours||'0')||0),0);
+    let totalH=0,doneH=0,todoLeft=0;
+    [1,2,3,4,5].forEach(d=>(wd[d]||[]).forEach(t=>{
+      const h=parseHrsInput(t.hours||'0')||0;totalH+=h;
+      if(t.done)doneH+=h;else todoLeft++;
+    }));
+    const allDone=[1,2,3,4,5].flatMap(d=>(wd[d]||[]).filter(t=>t.done));
+    const billH=allDone.filter(t=>taskIsBillable(t)).reduce((s,t)=>s+(parseHrsInput(t.hours||'0')||0),0);
     const billPct=doneH>0?Math.round(billH/doneH*100):0;
     const note=b.notes[key]||'';
     return`<div class="pboard-lane">
       <div class="pboard-head">
-        <div style="width:42px;height:42px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:#fff;">${p.initials}</div>
-        <div><div style="font-size:15px;">${p.name}</div><div style="font-size:11px;color:var(--muted);">${p.role||'Team member'}</div></div>
-        <button class="d-action" style="margin-left:auto;" onclick="navTo('todo')">View week</button>
+        <div style="width:44px;height:44px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:#fff;flex-shrink:0;">${p.initials}</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:15px;line-height:1.3;">${p.name}</div><div style="font-size:11px;color:var(--muted);">${p.role||'Team member'}</div></div>
+        <button class="d-action" style="flex-shrink:0;" onclick="currentPerson='${key}';navTo('todo')">Week view</button>
       </div>
       <div class="pboard-stats">
         <div class="pboard-stat"><div class="ps-val">${totalH}h</div><div class="ps-lbl">Planned</div></div>
         <div class="pboard-stat"><div class="ps-val">${doneH}h</div><div class="ps-lbl">Done</div></div>
-        <div class="pboard-stat"><div class="ps-val">${todoCount}</div><div class="ps-lbl">Tasks left</div></div>
+        <div class="pboard-stat"><div class="ps-val">${todoLeft}</div><div class="ps-lbl">Remaining</div></div>
         <div class="pboard-stat"><div class="ps-val">${billPct}%</div><div class="ps-lbl">Billable</div></div>
       </div>
-      <textarea class="pboard-note" rows="2" placeholder="Notes about ${p.name}…" onchange="savePboardNote('${b.id}','${key}',this.value)">${note}</textarea>
+      <textarea class="pboard-note" rows="2" placeholder="Notes about ${p.name}..." onchange="savePboardNote('${b.id}','${key}',this.value)">${note}</textarea>
     </div>`;
   }).join('');
-  body.innerHTML=rows;
+  body.innerHTML=`<div class="pboard-grid">${lanes}</div>`;
 }
-
 function savePboardNote(boardId,personKey,val){
   const b=boardsList.find(x=>x.id===boardId);if(!b)return;
   if(!b.notes)b.notes={};
   b.notes[personKey]=val;saveBoardsData();
 }
 
+// ── Custom board ────────────────────────────────────────────────────────────
 function renderCustomBoard(b,body){
   if(!b.columns||b.columns.length===0)b.columns=[{id:'c1',name:'To Do',cards:[]},{id:'c2',name:'In Progress',cards:[]},{id:'c3',name:'Done',cards:[]}];
-  const cols=b.columns.map(col=>{
-    const cards=(col.cards||[]).map(card=>{
-      if(card.type==='job'){const j=jobs.find(x=>x.id===card.jobRef);if(!j)return'';
-        return`<div class="bdet-card" onclick="openJobDetail('${j.id}')"><div class="bc-name">${j.name}</div><div class="bc-client">${j.company} · ${j.id}</div></div>`;}
-      else if(card.type==='person'){const p=people[card.personRef];if(!p)return'';
-        return`<div class="bdet-card" style="display:flex;align-items:center;gap:10px;"><div style="width:32px;height:32px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;flex-shrink:0;">${p.initials}</div><div><div class="bc-name">${p.name}</div><div class="bc-client">${p.role||'Team'}</div></div></div>`;}
-      else{return`<div class="bdet-card"><textarea class="note-card-inp" onchange="saveCustomCardNote('${b.id}','${col.id}','${card.id}',this.value)">${card.note||''}</textarea></div>`;}
-    }).join('');
-    return`<div class="bdet-col"><div class="bdet-col-h"><span>${col.name}</span><span class="col-count">${(col.cards||[]).length}</span></div>${cards}<button class="d-action" style="width:100%;justify-content:center;margin-top:4px;font-size:11px;" onclick="addCustomNote('${b.id}','${col.id}')"><i class="ti ti-plus" style="font-size:11px;"></i> Note</button></div>`;
-  }).join('');
-  body.innerHTML=`<div class="bdet-cols">${cols}</div>`;
+  const colsHTML=b.columns.map(col=>buildCustomCol(b,col)).join('');
+  body.innerHTML=`<div class="bdet-cols" id="bdet-cols-${b.id}">${colsHTML}<button class="bdet-add-col-btn" onclick="addColumn('${b.id}')"><i class="ti ti-plus" style="font-size:12px;"></i> Add column</button></div>`;
 }
 
-function addCustomNote(boardId,colId){
+function buildCustomCol(b,col){
+  const cardsHTML=(col.cards||[]).map(card=>buildCustomCard(b,col,card)).join('');
+  return`<div class="bdet-col" id="col-${col.id}">
+    <div class="bdet-col-h">
+      <input class="bdet-col-name" value="${col.name}" onchange="renameCol('${b.id}','${col.id}',this.value)" title="Click to rename">
+      <span class="bdet-col-count">${(col.cards||[]).length}</span>
+      <button class="bdet-col-del" title="Delete column" onclick="deleteCol('${b.id}','${col.id}')"><i class="ti ti-trash"></i></button>
+    </div>
+    <div class="bdet-col-cards" id="cards-${col.id}">${cardsHTML}</div>
+    <div class="bdet-col-footer">
+      <button class="bdet-add-btn" onclick="showAddCardMenu('${b.id}','${col.id}',this)"><i class="ti ti-plus" style="font-size:11px;"></i> Add card</button>
+    </div>
+  </div>`;
+}
+
+function buildCustomCard(b,col,card){
+  const del=`<button class="bdet-card-del" title="Remove" onclick="deleteCard('${b.id}','${col.id}','${card.id}')"><i class="ti ti-x"></i></button>`;
+  if(card.type==='job'){
+    const j=jobs.find(x=>x.id===card.jobRef);if(!j)return'';
+    const pct=j.bPct||0;const over=pct>100;
+    return`<div class="bdet-card" style="${over?'border-left:3px solid var(--red);':''}" onclick="openJobDetail('${j.id}')">${del}
+      <div class="bc-name">${j.name}</div>
+      <div class="bc-client">${j.company} · ${j.id}</div>
+      <div style="margin-top:8px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;"><div style="height:3px;background:${over?'var(--red)':'var(--ink)'};width:${Math.min(pct,100)}%;"></div></div>
+    </div>`;
+  }
+  if(card.type==='person'){
+    const p=people[card.personRef];if(!p)return'';
+    return`<div class="bdet-card" style="display:flex;align-items:center;gap:10px;">${del}
+      <div style="width:34px;height:34px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;flex-shrink:0;">${p.initials}</div>
+      <div><div class="bc-name">${p.name}</div><div class="bc-client">${p.role||'Team'}</div></div>
+    </div>`;
+  }
+  if(card.type==='client'){
+    const clientJobs=jobs.filter(j=>j.company===card.clientRef&&j.status!=='complete');
+    const jobRows=clientJobs.map(j=>{
+      const pct=j.bPct||0;const over=pct>100;
+      return`<div class="client-job-row" onclick="openJobDetail('${j.id}')">
+        <div class="client-job-name">${j.name}<span style="color:var(--muted);margin-left:5px;font-size:10px;">${j.id}</span></div>
+        <div class="client-job-bar"><div class="client-job-bar-fill" style="width:${Math.min(pct,100)}%;background:${over?'var(--red)':'var(--ink)'};" title="${pct}%"></div></div>
+      </div>`;
+    }).join('')||`<div style="padding:8px 12px;font-size:11px;color:var(--muted);">No active jobs</div>`;
+    return`<div class="client-card" id="ccard-${card.id}">
+      <button class="client-card-del bdet-card-del" style="opacity:0;" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0" title="Remove" onclick="deleteCard('${b.id}','${col.id}','${card.id}')"><i class="ti ti-x"></i></button>
+      <div class="client-card-head"><i class="ti ti-building" style="font-size:13px;color:var(--muted);"></i><span class="client-card-name">${card.clientRef}</span><span class="client-card-count">${clientJobs.length} active</span></div>
+      ${jobRows}
+    </div>`;
+  }
+  // note card (default)
+  return`<div class="bdet-card" style="padding:10px 12px;" id="ncard-${card.id}">${del}
+    <textarea class="note-card-inp" placeholder="Write a note..." onchange="saveCustomCardNote('${b.id}','${col.id}','${card.id}',this.value)">${card.note||''}</textarea>
+  </div>`;
+}
+
+// ── Add card actions ────────────────────────────────────────────────────────
+let _addCardBoard=null,_addCardCol=null;
+
+function showAddCardMenu(boardId,colId,btn){
+  _addCardBoard=boardId;_addCardCol=colId;
+  const menu=document.getElementById('add-card-menu');
+  const rect=btn.getBoundingClientRect();
+  menu.style.top=(rect.bottom+4)+'px';
+  menu.style.left=rect.left+'px';
+  menu.classList.add('on');
+  setTimeout(()=>document.addEventListener('click',_closeCardMenuOnce,{once:true}),10);
+}
+function _closeCardMenuOnce(){document.getElementById('add-card-menu').classList.remove('on');}
+
+function addCardFromMenu(type){
+  document.getElementById('add-card-menu').classList.remove('on');
+  if(!_addCardBoard||!_addCardCol)return;
+  if(type==='note'){
+    _doAddCard({id:'nc'+Date.now(),type:'note',note:''});
+  }else if(type==='job'){
+    _openCardPicker('job','Pick a job',jobs.map(j=>({id:j.id,label:j.name,sub:j.company,data:j.id})));
+  }else if(type==='client'){
+    const clients=[...new Set(jobs.map(j=>j.company))];
+    _openCardPicker('client','Pick a client',clients.map(c=>({id:c,label:c,sub:jobs.filter(j=>j.company===c&&j.status!=='complete').length+' active jobs',data:c})));
+  }else if(type==='person'){
+    _openCardPicker('person','Pick a person',Object.keys(people).map(k=>({id:k,label:people[k].name,sub:people[k].role||'Team',data:k,color:people[k].color,initials:people[k].initials})));
+  }
+}
+
+let _pickerType=null,_pickerItems=[];
+function _openCardPicker(type,title,items){
+  _pickerType=type;_pickerItems=items;
+  document.getElementById('card-picker-title').textContent=title;
+  document.getElementById('card-picker-search').value='';
+  _renderPickerItems('');
+  document.getElementById('card-picker-modal').classList.add('on');
+  setTimeout(()=>document.getElementById('card-picker-search').focus(),50);
+}
+function closeCardPicker(){document.getElementById('card-picker-modal').classList.remove('on');}
+function filterCardPicker(q){_renderPickerItems(q);}
+function _renderPickerItems(q){
+  const list=document.getElementById('card-picker-list');
+  const filtered=_pickerItems.filter(i=>!q||i.label.toLowerCase().includes(q.toLowerCase())||(i.sub||'').toLowerCase().includes(q.toLowerCase()));
+  list.innerHTML=filtered.map(i=>{
+    const av=i.color?`<div style="width:28px;height:28px;border-radius:50%;background:${i.color};display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;flex-shrink:0;">${i.initials||''}</div>`:'';
+    const safeData=i.data.replace(/'/g,"\\'");
+    return`<div class="card-picker-item" onclick="selectPickerItem('${safeData}')">
+      ${av}<div><div style="font-size:13px;">${i.label}</div><div style="font-size:11px;color:var(--muted);">${i.sub||''}</div></div>
+    </div>`;
+  }).join('')||'<div style="padding:12px 16px;font-size:12px;color:var(--muted);">No results</div>';
+}
+function selectPickerItem(data){
+  closeCardPicker();
+  const cardMap={job:{type:'job',jobRef:data},client:{type:'client',clientRef:data},person:{type:'person',personRef:data}};
+  const card={id:'card'+Date.now(),...(cardMap[_pickerType]||{type:'note',note:''})};
+  _doAddCard(card);
+}
+function _doAddCard(card){
+  const b=boardsList.find(x=>x.id===_addCardBoard);if(!b)return;
+  const col=b.columns.find(c=>c.id===_addCardCol);if(!col)return;
+  if(!col.cards)col.cards=[];
+  col.cards.push(card);saveBoardsData();
+  const cardsEl=document.getElementById('cards-'+_addCardCol);
+  if(cardsEl){cardsEl.insertAdjacentHTML('beforeend',buildCustomCard(b,col,card));}
+  const colEl=document.getElementById('col-'+_addCardCol);
+  if(colEl){const badge=colEl.querySelector('.bdet-col-count');if(badge)badge.textContent=col.cards.length;}
+}
+
+function renameCol(boardId,colId,name){
+  const b=boardsList.find(x=>x.id===boardId);if(!b)return;
+  const col=b.columns.find(c=>c.id===colId);if(col){col.name=name;saveBoardsData();}
+}
+function deleteCol(boardId,colId){
+  const b=boardsList.find(x=>x.id===boardId);if(!b)return;
+  if((b.columns.find(c=>c.id===colId)?.cards||[]).length>0&&!confirm('Delete this column and all its cards?'))return;
+  b.columns=b.columns.filter(c=>c.id!==colId);saveBoardsData();
+  const el=document.getElementById('col-'+colId);if(el)el.remove();
+}
+function addColumn(boardId){
+  const b=boardsList.find(x=>x.id===boardId);if(!b)return;
+  const col={id:'c'+Date.now(),name:'New column',cards:[]};
+  b.columns.push(col);saveBoardsData();
+  const wrap=document.getElementById('bdet-cols-'+boardId);
+  if(wrap){
+    const addBtn=wrap.querySelector('.bdet-add-col-btn');
+    const tmp=document.createElement('div');tmp.innerHTML=buildCustomCol(b,col);
+    wrap.insertBefore(tmp.firstElementChild,addBtn);
+    const inp=document.getElementById('col-'+col.id)?.querySelector('.bdet-col-name');
+    if(inp){inp.focus();inp.select();}
+  }
+}
+function deleteCard(boardId,colId,cardId){
   const b=boardsList.find(x=>x.id===boardId);if(!b)return;
   const col=b.columns.find(c=>c.id===colId);if(!col)return;
-  if(!col.cards)col.cards=[];
-  col.cards.push({id:'nc'+Date.now(),type:'note',note:''});
-  saveBoardsData();openBoard(boardId);
+  col.cards=col.cards.filter(c=>c.id!==cardId);saveBoardsData();
+  // Try specific ID first, then scan
+  const byId=document.getElementById('ncard-'+cardId)||document.getElementById('ccard-'+cardId);
+  if(byId){byId.remove();}else{
+    const wrap=document.getElementById('cards-'+colId);
+    if(wrap)wrap.querySelectorAll('.bdet-card,.client-card').forEach(el=>{
+      if(el.innerHTML.includes("'"+cardId+"'"))el.remove();
+    });
+  }
+  const colEl=document.getElementById('col-'+colId);
+  if(colEl){const badge=colEl.querySelector('.bdet-col-count');if(badge)badge.textContent=col.cards.length;}
 }
 function saveCustomCardNote(boardId,colId,cardId,val){
   const b=boardsList.find(x=>x.id===boardId);if(!b)return;
@@ -3174,23 +3421,27 @@ function saveCustomCardNote(boardId,colId,cardId,val){
   const card=(col.cards||[]).find(c=>c.id===cardId);if(!card)return;
   card.note=val;saveBoardsData();
 }
+
+// ── Create board modal ──────────────────────────────────────────────────────
 function openCreateBoard(){
   const sel=document.getElementById('nb-client');
   const clients=[...new Set(jobs.map(j=>j.company))];
   sel.innerHTML=clients.map(c=>`<option value="${c}">${c}</option>`).join('');
   document.getElementById('nb-name').value='';
   newBoardType='client';
-  document.querySelectorAll('.board-type-opt').forEach(el=>el.classList.toggle('on',el.dataset.type==='client'));
+  document.querySelectorAll('.cb-type-item').forEach(el=>el.classList.toggle('on',el.dataset.type==='client'));
   document.getElementById('nb-client-row').style.display='';
+  if(document.getElementById('nb-custom-desc'))document.getElementById('nb-custom-desc').style.display='none';
   document.getElementById('create-board-modal').classList.add('on');
   setTimeout(()=>document.getElementById('nb-name').focus(),50);
 }
 function closeCreateBoard(){document.getElementById('create-board-modal').classList.remove('on');}
 function selectBoardType(type,el){
   newBoardType=type;
-  document.querySelectorAll('.board-type-opt').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.cb-type-item').forEach(x=>x.classList.remove('on'));
   el.classList.add('on');
   document.getElementById('nb-client-row').style.display=type==='client'?'':'none';
+  if(document.getElementById('nb-custom-desc'))document.getElementById('nb-custom-desc').style.display=type==='custom'?'':'none';
 }
 function saveNewBoard(){
   const name=document.getElementById('nb-name').value.trim();if(!name)return;
@@ -3199,13 +3450,14 @@ function saveNewBoard(){
   if(newBoardType==='custom')b.columns=[{id:'c1',name:'To Do',cards:[]},{id:'c2',name:'In Progress',cards:[]},{id:'c3',name:'Done',cards:[]}];
   if(newBoardType==='people')b.notes={};
   boardsList.push(b);saveBoardsData();closeCreateBoard();renderBoardsList();
-  setTimeout(()=>openBoard(b.id),50);
+  setTimeout(()=>openBoard(b.id),100);
 }
 function deleteBoard(id){
   if(!confirm('Delete this board?'))return;
   boardsList=boardsList.filter(b=>b.id!==id);saveBoardsData();renderBoardsList();
 }
 function showAddBoardItem(){openCreateBoard();}
+
 
 // navTo is fully defined above — no override needed here
 
