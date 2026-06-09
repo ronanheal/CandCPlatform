@@ -215,151 +215,8 @@ function initBoardsData(){
   BOARD_COLUMNS.forEach(col=>{if(!boardsData[col])boardsData[col]=[];});
 }
 
-function renderBoards(){
-  const clientFilter=document.getElementById('b-client-filter').value;
-  const columnFilter=document.getElementById('b-column-filter').value;
-  const container=document.getElementById('boards-cols');
-  container.innerHTML='';
-  
-  // Update client filter
-  const clients=[...new Set(jobs.map(j=>j.company))];
-  const clientSel=document.getElementById('b-client-filter');
-  const currentClient=clientSel.value;
-  clientSel.innerHTML='<option value="all">All Clients</option>';
-  clients.forEach(c=>{
-    const o=document.createElement('option');o.value=c;o.textContent=c;
-    if(c===currentClient)o.selected=true;
-    clientSel.appendChild(o);
-  });
-  
-  BOARD_COLUMNS.forEach(status=>{
-    if(columnFilter!=='all'&&columnFilter!==status)return;
-    const col=document.createElement('div');
-    col.className='board-col';
-    col.dataset.status=status;
-    
-    const items=(boardsData[status]||[]).filter(item=>{
-      if(clientFilter!=='all')return item.client===clientFilter;
-      return true;
-    });
-    
-    col.innerHTML=`<div class="board-col-h"><span>${COLUMN_LABELS[status]}</span><span class="col-count">${items.length}</span></div>`;
-    
-    items.forEach(item=>{
-      const card=document.createElement('div');
-      card.className='board-card'+(item.overBudget?' over-b':'');
-      card.draggable=true;
-      card.dataset.jobId=item.jobId;
-      
-      const lead=people[item.lead];
-      let tagsHTML='';
-      if(item.tags.length){
-        tagsHTML='<div class="bc-meta">';
-        item.tags.forEach(tag=>{
-          tagsHTML+=`<span class="bc-tag">${tag}</span>`;
-        });
-        if(item.overBudget)tagsHTML+='<span class="bc-tag budget-over">Over Budget</span>';
-        tagsHTML+='</div>';
-      }
-      
-      card.innerHTML=`<div class="bc-name">${item.title}</div><div class="bc-client">${item.client}${item.jobId?' · '+item.jobId:''}</div>${item.overBudget?'<div class="bc-client" style="color:var(--red);">'+item.hoursUsed+' / '+item.hoursTotal+' (Budget '+item.budgetPct+'%)</div>':'<div class="bc-client">'+item.hoursUsed+' / '+item.hoursTotal+'</div>'}${tagsHTML}<div class="bc-lead"><div class="bc-lead-avatar" style="background:${lead?lead.color:'#999'};">${lead?lead.initials:'?'}</div><span>${lead?lead.name:item.lead}</span></div>`;
-      
-      // Click to open job detail
-      card.addEventListener('click',()=>{
-        openJobDetail(item.jobId);
-      });
-      
-      // Drag events
-      card.addEventListener('dragstart',e=>{
-        e.dataTransfer.setData('text/plain',JSON.stringify({
-          jobId:item.jobId,
-          fromStatus:status
-        }));
-        e.dataTransfer.effectAllowed='move';
-        card.classList.add('dragging-b');
-      });
-      
-      card.addEventListener('dragend',()=>{
-        card.classList.remove('dragging-b');
-      });
-      
-      col.appendChild(card);
-    });
-    
-    // Drop zone
-    col.addEventListener('dragover',e=>{
-      e.preventDefault();
-      e.dataTransfer.dropEffect='move';
-      col.style.borderColor='#ED1E24';
-    });
-    
-    col.addEventListener('dragleave',e=>{
-      col.style.borderColor='';
-    });
-    
-    col.addEventListener('drop',e=>{
-      e.preventDefault();
-      col.style.borderColor='';
-      try{
-        const data=JSON.parse(e.dataTransfer.getData('text/plain'));
-        const{jobId,fromStatus}=data;
-        
-        // Find and move the item
-        const fromItems=(boardsData[fromStatus]||[]).filter(i=>i.jobId===jobId);
-        if(fromItems.length===0)return;
-        
-        const item=fromItems[0];
-        
-        // Remove from source
-        boardsData[fromStatus]=boardsData[fromStatus].filter(i=>i.jobId!==jobId);
-        
-        // Add to destination
-        if(!boardsData[status])boardsData[status]=[];
-        boardsData[status].push(item);
-        
-        // Update job status if applicable
-        const job=jobs.find(j=>j.id===jobId);
-        if(job){
-          if(status==='briefed')job.status='new';
-          else if(status==='complete')job.status='complete';
-          else job.status='inplay';
-        }
-        
-        renderBoards();
-        saveData();
-      }catch(err){
-        console.error('Board drop error:',err);
-      }
-    });
-    
-    container.appendChild(col);
-  });
-  
-  saveData();
-}
-
-function showAddBoardItem(){
-  const title=prompt('Item name:');
-  if(!title)return;
-  const client=prompt('Client:','Silver Fern Farms');
-  const jobId=prompt('Job ID (optional):','');
-  const lead=prompt('Lead person (ro=Ronan, bee=Bianca, jb=JB):','ro');
-  
-  const newItem={
-    jobId:jobId||'custom_'+Date.now(),
-    title:title,
-    client:client||'Internal',
-    overBudget:false,
-    budgetPct:0,
-    hoursUsed:'0h',
-    hoursTotal:'—',
-    lead:lead||'ro',
-    tags:[]
-  };
-  
-  boardsData.briefed.push(newItem);
-  renderBoards();
-}
+function renderBoards(){/* overridden by main script */if(typeof renderBoardsList==='function')renderBoardsList();}
+function showAddBoardItem(){if(typeof openCreateBoard==='function')openCreateBoard();}
 
 // Override navTo to include boards
 const _origNavTo2=navTo;
@@ -380,9 +237,9 @@ navTo=function(v){
     initBoardsData();
     setTimeout(renderBoards,50);
   }
-  if(v==='calendar'){
-    initCalendar();
-  }
+  if(v==='calendar'){initCalendar();}
+  if(v==='dashboard')renderDashboard();
+  if(v==='settings')renderSettings();
   saveData();
 };
 
@@ -985,6 +842,37 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .board-card.over-b{border-left:3px solid var(--red);}
 .bc-name{font-weight:400;margin-bottom:3px;}
 .bc-client{font-size:11px;color:var(--muted);}
+/* Boards redesign */
+.boards-list-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+.board-list-card{background:var(--white);border:1px solid var(--border);padding:20px 20px 16px;cursor:pointer;transition:border-color .15s;position:relative;}
+.board-list-card:hover{border-color:var(--ink);}
+.board-list-card .blc-type{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:5px;}
+.board-list-card .blc-name{font-family:var(--serif);font-size:18px;font-weight:400;margin-bottom:6px;}
+.board-list-card .blc-count{font-size:12px;color:var(--muted);}
+.board-list-card .blc-del{position:absolute;top:10px;right:10px;background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;font-size:14px;opacity:0;transition:opacity .1s;}
+.board-list-card:hover .blc-del{opacity:1;}
+.board-type-opt{flex:1;border:1px solid var(--border);padding:12px 10px;text-align:center;cursor:pointer;font-size:13px;transition:all .15s;}
+.board-type-opt i{font-size:20px;display:block;margin-bottom:6px;}
+.board-type-opt.on{border-color:var(--ink);background:var(--ink);color:#fff;}
+.board-type-opt.on div{color:#fff !important;}
+/* Board detail views */
+.bdet-cols{display:flex;gap:14px;overflow-x:auto;padding-bottom:14px;}
+.bdet-col{background:var(--off);border:1px solid var(--border);padding:12px;min-width:220px;flex:1;max-width:320px;display:flex;flex-direction:column;}
+.bdet-col-h{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.bdet-card{background:var(--white);border:1px solid var(--border);padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .15s;font-size:13px;}
+.bdet-card:hover{border-color:var(--ink);}
+.bdet-card .bc-name{font-weight:400;margin-bottom:3px;}
+.bdet-card .bc-client{font-size:11px;color:var(--muted);}
+/* People board */
+.pboard-lane{background:var(--off);border:1px solid var(--border);padding:18px;margin-bottom:14px;}
+.pboard-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.pboard-stats{display:flex;gap:24px;margin-bottom:14px;flex-wrap:wrap;}
+.pboard-stat{min-width:80px;}
+.pboard-stat .ps-val{font-size:20px;font-family:var(--serif);}
+.pboard-stat .ps-lbl{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-top:2px;}
+.pboard-note{border:none;background:transparent;width:100%;font-family:var(--font);font-size:12px;color:var(--ink);resize:none;outline:none;border-top:1px solid var(--border);padding-top:10px;margin-top:4px;}
+/* Note card in custom board */
+.note-card-inp{border:none;background:transparent;width:100%;font-family:var(--font);font-size:13px;color:var(--ink);resize:none;outline:none;min-height:60px;}
 
 /* CTX MENUS */
 .ctx,.pctx{position:fixed;background:var(--white);border:1px solid var(--border);border-radius:3px;box-shadow:0 4px 20px rgba(0,0,0,.1);z-index:500;min-width:195px;padding:4px 0;display:none;}
@@ -1088,6 +976,13 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .inv-sub-l{flex:1;font-weight:400;}
 .inv-tot{border-top:1.5px solid var(--ink);padding:14px 13px;display:flex;justify-content:flex-end;gap:28px;font-size:14px;}
 .inv-tot-l{color:var(--muted);}
+.inv-editable{border-bottom:1px dashed var(--border);cursor:text;outline:none;min-width:60px;display:inline-block;}
+.inv-editable:focus{border-bottom-color:var(--ink);}
+/* Settings */
+.sett-person{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--border);}
+.sett-person:last-child{border-bottom:none;}
+.sett-inp{border:none;outline:none;background:transparent;font-family:var(--font);color:var(--ink);padding:2px 0;width:100%;}
+.sett-inp:hover,.sett-inp:focus{background:var(--off);border-radius:2px;padding:2px 4px;}
 
 /* FOLLOW-UP */
 .fup{position:fixed;bottom:24px;right:24px;z-index:950;display:none;}
@@ -1259,7 +1154,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
       <div class="s-btn" id="snav-reporting" onclick="navTo('reporting')"><i class="ti ti-chart-bar"></i><span class="s-tip">Reporting</span></div>
       <div class="s-btn" id="snav-boards" onclick="navTo('boards')"><i class="ti ti-layout-kanban"></i><span class="s-tip">Priority Boards</span></div>
       <div class="s-btn" id="snav-calendar" onclick="navTo('calendar')"><i class="ti ti-calendar"></i><span class="s-tip">Calendar</span></div>
-      <div class="s-btn" style="margin-top:auto;"><i class="ti ti-settings"></i><span class="s-tip">Settings</span></div>
+      <div class="s-btn" id="snav-settings" style="margin-top:auto;" onclick="navTo('settings')"><i class="ti ti-settings"></i><span class="s-tip">Settings</span></div>
     </div>
     <div class="s-avatar">RO<span class="s-tip">Ronan</span></div>
   </div>
@@ -1362,6 +1257,9 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
             <div class="labels-row" id="labels-row">
               <div class="label-add-btn" onclick="addLabel()"><i class="ti ti-plus" style="font-size:11px"></i> Add label</div>
             </div>
+            <div id="job-notes-row" style="padding:0 0 10px;display:none;">
+              <textarea id="job-notes-inp" placeholder="Add a brief or notes for this job…" style="width:100%;border:none;border-top:1px solid var(--border);background:var(--off);font-family:var(--font);font-size:12px;color:var(--ink);resize:none;outline:none;padding:8px 0 4px;line-height:1.5;" rows="2" oninput="updateJobNotes(this.value)"></textarea>
+            </div>
             <div class="detail-tabs">
               <div class="d-tab on" onclick="switchDTab(this,'plan')">Job plan</div>
               <div class="d-tab" onclick="switchDTab(this,'quote')">Quote</div>
@@ -1387,12 +1285,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
             </div>
           </div>
           <div id="dtab-quote" class="hidden" style="flex:1;overflow-y:auto;padding:24px 24px 50px;"></div>
-          <div id="dtab-activity" class="act-feed hidden">
-            <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:18px;">Activity</div>
-            <div class="act-row"><div class="d-av" style="background:#7B9E87;flex-shrink:0;">CA</div><div><div class="act-text">Logged <strong style="font-weight:500;">15h 45m</strong> on Creative Direction — Doc Layout Stage 2</div><div class="act-time">Today, 9:14am</div></div></div>
-            <div class="act-row"><div class="d-av" style="background:#6B7FA3;flex-shrink:0;">JC</div><div><div class="act-text">Logged <strong style="font-weight:500;">31h 20m</strong> on Design &amp; Artwork — Doc Layout Stage 2</div><div class="act-time">Yesterday, 5:22pm</div></div></div>
-            <div class="act-row"><div class="d-av" style="background:#C4956A;flex-shrink:0;">CM</div><div><div class="act-text">Added phase <strong style="font-weight:500;">Doc Layout: Stage 2</strong></div><div class="act-time">2 Jun, 11:05am</div></div></div>
-          </div>
+          <div id="dtab-activity" class="act-feed hidden"></div>
         </div>
       </div>
 
@@ -1451,31 +1344,48 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 
       <!-- BOARDS -->
       <div id="view-boards" class="view hidden">
-        <div class="boards-scroll">
-          <div class="boards-head">Priority boards</div>
-          <div class="boards-sub">Campaigns &amp; projects across all clients</div>
-          <div class="dash-rule" style="margin:14px 0 20px;"></div>
-
-          <!-- BOARD CONTROLS -->
-          <div class="r-filter-row" style="margin-bottom:16px;">
-            <label>Client</label>
-            <select id="b-client-filter" onchange="renderBoards()">
-              <option value="all">All Clients</option>
-            </select>
-            <label>Column</label>
-            <select id="b-column-filter" onchange="renderBoards()">
-              <option value="all">All Columns</option>
-              <option value="briefed">Briefed</option>
-              <option value="inprogress">In Progress</option>
-              <option value="review">In Review</option>
-              <option value="approved">Approved</option>
-              <option value="complete">Complete</option>
-            </select>
-            <button class="r-export-btn" onclick="showAddBoardItem()" style="margin-left:0;">+ Add item</button>
+        <!-- BOARDS LANDING -->
+        <div id="boards-landing" class="boards-scroll">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:4px;">
+            <div><div class="boards-head">Priority Boards</div><div class="boards-sub">Campaigns, clients &amp; team at a glance</div></div>
+            <button class="d-action primary" onclick="openCreateBoard()"><i class="ti ti-plus" style="font-size:12px;"></i> New board</button>
           </div>
+          <div class="dash-rule" style="margin:14px 0 24px;"></div>
+          <div id="boards-list-grid"></div>
+        </div>
+        <!-- BOARD DETAIL -->
+        <div id="board-detail" style="display:none;flex-direction:column;height:100%;overflow:hidden;">
+          <div class="r-filter-row" style="padding:14px 28px;border-bottom:1px solid var(--border);flex-shrink:0;gap:10px;">
+            <button class="detail-back" onclick="closeBoardDetail()" style="margin-right:8px;"><i class="ti ti-arrow-left" style="font-size:12px;"></i> Boards</button>
+            <span id="bd-title" style="font-family:var(--serif);font-size:18px;font-weight:400;flex:1;"></span>
+            <span id="bd-type-badge" style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:var(--ink);color:#fff;padding:3px 8px;border-radius:2px;"></span>
+          </div>
+          <div id="board-detail-body" style="flex:1;overflow:auto;padding:24px 28px;"></div>
+        </div>
+      </div>
+      <!-- CREATE BOARD MODAL -->
+      <div class="modal-bg" id="create-board-modal" onclick="if(event.target===this)closeCreateBoard()">
+        <div class="modal-box" style="width:380px;">
+          <div class="modal-head"><span>New Board</span><button class="modal-x" onclick="closeCreateBoard()"><i class="ti ti-x"></i></button></div>
+          <div style="padding:20px;">
+            <div style="margin-bottom:14px;"><label class="form-label">Board name</label><input id="nb-name" class="form-inp" placeholder="e.g. Silver Fern Farms" style="width:100%;"></div>
+            <div style="margin-bottom:20px;"><label class="form-label">Type</label>
+              <div style="display:flex;gap:8px;margin-top:6px;">
+                <div class="board-type-opt on" onclick="selectBoardType('client',this)" data-type="client"><i class="ti ti-building"></i><div>Client</div><div style="font-size:10px;color:var(--muted);">Auto-pull jobs</div></div>
+                <div class="board-type-opt" onclick="selectBoardType('people',this)" data-type="people"><i class="ti ti-users"></i><div>People</div><div style="font-size:10px;color:var(--muted);">Team overview</div></div>
+                <div class="board-type-opt" onclick="selectBoardType('custom',this)" data-type="custom"><i class="ti ti-layout-kanban"></i><div>Custom</div><div style="font-size:10px;color:var(--muted);">Freeform board</div></div>
+              </div>
+            </div>
+            <div id="nb-client-row" style="margin-bottom:14px;"><label class="form-label">Client / Company</label><select id="nb-client" class="filter-btn" style="width:100%;font-size:13px;"></select></div>
+            <button class="d-action primary" onclick="saveNewBoard()" style="width:100%;justify-content:center;padding:10px;">Create Board</button>
+          </div>
+        </div>
+      </div>
 
-          <!-- BOARDS -->
-          <div class="boards-cols" id="boards-cols"></div>
+      <!-- SETTINGS -->
+      <div id="view-settings" class="view hidden">
+        <div class="dash-scroll" id="settings-scroll">
+          <!-- populated by renderSettings() -->
         </div>
       </div>
 
@@ -1627,17 +1537,17 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 <!-- INVOICE MODAL -->
 <div class="inv-bg" id="inv-modal">
   <div class="inv-modal">
-    <div class="inv-top"><span class="inv-top-t">Invoice — 6752 SFF Brand Guidelines</span><button class="inv-act sec" style="margin-right:7px;">Reorder</button><button class="inv-act" onclick="alert('Pushed to Xero ✓')">Copy to Xero</button><button class="inv-x" onclick="closeInvoice()"><i class="ti ti-x"></i></button></div>
-    <div class="inv-body">
-      <div class="inv-meta-grid"><div><div class="inv-ml">Job number</div><div class="inv-mv">6752</div></div><div><div class="inv-ml">Issued</div><div class="inv-mv">6 Jun 2026</div></div><div><div class="inv-ml">PO number</div><div class="inv-mv">PO009091</div></div><div><div class="inv-ml">Due</div><div class="inv-mv">26 Jun 2026 · 20 days</div></div><div><div class="inv-ml">Client</div><div class="inv-mv">Silver Fern Farms</div></div><div><div class="inv-ml">Reference</div><div class="inv-mv">6752 SFF 2026</div></div></div>
-      <div class="inv-job-title">6752 SFF Brand Guidelines</div>
-      <div class="inv-sec"><div class="inv-sec-h">Briefing + Brand Discovery</div><div class="inv-line"><span class="inv-ln">Creative Direction</span><span class="inv-lv">$1,050.00</span></div><div class="inv-line"><span class="inv-ln">Design &amp; Artwork</span><span class="inv-lv">$975.00</span></div><div class="inv-line"><span class="inv-ln">Briefing &amp; coordination</span><span class="inv-lv">$1,350.00</span></div><div class="inv-sub"><span class="inv-sub-l">Subtotal</span><span>$3,375.00</span></div></div>
-      <div class="inv-sec"><div class="inv-sec-h">Doc Layout: Stage 2</div><div class="inv-line"><span class="inv-ln">Creative Direction</span><span class="inv-lv">$3,200.00</span></div><div class="inv-line"><span class="inv-ln">Copywriting</span><span class="inv-lv">$1,500.00</span></div><div class="inv-line"><span class="inv-ln">Design &amp; Artwork</span><span class="inv-lv">$6,000.00</span></div><div class="inv-line"><span class="inv-ln">Briefing &amp; coordination</span><span class="inv-lv">$1,500.00</span></div><div class="inv-sub"><span class="inv-sub-l">Subtotal</span><span>$12,200.00</span></div></div>
-      <div class="inv-sec"><div class="inv-sec-h">Expenses</div><div class="inv-line"><span class="inv-ln">Disbursements</span><span class="inv-lv">$100.00</span></div><div class="inv-sub"><span class="inv-sub-l">Subtotal</span><span>$100.00</span></div></div>
-      <div class="inv-tot"><span class="inv-tot-l">Subtotal ex GST</span><span>$15,675.00</span></div>
-      <div class="inv-tot" style="border-top:none;padding-top:0;"><span class="inv-tot-l">GST 15%</span><span>$2,351.25</span></div>
-      <div class="inv-tot" style="font-size:16px;"><span>Total inc GST</span><span style="font-weight:500;">$18,026.25</span></div>
+    <div class="inv-top">
+      <span class="inv-top-t" id="inv-top-t">Invoice</span>
+      <select class="filter-btn" id="inv-status" style="font-size:11px;margin-left:auto;margin-right:8px;" onchange="saveInvStatus()">
+        <option value="draft">Draft</option>
+        <option value="sent">Sent</option>
+        <option value="paid">Paid</option>
+      </select>
+      <button class="inv-act" onclick="copyInvoiceToXero()">Copy to Xero</button>
+      <button class="inv-x" onclick="closeInvoice()"><i class="ti ti-x"></i></button>
     </div>
+    <div class="inv-body" id="inv-body"><!-- populated by renderInvoice() --></div>
   </div>
 </div>
 
@@ -1654,7 +1564,8 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 <script>
 const LINE_ITEMS=['Creative Direction','Design & Artwork','Briefing & coordination','Copywriting','Video Editing','Proofing & spell check','Artwork & file despatch','Contingency','Shot listing','Website build'];
 let jobCounter=6953,activeJobId=null,activeLabels=[],ctxTarget=null,pctxTarget=null,dragSrc=null;
-let jobs=[{id:'6752',name:'SFF Brand Guidelines',company:'Silver Fern Farms',budget:'$13,625',budgetTotal:'$23,125',bPct:59,hours:'85h',hoursTotal:'143h',hPct:59,status:'open',billable:true,labels:['May','June','July','APPROVED']}];
+let jobs=[{id:'6752',name:'SFF Brand Guidelines',company:'Silver Fern Farms',budget:'$13,625',budgetTotal:'$23,125',bPct:59,hours:'85h',hoursTotal:'143h',hPct:59,status:'inplay',billable:true,labels:['May','June','July','APPROVED'],notes:'Brand refresh for SFF New Zealand. Includes full guidelines, typography, colour system, and template suite. Approved budget $23,125.',activity:[],invNum:null}];
+let invCounter=1001;
 const SFF_PHASES=[
   {id:'p1',name:'Briefing + Brand Discovery',status:'complete',items:[
     {id:'i1',name:'Creative Direction',hours:'7h',rate:'$150',used:'$1,050',total:'$1,050',status:'complete'},
@@ -1838,6 +1749,7 @@ function navTo(v){
   if(v==='reporting'){initReportingSelects();wireReportingFilters();setTimeout(renderReporting,50);}
   if(v==='boards'){initBoardsData();setTimeout(renderBoards,50);}
   if(v==='calendar')initCalendar();
+  if(v==='settings')renderSettings();
   saveData();
 }
 function viewTeamTodo(p){currentPerson=p;navTo('todo');}
@@ -2605,12 +2517,22 @@ function openJobDetail(id){
   document.getElementById('d-hours-sell').textContent=isNew?'No hours logged yet':`${j.hours} used / ${j.hoursTotal} planned · ${j.budget} sell`;
   activeLabels=j.labels?[...j.labels]:[];
   renderLabels();
+  // Job notes field
+  const notesRow=document.getElementById('job-notes-row');
+  const notesInp=document.getElementById('job-notes-inp');
+  if(notesRow&&notesInp){notesRow.style.display='';notesInp.value=j.notes||'';}
+  if(!j.activity)j.activity=[];
+  if(!j.invNum)j.invNum=null;
   phases=isNew?[]:JSON.parse(JSON.stringify(SFF_PHASES));
   renderStats(j,isNew);renderPhases();
   document.querySelectorAll('.view').forEach(el=>el.classList.add('hidden'));
   document.getElementById('view-detail').classList.remove('hidden');
   document.getElementById('topbar').classList.remove('hidden');
   switchDTab(document.querySelector('.d-tab'),'plan');
+}
+function updateJobNotes(val){
+  const j=jobs.find(x=>x.id===activeJobId);
+  if(j){j.notes=val;saveData();}
 }
 
 function _statBlock(label,val,sub,pct,col){
@@ -2636,6 +2558,7 @@ function switchDTab(el,tab){
   document.getElementById('dtab-quote').classList.toggle('hidden',tab!=='quote');
   document.getElementById('dtab-activity').classList.toggle('hidden',tab!=='activity');
   if(tab==='quote')renderQuoteTab();
+  if(tab==='activity')renderActivityTab();
 }
 function renderQuoteTab(){
   const j=jobs.find(x=>x.id===activeJobId);if(!j)return;
@@ -2743,6 +2666,7 @@ function toggleItemStatus(itemId,phId,e){
   const ph=phases.find(p=>p.id===phId);if(!ph)return;
   const item=ph.items.find(i=>i.id===itemId);if(!item)return;
   item.status=item.status==='complete'?'open':'complete';
+  logActivity(activeJobId,MY_PERSON,'item_status',`<strong>${item.name}</strong> marked <strong>${item.status}</strong>`);
   renderPhases();saveData();
 }
 function showAddItemForm(phId){
@@ -2757,9 +2681,10 @@ function saveItem(phId){
   const name=document.getElementById('ni-n').value;if(!name)return;
   const hours=document.getElementById('ni-h').value||'0h';const rate=document.getElementById('ni-r').value||'$150';
   const ph=phases.find(p=>p.id===phId);ph.items.push({id:'i'+Date.now(),name,hours,rate,used:'$0',total:'$0',status:'open'});
-  renderPhases();setTimeout(()=>document.getElementById('fup').classList.add('on'),700);
+  logActivity(activeJobId,MY_PERSON,'item_add',`Added <strong>${name}</strong> to <strong>${ph.name}</strong>`);
+  renderPhases();saveData();setTimeout(()=>document.getElementById('fup').classList.add('on'),700);
 }
-function addPhase(){phases.push({id:'p'+Date.now(),name:'New Phase',status:'open',items:[]});renderPhases();}
+function addPhase(){const ph={id:'p'+Date.now(),name:'New Phase',status:'open',items:[]};phases.push(ph);logActivity(activeJobId,MY_PERSON,'phase_add','Added phase <strong>New Phase</strong>');renderPhases();saveData();}
 function showCtx(e,itemId,phId){e.stopPropagation();ctxTarget={itemId,phId};const m=document.getElementById('ctx');m.style.cssText=`left:${Math.min(e.clientX,window.innerWidth-205)}px;top:${Math.min(e.clientY,window.innerHeight-230)}px;`;m.classList.add('on');}
 function ctxDo(a){document.getElementById('ctx').classList.remove('on');if(!ctxTarget)return;if(a==='delete'){const ph=phases.find(p=>p.id===ctxTarget.phId);ph.items=ph.items.filter(i=>i.id!==ctxTarget.itemId);renderPhases();}else if(a==='todo')openTodoModal(activeJobId,5);}
 function showPctx(e,phId){e.stopPropagation();pctxTarget=phId;const m=document.getElementById('pctx');m.style.cssText=`left:${Math.min(e.clientX,window.innerWidth-200)}px;top:${Math.min(e.clientY,window.innerHeight-170)}px;`;m.classList.add('on');}
@@ -2775,8 +2700,149 @@ function createJob(){
   jobs.unshift({id:String(jobCounter),name,company,budget:'$0',budgetTotal:'—',bPct:0,hours:'0h',hoursTotal:'—',hPct:0,status:'new',billable,labels:[]});
   closeCreateJob();renderJobs();openJobDetail(String(jobCounter));
 }
-function openInvoice(){document.getElementById('inv-modal').classList.add('on');}
+// ---- ACTIVITY LOGGING ----
+function logActivity(jobId,personKey,action,detail){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  if(!j.activity)j.activity=[];
+  j.activity.unshift({ts:Date.now(),personKey:personKey||MY_PERSON,action,detail});
+  saveData();
+}
+function renderActivityTab(){
+  const el=document.getElementById('dtab-activity');if(!el)return;
+  const j=jobs.find(x=>x.id===activeJobId);
+  if(!j||!j.activity||j.activity.length===0){
+    el.innerHTML='<div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:18px;">Activity</div><div style="font-size:13px;color:var(--muted);">No activity yet on this job.</div>';
+    return;
+  }
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const rows=j.activity.map(a=>{
+    const p=people[a.personKey]||{initials:'??',color:'#999',name:a.personKey};
+    const d=new Date(a.ts);
+    const now=new Date();const dDiff=Math.floor((now-d)/86400000);
+    const timeStr=dDiff===0?`Today, ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`:dDiff===1?`Yesterday`:(`${d.getDate()} ${MONTHS[d.getMonth()]}`);
+    return`<div class="act-row"><div class="d-av" style="background:${p.color};flex-shrink:0;">${p.initials}</div><div><div class="act-text">${a.detail}</div><div class="act-time">${timeStr}</div></div></div>`;
+  }).join('');
+  el.innerHTML=`<div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:18px;">Activity</div>${rows}`;
+}
+
+// ---- INVOICE GENERATION ----
+function openInvoice(){
+  const j=jobs.find(x=>x.id===activeJobId);if(!j)return;
+  if(!j.invNum){j.invNum=invCounter++;saveData();}
+  document.getElementById('inv-top-t').textContent=`Invoice #${j.invNum} — ${j.id} ${j.name}`;
+  const statusEl=document.getElementById('inv-status');
+  if(statusEl)statusEl.value=j.invStatus||'draft';
+  renderInvoice(j);
+  document.getElementById('inv-modal').classList.add('on');
+}
 function closeInvoice(){document.getElementById('inv-modal').classList.remove('on');}
+function saveInvStatus(){
+  const j=jobs.find(x=>x.id===activeJobId);if(!j)return;
+  j.invStatus=document.getElementById('inv-status').value;
+  saveData();
+  logActivity(activeJobId,MY_PERSON,`Invoice status → ${j.invStatus}`,`Invoice marked as <strong>${j.invStatus}</strong>`);
+}
+function renderInvoice(j){
+  const wrap=document.getElementById('inv-body');if(!wrap)return;
+  const now=new Date();
+  const due=new Date(now);due.setDate(now.getDate()+20);
+  const fmt=d=>`${d.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]} ${d.getFullYear()}`;
+  // Build phase sections from phases array
+  let subtotal=0;
+  const phSections=phases.map(ph=>{
+    const phTotal=ph.items.reduce((s,i)=>s+parseInt((i.total||'0').replace(/[$,]/g,'')||0),0);
+    subtotal+=phTotal;
+    const lines=ph.items.map(i=>`<div class="inv-line"><span class="inv-ln">${i.name}</span><span class="inv-lv">$${parseInt((i.total||'0').replace(/[$,]/g,'')||0).toLocaleString()}.00</span></div>`).join('');
+    return`<div class="inv-sec"><div class="inv-sec-h">${ph.name}</div>${lines}<div class="inv-sub"><span class="inv-sub-l">Subtotal</span><span>$${phTotal.toLocaleString()}.00</span></div></div>`;
+  }).join('');
+  const gst=Math.round(subtotal*0.15);
+  const total=subtotal+gst;
+  wrap.innerHTML=`
+    <div class="inv-meta-grid">
+      <div><div class="inv-ml">Job number</div><div class="inv-mv">${j.id}</div></div>
+      <div><div class="inv-ml">Invoice #</div><div class="inv-mv inv-editable" contenteditable="true">${j.invNum}</div></div>
+      <div><div class="inv-ml">Issued</div><div class="inv-mv">${fmt(now)}</div></div>
+      <div><div class="inv-ml">Due</div><div class="inv-mv">${fmt(due)} · 20 days</div></div>
+      <div><div class="inv-ml">Client</div><div class="inv-mv">${j.company}</div></div>
+      <div><div class="inv-ml">Reference</div><div class="inv-mv inv-editable" contenteditable="true" id="inv-ref">${j.id} ${j.company.split(' ')[0]} ${now.getFullYear()}</div></div>
+    </div>
+    <div class="inv-job-title">${j.id} ${j.name}</div>
+    ${phSections}
+    <div class="inv-tot"><span class="inv-tot-l">Subtotal ex GST</span><span>$${subtotal.toLocaleString()}.00</span></div>
+    <div class="inv-tot" style="border-top:none;padding-top:0;"><span class="inv-tot-l">GST 15%</span><span>$${gst.toLocaleString()}.00</span></div>
+    <div class="inv-tot" style="font-size:16px;"><span>Total inc GST</span><span style="font-weight:500;">$${total.toLocaleString()}.00</span></div>`;
+}
+function copyInvoiceToXero(){
+  const j=jobs.find(x=>x.id===activeJobId);if(!j)return;
+  const rows=['ContactName,InvoiceNumber,Description,Quantity,UnitAmount,TaxType,AccountCode'];
+  phases.forEach(ph=>{
+    ph.items.forEach(i=>{
+      const amt=parseInt((i.total||'0').replace(/[$,]/g,'')||0);
+      rows.push(`"${j.company}","${j.invNum}","${ph.name} — ${i.name}",1,${amt},"OUTPUT2","200"`);
+    });
+  });
+  navigator.clipboard.writeText(rows.join('\n')).then(()=>alert('Xero CSV copied to clipboard ✓'));
+}
+
+// ---- SETTINGS / TEAM MANAGEMENT ----
+function renderSettings(){
+  const wrap=document.getElementById('settings-scroll');if(!wrap)return;
+  const COLORS=['#ED1E24','#6B7FA3','#7B9E87','#C4956A','#9B59B6','#E67E22','#1ABC9C','#E74C3C','#3498DB','#F39C12'];
+  const teamRows=Object.keys(people).map(key=>{
+    const p=people[key];
+    return`<div class="sett-person" id="sp-${key}">
+      <div class="sp-av" style="background:${p.color};width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#fff;flex-shrink:0;">${p.initials}</div>
+      <div style="flex:1;min-width:0;">
+        <input class="sett-inp" value="${p.name}" placeholder="Name" onchange="updatePerson('${key}','name',this.value)" style="font-size:14px;font-weight:400;width:100%;border:none;outline:none;background:transparent;font-family:var(--font);color:var(--ink);">
+        <input class="sett-inp sett-inp-sm" value="${p.role||''}" placeholder="Role" onchange="updatePerson('${key}','role',this.value)" style="font-size:12px;color:var(--muted);width:100%;border:none;outline:none;background:transparent;font-family:var(--font);">
+      </div>
+      <div class="color-swatches" style="display:flex;gap:4px;flex-wrap:wrap;max-width:120px;">
+        ${COLORS.map(c=>`<div onclick="updatePerson('${key}','color','${c}')" style="width:16px;height:16px;border-radius:50%;background:${c};cursor:pointer;border:${p.color===c?'2px solid var(--ink)':'2px solid transparent'};flex-shrink:0;"></div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  wrap.innerHTML=`
+    <div style="margin-bottom:28px;">
+      <div class="dash-greeting">Settings</div>
+      <div class="dash-date">Workspace configuration</div>
+      <div class="dash-rule"></div>
+    </div>
+    <div class="section-label" style="margin-bottom:14px;">Team</div>
+    <div style="background:var(--white);border:1px solid var(--border);">
+      ${teamRows}
+      <div style="padding:12px 16px;border-top:1px solid var(--border);">
+        <button class="d-action" onclick="showAddPersonForm()"><i class="ti ti-plus" style="font-size:12px"></i> Add team member</button>
+      </div>
+    </div>
+    <div id="add-person-form" style="display:none;margin-top:12px;padding:14px 16px;background:var(--white);border:1px solid var(--border);">
+      <div style="display:flex;gap:12px;align-items:flex-end;">
+        <div style="flex:1;"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Name</div><input id="ap-name" class="filter-btn" style="width:100%;font-size:13px;" placeholder="Full name"></div>
+        <div style="flex:1;"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Role</div><input id="ap-role" class="filter-btn" style="width:100%;font-size:13px;" placeholder="e.g. Designer"></div>
+        <button class="d-action primary" onclick="saveNewPerson()">Add</button>
+        <button class="d-action" onclick="document.getElementById('add-person-form').style.display='none'">Cancel</button>
+      </div>
+    </div>`;
+}
+function showAddPersonForm(){document.getElementById('add-person-form').style.display='';}
+function updatePerson(key,field,val){
+  if(!people[key])return;
+  people[key][field]=val;
+  if(field==='color'||field==='name'){renderSettings();}
+  saveData();
+  populatePersonSwitcher();
+}
+function saveNewPerson(){
+  const name=document.getElementById('ap-name').value.trim();
+  const role=document.getElementById('ap-role').value.trim();
+  if(!name)return;
+  const COLORS=['#ED1E24','#6B7FA3','#7B9E87','#C4956A','#9B59B6','#E67E22','#1ABC9C','#3498DB'];
+  const initials=name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  const color=COLORS[Object.keys(people).length%COLORS.length];
+  const key=name.toLowerCase().replace(/\s+/g,'_');
+  people[key]={name,initials,color,days:[1,2,3,4,5],role};
+  personStatus[key]='available';
+  saveData();populatePersonSwitcher();renderSettings();
+}
 document.addEventListener('click',()=>{document.getElementById('ctx').classList.remove('on');document.getElementById('pctx').classList.remove('on');});
 ['create-modal','todo-modal','inv-modal'].forEach(id=>{document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id))document.getElementById(id).classList.remove('on');});});
 
@@ -2958,182 +3024,188 @@ function wireReportingFilters(){
     if(el&&!el.dataset.wired){el.addEventListener('change',renderReporting);el.dataset.wired='1';}
   });
 }
-// ============ BOARDS ENGINE ============
-const BOARD_COLUMNS=['briefed','inprogress','review','approved','complete'];
-const COLUMN_LABELS={briefed:'Briefed',inprogress:'In Progress',review:'In Review',approved:'Approved',complete:'Complete'};
+// ============ BOARDS ENGINE (redesigned) ============
+let boardsData={briefed:[],inprogress:[],review:[],approved:[],complete:[]};
+let boardsList=JSON.parse(localStorage.getItem('cc_boards')||'[]');
+let activeBoardId=null;
+let newBoardType='client';
 
-// Boards data - linked to jobs
-let boardsData={};
-function initBoardsData(){
-  // Initialize from jobs
-  boardsData={};
-  BOARD_COLUMNS.forEach(col=>boardsData[col]=[]);
-  jobs.forEach(j=>{
-    let status='inprogress';
-    if(j.status==='new')status='briefed';
-    if(j.status==='complete')status='complete';
-    if(!boardsData[status])boardsData[status]=[];
-    boardsData[status].push({
-      jobId:j.id,
-      title:j.name,
-      client:j.company,
-      overBudget:(j.bPct||0)>100,
-      budgetPct:j.bPct||0,
-      hoursUsed:j.hours||'0h',
-      hoursTotal:j.hoursTotal||'—',
-      lead:'ro',
-      tags:j.labels?j.labels.slice(0,3):[]
-    });
-  });
-  // Ensure all columns have arrays
-  BOARD_COLUMNS.forEach(col=>{if(!boardsData[col])boardsData[col]=[];});
+function saveBoardsData(){localStorage.setItem('cc_boards',JSON.stringify(boardsList));}
+function initBoardsData(){boardsData={briefed:[],inprogress:[],review:[],approved:[],complete:[]};}
+function renderBoards(){renderBoardsList();}
+
+function renderBoardsList(){
+  const landing=document.getElementById('boards-landing');
+  const det=document.getElementById('board-detail');
+  if(landing)landing.style.display='';
+  if(det)det.style.display='none';
+  const grid=document.getElementById('boards-list-grid');
+  if(!grid)return;
+  if(boardsList.length===0){
+    grid.innerHTML='<div style="color:var(--muted);font-size:13px;padding:40px 0;">No boards yet. Create your first board to get started.</div>';
+    return;
+  }
+  grid.className='boards-list-grid';
+  grid.innerHTML=boardsList.map(b=>{
+    const typeIcons={client:'ti-building',people:'ti-users',custom:'ti-layout-kanban'};
+    const typeLabels={client:'Client board',people:'People board',custom:'Custom board'};
+    let count='';
+    if(b.type==='client'){const n=jobs.filter(j=>j.company===b.clientFilter&&j.status!=='complete').length;count=`${n} active job${n!==1?'s':''}`;}
+    else if(b.type==='people'){const n=Object.keys(b.notes||{}).length||Object.keys(people).length;count=`${n} team member${n!==1?'s':''}`;}
+    else{const n=(b.columns||[]).reduce((s,c)=>s+(c.cards||[]).length,0);count=`${n} card${n!==1?'s':''}`;}
+    return`<div class="board-list-card" onclick="openBoard('${b.id}')">
+      <button class="blc-del" onclick="event.stopPropagation();deleteBoard('${b.id}')"><i class="ti ti-trash"></i></button>
+      <div class="blc-type"><i class="ti ${typeIcons[b.type]||'ti-layout-kanban'}"></i>${typeLabels[b.type]||b.type}</div>
+      <div class="blc-name">${b.name}</div>
+      <div class="blc-count">${count}</div>
+    </div>`;
+  }).join('');
 }
 
-function renderBoards(){
-  const clientFilter=document.getElementById('b-client-filter').value;
-  const columnFilter=document.getElementById('b-column-filter').value;
-  const container=document.getElementById('boards-cols');
-  container.innerHTML='';
-  
-  // Update client filter
+function openBoard(id){
+  activeBoardId=id;
+  const b=boardsList.find(x=>x.id===id);if(!b)return;
+  const landing=document.getElementById('boards-landing');
+  const det=document.getElementById('board-detail');
+  if(landing)landing.style.display='none';
+  if(det)det.style.display='flex';
+  document.getElementById('bd-title').textContent=b.name;
+  const typeLabels={client:'Client',people:'People',custom:'Custom'};
+  document.getElementById('bd-type-badge').textContent=typeLabels[b.type]||b.type;
+  const body=document.getElementById('board-detail-body');
+  if(b.type==='client')renderClientBoard(b,body);
+  else if(b.type==='people')renderPeopleBoard(b,body);
+  else renderCustomBoard(b,body);
+}
+
+function closeBoardDetail(){activeBoardId=null;renderBoardsList();}
+
+function renderClientBoard(b,body){
+  const boardJobs=jobs.filter(j=>j.company===b.clientFilter);
+  const COLS={briefed:'Briefed',inprogress:'In Progress',review:'In Review',approved:'Approved',complete:'Complete'};
+  const colKeys=Object.keys(COLS);
+  const buckets={};colKeys.forEach(k=>buckets[k]=[]);
+  boardJobs.forEach(j=>{
+    let k='inprogress';
+    if(j.status='new')k='briefed';
+    else if(j.status==='complete')k='complete';
+    buckets[k].push(j);
+  });
+  body.innerHTML=`<div class="bdet-cols">${colKeys.map(k=>`
+    <div class="bdet-col">
+      <div class="bdet-col-h"><span>${COLS[k]}</span><span class="col-count">${buckets[k].length}</span></div>
+      ${buckets[k].map(j=>{
+        const pct=j.bPct||0;const over=pct>100;
+        return`<div class="bdet-card"${over?' style="border-left:3px solid var(--red);"':''}  onclick="openJobDetail('${j.id}')">
+          <div class="bc-name">${j.name}</div>
+          <div class="bc-client">${j.id} · ${j.company}</div>
+          <div style="margin-top:8px;height:3px;background:var(--border);border-radius:2px;"><div style="height:3px;background:${over?'var(--red)':'var(--ink)'};border-radius:2px;width:${Math.min(pct,100)}%;"></div></div>
+          <div style="font-size:10px;color:${over?'var(--red)':'var(--muted)'};margin-top:3px;">${j.hours||'0h'} / ${j.hoursTotal||'—'} · ${pct}%</div>
+        </div>`;
+      }).join('')}
+    </div>`).join('')}</div>`;
+}
+
+function renderPeopleBoard(b,body){
+  if(!b.notes)b.notes={};
+  const rows=Object.keys(people).map(key=>{
+    const p=people[key];
+    const wd=getWeekData(key,0);
+    let totalH=0,doneH=0,todoCount=0,doneCount=0;
+    [1,2,3,4,5].forEach(d=>{
+      (wd[d]||[]).forEach(t=>{
+        const h=parseHrsInput(t.hours||'0')||0;totalH+=h;
+        if(t.done){doneH+=h;doneCount++;}else todoCount++;
+      });
+    });
+    const allTasks=Object.keys(wd).flatMap(d=>(wd[d]||[]));
+    const billH=allTasks.filter(t=>t.done&&taskIsBillable(t)).reduce((s,t)=>s+(parseHrsInput(t.hours||'0')||0),0);
+    const billPct=doneH>0?Math.round(billH/doneH*100):0;
+    const note=b.notes[key]||'';
+    return`<div class="pboard-lane">
+      <div class="pboard-head">
+        <div style="width:42px;height:42px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:#fff;">${p.initials}</div>
+        <div><div style="font-size:15px;">${p.name}</div><div style="font-size:11px;color:var(--muted);">${p.role||'Team member'}</div></div>
+        <button class="d-action" style="margin-left:auto;" onclick="navTo('todo')">View week</button>
+      </div>
+      <div class="pboard-stats">
+        <div class="pboard-stat"><div class="ps-val">${totalH}h</div><div class="ps-lbl">Planned</div></div>
+        <div class="pboard-stat"><div class="ps-val">${doneH}h</div><div class="ps-lbl">Done</div></div>
+        <div class="pboard-stat"><div class="ps-val">${todoCount}</div><div class="ps-lbl">Tasks left</div></div>
+        <div class="pboard-stat"><div class="ps-val">${billPct}%</div><div class="ps-lbl">Billable</div></div>
+      </div>
+      <textarea class="pboard-note" rows="2" placeholder="Notes about ${p.name}…" onchange="savePboardNote('${b.id}','${key}',this.value)">${note}</textarea>
+    </div>`;
+  }).join('');
+  body.innerHTML=rows;
+}
+
+function savePboardNote(boardId,personKey,val){
+  const b=boardsList.find(x=>x.id===boardId);if(!b)return;
+  if(!b.notes)b.notes={};
+  b.notes[personKey]=val;saveBoardsData();
+}
+
+function renderCustomBoard(b,body){
+  if(!b.columns||b.columns.length===0)b.columns=[{id:'c1',name:'To Do',cards:[]},{id:'c2',name:'In Progress',cards:[]},{id:'c3',name:'Done',cards:[]}];
+  const cols=b.columns.map(col=>{
+    const cards=(col.cards||[]).map(card=>{
+      if(card.type==='job'){const j=jobs.find(x=>x.id===card.jobRef);if(!j)return'';
+        return`<div class="bdet-card" onclick="openJobDetail('${j.id}')"><div class="bc-name">${j.name}</div><div class="bc-client">${j.company} · ${j.id}</div></div>`;}
+      else if(card.type==='person'){const p=people[card.personRef];if(!p)return'';
+        return`<div class="bdet-card" style="display:flex;align-items:center;gap:10px;"><div style="width:32px;height:32px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;flex-shrink:0;">${p.initials}</div><div><div class="bc-name">${p.name}</div><div class="bc-client">${p.role||'Team'}</div></div></div>`;}
+      else{return`<div class="bdet-card"><textarea class="note-card-inp" onchange="saveCustomCardNote('${b.id}','${col.id}','${card.id}',this.value)">${card.note||''}</textarea></div>`;}
+    }).join('');
+    return`<div class="bdet-col"><div class="bdet-col-h"><span>${col.name}</span><span class="col-count">${(col.cards||[]).length}</span></div>${cards}<button class="d-action" style="width:100%;justify-content:center;margin-top:4px;font-size:11px;" onclick="addCustomNote('${b.id}','${col.id}')"><i class="ti ti-plus" style="font-size:11px;"></i> Note</button></div>`;
+  }).join('');
+  body.innerHTML=`<div class="bdet-cols">${cols}</div>`;
+}
+
+function addCustomNote(boardId,colId){
+  const b=boardsList.find(x=>x.id===boardId);if(!b)return;
+  const col=b.columns.find(c=>c.id===colId);if(!col)return;
+  if(!col.cards)col.cards=[];
+  col.cards.push({id:'nc'+Date.now(),type:'note',note:''});
+  saveBoardsData();openBoard(boardId);
+}
+function saveCustomCardNote(boardId,colId,cardId,val){
+  const b=boardsList.find(x=>x.id===boardId);if(!b)return;
+  const col=b.columns.find(c=>c.id===colId);if(!col)return;
+  const card=(col.cards||[]).find(c=>c.id===cardId);if(!card)return;
+  card.note=val;saveBoardsData();
+}
+function openCreateBoard(){
+  const sel=document.getElementById('nb-client');
   const clients=[...new Set(jobs.map(j=>j.company))];
-  const clientSel=document.getElementById('b-client-filter');
-  const currentClient=clientSel.value;
-  clientSel.innerHTML='<option value="all">All Clients</option>';
-  clients.forEach(c=>{
-    const o=document.createElement('option');o.value=c;o.textContent=c;
-    if(c===currentClient)o.selected=true;
-    clientSel.appendChild(o);
-  });
-  
-  BOARD_COLUMNS.forEach(status=>{
-    if(columnFilter!=='all'&&columnFilter!==status)return;
-    const col=document.createElement('div');
-    col.className='board-col';
-    col.dataset.status=status;
-    
-    const items=(boardsData[status]||[]).filter(item=>{
-      if(clientFilter!=='all')return item.client===clientFilter;
-      return true;
-    });
-    
-    col.innerHTML=`<div class="board-col-h"><span>${COLUMN_LABELS[status]}</span><span class="col-count">${items.length}</span></div>`;
-    
-    items.forEach(item=>{
-      const card=document.createElement('div');
-      card.className='board-card'+(item.overBudget?' over-b':'');
-      card.draggable=true;
-      card.dataset.jobId=item.jobId;
-      
-      const lead=people[item.lead];
-      let tagsHTML='';
-      if(item.tags.length){
-        tagsHTML='<div class="bc-meta">';
-        item.tags.forEach(tag=>{
-          tagsHTML+=`<span class="bc-tag">${tag}</span>`;
-        });
-        if(item.overBudget)tagsHTML+='<span class="bc-tag budget-over">Over Budget</span>';
-        tagsHTML+='</div>';
-      }
-      
-      card.innerHTML=`<div class="bc-name">${item.title}</div><div class="bc-client">${item.client}${item.jobId?' · '+item.jobId:''}</div>${item.overBudget?'<div class="bc-client" style="color:var(--red);">'+item.hoursUsed+' / '+item.hoursTotal+' (Budget '+item.budgetPct+'%)</div>':'<div class="bc-client">'+item.hoursUsed+' / '+item.hoursTotal+'</div>'}${tagsHTML}<div class="bc-lead"><div class="bc-lead-avatar" style="background:${lead?lead.color:'#999'};">${lead?lead.initials:'?'}</div><span>${lead?lead.name:item.lead}</span></div>`;
-      
-      // Click to open job detail
-      card.addEventListener('click',()=>{
-        openJobDetail(item.jobId);
-      });
-      
-      // Drag events
-      card.addEventListener('dragstart',e=>{
-        e.dataTransfer.setData('text/plain',JSON.stringify({
-          jobId:item.jobId,
-          fromStatus:status
-        }));
-        e.dataTransfer.effectAllowed='move';
-        card.classList.add('dragging-b');
-      });
-      
-      card.addEventListener('dragend',()=>{
-        card.classList.remove('dragging-b');
-      });
-      
-      col.appendChild(card);
-    });
-    
-    // Drop zone
-    col.addEventListener('dragover',e=>{
-      e.preventDefault();
-      e.dataTransfer.dropEffect='move';
-      col.style.borderColor='#ED1E24';
-    });
-    
-    col.addEventListener('dragleave',e=>{
-      col.style.borderColor='';
-    });
-    
-    col.addEventListener('drop',e=>{
-      e.preventDefault();
-      col.style.borderColor='';
-      try{
-        const data=JSON.parse(e.dataTransfer.getData('text/plain'));
-        const{jobId,fromStatus}=data;
-        
-        // Find and move the item
-        const fromItems=(boardsData[fromStatus]||[]).filter(i=>i.jobId===jobId);
-        if(fromItems.length===0)return;
-        
-        const item=fromItems[0];
-        
-        // Remove from source
-        boardsData[fromStatus]=boardsData[fromStatus].filter(i=>i.jobId!==jobId);
-        
-        // Add to destination
-        if(!boardsData[status])boardsData[status]=[];
-        boardsData[status].push(item);
-        
-        // Update job status if applicable
-        const job=jobs.find(j=>j.id===jobId);
-        if(job){
-          if(status==='briefed')job.status='new';
-          else if(status==='complete')job.status='complete';
-          else job.status='inplay';
-        }
-        
-        renderBoards();
-        saveData();
-      }catch(err){
-        console.error('Board drop error:',err);
-      }
-    });
-    
-    container.appendChild(col);
-  });
-  
-  saveData();
+  sel.innerHTML=clients.map(c=>`<option value="${c}">${c}</option>`).join('');
+  document.getElementById('nb-name').value='';
+  newBoardType='client';
+  document.querySelectorAll('.board-type-opt').forEach(el=>el.classList.toggle('on',el.dataset.type==='client'));
+  document.getElementById('nb-client-row').style.display='';
+  document.getElementById('create-board-modal').classList.add('on');
+  setTimeout(()=>document.getElementById('nb-name').focus(),50);
 }
-
-function showAddBoardItem(){
-  const title=prompt('Item name:');
-  if(!title)return;
-  const client=prompt('Client:','Silver Fern Farms');
-  const jobId=prompt('Job ID (optional):','');
-  const lead=prompt('Lead person (ro=Ronan, bee=Bianca, jb=JB):','ro');
-  
-  const newItem={
-    jobId:jobId||'custom_'+Date.now(),
-    title:title,
-    client:client||'Internal',
-    overBudget:false,
-    budgetPct:0,
-    hoursUsed:'0h',
-    hoursTotal:'—',
-    lead:lead||'ro',
-    tags:[]
-  };
-  
-  boardsData.briefed.push(newItem);
-  renderBoards();
+function closeCreateBoard(){document.getElementById('create-board-modal').classList.remove('on');}
+function selectBoardType(type,el){
+  newBoardType=type;
+  document.querySelectorAll('.board-type-opt').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('nb-client-row').style.display=type==='client'?'':'none';
 }
+function saveNewBoard(){
+  const name=document.getElementById('nb-name').value.trim();if(!name)return;
+  const b={id:'b'+Date.now(),name,type:newBoardType};
+  if(newBoardType==='client')b.clientFilter=document.getElementById('nb-client').value;
+  if(newBoardType==='custom')b.columns=[{id:'c1',name:'To Do',cards:[]},{id:'c2',name:'In Progress',cards:[]},{id:'c3',name:'Done',cards:[]}];
+  if(newBoardType==='people')b.notes={};
+  boardsList.push(b);saveBoardsData();closeCreateBoard();renderBoardsList();
+  setTimeout(()=>openBoard(b.id),50);
+}
+function deleteBoard(id){
+  if(!confirm('Delete this board?'))return;
+  boardsList=boardsList.filter(b=>b.id!==id);saveBoardsData();renderBoardsList();
+}
+function showAddBoardItem(){openCreateBoard();}
 
 // navTo is fully defined above — no override needed here
 
