@@ -227,7 +227,13 @@ navTo=function(v){
   const ne=document.getElementById('snav-'+v);if(ne)ne.classList.add('on');
   document.getElementById('topbar').classList.toggle('hidden',v!=='jobs'&&v!=='detail');
   if(v==='todo')renderTodo();
-  if(v==='jobs')renderJobs();
+  if(v==='jobs'){
+    // Ensure jobs panel visible (user may have switched sub-tabs last visit)
+    document.querySelectorAll('.jt-panel').forEach(el=>el.style.display='none');
+    const jp=document.getElementById('jt-jobs');if(jp){jp.style.display='flex';jp.style.flexDirection='column';}
+    document.querySelectorAll('.jsn-tab').forEach(el=>el.classList.toggle('on',el.dataset.tab==='jobs'));
+    renderJobs();
+  }
   if(v==='reporting'){
     initReportingSelects();
     wireReportingFilters();
@@ -1305,6 +1311,33 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
 /* ── Jobs toolbar update ──────────────────────────────────── */
 .jobs-toolbar{display:flex;align-items:center;gap:10px;padding:14px 28px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;}
 
+/* ── Todo modal redesign ─────────────────────────────────────────────────── */
+.tm-hd{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);background:#fff;gap:0;}
+.tm-hd-personal{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;min-width:80px;}
+.tm-hd-personal input{accent-color:var(--red);cursor:pointer;}
+.tm-hd-title{flex:1;text-align:center;font-size:14px;font-weight:600;color:var(--ink);letter-spacing:-.01em;}
+.tm-x{background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:2px;display:flex;align-items:center;justify-content:center;min-width:80px;justify-content:flex-end;}
+/* Personal hero */
+.tm-personal-hero{display:none;align-items:center;gap:14px;padding:20px 24px 0;}
+.tm-personal-hero.on{display:flex;}
+.tm-pav-lg{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:600;flex-shrink:0;}
+.tm-pname-lg{font-size:16px;color:var(--ink);font-weight:300;text-transform:lowercase;}
+/* Date + Repeat row */
+.tm-date-repeat-row{display:flex;align-items:center;gap:8px;padding:8px 0 4px;}
+.tm-date-btn{display:flex;align-items:center;gap:6px;background:none;border:none;font-size:13px;color:var(--ink);cursor:pointer;font-family:var(--font);padding:4px 6px;border-radius:3px;}
+.tm-date-btn:hover{background:var(--off);}
+.tm-repeat-btn{display:flex;align-items:center;gap:5px;background:none;border:none;font-size:13px;color:var(--muted);cursor:pointer;font-family:var(--font);padding:4px 8px;border-radius:3px;transition:color .12s;}
+.tm-repeat-btn:hover,.tm-repeat-btn.on{color:var(--ink);}
+.tm-repeat-btn.on{background:var(--off);}
+.tm-repeat-config{background:var(--off);border:1px solid var(--border);border-radius:3px;padding:12px 14px;margin-top:6px;display:none;}
+.tm-repeat-config.on{display:block;}
+/* Item inline edit */
+.item-editable{cursor:pointer;border-radius:2px;padding:1px 4px;transition:background .1s;}
+.item-editable:hover{background:var(--off);}
+.item-edit-inp{width:72px;border:1px solid var(--ink);border-radius:2px;padding:2px 5px;font-size:12px;font-family:var(--font);outline:none;background:#fff;}
+/* d-meta-line with badge */
+#d-meta-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+
 </style>
 </head>
 <body>
@@ -1655,43 +1688,51 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
   <div class="tm-modal">
     <!-- Header -->
     <div class="tm-hd">
-      <label class="tm-hd-personal"><input type="checkbox" id="td-personal"><span>Personal</span></label>
-      <div class="tm-hd-title" id="td-modal-title">Add a task</div>
+      <label class="tm-hd-personal"><input type="checkbox" id="td-personal" onchange="togglePersonalMode(this.checked)"><span>Personal</span></label>
+      <div class="tm-hd-title" id="td-modal-title">New task</div>
       <button class="tm-x" onclick="closeTodoModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <!-- Personal hero (shown when personal is checked) -->
+    <div class="tm-personal-hero" id="td-personal-hero">
+      <div class="tm-pav-lg" id="td-pav-lg" style="background:var(--red);">RO</div>
+      <span class="tm-pname-lg" id="td-pname-lg">Ronan</span>
     </div>
     <!-- Body -->
     <div class="tm-bd">
       <input type="text" class="tm-title-inp" id="td-task" placeholder="What needs doing?">
-      <!-- Assign to -->
-      <div class="tm-lbl">Assigned to</div>
-      <div class="tm-assign-row" id="tm-assign-row" onclick="openTodoAssignMenu()">
-        <div class="tm-pav" id="td-pav" style="background:var(--red);">RO</div>
-        <span class="tm-pname" id="td-pname">Ronan</span>
-        <div class="tm-assign-chevron"><i class="ti ti-chevron-down" style="font-size:11px;"></i></div>
-        <div class="tm-assign-menu" id="tm-assign-menu"></div>
+      <!-- Assign to (hidden in personal mode) -->
+      <div id="td-assign-section">
+        <div class="tm-lbl">Assigned to</div>
+        <div class="tm-assign-row" id="tm-assign-row" onclick="openTodoAssignMenu()">
+          <div class="tm-pav" id="td-pav" style="background:var(--red);">RO</div>
+          <span class="tm-pname" id="td-pname">Ronan</span>
+          <div class="tm-assign-chevron"><i class="ti ti-chevron-down" style="font-size:11px;"></i></div>
+          <div class="tm-assign-menu" id="tm-assign-menu"></div>
+        </div>
       </div>
-      <!-- Job -->
-      <div class="tm-lbl" id="td-job-lbl" style="margin-top:16px;">Job</div>
-      <select class="tm-field-sel" id="td-job" onchange="updateJobLabel()">
-        <option value="">— Personal / no job —</option>
-      </select>
-      <!-- Item -->
-      <div class="tm-lbl" style="margin-top:16px;">Item</div>
-      <input list="item-datalist" class="tm-field-sel" id="td-item" placeholder="Select or type an item…" autocomplete="off">
-      <datalist id="item-datalist">
-        <option>Creative Direction</option>
-        <option>Design &amp; Artwork</option>
-        <option>Briefing &amp; coordination</option>
-        <option>Copywriting</option>
-        <option>Video Editing</option>
-        <option>Proofing &amp; spell check</option>
-        <option>Artwork &amp; file despatch</option>
-        <option>Contingency</option>
-        <option>Shot listing</option>
-        <option>Website build</option>
-      </datalist>
+      <!-- Job + Item (hidden in personal mode) -->
+      <div id="td-job-section">
+        <div class="tm-lbl" id="td-job-lbl" style="margin-top:16px;">Job</div>
+        <select class="tm-field-sel" id="td-job" onchange="updateJobLabel()">
+          <option value="">— Personal / no job —</option>
+        </select>
+        <div class="tm-lbl" style="margin-top:16px;">Item</div>
+        <input list="item-datalist" class="tm-field-sel" id="td-item" placeholder="Select or type an item…" autocomplete="off">
+        <datalist id="item-datalist">
+          <option>Creative Direction</option>
+          <option>Design &amp; Artwork</option>
+          <option>Briefing &amp; coordination</option>
+          <option>Copywriting</option>
+          <option>Video Editing</option>
+          <option>Proofing &amp; spell check</option>
+          <option>Artwork &amp; file despatch</option>
+          <option>Contingency</option>
+          <option>Shot listing</option>
+          <option>Website build</option>
+        </datalist>
+      </div>
       <!-- Note -->
-      <textarea class="tm-note-area" id="td-note" placeholder="Notes, due dates, context…"></textarea>
+      <textarea class="tm-note-area" id="td-note" placeholder="Describe what you're doing…"></textarea>
       <!-- Urgent toggle -->
       <div class="tm-urgent-row">
         <label class="tm-urgent-lbl" id="td-urgent-lbl">
@@ -1701,7 +1742,7 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
         </label>
       </div>
       <hr class="tm-dash">
-      <!-- Hours + Day -->
+      <!-- Hours + Scheduled -->
       <div class="tm-2col" style="margin-bottom:16px;">
         <div>
           <div class="tm-col-lbl">Scheduled</div>
@@ -1709,13 +1750,39 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
         </div>
         <div style="flex:1;">
           <div class="tm-col-lbl">Day</div>
-          <select class="tm-day-sel" id="td-day">
+          <select class="tm-day-sel" id="td-day" onchange="_updateDateLabel()">
             <option value="1">Monday</option>
             <option value="2">Tuesday</option>
             <option value="3">Wednesday</option>
             <option value="4">Thursday</option>
             <option value="5" selected>Friday</option>
           </select>
+        </div>
+      </div>
+      <!-- Date display + Repeat row -->
+      <div class="tm-date-repeat-row">
+        <button class="tm-date-btn" onclick="openDatePicker()" id="td-date-display">
+          <i class="ti ti-calendar" style="font-size:14px;"></i>
+          <span id="td-date-label">—</span>
+        </button>
+        <button class="tm-repeat-btn" id="td-repeat-btn" onclick="toggleRepeatSection()">
+          <i class="ti ti-repeat" style="font-size:13px;"></i>
+          <span id="td-repeat-label">Repeat</span>
+        </button>
+      </div>
+      <!-- Repeat config (hidden by default) -->
+      <div class="tm-repeat-config" id="td-repeat-config">
+        <div class="tm-lbl" style="margin-bottom:8px;">Repeat every</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <input type="number" id="td-rep-n" value="1" min="1" max="52" class="tm-hours-inp" style="width:50px;font-size:16px;">
+          <select id="td-rep-unit" class="tm-day-sel" style="font-size:13px;">
+            <option value="day">Day</option>
+            <option value="week" selected>Week</option>
+            <option value="month">Month</option>
+          </select>
+          <span style="font-size:12px;color:var(--muted);">for</span>
+          <input type="number" id="td-rep-count" value="4" min="1" max="52" class="tm-hours-inp" style="width:50px;font-size:16px;">
+          <span style="font-size:12px;color:var(--muted);">occurrences</span>
         </div>
       </div>
       <!-- Timestamps (edit mode only) -->
@@ -1729,7 +1796,7 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
       <button class="tm-btn-cancel" onclick="closeTodoModal()">Cancel</button>
       <button class="tm-btn-delete" id="edit-task-btn" onclick="deleteTodo()">Delete</button>
       <button class="tm-btn-save" onclick="saveTodo()">
-        <span id="td-save-lbl">Add task</span>
+        <span id="td-save-lbl">Create To Do</span>
         <i class="ti ti-chevron-down" style="font-size:11px;"></i>
       </button>
     </div>
@@ -1766,7 +1833,7 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
 <script>
 const LINE_ITEMS=['Creative Direction','Design & Artwork','Briefing & coordination','Copywriting','Video Editing','Proofing & spell check','Artwork & file despatch','Contingency','Shot listing','Website build'];
 let jobCounter=6953,activeJobId=null,activeLabels=[],ctxTarget=null,pctxTarget=null,dragSrc=null;
-let jobs=[{id:'6752',name:'SFF Brand Guidelines',company:'Silver Fern Farms',budget:'$13,625',budgetTotal:'$23,125',bPct:59,hours:'85h',hoursTotal:'143h',hPct:59,status:'inplay',billable:true,labels:['May','June','July','APPROVED'],notes:'Brand refresh for SFF New Zealand. Includes full guidelines, typography, colour system, and template suite. Approved budget $23,125.',activity:[],invNum:null}];
+let jobs=[{id:'6752',name:'SFF Brand Guidelines',company:'Silver Fern Farms',budget:'$13,625',budgetTotal:'$23,125',bPct:59,hours:'85h',hoursTotal:'143h',hPct:59,status:'inplay',billable:true,workflowStatus:'live',labels:['May','June','July','APPROVED'],notes:'Brand refresh for SFF New Zealand. Includes full guidelines, typography, colour system, and template suite. Approved budget $23,125.',activity:[],invNum:null,members:['ro','bee','jb']}];
 let invCounter=1001;
 const SFF_PHASES=[
   {id:'p1',name:'Briefing + Brand Discovery',status:'complete',items:[
@@ -2330,6 +2397,68 @@ function updateJobLabel(){
     lbl.textContent='Job';
   }
 }
+
+// ── Todo modal helpers ────────────────────────────────────────────────────────
+function togglePersonalMode(on){
+  const hero=document.getElementById('td-personal-hero');
+  const assignSec=document.getElementById('td-assign-section');
+  const jobSec=document.getElementById('td-job-section');
+  if(hero)hero.classList.toggle('on',on);
+  if(assignSec)assignSec.style.display=on?'none':'block';
+  if(jobSec)jobSec.style.display=on?'none':'block';
+  // Sync the large avatar with the current assignee
+  const p=people[_todoAssignTo||currentPerson];
+  if(p){
+    const av=document.getElementById('td-pav-lg');const nm=document.getElementById('td-pname-lg');
+    if(av){av.style.background=p.color;av.textContent=p.initials;}
+    if(nm)nm.textContent=p.name.toLowerCase();
+  }
+}
+function _updateDateLabel(){
+  const dayNum=parseInt(document.getElementById('td-day')?.value)||5;
+  const d=new Date();const dow=(d.getDay()+6)%7;
+  d.setDate(d.getDate()-dow+(weekOffset*7)+(dayNum-1));
+  d.setHours(0,0,0,0);
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const dow2=(d.getDay()+6)%7;
+  const lbl=document.getElementById('td-date-label');
+  if(lbl)lbl.textContent=`${DAYS[dow2]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
+function openDatePicker(){
+  // Use a hidden date input
+  let inp=document.getElementById('_td-date-picker');
+  if(!inp){inp=document.createElement('input');inp.type='date';inp.id='_td-date-picker';inp.style.cssText='position:fixed;top:-9999px;opacity:0;';document.body.appendChild(inp);
+    inp.addEventListener('change',function(){
+      const sel=new Date(this.value+'T00:00:00');
+      // Compute weekOffset + dayNum from selected date
+      const today=new Date();const todayDow=(today.getDay()+6)%7;
+      today.setDate(today.getDate()-todayDow);today.setHours(0,0,0,0);
+      const selDow=(sel.getDay()+6)%7; // 0=Mon
+      const selMon=new Date(sel);selMon.setDate(sel.getDate()-selDow);selMon.setHours(0,0,0,0);
+      const diffDays=(selMon-today)/(1000*60*60*24);
+      weekOffset=Math.round(diffDays/7);
+      const dayN=selDow+1; // 1=Mon…5=Fri
+      const ds=document.getElementById('td-day');
+      if(ds)for(let o of ds.options){if(parseInt(o.value)===dayN){o.selected=true;break;}}
+      _updateDateLabel();
+    });
+  }
+  // Set current value
+  const dayNum=parseInt(document.getElementById('td-day')?.value)||5;
+  const d=new Date();const dow=(d.getDay()+6)%7;
+  d.setDate(d.getDate()-dow+(weekOffset*7)+(dayNum-1));d.setHours(0,0,0,0);
+  inp.value=d.toISOString().split('T')[0];
+  inp.click();
+}
+function toggleRepeatSection(){
+  const cfg=document.getElementById('td-repeat-config');
+  const btn=document.getElementById('td-repeat-btn');
+  const lbl=document.getElementById('td-repeat-label');
+  if(cfg)cfg.classList.toggle('on');
+  if(btn)btn.classList.toggle('on',cfg.classList.contains('on'));
+  if(lbl)lbl.textContent=cfg.classList.contains('on')?'Repeating':'Repeat';
+}
 function _resetTodoModal(day){
   editingTaskId=null;editingDay=null;
   _todoAssignTo=currentPerson;
@@ -2351,6 +2480,17 @@ function _resetTodoModal(day){
   // Set day
   const ds=document.getElementById('td-day');
   if(ds)for(let o of ds.options){if(parseInt(o.value)===(day||5)){o.selected=true;break;}}
+  // Reset personal mode
+  togglePersonalMode(false);
+  // Update date label
+  _updateDateLabel();
+  // Reset repeat
+  const cfg=document.getElementById('td-repeat-config');
+  const btn=document.getElementById('td-repeat-btn');
+  const lbl=document.getElementById('td-repeat-label');
+  if(cfg)cfg.classList.remove('on');
+  if(btn)btn.classList.remove('on');
+  if(lbl)lbl.textContent='Repeat';
   updateJobLabel();
 }
 function openTodoModal(jobId,day){
@@ -2749,6 +2889,30 @@ function saveTodo(){
     wd[dayNum].push(task);
     _fupTask=null;
     setTimeout(()=>document.getElementById('fup').classList.add('on'),800);
+    // Handle repeat: create copies for next N occurrences
+    const isRepeat=document.getElementById('td-repeat-config')?.classList.contains('on');
+    if(isRepeat){
+      const repN=parseInt(document.getElementById('td-rep-n')?.value)||1;
+      const repUnit=document.getElementById('td-rep-unit')?.value||'week';
+      const repCount=parseInt(document.getElementById('td-rep-count')?.value)||4;
+      const savedTask=task;
+      for(let i=1;i<=repCount;i++){
+        const savedOffset=weekOffset;
+        const daysAdd=repUnit==='day'?repN*i:repUnit==='week'?repN*i*7:repN*i*30;
+        const clonedDay=dayNum;
+        // Calculate future week key
+        const base=new Date();const bDow=(base.getDay()+6)%7;base.setDate(base.getDate()-bDow+(weekOffset*7));base.setHours(0,0,0,0);
+        const futureDate=new Date(base);futureDate.setDate(base.getDate()+(i*(repUnit==='day'?1:repUnit==='week'?7:30)*repN)+(dayNum-1));
+        const futureDow=(futureDate.getDay()+6)%7;
+        const futureMon=new Date(futureDate);futureMon.setDate(futureDate.getDate()-futureDow);futureMon.setHours(0,0,0,0);
+        const futureWk=futureMon.toISOString().split('T')[0];
+        const futureDayN=futureDow+1;
+        if(!todoData[targetPerson])todoData[targetPerson]={};
+        if(!todoData[targetPerson][futureWk])todoData[targetPerson][futureWk]={};
+        if(!todoData[targetPerson][futureWk][futureDayN])todoData[targetPerson][futureWk][futureDayN]=[];
+        todoData[targetPerson][futureWk][futureDayN].push({...savedTask,id:'t'+Date.now()+i,repeat:true});
+      }
+    }
   }
   closeTodoModal();
   renderTodo();saveData();
@@ -2823,11 +2987,22 @@ function renderJobs(){
 function openJobDetail(id){
   activeJobId=id;const j=jobs.find(x=>x.id===id);
   const isNew=!j.budget||j.budget==='$0';
-  document.getElementById('d-meta-line').textContent=`${j.id} · ${j.company} · ${j.billable?'Billable':'Non-billable'}`;
+  const wfLabel=j.workflowStatus==='quote'?'Quote':j.workflowStatus==='invoiced'?'Invoiced':'Live job';
+  const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
+  document.getElementById('d-meta-line').innerHTML=`${j.id} · ${j.company} · ${j.billable?'Billable':'Non-billable'} &nbsp;<span class="wf-badge ${wfCls}">${wfLabel}</span>`;
   document.getElementById('d-title-text').textContent=j.name;
   document.getElementById('d-hours-sell').textContent=isNew?'No hours logged yet':`${j.hours} used / ${j.hoursTotal} planned · ${j.budget} sell`;
   activeLabels=j.labels?[...j.labels]:[];
   renderLabels();
+  // Render team members
+  const membersRow=document.getElementById('d-members-row');
+  if(membersRow){
+    if(!j.members||!j.members.length)j.members=['ro'];
+    membersRow.innerHTML=j.members.map(k=>{
+      const p=people[k];if(!p)return'';
+      return`<div class="d-av" style="background:${p.color};cursor:pointer;" title="${p.name}" onclick="openPersonTodo('${k}')">${p.initials}</div>`;
+    }).join('')+`<div class="d-av" style="background:#ddd;color:#888;font-size:13px;cursor:pointer;" title="Add team member" onclick="openAddMemberPicker('${j.id}')">+</div>`;
+  }
   // Job notes field
   const notesRow=document.getElementById('job-notes-row');
   const notesInp=document.getElementById('job-notes-inp');
@@ -2839,6 +3014,39 @@ function openJobDetail(id){
   document.querySelectorAll('.view').forEach(el=>el.classList.add('hidden'));
   document.getElementById('view-detail').classList.remove('hidden');
   switchDTab(document.querySelector('.d-tab'),'plan');
+}
+function openPersonTodo(personKey){currentPerson=personKey;navTo('todo');}
+function openAddMemberPicker(jobId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  if(!j.members)j.members=['ro'];
+  const modal=document.createElement('div');
+  modal.className='modal-bg on';
+  const opts=Object.keys(people).map(k=>{
+    const p=people[k];const on=j.members.includes(k);
+    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;background:${on?'var(--off)':'#fff'};" onclick="toggleJobMember('${jobId}','${k}',this)">
+      <div class="d-av" style="background:${p.color};flex-shrink:0;">${p.initials}</div>
+      <span style="flex:1;font-size:13px;">${p.name}</span>
+      ${on?'<i class="ti ti-check" style="color:var(--red);font-size:12px;"></i>':''}
+    </div>`;
+  }).join('');
+  modal.innerHTML=`<div class="modal" style="max-width:320px;"><div class="modal-hd"><span class="modal-hd-title">Team on this job</span><button class="modal-x" onclick="this.closest('.modal-bg').remove()"><i class="ti ti-x"></i></button></div><div style="padding:8px 0;">${opts}</div></div>`;
+  document.body.appendChild(modal);
+}
+function toggleJobMember(jobId,personKey,rowEl){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  if(!j.members)j.members=[];
+  const idx=j.members.indexOf(personKey);
+  if(idx===-1){j.members.push(personKey);rowEl.style.background='var(--off)';rowEl.insertAdjacentHTML('beforeend','<i class="ti ti-check" style="color:var(--red);font-size:12px;"></i>');}
+  else{j.members.splice(idx,1);rowEl.style.background='#fff';rowEl.querySelector('.ti-check')?.remove();}
+  saveData();
+  // Refresh the avatars row
+  const membersRow=document.getElementById('d-members-row');
+  if(membersRow){
+    membersRow.innerHTML=j.members.map(k=>{
+      const p=people[k];if(!p)return'';
+      return`<div class="d-av" style="background:${p.color};cursor:pointer;" title="${p.name}" onclick="openPersonTodo('${k}')">${p.initials}</div>`;
+    }).join('')+`<div class="d-av" style="background:#ddd;color:#888;font-size:13px;cursor:pointer;" title="Add team member" onclick="openAddMemberPicker('${j.id}')">+</div>`;
+  }
 }
 function updateJobNotes(val){
   const j=jobs.find(x=>x.id===activeJobId);
@@ -2965,7 +3173,7 @@ function renderItems(phId){
     const iCls=item.status==='complete'?'ib-c':'ib-p';
     const iLbl=item.status==='complete'?'Complete':'Open';
     const noteIcon=item.note?`<i class="ti ti-note" style="font-size:11px;color:var(--muted);margin-left:5px;" title="${item.note.replace(/"/g,'&quot;')}"></i>`:'';
-    tr.innerHTML=`<td><i class="ti ti-grip-vertical" style="color:var(--border);font-size:13px;cursor:grab;"></i></td><td class="i-name">${item.name}${noteIcon}</td><td class="i-hrs ${item.over?'i-hrs-over':''}">${item.hours}</td><td class="i-rate" style="font-size:12px;color:var(--muted);">${item.rate}</td><td class="i-sell"><span style="font-weight:400;">${item.used}</span> <span class="i-sof">/ ${item.total}</span></td><td style="text-align:right"><span class="i-badge ${iCls}" style="cursor:pointer;" title="Click to toggle" onclick="toggleItemStatus('${item.id}','${phId}',event)">${iLbl}</span></td><td><i class="ti ti-dots" style="font-size:14px;color:var(--muted);cursor:pointer;" onclick="showCtx(event,'${item.id}','${phId}')"></i></td>`;
+    tr.innerHTML=`<td><i class="ti ti-grip-vertical" style="color:var(--border);font-size:13px;cursor:grab;"></i></td><td class="i-name"><span class="item-editable" title="Click to rename" onclick="inlineEditItem(event,'${item.id}','${phId}','name')">${item.name}</span>${noteIcon}</td><td class="i-hrs ${item.over?'i-hrs-over':''}" style="text-align:right;"><span class="item-editable" title="Click to edit hours" onclick="inlineEditItem(event,'${item.id}','${phId}','hours')">${item.hours}</span></td><td class="i-rate" style="font-size:12px;color:var(--muted);text-align:right;"><span class="item-editable" title="Click to edit rate" onclick="inlineEditItem(event,'${item.id}','${phId}','rate')">${item.rate}</span></td><td class="i-sell"><span style="font-weight:400;">${item.used}</span> <span class="i-sof">/ ${item.total}</span></td><td style="text-align:right"><span class="i-badge ${iCls}" style="cursor:pointer;" title="Click to toggle" onclick="toggleItemStatus('${item.id}','${phId}',event)">${iLbl}</span></td><td><i class="ti ti-dots" style="font-size:14px;color:var(--muted);cursor:pointer;" onclick="showCtx(event,'${item.id}','${phId}')"></i></td>`;
     tr.addEventListener('dragstart',e=>{dragSrc=tr;tr.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
     tr.addEventListener('dragover',e=>e.preventDefault());
     tr.addEventListener('drop',e=>{e.stopPropagation();if(dragSrc===tr)return;const sp=phases.find(p=>p.id===dragSrc.dataset.phId);const tp=phases.find(p=>p.id===tr.dataset.phId);const si=sp.items.findIndex(i=>i.id===dragSrc.dataset.itemId);const ti=tp.items.findIndex(i=>i.id===tr.dataset.itemId);const[mv]=sp.items.splice(si,1);tp.items.splice(ti,0,mv);renderPhases();});
@@ -2977,6 +3185,33 @@ function renderItems(phId){
     nr.innerHTML=`<td colspan="${COLS}"><div class="item-note-wrap"><span class="item-note-lbl">Note</span><textarea class="item-note-inp" rows="1" placeholder="Add a note for this item — it will carry through to any todos booked against it…" onchange="saveItemNote('${item.id}','${phId}',this.value)" oninput="autoResizeNote(this)">${item.note||''}</textarea></div></td>`;
     tbody.appendChild(nr);
   });
+}
+
+function inlineEditItem(e,itemId,phId,field){
+  e.stopPropagation();
+  const span=e.target;const current=span.textContent.trim();
+  const inp=document.createElement('input');
+  inp.type='text';inp.value=current;inp.className='item-edit-inp';
+  inp.style.width=field==='name'?'160px':'70px';
+  span.replaceWith(inp);inp.focus();inp.select();
+  function commit(){
+    const val=inp.value.trim()||current;
+    const ph=phases.find(p=>p.id===phId);
+    const item=ph?.items.find(i=>i.id===itemId);
+    if(item){
+      item[field]=val;
+      // Recalculate total if hours or rate changed
+      if(field==='hours'||field==='rate'){
+        const h=parseHrsInput(item.hours)||0;
+        const r=parseInt((item.rate||'$150').replace(/[$,]/g,''))||150;
+        item.total='$'+(h*r).toLocaleString();
+      }
+      saveData();
+    }
+    renderPhases();
+  }
+  inp.addEventListener('blur',commit);
+  inp.addEventListener('keydown',e2=>{if(e2.key==='Enter')inp.blur();if(e2.key==='Escape'){inp.value=current;inp.blur();}});
 }
 function autoResizeNote(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';}
 function saveItemNote(itemId,phId,val){
