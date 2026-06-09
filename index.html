@@ -753,16 +753,30 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .day-hrs-bar{font-size:10px;color:var(--muted);margin-top:3px;display:flex;gap:6px;}
 .day-hrs-todo{color:var(--ink);font-weight:400;}
 /* Split layout */
+.todo-body{position:relative;}
 .day-todo-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .day-todo{overflow-y:auto;padding:6px 7px;display:flex;flex-direction:column;gap:4px;min-height:32px;flex:none;}
 .day-todo.drop-hi{background:#fffdf5;}
-.day-divider{flex-shrink:0;height:22px;display:flex;align-items:center;cursor:ns-resize;background:var(--faint);border-top:1px solid var(--border);border-bottom:1px solid var(--border);user-select:none;position:relative;}
-.day-divider-label{position:absolute;left:10px;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);pointer-events:none;}
-.day-divider-handle{position:absolute;right:10px;font-size:11px;color:var(--border);pointer-events:none;}
-.day-divider.div-drop-hi{background:var(--done);border-color:#A5D6A7;}
 .day-done{overflow-y:auto;padding:6px 7px;display:flex;flex-direction:column;gap:4px;background:var(--off);flex:1;}
 .day-done.drop-hi{background:#f0fef4;}
 .day-done-empty{padding:6px 0;font-size:11px;color:var(--border);text-align:center;}
+/* Global done divider */
+.global-divider{position:absolute;left:0;right:0;height:22px;background:var(--faint);border-top:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;cursor:ns-resize;user-select:none;z-index:20;}
+.global-divider.div-drop-hi{background:var(--done);border-color:#A5D6A7;}
+.gd-label{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
+.gd-handle{margin-left:auto;font-size:11px;color:var(--border);line-height:1;}
+/* Day capacity */
+.day-cap{display:flex;align-items:center;gap:7px;margin-top:4px;}
+.day-cap-bar{flex:1;height:3px;background:var(--faint);border-radius:1px;display:flex;overflow:hidden;}
+.dcb-todo{height:100%;background:var(--ink);transition:width .2s;}
+.dcb-done{height:100%;background:#A5D6A7;transition:width .2s;}
+.day-cap-info{font-size:10px;color:var(--muted);white-space:nowrap;}
+.day-cap-info.over{color:var(--red);font-weight:500;}
+/* Resize handle */
+.tc-resize{height:8px;margin:3px -10px -8px;cursor:ns-resize;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.tc-resize::after{content:'';width:20px;height:2px;background:var(--faint);border-radius:1px;transition:background .15s;}
+.task-card:hover .tc-resize::after{background:var(--border);}
+.task-card.resizing{cursor:ns-resize;user-select:none;}
 /* Task cards */
 .task-card{background:var(--white);border:1px solid var(--border);padding:8px 10px;cursor:pointer;transition:border-color .15s;user-select:none;}
 .task-card:hover{border-color:#aaa;}
@@ -1614,6 +1628,14 @@ function viewTeamTodo(p){currentPerson=p;navTo('todo');}
 
 let todoSplitPx=260,isDivDrag=false,divDragStartY=0,divDragStartPx=0;
 
+function positionGlobalDivider(){
+  const gd=document.getElementById('global-divider');
+  if(!gd)return;
+  const firstHead=document.querySelector('.day-head');
+  const headH=firstHead?firstHead.offsetHeight:58;
+  gd.style.top=(headH+todoSplitPx)+'px';
+}
+
 function renderTodo(){
   const p=people[currentPerson];
   document.getElementById('current-av').textContent=p.initials;
@@ -1622,15 +1644,16 @@ function renderTodo(){
   const wrap=document.getElementById('day-cols');wrap.innerHTML='';
   const data=todoData[currentPerson]||{};
 
-  // Calc totals for summary bar
+  // Week totals for summary bar
   let totalTodoH=0,totalDoneH=0;
   [1,2,3,4,5].forEach(d=>{(data[d]||[]).forEach(t=>{if(t.done)totalDoneH+=t.hours||0;else totalTodoH+=t.hours||0;});});
   const sumEl=document.querySelector('.todo-summary');
-  if(sumEl)sumEl.textContent=`To do: ${formatHrs(totalTodoH)} · Done: ${formatHrs(totalDoneH)}`;
+  if(sumEl)sumEl.textContent=`To do: ${formatHrs(totalTodoH)||'0h'} · Done: ${formatHrs(totalDoneH)||'0h'}`;
 
-  // Actual today day-of-week (Mon=1…Fri=5)
   const _dow=new Date().getDay();
-  const todayDayNum=_dow===0?0:_dow; // 0=Sun,1=Mon…5=Fri
+  const todayDayNum=_dow===0?0:_dow;
+  const DAY_CAP=8;
+
   [1,2,3,4,5].forEach((d,i)=>{
     const isWork=people[currentPerson].days.includes(d);
     const isToday=d===todayDayNum;
@@ -1639,10 +1662,20 @@ function renderTodo(){
     const doneTasks=tasks.filter(t=>t.done);
     const dayTodoH=todoTasks.reduce((s,t)=>s+(t.hours||0),0);
     const dayDoneH=doneTasks.reduce((s,t)=>s+(t.hours||0),0);
+    const dayTotalH=dayTodoH+dayDoneH;
+    const isOver=dayTotalH>DAY_CAP;
+    const todoW=Math.min(100,Math.round((dayTodoH/DAY_CAP)*100));
+    const doneW=Math.min(100-todoW,Math.round((dayDoneH/DAY_CAP)*100));
 
     const col=document.createElement('div');
     col.className='day-col'+(isWork?' workday':'')+(isToday?' today':'');
     col.dataset.day=d;
+
+    let capHTML='';
+    if(isWork){
+      const label=dayTotalH>0?(isOver?`<span class="day-cap-info over">${formatHrs(dayTotalH)} / 8h · OVER</span>`:`<span class="day-cap-info">${formatHrs(dayTodoH)||'0h'} to do · ${formatHrs(dayDoneH)||'0h'} done</span>`):'<span class="day-cap-info">No tasks</span>';
+      capHTML=`<div class="day-cap">${label}<div class="day-cap-bar"><div class="dcb-done" style="width:${doneW}%;"></div><div class="dcb-todo" style="width:${todoW}%;${isOver?'background:var(--red);':''}"></div></div></div>`;
+    }
 
     col.innerHTML=`
       <div class="day-head">
@@ -1650,11 +1683,10 @@ function renderTodo(){
           <div><div class="day-name">${DAY_NAMES[i]}</div><div class="day-num ${isToday?'today-red':''}">${d}</div></div>
           ${isWork?`<button class="day-add-btn" onclick="openTodoModal(null,${d})"><i class="ti ti-plus" style="font-size:9px"></i> Add New</button>`:''}
         </div>
-        ${isWork?`<div class="day-hrs-bar"><span class="day-hrs-todo">${formatHrs(dayTodoH)}</span><span>· ${formatHrs(dayDoneH)} done</span></div>`:''}
+        ${capHTML}
       </div>
       <div class="day-todo-wrap">
         <div class="day-todo" id="dtodo-${d}" style="height:${todoSplitPx}px;"></div>
-        <div class="day-divider" id="ddiv-${d}"><span class="day-divider-label">Done</span><span class="day-divider-handle">⠿</span></div>
         <div class="day-done" id="ddone-${d}"></div>
       </div>`;
     wrap.appendChild(col);
@@ -1662,65 +1694,145 @@ function renderTodo(){
 
     const todoEl=document.getElementById('dtodo-'+d);
     const doneEl=document.getElementById('ddone-'+d);
-    const divEl=document.getElementById('ddiv-'+d);
 
     todoTasks.forEach(t=>todoEl.appendChild(createTaskCard(t,d,false)));
-    if(doneTasks.length===0){doneEl.innerHTML='<div class="day-done-empty">—</div>';}
-    else{doneTasks.forEach(t=>doneEl.appendChild(createTaskCard(t,d,true)));}
+    if(doneTasks.length===0)doneEl.innerHTML='<div class="day-done-empty">—</div>';
+    else doneTasks.forEach(t=>doneEl.appendChild(createTaskCard(t,d,true)));
 
-    // Drop zones
     todoEl.addEventListener('dragover',e=>{e.preventDefault();todoEl.classList.add('drop-hi');});
     todoEl.addEventListener('dragleave',()=>todoEl.classList.remove('drop-hi'));
     todoEl.addEventListener('drop',e=>onDropToSection(e,d,false));
     doneEl.addEventListener('dragover',e=>{e.preventDefault();doneEl.classList.add('drop-hi');});
     doneEl.addEventListener('dragleave',()=>doneEl.classList.remove('drop-hi'));
     doneEl.addEventListener('drop',e=>onDropToSection(e,d,true));
-    divEl.addEventListener('dragover',e=>{e.preventDefault();divEl.classList.add('div-drop-hi');});
-    divEl.addEventListener('dragleave',()=>divEl.classList.remove('div-drop-hi'));
-    divEl.addEventListener('drop',e=>{divEl.classList.remove('div-drop-hi');onDropToSection(e,d,true);});
+  });
 
-    // Divider drag to resize
-    divEl.addEventListener('mousedown',e=>{
+  // Single global done divider
+  let gd=document.getElementById('global-divider');
+  if(!gd){
+    gd=document.createElement('div');
+    gd.id='global-divider';
+    gd.className='global-divider';
+    gd.innerHTML='<span class="gd-label">Done</span><span class="gd-handle">⠿</span>';
+    document.querySelector('.todo-body').appendChild(gd);
+    gd.addEventListener('mousedown',e=>{
       isDivDrag=true;divDragStartY=e.clientY;divDragStartPx=todoSplitPx;
       document.body.style.cursor='ns-resize';document.body.style.userSelect='none';
       e.preventDefault();
     });
-  });
+    gd.addEventListener('dragover',e=>{e.preventDefault();gd.classList.add('div-drop-hi');});
+    gd.addEventListener('dragleave',()=>gd.classList.remove('div-drop-hi'));
+    gd.addEventListener('drop',e=>{gd.classList.remove('div-drop-hi');
+      // drop on divider = mark done in whichever column is under cursor
+      const col=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-day]');
+      const d=col?parseInt(col.dataset.day):1;
+      onDropToSection(e,d,true);
+    });
+  }
+  setTimeout(positionGlobalDivider,0);
 }
 
 function formatHrs(h){if(!h||h===0)return'';const m=Math.round(h*60);const hh=Math.floor(m/60);const mm=m%60;return hh&&mm?`${hh}h ${mm}m`:hh?`${hh}h`:`${mm}m`;}
+
+const ITEM_ICONS={'Creative Direction':'ti-palette','Design & Artwork':'ti-pencil','Briefing & coordination':'ti-clipboard-list','Copywriting':'ti-writing','Video Editing':'ti-video','Proofing & spell check':'ti-eye','Artwork & file despatch':'ti-send','Contingency':'ti-alert-circle','Shot listing':'ti-camera','Website build':'ti-code','Leave':'ti-sun','Briefing':'ti-clipboard-list'};
+
+function taskCardHeight(hours){return hours?Math.max(56,Math.round(52+(hours*20))):56;}
 
 function createTaskCard(t,day,isDone){
   const card=document.createElement('div');
   card.className='task-card'+(isDone?' done-c':'')+(t.urgent&&!isDone?' urgent-c':'');
   card.draggable=true;
   card.dataset.taskId=t.id;card.dataset.day=day;
-  const ITEM_ICONS={'Creative Direction':'ti-palette','Design & Artwork':'ti-pencil','Briefing & coordination':'ti-clipboard-list','Copywriting':'ti-writing','Video Editing':'ti-video','Proofing & spell check':'ti-eye','Artwork & file despatch':'ti-send','Contingency':'ti-alert-circle','Shot listing':'ti-camera','Website build':'ti-code','Leave':'ti-sun','Briefing':'ti-clipboard-list'};
+  if(t.hours)card.style.height=taskCardHeight(t.hours)+'px';
+
   const iconCls=ITEM_ICONS[t.item]||(t.urgent?'ti-alert-circle':'ti-point');
   const icon=`<i class="ti ${iconCls}" style="font-size:11px;color:var(--muted);"></i>`;
   const hrsLabel=t.hours?formatHrs(t.hours):'';
   const jobIdMatch=t.job?t.job.match(/^(\d+)/):null;
   const jobIdNum=jobIdMatch?jobIdMatch[1]:null;
   const hasJobOrItem=t.job||t.item;
+
   card.innerHTML=`
     <div class="tc-top">
       <span class="tc-icon">${icon}</span>
       <span class="tc-title">${t.title}</span>
-      ${hrsLabel?`<span class="tc-hrs">${hrsLabel}</span>`:''}
+      ${hrsLabel?`<span class="tc-hrs" id="hrs-${t.id}">${hrsLabel}</span>`:'<span class="tc-hrs" id="hrs-${t.id}"></span>'}
     </div>
     ${hasJobOrItem?`<div class="tc-meta">
       ${t.job?`<span class="tc-job${jobIdNum?' clickable':''}" data-jid="${jobIdNum||''}">${t.job}</span>`:''}
       ${t.job&&t.item?'<span class="tc-sep"></span>':''}
       ${t.item?`<span class="tc-item-tag">${t.item}</span>`:''}
     </div>`:''}
-    ${t.note?`<div class="tc-note">${t.note}</div>`:''}`;
-  // Click job ref to open job detail
+    ${t.note?`<div class="tc-note">${t.note}</div>`:''}
+    <div class="tc-resize" title="Drag to adjust hours"></div>`;
+
   const jEl=card.querySelector('.tc-job.clickable');
   if(jEl)jEl.addEventListener('click',e=>{e.stopPropagation();openJobDetail(jEl.dataset.jid);});
-  card.addEventListener('click',()=>openEditTodo(t,day));
-  card.addEventListener('dragstart',e=>{dragSrc=card;card.classList.add('dragging-c');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',JSON.stringify({taskId:t.id,fromDay:day}));});
+  card.addEventListener('click',e=>{if(!e.target.closest('.tc-resize'))openEditTodo(t,day);});
+  card.addEventListener('dragstart',e=>{
+    if(e.target.closest('.tc-resize')){e.preventDefault();return;}
+    dragSrc=card;card.classList.add('dragging-c');
+    e.dataTransfer.effectAllowed='move';
+    e.dataTransfer.setData('text/plain',JSON.stringify({taskId:t.id,fromDay:day}));
+  });
   card.addEventListener('dragend',()=>{card.classList.remove('dragging-c');document.querySelectorAll('.drop-hi,.div-drop-hi').forEach(el=>el.classList.remove('drop-hi','div-drop-hi'));});
+
+  // Resize handle — drag to change hours
+  const resizeHandle=card.querySelector('.tc-resize');
+  resizeHandle.addEventListener('mousedown',e=>{
+    e.preventDefault();e.stopPropagation();
+    card.classList.add('resizing');card.draggable=false;
+    const startY=e.clientY;
+    const startH=card.offsetHeight;
+    const startHours=t.hours||1;
+    let curHours=startHours;
+    const onMove=ev=>{
+      const dy=ev.clientY-startY;
+      const newH=Math.max(40,startH+dy);
+      // Snap to 0.25h steps; 20px per hour
+      curHours=Math.max(0.25,Math.round(((newH-52)/20)*4)/4);
+      card.style.height=taskCardHeight(curHours)+'px';
+      const hrsEl=document.getElementById('hrs-'+t.id);
+      if(hrsEl)hrsEl.textContent=formatHrs(curHours);
+    };
+    const onUp=()=>{
+      document.removeEventListener('mousemove',onMove);
+      document.removeEventListener('mouseup',onUp);
+      card.classList.remove('resizing');card.draggable=true;
+      if(curHours!==startHours){
+        const arr=todoData[currentPerson][day]||[];
+        const task=arr.find(x=>x.id===t.id);
+        if(task){task.hours=curHours;saveData();}
+        // Update header capacity without full re-render
+        renderTodoHeader(day);
+        const sumEl=document.querySelector('.todo-summary');
+        let wTodo=0,wDone=0;
+        [1,2,3,4,5].forEach(d=>{(todoData[currentPerson][d]||[]).forEach(x=>{if(x.done)wDone+=x.hours||0;else wTodo+=x.hours||0;});});
+        if(sumEl)sumEl.textContent=`To do: ${formatHrs(wTodo)||'0h'} · Done: ${formatHrs(wDone)||'0h'}`;
+      }
+    };
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+  });
+
   return card;
+}
+
+// Re-render just a day header's capacity bar without full re-render
+function renderTodoHeader(day){
+  const tasks=todoData[currentPerson][day]||[];
+  const todoH=tasks.filter(t=>!t.done).reduce((s,t)=>s+(t.hours||0),0);
+  const doneH=tasks.filter(t=>t.done).reduce((s,t)=>s+(t.hours||0),0);
+  const total=todoH+doneH;
+  const isOver=total>8;
+  const todoW=Math.min(100,Math.round((todoH/8)*100));
+  const doneW=Math.min(100-todoW,Math.round((doneH/8)*100));
+  const col=document.querySelector(`.day-col[data-day="${day}"]`);
+  if(!col)return;
+  const cap=col.querySelector('.day-cap');
+  if(!cap)return;
+  const label=total>0?(isOver?`<span class="day-cap-info over">${formatHrs(total)} / 8h · OVER</span>`:`<span class="day-cap-info">${formatHrs(todoH)||'0h'} to do · ${formatHrs(doneH)||'0h'} done</span>`):'<span class="day-cap-info">No tasks</span>';
+  cap.innerHTML=`${label}<div class="day-cap-bar"><div class="dcb-done" style="width:${doneW}%;"></div><div class="dcb-todo" style="width:${todoW}%;${isOver?'background:var(--red);':''}"></div></div>`;
 }
 
 function onDropToSection(e,toDay,markDone){
@@ -1901,6 +2013,7 @@ document.addEventListener('mousemove',e=>{
   const delta=e.clientY-divDragStartY;
   todoSplitPx=Math.max(32,divDragStartPx+delta);
   document.querySelectorAll('.day-todo').forEach(el=>el.style.height=todoSplitPx+'px');
+  positionGlobalDivider();
 });
 document.addEventListener('mouseup',()=>{
   if(isDivDrag){isDivDrag=false;document.body.style.cursor='';document.body.style.userSelect='';}
