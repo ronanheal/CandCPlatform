@@ -97,7 +97,7 @@ function renderReporting(){
   destroyChart(chartByPerson);
   chartByPerson=new Chart(document.getElementById('chart-by-person'),{
     type:'bar',
-    data:{labels:pLabels,data:pHours,backgroundColor:pColors,hoverBackgroundColor:pColors.map(c=>c+'cc')},
+    data:{labels:pLabels,datasets:[{data:pHours,backgroundColor:pColors,hoverBackgroundColor:pColors.map(c=>c+'cc')}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:'#f0f0f0'},ticks:{callback:v=>fmtHrs(v)}}}}
   });
 
@@ -109,7 +109,7 @@ function renderReporting(){
   destroyChart(chartByDay);
   chartByDay=new Chart(document.getElementById('chart-by-day'),{
     type:'bar',
-    data:{labels:dayLabels,data:dayData,backgroundColor:'#ED1E24',hoverBackgroundColor:'#ED1E24cc'},
+    data:{labels:dayLabels,datasets:[{data:dayData,backgroundColor:'#ED1E24',hoverBackgroundColor:'#ED1E24cc'}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:'#f0f0f0'},ticks:{callback:v=>fmtHrs(v)}}}}
   });
 
@@ -125,7 +125,7 @@ function renderReporting(){
   destroyChart(chartByJob);
   chartByJob=new Chart(document.getElementById('chart-by-job'),{
     type:'doughnut',
-    data:{labels:jobLabels,data:jobHours,backgroundColor:jobPalette.slice(0,jobLabels.length),hoverOffset:6},
+    data:{labels:jobLabels,datasets:[{data:jobHours,backgroundColor:jobPalette.slice(0,jobLabels.length),hoverOffset:6}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},padding:10}}}}
   });
 
@@ -1125,6 +1125,19 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 /* CHANGELOG banner */
 .changelog{background:var(--ink);color:#ccc;font-size:11px;padding:6px 16px;text-align:center;letter-spacing:.04em;flex-shrink:0;}
 .changelog strong{color:var(--white);}
+/* Changelog modal */
+.cl-modal{background:var(--white);border-radius:6px;width:480px;max-width:94vw;max-height:82vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.18);}
+.cl-hd{display:flex;align-items:flex-start;justify-content:space-between;padding:20px 22px 16px;border-bottom:1px solid var(--border);}
+.cl-body{flex:1;overflow-y:auto;padding:20px 22px;}
+.cl-release{margin-bottom:24px;}
+.cl-release:last-child{margin-bottom:0;}
+.cl-rel-hd{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;}
+.cl-rel-ver{font-size:13px;font-weight:600;color:var(--ink);}
+.cl-rel-date{font-size:11px;color:var(--muted);}
+.cl-rel-title{font-size:13px;font-weight:500;color:var(--ink);margin-bottom:8px;}
+.cl-item{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--ink);padding:3px 0;line-height:1.45;}
+.cl-item::before{content:'';display:block;width:5px;height:5px;border-radius:50%;background:var(--red);margin-top:5px;flex-shrink:0;}
+.cl-ft{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;}
 
 /* Person switcher dropdown */
 .ps-dropdown{position:relative;}
@@ -1331,6 +1344,9 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
 .tm-repeat-btn.on{background:var(--off);}
 .tm-repeat-config{background:var(--off);border:1px solid var(--border);border-radius:3px;padding:12px 14px;margin-top:6px;display:none;}
 .tm-repeat-config.on{display:block;}
+.rep-end-chip{background:var(--off);border:1px solid var(--border);border-radius:20px;padding:3px 12px;font-size:11px;font-family:var(--font);color:var(--muted);cursor:pointer;transition:all .12s;}
+.rep-end-chip:hover{border-color:var(--ink);color:var(--ink);}
+.rep-end-chip.on{background:var(--ink);border-color:var(--ink);color:#fff;}
 /* Item inline edit */
 .item-editable{cursor:pointer;border-radius:2px;padding:1px 4px;transition:background .1s;}
 .item-editable:hover{background:var(--off);}
@@ -1527,6 +1543,57 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
         </div>
       </div>
 
+
+      <!-- JOB DETAIL -->
+      <div id="view-detail" class="view hidden">
+        <div class="detail-view">
+          <div class="detail-head">
+            <div class="detail-back" onclick="navTo('jobs')"><i class="ti ti-arrow-left" style="font-size:12px"></i> Jobs</div>
+            <div class="detail-title-row">
+              <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;" id="d-meta-line"></div><div class="detail-title" id="d-title-text">—</div></div>
+              <div class="detail-actions">
+                <button class="d-action" onclick="openTodoModal(activeJobId,5)"><i class="ti ti-checklist" style="font-size:13px"></i> Add todo</button>
+                <button class="d-action" onclick="openInvoice()"><i class="ti ti-file-invoice" style="font-size:13px"></i> Invoice</button>
+              </div>
+            </div>
+            <div class="detail-meta-line">
+              <div style="display:flex;" id="d-members-row"><!-- populated by openJobDetail --></div>
+              <span id="d-hours-sell" style="margin-left:8px;font-size:12px;color:var(--muted);"></span>
+            </div>
+            <div class="labels-row" id="labels-row">
+              <div class="label-add-btn" onclick="addLabel()"><i class="ti ti-plus" style="font-size:11px"></i> Add label</div>
+            </div>
+            <div id="job-notes-row" style="padding:0 0 10px;display:none;">
+              <textarea id="job-notes-inp" placeholder="Add a brief or notes for this job…" style="width:100%;border:none;border-top:1px solid var(--border);background:var(--off);font-family:var(--font);font-size:12px;color:var(--ink);resize:none;outline:none;padding:8px 0 4px;line-height:1.5;" rows="2" oninput="updateJobNotes(this.value)"></textarea>
+            </div>
+            <div class="detail-tabs">
+              <div class="d-tab on" onclick="switchDTab(this,'plan')">Job plan</div>
+              <div class="d-tab" onclick="switchDTab(this,'quote')">Quote</div>
+              <div class="d-tab" onclick="switchDTab(this,'activity')">Activity</div>
+            </div>
+          </div>
+          <div id="dtab-plan" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+            <div class="stats-strip" id="d-stats"></div>
+            <div class="plan-area">
+              <div class="plan-actions">
+                <button class="p-btn" onclick="showAddItemForm(null)"><i class="ti ti-plus" style="font-size:12px"></i> Add item</button>
+                <button class="p-btn"><i class="ti ti-currency-dollar" style="font-size:12px"></i> Add expense</button>
+                <button class="p-btn" onclick="addPhase()"><i class="ti ti-layout-rows" style="font-size:12px"></i> New phase</button>
+              </div>
+              <div id="phases-wrap"></div>
+              <div class="exp-sec" id="exp-wrap">
+                <div class="exp-head" onclick="toggleExp()"><i class="ti ti-chevron-down ph-chv exp-chv"></i><span style="font-size:13px;font-weight:400;flex:1;letter-spacing:.02em;">Expenses</span><span style="font-size:11px;color:#888;">$0 / $200</span></div>
+                <table class="exp-t"><thead><tr><th>Expense</th><th style="width:100px;">Date</th><th style="width:55px;">Qty</th><th style="width:85px;">Cost</th><th style="width:65px;">Markup</th><th style="width:85px;">Sell</th><th style="width:80px;text-align:right;">Total</th><th style="width:75px;text-align:right;">Status</th></tr></thead>
+                <tbody><tr><td>Disbursements</td><td style="font-size:12px;color:var(--muted);">28 May 26</td><td style="font-size:12px;">1 NZD</td><td style="font-size:12px;">$0</td><td style="font-size:12px;color:var(--muted);">—</td><td style="font-size:12px;">$100</td><td style="text-align:right;font-size:12px;">$100</td><td style="text-align:right;"><span class="exp-badg">Draft</span></td></tr></tbody></table>
+                <div class="add-e-row"><i class="ti ti-plus" style="font-size:11px"></i> Add expense</div>
+              </div>
+              <div class="ph-add" onclick="addPhase()"><i class="ti ti-plus" style="font-size:13px"></i> New phase</div>
+            </div>
+          </div>
+          <div id="dtab-quote" class="hidden" style="flex:1;overflow-y:auto;padding:24px 24px 50px;"></div>
+          <div id="dtab-activity" class="act-feed hidden"></div>
+        </div>
+      </div>
       <!-- BOARDS -->
       <div id="view-boards" class="view hidden">
         <!-- BOARDS LANDING -->
@@ -1772,18 +1839,31 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
       </div>
       <!-- Repeat config (hidden by default) -->
       <div class="tm-repeat-config" id="td-repeat-config">
-        <div class="tm-lbl" style="margin-bottom:8px;">Repeat every</div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <input type="number" id="td-rep-n" value="1" min="1" max="52" class="tm-hours-inp" style="width:50px;font-size:16px;">
-          <select id="td-rep-unit" class="tm-day-sel" style="font-size:13px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <span style="font-size:12px;color:var(--muted);white-space:nowrap;">Every</span>
+          <input type="number" id="td-rep-n" value="1" min="1" max="52" class="tm-hours-inp" style="width:44px;text-align:center;">
+          <select id="td-rep-unit" class="tm-day-sel cc-select" style="font-size:12px;" onchange="_updateRepeatLabel()">
             <option value="day">Day</option>
             <option value="week" selected>Week</option>
             <option value="month">Month</option>
           </select>
-          <span style="font-size:12px;color:var(--muted);">for</span>
-          <input type="number" id="td-rep-count" value="4" min="1" max="52" class="tm-hours-inp" style="width:50px;font-size:16px;">
-          <span style="font-size:12px;color:var(--muted);">occurrences</span>
         </div>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">Ends</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="rep-end-chip on" id="rep-end-never" onclick="setRepeatEnd('never')">Never</button>
+            <button class="rep-end-chip" id="rep-end-after" onclick="setRepeatEnd('after')">After</button>
+            <button class="rep-end-chip" id="rep-end-date" onclick="setRepeatEnd('date')">On date</button>
+          </div>
+        </div>
+        <div id="rep-end-after-row" style="display:none;align-items:center;gap:8px;margin-bottom:8px;">
+          <input type="number" id="td-rep-count" value="4" min="1" max="52" class="tm-hours-inp" style="width:44px;text-align:center;">
+          <span id="rep-count-unit-lbl" style="font-size:12px;color:var(--muted);">weeks</span>
+        </div>
+        <div id="rep-end-date-row" style="display:none;margin-bottom:8px;">
+          <input type="date" id="td-rep-end-date" class="tm-hours-inp" style="width:140px;font-size:12px;">
+        </div>
+        <div id="rep-preview" style="font-size:11px;color:var(--muted);margin-top:4px;"></div>
       </div>
       <!-- Timestamps (edit mode only) -->
       <div id="td-timestamps" style="display:none;">
@@ -1799,6 +1879,23 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
         <span id="td-save-lbl">Create To Do</span>
         <i class="ti ti-chevron-down" style="font-size:11px;"></i>
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- CHANGELOG MODAL -->
+<div class="modal-bg" id="changelog-modal" onclick="closeChangelog(event)">
+  <div class="cl-modal">
+    <div class="cl-hd">
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:.06em;">What's new</div>
+        <div style="font-size:18px;font-family:var(--serif);font-weight:600;" id="cl-version-title">v1.3.0</div>
+      </div>
+      <button class="tm-x" onclick="closeChangelog()" style="min-width:auto;padding:6px;"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="cl-body" id="cl-body"></div>
+    <div class="cl-ft">
+      <button class="tm-btn-save" onclick="closeChangelog()" style="min-width:100px;">Got it</button>
     </div>
   </div>
 </div>
@@ -1861,6 +1958,28 @@ const people={
 };
 let currentPerson='ro';
 const MY_PERSON='ro'; // the logged-in user
+const APP_VERSION='1.3.0';
+const CHANGELOG=[
+  {version:'1.3.0',date:'9 Jun 2026',title:'Job plans, reporting & repeat tasks',items:[
+    'Fixed: job plans now open correctly from any job in the list',
+    'Fixed: reporting charts now display data correctly (Chart.js data structure corrected)',
+    'Improved: calendar icon in task modal now opens a proper date picker',
+    'Improved: repeat task feature — choose to repeat Never, After N occurrences, or until a specific date',
+    'Improved: repeat tasks skip weekends automatically',
+    'Added: this changelog — shown on first load after each update',
+  ]},
+  {version:'1.2.0',date:'7 Jun 2026',title:'Jobs sub-tabs & clients',items:[
+    'Jobs page now has sub-tabs: Jobs, Time, Expenses, Quotes, Invoices, Clients',
+    'Clients tab added — auto-populated from jobs data',
+    'Job workflow status: Quote → Live Job → Invoiced',
+    'Job plan items are now inline-editable (click hours or rate to edit)',
+    'Dynamic team member avatars in job detail header (clickable)',
+    'Task modal redesigned — personal mode, calendar icon, repeat button',
+    'Task modal: reassign task to another team member',
+    'Custom job plan line items with free-text or datalist suggestions',
+    'Site-wide dropdown styling (.cc-select)',
+  ]},
+];
 let _fupTask=null;    // task that triggered the follow-up prompt
 let personStatus={ro:'available',bee:'available',jb:'allocated'};
 let weekOffset=0;
@@ -2428,7 +2547,7 @@ function _updateDateLabel(){
 function openDatePicker(){
   // Use a hidden date input
   let inp=document.getElementById('_td-date-picker');
-  if(!inp){inp=document.createElement('input');inp.type='date';inp.id='_td-date-picker';inp.style.cssText='position:fixed;top:-9999px;opacity:0;';document.body.appendChild(inp);
+  if(!inp){inp=document.createElement('input');inp.type='date';inp.id='_td-date-picker';inp.style.cssText='position:fixed;bottom:0;left:0;opacity:0.001;width:1px;height:1px;z-index:-1;';document.body.appendChild(inp);
     inp.addEventListener('change',function(){
       const sel=new Date(this.value+'T00:00:00');
       // Compute weekOffset + dayNum from selected date
@@ -2449,8 +2568,9 @@ function openDatePicker(){
   const d=new Date();const dow=(d.getDay()+6)%7;
   d.setDate(d.getDate()-dow+(weekOffset*7)+(dayNum-1));d.setHours(0,0,0,0);
   inp.value=d.toISOString().split('T')[0];
-  inp.click();
+  try{inp.showPicker();}catch(e){inp.focus();inp.click();}
 }
+let _repeatEndMode='never'; // 'never'|'after'|'date'
 function toggleRepeatSection(){
   const cfg=document.getElementById('td-repeat-config');
   const btn=document.getElementById('td-repeat-btn');
@@ -2458,6 +2578,41 @@ function toggleRepeatSection(){
   if(cfg)cfg.classList.toggle('on');
   if(btn)btn.classList.toggle('on',cfg.classList.contains('on'));
   if(lbl)lbl.textContent=cfg.classList.contains('on')?'Repeating':'Repeat';
+  if(cfg.classList.contains('on'))_updateRepeatLabel();
+}
+function setRepeatEnd(mode){
+  _repeatEndMode=mode;
+  ['never','after','date'].forEach(m=>{
+    const el=document.getElementById('rep-end-'+m);
+    if(el)el.classList.toggle('on',m===mode);
+  });
+  const afterRow=document.getElementById('rep-end-after-row');
+  const dateRow=document.getElementById('rep-end-date-row');
+  if(afterRow)afterRow.style.display=mode==='after'?'flex':'none';
+  if(dateRow)dateRow.style.display=mode==='date'?'block':'none';
+  _updateRepeatLabel();
+}
+function _updateRepeatLabel(){
+  const n=parseInt(document.getElementById('td-rep-n')?.value)||1;
+  const unit=document.getElementById('td-rep-unit')?.value||'week';
+  const unitStr=n===1?unit:unit+'s';
+  const preview=document.getElementById('rep-preview');
+  if(!preview)return;
+  const countLbl=document.getElementById('rep-count-unit-lbl');
+  if(countLbl)countLbl.textContent=n===1?unit+'s':unit+'s';
+  let endStr='';
+  if(_repeatEndMode==='after'){
+    const cnt=parseInt(document.getElementById('td-rep-count')?.value)||4;
+    endStr=`, ending after ${cnt} ${n===1?unit:unit+'s'}`;
+  } else if(_repeatEndMode==='date'){
+    const d=document.getElementById('td-rep-end-date')?.value;
+    endStr=d?`, ending ${new Date(d+'T00:00:00').toLocaleDateString('en-NZ',{day:'numeric',month:'short'})}`:' (pick end date)';
+  } else {
+    endStr=', never ending';
+  }
+  const lbl=document.getElementById('td-repeat-label');
+  if(lbl)lbl.textContent=`Every ${n} ${unitStr}`;
+  preview.textContent=`Repeats every ${n} ${unitStr}${endStr}`;
 }
 function _resetTodoModal(day){
   editingTaskId=null;editingDay=null;
@@ -2491,6 +2646,12 @@ function _resetTodoModal(day){
   if(cfg)cfg.classList.remove('on');
   if(btn)btn.classList.remove('on');
   if(lbl)lbl.textContent='Repeat';
+  _repeatEndMode='never';
+  setRepeatEnd('never');
+  const repN=document.getElementById('td-rep-n');if(repN)repN.value='1';
+  const repUnit=document.getElementById('td-rep-unit');if(repUnit)repUnit.value='week';
+  const repCount=document.getElementById('td-rep-count');if(repCount)repCount.value='4';
+  const repPrev=document.getElementById('rep-preview');if(repPrev)repPrev.textContent='';
   updateJobLabel();
 }
 function openTodoModal(jobId,day){
@@ -2816,7 +2977,39 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
   populatePersonSwitcher();
   updateWeekLabel();
+  // Show changelog if new version
+  const seenVer=localStorage.getItem('cc_seen_version');
+  if(seenVer!==APP_VERSION){
+    setTimeout(()=>showChangelog(),600);
+  }
 });
+
+function showChangelog(){
+  const body=document.getElementById('cl-body');
+  const title=document.getElementById('cl-version-title');
+  if(!body)return;
+  if(title)title.textContent='v'+APP_VERSION;
+  body.innerHTML=CHANGELOG.map(rel=>`
+    <div class="cl-release">
+      <div class="cl-rel-hd">
+        <span class="cl-rel-ver">v${rel.version}</span>
+        <span class="cl-rel-date">${rel.date}</span>
+      </div>
+      <div class="cl-rel-title">${rel.title}</div>
+      ${rel.items.map(i=>`<div class="cl-item">${i}</div>`).join('')}
+    </div>
+  `).join('');
+  const modal=document.getElementById('changelog-modal');
+  if(modal)modal.classList.add('on');
+}
+function closeChangelog(evt){
+  if(evt&&evt.type==='click'){
+    // Allow close from backdrop click only (not clicks inside modal)
+    if(evt.target!==document.getElementById('changelog-modal'))return;
+  }
+  document.getElementById('changelog-modal')?.classList.remove('on');
+  localStorage.setItem('cc_seen_version',APP_VERSION);
+}
 
 // Global divider drag handlers
 document.addEventListener('mousemove',e=>{
@@ -2889,28 +3082,40 @@ function saveTodo(){
     wd[dayNum].push(task);
     _fupTask=null;
     setTimeout(()=>document.getElementById('fup').classList.add('on'),800);
-    // Handle repeat: create copies for next N occurrences
+    // Handle repeat: create copies for future occurrences
     const isRepeat=document.getElementById('td-repeat-config')?.classList.contains('on');
     if(isRepeat){
       const repN=parseInt(document.getElementById('td-rep-n')?.value)||1;
       const repUnit=document.getElementById('td-rep-unit')?.value||'week';
-      const repCount=parseInt(document.getElementById('td-rep-count')?.value)||4;
+      const repEndMode=_repeatEndMode||'never';
+      // Determine max occurrences
+      let maxOccurrences=52; // default for 'never' — cap at 1 year
+      if(repEndMode==='after'){
+        maxOccurrences=parseInt(document.getElementById('td-rep-count')?.value)||4;
+      } else if(repEndMode==='date'){
+        const endDateVal=document.getElementById('td-rep-end-date')?.value;
+        if(endDateVal){
+          const endDate=new Date(endDateVal+'T00:00:00');
+          const daysPerOcc=repUnit==='day'?repN:repUnit==='week'?repN*7:repN*30;
+          const base=new Date();const bDow=(base.getDay()+6)%7;base.setDate(base.getDate()-bDow+(weekOffset*7)+(dayNum-1));base.setHours(0,0,0,0);
+          maxOccurrences=Math.max(1,Math.floor((endDate-base)/(1000*60*60*24*daysPerOcc)));
+        }
+      }
       const savedTask=task;
-      for(let i=1;i<=repCount;i++){
-        const savedOffset=weekOffset;
-        const daysAdd=repUnit==='day'?repN*i:repUnit==='week'?repN*i*7:repN*i*30;
-        const clonedDay=dayNum;
-        // Calculate future week key
-        const base=new Date();const bDow=(base.getDay()+6)%7;base.setDate(base.getDate()-bDow+(weekOffset*7));base.setHours(0,0,0,0);
-        const futureDate=new Date(base);futureDate.setDate(base.getDate()+(i*(repUnit==='day'?1:repUnit==='week'?7:30)*repN)+(dayNum-1));
+      const base=new Date();const bDow=(base.getDay()+6)%7;base.setDate(base.getDate()-bDow+(weekOffset*7));base.setHours(0,0,0,0);
+      for(let i=1;i<=maxOccurrences;i++){
+        const futureDate=new Date(base);
+        const addDays=i*(repUnit==='day'?repN:repUnit==='week'?repN*7:repN*30)+(dayNum-1);
+        futureDate.setDate(base.getDate()+addDays);
         const futureDow=(futureDate.getDay()+6)%7;
         const futureMon=new Date(futureDate);futureMon.setDate(futureDate.getDate()-futureDow);futureMon.setHours(0,0,0,0);
         const futureWk=futureMon.toISOString().split('T')[0];
         const futureDayN=futureDow+1;
+        if(futureDayN<1||futureDayN>5)continue; // skip weekends
         if(!todoData[targetPerson])todoData[targetPerson]={};
         if(!todoData[targetPerson][futureWk])todoData[targetPerson][futureWk]={};
         if(!todoData[targetPerson][futureWk][futureDayN])todoData[targetPerson][futureWk][futureDayN]=[];
-        todoData[targetPerson][futureWk][futureDayN].push({...savedTask,id:'t'+Date.now()+i,repeat:true});
+        todoData[targetPerson][futureWk][futureDayN].push({...savedTask,id:'t'+Date.now()+i,repeat:true,repeatGroup:savedTask.id});
       }
     }
   }
@@ -3520,6 +3725,16 @@ function renderSettings(){
         <button class="d-action primary" onclick="saveNewPerson()">Add</button>
         <button class="d-action" onclick="document.getElementById('add-person-form').style.display='none'">Cancel</button>
       </div>
+    </div>
+    <div style="margin-top:28px;">
+      <div class="section-label" style="margin-bottom:14px;">About</div>
+      <div style="background:var(--white);border:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px;">C&C Platform <span style="font-weight:400;color:var(--muted);">v${APP_VERSION}</span></div>
+          <div style="font-size:11px;color:var(--muted);">Content & Co internal management tool</div>
+        </div>
+        <button class="d-action" onclick="showChangelog()"><i class="ti ti-history" style="font-size:12px"></i> View changelog</button>
+      </div>
     </div>`;
 }
 function showAddPersonForm(){document.getElementById('add-person-form').style.display='';}
@@ -3979,7 +4194,7 @@ function renderReporting(){
   destroyChart(chartByPerson);
   chartByPerson=new Chart(document.getElementById('chart-by-person'),{
     type:'bar',
-    data:{labels:pLabels,data:pHours,backgroundColor:pColors,hoverBackgroundColor:pColors.map(c=>c+'cc')},
+    data:{labels:pLabels,datasets:[{data:pHours,backgroundColor:pColors,hoverBackgroundColor:pColors.map(c=>c+'cc')}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:'#f0f0f0'},ticks:{callback:v=>fmtHrs(v)}}}}
   });
 
@@ -3991,7 +4206,7 @@ function renderReporting(){
   destroyChart(chartByDay);
   chartByDay=new Chart(document.getElementById('chart-by-day'),{
     type:'bar',
-    data:{labels:dayLabels,data:dayData,backgroundColor:'#ED1E24',hoverBackgroundColor:'#ED1E24cc'},
+    data:{labels:dayLabels,datasets:[{data:dayData,backgroundColor:'#ED1E24',hoverBackgroundColor:'#ED1E24cc'}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:'#f0f0f0'},ticks:{callback:v=>fmtHrs(v)}}}}
   });
 
@@ -4007,7 +4222,7 @@ function renderReporting(){
   destroyChart(chartByJob);
   chartByJob=new Chart(document.getElementById('chart-by-job'),{
     type:'doughnut',
-    data:{labels:jobLabels,data:jobHours,backgroundColor:jobPalette.slice(0,jobLabels.length),hoverOffset:6},
+    data:{labels:jobLabels,datasets:[{data:jobHours,backgroundColor:jobPalette.slice(0,jobLabels.length),hoverOffset:6}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},padding:10}}}}
   });
 
