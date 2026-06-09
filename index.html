@@ -1712,8 +1712,21 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
             <div class="detail-title-row">
               <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;" id="d-meta-line"></div><div class="detail-title" id="d-title-text">—</div></div>
               <div class="detail-actions">
-                <button class="d-action" onclick="openTodoModal(activeJobId,5)"><i class="ti ti-checklist" style="font-size:13px"></i> Add todo</button>
+                <button class="d-action" onclick="openJobSettingsModal()"><i class="ti ti-settings" style="font-size:13px"></i></button>
+                <button class="d-action" onclick="showJobDotMenu(event)"><i class="ti ti-dots" style="font-size:13px"></i></button>
                 <button class="d-action" onclick="openInvoice()"><i class="ti ti-file-invoice" style="font-size:13px"></i> Invoice</button>
+                <div class="create-item-wrap" style="position:relative;display:inline-block;">
+                  <button class="d-action primary" onclick="toggleCreateItemMenu(event)"><i class="ti ti-plus" style="font-size:12px"></i> Create <i class="ti ti-chevron-down" style="font-size:10px;margin-left:2px;"></i></button>
+                  <div id="create-item-menu" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--border);border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.14);z-index:900;min-width:160px;padding:4px 0;">
+                    <div class="tcm-item" onclick="closeCreateItemMenu();showAddItemForm(null)"><i class="ti ti-list-check" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Item</div>
+                    <div class="tcm-item" onclick="closeCreateItemMenu();addPhase()"><i class="ti ti-layout-rows" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Phase</div>
+                    <div class="tcm-item" onclick="closeCreateItemMenu();openTodoModal(activeJobId,5)"><i class="ti ti-checklist" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>To Do</div>
+                    <div class="tcm-item" onclick="closeCreateItemMenu();showAddExpenseInline()"><i class="ti ti-receipt" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Expense</div>
+                    <div style="border-top:1px solid var(--border);margin:4px 0;"></div>
+                    <div class="tcm-item" onclick="closeCreateItemMenu();openInvoice()"><i class="ti ti-file-invoice" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Invoice</div>
+                    <div class="tcm-item" onclick="closeCreateItemMenu();switchDTab(document.querySelectorAll('.d-tab')[1],'quote')"><i class="ti ti-file-text" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Quote</div>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="detail-meta-line">
@@ -1736,7 +1749,6 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
             <div class="stats-strip" id="d-stats"></div>
             <div class="plan-area">
               <div class="plan-actions">
-                <button class="p-btn" onclick="showAddItemForm(null)"><i class="ti ti-plus" style="font-size:12px"></i> Add item</button>
                 <button class="p-btn" onclick="addPhase()"><i class="ti ti-layout-rows" style="font-size:12px"></i> New phase</button>
               </div>
               <div id="phases-wrap"></div>
@@ -2509,11 +2521,12 @@ function _buildCalDayBlocks(tasksForDay,d,showDone){
     const showJob=heightPx>52&&!t.personal&&t.job;
     const jobName=showJob?t.job.replace(/^\d+\s+/,'').slice(0,22):'';
     return`<div class="cal-task-block"
-      style="top:${topPx}px;height:${heightPx}px;background:${bg};border-color:${border};"
-      draggable="true"
+      style="top:${topPx}px;height:${heightPx}px;background:${bg};border-color:${border};${isDone?'opacity:.65;':''}"
+      draggable="${isDone?'false':'true'}"
       ondragstart="calDragStart(event,'${t.id}',${d})"
       ondragend="calDragEnd(event)"
-      onclick="openEditTodoById('${t.id}',${d})">
+      onclick="openEditTodoById('${t.id}',${d})"
+      oncontextmenu="event.preventDefault();showTaskContextMenu(event,window._calTaskMap['${t.id}'],${d})">
       <div class="ctb-title" style="${titleStyle}">${t.title}</div>
       ${_calShowHours&&heightPx>36?`<div class="ctb-hrs">${t.hours?formatHrs(t.hours):''}</div>`:''}
       ${showJob?`<div class="ctb-job">${jobName}</div>`:''}
@@ -2551,18 +2564,18 @@ function renderTodoCalendar(){
   if(!_calFilterPersonal)allActive=allActive.filter(t=>!t.personal);
   if(!_calFilterJob)allActive=allActive.filter(t=>t.personal||!t.job);
 
-  // In fullscreen mode, swap: show done tasks in the calendar columns
-  const calTasks=_drawerFullscreen?doneTasks:allActive;
+  // Show both active and done tasks in calendar simultaneously
+  const calTasks=[...allActive,...doneTasks];
+  // Store task map for context menu access
+  window._calTaskMap={};calTasks.forEach(t=>{window._calTaskMap[t.id]=t;});
   const totalCalH=CAL_HOURS*CAL_PX_PER_HOUR;
 
   let calHtml=`<div class="todo-cal-wrap">
     <div class="cal-filter-bar">
-      ${_drawerFullscreen?`<span style="font-size:11px;font-weight:500;color:var(--muted);letter-spacing:.04em;">COMPLETED VIEW</span>
-        <button class="cal-filter-chip on" onclick="_drawerFullscreen=false;renderTodoCalendar()"><i class="ti ti-arrow-left" style="font-size:10px;"></i> Back to active</button>`
-      :`<span class="cal-filter-label">Show:</span>
-        <button class="cal-filter-chip${_calFilterPersonal?' on':''}" onclick="toggleCalFilter('personal')"><i class="ti ti-user" style="font-size:10px;"></i> Personal</button>
-        <button class="cal-filter-chip${_calFilterJob?' on':''}" onclick="toggleCalFilter('job')"><i class="ti ti-briefcase" style="font-size:10px;"></i> Job tasks</button>
-        <button class="cal-filter-chip${_calFilterUrgentOnly?' on':''}" onclick="toggleCalFilter('urgent')"><i class="ti ti-alert-circle" style="font-size:10px;color:var(--red);"></i> Urgent only</button>`}
+      <span class="cal-filter-label">Show:</span>
+      <button class="cal-filter-chip${_calFilterPersonal?' on':''}" onclick="toggleCalFilter('personal')"><i class="ti ti-user" style="font-size:10px;"></i> Personal</button>
+      <button class="cal-filter-chip${_calFilterJob?' on':''}" onclick="toggleCalFilter('job')"><i class="ti ti-briefcase" style="font-size:10px;"></i> Job tasks</button>
+      <button class="cal-filter-chip${_calFilterUrgentOnly?' on':''}" onclick="toggleCalFilter('urgent')"><i class="ti ti-alert-circle" style="font-size:10px;color:var(--red);"></i> Urgent only</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
         <button class="cal-filter-chip${_calShowHours?' on':''}" onclick="toggleCalFilter('hours')" title="Toggle time labels"><i class="ti ti-clock" style="font-size:10px;"></i> Time</button>
       </div>
@@ -2578,7 +2591,7 @@ function renderTodoCalendar(){
     const colDate=new Date(weekMon);colDate.setDate(weekMon.getDate()+(d-1));
     const calDate=colDate.getDate();
     const dayTasks=calTasks.filter(t=>t.day===d);
-    const taskBlocks=_buildCalDayBlocks(dayTasks,d,_drawerFullscreen);
+    const taskBlocks=_buildCalDayBlocks(dayTasks,d,true);
     let slotLines='';
     for(let h=0;h<CAL_HOURS;h++){slotLines+=`<div class="cal-slot-line" style="top:${h*CAL_PX_PER_HOUR}px;"></div><div class="cal-slot-line half" style="top:${h*CAL_PX_PER_HOUR+32}px;"></div>`;}
     calHtml+=`<div class="cal-day-col" style="${!isWork?'opacity:.35;pointer-events:none;':''}">
@@ -2611,9 +2624,6 @@ function renderTodoCalendar(){
         <span class="todo-drawer-count">${doneCount}</span>
         <i class="ti ${_drawerOpen?'ti-chevron-down':'ti-chevron-up'}" id="drawer-icon" style="font-size:12px;color:var(--muted);"></i>
       </div>
-      <button class="cal-filter-chip${_drawerFullscreen?' on':''}" style="margin-left:8px;font-size:10px;" onclick="_drawerFullscreen=!_drawerFullscreen;renderTodoCalendar()" title="${_drawerFullscreen?'Show active tasks':'Show completed in calendar'}">
-        <i class="ti ${_drawerFullscreen?'ti-layout-list':'ti-calendar-week'}" style="font-size:10px;"></i> ${_drawerFullscreen?'Active view':'Full view'}
-      </button>
     </div>
     <div class="todo-drawer-body" id="drawer-body" style="display:${_drawerOpen?'block':'none'};">
       ${doneCount===0
@@ -3880,7 +3890,7 @@ function openJobDetail(id){
   const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
   document.getElementById('d-meta-line').innerHTML=`${j.id} · ${j.company} · ${j.billable?'Billable':'Non-billable'} &nbsp;<span class="wf-badge ${wfCls}" style="cursor:pointer;user-select:none;" title="Click to advance workflow stage" onclick="advanceWorkflow('${id}')">${wfLabel} <i class="ti ti-arrow-right" style="font-size:9px;vertical-align:middle;"></i></span>`;
   document.getElementById('d-title-text').textContent=j.name;
-  document.getElementById('d-hours-sell').textContent=isNew?'No hours logged yet':`${j.hours} used / ${j.hoursTotal} planned · ${j.budget} sell`;
+  document.getElementById('d-hours-sell').textContent='';
   activeLabels=j.labels?[...j.labels]:[];
   renderLabels();
   // Render team members
@@ -3905,7 +3915,7 @@ function openJobDetail(id){
     phases=isNew?[]:JSON.parse(JSON.stringify(SFF_PHASES));
     if(j)j.phases=JSON.parse(JSON.stringify(phases));
   }
-  renderStats(j,isNew);renderPhases();renderExpenses();
+  renderStats(j);renderPhases();renderExpenses();
   document.querySelectorAll('.view').forEach(el=>el.classList.add('hidden'));
   document.getElementById('view-detail').classList.remove('hidden');
   switchDTab(document.querySelector('.d-tab'),'plan');
@@ -3948,21 +3958,172 @@ function updateJobNotes(val){
   if(j){j.notes=val;saveData();}
 }
 
+// Create Item dropdown
+function toggleCreateItemMenu(e){
+  e.stopPropagation();
+  const m=document.getElementById('create-item-menu');
+  if(!m)return;
+  const open=m.style.display==='block';
+  m.style.display=open?'none':'block';
+  if(!open){
+    setTimeout(()=>document.addEventListener('click',_closeCreateItemMenu,{once:true}),10);
+  }
+}
+function _closeCreateItemMenu(){closeCreateItemMenu();}
+function closeCreateItemMenu(){
+  const m=document.getElementById('create-item-menu');
+  if(m)m.style.display='none';
+}
+
+// Job settings modal
+function openJobSettingsModal(){
+  const j=jobs.find(x=>x.id===activeJobId);if(!j)return;
+  const modal=document.createElement('div');modal.className='modal-bg on';modal.id='job-sett-modal';
+  const rateCards=['Standard','Premium','Discount','Custom'];
+  modal.innerHTML=`<div class="modal" style="max-width:480px;width:100%;">
+    <div class="modal-hd"><span>Job Settings</span><button class="modal-x" onclick="document.getElementById('job-sett-modal')?.remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd" style="display:flex;flex-direction:column;gap:14px;">
+      <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">Job Name</label>
+        <input class="form-inp" id="jsett-name" value="${j.name||''}" style="width:100%;"></div>
+      <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">Company</label>
+        <input class="form-inp" id="jsett-company" value="${j.company||''}" style="width:100%;"></div>
+      <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">Contact</label>
+        <input class="form-inp" id="jsett-contact" value="${j.contact||''}" style="width:100%;"></div>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="jsett-billable" ${j.billable!==false?'checked':''} style="cursor:pointer;">
+          Billable
+        </label>
+        <div style="flex:1;">
+          <select class="filter-btn" id="jsett-wf" style="width:100%;font-size:12px;">
+            <option value="quote" ${j.workflowStatus==='quote'?'selected':''}>Quote</option>
+            <option value="live" ${j.workflowStatus==='live'?'selected':''}>Live job</option>
+            <option value="invoiced" ${j.workflowStatus==='invoiced'?'selected':''}>Invoiced</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="d-action" onclick="document.getElementById('job-sett-modal')?.remove()">Cancel</button>
+      <button class="d-action primary" onclick="saveJobSettings()">Save</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+}
+function saveJobSettings(){
+  const j=jobs.find(x=>x.id===activeJobId);if(!j)return;
+  j.name=(document.getElementById('jsett-name')?.value||j.name).trim();
+  j.company=(document.getElementById('jsett-company')?.value||j.company).trim();
+  j.contact=(document.getElementById('jsett-contact')?.value||'').trim();
+  j.billable=document.getElementById('jsett-billable')?.checked;
+  j.workflowStatus=document.getElementById('jsett-wf')?.value||j.workflowStatus;
+  saveData();
+  document.getElementById('job-sett-modal')?.remove();
+  openJobDetail(activeJobId);
+  toast('Job settings saved','success');
+}
+
+// Job 3-dot menu
+function showJobDotMenu(e){
+  e.stopPropagation();
+  document.querySelectorAll('.job-dot-menu').forEach(el=>el.remove());
+  const j=jobs.find(x=>x.id===activeJobId);if(!j)return;
+  const menu=document.createElement('div');
+  menu.className='task-ctx-menu job-dot-menu';
+  menu.style.cssText=`top:${e.clientY+4}px;left:${e.clientX-160}px;`;
+  const starred=j.starred;
+  menu.innerHTML=`
+    <div class="tcm-item" onclick="closeJobDotMenu();duplicateJob('${j.id}')"><i class="ti ti-copy tcm-icon"></i> Duplicate job</div>
+    <div class="tcm-item" onclick="closeJobDotMenu();toggleStarJob('${j.id}')"><i class="ti ti-star tcm-icon" style="${starred?'color:#F59E0B;':''}" ></i> ${starred?'Unstar job':'Star job'}</div>
+    <div class="tcm-item" onclick="closeJobDotMenu();archiveJob('${j.id}')"><i class="ti ti-archive tcm-icon"></i> Archive job</div>
+    <div style="border-top:1px solid var(--border);margin:3px 0;"></div>
+    <div class="tcm-item danger" onclick="closeJobDotMenu();deleteJobConfirm('${j.id}')"><i class="ti ti-trash tcm-icon"></i> Delete job</div>`;
+  document.body.appendChild(menu);
+  setTimeout(()=>document.addEventListener('click',closeJobDotMenu,{once:true}),10);
+}
+function closeJobDotMenu(){document.querySelectorAll('.job-dot-menu').forEach(el=>el.remove());}
+function duplicateJob(id){
+  const j=jobs.find(x=>x.id===id);if(!j)return;
+  const newId=String(Date.now());
+  const copy=JSON.parse(JSON.stringify(j));
+  copy.id=newId;copy.name=j.name+' (Copy)';copy.activity=[];copy.invNum=null;
+  jobs.push(copy);saveData();
+  toast('Job duplicated','success');
+  openJobDetail(newId);
+}
+function toggleStarJob(id){
+  const j=jobs.find(x=>x.id===id);if(!j)return;
+  j.starred=!j.starred;saveData();
+  openJobDetail(id);
+  toast(j.starred?'Job starred':'Unstarred');
+}
+function archiveJob(id){
+  const j=jobs.find(x=>x.id===id);if(!j)return;
+  j.status='archived';saveData();
+  navTo('jobs');
+  toast('Job archived');
+}
+function deleteJobConfirm(id){
+  const j=jobs.find(x=>x.id===id);if(!j)return;
+  ccConfirm(`Delete "${j.name}"? This cannot be undone.`,()=>{
+    const idx=jobs.findIndex(x=>x.id===id);
+    if(idx>-1)jobs.splice(idx,1);
+    saveData();navTo('jobs');
+    toast('Job deleted','success');
+  },'Delete',true);
+}
+
 function _statBlock(label,val,sub,pct,col){
   const bar=pct!=null?`<div class="stat-bar" style="margin-top:8px;"><div class="stat-bar-fill" style="width:${Math.min(100,pct)}%;background:${col||'#4CAF50'};"></div></div>`:'';
   const subHtml=sub?`<div style="font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:.05em;">${sub}</div>`:'';
   return`<div class="stat-b"><div class="stat-label">${label}</div><div class="stat-val">${val}</div>${subHtml}${bar}</div>`;
 }
-function renderStats(j,isNew){
+function renderStats(j){
   const s=document.getElementById('d-stats');
-  if(isNew){
-    s.innerHTML=_statBlock('Time used / planned','0h <span class="stat-of">/ —</span>',null,null)+_statBlock('Sell used / planned','$0 <span class="stat-of">/ —</span>',null,null)+_statBlock('Budget from quote','—',j.billable!==false?'BILLABLE':'NON-BILLABLE',null)+_statBlock('Invoiced ex GST','—',null,null)+_statBlock('Expenses','$0 <span class="stat-of">/ —</span>',null,null);
-    return;
-  }
-  const hPct=j.hPct||0;const bPct=j.bPct||0;
+  // Compute live from phases
+  const phArr=j.phases||phases||[];
+  let plannedMins=0, plannedSell=0;
+  phArr.forEach(ph=>{
+    (ph.items||[]).forEach(item=>{
+      plannedMins+=Math.round(parseHrsInput(item.hours||'0h')*60);
+      plannedSell+=parseInt((item.total||'$0').replace(/[$,]/g,'')||0);
+    });
+  });
+  // Logged hours from completed todos linked to this job
+  let loggedMins=0;
+  Object.keys(todoData).forEach(pKey=>{
+    const pd=todoData[pKey];if(!pd)return;
+    Object.keys(pd).forEach(wk=>{
+      const wd=pd[wk];if(!wd)return;
+      [1,2,3,4,5].forEach(d=>{
+        (wd[d]||[]).forEach(tt=>{
+          if((tt.jobId===j.id||(tt.job&&tt.job===j.name))&&tt.done)
+            loggedMins+=Math.round((tt.hours||0)*60);
+        });
+      });
+    });
+  });
+  // Sell used: logged hours * average rate from items
+  const avgRate=plannedMins>0?Math.round(plannedSell/(plannedMins/60)):0;
+  const sellUsed=Math.round((loggedMins/60)*avgRate);
+  // Expenses
+  const expUsed=(j.expenses||[]).reduce((a,e)=>a+(parseFloat(e.sell||e.total||0)||0),0);
+  // Format
+  const fmtH=m=>m>=60?`${Math.floor(m/60)}h${m%60?m%60+'m':''}`:(m>0?m+'m':'0h');
+  const logStr=fmtH(loggedMins);
+  const planStr=plannedMins>0?fmtH(plannedMins):'—';
+  const hPct=plannedMins>0?Math.round((loggedMins/plannedMins)*100):0;
+  const bPct=plannedSell>0?Math.round((sellUsed/plannedSell)*100):0;
   const hCol=hPct>=100?'var(--red)':hPct>=80?'#FF9800':'#4CAF50';
   const bCol=bPct>=100?'var(--red)':bPct>=80?'#FF9800':'#4CAF50';
-  s.innerHTML=_statBlock('Time used / planned',`${j.hours} <span class="stat-of">/ ${j.hoursTotal}</span>`,`${hPct}% of plan`,hPct,hCol)+_statBlock('Sell used / planned',`${j.budget} <span class="stat-of">/ ${j.budgetTotal}</span>`,`${bPct}% of plan`,bPct,bCol)+_statBlock('Budget from quote',j.budgetTotal||'—',j.billable!==false?'BILLABLE':'NON-BILLABLE',null)+_statBlock('Invoiced ex GST',`${j.budgetTotal} <span class="stat-of" style="color:#4CAF50;">issued</span>`,'100% invoiced',100,'#FF9800')+_statBlock('Expenses','$100 <span class="stat-of">/ $200</span>','50% of budget',50,'#4CAF50');
+  const billLabel=j.billable!==false?'BILLABLE':'NON-BILLABLE';
+  s.innerHTML=
+    _statBlock('Time used / planned',`${logStr} <span class="stat-of">/ ${planStr}</span>`,plannedMins>0?`${hPct}% of plan`:null,plannedMins>0?hPct:null,hCol)+
+    _statBlock('Sell used / planned',`$${sellUsed.toLocaleString()} <span class="stat-of">/ $${plannedSell.toLocaleString()}</span>`,plannedSell>0?`${bPct}% of plan`:null,plannedSell>0?bPct:null,bCol)+
+    _statBlock('Budget from quote',plannedSell>0?`$${plannedSell.toLocaleString()}`:'—',billLabel,null)+
+    _statBlock('Invoiced ex GST','—',null,null)+
+    _statBlock('Expenses',`$${Math.round(expUsed).toLocaleString()}`,null,null);
 }
 
 function switchDTab(el,tab){
@@ -3973,65 +4134,196 @@ function switchDTab(el,tab){
   if(tab==='quote')renderQuoteTab();
   if(tab==='activity')renderActivityTab();
 }
+// Quote display options stored per-job
+function _getQuoteOpts(jobId){
+  const stored=JSON.parse(localStorage.getItem('cc_quote_opts')||'{}');
+  return Object.assign({showJobNum:true,showQuoteNum:true,showDescriptions:true,showQty:true,showUnitRate:true,showSubtotals:true,showTax:true,showTCs:true},stored[jobId]||{});
+}
+function _setQuoteOpt(jobId,key,val){
+  const all=JSON.parse(localStorage.getItem('cc_quote_opts')||'{}');
+  if(!all[jobId])all[jobId]={};
+  all[jobId][key]=val;
+  localStorage.setItem('cc_quote_opts',JSON.stringify(all));
+  renderQuoteTab();
+}
+
 function renderQuoteTab(){
   const j=jobs.find(x=>x.id===activeJobId);if(!j)return;
   const wrap=document.getElementById('dtab-quote');
-  // Build quote from phases
+  const opts=_getQuoteOpts(j.id);
+  if(!j.quoteNum)j.quoteNum='Q-'+j.id;
+  if(!j.issueDate)j.issueDate=new Date().toISOString().slice(0,10);
+
+  // Compute totals
   let totalSell=0,totalHours=0;
-  const rows=phases.map(ph=>{
+  const phaseBlocks=phases.map(ph=>{
     const phSell=ph.items.reduce((s,i)=>s+parseInt((i.total||'0').replace(/[$,]/g,'')||0),0);
     const phHrsMin=ph.items.reduce((s,i)=>{const x=(i.hours||'0h').match(/(\d+)h(?:(\d+)m)?/);return s+(x?parseInt(x[1])*60+(parseInt(x[2])||0):0);},0);
     totalSell+=phSell;totalHours+=phHrsMin;
     const phHrsStr=phHrsMin>=60?`${Math.floor(phHrsMin/60)}h${phHrsMin%60?phHrsMin%60+'m':''}`:'0h';
-    const itemRows=ph.items.map(i=>`<tr style="border-bottom:1px solid var(--faint);">
-      <td style="padding:7px 12px;font-size:12px;padding-left:28px;color:var(--muted);">${i.name}</td>
-      <td style="padding:7px 12px;font-size:12px;text-align:right;color:var(--muted);">${i.hours}</td>
-      <td style="padding:7px 12px;font-size:12px;text-align:right;color:var(--muted);">${i.rate}</td>
-      <td style="padding:7px 12px;font-size:12px;text-align:right;">${i.total}</td>
-    </tr>`).join('');
-    return`<tr style="background:var(--off);border-bottom:1px solid var(--border);">
-      <td style="padding:9px 12px;font-size:13px;font-weight:500;">${ph.name}</td>
-      <td style="padding:9px 12px;font-size:12px;text-align:right;">${phHrsStr}</td>
-      <td></td>
-      <td style="padding:9px 12px;font-size:13px;font-weight:500;text-align:right;">$${phSell.toLocaleString()}</td>
-    </tr>${itemRows}`;
+    const itemRows=ph.items.map(i=>{
+      const hrsNum=parseHrsInput(i.hours||'0h');
+      const rateNum=parseInt((i.rate||'$0').replace(/[$,]/g,'')||0);
+      const totalNum=parseInt((i.total||'0').replace(/[$,]/g,'')||0);
+      const cols=[];
+      cols.push(`<td style="padding:8px 14px;font-size:12px;">${i.name}${opts.showDescriptions&&i.note?`<div style="font-size:11px;color:var(--muted);margin-top:2px;">${i.note}</div>`:''}</td>`);
+      if(opts.showQty)cols.push(`<td style="padding:8px 14px;font-size:12px;text-align:right;color:var(--muted);">${hrsNum>0?hrsNum+'h':'—'}</td>`);
+      if(opts.showUnitRate)cols.push(`<td style="padding:8px 14px;font-size:12px;text-align:right;color:var(--muted);">${i.rate||'—'}</td>`);
+      if(opts.showSubtotals)cols.push(`<td style="padding:8px 14px;font-size:12px;text-align:right;font-weight:500;">$${totalNum.toLocaleString()}</td>`);
+      return`<tr style="border-bottom:1px solid var(--faint);">${cols.join('')}</tr>`;
+    }).join('');
+    const phCols=[];
+    phCols.push(`<td style="padding:10px 14px;font-size:13px;font-weight:600;">${ph.name}</td>`);
+    if(opts.showQty)phCols.push(`<td style="padding:10px 14px;font-size:12px;text-align:right;">${phHrsStr}</td>`);
+    if(opts.showUnitRate)phCols.push('<td></td>');
+    if(opts.showSubtotals)phCols.push(`<td style="padding:10px 14px;font-size:13px;font-weight:600;text-align:right;">$${phSell.toLocaleString()}</td>`);
+    return`<tr style="background:var(--off);border-bottom:1px solid var(--border);border-top:2px solid var(--border);">${phCols.join('')}</tr>${itemRows}`;
   }).join('');
+
   const totalHrsStr=totalHours>=60?`${Math.floor(totalHours/60)}h${totalHours%60?totalHours%60+'m':''}`:'0h';
+  const gstAmt=Math.round(totalSell*0.15);
+
+  // Column headers
+  let colHdrs=`<th style="padding:10px 14px;font-size:11px;letter-spacing:.08em;font-weight:500;color:var(--muted);">DESCRIPTION</th>`;
+  if(opts.showQty)colHdrs+=`<th style="padding:10px 14px;font-size:11px;letter-spacing:.08em;font-weight:500;color:var(--muted);text-align:right;">HRS</th>`;
+  if(opts.showUnitRate)colHdrs+=`<th style="padding:10px 14px;font-size:11px;letter-spacing:.08em;font-weight:500;color:var(--muted);text-align:right;">RATE</th>`;
+  if(opts.showSubtotals)colHdrs+=`<th style="padding:10px 14px;font-size:11px;letter-spacing:.08em;font-weight:500;color:var(--muted);text-align:right;">AMOUNT</th>`;
+
+  // Footer cols
+  let colFt=`<td style="padding:10px 14px;font-size:13px;font-weight:600;">Total (excl. GST)</td>`;
+  if(opts.showQty)colFt+=`<td style="padding:10px 14px;text-align:right;font-size:13px;">${totalHrsStr}</td>`;
+  if(opts.showUnitRate)colFt+='<td></td>';
+  if(opts.showSubtotals)colFt+=`<td style="padding:10px 14px;text-align:right;font-family:var(--serif);font-size:16px;font-weight:600;">$${totalSell.toLocaleString()}</td>`;
+
+  let gstRow='';
+  if(opts.showTax){
+    let gstCols=`<td style="padding:6px 14px;font-size:12px;color:var(--muted);">GST (15%)</td>`;
+    if(opts.showQty)gstCols+='<td></td>';
+    if(opts.showUnitRate)gstCols+='<td></td>';
+    if(opts.showSubtotals)gstCols+=`<td style="padding:6px 14px;text-align:right;font-size:12px;color:var(--muted);">$${gstAmt.toLocaleString()}</td>`;
+    gstRow=`<tr style="border-top:1px solid var(--border);">${gstCols}</tr>`;
+    let totalInclCols=`<td style="padding:8px 14px;font-size:13px;font-weight:600;">Total (incl. GST)</td>`;
+    if(opts.showQty)totalInclCols+='<td></td>';
+    if(opts.showUnitRate)totalInclCols+='<td></td>';
+    if(opts.showSubtotals)totalInclCols+=`<td style="padding:8px 14px;text-align:right;font-family:var(--serif);font-size:15px;font-weight:600;color:var(--red);">$${(totalSell+gstAmt).toLocaleString()}</td>`;
+    gstRow+=`<tr style="background:var(--off);">${totalInclCols}</tr>`;
+  }
+
+  const qStatusVal=j.quoteStatus||'draft';
+  const statusColors={draft:'#888',sent:'#1565C0',approved:'#2E7D32',declined:'var(--red)'};
+  const statusColor=statusColors[qStatusVal]||'#888';
+
+  const clientInfo=clientsData.find(c=>c.name===j.company);
+  const issuedDateFmt=new Date(j.issueDate+'T12:00:00').toLocaleDateString('en-NZ',{day:'numeric',month:'long',year:'numeric'});
+
+  const TCsText=`<ol style="font-size:11px;color:var(--muted);line-height:1.7;padding-left:18px;margin:0;">
+    <li>The estimate is based on the brief supplied and is valid for thirty (30) days from the date of issue.</li>
+    <li>Any cancellations by a client on an approved estimate must be via email to the relevant Content&amp;Co contact &amp; may incur cancellation fees.</li>
+    <li>Content&amp;Co produces content on behalf of its client and will provide all materials in their final form to the client. Where no talent is featured, these assets are owned by the client to use in any media globally, in-perpetuity unless otherwise stipulated.</li>
+    <li>Our full day rate is based on an 8 hour shoot e.g. 9am-5pm unless otherwise stipulated. Shoot timings allow for set up and pack down of approximately 30mins either side of the shoot, and will be outlined in detail on the call sheet and/or shot list.</li>
+    <li>We allow for 2 rounds of feedback on all work supplied, anything over and above this will incur additional costs and hours will be invoiced accordingly.</li>
+    <li>Content&amp;Co will store all project files which includes compressed raw footage for 3 months. After the 3 month and 12 month storage period, content will be deleted from both the Content&amp;Co server and Dropbox back-up.</li>
+    <li>A 50% deposit may be required to begin work on any project. The remaining balance is due upon completion of the project. If a project is cancelled by the client, any deposit or payments made are non-refundable.</li>
+  </ol>
+  <div style="font-size:11px;color:var(--muted);margin-top:8px;">Please refer to our terms and conditions, which will apply on acceptance of this quote.<br><a href="https://content-co.nz/terms/" target="_blank" style="color:var(--red);">https://content-co.nz/terms/</a></div>`;
+
   wrap.innerHTML=`
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-      <div>
-        <div style="font-family:var(--serif);font-size:22px;font-weight:400;margin-bottom:2px;">Quote</div>
-        <div style="font-size:12px;color:var(--muted);">${j.id} · ${j.name} · ${j.company}</div>
+  <div style="display:flex;gap:20px;align-items:flex-start;min-height:100%;">
+    <!-- QUOTE DOCUMENT -->
+    <div style="flex:1;min-width:0;background:#fff;border:1px solid var(--border);border-radius:6px;padding:32px 36px;box-shadow:0 2px 12px rgba(0,0,0,.06);">
+      <!-- Header: logo + company block -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid var(--border);">
+        <div>
+          <div style="font-family:var(--serif);font-size:22px;font-weight:600;letter-spacing:-.01em;margin-bottom:4px;">Content &amp; Co</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.7;">NZ Ltd<br>Level 1, 53 Fort Street, Auckland<br>GST 116710013</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:22px;font-family:var(--serif);font-weight:400;margin-bottom:8px;">Quote</div>
+          <div style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:500;background:${statusColor}22;color:${statusColor};border:1px solid ${statusColor}44;cursor:pointer;" onclick="cycleQuoteStatus('${j.id}')" title="Click to change status">
+            ${qStatusVal.charAt(0).toUpperCase()+qStatusVal.slice(1)}
+          </div>
+        </div>
       </div>
-      <div style="display:flex;gap:8px;">
-        <select class="filter-btn" id="q-status" style="font-size:12px;cursor:pointer;">
-          <option value="draft">Draft</option>
-          <option value="sent">Sent</option>
-          <option value="approved" selected>Approved</option>
-          <option value="declined">Declined</option>
-        </select>
-        <button class="d-action primary" onclick="alert('Quote PDF export coming soon.')"><i class="ti ti-download" style="font-size:12px"></i> Export PDF</button>
+
+      <!-- Client + job meta -->
+      <div style="display:flex;gap:24px;margin-bottom:28px;">
+        <div style="flex:1;">
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;">Prepared for</div>
+          <div style="font-size:14px;font-weight:500;">${j.company}</div>
+          ${clientInfo&&clientInfo.contact?`<div style="font-size:12px;color:var(--muted);">${clientInfo.contact}</div>`:''}
+          ${clientInfo&&clientInfo.email?`<div style="font-size:12px;color:var(--muted);">${clientInfo.email}</div>`:''}
+        </div>
+        <div style="text-align:right;min-width:180px;">
+          <table style="margin-left:auto;border-collapse:collapse;">
+            ${opts.showJobNum?`<tr><td style="font-size:11px;color:var(--muted);padding:2px 0;padding-right:16px;text-align:left;">Job</td><td style="font-size:11px;padding:2px 0;font-weight:500;">${j.id}</td></tr>`:''}
+            ${opts.showQuoteNum?`<tr><td style="font-size:11px;color:var(--muted);padding:2px 0;padding-right:16px;text-align:left;">Quote</td><td style="font-size:11px;padding:2px 0;font-weight:500;">${j.quoteNum}</td></tr>`:''}
+            <tr><td style="font-size:11px;color:var(--muted);padding:2px 0;padding-right:16px;text-align:left;">PO Number</td><td style="font-size:11px;padding:2px 0;"><input style="border:none;border-bottom:1px dashed var(--border);font-size:11px;width:90px;outline:none;font-family:var(--font);text-align:right;" placeholder="—" value="${j.poNum||''}" oninput="updateQuoteField('${j.id}','poNum',this.value)"></td></tr>
+            <tr><td style="font-size:11px;color:var(--muted);padding:2px 0;padding-right:16px;text-align:left;">Issued</td><td style="font-size:11px;padding:2px 0;">${issuedDateFmt}</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Line items table -->
+      <table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-bottom:0;">
+        <thead><tr style="border-bottom:2px solid var(--border);background:var(--off);">${colHdrs}</tr></thead>
+        <tbody>${phaseBlocks}</tbody>
+        <tfoot>
+          <tr style="border-top:2px solid var(--border);background:var(--off);">${colFt}</tr>
+          ${gstRow}
+        </tfoot>
+      </table>
+
+      <!-- T&Cs -->
+      ${opts.showTCs?`<div style="margin-top:24px;padding:16px 18px;background:var(--off);border:1px solid var(--border);border-radius:4px;">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;color:var(--ink);">Terms &amp; Conditions</div>
+        ${TCsText}
+      </div>`:''}
+
+      <!-- Approve / Decline actions -->
+      <div style="display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+        <button class="d-action primary" onclick="setQuoteStatus('${j.id}','approved')"><i class="ti ti-check" style="font-size:12px;"></i> Approve quote</button>
+        <button class="d-action" onclick="setQuoteStatus('${j.id}','declined')" style="color:var(--red);">Decline</button>
+        <div style="flex:1;"></div>
+        <button class="d-action" onclick="toast('Print/PDF export coming soon')"><i class="ti ti-printer" style="font-size:12px;"></i> Print / PDF</button>
       </div>
     </div>
-    <table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:3px;overflow:hidden;">
-      <thead><tr style="border-bottom:2px solid var(--border);">
-        <th style="padding:10px 12px;font-size:11px;letter-spacing:.08em;text-align:left;font-weight:500;color:var(--muted);">PHASE / ITEM</th>
-        <th style="padding:10px 12px;font-size:11px;letter-spacing:.08em;text-align:right;font-weight:500;color:var(--muted);">HOURS</th>
-        <th style="padding:10px 12px;font-size:11px;letter-spacing:.08em;text-align:right;font-weight:500;color:var(--muted);">RATE</th>
-        <th style="padding:10px 12px;font-size:11px;letter-spacing:.08em;text-align:right;font-weight:500;color:var(--muted);">SELL</th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-      <tfoot><tr style="border-top:2px solid var(--border);background:var(--off);">
-        <td style="padding:12px;font-size:13px;font-weight:500;">Total</td>
-        <td style="padding:12px;font-size:13px;font-weight:500;text-align:right;">${totalHrsStr}</td>
-        <td></td>
-        <td style="padding:12px;font-size:15px;font-weight:500;text-align:right;font-family:var(--serif);">$${totalSell.toLocaleString()}</td>
-      </tr></tfoot>
-    </table>
-    <div style="margin-top:16px;padding:14px 16px;background:var(--off);border:1px solid var(--border);border-radius:3px;">
-      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:.06em;text-transform:uppercase;">Quote notes</div>
-      <textarea id="q-notes" style="width:100%;border:none;background:transparent;font-family:var(--font);font-size:13px;resize:none;outline:none;min-height:60px;color:var(--ink);" placeholder="Add notes to appear on the quote…"></textarea>
-    </div>`;
+
+    <!-- DISPLAY OPTIONS PANEL -->
+    <div style="width:200px;flex-shrink:0;background:#fff;border:1px solid var(--border);border-radius:6px;padding:16px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;color:var(--ink);">Display options</div>
+      ${[
+        ['showJobNum','Job number'],
+        ['showQuoteNum','Quote number'],
+        ['showDescriptions','Descriptions'],
+        ['showQty','Quantities'],
+        ['showUnitRate','Unit rates'],
+        ['showSubtotals','Subtotals'],
+        ['showTax','Tax names'],
+        ['showTCs','Terms &amp; Conditions'],
+      ].map(([key,label])=>`
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;padding:4px 0;user-select:none;">
+          <input type="checkbox" ${opts[key]?'checked':''} onchange="_setQuoteOpt('${j.id}','${key}',this.checked)" style="cursor:pointer;accent-color:var(--red);">
+          ${label}
+        </label>`).join('')}
+    </div>
+  </div>`;
+}
+
+function updateQuoteField(jobId,field,val){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  j[field]=val;saveData();
+}
+function cycleQuoteStatus(jobId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  const states=['draft','sent','approved','declined'];
+  const cur=states.indexOf(j.quoteStatus||'draft');
+  j.quoteStatus=states[(cur+1)%states.length];
+  saveData();renderQuoteTab();
+}
+function setQuoteStatus(jobId,status){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  j.quoteStatus=status;saveData();renderQuoteTab();
+  toast(status==='approved'?'Quote approved 🎉':'Quote declined',status==='approved'?'success':'warn');
 }
 
 function renderLabels(){
@@ -4608,6 +4900,7 @@ function renderClients(){
           <div class="ccf-meta">
             <span><strong>${jobCount(c.name)}</strong> jobs</span>
             <span><strong>${activeJobCount(c.name)}</strong> active</span>
+            ${c.lead&&people[c.lead]?`<span style="color:var(--muted);">Lead: ${people[c.lead].name}</span>`:''}
             ${c.email?`<span>${c.email}</span>`:''}
           </div>
         </div>`).join('')}
@@ -4640,6 +4933,13 @@ function openClientDetail(id){
     <div style="flex:1;min-width:120px;">
       <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Phone</div>
       <input class="form-inp" style="width:100%;font-size:12px;padding:4px 8px;" value="${c.phone||''}" placeholder="+64 …" oninput="updateClientField('${c.id}','phone',this.value)">
+    </div>
+    <div style="flex:1;min-width:140px;">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Lead</div>
+      <select class="filter-btn" style="width:100%;font-size:12px;" onchange="updateClientField('${c.id}','lead',this.value)">
+        <option value="">— No lead —</option>
+        ${Object.keys(people).map(k=>`<option value="${k}" ${c.lead===k?'selected':''}>${people[k].name} · ${people[k].role}</option>`).join('')}
+      </select>
     </div>
     <div style="min-width:80px;text-align:center;">
       <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Total budget</div>
