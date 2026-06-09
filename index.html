@@ -1613,8 +1613,6 @@ function navTo(v){
 }
 function viewTeamTodo(p){currentPerson=p;navTo('todo');}
 
-// Item type → emoji icon
-const ITEM_ICONS={'Creative Direction':'🎨','Design & Artwork':'✏️','Briefing & coordination':'📋','Copywriting':'✍️','Video Editing':'🎬','Proofing & spell check':'🔍','Artwork & file despatch':'📦','Contingency':'⚡','Shot listing':'📷','Website build':'💻','Leave':'🌿','Briefing':'📋','House':'🏠'};
 let todoSplitPx=260,isDivDrag=false,divDragStartY=0,divDragStartPx=0;
 
 function renderTodo(){
@@ -1631,9 +1629,12 @@ function renderTodo(){
   const sumEl=document.querySelector('.todo-summary');
   if(sumEl)sumEl.textContent=`To do: ${formatHrs(totalTodoH)} · Done: ${formatHrs(totalDoneH)}`;
 
+  // Actual today day-of-week (Mon=1…Fri=5)
+  const _dow=new Date().getDay();
+  const todayDayNum=_dow===0?0:_dow; // 0=Sun,1=Mon…5=Fri
   [1,2,3,4,5].forEach((d,i)=>{
     const isWork=people[currentPerson].days.includes(d);
-    const isToday=d===5;
+    const isToday=d===todayDayNum;
     const tasks=data[d]||[];
     const todoTasks=tasks.filter(t=>!t.done);
     const doneTasks=tasks.filter(t=>t.done);
@@ -1695,7 +1696,9 @@ function createTaskCard(t,day,isDone){
   card.className='task-card'+(isDone?' done-c':'')+(t.urgent&&!isDone?' urgent-c':'');
   card.draggable=true;
   card.dataset.taskId=t.id;card.dataset.day=day;
-  const icon=ITEM_ICONS[t.item]||(t.urgent?'🚨':'📌');
+  const ITEM_ICONS={'Creative Direction':'ti-palette','Design & Artwork':'ti-pencil','Briefing & coordination':'ti-clipboard-list','Copywriting':'ti-writing','Video Editing':'ti-video','Proofing & spell check':'ti-eye','Artwork & file despatch':'ti-send','Contingency':'ti-alert-circle','Shot listing':'ti-camera','Website build':'ti-code','Leave':'ti-sun','Briefing':'ti-clipboard-list'};
+  const iconCls=ITEM_ICONS[t.item]||(t.urgent?'ti-alert-circle':'ti-point');
+  const icon=`<i class="ti ${iconCls}" style="font-size:11px;color:var(--muted);"></i>`;
   const hrsLabel=t.hours?formatHrs(t.hours):'';
   const jobIdMatch=t.job?t.job.match(/^(\d+)/):null;
   const jobIdNum=jobIdMatch?jobIdMatch[1]:null;
@@ -2410,6 +2413,53 @@ function showAddBoardItem(){
 }
 
 // navTo is fully defined above — no override needed here
+
+// ===== CALENDAR (placeholder — full build in next phase) =====
+let calCurrentDate=new Date(),calViewMode='week';
+function initCalendar(){
+  const lbl=document.getElementById('cal-label');
+  const body=document.getElementById('cal-body');
+  if(!lbl||!body)return;
+  document.getElementById('cal-prev').onclick=()=>{calCurrentDate.setDate(calCurrentDate.getDate()-7);renderCalendarSimple();};
+  document.getElementById('cal-next').onclick=()=>{calCurrentDate.setDate(calCurrentDate.getDate()+7);renderCalendarSimple();};
+  document.getElementById('cal-today').onclick=()=>{calCurrentDate=new Date();renderCalendarSimple();};
+  document.getElementById('cal-view-mode').onchange=e=>{calViewMode=e.target.value;renderCalendarSimple();};
+  renderCalendarSimple();
+}
+function renderCalendarSimple(){
+  const lbl=document.getElementById('cal-label');
+  const body=document.getElementById('cal-body');
+  if(!lbl||!body)return;
+  // Get Mon of current week
+  const d=new Date(calCurrentDate);const day=d.getDay();const diff=d.getDate()-(day===0?6:day-1);
+  d.setDate(diff);
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const end=new Date(d);end.setDate(end.getDate()+6);
+  lbl.textContent=`${months[d.getMonth()]} ${d.getDate()} – ${months[end.getMonth()]} ${end.getDate()}, ${end.getFullYear()}`;
+  const today=new Date();
+  body.innerHTML='';
+  const grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border:1px solid var(--border);';
+  ['Mon','Tue','Wed','Thu','Fri'].forEach((name,i)=>{
+    const date=new Date(d);date.setDate(date.getDate()+i);
+    const isToday=date.toDateString()===today.toDateString();
+    const cell=document.createElement('div');
+    cell.style.cssText=`background:var(--white);padding:10px 12px;min-height:160px;${isToday?'border-top:3px solid var(--red);':''}`;
+    cell.innerHTML=`<div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);">${name}</div><div style="font-size:20px;font-weight:400;color:${isToday?'var(--red)':'var(--ink)'};">${date.getDate()}</div>`;
+    // Show tasks for this day
+    const dayNum=i+1;
+    const tasks=(todoData[currentPerson]||{})[dayNum]||[];
+    tasks.forEach(t=>{
+      const el=document.createElement('div');
+      el.style.cssText=`margin-top:4px;padding:4px 7px;background:${t.done?'var(--done)':'var(--off)'};border:1px solid var(--border);font-size:11px;cursor:pointer;border-radius:2px;${t.urgent&&!t.done?'border-left:2px solid var(--red);':''}`;
+      el.textContent=t.title;
+      el.onclick=()=>openEditTodo(t,dayNum);
+      cell.appendChild(el);
+    });
+    grid.appendChild(cell);
+  });
+  body.appendChild(grid);
+}
 </script>
 </body>
 </html>
