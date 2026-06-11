@@ -1520,6 +1520,43 @@ tr:hover .i-todo-btn{opacity:1;}
 /* d-meta-line with badge */
 #d-meta-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
 
+/* ── GLOBAL SEARCH (Cmd+K) ── */
+.gs-bg{display:none;position:fixed;inset:0;background:rgba(13,13,13,.38);z-index:2000;align-items:flex-start;justify-content:center;padding-top:11vh;}
+.gs-bg.on{display:flex;}
+.gs-panel{width:580px;max-width:92vw;background:var(--white);border-radius:10px;box-shadow:0 16px 48px rgba(0,0,0,.28);overflow:hidden;display:flex;flex-direction:column;max-height:62vh;}
+.gs-inp-row{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);}
+.gs-inp-row i{font-size:16px;color:var(--muted);}
+#gs-inp{flex:1;border:none;outline:none;font-family:var(--font);font-size:15px;color:var(--ink);background:transparent;}
+.gs-kbd{font-size:10px;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:2px 6px;background:var(--off);}
+#gs-results{overflow-y:auto;padding:6px 0 10px;}
+.gs-cat{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:10px 16px 4px;}
+.gs-item{display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;font-size:13px;}
+.gs-item.sel,.gs-item:hover{background:var(--off);}
+.gs-item .gs-ico{width:26px;height:26px;border-radius:6px;background:var(--off);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.gs-item .gs-ico i{font-size:13px;color:var(--muted);}
+.gs-item .gs-t{color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.gs-item .gs-s{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.gs-empty{padding:28px 16px;text-align:center;font-size:13px;color:var(--muted);}
+/* ── EMPTY STATES ── */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:64px 24px;gap:4px;}
+.empty-state .es-icon{width:56px;height:56px;border-radius:50%;background:var(--off);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+.empty-state .es-icon i{font-size:24px;color:var(--muted);}
+.empty-state .es-title{font-family:var(--serif);font-size:18px;color:var(--ink);}
+.empty-state .es-sub{font-size:12.5px;color:var(--muted);max-width:320px;line-height:1.5;margin-bottom:14px;}
+/* ── BULK ACTIONS BAR ── */
+.bulk-btn{background:rgba(255,255,255,.1);border:none;color:#fff;font-family:var(--font);font-size:12px;padding:5px 10px;border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:background .15s;}
+.bulk-btn:hover{background:rgba(255,255,255,.22);}
+/* ── PRINT / PDF EXPORT ── */
+#print-area{display:none;}
+.inv-print-head{display:none;}
+@media print{
+  body.printing>*:not(#print-area){display:none!important;}
+  #print-area{display:block!important;background:#fff;padding:0;}
+  #print-area button,#print-area select,#print-area .d-action,#print-area .no-print{display:none!important;}
+  #print-area .inv-editable{border:none!important;}
+  #print-area .inv-print-head{display:flex!important;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #E0DDD8;}
+  @page{margin:18mm 16mm;}
+}
 </style>
 </head>
 <body>
@@ -1528,6 +1565,7 @@ tr:hover .i-todo-btn{opacity:1;}
   <div class="sidebar">
     <svg class="s-logo" viewBox="0 0 621.5 266.3" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M546.7,26.9c14.2,0,24.7,10,28.4,37.9c0.5,9.5,5.3,16.9,14.2,16.9c13.2,0,32.1-12.6,32.1-29.5c0-25.3-25.3-44.8-63.7-44.8c-59,0-104.6,43.4-127.1,95c-12.6,28.9-20,62.7-16.6,94.2c2.1,19.5,9.9,39.1,24.9,51.7c-19.3,2.3-53.8-15.3-81.8-42.5c23.2-21.6,41.8-48,54.4-77c3.7-8.6,8.7-21.6,3.4-30.6c-4.2-7.2-14.6-6.8-21.4-4.2c-16,6.2-14.5,22.1-17.5,36.2c-4.8,23.3-13.2,46.3-29.7,63.9c-25.3-26.5-45.7-55.3-58.5-78.6c43.3-17.2,72.8-28.1,72.8-67c0-31.3-27.9-48.5-58-48.5c-35.7,0-67.3,26-67.3,70.2c0,15.5,4.3,30.7,11.9,44.1c-15.8,4.9-31.1,11.9-43.7,22.8c-13.9,12.1-24,28.8-35.2,43.3c-18,23.3-45.6,57.7-79.3,53.3c-31-4-35.8-37-35.8-62.8c0-64.2,35.8-145.3,80-145.3c14.2,0,24.7,10,28.4,37.9c0.5,9.5,5.3,16.8,14.2,16.8c13.2,0,32.1-12.6,32.1-29.5c0-25.3-25.2-44.8-63.7-44.8C54.2,6.2,0,102,0,181.5c0,59,34.7,80.6,71.6,80.6c37.2,0,76.4-13.5,108.2-56.8c4.6,29.1,28.5,55.4,72.6,55.4c29.7,0,51.3-8.4,77.4-30.5c0,0,11.3,8.7,12.4,9.5c19.4,12.8,42.6,19.4,65.3,22.9c25.4,3.9,51.4,5,77,2.5c0.3,0,0.5-0.1,0.8-0.1c23.3-2.4,46.9-7.5,67.2-20c19.5-12,35.3-29.2,47.6-48.4c3.3-5.1,2.4-11.9-2.1-16.1c-2.9-2.7-7.5-2.2-9.9,1c-11.6,15.7-27.3,32.4-44.7,43c-10.9,6.7-22.5,10.9-34.2,10.9c-35.3,0-42.7-29.5-42.7-63.2C466.7,108,502.5,26.9,546.7,26.9z M299.7,15.6c18.9,0,26.9,13.2,26.9,28.1c0,29.3-21.6,49.3-45.7,60.1c-8-12.4-13.2-30.9-13.2-45.3C267.7,32.9,283.3,15.6,299.7,15.6z M269.7,238.6c-31.7,0-52.1-23.7-52.1-50.5c0-38.5,30.9-57.3,37.7-58.1c18,30.9,38.1,62.1,63.7,89.8C305.3,231,290.5,238.6,269.7,238.6z"/></svg>
     <div class="s-nav">
+      <div class="s-btn" onclick="openGlobalSearch()"><i class="ti ti-search"></i><span class="s-tip">Search (⌘K)</span></div>
       <div class="s-btn on" id="snav-dashboard" onclick="navTo('dashboard')"><i class="ti ti-grid-dots"></i><span class="s-tip">Dashboard</span></div>
       <div class="s-btn" id="snav-todo" onclick="navTo('todo')"><i class="ti ti-checklist"></i><span class="s-tip">To Do</span></div>
       <div class="s-btn" id="snav-jobs" onclick="navTo('jobs')"><i class="ti ti-briefcase"></i><span class="s-tip">Jobs</span></div>
@@ -1621,9 +1659,16 @@ tr:hover .i-todo-btn{opacity:1;}
           </div>
           <div class="jobs-table-wrap">
             <table class="jobs-table">
-              <thead><tr><th style="width:32px;"></th><th>Job</th><th>Company</th><th>Budget</th><th>Hours</th><th>Labels / Progress</th><th>Workflow</th><th>Status</th></tr></thead>
+              <thead><tr><th style="width:32px;"><input type="checkbox" id="jobs-cb-all" onclick="toggleAllJobCbs(this.checked)" style="accent-color:var(--red);cursor:pointer;"></th><th>Job</th><th>Company</th><th>Budget</th><th>Hours</th><th>Labels / Progress</th><th>Workflow</th><th>Status</th></tr></thead>
               <tbody id="jobs-tbody"></tbody>
             </table>
+          </div>
+          <div id="bulk-bar" style="display:none;position:sticky;bottom:16px;margin:0 auto;width:fit-content;background:var(--ink);color:#fff;border-radius:6px;padding:8px 14px;box-shadow:0 4px 16px rgba(0,0,0,.25);align-items:center;gap:10px;z-index:50;">
+            <span id="bulk-count" style="font-size:12px;font-weight:500;margin-right:4px;">0 selected</span>
+            <button class="bulk-btn" onclick="bulkLabelJobs()"><i class="ti ti-tag" style="font-size:12px;"></i> Label</button>
+            <button class="bulk-btn" onclick="bulkArchiveJobs()"><i class="ti ti-archive" style="font-size:12px;"></i> Archive</button>
+            <button class="bulk-btn" onclick="bulkDeleteJobs()" style="color:#FF8A8A;"><i class="ti ti-trash" style="font-size:12px;"></i> Delete</button>
+            <button class="bulk-btn" onclick="clearJobSelection()" style="opacity:.7;">Clear</button>
           </div>
         </div>
         <!-- TIME panel -->
@@ -1766,7 +1811,7 @@ tr:hover .i-todo-btn{opacity:1;}
               <span id="d-hours-sell" style="margin-left:8px;font-size:12px;color:var(--muted);"></span>
             </div>
             <div class="labels-row" id="labels-row">
-              <div class="label-add-btn" onclick="addLabel()"><i class="ti ti-plus" style="font-size:11px"></i> Add label</div>
+              <div class="label-add-btn" onclick="addLabel(event)"><i class="ti ti-plus" style="font-size:11px"></i> Add label</div>
             </div>
             <div id="job-notes-row" style="padding:0 0 10px;display:none;">
               <textarea id="job-notes-inp" placeholder="Add a brief or notes for this job…" style="width:100%;border:none;border-top:1px solid var(--border);background:var(--off);font-family:var(--font);font-size:12px;color:var(--ink);resize:none;outline:none;padding:8px 0 4px;line-height:1.5;" rows="2" oninput="updateJobNotes(this.value)"></textarea>
@@ -2182,10 +2227,23 @@ tr:hover .i-todo-btn{opacity:1;}
         <option value="sent">Sent</option>
         <option value="paid">Paid</option>
       </select>
+      <button class="inv-act" onclick="printInvoice()"><i class="ti ti-printer" style="font-size:12px;"></i> Print / PDF</button>
       <button class="inv-act" onclick="copyInvoiceToXero()">Copy to Xero</button>
       <button class="inv-x" onclick="closeInvoice()"><i class="ti ti-x"></i></button>
     </div>
     <div class="inv-body" id="inv-body"><!-- populated by renderInvoice() --></div>
+  </div>
+</div>
+
+<!-- GLOBAL SEARCH -->
+<div class="gs-bg" id="gsearch" onclick="if(event.target===this)closeGlobalSearch()">
+  <div class="gs-panel">
+    <div class="gs-inp-row">
+      <i class="ti ti-search"></i>
+      <input id="gs-inp" placeholder="Search jobs, clients, tasks…" oninput="runGlobalSearch(this.value)" autocomplete="off">
+      <span class="gs-kbd">esc</span>
+    </div>
+    <div id="gs-results"><div class="gs-empty">Type to search across everything.</div></div>
   </div>
 </div>
 
@@ -2205,6 +2263,25 @@ let LINE_ITEMS=JSON.parse(localStorage.getItem('cc_line_items')||'null')||[...DE
 const DEFAULT_EXPENSE_ITEMS=['Photography','Print production','Illustration','Stock imagery','Media buy','Software subscription','Courier / freight','Translation','Voice over','Music licence','Venue hire','Equipment hire','Catering','Travel','Third-party production','Domain / hosting'];
 let EXPENSE_ITEMS=JSON.parse(localStorage.getItem('cc_expense_items')||'null')||[...DEFAULT_EXPENSE_ITEMS];
 let jobCounter=6953,activeJobId=null,activeLabels=[],ctxTarget=null,pctxTarget=null,dragSrc=null;
+// ── Global labels (cc_labels) ──
+const LABEL_COLORS=['#ED1E24','#6B7FA3','#7B9E87','#C4956A','#9B59B6','#E67E22','#1ABC9C','#3498DB','#2E7D32','#888888'];
+let globalLabels=JSON.parse(localStorage.getItem('cc_labels')||'null')||[];
+function saveGlobalLabels(){try{localStorage.setItem('cc_labels',JSON.stringify(globalLabels));}catch(e){}}
+function addGlobalLabel(name,color){
+  name=(name||'').trim();if(!name)return null;
+  let l=globalLabels.find(x=>x.name.toLowerCase()===name.toLowerCase());
+  if(!l){l={name,color:color||LABEL_COLORS[globalLabels.length%LABEL_COLORS.length]};globalLabels.push(l);saveGlobalLabels();}
+  return l;
+}
+function labelColor(name){const l=globalLabels.find(x=>x.name===name);return l?l.color:'#9A9A9A';}
+function emptyStateHTML(icon,title,sub,ctaLabel,ctaOnclick){
+  return`<div class="empty-state">
+    <div class="es-icon"><i class="ti ${icon}"></i></div>
+    <div class="es-title">${title}</div>
+    <div class="es-sub">${sub}</div>
+    ${ctaLabel?`<button class="d-action primary" onclick="${ctaOnclick}"><i class="ti ti-plus" style="font-size:12px;"></i> ${ctaLabel}</button>`:''}
+  </div>`;
+}
 let jobs=[{id:'6752',name:'SFF Brand Guidelines',company:'Silver Fern Farms',budget:'$13,625',budgetTotal:'$23,125',bPct:59,hours:'85h',hoursTotal:'143h',hPct:59,status:'inplay',billable:true,workflowStatus:'live',labels:['May','June','July','APPROVED'],notes:'Brand refresh for SFF New Zealand. Includes full guidelines, typography, colour system, and template suite. Approved budget $23,125.',activity:[],invNum:null,members:['ro','bee','jb']}];
 let invCounter=1001;
 const SFF_PHASES=[
@@ -2226,15 +2303,36 @@ const SFF_PHASES=[
   ]}
 ];
 let phases=JSON.parse(JSON.stringify(SFF_PHASES));
-const people={
+const DEFAULT_PEOPLE={
   ro:{name:'Ronan',initials:'RO',color:'#ED1E24',days:[1,2,3,4,5],role:'Creative Director'},
   bee:{name:'Bianca',initials:'BE',color:'#6B7FA3',days:[1,2,3,4,5],role:'Account Manager'},
   jb:{name:'JB',initials:'JB',color:'#7B9E87',days:[1,2,3,4,5],role:'Copywriter'}
 };
+let people=(function(){
+  try{const s=JSON.parse(localStorage.getItem('cc_people')||'null');if(s&&Object.keys(s).length)return s;}catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT_PEOPLE));
+})();
+function savePeople(){
+  try{
+    localStorage.setItem('cc_people',JSON.stringify(people));
+    localStorage.setItem('cc_person_status',JSON.stringify(personStatus));
+  }catch(e){}
+}
 let currentPerson='ro';
 const MY_PERSON='ro'; // the logged-in user
-const APP_VERSION='1.9.3';
+const APP_VERSION='2.0.0';
 const CHANGELOG=[
+  {version:'2.0.0',date:'12 Jun 2026',title:'MVP milestone — search, print, real team management',items:[
+    'Global search: press ⌘K (or the sidebar magnifier) to search jobs, clients, tasks and plan items',
+    'Team members now persist — add and remove people from Settings, no code edit needed',
+    'Quote + invoice Print / PDF: clean print stylesheet, Send quote marks it sent',
+    'Invoiced ex GST stat in the job plan now reads from the real invoice total',
+    'Jobs list: bulk select with Archive / Delete / Label actions; Hide archived now works',
+    'Global labels: manage in Settings, pick from the list on any job (coloured chips everywhere)',
+    'Designed empty states for jobs, schedule, boards and clients',
+    'Keyboard: Esc closes any modal, N adds a task in the schedule view',
+    'Activity log now covers task add/edit/delete/done, item edits, team and note changes',
+  ]},
   {version:'1.9.0',date:'10 Jun 2026',title:'Stats fix, quote redesign, Create dropdown, calendar improvements',items:[
     'Job plan stats: compute live from phases (hours, sell, logged) — no more stale $0',
     'Quote tab: full Streamtime-style redesign with display options panel and T&Cs',
@@ -2297,7 +2395,13 @@ const CHANGELOG=[
   ]},
 ];
 let _fupTask=null;    // task that triggered the follow-up prompt
-let personStatus={ro:'available',bee:'available',jb:'allocated'};
+let personStatus=(function(){
+  const def={ro:'available',bee:'available',jb:'allocated'};
+  let s=def;
+  try{const stored=JSON.parse(localStorage.getItem('cc_person_status')||'null');if(stored)s=stored;}catch(e){}
+  Object.keys(people).forEach(k=>{if(!s[k])s[k]='available';});
+  return s;
+})();
 let weekOffset=0;
 const DAYS_DATA={
   ro:{
@@ -2365,6 +2469,8 @@ function loadData(){
   }catch(e){}
 }
 loadData();
+// Seed the global label list from any labels already on jobs
+jobs.forEach(j=>(j.labels||[]).forEach(l=>addGlobalLabel(l)));
 
 // Week-keyed data helpers
 function getWeekKey(offset){
@@ -2937,6 +3043,21 @@ function renderTodo(){
     });
   }
   setTimeout(positionGlobalDivider,0);
+
+  // Empty week state — overlay invitation without breaking drag/drop targets
+  const weekTaskCount=[1,2,3,4,5].reduce((s,d)=>s+((data[d]||[]).length),0);
+  document.getElementById('todo-empty-overlay')?.remove();
+  if(weekTaskCount===0){
+    const body=document.querySelector('.todo-body');
+    if(body){
+      const ov=document.createElement('div');
+      ov.id='todo-empty-overlay';
+      ov.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:5;';
+      ov.innerHTML=`<div style="pointer-events:auto;background:var(--white);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.07);">${emptyStateHTML('ti-calendar-plus','Nothing scheduled this week',`${people[currentPerson].name.split(' ')[0]}'s week is wide open. Add a task or drag one in from another week.`,'Add task','openTodoModal(null,1)')}</div>`;
+      if(getComputedStyle(body).position==='static')body.style.position='relative';
+      body.appendChild(ov);
+    }
+  }
 }
 
 function formatHrs(h){if(!h||h===0)return'';const m=Math.round(h*60);const hh=Math.floor(m/60);const mm=m%60;return hh&&mm?`${hh}h ${mm}m`:hh?`${hh}h`:`${mm}m`;}
@@ -3148,14 +3269,19 @@ function toggleTaskDone(t,day){
   const wd=getWeekData(currentPerson);
   const arr=wd[day]||[];
   const task=arr.find(x=>x.id===t.id);
-  if(task){task.done=!task.done;saveData();renderTodo();_refreshJobStats();toast(task.done?'Marked done':'Marked undone',task.done?'success':'info');}
+  if(task){
+    task.done=!task.done;
+    if(task.jobId)logActivity(task.jobId,currentPerson,'task_status',`Task <strong>${task.title}</strong> ${task.done?'marked done':'reopened'}`);
+    saveData();renderTodo();_refreshJobStats();toast(task.done?'Marked done':'Marked undone',task.done?'success':'info');
+  }
 }
 function deleteTodoById(id,day){
   const wd=getWeekData(currentPerson);
   const arr=wd[day]||[];
   const idx=arr.findIndex(t=>t.id===id);
   if(idx===-1)return;
-  arr.splice(idx,1);
+  const[removed]=arr.splice(idx,1);
+  if(removed?.jobId)logActivity(removed.jobId,currentPerson,'task_delete',`Deleted task <strong>${removed.title}</strong>`);
   saveData();renderTodo();_refreshJobStats();toast('Task deleted');
 }
 function reassignTask(t,fromDay,toPersonKey){
@@ -3667,6 +3793,7 @@ function toggleTaskDone(taskId){
     const t=arr.find(x=>x.id===taskId);
     if(t){
       t.done=!t.done;
+      if(t.jobId)logActivity(t.jobId,currentPerson,'task_status',`Task <strong>${t.title}</strong> ${t.done?'marked done':'reopened'}`);
       if(t.done){_fupTask=t;setTimeout(()=>document.getElementById('fup').classList.add('on'),800);}
       renderTodo();saveData();_refreshJobStats();return;
     }
@@ -3699,7 +3826,7 @@ function addTeamMember(name){
   const color=colors[Object.keys(people).length%colors.length];
   people[name.toLowerCase().replace(/\s/g,'')]={name,initials,color,days:[1,2,3,4,5]};
   personStatus[people[name.toLowerCase().replace(/\s/g,'')].name.toLowerCase().replace(/\s/g,'')]='available';
-  renderTodo();saveData();
+  renderTodo();savePeople();saveData();
 }
 
 function closeFup(yes){
@@ -3980,11 +4107,13 @@ function saveTodo(){
       } else {
         Object.assign(arr[idx],{title:name,hours,item,itemId:itemId||arr[idx].itemId,note,urgent,personal,job:job?`${job.id} ${job.name}`:''});
       }
+      if(jobId)logActivity(jobId,MY_PERSON,'task_edit',`Updated task <strong>${name}</strong>`);
     }
   } else {
     const task={id:'t'+Date.now(),title:name,job:job?`${job.id} ${job.name}`:'',jobId:jobId||null,item,itemId:itemId||null,hours,note,urgent,personal};
     if(!wd[dayNum])wd[dayNum]=[];
     wd[dayNum].push(task);
+    if(jobId)logActivity(jobId,targetPerson,'task_add',`Added task <strong>${name}</strong>${item?` (${item})`:''} — ${DAY_NAMES[dayNum-1]}`);
     _fupTask=null;
     setTimeout(()=>document.getElementById('fup').classList.add('on'),800);
     // Handle repeat: create copies for future occurrences
@@ -4044,20 +4173,22 @@ function renderJobs(){
   const wfFilter=(document.getElementById('jobs-wf-filter')?.value)||'all';
   const q=_jobSearch;
   let shown=0;
+  const hideArchived=document.getElementById('jobs-hide-archived')?.checked;
   jobs.forEach(j=>{
+    if(hideArchived&&j.status==='archived')return;
     if(statusFilter!=='all'&&j.status!==statusFilter)return;
     const jWf=j.workflowStatus||'live';
     if(wfFilter!=='all'&&jWf!==wfFilter)return;
     if(q&&!(`${j.id} ${j.name} ${j.company}`).toLowerCase().includes(q))return;
     shown++;
     const sc=j.status==='inplay'?'sp-ip':j.status==='new'?'sp-new':'sp-co';
-    const sl=j.status==='inplay'?'In Play':j.status==='new'?'New':'Complete';
+    const sl=j.status==='inplay'?'In Play':j.status==='new'?'New':j.status==='archived'?'Archived':'Complete';
     computeJobStats(j);
     const bPct=j._bPct||0;const hPct=j._hPct||0;
     const bCol=bPct>=100?'var(--red)':bPct>=80?'#FF9800':'#4CAF50';
     const hCol=hPct>=100?'var(--red)':hPct>=80?'#FF9800':'#4CAF50';
     const billDot=j.billable===false?'<span style="width:6px;height:6px;border-radius:50%;background:#CBD5E1;display:inline-block;margin-right:5px;" title="Non-billable"></span>':'<span style="width:6px;height:6px;border-radius:50%;background:#4CAF50;display:inline-block;margin-right:5px;" title="Billable"></span>';
-    const labels=(j.labels||[]).slice(0,3).map(l=>`<span class="job-label-pip">${l}</span>`).join('');
+    const labels=(j.labels||[]).slice(0,3).map(l=>{const c=labelColor(l);return`<span class="job-label-pip" style="background:${c}18;color:${c};border:1px solid ${c}44;">${l}</span>`;}).join('');
     const notePrev=j.notes?`<div class="job-notes-preview" title="${j.notes.replace(/"/g,'&quot;')}">${j.notes}</div>`:'';
     const jPhases=j.id===activeJobId?phases:[];
     const totalItems=jPhases.reduce((s,p)=>s+p.items.length,0);
@@ -4067,7 +4198,7 @@ function renderJobs(){
     const wfCls=jWf==='quote'?'wf-quote':jWf==='invoiced'?'wf-invoiced':'wf-live';
     const tr=document.createElement('tr');tr.onclick=()=>openJobDetail(j.id);
     tr.innerHTML=`
-      <td style="width:32px;"><input type="checkbox" onclick="event.stopPropagation()"/></td>
+      <td style="width:32px;"><input type="checkbox" class="job-cb" data-id="${j.id}" onclick="event.stopPropagation();updateBulkBar()" style="accent-color:var(--red);cursor:pointer;"/></td>
       <td style="min-width:220px;">
         <div class="job-num-name"><span class="job-num">${j.id}</span><span class="job-name">${j.name}</span></div>
         ${notePrev}
@@ -4093,6 +4224,50 @@ function renderJobs(){
     tbody.appendChild(tr);
   });
   document.getElementById('jobs-count').textContent=`${shown} job${shown!==1?'s':''} · NZD`;
+  if(shown===0){
+    tbody.innerHTML=`<tr><td colspan="8">${jobs.length===0
+      ?emptyStateHTML('ti-briefcase','No jobs yet','Jobs hold your phases, budgets, quotes and invoices. Create your first one to get started.','New job','openCreateJob()')
+      :emptyStateHTML('ti-filter-off','No jobs match','Nothing matches the current search or filters. Try clearing them.','','')}</td></tr>`;
+  }
+  updateBulkBar();
+}
+
+// ── Bulk actions on jobs list ──
+function getSelectedJobIds(){return[...document.querySelectorAll('.job-cb:checked')].map(cb=>cb.dataset.id);}
+function updateBulkBar(){
+  const ids=getSelectedJobIds();
+  const bar=document.getElementById('bulk-bar');if(!bar)return;
+  bar.style.display=ids.length?'flex':'none';
+  const cnt=document.getElementById('bulk-count');
+  if(cnt)cnt.textContent=`${ids.length} selected`;
+  const all=document.getElementById('jobs-cb-all');
+  const total=document.querySelectorAll('.job-cb').length;
+  if(all){all.checked=total>0&&ids.length===total;all.indeterminate=ids.length>0&&ids.length<total;}
+}
+function toggleAllJobCbs(on){document.querySelectorAll('.job-cb').forEach(cb=>cb.checked=on);updateBulkBar();}
+function clearJobSelection(){toggleAllJobCbs(false);}
+function bulkArchiveJobs(){
+  const ids=getSelectedJobIds();if(!ids.length)return;
+  ids.forEach(id=>{const j=jobs.find(x=>x.id===id);if(j)j.status='archived';});
+  saveData();renderJobs();
+  toast(`${ids.length} job${ids.length!==1?'s':''} archived`);
+}
+function bulkDeleteJobs(){
+  const ids=getSelectedJobIds();if(!ids.length)return;
+  if(!confirm(`Delete ${ids.length} job${ids.length!==1?'s':''}? This can't be undone.`))return;
+  jobs=jobs.filter(j=>!ids.includes(j.id));
+  if(ids.includes(activeJobId))activeJobId=null;
+  saveData();renderJobs();
+  toast(`${ids.length} job${ids.length!==1?'s':''} deleted`,'warn');
+}
+function bulkLabelJobs(){
+  const ids=getSelectedJobIds();if(!ids.length)return;
+  const lbl=(prompt('Label to add to the selected jobs:')||'').trim();
+  if(!lbl)return;
+  addGlobalLabel(lbl);
+  ids.forEach(id=>{const j=jobs.find(x=>x.id===id);if(j){if(!j.labels)j.labels=[];if(!j.labels.includes(lbl))j.labels.push(lbl);}});
+  saveData();renderJobs();
+  toast(`Label “${lbl}” added to ${ids.length} job${ids.length!==1?'s':''}`,'success');
 }
 
 function openJobDetail(id){
@@ -4159,6 +4334,7 @@ function toggleJobMember(jobId,personKey,rowEl){
   const idx=j.members.indexOf(personKey);
   if(idx===-1){j.members.push(personKey);rowEl.style.background='var(--off)';rowEl.insertAdjacentHTML('beforeend','<i class="ti ti-check" style="color:var(--red);font-size:12px;"></i>');}
   else{j.members.splice(idx,1);rowEl.style.background='#fff';rowEl.querySelector('.ti-check')?.remove();}
+  logActivity(jobId,MY_PERSON,'member_change',`<strong>${people[personKey]?.name||personKey}</strong> ${idx===-1?'added to':'removed from'} the job`);
   saveData();
   // Refresh the avatars row
   const membersRow=document.getElementById('d-members-row');
@@ -4169,7 +4345,18 @@ function toggleJobMember(jobId,personKey,rowEl){
     }).join('')+`<div class="d-av" style="background:#ddd;color:#888;font-size:13px;cursor:pointer;" title="Add team member" onclick="openAddMemberPicker('${j.id}')">+</div>`;
   }
 }
+let _notesLogTimer=null,_notesLoggedFor=null;
 function updateJobNotes(val){
+  clearTimeout(_notesLogTimer);
+  _notesLogTimer=setTimeout(()=>{
+    if(activeJobId&&_notesLoggedFor!==activeJobId){
+      logActivity(activeJobId,MY_PERSON,'note_edit','Updated the job notes / brief');
+      _notesLoggedFor=activeJobId;
+    }
+  },2500);
+  _updateJobNotesNow(val);
+}
+function _updateJobNotesNow(val){
   const j=jobs.find(x=>x.id===activeJobId);
   if(j){j.notes=val;saveData();}
 }
@@ -4390,7 +4577,7 @@ function renderStats(j){
     _statBlock('Time used / planned',`${logStr} <span class="stat-of">/ ${planStr}</span>`,plannedMins>0?`${hPct}% of plan`:null,plannedMins>0?hPct:null,hCol)+
     _statBlock('Sell used / planned',`$${sellUsed.toLocaleString()} <span class="stat-of">/ $${plannedSell.toLocaleString()}</span>`,plannedSell>0?`${bPct}% of plan`:null,plannedSell>0?bPct:null,bCol)+
     _statBlock('Budget from quote',plannedSell>0?`$${plannedSell.toLocaleString()}`:'—',billLabel,null)+
-    _statBlock('Invoiced ex GST','—',null,null)+
+    _statBlock('Invoiced ex GST',(j.invStatus==='sent'||j.invStatus==='paid')&&(j.invTotal||plannedSell)?`$${(j.invTotal||plannedSell).toLocaleString()}`:'—',(j.invStatus==='sent'||j.invStatus==='paid')?j.invStatus.toUpperCase():null,null)+
     _statBlock('Expenses',`$${Math.round(expUsed).toLocaleString()}`,null,null);
 }
 
@@ -4498,7 +4685,7 @@ function renderQuoteTab(){
   wrap.innerHTML=`
   <div style="display:flex;gap:20px;align-items:flex-start;min-height:100%;">
     <!-- QUOTE DOCUMENT -->
-    <div style="flex:1;min-width:0;background:#fff;border:1px solid var(--border);border-radius:6px;padding:32px 36px;box-shadow:0 2px 12px rgba(0,0,0,.06);">
+    <div id="quote-doc" style="flex:1;min-width:0;background:#fff;border:1px solid var(--border);border-radius:6px;padding:32px 36px;box-shadow:0 2px 12px rgba(0,0,0,.06);">
       <!-- Header: logo + company block -->
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid var(--border);">
         <div>
@@ -4552,7 +4739,8 @@ function renderQuoteTab(){
         <button class="d-action primary" onclick="setQuoteStatus('${j.id}','approved')"><i class="ti ti-check" style="font-size:12px;"></i> Approve quote</button>
         <button class="d-action" onclick="setQuoteStatus('${j.id}','declined')" style="color:var(--red);">Decline</button>
         <div style="flex:1;"></div>
-        <button class="d-action" onclick="toast('Print/PDF export coming soon')"><i class="ti ti-printer" style="font-size:12px;"></i> Print / PDF</button>
+        <button class="d-action" onclick="sendQuote('${j.id}')"><i class="ti ti-send" style="font-size:12px;"></i> Send quote</button>
+        <button class="d-action" onclick="printQuote('${j.id}')"><i class="ti ti-printer" style="font-size:12px;"></i> Print / PDF</button>
       </div>
     </div>
 
@@ -4591,7 +4779,15 @@ function cycleQuoteStatus(jobId){
 function setQuoteStatus(jobId,status){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
   j.quoteStatus=status;saveData();renderQuoteTab();
+  logActivity(jobId,MY_PERSON,'quote_status',`Quote marked <strong>${status}</strong>`);
   toast(status==='approved'?'Quote approved 🎉':'Quote declined',status==='approved'?'success':'warn');
+}
+function sendQuote(jobId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  if((j.quoteStatus||'draft')==='draft'){j.quoteStatus='sent';saveData();renderQuoteTab();}
+  logActivity(jobId,MY_PERSON,'quote_sent',`Quote <strong>sent</strong> to ${j.company}`);
+  printQuote(jobId);
+  toast('Quote marked as sent — save the PDF to attach to your email','success');
 }
 
 function renderLabels(){
@@ -4599,13 +4795,61 @@ function renderLabels(){
   const addBtn=row.querySelector('.label-add-btn');
   row.querySelectorAll('.label-chip').forEach(el=>el.remove());
   activeLabels.forEach(l=>{
+    const c=labelColor(l);
     const el=document.createElement('div');el.className='label-chip';
-    el.innerHTML=`${l} <button onclick="removeLabel('${l}')"><i class="ti ti-x" style="font-size:10px"></i></button>`;
+    el.style.cssText=`background:${c}18;color:${c};border:1px solid ${c}44;`;
+    el.innerHTML=`${l} <button onclick="removeLabel('${l}')" style="color:${c};"><i class="ti ti-x" style="font-size:10px"></i></button>`;
     row.insertBefore(el,addBtn);
   });
 }
-function addLabel(){const lbl=prompt('Add label:');if(lbl&&lbl.trim()&&!activeLabels.includes(lbl.trim())){activeLabels.push(lbl.trim());renderLabels();}}
-function removeLabel(l){activeLabels=activeLabels.filter(x=>x!==l);renderLabels();}
+function _persistActiveLabels(){
+  const j=jobs.find(x=>x.id===activeJobId);
+  if(j){j.labels=[...activeLabels];saveData();}
+}
+function addLabel(ev){openLabelPicker(ev);}
+function removeLabel(l){activeLabels=activeLabels.filter(x=>x!==l);renderLabels();_persistActiveLabels();}
+function toggleJobLabel(name){
+  if(activeLabels.includes(name))activeLabels=activeLabels.filter(x=>x!==name);
+  else activeLabels.push(name);
+  renderLabels();_persistActiveLabels();
+  renderLabelPickerList();
+}
+function openLabelPicker(ev){
+  if(ev)ev.stopPropagation();
+  closeLabelPicker();
+  const btn=document.querySelector('.label-add-btn');if(!btn)return;
+  const r=btn.getBoundingClientRect();
+  const pop=document.createElement('div');pop.id='label-picker';
+  pop.style.cssText=`position:fixed;top:${r.bottom+6}px;left:${r.left}px;width:220px;background:var(--white);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.14);z-index:1000;padding:8px;`;
+  pop.onclick=e=>e.stopPropagation();
+  pop.innerHTML=`<div id="label-picker-list" style="max-height:200px;overflow-y:auto;"></div>
+    <div style="display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+      <input id="label-picker-new" class="form-inp" placeholder="New label…" style="flex:1;font-size:12px;" onkeydown="if(event.key==='Enter')createLabelFromPicker();if(event.key==='Escape')closeLabelPicker();">
+      <button class="d-action" style="padding:4px 8px;" onclick="createLabelFromPicker()"><i class="ti ti-plus" style="font-size:11px;"></i></button>
+    </div>`;
+  document.body.appendChild(pop);
+  renderLabelPickerList();
+  setTimeout(()=>document.addEventListener('click',closeLabelPicker,{once:true}),0);
+}
+function renderLabelPickerList(){
+  const list=document.getElementById('label-picker-list');if(!list)return;
+  list.innerHTML=globalLabels.length?globalLabels.map(l=>{
+    const on=activeLabels.includes(l.name);
+    return`<div onclick="toggleJobLabel('${l.name.replace(/'/g,"\\'")}')" style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:4px;cursor:pointer;font-size:12px;" onmouseover="this.style.background='var(--off)'" onmouseout="this.style.background=''">
+      <span style="width:10px;height:10px;border-radius:50%;background:${l.color};flex-shrink:0;"></span>
+      <span style="flex:1;">${l.name}</span>
+      ${on?'<i class="ti ti-check" style="font-size:12px;color:var(--ink);"></i>':''}
+    </div>`;
+  }).join(''):'<div style="font-size:12px;color:var(--muted);padding:6px 8px;">No labels yet — create one below.</div>';
+}
+function createLabelFromPicker(){
+  const inp=document.getElementById('label-picker-new');if(!inp)return;
+  const l=addGlobalLabel(inp.value);if(!l)return;
+  inp.value='';
+  if(!activeLabels.includes(l.name)){activeLabels.push(l.name);renderLabels();_persistActiveLabels();}
+  renderLabelPickerList();
+}
+function closeLabelPicker(){document.getElementById('label-picker')?.remove();}
 
 function renderPhases(){
   const c=document.getElementById('phases-wrap');c.innerHTML='';
@@ -4711,6 +4955,10 @@ function inlineEditItem(e,itemId,phId,field){
     const ph=phases.find(p=>p.id===phId);
     const item=ph?.items.find(i=>i.id===itemId);
     if(item){
+      if(val!==current){
+        if(field==='name')logActivity(activeJobId,MY_PERSON,'item_rename',`Renamed <strong>${current}</strong> to <strong>${val}</strong>`);
+        else logActivity(activeJobId,MY_PERSON,'item_edit',`Changed ${field} on <strong>${item.name}</strong> to <strong>${val}</strong>`);
+      }
       item[field]=val;
       // Recalculate total if hours or rate changed
       if(field==='hours'||field==='rate'){
@@ -5126,11 +5374,42 @@ function openInvoice(){
   document.getElementById('inv-modal').classList.add('on');
 }
 function closeInvoice(){document.getElementById('inv-modal').classList.remove('on');}
+function printElement(el,docTitle){
+  if(!el){toast('Nothing to print','warn');return;}
+  let pa=document.getElementById('print-area');
+  if(!pa){pa=document.createElement('div');pa.id='print-area';document.body.appendChild(pa);}
+  pa.innerHTML='';
+  const clone=el.cloneNode(true);
+  // Carry live values from inputs into the clone as plain text
+  const orig=el.querySelectorAll('input,textarea');
+  clone.querySelectorAll('input,textarea').forEach((n,i)=>{
+    const span=document.createElement('span');span.textContent=orig[i]?orig[i].value:'';n.replaceWith(span);
+  });
+  clone.style.boxShadow='none';clone.style.border='none';
+  pa.appendChild(clone);
+  const prevTitle=document.title;
+  if(docTitle)document.title=docTitle;
+  document.body.classList.add('printing');
+  window.print();
+  document.body.classList.remove('printing');
+  document.title=prevTitle;
+  pa.innerHTML='';
+}
+function printQuote(jobId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  printElement(document.getElementById('quote-doc'),`Quote ${j.quoteNum||j.id} — ${j.company}`);
+}
+function printInvoice(){
+  const j=jobs.find(x=>x.id===activeJobId);if(!j)return;
+  printElement(document.getElementById('inv-body'),`Invoice ${j.invNum} — ${j.company}`);
+}
 function saveInvStatus(){
   const j=jobs.find(x=>x.id===activeJobId);if(!j)return;
   j.invStatus=document.getElementById('inv-status').value;
+  if((j.invStatus==='sent'||j.invStatus==='paid')&&!j.invTotal){computeJobStats(j);j.invTotal=j._plannedSell||0;}
   saveData();
   logActivity(activeJobId,MY_PERSON,`Invoice status → ${j.invStatus}`,`Invoice marked as <strong>${j.invStatus}</strong>`);
+  renderStats(j);
 }
 function renderInvoice(j){
   const wrap=document.getElementById('inv-body');if(!wrap)return;
@@ -5147,7 +5426,15 @@ function renderInvoice(j){
   }).join('');
   const gst=Math.round(subtotal*0.15);
   const total=subtotal+gst;
+  j.invTotal=subtotal;
   wrap.innerHTML=`
+    <div class="inv-print-head">
+      <div>
+        <div style="font-family:var(--serif);font-size:22px;font-weight:600;letter-spacing:-.01em;margin-bottom:4px;">Content &amp; Co</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.7;">NZ Ltd<br>Level 1, 53 Fort Street, Auckland<br>GST 116710013</div>
+      </div>
+      <div style="font-size:22px;font-family:var(--serif);font-weight:400;">Tax Invoice</div>
+    </div>
     <div class="inv-meta-grid">
       <div><div class="inv-ml">Job number</div><div class="inv-mv">${j.id}</div></div>
       <div><div class="inv-ml">Invoice #</div><div class="inv-mv inv-editable" contenteditable="true">${j.invNum}</div></div>
@@ -5203,7 +5490,9 @@ function renderClients(){
       <div class="jobs-search"><i class="ti ti-search"></i><input id="clients-search-inp" placeholder="Search clients…" oninput="renderClients()"/></div>
       <button class="d-action primary" onclick="openNewClientModal()"><i class="ti ti-plus" style="font-size:12px;"></i> Add client</button>
     </div>
-    <div class="clients-grid">
+    ${clientsData.length===0?emptyStateHTML('ti-building','No clients yet','Clients are created automatically when you add a job, or add one here to get a head start.','Add client','openNewClientModal()'):''}
+    ${clientsData.length>0&&filtered.length===0?emptyStateHTML('ti-filter-off','No clients match','Nothing matches that search.','',''):''}
+    <div class="clients-grid" ${clientsData.length===0?'style="display:none;"':''}>
       ${filtered.map(c=>`
         <div class="client-card-full" onclick="openClientDetail('${c.id}')">
           <div class="ccf-name">${c.name}</div>
@@ -5346,6 +5635,7 @@ function renderSettings(){
       <div class="color-swatches" style="display:flex;gap:4px;flex-wrap:wrap;max-width:120px;">
         ${COLORS.map(c=>`<div onclick="updatePerson('${key}','color','${c}')" style="width:16px;height:16px;border-radius:50%;background:${c};cursor:pointer;border:${p.color===c?'2px solid var(--ink)':'2px solid transparent'};flex-shrink:0;"></div>`).join('')}
       </div>
+      ${key!==MY_PERSON?`<button onclick="deletePerson('${key}')" title="Remove ${p.name}" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:6px;margin-left:4px;flex-shrink:0;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--muted)'"><i class="ti ti-trash" style="font-size:14px;"></i></button>`:''}
     </div>`;
   }).join('');
   wrap.innerHTML=`
@@ -5389,6 +5679,19 @@ function renderSettings(){
         </div>
       </div>
     </div>
+    <div style="margin-top:20px;">
+      <div class="section-label" style="margin-bottom:14px;">Labels</div>
+      <div style="background:var(--white);border:1px solid var(--border);padding:14px 16px 10px;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Used across jobs. Click a swatch to recolour, &times; to remove.</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${globalLabels.map((l,i)=>`<span class="sett-chip" style="background:${l.color}18;color:${l.color};border:1px solid ${l.color}44;">
+          <span onclick="cycleLabelColor(${i})" title="Change colour" style="width:10px;height:10px;border-radius:50%;background:${l.color};display:inline-block;margin-right:5px;cursor:pointer;vertical-align:middle;"></span>${l.name}
+          <button onclick="removeGlobalLabel(${i})" style="background:none;border:none;cursor:pointer;font-size:10px;color:${l.color};margin-left:4px;padding:0 2px;">&times;</button></span>`).join('')||'<span style="font-size:12px;color:var(--muted);">No labels yet.</span>'}</div>
+        <div style="display:flex;gap:8px;">
+          <input id="sett-label-new" class="form-inp" placeholder="Add new label…" style="flex:1;" onkeydown="if(event.key==='Enter')addSettLabel()">
+          <button class="d-action" onclick="addSettLabel()"><i class="ti ti-plus" style="font-size:11px"></i> Add</button>
+        </div>
+      </div>
+    </div>
     <div style="margin-top:28px;">
       <div class="section-label" style="margin-bottom:14px;">About</div>
       <div style="background:var(--white);border:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
@@ -5408,17 +5711,34 @@ function addSettItem(type){
   else{if(!EXPENSE_ITEMS.includes(val)){EXPENSE_ITEMS.push(val);localStorage.setItem('cc_expense_items',JSON.stringify(EXPENSE_ITEMS));}}
   renderSettings();
 }
+function addSettLabel(){
+  const val=(document.getElementById('sett-label-new')?.value||'').trim();
+  if(!val)return;
+  addGlobalLabel(val);
+  renderSettings();
+}
+function removeGlobalLabel(i){
+  globalLabels.splice(i,1);
+  saveGlobalLabels();renderSettings();
+}
+function cycleLabelColor(i){
+  const l=globalLabels[i];if(!l)return;
+  const cur=LABEL_COLORS.indexOf(l.color);
+  l.color=LABEL_COLORS[(cur+1)%LABEL_COLORS.length];
+  saveGlobalLabels();renderSettings();
+}
 function removeSettItem(type,val){
   if(type==='line'){LINE_ITEMS=LINE_ITEMS.filter(x=>x!==val);localStorage.setItem('cc_line_items',JSON.stringify(LINE_ITEMS));}
   else{EXPENSE_ITEMS=EXPENSE_ITEMS.filter(x=>x!==val);localStorage.setItem('cc_expense_items',JSON.stringify(EXPENSE_ITEMS));}
   renderSettings();
 }
-function showAddPersonForm(){document.getElementById('add-person-form').style.display='';}
+function showAddPersonForm(){document.getElementById('add-person-form').style.display='';document.getElementById('ap-name')?.focus();}
 function updatePerson(key,field,val){
   if(!people[key])return;
   people[key][field]=val;
+  if(field==='name')people[key].initials=val.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)||people[key].initials;
   if(field==='color'||field==='name'){renderSettings();}
-  saveData();
+  savePeople();
   populatePersonSwitcher();
 }
 function saveNewPerson(){
@@ -5428,11 +5748,149 @@ function saveNewPerson(){
   const COLORS=['#ED1E24','#6B7FA3','#7B9E87','#C4956A','#9B59B6','#E67E22','#1ABC9C','#3498DB'];
   const initials=name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
   const color=COLORS[Object.keys(people).length%COLORS.length];
-  const key=name.toLowerCase().replace(/\s+/g,'_');
+  let key=name.toLowerCase().replace(/\s+/g,'_');
+  while(people[key])key+='_';
   people[key]={name,initials,color,days:[1,2,3,4,5],role};
   personStatus[key]='available';
-  saveData();populatePersonSwitcher();renderSettings();
+  savePeople();populatePersonSwitcher();renderSettings();
+  toast(`${name} added to the team`,'success');
 }
+function deletePerson(key){
+  const p=people[key];if(!p)return;
+  if(key===MY_PERSON){toast('You can\'t remove yourself','warn');return;}
+  if(Object.keys(people).length<=1){toast('At least one team member is required','warn');return;}
+  if(!confirm(`Remove ${p.name} from the team? Their scheduled tasks will be kept but hidden.`))return;
+  delete people[key];
+  delete personStatus[key];
+  if(currentPerson===key)currentPerson=MY_PERSON;
+  jobs.forEach(j=>{
+    if(j.members)j.members=j.members.filter(m=>m!==key);
+    if(j.lead===key)j.lead=null;
+  });
+  savePeople();saveData();populatePersonSwitcher();renderSettings();
+  toast(`${p.name} removed`);
+}
+// ═══════════════════════════════════════════════════════════════
+//  GLOBAL SEARCH (Cmd+K)
+// ═══════════════════════════════════════════════════════════════
+let _gsResults=[],_gsSel=0;
+function openGlobalSearch(){
+  document.getElementById('gsearch').classList.add('on');
+  const inp=document.getElementById('gs-inp');
+  inp.value='';runGlobalSearch('');
+  setTimeout(()=>inp.focus(),30);
+}
+function closeGlobalSearch(){document.getElementById('gsearch').classList.remove('on');}
+function runGlobalSearch(q){
+  q=(q||'').trim().toLowerCase();
+  const out=[];
+  if(q){
+    jobs.forEach(j=>{
+      if((`${j.id} ${j.name} ${j.company}`).toLowerCase().includes(q))
+        out.push({cat:'Jobs',icon:'ti-briefcase',title:`${j.id} — ${j.name}`,sub:j.company,fn:()=>openJobDetail(j.id)});
+    });
+    clientsData.forEach(c=>{
+      if((`${c.name} ${c.contact||''} ${c.email||''}`).toLowerCase().includes(q))
+        out.push({cat:'Clients',icon:'ti-building',title:c.name,sub:c.contact||c.email||'Client',fn:()=>{navTo('jobs');switchJobsTab('clients');openClientDetail(c.id);}});
+    });
+    // Tasks across all people and weeks
+    Object.keys(todoData).forEach(pk=>{
+      const p=people[pk];if(!p)return;
+      Object.keys(todoData[pk]).forEach(wk=>{
+        const week=todoData[pk][wk];
+        [1,2,3,4,5].forEach(d=>{
+          (week[d]||[]).forEach(t=>{
+            if((`${t.title} ${t.note||''} ${t.job||''} ${t.item||''}`).toLowerCase().includes(q)){
+              out.push({cat:'Tasks',icon:t.done?'ti-circle-check':'ti-circle-dot',title:t.title,sub:`${p.name} · ${DAY_NAMES[d-1]} ${wk}${t.job?' · '+t.job:''}`,fn:()=>{
+                currentPerson=pk;
+                weekOffset=Math.round((new Date(wk)-new Date(getWeekKey(0)))/(7*86400000));
+                navTo('todo');
+              }});
+            }
+          });
+        });
+      });
+    });
+    // Job plan items
+    jobs.forEach(j=>{
+      (j.phases||[]).forEach(ph=>(ph.items||[]).forEach(it=>{
+        if(it.name.toLowerCase().includes(q))
+          out.push({cat:'Job plan items',icon:'ti-list-details',title:it.name,sub:`${j.id} ${j.name} · ${ph.name}`,fn:()=>openJobDetail(j.id)});
+      }));
+    });
+  }
+  _gsResults=out.slice(0,30);_gsSel=0;
+  renderGsResults(q);
+}
+function renderGsResults(q){
+  const el=document.getElementById('gs-results');
+  if(!_gsResults.length){
+    el.innerHTML=`<div class="gs-empty">${q?'No matches for “'+q+'”.':'Type to search across everything.'}</div>`;
+    return;
+  }
+  let html='',lastCat='';
+  _gsResults.forEach((r,i)=>{
+    if(r.cat!==lastCat){html+=`<div class="gs-cat">${r.cat}</div>`;lastCat=r.cat;}
+    html+=`<div class="gs-item${i===_gsSel?' sel':''}" onclick="gsGo(${i})" onmousemove="_gsSel=${i};renderGsResults(document.getElementById('gs-inp').value)">
+      <div class="gs-ico"><i class="ti ${r.icon}"></i></div>
+      <div style="flex:1;min-width:0;"><div class="gs-t">${r.title}</div><div class="gs-s">${r.sub}</div></div>
+    </div>`;
+  });
+  el.innerHTML=html;
+  el.querySelector('.gs-item.sel')?.scrollIntoView({block:'nearest'});
+}
+function gsGo(i){
+  const r=_gsResults[i];if(!r)return;
+  closeGlobalSearch();
+  r.fn();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════════════════════════════
+function closeAnyOpenModal(){
+  // Returns true if something was closed
+  const gs=document.getElementById('gsearch');
+  if(gs?.classList.contains('on')){closeGlobalSearch();return true;}
+  if(document.getElementById('label-picker')){closeLabelPicker();return true;}
+  let closed=false;
+  ['create-modal','todo-modal','inv-modal','fup'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el?.classList.contains('on')){el.classList.remove('on');closed=true;}
+  });
+  document.querySelectorAll('.modal-bg.on').forEach(el=>{el.classList.remove('on');closed=true;});
+  return closed;
+}
+document.addEventListener('keydown',e=>{
+  const mod=e.metaKey||e.ctrlKey;
+  if(mod&&e.key.toLowerCase()==='k'){
+    e.preventDefault();
+    const gs=document.getElementById('gsearch');
+    gs.classList.contains('on')?closeGlobalSearch():openGlobalSearch();
+    return;
+  }
+  const gsOpen=document.getElementById('gsearch')?.classList.contains('on');
+  if(gsOpen){
+    if(e.key==='ArrowDown'){e.preventDefault();_gsSel=Math.min(_gsSel+1,_gsResults.length-1);renderGsResults(document.getElementById('gs-inp').value);}
+    else if(e.key==='ArrowUp'){e.preventDefault();_gsSel=Math.max(_gsSel-1,0);renderGsResults(document.getElementById('gs-inp').value);}
+    else if(e.key==='Enter'){e.preventDefault();gsGo(_gsSel);}
+    else if(e.key==='Escape'){closeGlobalSearch();}
+    return;
+  }
+  if(e.key==='Escape'){if(closeAnyOpenModal())e.stopPropagation();return;}
+  const ae=document.activeElement;
+  const typing=ae&&(/INPUT|TEXTAREA|SELECT/.test(ae.tagName)||ae.isContentEditable);
+  if(typing||mod||e.altKey)return;
+  if(e.key==='n'||e.key==='N'){
+    const todoVisible=!document.getElementById('view-todo').classList.contains('hidden');
+    if(todoVisible){
+      e.preventDefault();
+      const dow=new Date().getDay();
+      openTodoModal(null,dow>=1&&dow<=5?dow:1);
+    }
+  }
+});
+
 document.addEventListener('click',()=>{document.getElementById('ctx').classList.remove('on');document.getElementById('pctx').classList.remove('on');});
 ['create-modal','todo-modal','inv-modal'].forEach(id=>{document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id))document.getElementById(id).classList.remove('on');});});
 
@@ -5817,7 +6275,9 @@ function openInvoiceForJob(id){
 }
 function saveInvStatusForJob(jobId,val){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
-  j.invStatus=val;saveData();renderInvoices();
+  j.invStatus=val;
+  if((val==='sent'||val==='paid')&&!j.invTotal){computeJobStats(j);j.invTotal=j._plannedSell||0;}
+  saveData();renderInvoices();
 }
 function toggleQinvDetail(cardId){
   const base=cardId.replace('qcard-','').replace('icard-','');
@@ -6030,7 +6490,7 @@ function renderBoardsList(){
   if(!grid)return;
   const stripeColor={client:'var(--red)',people:'#6B7FA3',custom:'#7B9E87'};
   if(boardsList.length===0){
-    grid.innerHTML='<div style="color:var(--muted);font-size:13px;padding:40px 0;grid-column:1/-1;">No boards yet — hit <strong>New board</strong> to create your first one.</div>';
+    grid.innerHTML=`<div style="grid-column:1/-1;">${emptyStateHTML('ti-layout-kanban','No boards yet','Boards give you a priority view across clients, people or any custom grouping you like.','New board','openCreateBoard()')}</div>`;
     return;
   }
   grid.className='boards-list-grid';
