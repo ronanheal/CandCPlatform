@@ -15,6 +15,10 @@ function initReportingSelects(){
   const ps=document.getElementById('r-person');
   const js=document.getElementById('r-job');
   ps.innerHTML='<option value="all">All People</option>';
+  [...new Set(Object.values(people).map(p=>p.team).filter(Boolean))].forEach(tn=>{
+    const o=document.createElement('option');o.value='team:'+tn;o.textContent=`Team — ${tn}`;
+    ps.appendChild(o);
+  });
   Object.keys(people).forEach(k=>{
     const o=document.createElement('option');o.value=k;o.textContent=people[k].name;
     ps.appendChild(o);
@@ -39,7 +43,9 @@ function getFilteredTasks(){
   else if(period==='quarter')cutoff=now-90*86400000;
   
   Object.keys(todoData).forEach(pKey=>{
-    if(person!=='all'&&pKey!==person)return;
+    if(person&&person.startsWith('team:')){
+      if((people[pKey]?.team||'')!==person.slice(5))return;
+    }else if(person!=='all'&&pKey!==person)return;
     const personData=todoData[pKey];
     if(!personData)return;
     Object.keys(personData).forEach(weekKey=>{
@@ -556,8 +562,8 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .view{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 
 /* DASHBOARD */
-.dash-scroll{flex:1;overflow-y:auto;padding:32px 32px 60px;}
-.dash-greeting{font-family:var(--serif);font-size:30px;font-weight:400;font-style:italic;color:var(--ink);line-height:1.2;margin-bottom:4px;}
+.dash-scroll{flex:1;overflow-y:auto;padding:28px 28px 60px;}
+.dash-greeting{font-family:var(--serif);font-size:28px;font-weight:400;font-style:italic;color:var(--ink);line-height:1.2;margin-bottom:4px;}
 .dash-date{font-size:12px;color:var(--muted);letter-spacing:.06em;}
 .dash-rule{width:48px;height:2px;background:var(--red);margin:16px 0 28px;}
 .kpi-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:32px;}
@@ -836,7 +842,7 @@ button.detail-back{outline:none;}
 .r-big{font-family:var(--serif);font-size:28px;font-weight:400;margin-bottom:4px;}
 
 /* BOARDS */
-.boards-scroll{flex:1;overflow-y:auto;padding:32px;}
+.boards-scroll{flex:1;overflow-y:auto;padding:28px 28px 60px;}
 /* BOARDS - enhanced */
 .board-col{background:var(--off);border:1px solid var(--border);border-radius:4px;padding:12px;min-width:220px;flex:1;max-width:300px;display:flex;flex-direction:column;}
 .board-col-h{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
@@ -1005,7 +1011,8 @@ button.detail-back{outline:none;}
 .tm-pav{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:500;flex-shrink:0;}
 .tm-pname{font-size:13px;color:var(--ink);}
 .tm-lbl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
-.tm-field-sel{width:100%;border:none;border-bottom:1px solid var(--border);padding:6px 0;font-size:14px;font-family:var(--font);color:var(--ink);background:transparent;outline:none;margin-bottom:4px;cursor:pointer;}
+.tm-field-sel{width:100%;border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-size:13.5px;font-family:var(--font);color:var(--ink);background:var(--off);outline:none;margin-bottom:4px;cursor:pointer;transition:border-color .15s;}
+.tm-field-sel:focus{border-color:var(--ink);background:var(--white);}
 .tm-field-sel:focus{border-bottom-color:var(--ink);}
 .tm-note-area{background:var(--off);border:1px solid var(--border);border-radius:3px;padding:10px 12px;font-size:13px;font-family:var(--font);color:var(--ink);width:100%;box-sizing:border-box;resize:vertical;min-height:60px;outline:none;margin-top:12px;line-height:1.55;}
 .tm-note-area:focus{border-color:var(--ink);}
@@ -1520,6 +1527,40 @@ tr:hover .i-todo-btn{opacity:1;}
 /* d-meta-line with badge */
 #d-meta-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
 
+/* ── FORM FIELDS (shared) ── */
+.form-inp{background:var(--white);border:1px solid var(--border);border-radius:4px;padding:7px 10px;font-size:13px;font-family:var(--font);color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s;}
+.form-inp:focus{border-color:var(--ink);box-shadow:0 0 0 2px rgba(13,13,13,.06);}
+.form-inp::placeholder{color:#B8B3AB;}
+/* ── PROGRESS TAB ── */
+.prog-card{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:18px;}
+.prog-card-hd{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--ink);margin-bottom:14px;}
+.prog-row{margin-bottom:14px;}
+.prog-row:last-child{margin-bottom:2px;}
+.prog-row-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:5px;}
+.prog-lbl{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+.prog-val{font-size:14px;color:var(--ink);}
+.prog-val strong{font-weight:500;}
+.prog-of{color:var(--muted);font-size:12px;}
+.prog-track{height:7px;background:var(--off);border-radius:4px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:4px;transition:width .3s ease;}
+.prog-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.prog-table th{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 14px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--off);font-weight:500;}
+.prog-table td{padding:8px 14px;border-bottom:1px solid var(--faint);vertical-align:middle;}
+.prog-table tfoot td{border-top:2px solid var(--border);border-bottom:none;background:var(--off);font-size:12px;padding:10px 14px;}
+.prog-group-hd{cursor:pointer;background:#FCFBF9;}
+.prog-group-hd:hover{background:var(--off);}
+.prog-group-hd td{padding:9px 14px;font-size:12.5px;}
+.prog-tr:hover{background:#FCFBF9;}
+.prog-tr-sched td{opacity:.62;}
+.prog-date-chip{display:inline-flex;align-items:center;gap:4px;background:var(--off);border:1px solid var(--faint);border-radius:12px;padding:2px 9px;font-size:11px;white-space:nowrap;color:var(--ink);}
+.prog-av{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;color:#fff;font-size:8px;font-weight:600;margin-right:5px;vertical-align:middle;}
+.prog-dim{color:var(--muted);font-size:12px;}
+.prog-task-title{font-size:11px;color:var(--muted);margin-top:1px;}
+.prog-status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;}
+.prog-status-dot.done{background:#4CAF50;}
+.prog-status-dot.sched{background:#C4C0B8;}
+.prog-row-menu{font-size:14px;color:var(--muted);cursor:pointer;padding:4px;border-radius:4px;}
+.prog-row-menu:hover{color:var(--ink);background:var(--off);}
 /* ── GLOBAL SEARCH (Cmd+K) ── */
 .gs-bg{display:none;position:fixed;inset:0;background:rgba(13,13,13,.38);z-index:2000;align-items:flex-start;justify-content:center;padding-top:11vh;}
 .gs-bg.on{display:flex;}
@@ -1818,6 +1859,7 @@ tr:hover .i-todo-btn{opacity:1;}
             </div>
             <div class="detail-tabs">
               <div class="d-tab on" onclick="switchDTab(this,'plan')">Job plan</div>
+              <div class="d-tab" onclick="switchDTab(this,'progress')">Progress</div>
               <div class="d-tab" onclick="switchDTab(this,'quote')">Quote</div>
               <div class="d-tab" onclick="switchDTab(this,'activity')">Activity</div>
             </div>
@@ -1833,16 +1875,17 @@ tr:hover .i-todo-btn{opacity:1;}
               <div class="ph-add" onclick="addPhase()"><i class="ti ti-plus" style="font-size:13px"></i> New phase</div>
             </div>
           </div>
+          <div id="dtab-progress" class="hidden" style="flex:1;overflow-y:auto;padding:24px 24px 50px;"></div>
           <div id="dtab-quote" class="hidden" style="flex:1;overflow-y:auto;padding:24px 24px 50px;"></div>
           <div id="dtab-activity" class="act-feed hidden"></div>
         </div>
       </div>
       <!-- REPORTING -->
       <div id="view-reporting" class="view hidden">
-        <div class="r-filter-row" style="padding:14px 28px 10px;border-bottom:1px solid var(--border);flex-shrink:0;gap:10px;display:flex;align-items:center;flex-wrap:wrap;">
+        <div class="r-filter-row" style="padding:22px 28px 14px;border-bottom:1px solid var(--border);flex-shrink:0;gap:10px;display:flex;align-items:center;flex-wrap:wrap;">
           <div style="flex:1;min-width:0;">
-            <div style="font-family:var(--serif);font-size:20px;font-weight:400;">Reporting</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:1px;" id="r-sub">All People · This Month</div>
+            <div class="dash-greeting" style="font-size:24px;">Reporting</div>
+            <div class="dash-date" id="r-sub">All People · This Month</div>
           </div>
           <select class="filter-btn cc-select" id="r-period" style="min-width:130px;">
             <option value="week">This week</option>
@@ -2263,6 +2306,13 @@ let LINE_ITEMS=JSON.parse(localStorage.getItem('cc_line_items')||'null')||[...DE
 const DEFAULT_EXPENSE_ITEMS=['Photography','Print production','Illustration','Stock imagery','Media buy','Software subscription','Courier / freight','Translation','Voice over','Music licence','Venue hire','Equipment hire','Catering','Travel','Third-party production','Domain / hosting'];
 let EXPENSE_ITEMS=JSON.parse(localStorage.getItem('cc_expense_items')||'null')||[...DEFAULT_EXPENSE_ITEMS];
 let jobCounter=6953,activeJobId=null,activeLabels=[],ctxTarget=null,pctxTarget=null,dragSrc=null;
+// C&C brand logo (from Brand Assets/Logos/C&C Logo.svg, Final_Logo layer)
+function ccLogoSVG(h,color){
+  return `<svg viewBox="0 0 621.5 266.3" xmlns="http://www.w3.org/2000/svg" style="height:${h||34}px;width:auto;display:block;" aria-label="Content &amp; Co"><path fill="${color||'#0D0D0D'}" d="M546.7,26.9c14.2,0,24.7,10,28.4,37.9c0.5,9.5,5.3,16.9,14.2,16.9c13.2,0,32.1-12.6,32.1-29.5c0-25.3-25.3-44.8-63.7-44.8c-59,0-104.6,43.4-127.1,95c-12.6,28.9-20,62.7-16.6,94.2c2.1,19.5,9.9,39.1,24.9,51.7c-19.3,2.3-53.8-15.3-81.8-42.5c23.2-21.6,41.8-48,54.4-77c3.7-8.6,8.7-21.6,3.4-30.6c-4.2-7.2-14.6-6.8-21.4-4.2c-16,6.2-14.5,22.1-17.5,36.2c-4.8,23.3-13.2,46.3-29.7,63.9c-25.3-26.5-45.7-55.3-58.5-78.6c43.3-17.2,72.8-28.1,72.8-67c0-31.3-27.9-48.5-58-48.5c-35.7,0-67.3,26-67.3,70.2c0,15.5,4.3,30.7,11.9,44.1c-15.8,4.9-31.1,11.9-43.7,22.8c-13.9,12.1-24,28.8-35.2,43.3c-18,23.3-45.6,57.7-79.3,53.3c-31-4-35.8-37-35.8-62.8c0-64.2,35.8-145.3,80-145.3c14.2,0,24.7,10,28.4,37.9c0.5,9.5,5.3,16.8,14.2,16.8c13.2,0,32.1-12.6,32.1-29.5c0-25.3-25.2-44.8-63.7-44.8C54.2,6.2,0,102,0,181.5c0,59,34.7,80.6,71.6,80.6c37.2,0,76.4-13.5,108.2-56.8c4.6,29.1,28.5,55.4,72.6,55.4c29.7,0,51.3-8.4,77.4-30.5c0,0,11.3,8.7,12.4,9.5c19.4,12.8,42.6,19.4,65.3,22.9c25.4,3.9,51.4,5,77,2.5c0.3,0,0.5-0.1,0.8-0.1c23.3-2.4,46.9-7.5,67.2-20c19.5-12,35.3-29.2,47.6-48.4c3.3-5.1,2.4-11.9-2.1-16.1c-2.9-2.7-7.5-2.2-9.9,1c-11.6,15.7-27.3,32.4-44.7,43c-10.9,6.7-22.5,10.9-34.2,10.9c-35.3,0-42.7-29.5-42.7-63.2C466.7,108,502.5,26.9,546.7,26.9z M299.7,15.6c18.9,0,26.9,13.2,26.9,28.1c0,29.3-21.6,49.3-45.7,60.1c-8-12.4-13.2-30.9-13.2-45.3C267.7,32.9,283.3,15.6,299.7,15.6z M269.7,238.6c-31.7,0-52.1-23.7-52.1-50.5c0-38.5,30.9-57.3,37.7-58.1c18,30.9,38.1,62.1,63.7,89.8C305.3,231,290.5,238.6,269.7,238.6z"/></svg>`;
+}
+// Collision-proof id minting (Date.now() alone collides within one ms)
+let _uidN=0;
+function uid(prefix){return (prefix||'')+Date.now().toString(36)+(_uidN++).toString(36)+Math.random().toString(36).slice(2,6);}
 // ── Global labels (cc_labels) ──
 const LABEL_COLORS=['#ED1E24','#6B7FA3','#7B9E87','#C4956A','#9B59B6','#E67E22','#1ABC9C','#3498DB','#2E7D32','#888888'];
 let globalLabels=JSON.parse(localStorage.getItem('cc_labels')||'null')||[];
@@ -2320,8 +2370,20 @@ function savePeople(){
 }
 let currentPerson='ro';
 const MY_PERSON='ro'; // the logged-in user
-const APP_VERSION='2.0.0';
+const APP_VERSION='2.1.0';
 const CHANGELOG=[
+  {version:'2.1.0',date:'12 Jun 2026',title:'Progress tab, real logo, teams & a deep consistency pass',items:[
+    'Job plan: new Progress tab — per-person time table (logged & scheduled) with one-click reallocation of time to another item or job',
+    'Fixed: done todos now reliably feed job plan item hours (stale item links fall back to name matching)',
+    'Fixed: job plan Sell \u201cused\u201d now computed live from logged hours \u00d7 item rate',
+    'Fixed: item picker now explains when a job has no plan items (was a confusing \u201cSelect a job first\u201d)',
+    'Fixed: priority boards no longer share columns/cards (id collisions); new boards default to Custom',
+    'C&C logo now appears on quotes and invoices (and prints)',
+    'Team members can be assigned a team in Settings — dashboard and reporting group by it',
+    'Todo list: cards are content-sized with even gaps (calendar keeps time-blocks)',
+    'Task & expense forms: proper field styling (the form-inp class had no CSS at all)',
+    'Consistent page titles, spacing and paddings across all views',
+  ]},
   {version:'2.0.0',date:'12 Jun 2026',title:'MVP milestone — search, print, real team management',items:[
     'Global search: press ⌘K (or the sidebar magnifier) to search jobs, clients, tasks and plan items',
     'Team members now persist — add and remove people from Settings, no code edit needed',
@@ -2437,8 +2499,9 @@ let todoData=(function(){
 let editingTaskId=null,editingDay=null;
 function saveData(){
   try{
-    // Persist phases back to the active job before saving
-    if(activeJobId&&phases&&phases.length){
+    // Persist phases back to the active job before saving (empty plans too,
+    // so the todo item picker always sees the latest plan)
+    if(activeJobId&&Array.isArray(phases)){
       const j=jobs.find(x=>x.id===activeJobId);
       if(j)j.phases=JSON.parse(JSON.stringify(phases));
     }
@@ -2553,8 +2616,8 @@ function renderDashboard(){
       ${isUrgent?`<div class="todo-meta" style="color:var(--red);flex-shrink:0;">Urgent</div>`:''}
     </div>`;
   }).join('');
-  // Team cards
-  const teamHTML=Object.keys(people).filter(k=>k!==MY_PERSON).map(k=>{
+  // Team cards — grouped by each person's team when teams are defined
+  const _teamCard=k=>{
     const tp=people[k];const twd=getWeekData(k,0);const ttasks=(twd[todayDow]||[]);
     const tdone=ttasks.filter(t=>t.done);const ttodo=ttasks.filter(t=>!t.done);
     const doneH=tdone.reduce((s,t)=>s+(t.hours||0),0);const todoH=ttodo.reduce((s,t)=>s+(t.hours||0),0);
@@ -2565,7 +2628,20 @@ function renderDashboard(){
       <div class="tc-timeline">${taskBlocks||'<div style="font-size:12px;color:var(--muted);padding:4px 0;">No tasks today</div>'}</div>
       <div class="tc-footer"><div class="tc-stat">Done <span>${formatHrs(doneH)||'0h'}</span></div><div class="tc-stat">To do <span>${formatHrs(todoH)||'0h'}</span></div>${urgCnt?`<div class="tc-stat" style="margin-left:auto;color:var(--red);font-size:11px;">${urgCnt} urgent</div>`:'<div class="tc-stat" style="margin-left:auto;font-size:11px;color:var(--muted);">On track</div>'}</div>
     </div>`;
-  }).join('');
+  };
+  const otherKeys=Object.keys(people).filter(k=>k!==MY_PERSON);
+  const teamNames=[...new Set(otherKeys.map(k=>people[k].team).filter(Boolean))];
+  let teamHTML='';
+  if(teamNames.length){
+    teamHTML=teamNames.map(tn=>{
+      const members=otherKeys.filter(k=>people[k].team===tn);
+      return`<div style="grid-column:1/-1;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:4px 0 -6px;">${tn}</div>${members.map(_teamCard).join('')}`;
+    }).join('');
+    const unassigned=otherKeys.filter(k=>!people[k].team);
+    if(unassigned.length)teamHTML+=`<div style="grid-column:1/-1;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:4px 0 -6px;">No team</div>`+unassigned.map(_teamCard).join('');
+  }else{
+    teamHTML=otherKeys.map(_teamCard).join('');
+  }
   // Over budget alerts
   const alerts=jobs.filter(j=>(j.bPct||0)>=100||((j.hPct||0)>=100)).map(j=>`<div class="alert"><i class="ti ti-alert-triangle" style="color:var(--red);font-size:16px;flex-shrink:0;"></i><div><div class="alert-job">${j.id} ${j.name}</div><div class="alert-detail">${(j.bPct||0)>=100?`Budget ${j.bPct}% used · over sell`:`Hours ${j.hPct}% of plan`}</div></div></div>`).join('');
   wrap.innerHTML=`
@@ -3064,26 +3140,19 @@ function formatHrs(h){if(!h||h===0)return'';const m=Math.round(h*60);const hh=Ma
 
 const ITEM_ICONS={'Creative Direction':'ti-palette','Design & Artwork':'ti-pencil','Briefing & coordination':'ti-clipboard-list','Copywriting':'ti-writing','Video Editing':'ti-video','Proofing & spell check':'ti-eye','Artwork & file despatch':'ti-send','Contingency':'ti-alert-circle','Shot listing':'ti-camera','Website build':'ti-code','Leave':'ti-sun','Briefing':'ti-clipboard-list'};
 
-function taskCardHeight(hours){
-  if(!hours)return 56;
-  // Scale proportionally: 8h fills the todo column height
-  const pxPerHr=Math.max(24,(todoSplitPx||360)/8);
-  return Math.max(40,Math.round(hours*pxPerHr));
-}
-
 function createTaskCard(t,day,isDone){
   const card=document.createElement('div');
   card.className='task-card'+(isDone?' done-c':'')+(t.urgent&&!isDone?' urgent-c':'');
   card.draggable=true;
   card.dataset.taskId=t.id;card.dataset.day=day;
-  if(t.hours)card.style.height=taskCardHeight(t.hours)+'px';
+  // List cards are content-sized with a uniform gap — the calendar view is
+  // the place for duration-proportional blocks.
 
   const iconCls=ITEM_ICONS[t.item]||(t.urgent?'ti-alert-circle':'ti-point');
   const icon=`<i class="ti ${iconCls}" style="font-size:11px;color:var(--muted);"></i>`;
   const hrsLabel=t.hours?formatHrs(t.hours):'';
   const jobIdMatch=t.job?t.job.match(/^(\d+)/):null;
   const jobIdNum=jobIdMatch?jobIdMatch[1]:null;
-  const hasJobOrItem=t.job||t.item;
 
   const showHours=getCS('showHours');
   const showJob=getCS('showJob');
@@ -3092,33 +3161,23 @@ function createTaskCard(t,day,isDone){
   const metaJob=showJob&&t.job;
   const metaItem=showItem&&t.item;
 
-  // Show/hide content based on card height
-  const _ch=t.hours?taskCardHeight(t.hours):56;
-  const _tiny=_ch<44;   // title only, tiny text
-  const _small=_ch<68;  // title + hours
-  const _med=_ch<95;    // + job/item
-
   card.innerHTML=`
     <div class="tc-top">
-      ${_tiny?'':`<span class="tc-icon">${icon}</span>`}
+      <span class="tc-icon">${icon}</span>
       <span class="tc-title">${t.title}</span>
-      ${!_tiny&&showHours&&hrsLabel?`<span class="tc-hrs" id="hrs-${t.id}">${hrsLabel}</span>`:`<span class="tc-hrs" id="hrs-${t.id}" style="display:none;"></span>`}
+      ${showHours&&hrsLabel?`<span class="tc-hrs" id="hrs-${t.id}">${hrsLabel}</span>`:''}
     </div>
-    ${(!_tiny&&!_small&&(metaJob||metaItem))?`<div class="tc-meta">
+    ${(metaJob||metaItem)?`<div class="tc-meta">
       ${metaJob?`<span class="tc-job${jobIdNum?' clickable':''}" data-jid="${jobIdNum||''}">${t.job}</span>`:''}
       ${metaJob&&metaItem?'<span class="tc-sep"></span>':''}
       ${metaItem?`<span class="tc-item-tag">${t.item}</span>`:''}
     </div>`:''}
-    ${(!_tiny&&!_small&&!_med&&showNote&&t.note)?`<div class="tc-note">${t.note}</div>`:''}`;
+    ${(showNote&&t.note)?`<div class="tc-note">${t.note}</div>`:''}`;
 
   const jEl=card.querySelector('.tc-job.clickable');
   if(jEl)jEl.addEventListener('click',e=>{e.stopPropagation();openJobDetail(jEl.dataset.jid);});
 
-  // Track whether a resize drag happened (to prevent click opening modal)
-  let _wasResized=false;
-
   card.addEventListener('click',e=>{
-    if(_wasResized){_wasResized=false;return;}
     if(!e.target.closest('.tc-job.clickable'))openEditTodo(t,day);
   });
   card.addEventListener('dragstart',e=>{
@@ -3132,70 +3191,6 @@ function createTaskCard(t,day,isDone){
     e.preventDefault();e.stopPropagation();
     const parent=card.closest('.day-todo,.day-done');
     if(parent)_highlightDropTarget(e,parent);
-  });
-
-  // Edge resize: top or bottom 7px = resize zone
-  const EDGE=7;
-  card.addEventListener('mousemove',e=>{
-    if(card.classList.contains('resizing'))return;
-    const rect=card.getBoundingClientRect();
-    const atEdge=e.clientY>=rect.bottom-EDGE||e.clientY<=rect.top+EDGE;
-    card.style.cursor=atEdge?'ns-resize':'pointer';
-  });
-  card.addEventListener('mouseleave',()=>{if(!card.classList.contains('resizing'))card.style.cursor='';});
-
-  card.addEventListener('mousedown',e=>{
-    const rect=card.getBoundingClientRect();
-    const atBottom=e.clientY>=rect.bottom-EDGE;
-    const atTop=e.clientY<=rect.top+EDGE;
-    if(!atBottom&&!atTop)return; // not an edge
-    e.preventDefault();e.stopPropagation();
-    hideTodoTooltip();
-    _wasResized=false;
-    card.classList.add('resizing');card.draggable=false;
-    const startY=e.clientY,startH=card.offsetHeight,startHours=t.hours||1;
-    let curHours=startHours;
-    const onMove=ev=>{
-      if(Math.abs(ev.clientY-startY)>2)_wasResized=true;
-      const dy=atBottom?(ev.clientY-startY):(startY-ev.clientY);
-      const newH=Math.max(40,startH+dy);
-      const _px=Math.max(24,(todoSplitPx||360)/8);
-      curHours=Math.max(0.25,Math.min(8,Math.round((newH/_px)*4)/4));
-      const newCardH=taskCardHeight(curHours);
-      card.style.height=newCardH+'px';
-      // Responsive content: update visibility based on new height (title stays same size)
-      const hrsEl=document.getElementById('hrs-'+t.id);
-      const _tiny2=newCardH<44;const _small2=newCardH<68;const _med2=newCardH<95;
-      // Icon
-      const iconEl=card.querySelector('.tc-icon');
-      if(iconEl)iconEl.style.display=_tiny2?'none':'';
-      // Hours badge
-      if(hrsEl){hrsEl.style.display=(_tiny2||!showHours)?'none':'';hrsEl.textContent=formatHrs(curHours);}
-      // Meta row
-      const metaEl=card.querySelector('.tc-meta');
-      if(metaEl)metaEl.style.display=(_tiny2||_small2)?'none':'';
-      // Note
-      const noteEl=card.querySelector('.tc-note');
-      if(noteEl)noteEl.style.display=(_tiny2||_small2||_med2)?'none':'';
-    };
-    const onUp=()=>{
-      document.removeEventListener('mousemove',onMove);
-      document.removeEventListener('mouseup',onUp);
-      card.classList.remove('resizing');card.draggable=true;
-      if(curHours!==startHours){
-        const wd=getWeekData(currentPerson);
-        const arr=wd[day]||[];
-        const task=arr.find(x=>x.id===t.id);
-        if(task){task.hours=curHours;t.hours=curHours;saveData();}
-        renderTodoHeader(day);
-        const sumEl=document.querySelector('.todo-summary');
-        let wTodo=0,wDone=0;
-        [1,2,3,4,5].forEach(d=>{(getWeekData(currentPerson)[d]||[]).forEach(x=>{if(x.done)wDone+=x.hours||0;else wTodo+=x.hours||0;});});
-        if(sumEl)sumEl.textContent=`To do: ${formatHrs(wTodo)||'0h'} · Done: ${formatHrs(wDone)||'0h'}`;
-      }
-    };
-    document.addEventListener('mousemove',onMove);
-    document.addEventListener('mouseup',onUp);
   });
 
   // Tooltip on hover
@@ -3261,7 +3256,7 @@ function duplicateTask(t,day){
   const wd=getWeekData(currentPerson);
   const arr=wd[day]||[];
   const idx=arr.findIndex(x=>x.id===t.id);
-  const clone={...t,id:'t'+Date.now()};
+  const clone={...t,id:uid('t')};
   arr.splice(idx+1,0,clone);
   saveData();renderTodo();toast('Task duplicated');
 }
@@ -3367,7 +3362,7 @@ function onDropToSection(e,toDay,markDone){
       }
     }
     if(e.altKey){
-      const clone={...task,id:'t'+Date.now(),done:markDone};
+      const clone={...task,id:uid('t'),done:markDone};
       if(!wd[toDay])wd[toDay]=[];
       if(insertIdx>=0)wd[toDay].splice(insertIdx,0,clone);else wd[toDay].push(clone);
     } else {
@@ -3462,8 +3457,10 @@ function toggleItemPicker(e){
   const srcPhases=(jobId===activeJobId&&phases&&phases.length)?phases:(j?.phases||[]);
   const curItemId=document.getElementById('td-item-id')?.value||'';
   let html='<div class="item-pick-opt'+(curItemId===''?' selected':'')+'" onclick="selectItemFromPicker(\'\',\'\',\'\')"><span style="color:var(--muted);">— No item —</span></div>';
-  if(!srcPhases.length){
+  if(!jobId){
     html+='<div style="padding:8px 12px;font-size:12px;color:var(--muted);">Select a job first</div>';
+  } else if(!srcPhases.length||!srcPhases.some(p=>(p.items||[]).length)){
+    html+=`<div style="padding:8px 12px;font-size:12px;color:var(--muted);line-height:1.5;">This job has no plan items yet.<br><span style="color:var(--ink);cursor:pointer;text-decoration:underline;" onclick="closeTodoModal();openJobDetail('${jobId}')">Open the job plan</span> to add some.</div>`;
   } else {
     srcPhases.forEach(ph=>{
       const items=(ph.items||[]);
@@ -4110,7 +4107,7 @@ function saveTodo(){
       if(jobId)logActivity(jobId,MY_PERSON,'task_edit',`Updated task <strong>${name}</strong>`);
     }
   } else {
-    const task={id:'t'+Date.now(),title:name,job:job?`${job.id} ${job.name}`:'',jobId:jobId||null,item,itemId:itemId||null,hours,note,urgent,personal};
+    const task={id:uid('t'),title:name,job:job?`${job.id} ${job.name}`:'',jobId:jobId||null,item,itemId:itemId||null,hours,note,urgent,personal};
     if(!wd[dayNum])wd[dayNum]=[];
     wd[dayNum].push(task);
     if(jobId)logActivity(jobId,targetPerson,'task_add',`Added task <strong>${name}</strong>${item?` (${item})`:''} — ${DAY_NAMES[dayNum-1]}`);
@@ -4540,20 +4537,25 @@ function computeJobStats(j){
       plannedSell+=itemSell;
     });
   });
-  let loggedMins=0;
+  // Index plan items so logged time can be valued at the right rate
+  const itemIndex=[];
+  phArr.forEach(ph=>(ph.items||[]).forEach(it=>itemIndex.push({id:it.id,name:(it.name||'').trim().toLowerCase(),rate:parseInt((it.rate||'$150').replace(/[$,]/g,''))||150})));
+  let loggedMins=0,sellUsed=0;
   Object.keys(todoData).forEach(pKey=>{
     const pd=todoData[pKey];if(!pd)return;
     Object.keys(pd).forEach(wk=>{
       const wd=pd[wk];if(!wd)return;
       [1,2,3,4,5].forEach(d=>{
         (wd[d]||[]).forEach(tt=>{
-          if((tt.jobId===j.id||(tt.job&&tt.job.includes(j.id)))&&tt.done)
+          if((tt.jobId===j.id||(tt.job&&tt.job.includes(j.id)))&&tt.done){
             loggedMins+=Math.round((tt.hours||0)*60);
+            const match=(tt.itemId&&itemIndex.find(x=>x.id===tt.itemId))||itemIndex.find(x=>x.name&&(tt.item||'').trim().toLowerCase()===x.name);
+            sellUsed+=Math.round((tt.hours||0)*(match?match.rate:150));
+          }
         });
       });
     });
   });
-  const sellUsed=plannedMins>0?Math.round((loggedMins/plannedMins)*plannedSell):0;
   const expUsed=(j.expenses||[]).reduce((a,e)=>a+(parseFloat(e.sell||e.total||0)||0),0);
   const fmtH=m=>m>=60?`${Math.floor(m/60)}h${m%60?m%60+'m':''}`:(m>0?m+'m':'0h');
   const hPct=plannedMins>0?Math.round((loggedMins/plannedMins)*100):0;
@@ -4584,10 +4586,197 @@ function renderStats(j){
 function switchDTab(el,tab){
   document.querySelectorAll('.d-tab').forEach(t=>t.classList.remove('on'));if(el)el.classList.add('on');
   document.getElementById('dtab-plan').style.display=tab==='plan'?'flex':'none';
+  document.getElementById('dtab-progress').classList.toggle('hidden',tab!=='progress');
   document.getElementById('dtab-quote').classList.toggle('hidden',tab!=='quote');
   document.getElementById('dtab-activity').classList.toggle('hidden',tab!=='activity');
+  if(tab==='plan')renderPhases();
+  if(tab==='progress')renderProgressTab();
   if(tab==='quote')renderQuoteTab();
   if(tab==='activity')renderActivityTab();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PROGRESS TAB — who spent what, where, with reallocation
+// ═══════════════════════════════════════════════════════════════
+let _progGroupCollapsed={};
+function _jobTimeEntries(jobId){
+  // Every task (done or scheduled) linked to this job, across all people/weeks
+  const j=jobs.find(x=>x.id===jobId);if(!j)return[];
+  const phArr=jobId===activeJobId?(phases||j.phases||[]):(j.phases||[]);
+  const itemIndex=[];
+  phArr.forEach(ph=>(ph.items||[]).forEach(it=>itemIndex.push({id:it.id,name:(it.name||'').trim().toLowerCase(),displayName:it.name,phase:ph.name,rate:parseInt((it.rate||'$150').replace(/[$,]/g,''))||150})));
+  const rows=[];
+  Object.keys(todoData).forEach(pKey=>{
+    const pd=todoData[pKey];if(!pd)return;
+    Object.keys(pd).forEach(wk=>{
+      const wd=pd[wk];if(!wd)return;
+      [1,2,3,4,5].forEach(d=>{
+        (wd[d]||[]).forEach(t=>{
+          if(!(t.jobId===jobId||(t.job&&t.job.includes(jobId))))return;
+          const date=new Date(wk+'T00:00:00');date.setDate(date.getDate()+(d-1));
+          const match=(t.itemId&&itemIndex.find(x=>x.id===t.itemId))||itemIndex.find(x=>x.name&&(t.item||'').trim().toLowerCase()===x.name);
+          rows.push({
+            person:pKey,wk,day:d,id:t.id,title:t.title,date,
+            item:match?match.displayName:(t.item||'—'),
+            phase:match?match.phase:'',
+            hours:t.hours||0,done:!!t.done,
+            sell:Math.round((t.hours||0)*(match?match.rate:150)),
+          });
+        });
+      });
+    });
+  });
+  rows.sort((a,b)=>a.date-b.date);
+  return rows;
+}
+function _progBar(label,valHTML,pct,color){
+  return`<div class="prog-row">
+    <div class="prog-row-top"><span class="prog-lbl">${label}</span><span class="prog-val">${valHTML}</span></div>
+    <div class="prog-track"><div class="prog-fill" style="width:${Math.min(pct||0,100)}%;background:${color};"></div></div>
+  </div>`;
+}
+function renderProgressTab(){
+  const el=document.getElementById('dtab-progress');if(!el)return;
+  const j=jobs.find(x=>x.id===activeJobId);if(!j){el.innerHTML='';return;}
+  const stats=computeJobStats(j);
+  const entries=_jobTimeEntries(j.id);
+  const doneRows=entries.filter(r=>r.done);
+  const schedRows=entries.filter(r=>!r.done);
+  const schedMins=schedRows.reduce((s,r)=>s+Math.round(r.hours*60),0);
+  const unschedMins=Math.max(0,stats.plannedMins-stats.loggedMins-schedMins);
+  const fmtH=stats.fmtH;
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const fmtD=d=>`${String(d.getDate()).padStart(2,'0')} ${MONTHS[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`;
+  const hCol=stats.hPct>=100?'var(--red)':stats.hPct>=80?'#FF9800':'#4C7DAF';
+  const bCol=stats.bPct>=100?'var(--red)':stats.bPct>=80?'#FF9800':'#4C7DAF';
+  const expTotal=Math.round(stats.expUsed);
+  const quoteStatus=j.quoteStatus||'draft';
+
+  // ── Summary bars ──
+  const barsHTML=`<div class="prog-card">
+    <div class="prog-card-hd">Progress</div>
+    ${_progBar('Time (h)',`<strong>${fmtH(stats.loggedMins)}</strong> <span class="prog-of">/ ${fmtH(stats.plannedMins)}</span>`,stats.hPct,hCol)}
+    ${_progBar('Time ($)',`<strong>$${stats.sellUsed.toLocaleString()}</strong> <span class="prog-of">/ $${stats.plannedSell.toLocaleString()}</span>`,stats.bPct,bCol)}
+    ${_progBar('Scheduled',`<strong>${fmtH(schedMins)}</strong> <span class="prog-of">booked · ${fmtH(unschedMins)} unscheduled</span>`,stats.plannedMins>0?Math.round(((stats.loggedMins+schedMins)/stats.plannedMins)*100):0,'#9A9A9A')}
+    ${_progBar('Expenses',`<strong>$${expTotal.toLocaleString()}</strong>`,expTotal>0?100:0,'#4CAF50')}
+    ${_progBar('Quote',`<strong>$${stats.plannedSell.toLocaleString()}</strong> <span class="prog-of">${quoteStatus}</span>`,quoteStatus==='approved'?100:quoteStatus==='sent'?50:0,'#C4956A')}
+  </div>`;
+
+  // ── Time table grouped by person ──
+  const byPerson={};
+  entries.forEach(r=>{(byPerson[r.person]=byPerson[r.person]||[]).push(r);});
+  const totalMins=entries.reduce((s,r)=>s+Math.round(r.hours*60),0);
+  const totalSell=entries.reduce((s,r)=>s+r.sell,0);
+  const groups=Object.keys(byPerson).map(pKey=>{
+    const p=people[pKey]||{name:pKey,initials:'??',color:'#999'};
+    const rows=byPerson[pKey];
+    const gMins=rows.reduce((s,r)=>s+Math.round(r.hours*60),0);
+    const gSell=rows.reduce((s,r)=>s+r.sell,0);
+    const collapsed=_progGroupCollapsed[pKey];
+    const rowsHTML=rows.map(r=>`
+      <tr class="prog-tr${r.done?'':' prog-tr-sched'}">
+        <td><span class="prog-date-chip"><i class="ti ti-calendar" style="font-size:10px;"></i> ${fmtD(r.date)}</span></td>
+        <td><span class="prog-av" style="background:${p.color};">${p.initials}</span> ${p.name}</td>
+        <td class="prog-dim">${r.phase||''}</td>
+        <td>${r.item}${r.title&&r.title!==r.item?`<div class="prog-task-title">${r.title}</div>`:''}</td>
+        <td style="text-align:center;"><span class="prog-status-dot ${r.done?'done':'sched'}" title="${r.done?'Logged (done)':'Scheduled (not done yet)'}"></span></td>
+        <td style="text-align:right;white-space:nowrap;">${formatHrs(r.hours)||'0h'}</td>
+        <td style="text-align:right;white-space:nowrap;">$${r.sell.toLocaleString()}</td>
+        <td style="width:30px;text-align:center;"><i class="ti ti-dots-vertical prog-row-menu" onclick="openReallocate(event,'${r.person}','${r.wk}',${r.day},'${r.id}')" title="Reallocate this time"></i></td>
+      </tr>`).join('');
+    return`<tbody class="prog-group">
+      <tr class="prog-group-hd" onclick="toggleProgGroup('${pKey}')">
+        <td colspan="5"><i class="ti ti-chevron-${collapsed?'right':'down'}" style="font-size:11px;margin-right:6px;"></i><strong>${p.name}</strong> <span class="prog-dim">(${rows.length})</span></td>
+        <td style="text-align:right;"><strong>${fmtH(gMins)}</strong></td>
+        <td style="text-align:right;"><strong>$${gSell.toLocaleString()}</strong></td>
+        <td></td>
+      </tr>
+      ${collapsed?'':rowsHTML}
+    </tbody>`;
+  }).join('');
+
+  el.innerHTML=`
+    <div style="max-width:1100px;">
+      ${barsHTML}
+      <div class="prog-card" style="margin-top:18px;padding:0;overflow:hidden;">
+        <div class="prog-card-hd" style="padding:16px 18px 12px;display:flex;align-items:center;">Time on this job
+          <span class="prog-dim" style="margin-left:auto;font-weight:400;text-transform:none;letter-spacing:0;">Logged &amp; scheduled todos · click ⋮ to reallocate</span>
+        </div>
+        ${entries.length?`<table class="prog-table">
+          <thead><tr><th>Date</th><th>Team member</th><th>Phase</th><th>Item / task</th><th style="text-align:center;">Status</th><th style="text-align:right;">Hours</th><th style="text-align:right;">Sell ex GST</th><th></th></tr></thead>
+          ${groups}
+          <tfoot><tr><td colspan="5">Total (${entries.length})</td><td style="text-align:right;"><strong>${fmtH(totalMins)}</strong></td><td style="text-align:right;"><strong>$${totalSell.toLocaleString()}</strong></td><td></td></tr></tfoot>
+        </table>`:emptyStateHTML('ti-clock','No time on this job yet','Time appears here as soon as todos are linked to this job — scheduled and logged.','Add todo',"openTodoModal('"+j.id+"',1)")}
+      </div>
+    </div>`;
+}
+function toggleProgGroup(pKey){_progGroupCollapsed[pKey]=!_progGroupCollapsed[pKey];renderProgressTab();}
+
+// ── Reallocate a time entry to a different item or job ──
+let _reallocRef=null;
+function openReallocate(ev,person,wk,day,taskId){
+  if(ev)ev.stopPropagation();
+  _reallocRef={person,wk,day,taskId};
+  const t=((todoData[person]||{})[wk]||{})[day]?.find(x=>x.id===taskId);
+  if(!t)return;
+  document.getElementById('realloc-modal')?.remove();
+  const modal=document.createElement('div');
+  modal.className='modal-bg on';modal.id='realloc-modal';
+  const jobOpts=jobs.filter(x=>x.status!=='archived').map(x=>`<option value="${x.id}" ${x.id===(t.jobId||'')?'selected':''}>${x.id} ${x.name}</option>`).join('');
+  modal.innerHTML=`<div class="modal" style="max-width:420px;">
+    <div class="modal-hd"><span class="modal-hd-title">Reallocate time</span><button class="modal-x" onclick="document.getElementById('realloc-modal').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd" style="padding:16px 20px;">
+      <div style="font-size:13px;margin-bottom:14px;"><strong>${t.title}</strong> · ${formatHrs(t.hours)||'0h'} · ${people[person]?.name||person}</div>
+      <div class="tm-lbl">Move to job</div>
+      <select class="tm-field-sel" id="realloc-job" onchange="_reallocFillItems()">${jobOpts}</select>
+      <div class="tm-lbl" style="margin-top:14px;">Move to item</div>
+      <select class="tm-field-sel" id="realloc-item"></select>
+    </div>
+    <div class="modal-ft" style="display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid var(--border);">
+      <button class="d-action" onclick="document.getElementById('realloc-modal').remove()">Cancel</button>
+      <button class="d-action primary" onclick="applyReallocate()">Move time</button>
+    </div>
+  </div>`;
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+  document.body.appendChild(modal);
+  _reallocFillItems(t);
+}
+function _reallocFillItems(t){
+  const jobId=document.getElementById('realloc-job')?.value;
+  const sel=document.getElementById('realloc-item');if(!sel)return;
+  const j=jobs.find(x=>x.id===jobId);
+  const srcPhases=(jobId===activeJobId&&phases&&phases.length)?phases:(j?.phases||[]);
+  let opts='<option value="">— No item —</option>';
+  srcPhases.forEach(ph=>{
+    (ph.items||[]).forEach(it=>{
+      const sel2=t&&(t.itemId===it.id||((t.item||'').trim().toLowerCase()===(it.name||'').trim().toLowerCase()));
+      opts+=`<option value="${it.id}" data-name="${(it.name||'').replace(/"/g,'&quot;')}" ${sel2?'selected':''}>${ph.name} — ${it.name}</option>`;
+    });
+  });
+  sel.innerHTML=opts;
+}
+function applyReallocate(){
+  if(!_reallocRef)return;
+  const{person,wk,day,taskId}=_reallocRef;
+  const arr=((todoData[person]||{})[wk]||{})[day]||[];
+  const t=arr.find(x=>x.id===taskId);if(!t)return;
+  const newJobId=document.getElementById('realloc-job').value;
+  const itemSel=document.getElementById('realloc-item');
+  const newItemId=itemSel.value||null;
+  const newItemName=itemSel.selectedOptions[0]?.dataset?.name||'';
+  const newJob=jobs.find(x=>x.id===newJobId);
+  const oldJobId=t.jobId;
+  t.jobId=newJobId||null;
+  t.job=newJob?`${newJob.id} ${newJob.name}`:'';
+  t.itemId=newItemId;
+  t.item=newItemName;
+  saveData();
+  if(oldJobId&&oldJobId!==newJobId)logActivity(oldJobId,MY_PERSON,'time_realloc',`Moved <strong>${t.title}</strong> (${formatHrs(t.hours)||'0h'}) to <strong>${newJob?newJob.name:'no job'}</strong>`);
+  if(newJobId)logActivity(newJobId,MY_PERSON,'time_realloc',`<strong>${t.title}</strong> (${formatHrs(t.hours)||'0h'}) moved onto this job${newItemName?` — ${newItemName}`:''}`);
+  document.getElementById('realloc-modal')?.remove();
+  renderProgressTab();
+  _refreshJobStats();
+  toast('Time reallocated','success');
 }
 // Quote display options stored per-job
 function _getQuoteOpts(jobId){
@@ -4689,7 +4878,7 @@ function renderQuoteTab(){
       <!-- Header: logo + company block -->
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid var(--border);">
         <div>
-          <div style="font-family:var(--serif);font-size:22px;font-weight:600;letter-spacing:-.01em;margin-bottom:4px;">Content &amp; Co</div>
+          <div style="margin-bottom:8px;">${ccLogoSVG(36)}</div>
           <div style="font-size:11px;color:var(--muted);line-height:1.7;">NZ Ltd<br>Level 1, 53 Fort Street, Auckland<br>GST 116710013</div>
         </div>
         <div style="text-align:right;">
@@ -4851,6 +5040,23 @@ function createLabelFromPicker(){
 }
 function closeLabelPicker(){document.getElementById('label-picker')?.remove();}
 
+// A task claims time on exactly one plan item: by id when the id still
+// exists in the plan, otherwise by name — first name match only, so two
+// items with the same name never double-count the same task.
+function _taskMatchesItem(tt,item,allPhases){
+  const tname=(tt.item||'').trim().toLowerCase();
+  if(tt.itemId){
+    const idInPlan=allPhases.some(p=>(p.items||[]).some(ii=>ii.id===tt.itemId));
+    if(idInPlan)return tt.itemId===item.id;
+  }
+  if(!tname)return false;
+  for(const p of allPhases){
+    for(const ii of (p.items||[])){
+      if((ii.name||'').trim().toLowerCase()===tname)return ii.id===item.id;
+    }
+  }
+  return false;
+}
 function renderPhases(){
   const c=document.getElementById('phases-wrap');c.innerHTML='';
   phases.forEach(ph=>{
@@ -4881,8 +5087,7 @@ function renderItems(phId){
         [1,2,3,4,5].forEach(d=>{
           (wd[d]||[]).forEach(tt=>{
             const jmatch=tt.jobId===activeJobId||(tt.job&&activeJobId&&tt.job.includes(activeJobId));
-            const imatch=tt.itemId&&item.id?tt.itemId===item.id:((tt.item||'').trim().toLowerCase()===(item.name||'').trim().toLowerCase());
-            if(jmatch&&imatch&&tt.done)_loggedH+=tt.hours||0;
+            if(jmatch&&_taskMatchesItem(tt,item,phases)&&tt.done)_loggedH+=tt.hours||0;
           });
         });
       });
@@ -4890,6 +5095,9 @@ function renderItems(phId){
     const _loggedStr=_loggedH>0?formatHrs(_loggedH):'—';
     const _plannedH=parseHrsInput(item.hours)||0;
     const _overLogged=_loggedH>_plannedH&&_plannedH>0;
+    // Live sell-used from logged hours × rate (falls back to stored value)
+    const _rateN=parseInt((item.rate||'$150').replace(/[$,]/g,''))||150;
+    const _usedDisp=_loggedH>0?'$'+Math.round(_loggedH*_rateN).toLocaleString():(item.used||'$0');
     tr.innerHTML=`<td><i class="ti ti-grip-vertical" style="color:var(--border);font-size:13px;cursor:grab;"></i></td>
 <td class="i-name"><span class="item-editable" title="Click to rename" onclick="inlineEditItem(event,'${item.id}','${phId}','name')">${item.name}</span>${noteIcon}<button class="i-todo-btn" title="Add todo for this item" onclick="event.stopPropagation();ctxTarget={itemId:'${item.id}',phId:'${phId}'};ctxDo('todo')"><i class="ti ti-calendar-plus"></i></button></td>
 <td class="i-hrs ${_overLogged?'i-hrs-over':''}" style="text-align:right;white-space:nowrap;">
@@ -4898,7 +5106,7 @@ function renderItems(phId){
   <span class="item-editable" title="Click to edit planned hours" onclick="inlineEditItem(event,'${item.id}','${phId}','hours')">${item.hours}</span>
 </td>
 <td class="i-rate" style="font-size:12px;color:var(--muted);text-align:right;"><span class="item-editable" title="Click to edit rate" onclick="inlineEditItem(event,'${item.id}','${phId}','rate')">${item.rate}</span></td>
-<td class="i-sell"><span style="font-weight:400;">${item.used}</span> <span class="i-sof">/ ${item.total}</span></td>
+<td class="i-sell"><span style="font-weight:400;" title="Sell value of logged time">${_usedDisp}</span> <span class="i-sof">/ ${item.total}</span></td>
 <td style="text-align:right"><span class="i-badge ${iCls}" style="cursor:pointer;" title="Click to toggle" onclick="toggleItemStatus('${item.id}','${phId}',event)">${iLbl}</span></td>
 <td><i class="ti ti-dots" style="font-size:14px;color:var(--muted);cursor:pointer;" onclick="showCtx(event,'${item.id}','${phId}')"></i></td>`;
     tr.addEventListener('dragstart',e=>{dragSrc=tr;tr.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
@@ -4917,7 +5125,7 @@ function renderItems(phId){
         [1,2,3,4,5].forEach(d=>{
           (wd[d]||[]).forEach(t=>{
             const jobMatch=t.jobId===activeJobId||(t.job&&activeJobId&&t.job.includes(activeJobId));
-            const itemMatch=t.itemId&&item.id?t.itemId===item.id:((t.item||'').trim().toLowerCase()===(item.name||'').trim().toLowerCase());
+            const itemMatch=_taskMatchesItem(t,item,phases);
             if(t.note&&t.note.trim()&&jobMatch&&itemMatch){
               linkedTaskNotes.push({note:t.note.trim(),person:pKey,title:t.title||'Task'});
             }
@@ -5021,7 +5229,7 @@ function saveItem(phId){
   const h=parseHrsInput(hours);
   const r=parseInt(rate.replace(/[$,]/g,''))||150;
   const total='$'+(Math.round(h*r)).toLocaleString();
-  const ph=phases.find(p=>p.id===phId);ph.items.push({id:'i'+Date.now(),name,hours,rate,used:'$0',total,status:'open'});
+  const ph=phases.find(p=>p.id===phId);ph.items.push({id:uid('i'),name,hours,rate,used:'$0',total,status:'open'});
   logActivity(activeJobId,MY_PERSON,'item_add',`Added <strong>${name}</strong> to <strong>${ph.name}</strong>`);
   renderPhases();saveData();setTimeout(()=>document.getElementById('fup').classList.add('on'),700);
 }
@@ -5092,7 +5300,7 @@ function saveExpenseInline(){
   renderExpenses();
   toast('Expense added');
 }
-function addPhase(){const ph={id:'p'+Date.now(),name:'New Phase',status:'open',items:[]};phases.push(ph);logActivity(activeJobId,MY_PERSON,'phase_add','Added phase <strong>New Phase</strong>');renderPhases();saveData();}
+function addPhase(){const ph={id:uid('p'),name:'New Phase',status:'open',items:[]};phases.push(ph);logActivity(activeJobId,MY_PERSON,'phase_add','Added phase <strong>New Phase</strong>');renderPhases();saveData();}
 function showCtx(e,itemId,phId){e.stopPropagation();ctxTarget={itemId,phId};const m=document.getElementById('ctx');m.style.cssText=`left:${Math.min(e.clientX,window.innerWidth-205)}px;top:${Math.min(e.clientY,window.innerHeight-230)}px;`;m.classList.add('on');}
 function ctxDo(a){
   document.getElementById('ctx').classList.remove('on');if(!ctxTarget)return;
@@ -5430,7 +5638,7 @@ function renderInvoice(j){
   wrap.innerHTML=`
     <div class="inv-print-head">
       <div>
-        <div style="font-family:var(--serif);font-size:22px;font-weight:600;letter-spacing:-.01em;margin-bottom:4px;">Content &amp; Co</div>
+        <div style="margin-bottom:8px;">${ccLogoSVG(36)}</div>
         <div style="font-size:11px;color:var(--muted);line-height:1.7;">NZ Ltd<br>Level 1, 53 Fort Street, Auckland<br>GST 116710013</div>
       </div>
       <div style="font-size:22px;font-family:var(--serif);font-weight:400;">Tax Invoice</div>
@@ -5612,7 +5820,7 @@ function openNewClientModal(){
 
 function saveNewClient(btn){
   const name=document.getElementById('nc-name').value.trim();if(!name)return;
-  clientsData.push({id:'cl'+Date.now(),name,contact:document.getElementById('nc-contact').value.trim(),email:document.getElementById('nc-email').value.trim(),phone:document.getElementById('nc-phone').value.trim(),notes:''});
+  clientsData.push({id:uid('cl'),name,contact:document.getElementById('nc-contact').value.trim(),email:document.getElementById('nc-email').value.trim(),phone:document.getElementById('nc-phone').value.trim(),notes:''});
   saveClientsData();
   btn.closest('.modal-bg').remove();
   renderClients();
@@ -5632,6 +5840,7 @@ function renderSettings(){
         <input class="sett-inp" value="${p.name}" placeholder="Name" onchange="updatePerson('${key}','name',this.value)" style="font-size:14px;font-weight:400;width:100%;border:none;outline:none;background:transparent;font-family:var(--font);color:var(--ink);">
         <input class="sett-inp sett-inp-sm" value="${p.role||''}" placeholder="Role" onchange="updatePerson('${key}','role',this.value)" style="font-size:12px;color:var(--muted);width:100%;border:none;outline:none;background:transparent;font-family:var(--font);">
       </div>
+      <input list="team-name-list" value="${p.team||''}" placeholder="Team…" onchange="updatePerson('${key}','team',this.value.trim())" title="Team — groups this person on the dashboard and in reporting" style="width:110px;font-size:12px;font-family:var(--font);color:var(--ink);border:1px solid var(--border);border-radius:4px;padding:5px 8px;background:var(--off);outline:none;flex-shrink:0;">
       <div class="color-swatches" style="display:flex;gap:4px;flex-wrap:wrap;max-width:120px;">
         ${COLORS.map(c=>`<div onclick="updatePerson('${key}','color','${c}')" style="width:16px;height:16px;border-radius:50%;background:${c};cursor:pointer;border:${p.color===c?'2px solid var(--ink)':'2px solid transparent'};flex-shrink:0;"></div>`).join('')}
       </div>
@@ -5645,6 +5854,7 @@ function renderSettings(){
       <div class="dash-rule"></div>
     </div>
     <div class="section-label" style="margin-bottom:14px;">Team</div>
+    <datalist id="team-name-list">${[...new Set(Object.values(people).map(p=>p.team).filter(Boolean))].map(t=>`<option value="${t}">`).join('')}</datalist>
     <div style="background:var(--white);border:1px solid var(--border);">
       ${teamRows}
       <div style="padding:12px 16px;border-top:1px solid var(--border);">
@@ -6296,6 +6506,10 @@ function initReportingSelects(){
   const ps=document.getElementById('r-person');
   const js=document.getElementById('r-job');
   ps.innerHTML='<option value="all">All People</option>';
+  [...new Set(Object.values(people).map(p=>p.team).filter(Boolean))].forEach(tn=>{
+    const o=document.createElement('option');o.value='team:'+tn;o.textContent=`Team — ${tn}`;
+    ps.appendChild(o);
+  });
   Object.keys(people).forEach(k=>{
     const o=document.createElement('option');o.value=k;o.textContent=people[k].name;
     ps.appendChild(o);
@@ -6320,7 +6534,9 @@ function getFilteredTasks(){
   else if(period==='quarter')cutoff=now-90*86400000;
   
   Object.keys(todoData).forEach(pKey=>{
-    if(person!=='all'&&pKey!==person)return;
+    if(person&&person.startsWith('team:')){
+      if((people[pKey]?.team||'')!==person.slice(5))return;
+    }else if(person!=='all'&&pKey!==person)return;
     const personData=todoData[pKey];
     if(!personData)return;
     Object.keys(personData).forEach(weekKey=>{
@@ -6474,7 +6690,26 @@ function wireReportingFilters(){
 let boardsData={briefed:[],inprogress:[],review:[],approved:[],complete:[]};
 let boardsList=JSON.parse(localStorage.getItem('cc_boards')||'[]');
 let activeBoardId=null;
-let newBoardType='client';
+let newBoardType='custom';
+// One-time migration: older versions minted column/card ids from Date.now()
+// alone, so boards created close together could share ids — which made
+// drag/drop and column edits bleed across boards. Reassign duplicates.
+(function dedupeBoardIds(){
+  const seen=new Set();let changed=false;
+  boardsList.forEach(b=>{
+    if(seen.has(b.id)){b.id=uid('b');changed=true;}
+    seen.add(b.id);
+    (b.columns||[]).forEach(col=>{
+      if(seen.has(col.id)){col.id=uid('c');changed=true;}
+      seen.add(col.id);
+      (col.cards||[]).forEach(card=>{
+        if(seen.has(card.id)){card.id=uid('card');changed=true;}
+        seen.add(card.id);
+      });
+    });
+  });
+  if(changed)try{localStorage.setItem('cc_boards',JSON.stringify(boardsList));}catch(e){}
+})();
 
 function saveBoardsData(){localStorage.setItem('cc_boards',JSON.stringify(boardsList));}
 function initBoardsData(){boardsData={briefed:[],inprogress:[],review:[],approved:[],complete:[]};}
@@ -6644,7 +6879,7 @@ function savePboardNote(boardId,personKey,val){
 
 // ── Custom board ────────────────────────────────────────────────────────────
 function renderCustomBoard(b,body){
-  if(!b.columns||b.columns.length===0){const ts=Date.now();b.columns=[{id:'c'+ts+'1',name:'To Do',cards:[]},{id:'c'+ts+'2',name:'In Progress',cards:[]},{id:'c'+ts+'3',name:'Done',cards:[]}];saveBoardsData();}
+  if(!b.columns||b.columns.length===0){b.columns=[{id:uid('c'),name:'To Do',cards:[]},{id:uid('c'),name:'In Progress',cards:[]},{id:uid('c'),name:'Done',cards:[]}];saveBoardsData();}
   const colsHTML=b.columns.map(col=>buildCustomCol(b,col)).join('');
   body.innerHTML=`<div class="bdet-cols" id="bdet-cols-${b.id}">${colsHTML}<button class="bdet-add-col-btn" onclick="addColumn('${b.id}')"><i class="ti ti-plus" style="font-size:12px;"></i> Add column</button></div>`;
 }
@@ -6802,7 +7037,7 @@ function _renderPickerItems(q){
 function selectPickerItem(data){
   closeCardPicker();
   const cardMap={job:{type:'job',jobRef:data},client:{type:'client',clientRef:data},person:{type:'person',personRef:data}};
-  const card={id:'card'+Date.now(),...(cardMap[_pickerType]||{type:'note',note:''})};
+  const card={id:uid('card'),...(cardMap[_pickerType]||{type:'note',note:''})};
   _doAddCard(card);
 }
 function _doAddCard(card){
@@ -6877,7 +7112,7 @@ function confirmAddColumn(boardId){
   const b=boardsList.find(x=>x.id===boardId);if(!b)return;
   const name=(document.getElementById('acol-name')?.value.trim())||'New column';
   const type=document.getElementById('acol-type')?.value||'generic';
-  const col={id:'c'+Date.now(),name,type,cards:[]};
+  const col={id:uid('c'),name,type,cards:[]};
   if(type==='client'){
     const cv=document.getElementById('acol-client')?.value;
     if(!cv){toast('Please select a client','error');return;}
@@ -7013,10 +7248,10 @@ function openCreateBoard(){
   const clients=[...new Set(jobs.map(j=>j.company))];
   sel.innerHTML=clients.map(c=>`<option value="${c}">${c}</option>`).join('');
   document.getElementById('nb-name').value='';
-  newBoardType='client';
-  document.querySelectorAll('.cb-type-item').forEach(el=>el.classList.toggle('on',el.dataset.type==='client'));
-  document.getElementById('nb-client-row').style.display='';
-  if(document.getElementById('nb-custom-desc'))document.getElementById('nb-custom-desc').style.display='none';
+  newBoardType='custom';
+  document.querySelectorAll('.cb-type-item').forEach(el=>el.classList.toggle('on',el.dataset.type==='custom'));
+  document.getElementById('nb-client-row').style.display='none';
+  if(document.getElementById('nb-custom-desc'))document.getElementById('nb-custom-desc').style.display='';
   document.getElementById('create-board-modal').classList.add('on');
   setTimeout(()=>document.getElementById('nb-name').focus(),50);
 }
@@ -7030,9 +7265,9 @@ function selectBoardType(type,el){
 }
 function saveNewBoard(){
   const name=document.getElementById('nb-name').value.trim();if(!name)return;
-  const b={id:'b'+Date.now(),name,type:newBoardType};
+  const b={id:uid('b'),name,type:newBoardType};
   if(newBoardType==='client')b.clientFilter=document.getElementById('nb-client').value;
-  if(newBoardType==='custom'){const ts=Date.now();b.columns=[{id:'c'+ts+'1',name:'To Do',cards:[]},{id:'c'+ts+'2',name:'In Progress',cards:[]},{id:'c'+ts+'3',name:'Done',cards:[]}];}
+  if(newBoardType==='custom'){b.columns=[{id:uid('c'),name:'To Do',cards:[]},{id:uid('c'),name:'In Progress',cards:[]},{id:uid('c'),name:'Done',cards:[]}];}
   if(newBoardType==='people')b.notes={};
   boardsList.push(b);saveBoardsData();closeCreateBoard();renderBoardsList();
   setTimeout(()=>openBoard(b.id),100);
