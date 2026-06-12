@@ -518,12 +518,12 @@ button.detail-back{outline:none;}
 .tm-meta{font-size:11px;color:var(--muted);line-height:1.8;}
 .tm-meta strong{color:var(--ink);font-weight:500;}
 .tm-ft{padding:12px 24px 14px;border-top:1px solid var(--border);display:flex;align-items:center;}
-.tm-btn-cancel{background:transparent;border:none;padding:7px 0;font-size:13px;font-family:var(--font);cursor:pointer;color:var(--muted);}
+.tm-btn-cancel{background:transparent;border:none;padding:7px 0;font-size:13px;font-family:var(--font);cursor:pointer;color:var(--muted);margin-right:auto;}
 .tm-btn-cancel:hover{color:var(--ink);}
-.tm-btn-delete{background:none;border:none;padding:7px 4px;font-size:12.5px;font-family:var(--font);cursor:pointer;color:var(--muted);text-decoration:underline;text-underline-offset:3px;margin-left:auto;margin-right:14px;display:none;transition:color .12s;}
+.tm-btn-delete{background:none;border:none;padding:7px 4px;font-size:12.5px;font-family:var(--font);cursor:pointer;color:var(--muted);text-decoration:underline;text-underline-offset:3px;margin-right:14px;display:none;transition:color .12s;}
 .tm-btn-delete:hover{color:var(--red);}
 .tm-btn-delete:hover{color:var(--red);border-color:var(--red);background:#FFF5F5;}
-.tm-btn-save{margin-left:auto;background:var(--ink);color:#fff;border:none;border-radius:20px;padding:8px 18px;font-size:13px;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:400;}
+.tm-btn-save{background:var(--ink);color:#fff;border:none;border-radius:20px;padding:8px 18px;font-size:13px;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:400;}
 .tm-btn-save:hover{opacity:.85;}
 /* Person-viewing banner */
 .todo-banner{background:#1a1a1a;color:#aaa;padding:7px 24px;display:flex;align-items:center;gap:10px;font-size:12px;flex-shrink:0;}
@@ -1017,6 +1017,11 @@ tr:hover .i-todo-btn{opacity:1;}
 /* d-meta-line with badge */
 #d-meta-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
 
+/* ── SEARCHABLE COMBO ── */
+.combo-dd{background:var(--white);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.14);max-height:220px;overflow-y:auto;padding:4px;}
+.combo-opt{padding:7px 10px;font-size:12.5px;border-radius:4px;cursor:pointer;color:var(--ink);}
+.combo-opt:hover{background:var(--off);}
+.combo-empty{padding:8px 10px;font-size:12px;color:var(--muted);}
 /* ── FORM FIELDS (shared) ── */
 .form-inp{background:var(--white);border:1px solid var(--border);border-radius:4px;padding:7px 10px;font-size:13px;font-family:var(--font);color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s;}
 .form-inp:focus{border-color:var(--ink);box-shadow:0 0 0 2px rgba(13,13,13,.06);}
@@ -1535,7 +1540,7 @@ tr:hover .i-todo-btn{opacity:1;}
     <div class="modal-bd">
       <div class="field"><label>Job name</label><input type="text" id="nj-name" placeholder="e.g. SFF Brand Guidelines"/></div>
       <div class="field-row">
-        <div class="field"><label>Company</label><select id="nj-co"><option value="">Select…</option><option>Silver Fern Farms</option><option>Avalanche Coffee Limited</option><option>Formthotics</option><option>Natural Pet Food Group</option><option>Dairyworks</option><option>Carboland Limited</option><option>Boyd Visuals</option></select></div>
+        <div class="field"><label>Company</label><input id="nj-co" class="form-inp" placeholder="Search clients…" style="width:100%;"></div>
         <div class="field"><label>Contact (optional)</label><input type="text" placeholder="Name…"/></div>
       </div>
       <div class="field-row">
@@ -1781,6 +1786,40 @@ let jobCounter=6953,activeJobId=null,activeLabels=[],ctxTarget=null,pctxTarget=n
 function ccLogoSVG(h,color){
   return `<svg viewBox="0 0 621.5 266.3" xmlns="http://www.w3.org/2000/svg" style="height:${h||34}px;width:auto;display:block;" aria-label="Content &amp; Co"><path fill="${color||'#0D0D0D'}" d="M546.7,26.9c14.2,0,24.7,10,28.4,37.9c0.5,9.5,5.3,16.9,14.2,16.9c13.2,0,32.1-12.6,32.1-29.5c0-25.3-25.3-44.8-63.7-44.8c-59,0-104.6,43.4-127.1,95c-12.6,28.9-20,62.7-16.6,94.2c2.1,19.5,9.9,39.1,24.9,51.7c-19.3,2.3-53.8-15.3-81.8-42.5c23.2-21.6,41.8-48,54.4-77c3.7-8.6,8.7-21.6,3.4-30.6c-4.2-7.2-14.6-6.8-21.4-4.2c-16,6.2-14.5,22.1-17.5,36.2c-4.8,23.3-13.2,46.3-29.7,63.9c-25.3-26.5-45.7-55.3-58.5-78.6c43.3-17.2,72.8-28.1,72.8-67c0-31.3-27.9-48.5-58-48.5c-35.7,0-67.3,26-67.3,70.2c0,15.5,4.3,30.7,11.9,44.1c-15.8,4.9-31.1,11.9-43.7,22.8c-13.9,12.1-24,28.8-35.2,43.3c-18,23.3-45.6,57.7-79.3,53.3c-31-4-35.8-37-35.8-62.8c0-64.2,35.8-145.3,80-145.3c14.2,0,24.7,10,28.4,37.9c0.5,9.5,5.3,16.8,14.2,16.8c13.2,0,32.1-12.6,32.1-29.5c0-25.3-25.2-44.8-63.7-44.8C54.2,6.2,0,102,0,181.5c0,59,34.7,80.6,71.6,80.6c37.2,0,76.4-13.5,108.2-56.8c4.6,29.1,28.5,55.4,72.6,55.4c29.7,0,51.3-8.4,77.4-30.5c0,0,11.3,8.7,12.4,9.5c19.4,12.8,42.6,19.4,65.3,22.9c25.4,3.9,51.4,5,77,2.5c0.3,0,0.5-0.1,0.8-0.1c23.3-2.4,46.9-7.5,67.2-20c19.5-12,35.3-29.2,47.6-48.4c3.3-5.1,2.4-11.9-2.1-16.1c-2.9-2.7-7.5-2.2-9.9,1c-11.6,15.7-27.3,32.4-44.7,43c-10.9,6.7-22.5,10.9-34.2,10.9c-35.3,0-42.7-29.5-42.7-63.2C466.7,108,502.5,26.9,546.7,26.9z M299.7,15.6c18.9,0,26.9,13.2,26.9,28.1c0,29.3-21.6,49.3-45.7,60.1c-8-12.4-13.2-30.9-13.2-45.3C267.7,32.9,283.3,15.6,299.7,15.6z M269.7,238.6c-31.7,0-52.1-23.7-52.1-50.5c0-38.5,30.9-57.3,37.7-58.1c18,30.9,38.1,62.1,63.7,89.8C305.3,231,290.5,238.6,269.7,238.6z"/></svg>`;
 }
+// Searchable dropdown for text inputs: shows the full scrollable option
+// list on focus, filters as you type, but still accepts free text
+function attachCombo(inp,getOptions){
+  if(!inp||inp.dataset.combo)return;
+  inp.dataset.combo='1';inp.autocomplete='off';
+  let dd=null;
+  const close=()=>{dd?.remove();dd=null;};
+  const show=()=>{
+    close();
+    const q=(inp.value||'').toLowerCase();
+    const opts=getOptions().filter(o=>!q||o.toLowerCase().includes(q));
+    const r=inp.getBoundingClientRect();
+    dd=document.createElement('div');
+    dd.className='combo-dd';
+    dd.style.cssText=`position:fixed;left:${r.left}px;top:${r.bottom+4}px;width:${Math.max(r.width,220)}px;z-index:1300;`;
+    dd.innerHTML=opts.length
+      ?opts.map(o=>`<div class="combo-opt">${o.replace(/</g,'&lt;')}</div>`).join('')
+      :'<div class="combo-empty">No matches — your typed text will be used as-is</div>';
+    dd.querySelectorAll('.combo-opt').forEach(el=>el.addEventListener('mousedown',e=>{
+      e.preventDefault();
+      inp.value=el.textContent;
+      close();
+      inp.dispatchEvent(new Event('change',{bubbles:true}));
+      inp.dispatchEvent(new Event('input',{bubbles:true}));
+    }));
+    document.body.appendChild(dd);
+  };
+  inp.addEventListener('focus',show);
+  inp.addEventListener('input',show);
+  inp.addEventListener('blur',()=>setTimeout(close,150));
+}
+function clientNameOptions(){
+  return[...new Set([...clientsData.map(c=>c.name),...jobs.map(j=>j.company)].filter(Boolean))].sort();
+}
 // Collision-proof id minting (Date.now() alone collides within one ms)
 let _uidN=0;
 function uid(prefix){return (prefix||'')+Date.now().toString(36)+(_uidN++).toString(36)+Math.random().toString(36).slice(2,6);}
@@ -1841,8 +1880,18 @@ function savePeople(){
 }
 let currentPerson='ro';
 const MY_PERSON='ro'; // the logged-in user
-const APP_VERSION='2.2.0';
+const APP_VERSION='2.3.0';
 const CHANGELOG=[
+  {version:'2.3.0',date:'12 Jun 2026',title:'Searchable pickers, drag fixes, repeats that actually repeat',items:[
+    'Client fields (job settings + new job) are now searchable dropdowns of all clients; add-item gets the same treatment for the item list',
+    'Fixed: reordering tasks in the day list now drops exactly where the red line shows (the indicator was being cleared before it was read)',
+    'Dragging the Done line now tidies card content live while you drag, not after release',
+    'Calendar: resizing a block reflows the blocks below it live',
+    'Fixed: turning Repeat on while editing an existing task now books future weeks (previously only brand-new tasks repeated)',
+    'Repeating tasks show a repeat icon on list cards and calendar blocks',
+    'Fixed: task modal Delete now sits beside Save (two auto-margins had parked it mid-footer)',
+    'Boards: one-time cleanup of cards the old id-collision bug had copied into multiple boards; Client/People boards are labelled “live view” to show they mirror live data by design',
+  ]},
   {version:'2.2.0',date:'12 Jun 2026',title:'Resize is back, job numbers fixed, board deletes fixed',items:[
     'Todo list: edge-resize on task cards is back, and dragging the Done line rescales all cards live (relative to their hours)',
     'Fixed: job numbers no longer duplicate — numbering continues from the highest existing number, duplicates from before are auto-renumbered',
@@ -2254,7 +2303,7 @@ function _buildCalDayBlocks(tasksForDay,d,showDone){
       ondragend="calDragEnd(event)"
       onclick="openEditTodoById('${t.id}',${d})"
       oncontextmenu="event.preventDefault();showTaskContextMenu(event,window._calTaskMap['${t.id}'],${d})">
-      <div class="ctb-title" style="${titleStyle}">${t.title}</div>
+      <div class="ctb-title" style="${titleStyle}">${t.title}${(t.repeat||t.repeatGroup)?' <i class="ti ti-repeat" style="font-size:9px;opacity:.6;"></i>':''}</div>
       ${_calShowHours&&heightPx>36?`<div class="ctb-hrs">${t.hours?formatHrs(t.hours):''}</div>`:''}
       ${showJob?`<div class="ctb-job">${jobName}</div>`:''}
       ${isDone?'':'<div class="ctb-resize" onmousedown="calResizeStart(event,\''+t.id+'\','+d+')" onclick="event.stopPropagation()"></div>'}
@@ -2413,6 +2462,15 @@ function _calResizeMove(e){
     const hrsEl=block.querySelector('.ctb-hrs');
     if(hrsEl)hrsEl.textContent=formatHrs(snapped);
     block.dataset.pendingH=rawH;
+    // Reflow the whole column live so blocks below move with the resize
+    const col=block.parentElement;
+    if(col){
+      let cursor=0;
+      [...col.querySelectorAll('.cal-task-block')].forEach(b=>{
+        b.style.top=cursor+'px';
+        cursor+=b.offsetHeight+3;
+      });
+    }
   }
 }
 function _calResizeEnd(e){
@@ -2683,7 +2741,7 @@ function createTaskCard(t,day,isDone){
   card.innerHTML=`
     <div class="tc-top">
       ${_tiny?'':`<span class="tc-icon">${icon}</span>`}
-      <span class="tc-title">${t.title}</span>
+      <span class="tc-title">${t.title}${(t.repeat||t.repeatGroup)?' <i class="ti ti-repeat" title="Repeating task" style="font-size:10px;color:var(--muted);"></i>':''}</span>
       ${!_tiny&&showHours&&hrsLabel?`<span class="tc-hrs" id="hrs-${t.id}">${hrsLabel}</span>`:`<span class="tc-hrs" id="hrs-${t.id}" style="display:none;"></span>`}
     </div>
     ${(!_tiny&&!_small&&(metaJob||metaItem))?`<div class="tc-meta">
@@ -2916,6 +2974,14 @@ function _clearDropIndicators(){document.querySelectorAll('.drop-above').forEach
 
 function onDropToSection(e,toDay,markDone){
   e.preventDefault();e.stopPropagation();
+  // Read the drop indicator BEFORE clearing it — clearing first meant the
+  // insertion point was always lost and drops landed at the end of the day
+  const sectionEl=document.getElementById(markDone?'ddone-'+toDay:'dtodo-'+toDay);
+  let aboveId=null;
+  if(sectionEl){
+    const aboveCard=[...sectionEl.querySelectorAll('.task-card')].find(c=>c.classList.contains('drop-above'));
+    if(aboveCard)aboveId=aboveCard.dataset.taskId;
+  }
   _clearDropIndicators();
   document.querySelectorAll('.drop-hi,.div-drop-hi').forEach(el=>el.classList.remove('drop-hi','div-drop-hi'));
   try{
@@ -2927,18 +2993,9 @@ function onDropToSection(e,toDay,markDone){
     if(idx===-1)return;
     const task=fromArr[idx];
     const wasAlreadyDone=task.done;
-    // Find insertion index from DOM drop-above indicator
-    const sectionEl=document.getElementById(markDone?'ddone-'+toDay:'dtodo-'+toDay);
     let insertIdx=-1;
-    if(sectionEl){
-      const toArr=wd[toDay]||[];
-      const cards=[...sectionEl.querySelectorAll('.task-card')];
-      const aboveCard=cards.find(c=>c.classList.contains('drop-above'));
-      if(aboveCard){
-        const aboveId=aboveCard.dataset.taskId;
-        const targetArr=wd[toDay]||[];
-        insertIdx=targetArr.findIndex(t=>t.id===aboveId);
-      }
+    if(aboveId){
+      insertIdx=(wd[toDay]||[]).findIndex(t=>t.id===aboveId);
     }
     if(e.altKey){
       const clone={...task,id:uid('t'),done:markDone};
@@ -3624,10 +3681,19 @@ document.addEventListener('mousemove',e=>{
   const delta=e.clientY-divDragStartY;
   todoSplitPx=Math.max(32,divDragStartPx+delta);
   document.querySelectorAll('.day-todo').forEach(el=>el.style.height=todoSplitPx+'px');
-  // Rescale every task card live so heights stay relative to their hours
+  // Rescale every task card live so heights stay relative to their hours,
+  // and gate the content (icon/hours/meta/note) at the same thresholds the
+  // renderer uses — so cards tidy themselves WHILE you drag, not after
   document.querySelectorAll('.day-todo .task-card,.day-done .task-card').forEach(c=>{
     const h=parseFloat(c.dataset.hours);
-    if(h)c.style.height=taskCardHeight(h)+'px';
+    if(!h)return;
+    const ch=taskCardHeight(h);
+    c.style.height=ch+'px';
+    const tiny=ch<44,small=ch<68,med=ch<95;
+    const ic=c.querySelector('.tc-icon');if(ic)ic.style.display=tiny?'none':'';
+    const hr=c.querySelector('.tc-hrs');if(hr)hr.style.display=tiny?'none':'';
+    const me=c.querySelector('.tc-meta');if(me)me.style.display=(tiny||small)?'none':'';
+    const no=c.querySelector('.tc-note');if(no)no.style.display=(tiny||small||med)?'none':'';
   });
   positionGlobalDivider();
 });
@@ -3664,6 +3730,38 @@ document.addEventListener('click',e=>{
   const menu=document.getElementById('tm-assign-menu');
   if(menu&&!e.target.closest('#tm-assign-row'))menu.classList.remove('open');
 });
+function _spawnRepeatOccurrences(savedTask,targetPerson,dayNum){
+  const repN=parseInt(document.getElementById('td-rep-n')?.value)||1;
+  const repUnit=document.getElementById('td-rep-unit')?.value||'week';
+  const repEndMode=_repeatEndMode||'never';
+  let maxOccurrences=52; // 'never' — cap at a year of occurrences
+  if(repEndMode==='after'){
+    maxOccurrences=parseInt(document.getElementById('td-rep-count')?.value)||4;
+  } else if(repEndMode==='date'){
+    const endDateVal=document.getElementById('td-rep-end-date')?.value;
+    if(endDateVal){
+      const endDate=new Date(endDateVal+'T00:00:00');
+      const daysPerOcc=repUnit==='day'?repN:repUnit==='week'?repN*7:repN*30;
+      const base=new Date();const bDow=(base.getDay()+6)%7;base.setDate(base.getDate()-bDow+(weekOffset*7)+(dayNum-1));base.setHours(0,0,0,0);
+      maxOccurrences=Math.max(1,Math.floor((endDate-base)/(1000*60*60*24*daysPerOcc)));
+    }
+  }
+  const base=new Date();const bDow=(base.getDay()+6)%7;base.setDate(base.getDate()-bDow+(weekOffset*7));base.setHours(0,0,0,0);
+  for(let i=1;i<=maxOccurrences;i++){
+    const futureDate=new Date(base);
+    const addDays=i*(repUnit==='day'?repN:repUnit==='week'?repN*7:repN*30)+(dayNum-1);
+    futureDate.setDate(base.getDate()+addDays);
+    const futureDow=(futureDate.getDay()+6)%7;
+    const futureMon=new Date(futureDate);futureMon.setDate(futureDate.getDate()-futureDow);futureMon.setHours(0,0,0,0);
+    const futureWk=futureMon.toISOString().split('T')[0];
+    const futureDayN=futureDow+1;
+    if(futureDayN<1||futureDayN>5)continue; // skip weekends
+    if(!todoData[targetPerson])todoData[targetPerson]={};
+    if(!todoData[targetPerson][futureWk])todoData[targetPerson][futureWk]={};
+    if(!todoData[targetPerson][futureWk][futureDayN])todoData[targetPerson][futureWk][futureDayN]=[];
+    todoData[targetPerson][futureWk][futureDayN].push({...savedTask,id:uid('t'),done:false,repeat:true,repeatGroup:savedTask.id});
+  }
+}
 function saveTodo(){
   const name=document.getElementById('td-task').value.trim();if(!name)return;
   const jobId=document.getElementById('td-job').value;
@@ -3692,49 +3790,24 @@ function saveTodo(){
         Object.assign(arr[idx],{title:name,hours,item,itemId:itemId||arr[idx].itemId,note,urgent,personal,job:job?`${job.id} ${job.name}`:''});
       }
       if(jobId)logActivity(jobId,MY_PERSON,'task_edit',`Updated task <strong>${name}</strong>`);
+      // Repeat turned on while editing: spawn future occurrences (once)
+      const editedTask=(getWeekData(targetPerson)[dayNum]||[]).find(t=>t.id===editingTaskId)||arr[idx];
+      const cfgOn=document.getElementById('td-repeat-config')?.classList.contains('on');
+      if(cfgOn&&editedTask&&!editedTask.repeat&&!editedTask.repeatGroup){
+        editedTask.repeat=true;
+        _spawnRepeatOccurrences(editedTask,targetPerson,dayNum);
+      }
     }
   } else {
-    const task={id:uid('t'),title:name,job:job?`${job.id} ${job.name}`:'',jobId:jobId||null,item,itemId:itemId||null,hours,note,urgent,personal};
+    const task={id:uid('t'),title:name,job:job?`${job.id} ${job.name}`:'',jobId:jobId||null,item,itemId:itemId||null,hours,note,urgent,personal,repeat:document.getElementById('td-repeat-config')?.classList.contains('on')||false};
     if(!wd[dayNum])wd[dayNum]=[];
     wd[dayNum].push(task);
     if(jobId)logActivity(jobId,targetPerson,'task_add',`Added task <strong>${name}</strong>${item?` (${item})`:''} — ${DAY_NAMES[dayNum-1]}`);
     _fupTask=null;
     setTimeout(()=>document.getElementById('fup').classList.add('on'),800);
     // Handle repeat: create copies for future occurrences
-    const isRepeat=document.getElementById('td-repeat-config')?.classList.contains('on');
-    if(isRepeat){
-      const repN=parseInt(document.getElementById('td-rep-n')?.value)||1;
-      const repUnit=document.getElementById('td-rep-unit')?.value||'week';
-      const repEndMode=_repeatEndMode||'never';
-      // Determine max occurrences
-      let maxOccurrences=52; // default for 'never' — cap at 1 year
-      if(repEndMode==='after'){
-        maxOccurrences=parseInt(document.getElementById('td-rep-count')?.value)||4;
-      } else if(repEndMode==='date'){
-        const endDateVal=document.getElementById('td-rep-end-date')?.value;
-        if(endDateVal){
-          const endDate=new Date(endDateVal+'T00:00:00');
-          const daysPerOcc=repUnit==='day'?repN:repUnit==='week'?repN*7:repN*30;
-          const base=new Date();const bDow=(base.getDay()+6)%7;base.setDate(base.getDate()-bDow+(weekOffset*7)+(dayNum-1));base.setHours(0,0,0,0);
-          maxOccurrences=Math.max(1,Math.floor((endDate-base)/(1000*60*60*24*daysPerOcc)));
-        }
-      }
-      const savedTask=task;
-      const base=new Date();const bDow=(base.getDay()+6)%7;base.setDate(base.getDate()-bDow+(weekOffset*7));base.setHours(0,0,0,0);
-      for(let i=1;i<=maxOccurrences;i++){
-        const futureDate=new Date(base);
-        const addDays=i*(repUnit==='day'?repN:repUnit==='week'?repN*7:repN*30)+(dayNum-1);
-        futureDate.setDate(base.getDate()+addDays);
-        const futureDow=(futureDate.getDay()+6)%7;
-        const futureMon=new Date(futureDate);futureMon.setDate(futureDate.getDate()-futureDow);futureMon.setHours(0,0,0,0);
-        const futureWk=futureMon.toISOString().split('T')[0];
-        const futureDayN=futureDow+1;
-        if(futureDayN<1||futureDayN>5)continue; // skip weekends
-        if(!todoData[targetPerson])todoData[targetPerson]={};
-        if(!todoData[targetPerson][futureWk])todoData[targetPerson][futureWk]={};
-        if(!todoData[targetPerson][futureWk][futureDayN])todoData[targetPerson][futureWk][futureDayN]=[];
-        todoData[targetPerson][futureWk][futureDayN].push({...savedTask,id:'t'+Date.now()+i,repeat:true,repeatGroup:savedTask.id});
-      }
+    if(document.getElementById('td-repeat-config')?.classList.contains('on')){
+      _spawnRepeatOccurrences(task,targetPerson,dayNum);
     }
   }
   closeTodoModal();
@@ -4027,6 +4100,7 @@ function openJobSettingsModal(){
     </div>
   </div>`;
   document.body.appendChild(modal);
+  attachCombo(document.getElementById('jsett-company'),clientNameOptions);
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
 }
 function saveJobSettings(){
@@ -4807,8 +4881,11 @@ function showAddItemForm(phId){
   document.querySelectorAll('.add-form-row').forEach(r=>r.remove());
   const tbody=document.getElementById('ib_'+phId);
   const tr=document.createElement('tr');tr.className='add-form-row';
-  tr.innerHTML=`<td></td><td><input list="li-datalist" class="i-sel" id="ni-n" placeholder="Item name or type…" autocomplete="off" style="min-width:180px;"><datalist id="li-datalist">${LINE_ITEMS.map(l=>`<option>${l}</option>`).join('')}</datalist></td><td><input class="i-hi" placeholder="0h" id="ni-h"/></td><td><input class="i-hi" placeholder="$150" id="ni-r" style="width:62px;"/></td><td colspan="2"></td><td><div style="display:flex;gap:4px;"><button class="save-b" onclick="saveItem('${phId}')">Add</button><button class="cancel-b" onclick="this.closest('tr').remove()">x</button></div></td>`;
-  tbody.appendChild(tr);document.getElementById('ni-n').focus();
+  tr.innerHTML=`<td></td><td><input class="i-sel" id="ni-n" placeholder="Item name or type…" autocomplete="off" style="min-width:180px;"></td><td><input class="i-hi" placeholder="0h" id="ni-h"/></td><td><input class="i-hi" placeholder="$150" id="ni-r" style="width:62px;"/></td><td colspan="2"></td><td><div style="display:flex;gap:4px;"><button class="save-b" onclick="saveItem('${phId}')">Add</button><button class="cancel-b" onclick="this.closest('tr').remove()">x</button></div></td>`;
+  tbody.appendChild(tr);
+  const niN=document.getElementById('ni-n');
+  attachCombo(niN,()=>LINE_ITEMS);
+  niN.focus();
 }
 function saveItem(phId){
   const name=document.getElementById('ni-n').value;if(!name)return;
@@ -5047,7 +5124,7 @@ function cycleExpenseStatus(id){
   e.status=states[(idx+1)%states.length];
   saveData();renderExpenses();
 }
-function openCreateJob(){document.getElementById('nj-num').value=nextJobNumber();document.getElementById('nj-name').value='';document.getElementById('create-modal').classList.add('on');setTimeout(()=>document.getElementById('nj-name').focus(),50);}
+function openCreateJob(){document.getElementById('nj-num').value=nextJobNumber();const co=document.getElementById('nj-co');if(co){co.value='';attachCombo(co,clientNameOptions);}document.getElementById('nj-name').value='';document.getElementById('create-modal').classList.add('on');setTimeout(()=>document.getElementById('nj-name').focus(),50);}
 function closeCreateJob(){document.getElementById('create-modal').classList.remove('on');}
 // ── Job creation helpers ──────────────────────────────────────────────────────
 function selectBillChoice(val){
@@ -6335,6 +6412,19 @@ let newBoardType='custom';
       });
     });
   });
+  // Cards written into more than one board by the old collision bug:
+  // keep the first occurrence, strip the copies
+  const cardSeen=new Set();
+  boardsList.forEach(b=>(b.columns||[]).forEach(col=>{
+    if(!col.cards)return;
+    const before=col.cards.length;
+    col.cards=col.cards.filter(card=>{
+      const key=card.id;
+      if(cardSeen.has(key))return false;
+      cardSeen.add(key);return true;
+    });
+    if(col.cards.length!==before)changed=true;
+  }));
   if(changed)try{localStorage.setItem('cc_boards',JSON.stringify(boardsList));}catch(e){}
 })();
 
@@ -6358,7 +6448,7 @@ function renderBoardsList(){
   grid.className='boards-list-grid';
   grid.innerHTML=boardsList.map(b=>{
     const typeIcons={client:'ti-building',people:'ti-users',custom:'ti-layout-kanban'};
-    const typeLabels={client:'Client board',people:'People board',custom:'Custom board'};
+    const typeLabels={client:'Client board · live view',people:'People board · live view',custom:'Custom board'};
     let count='';
     if(b.type==='client'){const n=jobs.filter(j=>j.company===b.clientFilter&&j.status!=='complete').length;count=`${n} active job${n!==1?'s':''}`;}
     else if(b.type==='people'){const n=Object.keys(people).length;count=`${n} team member${n!==1?'s':''}`;}

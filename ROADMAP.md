@@ -89,6 +89,8 @@ The platform's job is twofold: a **rich visual read on the whole business** (whe
 
 ## Suggested order
 
+**Fixed since this was written (v2.3.0):** searchable client/item dropdowns, drop-at-indicator reordering, live divider gating, live calendar reflow on resize, repeat-on-edit, repeat icons, delete button placement, board card dedupe + live-view labelling.
+
 | Phase | Items | Why first |
 |---|---|---|
 | Next | Undo toasts · rollover prompt · workspace export/import | Daily-use trust + data safety, all cheap |
