@@ -7,518 +7,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js">
-// ============ REPORTING ENGINE ============
-let chartByPerson=null,chartByDay=null,chartByJob=null,chartByBudget=null;
-
-function initReportingSelects(){
-  const ps=document.getElementById('r-person');
-  const js=document.getElementById('r-job');
-  ps.innerHTML='<option value="all">All People</option>';
-  [...new Set(Object.values(people).map(p=>p.team).filter(Boolean))].forEach(tn=>{
-    const o=document.createElement('option');o.value='team:'+tn;o.textContent=`Team — ${tn}`;
-    ps.appendChild(o);
-  });
-  Object.keys(people).forEach(k=>{
-    const o=document.createElement('option');o.value=k;o.textContent=people[k].name;
-    ps.appendChild(o);
-  });
-  js.innerHTML='<option value="all">All Jobs</option>';
-  jobs.forEach(j=>{
-    const o=document.createElement('option');o.value=j.id;o.textContent=`${j.name} (${j.id})`;
-    js.appendChild(o);
-  });
-}
-
-function getFilteredTasks(){
-  const period=document.getElementById('r-period').value;
-  const person=document.getElementById('r-person').value;
-  const jobFilter=document.getElementById('r-job').value;
-  let tasks=[];
-  const now=new Date();
-  let cutoff=0;
-  if(period==='week')cutoff=now-7*86400000;
-  else if(period==='2weeks')cutoff=now-14*86400000;
-  else if(period==='month')cutoff=now-30*86400000;
-  else if(period==='quarter')cutoff=now-90*86400000;
-  
-  Object.keys(todoData).forEach(pKey=>{
-    if(person&&person.startsWith('team:')){
-      if((people[pKey]?.team||'')!==person.slice(5))return;
-    }else if(person!=='all'&&pKey!==person)return;
-    const personData=todoData[pKey];
-    if(!personData)return;
-    Object.keys(personData).forEach(weekKey=>{
-      const weekDays=personData[weekKey];
-      if(!weekDays||typeof weekDays!=='object')return;
-      for(let d=1;d<=5;d++){
-        const dayTasks=weekDays[d]||[];
-        dayTasks.forEach(t=>{
-          if(jobFilter!=='all'){
-            const jobMatch=t.job?t.job.includes(jobFilter):false;
-            if(!jobMatch)return;
-          }
-          tasks.push({...t,person:pKey,personName:people[pKey]?.name||pKey,day:d,weekKey});
-        });
-      }
-    });
-  });
-  return tasks;
-}
-
-function fmtHrs(h){if(!h||h===0)return'0h';const m=Math.round(h*60);const hh=Math.floor(m/60);const mm=m%60;return hh&&mm?`${hh}h ${mm}m`:hh?`${hh}h`:`${mm}m`;}
-
-function renderReporting(){
-  const tasks=getFilteredTasks();
-  updateWeekLabel();
-  
-  // Update subtitle
-  const personSel=document.getElementById('r-person');
-  const periodSel=document.getElementById('r-period');
-  const jobSel=document.getElementById('r-job');
-  const personLabel=personSel.value==='all'?'All People':people[personSel.value]?.name||personSel.value;
-  document.getElementById('r-sub').textContent=`${personLabel} · ${periodSel.value==='week'?'This Week':periodSel.value==='2weeks'?'Last 2 Weeks':periodSel.value==='month'?'This Month':periodSel.value==='quarter'?'This Quarter':'All Time'}`;
-
-  // Person totals
-  const personTotals={};
-  let grandTotal=0;
-  tasks.forEach(t=>{
-    if(!personTotals[t.person])personTotals[t.person]={hours:0,name:people[t.person]?.name||t.person,color:people[t.person]?.color||'#999'};
-    personTotals[t.person].hours+=t.hours||0;
-    grandTotal+=t.hours||0;
-  });
-  
-  const ptEl=document.getElementById('r-person-totals');
-  ptEl.innerHTML='';
-  Object.keys(personTotals).forEach(pk=>{
-    const pt=personTotals[pk];
-    const utilPct=Math.min(100,Math.round((pt.hours/100)*100));
-    ptEl.innerHTML+=`<div class="r-p-card"><div class="r-p-name">${pt.name}</div><div class="r-p-hours" style="color:${pt.color}">${fmtHrs(pt.hours)}</div><div class="r-p-util">${utilPct}% utilised</div><div class="r-p-bar"><div class="r-p-bar-fill" style="width:${utilPct}%;background:${pt.color};"></div></div></div>`;
-  });
-
-  // Chart: Hours by Person
-  const pLabels=Object.keys(personTotals).map(k=>personTotals[k].name);
-  const pHours=Object.values(personTotals).map(v=>v.hours);
-  const pColors=Object.values(personTotals).map(v=>v.color);
-  destroyChart(chartByPerson);
-  chartByPerson=new Chart(document.getElementById('chart-by-person'),{
-    type:'bar',
-    data:{labels:pLabels,datasets:[{data:pHours,backgroundColor:pColors,hoverBackgroundColor:pColors.map(c=>c+'cc')}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:'#f0f0f0'},ticks:{callback:v=>fmtHrs(v)}}}}
-  });
-
-  // Chart: Hours by Day
-  const dayTotals={};
-  tasks.forEach(t=>{dayTotals[t.day]=(dayTotals[t.day]||0)+(t.hours||0);});
-  const dayLabels=['Mon','Tue','Wed','Thu','Fri'];
-  const dayData=[1,2,3,4,5].map(d=>dayTotals[d]||0);
-  destroyChart(chartByDay);
-  chartByDay=new Chart(document.getElementById('chart-by-day'),{
-    type:'bar',
-    data:{labels:dayLabels,datasets:[{data:dayData,backgroundColor:'#ED1E24',hoverBackgroundColor:'#ED1E24cc'}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:'#f0f0f0'},ticks:{callback:v=>fmtHrs(v)}}}}
-  });
-
-  // Chart: Hours by Job
-  const jobTotals={};
-  tasks.forEach(t=>{
-    const job=t.job||'Personal';
-    jobTotals[job]=(jobTotals[job]||0)+(t.hours||0);
-  });
-  const jobLabels=Object.keys(jobTotals);
-  const jobHours=Object.values(jobTotals);
-  const jobPalette=['#ED1E24','#6B7FA3','#7B9E87','#C45D5D','#5D88C4','#C4A35D','#5DC48A','#8A5DC4'];
-  destroyChart(chartByJob);
-  chartByJob=new Chart(document.getElementById('chart-by-job'),{
-    type:'doughnut',
-    data:{labels:jobLabels,datasets:[{data:jobHours,backgroundColor:jobPalette.slice(0,jobLabels.length),hoverOffset:6}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},padding:10}}}}
-  });
-
-  // Chart: Budget usage by job
-  const budgetData=jobs.filter(j=>j.budgetTotal).slice(0,8).map(j=>({
-    name:j.name,usedPct:j.bPct||0,overBudget:j.bPct>100
-  }));
-  destroyChart(chartByBudget);
-  chartByBudget=new Chart(document.getElementById('chart-by-budget'),{
-    type:'bar',
-    data:{
-      labels:budgetData.map(b=>b.name.length>20?b.name.slice(0,20)+'…':b.name),
-      datasets:[{label:'Budget Used %',data:budgetData.map(b=>b.usedPct),
-        backgroundColor:budgetData.map(b=>b.overBudget?'#ED1E24':'#4CAF50'),
-        hoverBackgroundColor:budgetData.map(b=>b.overBudget?'#ED1E24cc':'#4CAF50cc')}]
-    },
-    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:120,grid:{color:'#f0f0f0'},ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}
-  });
-
-  // Data table
-  const tbody=document.getElementById('r-tbody');
-  if(tbody){
-    const dayNames=['','Mon','Tue','Wed','Thu','Fri'];
-    tbody.innerHTML=tasks.length===0
-      ?'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;">No tasks in this period.</td></tr>'
-      :tasks.map(t=>{
-        const done=t.done?`<span style="color:#2E7D32;font-size:11px;">✓ Done</span>`:`<span style="color:var(--muted);font-size:11px;">Pending</span>`;
-        const urgent=t.urgent&&!t.done?` <i class="ti ti-alert-circle" style="color:var(--red);font-size:11px;"></i>`:'';
-        return`<tr>
-          <td>${t.title||'—'}${urgent}</td>
-          <td style="font-size:12px;color:var(--muted);">${people[t.person]?.name||t.person}</td>
-          <td style="font-size:12px;color:var(--muted);">${t.job||'Personal'}</td>
-          <td style="font-size:12px;color:var(--muted);">${dayNames[t.day]||'—'}</td>
-          <td style="font-weight:500;">${fmtHrs(t.hours||0)}</td>
-          <td>${done}</td>
-        </tr>`;
-      }).join('');
-  }
-  saveData();
-}
-
-function destroyChart(c){if(c&&typeof c.destroy==='function'){try{c.destroy();}catch(e){}}return null;}
-
-function exportReportingCSV(){
-  const tasks=getFilteredTasks();
-  if(tasks.length===0){alert('No data to export.');return;}
-  let csv='Person,Task,Job,Item,Hours,Status,Day\n';
-  tasks.forEach(t=>{
-    csv+=`${people[t.person]?.name||t.person},"${(t.title||'').replace(/"/g,'""')}","${(t.job||'').replace(/"/g,'""')}","${(t.item||'').replace(/"/g,'""')}",${fmtHrs(t.hours||0)},${t.done?'Done':'Pending'},${['','Mon','Tue','Wed','Thu','Fri'][t.day]||t.day}\n`;
-  });
-  const blob=new Blob([csv],{type:'text/csv'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`report_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();URL.revokeObjectURL(url);
-}
-
-// Wire up filter listeners (idempotent)
-function wireReportingFilters(){
-  ['r-period','r-person','r-job'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el&&!el.dataset.wired){el.addEventListener('change',renderReporting);el.dataset.wired='1';}
-  });
-}
-// ============ BOARDS ENGINE ============
-const BOARD_COLUMNS=['briefed','inprogress','review','approved','complete'];
-const COLUMN_LABELS={briefed:'Briefed',inprogress:'In Progress',review:'In Review',approved:'Approved',complete:'Complete'};
-
-// Boards data - linked to jobs
-let boardsData={};
-function initBoardsData(){
-  // Initialize from jobs
-  boardsData={};
-  BOARD_COLUMNS.forEach(col=>boardsData[col]=[]);
-  jobs.forEach(j=>{
-    let status='inprogress';
-    if(j.status==='new')status='briefed';
-    if(j.status==='complete')status='complete';
-    if(!boardsData[status])boardsData[status]=[];
-    boardsData[status].push({
-      jobId:j.id,
-      title:j.name,
-      client:j.company,
-      overBudget:(j.bPct||0)>100,
-      budgetPct:j.bPct||0,
-      hoursUsed:j.hours||'0h',
-      hoursTotal:j.hoursTotal||'—',
-      lead:'ro',
-      tags:j.labels?j.labels.slice(0,3):[]
-    });
-  });
-  // Ensure all columns have arrays
-  BOARD_COLUMNS.forEach(col=>{if(!boardsData[col])boardsData[col]=[];});
-}
-
-function renderBoards(){/* overridden by main script */if(typeof renderBoardsList==='function')renderBoardsList();}
-function showAddBoardItem(){if(typeof openCreateBoard==='function')openCreateBoard();}
-
-// Override navTo to include boards
-const _origNavTo2=navTo;
-navTo=function(v){
-  document.querySelectorAll('.view').forEach(el=>el.classList.add('hidden'));
-  document.querySelectorAll('.s-btn[id]').forEach(el=>el.classList.remove('on'));
-  const ve=document.getElementById('view-'+v);if(ve)ve.classList.remove('hidden');
-  const ne=document.getElementById('snav-'+v);if(ne)ne.classList.add('on');
-  document.getElementById('topbar').classList.toggle('hidden',v!=='jobs'&&v!=='detail');
-  if(v==='todo')renderTodo();
-  if(v==='jobs'){
-    // Ensure jobs panel visible (user may have switched sub-tabs last visit)
-    document.querySelectorAll('.jt-panel').forEach(el=>el.style.display='none');
-    const jp=document.getElementById('jt-jobs');if(jp){jp.style.display='flex';jp.style.flexDirection='column';}
-    document.querySelectorAll('.jsn-tab').forEach(el=>el.classList.toggle('on',el.dataset.tab==='jobs'));
-    renderJobs();
-  }
-  if(v==='reporting'){
-    initReportingSelects();
-    wireReportingFilters();
-    setTimeout(renderReporting,50);
-  }
-  if(v==='boards'){
-    initBoardsData();
-    setTimeout(renderBoards,50);
-  }
-  if(v==='calendar'){initCalendar();}
-  if(v==='dashboard')renderDashboard();
-  if(v==='settings')renderSettings();
-  if(v==='time'){if(typeof initTimeFilters==='function'){initTimeFilters();renderTime();}}
-  if(v==='quotes')if(typeof renderQuotes==='function')renderQuotes();
-  if(v==='invoices')if(typeof renderInvoices==='function')renderInvoices();
-  saveData();
-};
-
-/* ========== CALENDAR ========== */
-let calCurrentDate = new Date();
-let calViewMode = 'week'; // or 'month'
-let calPersonFilter = 'all';
-
-function initCalendar() {
-  // Populate person filter
-  const sel = document.getElementById('cal-person-filter');
-  if (sel && sel.options.length <= 1) {
-    Object.keys(people).forEach((key, i) => {
-      const p = people[key];
-      const opt = document.createElement('option');
-      opt.value = key;
-      opt.textContent = p.name;
-      sel.appendChild(opt);
-    });
-  }
-  
-  // Wire up controls
-  document.getElementById('cal-prev').onclick = () => calNavigate(-1);
-  document.getElementById('cal-next').onclick = () => calNavigate(1);
-  document.getElementById('cal-today').onclick = calGoToday;
-  document.getElementById('cal-person-filter').onchange = (e) => {
-    calPersonFilter = e.target.value;
-    renderCalendar();
-  };
-  document.getElementById('cal-view-mode').onchange = (e) => {
-    calViewMode = e.target.value;
-    renderCalendar();
-  };
-  
-  renderCalendar();
-}
-
-function calNavigate(dir) {
-  if (calViewMode === 'week') {
-    calCurrentDate.setDate(calCurrentDate.getDate() + dir * 7);
-  } else {
-    calCurrentDate.setMonth(calCurrentDate.getMonth() + dir);
-  }
-  renderCalendar();
-}
-
-function calGoToday() {
-  calCurrentDate = new Date();
-  renderCalendar();
-}
-
-function getWeekStart(d) {
-  const date = new Date(d);
-  const day = date.getDay();
-  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-  date.setDate(diff);
-  date.setHours(0, 0, 0, 0);
-  return date;
-}
-
-function isSameDay(d1, d2) {
-  return d1.getFullYear() === d2.getFullYear() &&
-         d1.getMonth() === d2.getMonth() &&
-         d1.getDate() === d2.getDate();
-}
-
-function formatDate(d) {
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-}
-
-function renderCalendar() {
-  const label = document.getElementById('cal-label');
-  const body = document.getElementById('cal-body');
-  
-  if (calViewMode === 'week') {
-    calRenderWeekView(label, body);
-  } else {
-    calRenderMonthView(label, body);
-  }
-}
-
-function calRenderWeekView(label, body) {
-  const weekStart = getWeekStart(calCurrentDate);
-  const today = new Date();
-  
-  // Update label
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekEnd.getDate() + 6);
-  label.textContent = `${weekStart.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })} – ${weekEnd.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`;
-  
-  // Build grid
-  body.innerHTML = `
-    <div class="cal-week-header">
-      <div class="cal-week-header-cell">Mon</div>
-      <div class="cal-week-header-cell">Tue</div>
-      <div class="cal-week-header-cell">Wed</div>
-      <div class="cal-week-header-cell">Thu</div>
-      <div class="cal-week-header-cell">Fri</div>
-      <div class="cal-week-header-cell">Sat</div>
-      <div class="cal-week-header-cell">Sun</div>
-    </div>
-    <div class="cal-week-grid" id="cal-week-grid"></div>
-  `;
-  
-  const grid = document.getElementById('cal-week-grid');
-  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(weekStart);
-    date.setDate(date.getDate() + i);
-    const isToday = isSameDay(date, today);
-    const isCurrentMonth = date.getMonth() === calCurrentDate.getMonth();
-    
-    const dayEl = document.createElement('div');
-    dayEl.className = 'cal-week-day' + (isToday ? ' today' : '') + (!isCurrentMonth ? ' other-month' : '');
-    
-    // Get todos for this day
-    const todos = calGetTodosForDay(date);
-    
-    dayEl.innerHTML = `
-      <div class="cal-day-num${isToday ? ' today-num' : ''}">${date.getDate()}</div>
-      <div class="cal-day-events" data-date="${date.toISOString().split('T')[0]}"></div>
-    `;
-    
-    grid.appendChild(dayEl);
-    
-    const eventsContainer = dayEl.querySelector('.cal-day-events');
-    
-    todos.forEach(t => {
-      const evt = document.createElement('div');
-      evt.className = `cal-day-event priority-${t.priority || 'med'} person-${['a', 'b', 'c', 'd', 'e'][t.person || 0]}`;
-      evt.textContent = t.title;
-      evt.title = `${t.title} — ${t.assignedTo || 'Unassigned'}`;
-      evt.onclick = (e) => {
-        e.stopPropagation();
-        openTodoModalForEdit(t);
-      };
-      eventsContainer.appendChild(evt);
-    });
-    
-    if (todos.length > 4) {
-      const more = document.createElement('div');
-      more.className = 'cal-day-more';
-      more.textContent = `+${todos.length - 4} more`;
-      eventsContainer.appendChild(more);
-    }
-    
-    // Click to add
-    dayEl.onclick = (e) => {
-      if (e.target.closest('.cal-day-event') || e.target.closest('.cal-day-more')) return;
-      const dateStr = date.toISOString().split('T')[0];
-      openTodoModal(null, parseInt(dateStr.split('-')[2]), date);
-    };
-  }
-}
-
-function calRenderMonthView(label, body) {
-  const year = calCurrentDate.getFullYear();
-  const month = calCurrentDate.getMonth();
-  const today = new Date();
-  
-  label.textContent = calCurrentDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-  
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const startDay = firstDay.getDay();
-  const daysInMonth = lastDay.getDate();
-  
-  // Adjust for Monday start
-  const startOffset = startDay === 0 ? 6 : startDay - 1;
-  
-  body.innerHTML = `<div class="cal-month-grid" id="cal-month-grid"></div>`;
-  const grid = document.getElementById('cal-month-grid');
-  
-  const startDate = new Date(firstDay);
-  startDate.setDate(startDate.getDate() - startOffset);
-  
-  for (let i = 0; i < 42; i++) {
-    const date = new Date(startDate);
-    date.setDate(date.getDate() + i);
-    const isToday = isSameDay(date, today);
-    const isCurrentMonth = date.getMonth() === month;
-    
-    const dayEl = document.createElement('div');
-    dayEl.className = 'cal-month-day' + (isToday ? ' today' : '') + (!isCurrentMonth ? ' other-month' : '');
-    
-    const todos = calGetTodosForDay(date);
-    
-    dayEl.innerHTML = `
-      <div class="cal-month-num${isToday ? ' today-num' : ''}">${date.getDate()}</div>
-      <div class="cal-month-events"></div>
-    `;
-    
-    const eventsContainer = dayEl.querySelector('.cal-month-events');
-    
-    todos.slice(0, 3).forEach(t => {
-      const evt = document.createElement('div');
-      evt.className = `cal-month-event priority-${t.priority || 'med'} person-${['a', 'b', 'c', 'd', 'e'][t.person || 0]}`;
-      evt.textContent = t.title;
-      evt.onclick = (e) => {
-        e.stopPropagation();
-        openTodoModalForEdit(t);
-      };
-      eventsContainer.appendChild(evt);
-    });
-    
-    if (todos.length > 3) {
-      const more = document.createElement('div');
-      more.className = 'cal-month-more';
-      more.textContent = `+${todos.length - 3}`;
-      eventsContainer.appendChild(more);
-    }
-    
-    // Click to add
-    dayEl.onclick = (e) => {
-      if (e.target.closest('.cal-month-event')) return;
-      const dateStr = date.toISOString().split('T')[0];
-      openTodoModal(null, parseInt(dateStr.split('-')[2]), date);
-    };
-    
-    grid.appendChild(dayEl);
-  }
-}
-
-function calGetTodosForDay(date) {
-  const todos = [];
-  const dayOfWeek = date.getDay(); // 0=Sun,1=Mon..5=Fri,6=Sat
-  const mappedDay = dayOfWeek === 0 ? 0 : dayOfWeek;
-  if (mappedDay < 1 || mappedDay > 5) return todos;
-  const weekMon = new Date(date);
-  weekMon.setDate(date.getDate() - (date.getDay() + 6) % 7);
-  weekMon.setHours(0, 0, 0, 0);
-  const weekKey = weekMon.toISOString().split('T')[0];
-  Object.keys(people).forEach(key => {
-    const p = people[key];
-    if (calPersonFilter !== 'all' && calPersonFilter !== key) return;
-    const weekData = (todoData[key] || {})[weekKey] || {};
-    (weekData[mappedDay] || []).forEach(t => {
-      todos.push({...t, personKey: key, personName: p.name, personColor: p.color, personInitials: p.initials});
-    });
-  });
-  return todos;
-}
-
-function openTodoModalForEdit(todo) {
-  // Find the todo in the data structure and open edit modal
-  for (let personIdx = 0; personIdx < people.length; personIdx++) {
-    const personData = todoData[personIdx] || {};
-    for (let dayKey in personData) {
-      const tasks = personData[dayKey] || [];
-      const idx = tasks.findIndex(t => t.id === todo.id);
-      if (idx !== -1) {
-        openTodoModal(personIdx, parseInt(dayKey), null, idx);
-        return;
-      }
-    }
-  }
-}
-</script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -1031,7 +520,8 @@ button.detail-back{outline:none;}
 .tm-ft{padding:12px 24px 14px;border-top:1px solid var(--border);display:flex;align-items:center;}
 .tm-btn-cancel{background:transparent;border:none;padding:7px 0;font-size:13px;font-family:var(--font);cursor:pointer;color:var(--muted);}
 .tm-btn-cancel:hover{color:var(--ink);}
-.tm-btn-delete{background:transparent;border:1px solid var(--border);border-radius:3px;padding:7px 14px;font-size:12px;font-family:var(--font);cursor:pointer;color:var(--muted);margin-left:12px;display:none;transition:all .12s;}
+.tm-btn-delete{background:none;border:none;padding:7px 4px;font-size:12.5px;font-family:var(--font);cursor:pointer;color:var(--muted);text-decoration:underline;text-underline-offset:3px;margin-left:auto;margin-right:14px;display:none;transition:color .12s;}
+.tm-btn-delete:hover{color:var(--red);}
 .tm-btn-delete:hover{color:var(--red);border-color:var(--red);background:#FFF5F5;}
 .tm-btn-save{margin-left:auto;background:var(--ink);color:#fff;border:none;border-radius:20px;padding:8px 18px;font-size:13px;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:400;}
 .tm-btn-save:hover{opacity:.85;}
@@ -2018,25 +1508,6 @@ tr:hover .i-todo-btn{opacity:1;}
         </div>
       </div>
 
-      <!-- CALENDAR -->
-      <div id="view-calendar" class="view hidden">
-        <div style="display:flex;flex-direction:column;height:100%;overflow:hidden;">
-          <div class="cal-header">
-            <div class="cal-nav">
-              <button class="cal-nav-btn" id="cal-prev">‹</button>
-              <span class="cal-label" id="cal-label">—</span>
-              <button class="cal-nav-btn" id="cal-next">›</button>
-            </div>
-            <button class="cal-today-btn" id="cal-today">Today</button>
-            <div class="cal-filters" style="margin-left:auto;">
-              <select id="cal-person-filter"><option value="all">All People</option></select>
-              <select id="cal-view-mode"><option value="week">Week</option><option value="month">Month</option></select>
-            </div>
-          </div>
-          <div class="cal-body" id="cal-body"></div>
-        </div>
-      </div>
-
     </div>
   </div>
 </div>
@@ -2370,8 +1841,18 @@ function savePeople(){
 }
 let currentPerson='ro';
 const MY_PERSON='ro'; // the logged-in user
-const APP_VERSION='2.1.0';
+const APP_VERSION='2.2.0';
 const CHANGELOG=[
+  {version:'2.2.0',date:'12 Jun 2026',title:'Resize is back, job numbers fixed, board deletes fixed',items:[
+    'Todo list: edge-resize on task cards is back, and dragging the Done line rescales all cards live (relative to their hours)',
+    'Fixed: job numbers no longer duplicate — numbering continues from the highest existing number, duplicates from before are auto-renumbered',
+    'Task cards now show the live job name (renaming a job updates every task)',
+    'Fixed: board delete and column delete did nothing (confirm dialog lost its callback)',
+    'Task modal: Delete is back — underlined, left of Save (it was invisible due to a CSS clash)',
+    'Time view: per-person groups start minimised — summary first, click to expand',
+    'Settings: new My Profile section — choose which teams appear on your dashboard',
+    'Removed ~700 lines of dead legacy code (an entire inert script block and an orphaned calendar view)',
+  ]},
   {version:'2.1.0',date:'12 Jun 2026',title:'Progress tab, real logo, teams & a deep consistency pass',items:[
     'Job plan: new Progress tab — per-person time table (logged & scheduled) with one-click reallocation of time to another item or job',
     'Fixed: done todos now reliably feed job plan item hours (stale item links fall back to name matching)',
@@ -2534,6 +2015,26 @@ function loadData(){
 loadData();
 // Seed the global label list from any labels already on jobs
 jobs.forEach(j=>(j.labels||[]).forEach(l=>addGlobalLabel(l)));
+// Job numbers: always continue from the highest existing number, never reuse
+function nextJobNumber(){
+  let max=6953;
+  jobs.forEach(j=>{const n=parseInt(j.id,10);if(!isNaN(n)&&n<1000000&&n>max)max=n;});
+  return String(max+1);
+}
+// Migration: earlier versions could hand out the same number twice (the
+// counter reset every session). Renumber any later duplicates.
+(function fixDuplicateJobIds(){
+  const seen=new Set();let changed=false;
+  jobs.forEach(j=>{
+    if(seen.has(j.id)){
+      const oldId=j.id;j.id=nextJobNumber();changed=true;
+      if(!j.activity)j.activity=[];
+      j.activity.unshift({ts:Date.now(),personKey:MY_PERSON,action:'renumber',detail:`Job renumbered from <strong>${oldId}</strong> to <strong>${j.id}</strong> (duplicate number)`});
+    }
+    seen.add(j.id);
+  });
+  if(changed)try{localStorage.setItem('cc_jobs',JSON.stringify(jobs));}catch(e){}
+})();
 
 // Week-keyed data helpers
 function getWeekKey(offset){
@@ -2629,7 +2130,9 @@ function renderDashboard(){
       <div class="tc-footer"><div class="tc-stat">Done <span>${formatHrs(doneH)||'0h'}</span></div><div class="tc-stat">To do <span>${formatHrs(todoH)||'0h'}</span></div>${urgCnt?`<div class="tc-stat" style="margin-left:auto;color:var(--red);font-size:11px;">${urgCnt} urgent</div>`:'<div class="tc-stat" style="margin-left:auto;font-size:11px;color:var(--muted);">On track</div>'}</div>
     </div>`;
   };
-  const otherKeys=Object.keys(people).filter(k=>k!==MY_PERSON);
+  let otherKeys=Object.keys(people).filter(k=>k!==MY_PERSON);
+  const dashPref=people[MY_PERSON].dashTeams||[];
+  if(dashPref.length)otherKeys=otherKeys.filter(k=>dashPref.includes(people[k].team));
   const teamNames=[...new Set(otherKeys.map(k=>people[k].team).filter(Boolean))];
   let teamHTML='';
   if(teamNames.length){
@@ -2671,7 +2174,6 @@ function navTo(v){
   if(v==='jobs')renderJobs();
   if(v==='reporting'){initReportingSelects();wireReportingFilters();setTimeout(renderReporting,50);}
   if(v==='boards'){initBoardsData();setTimeout(renderBoards,50);}
-  if(v==='calendar')initCalendar();
   if(v==='settings')renderSettings();
   saveData();
 }
@@ -3140,44 +2642,63 @@ function formatHrs(h){if(!h||h===0)return'';const m=Math.round(h*60);const hh=Ma
 
 const ITEM_ICONS={'Creative Direction':'ti-palette','Design & Artwork':'ti-pencil','Briefing & coordination':'ti-clipboard-list','Copywriting':'ti-writing','Video Editing':'ti-video','Proofing & spell check':'ti-eye','Artwork & file despatch':'ti-send','Contingency':'ti-alert-circle','Shot listing':'ti-camera','Website build':'ti-code','Leave':'ti-sun','Briefing':'ti-clipboard-list'};
 
+function taskCardHeight(hours){
+  if(!hours)return 56;
+  // Scale proportionally: 8h fills the todo column height, so dragging the
+  // Done divider rescales every card while keeping them relative to time
+  const pxPerHr=Math.max(24,(todoSplitPx||360)/8);
+  return Math.max(40,Math.round(hours*pxPerHr));
+}
+
 function createTaskCard(t,day,isDone){
   const card=document.createElement('div');
   card.className='task-card'+(isDone?' done-c':'')+(t.urgent&&!isDone?' urgent-c':'');
   card.draggable=true;
   card.dataset.taskId=t.id;card.dataset.day=day;
-  // List cards are content-sized with a uniform gap — the calendar view is
-  // the place for duration-proportional blocks.
+  card.dataset.hours=t.hours||'';
+  if(t.hours)card.style.height=taskCardHeight(t.hours)+'px';
 
   const iconCls=ITEM_ICONS[t.item]||(t.urgent?'ti-alert-circle':'ti-point');
   const icon=`<i class="ti ${iconCls}" style="font-size:11px;color:var(--muted);"></i>`;
   const hrsLabel=t.hours?formatHrs(t.hours):'';
   const jobIdMatch=t.job?t.job.match(/^(\d+)/):null;
   const jobIdNum=jobIdMatch?jobIdMatch[1]:null;
+  // Resolve the job label live from the jobs list so renames propagate
+  const liveJob=jobIdNum?jobs.find(j=>j.id===jobIdNum):null;
+  const jobLabel=liveJob?`${liveJob.id} ${liveJob.name}`:(t.job||'');
 
   const showHours=getCS('showHours');
   const showJob=getCS('showJob');
   const showItem=getCS('showItem');
   const showNote=getCS('showNote');
-  const metaJob=showJob&&t.job;
+  const metaJob=showJob&&jobLabel;
   const metaItem=showItem&&t.item;
+
+  // Show/hide content based on card height
+  const _ch=t.hours?taskCardHeight(t.hours):56;
+  const _tiny=_ch<44;   // title only
+  const _small=_ch<68;  // title + hours
+  const _med=_ch<95;    // + job/item
 
   card.innerHTML=`
     <div class="tc-top">
-      <span class="tc-icon">${icon}</span>
+      ${_tiny?'':`<span class="tc-icon">${icon}</span>`}
       <span class="tc-title">${t.title}</span>
-      ${showHours&&hrsLabel?`<span class="tc-hrs" id="hrs-${t.id}">${hrsLabel}</span>`:''}
+      ${!_tiny&&showHours&&hrsLabel?`<span class="tc-hrs" id="hrs-${t.id}">${hrsLabel}</span>`:`<span class="tc-hrs" id="hrs-${t.id}" style="display:none;"></span>`}
     </div>
-    ${(metaJob||metaItem)?`<div class="tc-meta">
-      ${metaJob?`<span class="tc-job${jobIdNum?' clickable':''}" data-jid="${jobIdNum||''}">${t.job}</span>`:''}
+    ${(!_tiny&&!_small&&(metaJob||metaItem))?`<div class="tc-meta">
+      ${metaJob?`<span class="tc-job${jobIdNum?' clickable':''}" data-jid="${jobIdNum||''}">${jobLabel}</span>`:''}
       ${metaJob&&metaItem?'<span class="tc-sep"></span>':''}
       ${metaItem?`<span class="tc-item-tag">${t.item}</span>`:''}
     </div>`:''}
-    ${(showNote&&t.note)?`<div class="tc-note">${t.note}</div>`:''}`;
+    ${(!_tiny&&!_small&&!_med&&showNote&&t.note)?`<div class="tc-note">${t.note}</div>`:''}`;
 
   const jEl=card.querySelector('.tc-job.clickable');
   if(jEl)jEl.addEventListener('click',e=>{e.stopPropagation();openJobDetail(jEl.dataset.jid);});
 
+  let _wasResized=false;
   card.addEventListener('click',e=>{
+    if(_wasResized){_wasResized=false;return;}
     if(!e.target.closest('.tc-job.clickable'))openEditTodo(t,day);
   });
   card.addEventListener('dragstart',e=>{
@@ -3191,6 +2712,64 @@ function createTaskCard(t,day,isDone){
     e.preventDefault();e.stopPropagation();
     const parent=card.closest('.day-todo,.day-done');
     if(parent)_highlightDropTarget(e,parent);
+  });
+
+  // Edge resize: top or bottom 7px = resize zone (drag to change hours)
+  const EDGE=7;
+  card.addEventListener('mousemove',e=>{
+    if(card.classList.contains('resizing'))return;
+    const rect=card.getBoundingClientRect();
+    const atEdge=e.clientY>=rect.bottom-EDGE||e.clientY<=rect.top+EDGE;
+    card.style.cursor=atEdge?'ns-resize':'pointer';
+  });
+  card.addEventListener('mouseleave',()=>{if(!card.classList.contains('resizing'))card.style.cursor='';});
+  card.addEventListener('mousedown',e=>{
+    const rect=card.getBoundingClientRect();
+    const atBottom=e.clientY>=rect.bottom-EDGE;
+    const atTop=e.clientY<=rect.top+EDGE;
+    if(!atBottom&&!atTop)return;
+    e.preventDefault();e.stopPropagation();
+    hideTodoTooltip();
+    _wasResized=false;
+    card.classList.add('resizing');card.draggable=false;
+    const startY=e.clientY,startH=card.offsetHeight,startHours=t.hours||1;
+    let curHours=startHours;
+    const onMove=ev=>{
+      if(Math.abs(ev.clientY-startY)>2)_wasResized=true;
+      const dy=atBottom?(ev.clientY-startY):(startY-ev.clientY);
+      const newH=Math.max(40,startH+dy);
+      const _px=Math.max(24,(todoSplitPx||360)/8);
+      curHours=Math.max(0.25,Math.min(8,Math.round((newH/_px)*4)/4));
+      const newCardH=taskCardHeight(curHours);
+      card.style.height=newCardH+'px';
+      const hrsEl=document.getElementById('hrs-'+t.id);
+      const _tiny2=newCardH<44;const _small2=newCardH<68;const _med2=newCardH<95;
+      const iconEl=card.querySelector('.tc-icon');
+      if(iconEl)iconEl.style.display=_tiny2?'none':'';
+      if(hrsEl){hrsEl.style.display=(_tiny2||!showHours)?'none':'';hrsEl.textContent=formatHrs(curHours);}
+      const metaEl=card.querySelector('.tc-meta');
+      if(metaEl)metaEl.style.display=(_tiny2||_small2)?'none':'';
+      const noteEl=card.querySelector('.tc-note');
+      if(noteEl)noteEl.style.display=(_tiny2||_small2||_med2)?'none':'';
+    };
+    const onUp=()=>{
+      document.removeEventListener('mousemove',onMove);
+      document.removeEventListener('mouseup',onUp);
+      card.classList.remove('resizing');card.draggable=true;
+      if(curHours!==startHours){
+        const wd=getWeekData(currentPerson);
+        const arr=wd[day]||[];
+        const task=arr.find(x=>x.id===t.id);
+        if(task){task.hours=curHours;t.hours=curHours;card.dataset.hours=curHours;saveData();_refreshJobStats();}
+        renderTodoHeader(day);
+        const sumEl=document.querySelector('.todo-summary');
+        let wTodo=0,wDone=0;
+        [1,2,3,4,5].forEach(d=>{(getWeekData(currentPerson)[d]||[]).forEach(x=>{if(x.done)wDone+=x.hours||0;else wTodo+=x.hours||0;});});
+        if(sumEl)sumEl.textContent=`To do: ${formatHrs(wTodo)||'0h'} · Done: ${formatHrs(wDone)||'0h'}`;
+      }
+    };
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
   });
 
   // Tooltip on hover
@@ -3778,7 +3357,7 @@ function editTask(t,day){
   document.getElementById('td-timestamps').style.display='';
   document.getElementById('td-modal-title').textContent='Edit task';
   document.getElementById('td-save-lbl').textContent='Save changes';
-  document.getElementById('edit-task-btn').style.display='';
+  document.getElementById('edit-task-btn').style.display='inline-block';
   document.getElementById('todo-modal').classList.add('on');
   setTimeout(()=>document.getElementById('td-task').focus(),50);
 }
@@ -4045,10 +3624,18 @@ document.addEventListener('mousemove',e=>{
   const delta=e.clientY-divDragStartY;
   todoSplitPx=Math.max(32,divDragStartPx+delta);
   document.querySelectorAll('.day-todo').forEach(el=>el.style.height=todoSplitPx+'px');
+  // Rescale every task card live so heights stay relative to their hours
+  document.querySelectorAll('.day-todo .task-card,.day-done .task-card').forEach(c=>{
+    const h=parseFloat(c.dataset.hours);
+    if(h)c.style.height=taskCardHeight(h)+'px';
+  });
   positionGlobalDivider();
 });
 document.addEventListener('mouseup',()=>{
-  if(isDivDrag){isDivDrag=false;document.body.style.cursor='';document.body.style.userSelect='';}
+  if(isDivDrag){
+    isDivDrag=false;document.body.style.cursor='';document.body.style.userSelect='';
+    renderTodo(); // re-render so card content gating matches the new scale
+  }
 });
 
 // Track who the task is assigned to in the modal
@@ -4477,7 +4064,7 @@ function showJobDotMenu(e){
 function closeJobDotMenu(){document.querySelectorAll('.job-dot-menu').forEach(el=>el.remove());}
 function duplicateJob(id){
   const j=jobs.find(x=>x.id===id);if(!j)return;
-  const newId=String(Date.now());
+  const newId=nextJobNumber();
   const copy=JSON.parse(JSON.stringify(j));
   copy.id=newId;copy.name=j.name+' (Copy)';copy.activity=[];copy.invNum=null;
   jobs.push(copy);saveData();
@@ -5460,7 +5047,7 @@ function cycleExpenseStatus(id){
   e.status=states[(idx+1)%states.length];
   saveData();renderExpenses();
 }
-function openCreateJob(){jobCounter++;document.getElementById('nj-num').value=jobCounter;document.getElementById('nj-name').value='';document.getElementById('create-modal').classList.add('on');setTimeout(()=>document.getElementById('nj-name').focus(),50);}
+function openCreateJob(){document.getElementById('nj-num').value=nextJobNumber();document.getElementById('nj-name').value='';document.getElementById('create-modal').classList.add('on');setTimeout(()=>document.getElementById('nj-name').focus(),50);}
 function closeCreateJob(){document.getElementById('create-modal').classList.remove('on');}
 // ── Job creation helpers ──────────────────────────────────────────────────────
 function selectBillChoice(val){
@@ -5520,8 +5107,11 @@ function createJob(){
   const company=document.getElementById('nj-co').value||'Unassigned';
   const billable=document.getElementById('nj-billable')?.value!=='nonbillable';
   const wf=document.getElementById('nj-workflow')?.value||'quote';
-  jobs.unshift({id:String(jobCounter),name,company,budget:'$0',budgetTotal:'—',bPct:0,hours:'0h',hoursTotal:'—',hPct:0,status:'new',billable,labels:[],workflowStatus:wf});
-  closeCreateJob();renderJobs();openJobDetail(String(jobCounter));
+  let id=String(parseInt(document.getElementById('nj-num').value,10)||nextJobNumber());
+  while(jobs.some(j=>j.id===id))id=String(parseInt(id,10)+1);
+  jobs.unshift({id,name,company,budget:'$0',budgetTotal:'—',bPct:0,hours:'0h',hoursTotal:'—',hPct:0,status:'new',billable,labels:[],workflowStatus:wf,phases:[],activity:[],members:[MY_PERSON]});
+  saveData();
+  closeCreateJob();renderJobs();openJobDetail(id);
 }
 // ---- ACTIVITY LOGGING ----
 // ── Toast notification system ────────────────────────────────────────────────
@@ -5540,10 +5130,14 @@ function ccConfirm(msg,onYes,yesLabel='Confirm',danger=false){
   m.innerHTML=`<div class="modal" style="max-width:380px;">
     <div class="modal-bd" style="padding:24px 24px 8px;font-size:13px;line-height:1.6;color:var(--ink);">${msg}</div>
     <div class="modal-ft" style="gap:8px;padding:12px 24px 20px;">
-      <button class="modal-cancel" onclick="document.getElementById('cc-confirm-modal').remove()">Cancel</button>
-      <button class="modal-save${danger?' danger':''}" style="${danger?'background:var(--red);':''}" onclick="document.getElementById('cc-confirm-modal').remove();(${onYes.toString()})();">${yesLabel}</button>
+      <button class="modal-cancel">Cancel</button>
+      <button class="modal-save${danger?' danger':''}" style="${danger?'background:var(--red);':''}">${yesLabel}</button>
     </div>
   </div>`;
+  // Wire with real listeners — serialising the callback into an onclick
+  // attribute loses its closure (this is what broke board deletion)
+  m.querySelector('.modal-cancel').addEventListener('click',()=>m.remove());
+  m.querySelector('.modal-save').addEventListener('click',()=>{m.remove();onYes();});
   document.body.appendChild(m);
   m.addEventListener('click',e=>{if(e.target===m)m.remove();});
 }
@@ -5850,10 +5444,32 @@ function renderSettings(){
   wrap.innerHTML=`
     <div style="margin-bottom:28px;">
       <div class="dash-greeting">Settings</div>
-      <div class="dash-date">Workspace configuration</div>
+      <div class="dash-date">Profile &amp; workspace configuration</div>
       <div class="dash-rule"></div>
     </div>
-    <div class="section-label" style="margin-bottom:14px;">Team</div>
+    <div class="section-label" style="margin-bottom:14px;">My profile</div>
+    <div style="background:var(--white);border:1px solid var(--border);padding:16px;margin-bottom:28px;">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+        <div style="width:44px;height:44px;border-radius:50%;background:${people[MY_PERSON].color};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:#fff;flex-shrink:0;">${people[MY_PERSON].initials}</div>
+        <div>
+          <div style="font-size:15px;">${people[MY_PERSON].name}</div>
+          <div style="font-size:12px;color:var(--muted);">${people[MY_PERSON].role||'Team member'}${people[MY_PERSON].team?` · ${people[MY_PERSON].team} team`:''}</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Teams shown on my dashboard <span style="color:#B8B3AB;">— none selected = everyone</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        ${(function(){
+          const allTeams=[...new Set(Object.values(people).map(x=>x.team).filter(Boolean))];
+          if(!allTeams.length)return'<span style="font-size:12px;color:var(--muted);">No teams defined yet — set a team on people below.</span>';
+          const myT=people[MY_PERSON].dashTeams||[];
+          return allTeams.map(tn=>{
+            const on=myT.includes(tn);
+            return`<button onclick="toggleDashTeam('${tn.replace(/'/g,"\\'")}')" class="filter-btn" style="cursor:pointer;font-size:12px;${on?'background:var(--ink);color:#fff;border-color:var(--ink);':''}">${on?'✓ ':''}${tn}</button>`;
+          }).join('');
+        })()}
+      </div>
+    </div>
+    <div class="section-label" style="margin-bottom:14px;">Workspace · Team</div>
     <datalist id="team-name-list">${[...new Set(Object.values(people).map(p=>p.team).filter(Boolean))].map(t=>`<option value="${t}">`).join('')}</datalist>
     <div style="background:var(--white);border:1px solid var(--border);">
       ${teamRows}
@@ -5941,6 +5557,13 @@ function removeSettItem(type,val){
   if(type==='line'){LINE_ITEMS=LINE_ITEMS.filter(x=>x!==val);localStorage.setItem('cc_line_items',JSON.stringify(LINE_ITEMS));}
   else{EXPENSE_ITEMS=EXPENSE_ITEMS.filter(x=>x!==val);localStorage.setItem('cc_expense_items',JSON.stringify(EXPENSE_ITEMS));}
   renderSettings();
+}
+function toggleDashTeam(tn){
+  const me=people[MY_PERSON];
+  if(!me.dashTeams)me.dashTeams=[];
+  const i=me.dashTeams.indexOf(tn);
+  if(i===-1)me.dashTeams.push(tn);else me.dashTeams.splice(i,1);
+  savePeople();renderSettings();
 }
 function showAddPersonForm(){document.getElementById('add-person-form').style.display='';document.getElementById('ap-name')?.focus();}
 function updatePerson(key,field,val){
@@ -6271,8 +5894,12 @@ function renderTime(){
   const byPerson={};
   entries.forEach(e=>{if(!byPerson[e.personKey])byPerson[e.personKey]=[];byPerson[e.personKey].push(e);});
 
-  // Track collapsed groups in module scope
+  // Track collapsed groups in module scope — groups start minimised so the
+  // Time view reads as a summary first; click a person to expand
   if(!window._timeCollapsedGroups)window._timeCollapsedGroups={};
+  Object.keys(byPerson).forEach(pKey=>{
+    if(!(pKey in window._timeCollapsedGroups))window._timeCollapsedGroups[pKey]=true;
+  });
   Object.keys(byPerson).forEach(pKey=>{
     const p=people[pKey]||{name:pKey,color:'#999',initials:'?'};
     const pEntries=byPerson[pKey];
@@ -7280,52 +6907,6 @@ function showAddBoardItem(){openCreateBoard();}
 
 // navTo is fully defined above — no override needed here
 
-// ===== CALENDAR (placeholder — full build in next phase) =====
-let calCurrentDate=new Date(),calViewMode='week';
-function initCalendar(){
-  const lbl=document.getElementById('cal-label');
-  const body=document.getElementById('cal-body');
-  if(!lbl||!body)return;
-  document.getElementById('cal-prev').onclick=()=>{calCurrentDate.setDate(calCurrentDate.getDate()-7);renderCalendarSimple();};
-  document.getElementById('cal-next').onclick=()=>{calCurrentDate.setDate(calCurrentDate.getDate()+7);renderCalendarSimple();};
-  document.getElementById('cal-today').onclick=()=>{calCurrentDate=new Date();renderCalendarSimple();};
-  document.getElementById('cal-view-mode').onchange=e=>{calViewMode=e.target.value;renderCalendarSimple();};
-  renderCalendarSimple();
-}
-function renderCalendarSimple(){
-  const lbl=document.getElementById('cal-label');
-  const body=document.getElementById('cal-body');
-  if(!lbl||!body)return;
-  // Get Mon of current week
-  const d=new Date(calCurrentDate);const day=d.getDay();const diff=d.getDate()-(day===0?6:day-1);
-  d.setDate(diff);
-  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const end=new Date(d);end.setDate(end.getDate()+6);
-  lbl.textContent=`${months[d.getMonth()]} ${d.getDate()} – ${months[end.getMonth()]} ${end.getDate()}, ${end.getFullYear()}`;
-  const today=new Date();
-  body.innerHTML='';
-  const grid=document.createElement('div');
-  grid.style.cssText='display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);border:1px solid var(--border);';
-  ['Mon','Tue','Wed','Thu','Fri'].forEach((name,i)=>{
-    const date=new Date(d);date.setDate(date.getDate()+i);
-    const isToday=date.toDateString()===today.toDateString();
-    const cell=document.createElement('div');
-    cell.style.cssText=`background:var(--white);padding:10px 12px;min-height:160px;${isToday?'border-top:3px solid var(--red);':''}`;
-    cell.innerHTML=`<div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);">${name}</div><div style="font-size:20px;font-weight:400;color:${isToday?'var(--red)':'var(--ink)'};">${date.getDate()}</div>`;
-    // Show tasks for this day
-    const dayNum=i+1;
-    const tasks=(todoData[currentPerson]||{})[dayNum]||[];
-    tasks.forEach(t=>{
-      const el=document.createElement('div');
-      el.style.cssText=`margin-top:4px;padding:4px 7px;background:${t.done?'var(--done)':'var(--off)'};border:1px solid var(--border);font-size:11px;cursor:pointer;border-radius:2px;${t.urgent&&!t.done?'border-left:2px solid var(--red);':''}`;
-      el.textContent=t.title;
-      el.onclick=()=>openEditTodo(t,dayNum);
-      cell.appendChild(el);
-    });
-    grid.appendChild(cell);
-  });
-  body.appendChild(grid);
-}
 </script>
 <!-- Calendar popup -->
 <div id="cal-popup" class="cal-popup">
