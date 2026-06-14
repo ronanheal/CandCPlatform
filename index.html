@@ -808,7 +808,14 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
 .wf-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500;letter-spacing:.05em;text-transform:uppercase;}
 .wf-quote{background:#F0F4FF;color:#4A6FA5;}
 .wf-live{background:#E8F5E9;color:#2E7D32;}
-.wf-invoiced{background:#FFF3E0;color:#E65100;}
+.wf-completed{background:#FFF8E1;color:#F57F17;}
+.wf-invoiced{background:#F3E5F5;color:#6A1B9A;}
+.paused-badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;background:#F5F5F5;color:#757575;font-weight:500;letter-spacing:.04em;border:1px solid #E0E0E0;}
+.tm-job-brief-wrap{margin-top:14px;}
+.tm-job-brief-lbl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.tm-job-brief{background:var(--off);border:1px solid var(--border);border-radius:3px;padding:10px 12px;font-size:12px;color:var(--muted);line-height:1.5;}
+.tm-job-brief a{color:var(--red);text-decoration:underline;}
+.paused-warn{background:#FFF3E0;border:1px solid #FFE0B2;border-radius:3px;padding:9px 12px;font-size:12px;color:#E65100;margin-top:12px;display:none;}
 /* ── Clients panel ────────────────────────────────────────── */
 .clients-wrap{padding:28px 32px;overflow-y:auto;}
 .clients-toolbar{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
@@ -1167,6 +1174,7 @@ tr:hover .i-todo-btn{opacity:1;}
       <div id="view-jobs" class="view hidden">
         <div class="jobs-subnav">
           <div class="jsn-tab on" data-tab="jobs" onclick="switchJobsTab('jobs')">Jobs</div>
+          <div class="jsn-tab" data-tab="tobeinvoiced" onclick="switchJobsTab('tobeinvoiced')">To Be Invoiced</div>
           <div class="jsn-tab" data-tab="time" onclick="switchJobsTab('time')">Time</div>
           <div class="jsn-tab" data-tab="expenses" onclick="switchJobsTab('expenses')">Expenses</div>
           <div class="jsn-tab" data-tab="quotes" onclick="switchJobsTab('quotes')">Quotes</div>
@@ -1188,7 +1196,11 @@ tr:hover .i-todo-btn{opacity:1;}
               <option value="all">All workflow</option>
               <option value="quote">Quote</option>
               <option value="live">Live job</option>
+              <option value="completed">Completed</option>
               <option value="invoiced">Invoiced</option>
+            </select>
+            <select class="cc-select" id="jobs-label-filter" onchange="renderJobs()">
+              <option value="">All labels</option>
             </select>
             <label class="filter-btn" style="cursor:pointer;"><input type="checkbox" id="jobs-hide-archived" checked style="margin-right:5px;accent-color:var(--red)" onchange="renderJobs()"/> Hide archived</label>
             <span class="jobs-count" id="jobs-count">1 job · NZD</span>
@@ -1529,6 +1541,7 @@ tr:hover .i-todo-btn{opacity:1;}
   <div class="pctx-r" onclick="pctxDo('rename')"><i class="ti ti-pencil"></i> Rename phase</div>
   <div class="pctx-r" onclick="pctxDo('additem')"><i class="ti ti-plus"></i> Add item</div>
   <div class="pctx-r" onclick="pctxDo('complete')"><i class="ti ti-check"></i> Toggle complete</div>
+  <div class="pctx-r" id="pctx-pause-row" onclick="pctxDo('pause')"><i class="ti ti-pause"></i> <span id="pctx-pause-lbl">Pause phase</span></div>
   <div class="ctx-sep"></div>
   <div class="pctx-r danger" onclick="pctxDo('delete')"><i class="ti ti-trash"></i> Delete phase</div>
 </div>
@@ -1622,8 +1635,13 @@ tr:hover .i-todo-btn{opacity:1;}
         <input type="hidden" id="td-item" value="">
         <input type="hidden" id="td-item-id" value="">
       </div>
-      <!-- Note -->
-      <textarea class="tm-note-area" id="td-note" placeholder="Describe what you're doing…"></textarea>
+      <!-- Job brief (read-only, shown when a job with notes is selected) -->
+      <div id="td-job-brief-wrap" class="tm-job-brief-wrap" style="display:none;">
+        <div class="tm-job-brief-lbl">Job brief</div>
+        <div id="td-job-brief" class="tm-job-brief"></div>
+      </div>
+      <!-- Paused warning -->
+      <div id="td-pause-warn" class="paused-warn"><i class="ti ti-pause" style="font-size:13px;margin-right:6px;vertical-align:middle;"></i>This job or phase is paused — time cannot be logged against it.</div>
       <!-- Urgent toggle -->
       <div class="tm-urgent-row">
         <label class="tm-urgent-lbl" id="td-urgent-lbl">
@@ -1711,7 +1729,7 @@ tr:hover .i-todo-btn{opacity:1;}
     <div class="tm-ft">
       <button class="tm-btn-cancel" onclick="closeTodoModal()">Cancel</button>
       <button class="tm-btn-delete" id="edit-task-btn" onclick="deleteTodo()">Delete</button>
-      <button class="tm-btn-save" onclick="saveTodo()">
+      <button class="tm-btn-save" id="td-save-btn" onclick="saveTodo()">
         <span id="td-save-lbl">Create To Do</span>
         <i class="ti ti-chevron-down" style="font-size:11px;"></i>
       </button>
@@ -1796,17 +1814,20 @@ function attachCombo(inp,getOptions){
   const show=()=>{
     close();
     const q=(inp.value||'').toLowerCase();
-    const opts=getOptions().filter(o=>!q||o.toLowerCase().includes(q));
+    const raw=getOptions();
+    // Support both string[] and {label,value}[]
+    const opts=raw.map(o=>typeof o==='string'?{label:o,value:o}:o)
+      .filter(o=>!q||o.label.toLowerCase().includes(q)||o.value.toLowerCase().includes(q));
     const r=inp.getBoundingClientRect();
     dd=document.createElement('div');
     dd.className='combo-dd';
     dd.style.cssText=`position:fixed;left:${r.left}px;top:${r.bottom+4}px;width:${Math.max(r.width,220)}px;z-index:1300;`;
     dd.innerHTML=opts.length
-      ?opts.map(o=>`<div class="combo-opt">${o.replace(/</g,'&lt;')}</div>`).join('')
+      ?opts.map(o=>`<div class="combo-opt" data-val="${(o.value).replace(/"/g,'&quot;')}">${o.label.replace(/</g,'&lt;')}</div>`).join('')
       :'<div class="combo-empty">No matches — your typed text will be used as-is</div>';
     dd.querySelectorAll('.combo-opt').forEach(el=>el.addEventListener('mousedown',e=>{
       e.preventDefault();
-      inp.value=el.textContent;
+      inp.value=el.dataset.val||el.textContent;
       close();
       inp.dispatchEvent(new Event('change',{bubbles:true}));
       inp.dispatchEvent(new Event('input',{bubbles:true}));
@@ -1818,11 +1839,17 @@ function attachCombo(inp,getOptions){
   inp.addEventListener('blur',()=>setTimeout(close,150));
 }
 function clientNameOptions(){
-  return[...new Set([...clientsData.map(c=>c.name),...jobs.map(j=>j.company)].filter(Boolean))].sort();
+  const names=[...new Set([...clientsData.map(c=>c.name),...jobs.map(j=>j.company)].filter(Boolean))].sort();
+  return names.map(name=>{
+    const c=clientsData.find(x=>x.name===name);
+    return c?.nickname?{label:`${c.nickname} — ${name}`,value:name}:name;
+  });
 }
 // Collision-proof id minting (Date.now() alone collides within one ms)
 let _uidN=0;
 function uid(prefix){return (prefix||'')+Date.now().toString(36)+(_uidN++).toString(36)+Math.random().toString(36).slice(2,6);}
+// Linkify URLs in display text (never used on editable inputs, only rendered HTML)
+function linkify(t){return (t||'').replace(/https?:\/\/[^\s<>"']+/g,url=>`<a href="${url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${url}</a>`);}
 // ── Global labels (cc_labels) ──
 const LABEL_COLORS=['#ED1E24','#6B7FA3','#7B9E87','#C4956A','#9B59B6','#E67E22','#1ABC9C','#3498DB','#2E7D32','#888888'];
 let globalLabels=JSON.parse(localStorage.getItem('cc_labels')||'null')||[];
@@ -1880,8 +1907,19 @@ function savePeople(){
 }
 let currentPerson='ro';
 const MY_PERSON='ro'; // the logged-in user
-const APP_VERSION='2.3.0';
+const APP_VERSION='2.4.0';
 const CHANGELOG=[
+  {version:'2.4.0',date:'15 Jun 2026',title:'Client nicknames, job status overhaul, pause, dashboard task adding',items:[
+    'URLs in job notes and task notes are now clickable hyperlinks',
+    'Todo task modal: removed per-task notes; job\'s own brief now shows as read-only context when a job is selected',
+    'Clients: add a short name / nickname (e.g. SFF) — appears in dropdowns, client list, and client cards on dashboard',
+    'Approving a quote now automatically moves the job from Quote → Live Job',
+    'New workflow stage: Completed (between Live and Invoiced) — jobs marked Completed appear in the new "To Be Invoiced" tab',
+    'Pause jobs and phases — paused jobs/phases show a badge and block time logging',
+    'Dashboard: "+" button on Your Day and each team member card to add tasks directly',
+    'Dashboard: new Clients section showing active clients with their live jobs',
+    'Jobs list: label filter added; workflow filter includes Completed',
+  ]},
   {version:'2.3.0',date:'12 Jun 2026',title:'Searchable pickers, drag fixes, repeats that actually repeat',items:[
     'Client fields (job settings + new job) are now searchable dropdowns of all clients; add-item gets the same treatment for the item list',
     'Fixed: reordering tasks in the day list now drops exactly where the red line shows (the indicator was being cleared before it was read)',
@@ -2174,7 +2212,9 @@ function renderDashboard(){
     const taskBlocks=ttasks.slice(0,5).map(t=>`<div class="tc-block ${t.done?'done':t.urgent?'urgent':'todo'}">${t.title}${t.hours?' — '+formatHrs(t.hours):''}</div>`).join('');
     const urgCnt=ttodo.filter(t=>t.urgent).length;
     return`<div class="team-card" onclick="viewTeamTodo('${k}')">
-      <div class="tc-head"><div class="tc-av" style="background:${tp.color};">${tp.initials}</div><div><div class="tc-name">${tp.name}</div></div><div class="tc-meta">${formatHrs(todoH+doneH)||'0h'} booked</div></div>
+      <div class="tc-head"><div class="tc-av" style="background:${tp.color};">${tp.initials}</div><div><div class="tc-name">${tp.name}</div></div><div class="tc-meta">${formatHrs(todoH+doneH)||'0h'} booked</div>
+        <button onclick="event.stopPropagation();openTodoModal(null,null,'${k}')" title="Add task for ${tp.name}" style="margin-left:8px;background:transparent;border:1px solid var(--border);border-radius:4px;width:22px;height:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted);font-size:13px;"><i class="ti ti-plus" style="font-size:11px;"></i></button>
+      </div>
       <div class="tc-timeline">${taskBlocks||'<div style="font-size:12px;color:var(--muted);padding:4px 0;">No tasks today</div>'}</div>
       <div class="tc-footer"><div class="tc-stat">Done <span>${formatHrs(doneH)||'0h'}</span></div><div class="tc-stat">To do <span>${formatHrs(todoH)||'0h'}</span></div>${urgCnt?`<div class="tc-stat" style="margin-left:auto;color:var(--red);font-size:11px;">${urgCnt} urgent</div>`:'<div class="tc-stat" style="margin-left:auto;font-size:11px;color:var(--muted);">On track</div>'}</div>
     </div>`;
@@ -2196,6 +2236,27 @@ function renderDashboard(){
   }
   // Over budget alerts
   const alerts=jobs.filter(j=>(j.bPct||0)>=100||((j.hPct||0)>=100)).map(j=>`<div class="alert"><i class="ti ti-alert-triangle" style="color:var(--red);font-size:16px;flex-shrink:0;"></i><div><div class="alert-job">${j.id} ${j.name}</div><div class="alert-detail">${(j.bPct||0)>=100?`Budget ${j.bPct}% used · over sell`:`Hours ${j.hPct}% of plan`}</div></div></div>`).join('');
+  // Client cards — one per client with active jobs
+  const _activeClients=[...new Set(jobs.filter(j=>j.status!=='archived'&&j.status!=='complete').map(j=>j.company).filter(Boolean))];
+  const _clientsHTML=_activeClients.map(co=>{
+    const cl=clientsData.find(c=>c.name===co);
+    const cjobs=jobs.filter(j=>j.company===co&&j.status!=='archived'&&j.status!=='complete');
+    if(!cjobs.length)return'';
+    computeJobStats(cjobs[0]);
+    const initials=(cl?.nickname||(co.match(/\b\w/g)||[co[0]]).join('')).slice(0,3).toUpperCase();
+    const clrIdx=_activeClients.indexOf(co)%10;
+    const clColors=['#6B7FA3','#7B9E87','#C4956A','#9B59B6','#E67E22','#1ABC9C','#3498DB','#E74C3C','#F39C12','#888888'];
+    const clColor=clColors[clrIdx];
+    const jobPills=cjobs.slice(0,4).map(j=>{
+      const wl=j.workflowStatus==='quote'?'Q':j.workflowStatus==='completed'?'✓':j.workflowStatus==='invoiced'?'$':'';
+      return`<span onclick="event.stopPropagation();openJobDetail('${j.id}')" style="display:inline-block;background:var(--off);border:1px solid var(--border);border-radius:3px;padding:2px 7px;font-size:10px;cursor:pointer;white-space:nowrap;margin:2px 2px 0 0;" title="${j.id} ${j.name}">${wl?wl+' ':''}<span style="color:var(--muted);">${j.id}</span> ${j.name.slice(0,18)}${j.name.length>18?'…':''}</span>`;
+    }).join('');
+    const moreCount=cjobs.length>4?`<span style="font-size:11px;color:var(--muted);margin-top:4px;display:block;">+${cjobs.length-4} more</span>`:'';
+    return`<div class="team-card" onclick="navTo('clients')">
+      <div class="tc-head"><div class="tc-av" style="background:${clColor};">${initials}</div><div><div class="tc-name">${cl?.nickname?`${cl.nickname} <span style='font-size:11px;color:var(--muted);font-weight:300;'>${co}</span>`:co}</div></div><div class="tc-meta">${cjobs.length} job${cjobs.length!==1?'s':''}</div></div>
+      <div class="tc-timeline">${jobPills}${moreCount}</div>
+    </div>`;
+  }).filter(Boolean).join('');
   wrap.innerHTML=`
     <div style="margin-bottom:28px;">
       <div class="dash-greeting">${greetStr}, ${p?.name||'Ronan'}.</div>
@@ -2207,9 +2268,10 @@ function renderDashboard(){
       <div class="kpi"><div class="kpi-label">Non-billable</div><div class="kpi-val">${formatHrs(nbillH)||'0h'}</div><div class="kpi-sub">internal & admin</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${nbillPct}%;background:#FF9800;"></div></div></div>
       <div class="kpi"><div class="kpi-label">My tasks today</div><div class="kpi-val">${todayTodo.length}</div><div class="kpi-sub">${urgentCount?urgentCount+' urgent · ':''}${todayDone.length} done</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${todayTasks.length?Math.round(todayDone.length/todayTasks.length*100):0}%;background:var(--red);"></div></div></div>
     </div>
-    <div class="section-label" style="margin-bottom:12px;">Your day</div>
+    <div class="section-label" style="margin-bottom:12px;">Your day <button onclick="openTodoModal(null,null,'${MY_PERSON}')" title="Add task" style="background:transparent;border:1px solid var(--border);border-radius:4px;padding:1px 8px;cursor:pointer;font-size:11px;color:var(--muted);font-family:var(--font);margin-left:8px;vertical-align:middle;">+ Add task</button></div>
     <div class="my-todos" style="margin-bottom:28px;">${todoRows||'<div class="my-todo-item" style="color:var(--muted);font-size:13px;"><i class="ti ti-sun" style="font-size:16px;margin-right:10px;"></i>No tasks scheduled today.</div>'}</div>
     ${teamHTML?`<div class="section-label" style="margin-bottom:14px;">Team · today</div><div class="team-grid">${teamHTML}</div>`:''}
+    ${_clientsHTML?`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Clients</div><div class="team-grid">${_clientsHTML}</div>`:''}
     ${alerts?`<div style="margin-top:28px;" class="section-label" style="margin-bottom:14px;">Over budget</div><div class="alert-list">${alerts}</div>`:''}
   `;
 }
@@ -2229,8 +2291,19 @@ function navTo(v){
 function switchJobsTab(tab){
   document.querySelectorAll('.jsn-tab').forEach(el=>el.classList.toggle('on',el.dataset.tab===tab));
   document.querySelectorAll('.jt-panel').forEach(el=>el.style.display='none');
+  if(tab==='tobeinvoiced'){
+    // Reuse the jobs panel with wf filter set to 'completed'
+    const panel=document.getElementById('jt-jobs');
+    if(panel){panel.style.display='flex';panel.style.flexDirection='column';}
+    const wfSel=document.getElementById('jobs-wf-filter');if(wfSel)wfSel.value='completed';
+    renderJobs();
+    return;
+  }
+  // When switching away from tobeinvoiced, reset the wf filter
+  if(tab==='jobs'){const wfSel=document.getElementById('jobs-wf-filter');if(wfSel&&wfSel.value==='completed')wfSel.value='all';}
   const panel=document.getElementById('jt-'+tab);
   if(panel){panel.style.display='flex';panel.style.flexDirection='column';}
+  if(tab==='jobs')renderJobs();
   if(tab==='time'){initTimeFilters();renderTime();}
   if(tab==='quotes'){initQuotesClientFilter();renderQuotes();}
   if(tab==='invoices'){initInvoicesClientFilter();renderInvoices();}
@@ -3047,16 +3120,28 @@ function updateJobLabel(){
       if(document.getElementById('td-item-id'))document.getElementById('td-item-id').value='';
     }
   }
-  // Pre-fill note from job plan item if note field is empty
-  const itemVal=(document.getElementById('td-item')?.value||'').trim();
-  if(jobId&&itemVal){
-    const j=jobs.find(x=>x.id===jobId);
-    const srcPhases=(jobId===activeJobId&&phases&&phases.length)?phases:(j?.phases||[]);
-    let matchNote='';
-    srcPhases.forEach(ph=>{(ph.items||[]).forEach(it=>{if((it.name||'').trim().toLowerCase()===itemVal.toLowerCase()&&it.note){matchNote=it.note;}});});
-    if(matchNote){
-      const noteInp=document.getElementById('td-note');
-      if(noteInp&&!noteInp.value.trim()){noteInp.value=matchNote;}
+  // Show job brief (read-only) when a job with notes is selected
+  const _jbw=document.getElementById('td-job-brief-wrap');
+  const _jbd=document.getElementById('td-job-brief');
+  const _pw=document.getElementById('td-pause-warn');
+  const _saveBtn=document.getElementById('td-save-btn');
+  if(_jbw&&_jbd){
+    if(jobId){
+      const _jf=jobs.find(x=>x.id===jobId);
+      if(_jf?.notes){_jbw.style.display='';_jbd.innerHTML=linkify(_jf.notes.replace(/</g,'&lt;'));}
+      else{_jbw.style.display='none';_jbd.innerHTML='';}
+      // Paused check: is the job or any containing phase paused?
+      const _itemVal=(document.getElementById('td-item')?.value||'').trim();
+      const _srcPhases=(jobId===activeJobId&&phases&&phases.length)?phases:(_jf?.phases||[]);
+      let _phasePaused=false;
+      if(_itemVal){_srcPhases.forEach(ph=>{if(ph.paused&&ph.items.some(it=>(it.name||'').trim().toLowerCase()===_itemVal.toLowerCase()))_phasePaused=true;});}
+      const _isPaused=(_jf?.paused)||_phasePaused;
+      if(_pw)_pw.style.display=_isPaused?'block':'none';
+      if(_saveBtn)_saveBtn.disabled=_isPaused;
+    } else {
+      _jbw.style.display='none';_jbd.innerHTML='';
+      if(_pw)_pw.style.display='none';
+      if(_saveBtn)_saveBtn.disabled=false;
     }
   }
   // Sync item datalist from the selected job's plan phases
@@ -3280,8 +3365,10 @@ function _resetTodoModal(day){
   const p=people[currentPerson];
   document.getElementById('td-task').value='';
   document.getElementById('td-hours').value='';
-  document.getElementById('td-note').value='';
   document.getElementById('td-item').value='';
+  const _jbw=document.getElementById('td-job-brief-wrap');if(_jbw)_jbw.style.display='none';
+  const _jbd=document.getElementById('td-job-brief');if(_jbd)_jbd.innerHTML='';
+  const _pw=document.getElementById('td-pause-warn');if(_pw)_pw.style.display='none';
   if(document.getElementById('td-item-id'))document.getElementById('td-item-id').value='';
   _setItemPickerLabel('','');
   document.getElementById('td-urgent').checked=false;
@@ -3316,8 +3403,17 @@ function _resetTodoModal(day){
   const repPrev=document.getElementById('rep-preview');if(repPrev)repPrev.textContent='';
   updateJobLabel();
 }
-function openTodoModal(jobId,day){
+function openTodoModal(jobId,day,personOverride){
   _resetTodoModal(day||5);
+  if(personOverride&&people[personOverride]){
+    _todoAssignTo=personOverride;
+    const p=people[personOverride];
+    document.getElementById('td-pav').textContent=p.initials;
+    document.getElementById('td-pav').style.background=p.color;
+    document.getElementById('td-pname').textContent=p.name;
+    const pgl=document.getElementById('td-pav-lg');if(pgl){pgl.textContent=p.initials;pgl.style.background=p.color;}
+    const pnl=document.getElementById('td-pname-lg');if(pnl)pnl.textContent=p.name;
+  }
   populateTodoJobSelect(jobId);
   if(jobId){const sel=document.getElementById('td-job');for(let o of sel.options){if(o.value===jobId){o.selected=true;break;}}}
   updateJobLabel();
@@ -3399,7 +3495,6 @@ function editTask(t,day){
   editingTaskId=t.id;editingDay=day;
   document.getElementById('td-task').value=t.title||'';
   document.getElementById('td-hours').value=t.hours?formatHrs(t.hours):'';
-  document.getElementById('td-note').value=t.note||'';
   document.getElementById('td-urgent').checked=!!t.urgent;
   if(t.urgent)document.getElementById('td-urgent-lbl').classList.add('on');
   document.getElementById('td-personal').checked=!!t.personal;
@@ -3770,7 +3865,6 @@ function saveTodo(){
   const job=jobs.find(j=>j.id===jobId);
   const item=document.getElementById('td-item').value;
   const itemId=document.getElementById('td-item-id')?.value||null;
-  const note=document.getElementById('td-note').value.trim();
   const dayNum=parseInt(document.getElementById('td-day').value)||5;
   const urgent=document.getElementById('td-urgent').checked;
   const personal=document.getElementById('td-personal').checked;
@@ -3784,10 +3878,10 @@ function saveTodo(){
     if(idx!==-1){
       if(targetPerson!==currentPerson){
         const task=arr.splice(idx,1)[0];
-        Object.assign(task,{title:name,hours,item,itemId:itemId||task.itemId,note,urgent,personal,job:job?`${job.id} ${job.name}`:''});
+        Object.assign(task,{title:name,hours,item,itemId:itemId||task.itemId,urgent,personal,job:job?`${job.id} ${job.name}`:''});
         if(!wd[dayNum])wd[dayNum]=[];wd[dayNum].push(task);
       } else {
-        Object.assign(arr[idx],{title:name,hours,item,itemId:itemId||arr[idx].itemId,note,urgent,personal,job:job?`${job.id} ${job.name}`:''});
+        Object.assign(arr[idx],{title:name,hours,item,itemId:itemId||arr[idx].itemId,urgent,personal,job:job?`${job.id} ${job.name}`:''});
       }
       if(jobId)logActivity(jobId,MY_PERSON,'task_edit',`Updated task <strong>${name}</strong>`);
       // Repeat turned on while editing: spawn future occurrences (once)
@@ -3799,7 +3893,10 @@ function saveTodo(){
       }
     }
   } else {
-    const task={id:uid('t'),title:name,job:job?`${job.id} ${job.name}`:'',jobId:jobId||null,item,itemId:itemId||null,hours,note,urgent,personal,repeat:document.getElementById('td-repeat-config')?.classList.contains('on')||false};
+    // Paused guard
+    const _gj=jobs.find(x=>x.id===jobId);
+    if(_gj?.paused){toast('This job is paused — time cannot be logged against it','warn');return;}
+    const task={id:uid('t'),title:name,job:job?`${job.id} ${job.name}`:'',jobId:jobId||null,item,itemId:itemId||null,hours,urgent,personal,repeat:document.getElementById('td-repeat-config')?.classList.contains('on')||false};
     if(!wd[dayNum])wd[dayNum]=[];
     wd[dayNum].push(task);
     if(jobId)logActivity(jobId,targetPerson,'task_add',`Added task <strong>${name}</strong>${item?` (${item})`:''} — ${DAY_NAMES[dayNum-1]}`);
@@ -3828,14 +3925,22 @@ function renderJobs(){
   const tbody=document.getElementById('jobs-tbody');tbody.innerHTML='';
   const statusFilter=(document.getElementById('jobs-status-filter')?.value)||'all';
   const wfFilter=(document.getElementById('jobs-wf-filter')?.value)||'all';
+  const labelFilter=(document.getElementById('jobs-label-filter')?.value)||'';
   const q=_jobSearch;
   let shown=0;
   const hideArchived=document.getElementById('jobs-hide-archived')?.checked;
+  // Populate label dropdown
+  const labelSel=document.getElementById('jobs-label-filter');
+  if(labelSel&&globalLabels.length){
+    const cur=labelSel.value;
+    labelSel.innerHTML='<option value="">All labels</option>'+globalLabels.map(l=>`<option value="${l.name}"${cur===l.name?' selected':''}>${l.name}</option>`).join('');
+  }
   jobs.forEach(j=>{
     if(hideArchived&&j.status==='archived')return;
     if(statusFilter!=='all'&&j.status!==statusFilter)return;
     const jWf=j.workflowStatus||'live';
     if(wfFilter!=='all'&&jWf!==wfFilter)return;
+    if(labelFilter&&!(j.labels||[]).includes(labelFilter))return;
     if(q&&!(`${j.id} ${j.name} ${j.company}`).toLowerCase().includes(q))return;
     shown++;
     const sc=j.status==='inplay'?'sp-ip':j.status==='new'?'sp-new':'sp-co';
@@ -3846,18 +3951,19 @@ function renderJobs(){
     const hCol=hPct>=100?'var(--red)':hPct>=80?'#FF9800':'#4CAF50';
     const billDot=j.billable===false?'<span style="width:6px;height:6px;border-radius:50%;background:#CBD5E1;display:inline-block;margin-right:5px;" title="Non-billable"></span>':'<span style="width:6px;height:6px;border-radius:50%;background:#4CAF50;display:inline-block;margin-right:5px;" title="Billable"></span>';
     const labels=(j.labels||[]).slice(0,3).map(l=>{const c=labelColor(l);return`<span class="job-label-pip" style="background:${c}18;color:${c};border:1px solid ${c}44;">${l}</span>`;}).join('');
-    const notePrev=j.notes?`<div class="job-notes-preview" title="${j.notes.replace(/"/g,'&quot;')}">${j.notes}</div>`:'';
+    const notePrev=j.notes?`<div class="job-notes-preview" title="${j.notes.replace(/"/g,'&quot;')}">${linkify(j.notes.replace(/</g,'&lt;'))}</div>`:'';
+    const pausedBadge=j.paused?`<span class="paused-badge" style="margin-left:6px;"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>`:'';
     const jPhases=j.id===activeJobId?phases:[];
     const totalItems=jPhases.reduce((s,p)=>s+p.items.length,0);
     const doneItems=jPhases.reduce((s,p)=>s+p.items.filter(i=>i.status==='complete').length,0);
     const progHTML=totalItems>0?`<div class="job-prog-row"><div class="job-prog-bar"><div class="job-prog-fill" style="width:${Math.round(doneItems/totalItems*100)}%;background:#4CAF50;"></div></div><span>${doneItems}/${totalItems}</span></div>`:'';
-    const wfLabel=jWf==='quote'?'Quote':jWf==='invoiced'?'Invoiced':'Live job';
-    const wfCls=jWf==='quote'?'wf-quote':jWf==='invoiced'?'wf-invoiced':'wf-live';
+    const wfLabel=jWf==='quote'?'Quote':jWf==='completed'?'Completed':jWf==='invoiced'?'Invoiced':'Live job';
+    const wfCls=jWf==='quote'?'wf-quote':jWf==='completed'?'wf-completed':jWf==='invoiced'?'wf-invoiced':'wf-live';
     const tr=document.createElement('tr');tr.onclick=()=>openJobDetail(j.id);
     tr.innerHTML=`
       <td style="width:32px;"><input type="checkbox" class="job-cb" data-id="${j.id}" onclick="event.stopPropagation();updateBulkBar()" style="accent-color:var(--red);cursor:pointer;"/></td>
       <td style="min-width:220px;">
-        <div class="job-num-name"><span class="job-num">${j.id}</span><span class="job-name">${j.name}</span></div>
+        <div class="job-num-name"><span class="job-num">${j.id}</span><span class="job-name">${j.name}</span>${pausedBadge}</div>
         ${notePrev}
       </td>
       <td><span class="job-co">${billDot}${j.company}</span></td>
@@ -3930,13 +4036,13 @@ function bulkLabelJobs(){
 function openJobDetail(id){
   activeJobId=id;const j=jobs.find(x=>x.id===id);
   const isNew=!j.budget||j.budget==='$0';
-  const wfLabel=j.workflowStatus==='quote'?'Quote':j.workflowStatus==='invoiced'?'Invoiced':'Live job';
-  const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
+  const wfLabel=j.workflowStatus==='quote'?'Quote':j.workflowStatus==='completed'?'Completed':j.workflowStatus==='invoiced'?'Invoiced':'Live job';
+  const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='completed'?'wf-completed':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
   // Default lead from client record if not set on job
   if(!j.lead){const cl=clientsData.find(c=>c.name===j.company);if(cl&&cl.lead)j.lead=cl.lead;}
   const leadPerson=j.lead&&people[j.lead]?people[j.lead]:null;
   const leadHtml=leadPerson?`<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;"><div style="width:16px;height:16px;border-radius:50%;background:${leadPerson.color};display:inline-flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:600;">${leadPerson.initials}</div> ${leadPerson.name}</span> · `:'';
-  document.getElementById('d-meta-line').innerHTML=`${j.id} · ${j.company} · ${leadHtml}${j.billable?'Billable':'Non-billable'} &nbsp;<span class="wf-badge ${wfCls}" style="cursor:pointer;user-select:none;" title="Click to advance workflow stage" onclick="advanceWorkflow('${id}')">${wfLabel} <i class="ti ti-arrow-right" style="font-size:9px;vertical-align:middle;"></i></span>`;
+  document.getElementById('d-meta-line').innerHTML=`${j.id} · ${j.company} · ${leadHtml}${j.billable?'Billable':'Non-billable'} &nbsp;<span class="wf-badge ${wfCls}" style="cursor:pointer;user-select:none;" title="Click to advance workflow stage" onclick="advanceWorkflow('${id}')">${wfLabel} <i class="ti ti-arrow-right" style="font-size:9px;vertical-align:middle;"></i></span>`+(j.paused?' &nbsp;<span class="paused-badge"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>':'');
   document.getElementById('d-title-text').textContent=j.name;
   document.getElementById('d-hours-sell').textContent='';
   activeLabels=j.labels?[...j.labels]:[];
@@ -4082,6 +4188,7 @@ function openJobSettingsModal(){
           <select id="jsett-wf">
             <option value="quote" ${j.workflowStatus==='quote'?'selected':''}>Quote</option>
             <option value="live" ${j.workflowStatus==='live'?'selected':''}>Live job</option>
+            <option value="completed" ${j.workflowStatus==='completed'?'selected':''}>Completed</option>
             <option value="invoiced" ${j.workflowStatus==='invoiced'?'selected':''}>Invoiced</option>
           </select>
         </div>
@@ -4092,6 +4199,13 @@ function openJobSettingsModal(){
           Billable job
         </label>
         <span style="font-size:11px;color:var(--muted);">Billable jobs track sell value against planned budget</span>
+      </div>
+      <div style="padding:12px 16px;background:${j.paused?'#FFF3E0':'var(--off)'};border:1px solid ${j.paused?'#FFE0B2':'var(--border)'};border-radius:2px;display:flex;align-items:center;gap:10px;margin-top:8px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:400;">
+          <input type="checkbox" id="jsett-paused" ${j.paused?'checked':''} style="cursor:pointer;accent-color:#E65100;width:15px;height:15px;">
+          Pause job
+        </label>
+        <span style="font-size:11px;color:var(--muted);">Paused jobs cannot have time logged against them</span>
       </div>
     </div>
     <div class="modal-ft">
@@ -4109,6 +4223,7 @@ function saveJobSettings(){
   j.company=(document.getElementById('jsett-company')?.value||j.company).trim();
   j.contact=(document.getElementById('jsett-contact')?.value||'').trim();
   j.billable=document.getElementById('jsett-billable')?.checked;
+  j.paused=document.getElementById('jsett-paused')?.checked||false;
   j.workflowStatus=document.getElementById('jsett-wf')?.value||j.workflowStatus;
   j.lead=document.getElementById('jsett-lead')?.value||null;
   saveData();
@@ -4628,9 +4743,17 @@ function cycleQuoteStatus(jobId){
 }
 function setQuoteStatus(jobId,status){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
-  j.quoteStatus=status;saveData();renderQuoteTab();
+  j.quoteStatus=status;
+  if(status==='approved'&&(j.workflowStatus||'quote')==='quote'){
+    j.workflowStatus='live';
+    logActivity(jobId,MY_PERSON,'workflow_change','Job moved to <strong>Live Job</strong> on quote approval');
+    toast('Quote approved — job moved to Live Job 🚀','success');
+  } else {
+    toast(status==='approved'?'Quote approved 🎉':'Quote declined',status==='approved'?'success':'warn');
+  }
   logActivity(jobId,MY_PERSON,'quote_status',`Quote marked <strong>${status}</strong>`);
-  toast(status==='approved'?'Quote approved 🎉':'Quote declined',status==='approved'?'success':'warn');
+  saveData();renderQuoteTab();
+  if(status==='approved')openJobDetail(jobId);
 }
 function sendQuote(jobId){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
@@ -4724,7 +4847,8 @@ function renderPhases(){
     const el=document.createElement('div');el.className='phase';el.id='pw_'+ph.id;
     const sell=pSell(ph);const hrs=pHrs(ph);const cnt=ph.items.length;
     const statusIcon=ph.status==='complete'?'<i class="ti ti-circle-check" style="color:#4CAF50;font-size:13px;"></i>':'<i class="ti ti-circle-dot" style="color:#ED1E24;font-size:13px;"></i>';
-    el.innerHTML=`<div class="phase-head" onclick="togglePhase('${ph.id}')"><i class="ti ti-chevron-down ph-chv"></i><span class="ph-n">${ph.name}</span><span class="ph-cnt">${cnt} item${cnt!==1?'s':''}</span><div class="ph-inf"><span class="ph-meta">${hrs} · ${sell}</span>${statusIcon}<i class="ti ti-dots ph-mb" onclick="showPctx(event,'${ph.id}')"></i></div></div><table class="items-t" id="it_${ph.id}"><thead><tr><th style="width:22px;"></th><th>Item</th><th style="width:120px;text-align:right;" title="Logged (done todos) / Planned hours">Hours</th><th style="width:75px;text-align:right;">Rate</th><th style="width:140px;text-align:right;">Sell</th><th style="width:90px;text-align:right;">Status</th><th style="width:26px;"></th></tr></thead><tbody id="ib_${ph.id}"></tbody></table><div class="plan-row-actions"><div class="add-i-row" onclick="showAddItemForm('${ph.id}')"><i class="ti ti-plus" style="font-size:11px"></i> Add item</div><div class="add-i-row" style="border-left:1px solid var(--border);" onclick="showAddExpenseInline('${ph.id}')"><i class="ti ti-receipt" style="font-size:11px"></i> Add expense</div></div>`;
+    const pausedTag=ph.paused?`<span class="paused-badge" style="margin-right:4px;"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>`:'';
+    el.innerHTML=`<div class="phase-head" onclick="togglePhase('${ph.id}')" style="${ph.paused?'opacity:.65;':''}"><i class="ti ti-chevron-down ph-chv"></i><span class="ph-n">${ph.name}</span>${pausedTag}<span class="ph-cnt">${cnt} item${cnt!==1?'s':''}</span><div class="ph-inf"><span class="ph-meta">${hrs} · ${sell}</span>${statusIcon}<i class="ti ti-dots ph-mb" onclick="showPctx(event,'${ph.id}')"></i></div></div><table class="items-t" id="it_${ph.id}"><thead><tr><th style="width:22px;"></th><th>Item</th><th style="width:120px;text-align:right;" title="Logged (done todos) / Planned hours">Hours</th><th style="width:75px;text-align:right;">Rate</th><th style="width:140px;text-align:right;">Sell</th><th style="width:90px;text-align:right;">Status</th><th style="width:26px;"></th></tr></thead><tbody id="ib_${ph.id}"></tbody></table><div class="plan-row-actions"><div class="add-i-row" onclick="showAddItemForm('${ph.id}')"><i class="ti ti-plus" style="font-size:11px"></i> Add item</div><div class="add-i-row" style="border-left:1px solid var(--border);" onclick="showAddExpenseInline('${ph.id}')"><i class="ti ti-receipt" style="font-size:11px"></i> Add expense</div></div>`;
     c.appendChild(el);renderItems(ph.id);
   });
 }
@@ -4800,7 +4924,7 @@ function renderItems(phId){
     if(linkedTaskNotes.length>0){
       taskNotesHTML=`<div class="item-task-notes">`+linkedTaskNotes.map(tn=>{
         const p=people[tn.person];
-        return`<div class="item-task-note"><span class="itn-av" style="background:${p?.color||'#999'}">${p?.initials||'?'}</span><div class="itn-body"><div class="itn-title">${tn.title}</div><div class="itn-text">${tn.note}</div></div></div>`;
+        return`<div class="item-task-note"><span class="itn-av" style="background:${p?.color||'#999'}">${p?.initials||'?'}</span><div class="itn-body"><div class="itn-title">${tn.title}</div><div class="itn-text">${linkify((tn.note||'').replace(/</g,'&lt;'))}</div></div></div>`;
       }).join('')+`</div>`;
     }
     nr.innerHTML=`<td colspan="${COLS}"><div class="item-note-wrap">
@@ -4981,16 +5105,28 @@ function ctxDo(a){
         if(taskInp&&!taskInp.value)taskInp.value=item.name;
         // Select the item in the new picker
         selectItemFromPicker(item.name,item.id,item.note||'');
-        // Pre-fill note
-        const noteInp=document.getElementById('td-note');
-        if(noteInp&&item.note&&!noteInp.value)noteInp.value=item.note;
       }
     },80);
   }
   else if(a==='note'){toggleItemNote(ctxTarget.itemId);}
 }
-function showPctx(e,phId){e.stopPropagation();pctxTarget=phId;const m=document.getElementById('pctx');m.style.cssText=`left:${Math.min(e.clientX,window.innerWidth-200)}px;top:${Math.min(e.clientY,window.innerHeight-170)}px;`;m.classList.add('on');}
-function pctxDo(a){document.getElementById('pctx').classList.remove('on');if(!pctxTarget)return;if(a==='delete'){ccConfirm('Delete this phase and all its items?',()=>{phases=phases.filter(p=>p.id!==pctxTarget);renderPhases();saveData();},'Delete',true);}else if(a==='additem')showAddItemForm(pctxTarget);else if(a==='rename'){const ph=phases.find(p=>p.id===pctxTarget);const n=prompt('Rename phase:',ph.name);if(n?.trim()){ph.name=n.trim();renderPhases();saveData();}}else if(a==='complete'){const ph=phases.find(p=>p.id===pctxTarget);ph.status=ph.status==='complete'?'open':'complete';renderPhases();saveData();}}
+function showPctx(e,phId){
+  e.stopPropagation();pctxTarget=phId;
+  const ph=phases.find(p=>p.id===phId);
+  const lbl=document.getElementById('pctx-pause-lbl');
+  if(lbl)lbl.textContent=ph?.paused?'Resume phase':'Pause phase';
+  const m=document.getElementById('pctx');
+  m.style.cssText=`left:${Math.min(e.clientX,window.innerWidth-200)}px;top:${Math.min(e.clientY,window.innerHeight-200)}px;`;
+  m.classList.add('on');
+}
+function pctxDo(a){
+  document.getElementById('pctx').classList.remove('on');if(!pctxTarget)return;
+  if(a==='delete'){ccConfirm('Delete this phase and all its items?',()=>{phases=phases.filter(p=>p.id!==pctxTarget);renderPhases();saveData();},'Delete',true);}
+  else if(a==='additem')showAddItemForm(pctxTarget);
+  else if(a==='rename'){const ph=phases.find(p=>p.id===pctxTarget);const n=prompt('Rename phase:',ph.name);if(n?.trim()){ph.name=n.trim();renderPhases();saveData();}}
+  else if(a==='complete'){const ph=phases.find(p=>p.id===pctxTarget);ph.status=ph.status==='complete'?'open':'complete';renderPhases();saveData();}
+  else if(a==='pause'){const ph=phases.find(p=>p.id===pctxTarget);ph.paused=!ph.paused;renderPhases();saveData();toast(ph.paused?'Phase paused — time logging disabled':'Phase resumed','info');}
+}
 function toggleExp(){const w=document.getElementById('exp-wrap');w.classList.toggle('collapsed');const ch=w.querySelector('.exp-chv');if(ch)ch.style.transform=w.classList.contains('collapsed')?'rotate(-90deg)':'';}
 function showAddExpenseForm(){
   const _jid=activeJobId;
@@ -5143,14 +5279,14 @@ function selectWfChoice(btn){
 // ── Workflow advance in job detail ────────────────────────────────────────────
 function advanceWorkflow(jobId){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
-  const seq=['quote','live','invoiced'];
+  const seq=['quote','live','completed','invoiced'];
   const cur=j.workflowStatus||'quote';
   const curIdx=seq.indexOf(cur);
   if(curIdx===seq.length-1){toast('Already at final stage (Invoiced)','warn');return;}
   const next=seq[curIdx+1];
-  const labels={quote:'Quote',live:'Live job',invoiced:'Invoiced'};
-  const emojis={live:'🚀',invoiced:'📄'};
-  const descs={live:'Client has approved — work is now in progress.',invoiced:'Work is complete — ready to raise an invoice.'};
+  const labels={quote:'Quote',live:'Live job',completed:'Completed',invoiced:'Invoiced'};
+  const emojis={live:'🚀',completed:'✅',invoiced:'📄'};
+  const descs={live:'Client has approved — work is now in progress.',completed:'Work is done — ready to raise an invoice.',invoiced:'Invoice has been sent to the client.'};
   document.getElementById('wf-confirm-modal')?.remove();
   const m=document.createElement('div');m.className='modal-bg on';m.id='wf-confirm-modal';
   m.innerHTML=`<div class="modal" style="max-width:400px;text-align:center;">
@@ -5171,7 +5307,7 @@ function advanceWorkflow(jobId){
 function confirmAdvanceWorkflow(jobId,next){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
   j.workflowStatus=next;
-  const labels={quote:'Quote',live:'Live job',invoiced:'Invoiced'};
+  const labels={quote:'Quote',live:'Live job',completed:'Completed',invoiced:'Invoiced'};
   logActivity(jobId,MY_PERSON,'workflow_change',`Moved to <strong>${labels[next]}</strong>`);
   saveData();
   document.getElementById('wf-confirm-modal')?.remove();
@@ -5354,7 +5490,7 @@ function renderClients(){
   const fromJobs=[...new Set(jobs.map(j=>j.company).filter(Boolean))];
   fromJobs.forEach(co=>{
     if(!clientsData.find(c=>c.name===co)){
-      clientsData.push({id:'cl'+Date.now()+Math.random().toString(36).slice(2),name:co,contact:'',email:'',phone:'',notes:''});
+      clientsData.push({id:uid('cl'),name:co,nickname:'',contact:'',email:'',phone:'',notes:''});
       saveClientsData();
     }
   });
@@ -5374,7 +5510,7 @@ function renderClients(){
     <div class="clients-grid" ${clientsData.length===0?'style="display:none;"':''}>
       ${filtered.map(c=>`
         <div class="client-card-full" onclick="openClientDetail('${c.id}')">
-          <div class="ccf-name">${c.name}</div>
+          <div class="ccf-name">${c.nickname?`<span style="font-weight:500;">${c.nickname}</span> <span style="font-size:12px;color:var(--muted);font-weight:300;">— ${c.name}</span>`:c.name}</div>
           <div class="ccf-contact">${c.contact||'<span style="color:#bbb;">No contact added</span>'}</div>
           <div class="ccf-meta">
             <span><strong>${jobCount(c.name)}</strong> jobs</span>
@@ -5401,6 +5537,10 @@ function openClientDetail(id){
   document.getElementById('cd-view-meta').textContent=`${clientJobs.length} job${clientJobs.length!==1?'s':''} · ${clientJobs.filter(j=>j.status!=='complete').length} active`;
   // Info strip: editable fields
   document.getElementById('cd-info-strip').innerHTML=`
+    <div style="flex:1;min-width:120px;">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Short name</div>
+      <input class="form-inp" style="width:100%;font-size:12px;padding:4px 8px;" value="${c.nickname||''}" placeholder="e.g. SFF" oninput="updateClientField('${c.id}','nickname',this.value)">
+    </div>
     <div style="flex:1;min-width:160px;">
       <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Contact</div>
       <input class="form-inp" style="width:100%;font-size:12px;padding:4px 8px;" value="${c.contact||''}" placeholder="Contact name" oninput="updateClientField('${c.id}','contact',this.value)">
@@ -5429,8 +5569,8 @@ function openClientDetail(id){
   const jobsList=document.getElementById('cd-jobs-list');
   jobsList.innerHTML=clientJobs.length===0?`<div style="font-size:13px;color:var(--muted);padding:24px 0;">No jobs yet for this client.</div>`
     :clientJobs.map(j=>{
-      const wfLabel=j.workflowStatus==='quote'?'Quote':j.workflowStatus==='invoiced'?'Invoiced':'Live job';
-      const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
+      const wfLabel=j.workflowStatus==='quote'?'Quote':j.workflowStatus==='completed'?'Completed':j.workflowStatus==='invoiced'?'Invoiced':'Live job';
+      const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='completed'?'wf-completed':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
       const hPct=j.hPct||0;
       return`<div class="cd-job-row" onclick="openJobDetail('${j.id}')">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
@@ -5476,7 +5616,10 @@ function openNewClientModal(){
     <div class="modal">
       <div class="modal-hd"><span class="modal-hd-title">Add new client</span><button class="modal-x" onclick="this.closest('.modal-bg').remove()"><i class="ti ti-x"></i></button></div>
       <div class="modal-bd">
-        <div class="field"><label>Company name</label><input id="nc-name" class="form-inp" placeholder="e.g. Acme Ltd" style="width:100%;"></div>
+        <div class="field-row">
+          <div class="field" style="flex:2;"><label>Company name</label><input id="nc-name" class="form-inp" placeholder="e.g. Silver Fern Farms" style="width:100%;"></div>
+          <div class="field" style="flex:1;"><label>Short name / nickname</label><input id="nc-nickname" class="form-inp" placeholder="e.g. SFF" style="width:100%;"></div>
+        </div>
         <div class="field-row">
           <div class="field"><label>Contact name</label><input id="nc-contact" class="form-inp" placeholder="Full name" style="width:100%;"></div>
           <div class="field"><label>Email</label><input id="nc-email" class="form-inp" placeholder="email@co.nz" style="width:100%;"></div>
@@ -5491,7 +5634,7 @@ function openNewClientModal(){
 
 function saveNewClient(btn){
   const name=document.getElementById('nc-name').value.trim();if(!name)return;
-  clientsData.push({id:uid('cl'),name,contact:document.getElementById('nc-contact').value.trim(),email:document.getElementById('nc-email').value.trim(),phone:document.getElementById('nc-phone').value.trim(),notes:''});
+  clientsData.push({id:uid('cl'),name,nickname:document.getElementById('nc-nickname')?.value.trim()||'',contact:document.getElementById('nc-contact').value.trim(),email:document.getElementById('nc-email').value.trim(),phone:document.getElementById('nc-phone').value.trim(),notes:''});
   saveClientsData();
   btn.closest('.modal-bg').remove();
   renderClients();
@@ -6486,8 +6629,8 @@ function _richJobCard(j,expanded){
   computeJobStats(j);
   const pct=j._bPct||0;const over=pct>100;
   const hPct=j._hPct||0;const hOver=hPct>100;
-  const wfLabel=j.workflowStatus==='quote'?'Quote':j.workflowStatus==='invoiced'?'Invoiced':'Live';
-  const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
+  const wfLabel=j.workflowStatus==='quote'?'Quote':j.workflowStatus==='completed'?'Completed':j.workflowStatus==='invoiced'?'Invoiced':'Live';
+  const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='completed'?'wf-completed':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
   const memberAvatars=(j.members||['ro']).map(k=>{const p=people[k];return p?`<span class="bc-av" style="background:${p.color};">${p.initials}</span>`:''}).join('');
   const labels=(j.labels||[]).slice(0,3).map(l=>`<span class="bc-lbl">${l}</span>`).join('');
   // Active tasks this week across all people
@@ -6542,7 +6685,7 @@ function renderClientBoard(b,body){
   boardJobs.forEach(j=>{
     let k='inprogress';
     if(j.workflowStatus==='quote')k='briefed';
-    else if(j.workflowStatus==='invoiced')k='complete';
+    else if(j.workflowStatus==='completed'||j.workflowStatus==='invoiced')k='complete';
     else if(j.status==='complete')k='complete';
     buckets[k].push(j);
   });
@@ -6631,8 +6774,8 @@ function buildCustomCard(b,col,card){
     const j=jobs.find(x=>x.id===card.jobRef);if(!j)return'';
     computeJobStats(j);
     const pct=j._bPct||0;const over=pct>100;const hPct=j._hPct||0;const hOver=hPct>100;
-    const wfLabel=j.workflowStatus==='quote'?'Quote':j.workflowStatus==='invoiced'?'Invoiced':'Live';
-    const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
+    const wfLabel=j.workflowStatus==='quote'?'Quote':j.workflowStatus==='completed'?'Completed':j.workflowStatus==='invoiced'?'Invoiced':'Live';
+    const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='completed'?'wf-completed':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
     const memberAvatars=(j.members||['ro']).map(k=>{const p=people[k];return p?`<span class="bc-av" style="background:${p.color};">${p.initials}</span>`:''}).join('');
     return`<div class="bdet-card bc-rich" id="bc-${card.id}" data-card-id="${card.id}" ${dragAttrs} style="${over?'border-left:3px solid var(--red);':''}" onclick="toggleBoardCard('${card.id}','${j.id}')">${del}
       <div class="bc-name">${j.name}</div>
@@ -6675,8 +6818,8 @@ function buildCustomCard(b,col,card){
     const clientJobs=jobs.filter(j=>j.company===card.clientRef&&j.status!=='complete').map(j=>{computeJobStats(j);return j;});
     const jobRows=clientJobs.map(j=>{
       const pct=j._bPct||0;const over=pct>100;const hPct=j._hPct||0;
-      const wfLabel=j.workflowStatus==='quote'?'QUOTE':j.workflowStatus==='invoiced'?'INVOICED':'LIVE';
-      const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
+      const wfLabel=j.workflowStatus==='quote'?'QUOTE':j.workflowStatus==='completed'?'COMPLETED':j.workflowStatus==='invoiced'?'INVOICED':'LIVE';
+      const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='completed'?'wf-completed':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
       const memberAvatars=(j.members||['ro']).map(k=>{const p=people[k];return p?`<span class="bc-av" style="background:${p.color};">${p.initials}</span>`:''}).join('');
       return`<div class="bdet-card bc-rich" style="margin:0 0 8px;${over?'border-left:3px solid var(--red);':''}" onclick="openJobDetail('${j.id}')">
         <div class="bc-name">${j.name}</div>

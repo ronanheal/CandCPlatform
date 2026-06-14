@@ -91,9 +91,23 @@ The platform's job is twofold: a **rich visual read on the whole business** (whe
 
 **Fixed since this was written (v2.3.0):** searchable client/item dropdowns, drop-at-indicator reordering, live divider gating, live calendar reflow on resize, repeat-on-edit, repeat icons, delete button placement, board card dedupe + live-view labelling.
 
+**Shipped in v2.4.0 (15 Jun 2026):** linkified URLs in notes, todo notes → job brief read-only, client nicknames, quote approval auto-advances to Live, Completed workflow stage + To Be Invoiced tab, pause jobs/phases, dashboard "+" task buttons, client widget on dashboard, label filter in jobs list.
+
 | Phase | Items | Why first |
 |---|---|---|
-| Next | Undo toasts · rollover prompt · workspace export/import | Daily-use trust + data safety, all cheap |
+| **Next** | **Quoting & invoicing overhaul** — invoice from Job Plan / T&E / Quote picker; multi-quote select; quote versioning; deposit invoicing | Ronan's explicit top priority |
+| Then | Undo toasts · rollover prompt · workspace export/import | Daily-use trust + data safety |
 | Then | Uninvoiced-work report · per-item progress bars · utilisation report | The money answers |
-| Then | Notifications bell · quote versioning · deposit invoicing | Workflow depth |
-| Later | Sync backend · client profitability · saved reports | Multi-user era |
+| Then | Notifications bell · saved filter presets | Workflow depth |
+| Later | Sync backend · client profitability · full filter set | Multi-user era |
+
+### Quoting & invoicing overhaul — target design
+
+**Invoice creation flow** (matching agency workflow):
+- "Create invoice from…" picker with three paths:
+  - **Job Plan** — invoice selected items/phases at their planned sell value
+  - **Time & Expenses** — invoice from logged hours × rate + expenses (what's actually been done)
+  - **Quote** — invoice directly from an approved quote (dropdown when multiple quotes exist per job)
+- Multi-quote support: a job can hold multiple quote versions; the invoice picker shows all approved/pending quotes with their totals
+- Quote versioning: revise a sent quote without losing the original (v1, v2 with a total diff shown)
+- Deposit / split invoicing: 50% on approval, balance on delivery
