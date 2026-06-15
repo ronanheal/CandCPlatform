@@ -1,0 +1,39 @@
+name: Streamtime Sync
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # every 30 minutes
+  workflow_dispatch:          # allow manual trigger from GitHub UI
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout main (for the sync script)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Run sync script
+        run: python3 scripts/streamtime_sync.py
+        env:
+          STREAMTIME_API_KEY: ${{ secrets.STREAMTIME_API_KEY }}
+
+      - name: Push data files to streamtime-data branch
+        run: |
+          # Check out the streamtime-data branch into a separate worktree
+          git worktree add ../data-branch origin/streamtime-data
+
+          # Copy the freshly generated JSON files into the worktree
+          cp streamtime-data/*.json ../data-branch/
+
+          cd ../data-branch
+          git config user.name "streamtime-sync[bot]"
+          git config user.email "noreply@github.com"
+          git add *.json
+          git diff --staged --quiet || git commit -m "sync: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push origin HEAD:streamtime-data
