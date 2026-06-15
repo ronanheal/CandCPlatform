@@ -2160,9 +2160,11 @@ function _getStWeekEntries(personKey,offset){
   const mon=new Date();const dow=(mon.getDay()+6)%7;
   mon.setDate(mon.getDate()-dow+(offset*7));mon.setHours(0,0,0,0);
   const dateToDay={};
+  const pad=n=>String(n).padStart(2,'0');
   for(let i=0;i<5;i++){
     const d=new Date(mon);d.setDate(mon.getDate()+i);
-    dateToDay[d.toISOString().slice(0,10)]=i+1;
+    const key=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    dateToDay[key]=i+1;
   }
   const result={};
   stLoggedTimes.forEach(lt=>{
