@@ -2143,6 +2143,11 @@ loadData();
 
 // ── Streamtime data ──────────────────────────────────────────────────────────
 const ST_BASE='https://raw.githubusercontent.com/ronanheal/CandCPlatform/streamtime-data';
+let stLoggedTimes=[];
+let stInvoices=[];
+let stQuotes=[];
+let stUsersById={};   // userId → {name,initials,color,key}
+let _stIdToJobNum={}; // Streamtime internal job ID → job number string
 function _stFmtH(mins){return mins>=60?`${Math.floor(mins/60)}h${mins%60?mins%60+'m':''}`:mins>0?mins+'m':'0h';}
 function _mapStJob(j){
   const statusMap={'In Play':'inplay','Complete':'complete','Paused':'paused','Archived':'archived'};
@@ -2175,36 +2180,64 @@ function _mapStJob(j){
     _sellUsed:sellUsed,_plannedSell:plannedSell,_expUsed:expUsed,
     _hPct:hPct,_bPct:bPct,
     _loggedH:_stFmtH(loggedMins),_plannedH:plannedMins>0?_stFmtH(plannedMins):'—',
+    _stInvoiced:Math.round(j.totalIssuedInvoicesExTax||0),
+    _stPaid:Math.round(j.totalPaidInvoicesExTax||0),
+    _stAwaitingPayment:Math.round(j.totalAwaitingPaymentInvoicesExTax||0),
   };
 }
 function _mapStCompany(c){
   return{id:'st-'+c.id,name:c.name,nickname:'',contact:'',email:'',phone:'',notes:''};
 }
 async function initStreamtime(){
-  const jobsView=document.getElementById('view-jobs');
-  if(jobsView){const tb=document.getElementById('jobs-tbody');if(tb)tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted);font-size:13px;"><i class="ti ti-loader" style="font-size:18px;display:block;margin:0 auto 8px;"></i>Loading jobs from Streamtime…</td></tr>`;}
+  const tb=document.getElementById('jobs-tbody');
+  if(tb)tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted);font-size:13px;"><i class="ti ti-loader" style="font-size:18px;display:block;margin:0 auto 8px;"></i>Loading from Streamtime…</td></tr>`;
   try{
     const _v='?v='+Date.now();
-    const [jobsRes,coRes]=await Promise.all([
+    const [jobsRes,coRes,ltRes,invRes,qtRes,usersRes]=await Promise.all([
       fetch(`${ST_BASE}/jobs.json${_v}`),
       fetch(`${ST_BASE}/companies.json${_v}`),
+      fetch(`${ST_BASE}/logged_times.json${_v}`),
+      fetch(`${ST_BASE}/invoices.json${_v}`),
+      fetch(`${ST_BASE}/quotes.json${_v}`),
+      fetch(`${ST_BASE}/users.json${_v}`),
     ]);
+    // Users — build lookup map first (needed for time entries)
+    if(usersRes.ok){
+      const rawU=await usersRes.json();
+      const COLS=['#ED1E24','#6B7FA3','#7B9E87','#C4956A','#9B59B6','#3498DB','#E67E22','#1ABC9C','#E91E63','#00BCD4'];
+      rawU.forEach((u,i)=>{
+        const name=[u.firstName,u.lastName].filter(Boolean).join(' ')||u.displayName||'Unknown';
+        const initials=((u.firstName||'?')[0]+(u.lastName||'?')[0]).toUpperCase();
+        stUsersById[u.id]={id:u.id,name,initials,color:COLS[i%COLS.length],key:'st_'+u.id,email:u.email||''};
+      });
+    }
+    // Jobs
     if(jobsRes.ok){
       const raw=await jobsRes.json();
       jobs=raw.map(_mapStJob);
-      jobs.forEach(j=>(j.labels||[]).forEach(l=>addGlobalLabel(l)));
-    }
-    if(coRes.ok){
-      const rawCo=await coRes.json();
-      // Merge: keep any locally-enriched clients, add new ones from Streamtime
-      rawCo.forEach(c=>{
-        if(!clientsData.find(x=>x.name===c.name))clientsData.push(_mapStCompany(c));
+      jobs.forEach(j=>{
+        (j.labels||[]).forEach(l=>addGlobalLabel(l));
+        if(j._stId)_stIdToJobNum[j._stId]=j.id;
       });
     }
+    // Companies / clients
+    if(coRes.ok){
+      const rawCo=await coRes.json();
+      rawCo.forEach(c=>{if(!clientsData.find(x=>x.name===c.name))clientsData.push(_mapStCompany(c));});
+    }
+    // Logged times
+    if(ltRes.ok)stLoggedTimes=await ltRes.json();
+    // Invoices
+    if(invRes.ok)stInvoices=await invRes.json();
+    // Quotes
+    if(qtRes.ok)stQuotes=await qtRes.json();
   }catch(e){console.warn('Streamtime fetch failed:',e);}
-  // Re-render any views that are currently open
+  // Re-render open views
   if(typeof renderJobs==='function')renderJobs();
-  if(typeof renderClients==='function'&&document.getElementById('view-jobs')?.classList.contains('active'))renderClients();
+  if(typeof renderTime==='function'&&document.querySelector('#jt-time')?.style.display!=='none'){initTimeFilters();renderTime();}
+  if(typeof renderInvoices==='function'&&document.querySelector('#jt-invoices')?.style.display!=='none')renderInvoices();
+  if(typeof renderQuotes==='function'&&document.querySelector('#jt-quotes')?.style.display!=='none')renderQuotes();
+  if(typeof renderClients==='function'&&document.querySelector('#view-jobs')?.classList.contains('active'))renderClients();
 }
 
 // Seed the global label list from any labels already on jobs
@@ -6122,18 +6155,21 @@ function toggleTimeCollapse(){
 }
 let _lastTimeTasks=null;
 function initTimeFilters(){
-  // Populate person filter
   const pSel=document.getElementById('tf-person');
-  if(pSel&&pSel.options.length<=1){
-    Object.keys(people).forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=people[k].name;pSel.appendChild(o);});
+  if(pSel){
+    // Use Streamtime users if available, otherwise fall back to local people
+    const stUserList=Object.values(stUsersById).sort((a,b)=>a.name.localeCompare(b.name));
+    if(stUserList.length){
+      pSel.innerHTML='<option value="all">All people</option>'+stUserList.map(u=>`<option value="${u.key}">${u.name}</option>`).join('');
+    } else if(pSel.options.length<=1){
+      Object.keys(people).forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=people[k].name;pSel.appendChild(o);});
+    }
   }
-  // Populate client filter
   const cSel=document.getElementById('tf-client');
   if(cSel){
     const clients=[...new Set(jobs.map(j=>j.company))].sort();
     cSel.innerHTML='<option value="all">All clients</option>'+clients.map(c=>`<option value="${c}">${c}</option>`).join('');
   }
-  // Populate job filter
   const jSel=document.getElementById('tf-job');
   if(jSel){
     jSel.innerHTML='<option value="all">All jobs</option>'+jobs.map(j=>`<option value="${j.id}">[${j.id}] ${j.name}</option>`).join('');
@@ -6141,7 +6177,24 @@ function initTimeFilters(){
 }
 
 function _getTimeEntries(){
-  // Flatten all todo tasks across all people / all weeks
+  // Use Streamtime logged times if available
+  if(stLoggedTimes.length){
+    return stLoggedTimes.map(lt=>{
+      const u=stUsersById[lt.userId]||{name:'Unknown',initials:'?',color:'#999',key:'st_'+lt.userId};
+      const jobNum=_stIdToJobNum[lt.job?.id]||null;
+      return{
+        personKey:u.key,personName:u.name,personColor:u.color,personInitials:u.initials,
+        date:new Date((lt.date||'').slice(0,10)+'T12:00:00'),
+        title:lt.itemName||lt.job?.name||'',
+        hours:(lt.minutes||0)/60,
+        jobId:jobNum,
+        done:(lt.loggedTimeStatus?.name||'Logged')==='Logged',
+        billable:lt.isBillable!==false,
+        note:'',
+      };
+    });
+  }
+  // Fallback: flatten todo tasks from local planner
   const entries=[];
   Object.keys(todoData).forEach(personKey=>{
     const p=people[personKey];if(!p)return;
@@ -6152,15 +6205,13 @@ function _getTimeEntries(){
         const tasks=personWeeks[weekKey][dayNum]||[];
         const taskDate=new Date(weekMon);taskDate.setDate(weekMon.getDate()+(dayNum-1));
         tasks.forEach(t=>{
-          // Resolve jobId from t.jobId or parse from t.job string
           let jId=t.jobId||null;
           if(!jId&&t.job){const m=t.job.match(/^(\d+)/);if(m)jId=m[1];}
           entries.push({
             personKey,personName:p.name,personColor:p.color,personInitials:p.initials,
             weekKey,dayNum,date:new Date(taskDate),
             title:t.title||'',hours:(typeof t.hours==='number'?t.hours:parseHrsInput(t.hours||'0'))||0,
-            jobId:jId,done:!!t.done,billable:taskIsBillable(t),
-            note:t.note||''
+            jobId:jId,done:!!t.done,billable:taskIsBillable(t),note:t.note||''
           });
         });
       });
@@ -6260,7 +6311,7 @@ function renderTime(){
     if(!(pKey in window._timeCollapsedGroups))window._timeCollapsedGroups[pKey]=true;
   });
   Object.keys(byPerson).forEach(pKey=>{
-    const p=people[pKey]||{name:pKey,color:'#999',initials:'?'};
+    const p=people[pKey]||Object.values(stUsersById).find(u=>u.key===pKey)||{name:pKey,color:'#999',initials:'?'};
     const pEntries=byPerson[pKey];
     const pTotal=pEntries.reduce((s,e)=>s+e.hours,0);
     const pBill=pEntries.filter(e=>e.done&&e.billable).reduce((s,e)=>s+e.hours,0);
@@ -6311,73 +6362,67 @@ function renderQuotes(q){
   const search=(q||document.getElementById('quotes-search-inp')?.value||'').toLowerCase();
   const statusFilter=document.getElementById('quotes-status')?.value||'all';
   const clientFilter=document.getElementById('quotes-client')?.value||'all';
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fmtDate(iso){if(!iso)return'—';const d=new Date(iso);return`${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;}
 
-  // Populate client filter
+  // Populate client filter from Streamtime quotes
   const cSel=document.getElementById('quotes-client');
-  if(cSel&&cSel.options.length<=1){
-    const clients=[...new Set(jobs.map(j=>j.company))].sort();
-    clients.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;cSel.appendChild(o);});
+  if(cSel&&stQuotes.length){
+    const clients=[...new Set(stQuotes.map(qt=>qt.company?.name||''))].filter(Boolean).sort();
+    cSel.innerHTML='<option value="all">All clients</option>'+clients.map(c=>`<option value="${c}">${c}</option>`).join('');
   }
-
-  // All jobs with any budget/phases are "quotes"
-  let quoteJobs=jobs.filter(j=>j.budgetTotal&&j.budgetTotal!=='$0');
-  if(search)quoteJobs=quoteJobs.filter(j=>(`${j.id} ${j.name} ${j.company}`).toLowerCase().includes(search));
-  if(clientFilter!=='all')quoteJobs=quoteJobs.filter(j=>j.company===clientFilter);
-  // For status: use job.quoteStatus or derive from job.invStatus / status
-  if(statusFilter!=='all')quoteJobs=quoteJobs.filter(j=>(j.quoteStatus||'draft')===statusFilter);
-
-  document.getElementById('quotes-count').textContent=`${quoteJobs.length} quote${quoteJobs.length!==1?'s':''}`;
 
   const list=document.getElementById('quotes-list');
   if(!list)return;
-  if(!quoteJobs.length){list.innerHTML='<div style="padding:40px 28px;font-size:13px;color:var(--muted);">No quotes match the current filters.</div>';return;}
 
-  list.innerHTML=quoteJobs.map(j=>{
-    const total=parseInt((j.budgetTotal||'0').replace(/[$,]/g,'')||0);
-    const status=j.quoteStatus||'draft';
-    const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const now=new Date();
-    const dateStr=`${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
-    // Phases from SFF_PHASES if active job, else placeholder
-    const isActive=j.id===activeJobId;
-    const phData=isActive?phases:SFF_PHASES;
-    const phRows=isActive?phData.map(ph=>{
-      const phTotal=ph.items.reduce((s,i)=>s+parseInt((i.total||'0').replace(/[$,]/g,'')||0),0);
-      const itemRows=ph.items.map(i=>`<tr><td style="padding-left:32px;">${i.name}</td><td>${i.hours}</td><td>${i.rate}</td><td style="text-align:right;">${i.total}</td><td style="text-align:right;"><span class="inv-pill ${i.status==='complete'?'paid':'draft'}">${i.status==='complete'?'Complete':'Open'}</span></td></tr>`).join('');
-      return`<tr class="qinv-ph-row"><td colspan="5"><strong>${ph.name}</strong> — ${ph.items.length} items</td></tr>${itemRows}`;
-    }).join(''):`<tr><td colspan="5" style="color:var(--muted);font-size:12px;padding:12px 20px;">Open job to see full quote breakdown.</td></tr>`;
+  // Use Streamtime quote records if available
+  let quotes=stQuotes.length?[...stQuotes]:[];
+  if(search)quotes=quotes.filter(qt=>(`${qt.id} ${qt.number||''} ${qt.name||''} ${qt.company?.name||''} ${qt.jobName||''}`).toLowerCase().includes(search));
+  if(clientFilter!=='all')quotes=quotes.filter(qt=>(qt.company?.name||'')===clientFilter);
+  // Derive status: sent if sentDate present
+  const derivedStatus=qt=>qt.sentDate?'sent':'draft';
+  if(statusFilter!=='all')quotes=quotes.filter(qt=>derivedStatus(qt)===statusFilter);
+  quotes.sort((a,b)=>b.id-a.id);
 
-    return`<div class="qinv-card" id="qcard-${j.id}">
-      <div class="qinv-card-head" onclick="toggleQinvDetail('qcard-${j.id}')">
-        <span class="qinv-card-num">${j.id}</span>
-        <span class="qinv-card-name">${j.name}</span>
-        <span class="qinv-card-co">${j.company}</span>
-        <span class="qinv-card-val">$${total.toLocaleString()}</span>
-        <span class="qinv-card-status"><span class="inv-pill ${status}">${status.charAt(0).toUpperCase()+status.slice(1)}</span></span>
-        <span class="qinv-card-date">${dateStr}</span>
-        <i class="ti ti-chevron-down" style="font-size:12px;color:var(--muted);transition:transform .15s;" id="qchv-${j.id}"></i>
+  document.getElementById('quotes-count').textContent=`${quotes.length} quote${quotes.length!==1?'s':''}`;
+
+  if(!quotes.length){
+    const msg=stQuotes.length===0?'Quote data syncing — check back shortly.':'No quotes match the current filters.';
+    list.innerHTML=`<div style="padding:40px 28px;font-size:13px;color:var(--muted);">${msg}</div>`;
+    return;
+  }
+
+  // Match quote to job to get budget value
+  const jobByStId={};jobs.forEach(j=>{if(j._stId)jobByStId[j._stId]=j;});
+
+  list.innerHTML=quotes.map(qt=>{
+    const status=derivedStatus(qt);
+    const job=jobByStId[qt.jobId];
+    const budget=job?job._plannedSell:null;
+    return`<div class="qinv-card" id="qcard-${qt.id}">
+      <div class="qinv-card-head" onclick="toggleQinvDetail('qcard-${qt.id}')">
+        <span class="qinv-card-num">${qt.number||qt.id}</span>
+        <span class="qinv-card-name">${qt.name||qt.jobName||'—'}</span>
+        <span class="qinv-card-co">${qt.company?.name||'—'}</span>
+        <span class="qinv-card-val">${budget!=null?'$'+budget.toLocaleString():'—'}</span>
+        <span class="qinv-card-status"><span class="inv-pill ${status}">${status==='sent'?'Sent':'Draft'}</span></span>
+        <span class="qinv-card-date">${fmtDate(qt.sentDate)}</span>
+        <i class="ti ti-chevron-down" style="font-size:12px;color:var(--muted);transition:transform .15s;" id="qchv-${qt.id}"></i>
       </div>
-      <div class="qinv-detail" id="qdet-${j.id}">
-        <table class="qinv-detail-table">
-          <thead><tr><th>Item</th><th>Hours</th><th>Rate</th><th style="text-align:right;">Total</th><th style="text-align:right;">Status</th></tr></thead>
-          <tbody>${phRows}</tbody>
-          <tfoot><tr class="qinv-total-row"><td><strong>Total</strong></td><td></td><td></td><td style="text-align:right;"><strong>$${total.toLocaleString()}</strong></td><td></td></tr></tfoot>
-        </table>
+      <div class="qinv-detail" id="qdet-${qt.id}">
+        <div style="padding:14px 20px;font-size:12px;color:var(--muted);display:flex;gap:24px;flex-wrap:wrap;">
+          <span><strong>Quote ID:</strong> ${qt.id}</span>
+          <span><strong>Job:</strong> ${qt.jobNumber?'#'+qt.jobNumber+' ':''} ${qt.jobName||'—'}</span>
+          <span><strong>Sent by:</strong> ${qt.sentByUser?.name||'—'}</span>
+          <span><strong>Sent:</strong> ${fmtDate(qt.sentDate)}</span>
+          ${budget!=null?`<span><strong>Budget:</strong> $${budget.toLocaleString()} ex GST</span>`:''}
+        </div>
         <div class="qinv-actions">
-          <button class="d-action" onclick="openJobDetail('${j.id}')"><i class="ti ti-external-link" style="font-size:12px;"></i> Open job</button>
-          <select class="filter-btn" style="font-size:11px;" onchange="saveQuoteStatus('${j.id}',this.value)">
-            <option value="draft" ${(j.quoteStatus||'draft')==='draft'?'selected':''}>Draft</option>
-            <option value="sent" ${j.quoteStatus==='sent'?'selected':''}>Sent to client</option>
-            <option value="approved" ${j.quoteStatus==='approved'?'selected':''}>Approved</option>
-          </select>
+          ${job?`<button class="d-action" onclick="openJobDetail('${job.id}')"><i class="ti ti-external-link" style="font-size:12px;"></i> Open job</button>`:''}
         </div>
       </div>
     </div>`;
   }).join('');
-}
-function saveQuoteStatus(jobId,val){
-  const j=jobs.find(x=>x.id===jobId);if(!j)return;
-  j.quoteStatus=val;saveData();renderQuotes();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -6426,75 +6471,76 @@ function renderInvoices(){
   function fmtDate(iso){if(!iso)return'—';const d=new Date(iso);return`${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;}
 
   if(_invMode==='tobeinvoiced'){
-    // Show completed jobs awaiting invoice
+    // Complete jobs awaiting invoicing — still derived from jobs array
     const tbiJobs=jobs.filter(j=>j.workflowStatus==='completed');
     document.getElementById('invoices-count').textContent=`${tbiJobs.length} job${tbiJobs.length!==1?'s':''} to invoice`;
     document.getElementById('invoices-total').textContent='';
     if(!tbiJobs.length){
-      list.innerHTML=emptyStateHTML('ti-circle-check','Nothing to invoice','Jobs marked Completed will appear here, ready to raise an invoice against.','','');
+      list.innerHTML=emptyStateHTML('ti-circle-check','Nothing to invoice','Jobs marked Complete in Streamtime will appear here.','','');
       return;
     }
     list.innerHTML=`<table class="inv-table"><thead><tr>
-      <th class="inv-th">Company</th><th class="inv-th">Job</th><th class="inv-th">Budget</th><th class="inv-th">Invoice status</th><th class="inv-th" style="text-align:right;"></th>
-    </tr></thead><tbody>${tbiJobs.map(j=>{
-      const hasInv=!!j.invNum;
-      const statusHtml=hasInv?_invStatusPill(j):'<span class="inv-pill draft" style="opacity:.5;">Not created</span>';
-      return`<tr class="inv-tr">
-        <td class="inv-td" style="color:var(--muted);font-size:12px;">${j.company}</td>
-        <td class="inv-td"><span style="font-size:11px;color:var(--muted);margin-right:6px;">${j.id}</span>${j.name}</td>
-        <td class="inv-td" style="font-variant-numeric:tabular-nums;">${j.budgetTotal||j.budget||'—'}</td>
-        <td class="inv-td">${statusHtml}</td>
-        <td class="inv-td" style="text-align:right;white-space:nowrap;">
-          <button class="d-action primary" style="font-size:11px;padding:4px 10px;" onclick="openInvoiceForJob('${j.id}')"><i class="ti ti-file-invoice" style="font-size:11px;"></i> ${hasInv?'View':'Create'} invoice</button>
-          ${hasInv?`<button class="inv-ctx-btn" onclick="showInvCtx(event,'${j.id}')"><i class="ti ti-dots-vertical"></i></button>`:''}
-        </td>
-      </tr>`;
-    }).join('')}</tbody></table>`;
+      <th class="inv-th">Company</th><th class="inv-th">Job</th><th class="inv-th">Logged ex GST</th><th class="inv-th">Invoiced ex GST</th><th class="inv-th">Status</th>
+    </tr></thead><tbody>${tbiJobs.map(j=>`<tr class="inv-tr">
+      <td class="inv-td" style="color:var(--muted);font-size:12px;">${j.company}</td>
+      <td class="inv-td"><span style="font-size:11px;color:var(--muted);margin-right:6px;">${j.id}</span>${j.name}</td>
+      <td class="inv-td" style="font-variant-numeric:tabular-nums;">$${(j._sellUsed||0).toLocaleString()}</td>
+      <td class="inv-td" style="font-variant-numeric:tabular-nums;">${j._stInvoiced?'$'+j._stInvoiced.toLocaleString():'—'}</td>
+      <td class="inv-td"><span class="wf-badge wf-completed">Complete</span></td>
+    </tr>`).join('')}</tbody></table>`;
     return;
   }
 
-  // All Invoices mode — table of invoiced jobs
+  // All Invoices — from Streamtime stInvoices
   const search=(document.getElementById('invoices-search-inp')?.value||'').toLowerCase();
   const clientFilter=document.getElementById('invoices-client')?.value||'all';
-  let invJobs=jobs.filter(j=>j.invNum);
-  if(search)invJobs=invJobs.filter(j=>(`${j.invNum} ${j.id} ${j.name} ${j.company}`).toLowerCase().includes(search));
-  if(clientFilter!=='all')invJobs=invJobs.filter(j=>j.company===clientFilter);
-  // Sort: newest first (by invNum desc)
-  invJobs=invJobs.slice().sort((a,b)=>(b.invNum||0)-(a.invNum||0));
 
-  const totalEx=invJobs.reduce((s,j)=>s+(j.invTotal||parseInt((j.budgetTotal||'0').replace(/[$,]/g,''))||0),0);
-  const paidTotal=invJobs.filter(j=>j.invStatus==='paid').reduce((s,j)=>s+(j.invTotal||parseInt((j.budgetTotal||'0').replace(/[$,]/g,''))||0),0);
-  document.getElementById('invoices-count').textContent=`${invJobs.length} invoice${invJobs.length!==1?'s':''}`;
+  // Build a job lookup for amounts (keyed by Streamtime internal job ID)
+  const jobByStId={};jobs.forEach(j=>{if(j._stId)jobByStId[j._stId]=j;});
+
+  let inv=stInvoices.length?[...stInvoices]:[];
+  if(search)inv=inv.filter(i=>(`${i.id} ${i.jobNumber||''} ${i.jobName||''} ${i.company?.name||''}`).toLowerCase().includes(search));
+  if(clientFilter!=='all')inv=inv.filter(i=>(i.company?.name||'')=== clientFilter);
+  inv.sort((a,b)=>b.id-a.id);
+
+  // Populate client filter dropdown
+  const cSel=document.getElementById('invoices-client');
+  if(cSel&&stInvoices.length){
+    const clients=[...new Set(stInvoices.map(i=>i.company?.name||''))].filter(Boolean).sort();
+    cSel.innerHTML='<option value="all">All clients</option>'+clients.map(c=>`<option value="${c}">${c}</option>`).join('');
+  }
+
+  // Totals from jobs data (more reliable than invoice search view)
+  const totalIssuedEx=jobs.reduce((s,j)=>s+(j._stInvoiced||0),0);
+  const totalPaidEx=jobs.reduce((s,j)=>s+(j._stPaid||0),0);
+  document.getElementById('invoices-count').textContent=`${inv.length} invoice${inv.length!==1?'s':''}`;
   const totEl=document.getElementById('invoices-total');
-  if(totEl)totEl.innerHTML=invJobs.length?`$${Math.round(totalEx*1.15).toLocaleString()} total &nbsp;·&nbsp; <span style="color:#2E7D32;">$${Math.round(paidTotal*1.15).toLocaleString()} paid</span>`:'';
+  if(totEl)totEl.innerHTML=`$${Math.round(totalIssuedEx*1.15).toLocaleString()} issued &nbsp;·&nbsp; <span style="color:#2E7D32;">$${Math.round(totalPaidEx*1.15).toLocaleString()} paid</span>`;
 
-  if(!invJobs.length){
-    list.innerHTML=emptyStateHTML('ti-file-invoice','No invoices yet','Invoices appear here once created from a job. Switch to "To Be Invoiced" to see what\'s ready to bill.','','');
+  if(!inv.length){
+    const msg=stInvoices.length===0?'Invoice data syncing — check back shortly.':'No invoices match the current filters.';
+    list.innerHTML=emptyStateHTML('ti-file-invoice','No invoices',msg,'','');
     return;
   }
   list.innerHTML=`<table class="inv-table"><thead><tr>
     <th class="inv-th">Company</th>
     <th class="inv-th">Inv #</th>
     <th class="inv-th">Job</th>
-    <th class="inv-th">Issue date</th>
-    <th class="inv-th">Due date</th>
+    <th class="inv-th">Sent date</th>
     <th class="inv-th">Status</th>
-    <th class="inv-th" style="text-align:right;">Amount inc GST</th>
-    <th class="inv-th" style="width:32px;"></th>
-  </tr></thead><tbody>${invJobs.map(j=>{
-    const exGst=j.invTotal||parseInt((j.budgetTotal||'0').replace(/[$,]/g,''))||0;
-    const incGst=Math.round(exGst*1.15);
-    const issueDate=j.invIssueDate||new Date().toISOString().slice(0,10);
-    const dueDate=j.invDueDate||(()=>{const d=new Date(issueDate);d.setDate(d.getDate()+30);return d.toISOString().slice(0,10);})();
+    <th class="inv-th" style="text-align:right;">Job invoiced inc GST</th>
+  </tr></thead><tbody>${inv.map(i=>{
+    const sent=i.sentDate||null;
+    const status=sent?'<span class="inv-pill sent">Sent</span>':'<span class="inv-pill draft">Draft</span>';
+    const job=jobByStId[i.jobId];
+    const jobInvoiced=job?Math.round((job._stInvoiced||0)*1.15):null;
     return`<tr class="inv-tr">
-      <td class="inv-td" style="color:var(--muted);font-size:12px;">${j.company}</td>
-      <td class="inv-td" style="font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;">INV-${j.invNum}</td>
-      <td class="inv-td"><span style="font-size:11px;color:var(--muted);margin-right:4px;">${j.id}</span>${j.name}</td>
-      <td class="inv-td" style="font-size:12px;color:var(--muted);">${fmtDate(issueDate)}</td>
-      <td class="inv-td" style="font-size:12px;${j.invStatus!=='paid'&&dueDate<new Date().toISOString().slice(0,10)?'color:#C62828;font-weight:500;':'color:var(--muted);'}">${fmtDate(dueDate)}</td>
-      <td class="inv-td">${_invStatusPill(j)}</td>
-      <td class="inv-td" style="text-align:right;font-family:var(--serif);font-size:14px;font-variant-numeric:tabular-nums;">$${incGst.toLocaleString()}</td>
-      <td class="inv-td" style="padding-left:4px;"><button class="inv-ctx-btn" onclick="showInvCtx(event,'${j.id}')"><i class="ti ti-dots-vertical"></i></button></td>
+      <td class="inv-td" style="color:var(--muted);font-size:12px;">${i.company?.name||'—'}</td>
+      <td class="inv-td" style="font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;">${i.id}</td>
+      <td class="inv-td"><span style="font-size:11px;color:var(--muted);margin-right:4px;">${i.jobNumber||''}</span>${i.jobName||'—'}</td>
+      <td class="inv-td" style="font-size:12px;color:var(--muted);">${fmtDate(sent)}</td>
+      <td class="inv-td">${status}</td>
+      <td class="inv-td" style="text-align:right;font-family:var(--serif);font-size:14px;font-variant-numeric:tabular-nums;">${jobInvoiced!=null?'$'+jobInvoiced.toLocaleString():'—'}</td>
     </tr>`;
   }).join('')}</tbody></table>`;
 }

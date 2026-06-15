@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """
 Streamtime API sync script.
-Pulls all data from the Streamtime API and writes JSON files to ./streamtime-data/.
-Run via GitHub Actions on a cron schedule; requires STREAMTIME_API_KEY env var.
+Pulls ALL data from the Streamtime API (live + archived) and writes JSON files
+to ./streamtime-data/. Phases and items are fetched for every job using a
+thread pool so the full pull completes in ~5 minutes.
+Requires STREAMTIME_API_KEY env var. Run via GitHub Actions on a cron schedule.
 """
 
 import json
@@ -10,10 +12,13 @@ import os
 import time
 import urllib.request
 import urllib.error
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 
 API_BASE = "https://api.streamtime.net/v1"
+# Use the Streamtime subdomain for endpoints that require it
+ST_SUBDOMAIN = "https://contentco.app.streamtime.net/api/v1"
 API_KEY = os.environ["STREAMTIME_API_KEY"]
 OUT_DIR = Path("streamtime-data")
 OUT_DIR.mkdir(exist_ok=True)
@@ -23,24 +28,30 @@ HEADERS = {
     "Content-Type": "application/json",
 }
 
+CONCURRENCY = 10   # parallel requests for per-job detail fetches
+RETRY_DELAY = 2    # seconds between retries
+
 errors = []
 
 
-def get(path):
-    req = urllib.request.Request(f"{API_BASE}{path}", headers=HEADERS)
-    for attempt in range(2):
+def get(path, base=API_BASE):
+    req = urllib.request.Request(f"{base}{path}", headers=HEADERS)
+    for attempt in range(3):
         try:
             with urllib.request.urlopen(req, timeout=30) as resp:
                 return json.loads(resp.read())
         except urllib.error.HTTPError as e:
-            if attempt == 0:
-                time.sleep(2)
+            if e.code == 429:
+                time.sleep(10)
                 continue
-            errors.append({"resource": path, "error": str(e)})
+            if attempt < 2:
+                time.sleep(RETRY_DELAY)
+                continue
+            errors.append({"resource": path, "error": f"HTTP {e.code}"})
             return None
         except Exception as e:
-            if attempt == 0:
-                time.sleep(2)
+            if attempt < 2:
+                time.sleep(RETRY_DELAY)
                 continue
             errors.append({"resource": path, "error": str(e)})
             return None
@@ -64,26 +75,31 @@ def search(view_id, query="", additional_data=None):
             headers=HEADERS,
             method="POST",
         )
-        for attempt in range(2):
+        result = None
+        for attempt in range(3):
             try:
                 with urllib.request.urlopen(req, timeout=60) as resp:
                     result = json.loads(resp.read())
                 break
             except urllib.error.HTTPError as e:
-                if attempt == 0:
-                    time.sleep(2)
+                if e.code == 429:
+                    time.sleep(10)
                     continue
-                errors.append({"resource": f"search?search_view={view_id}", "error": str(e)})
+                if attempt < 2:
+                    time.sleep(RETRY_DELAY)
+                    continue
+                errors.append({"resource": f"search?search_view={view_id}", "error": f"HTTP {e.code}"})
                 return all_records
             except Exception as e:
-                if attempt == 0:
-                    time.sleep(2)
+                if attempt < 2:
+                    time.sleep(RETRY_DELAY)
                     continue
                 errors.append({"resource": f"search?search_view={view_id}", "error": str(e)})
                 return all_records
 
+        if result is None:
+            break
         raw = result.get("searchResults", [])
-        # Some views return a dict keyed by ID rather than a list
         page = list(raw.values()) if isinstance(raw, dict) else raw
         all_records.extend(page)
         print(f"  view={view_id} offset={offset} got={len(page)} total={len(all_records)}")
@@ -94,6 +110,25 @@ def search(view_id, query="", additional_data=None):
     return all_records
 
 
+def fetch_job_detail(job):
+    """Fetch phases and items for a single job and attach them."""
+    jid = job["id"]
+    phases = get(f"/jobs/{jid}/job_phases", base=ST_SUBDOMAIN) or []
+    items = get(f"/jobs/{jid}/job_items", base=ST_SUBDOMAIN) or []
+    # Nest items under their phase
+    phase_map = {p["id"]: {**p, "items": []} for p in phases}
+    loose_items = []
+    for item in items:
+        pid = item.get("jobPhaseId")
+        if pid and pid in phase_map:
+            phase_map[pid]["items"].append(item)
+        else:
+            loose_items.append(item)
+    job["phases"] = list(phase_map.values())
+    job["looseItems"] = loose_items
+    return job
+
+
 def save(filename, data):
     path = OUT_DIR / filename
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2))
@@ -102,7 +137,8 @@ def save(filename, data):
     return count
 
 
-print("Fetching simple endpoints...")
+# ── Simple reference endpoints ────────────────────────────────────────────────
+print("Fetching reference endpoints...")
 organisation = get("/organisation")
 users = get("/users")
 roles = get("/roles")
@@ -115,20 +151,39 @@ save("roles.json", roles or [])
 save("branches.json", branches or [])
 save("rate_cards.json", rate_cards or [])
 
-print("\nFetching search views...")
-# view 7 = jobs, enriched with company data
-jobs = search(7, additional_data=["company"])
-# view 8 = logged times
+# ── All jobs — live + archived ────────────────────────────────────────────────
+print("\nFetching all jobs (live + archived)...")
+ALL_STATUSES = 'job_status in ["In Play","Complete","Paused","Archived"]'
+jobs = search(7, query=ALL_STATUSES, additional_data=["company"])
+print(f"  {len(jobs)} total jobs fetched")
+
+# ── Per-job phases and items (parallel) ──────────────────────────────────────
+print(f"\nFetching phases + items for all {len(jobs)} jobs ({CONCURRENCY} concurrent)...")
+job_map = {j["id"]: j for j in jobs}
+done = 0
+with ThreadPoolExecutor(max_workers=CONCURRENCY) as pool:
+    futures = {pool.submit(fetch_job_detail, j): j["id"] for j in jobs}
+    for future in as_completed(futures):
+        try:
+            updated = future.result()
+            job_map[updated["id"]] = updated
+        except Exception as e:
+            errors.append({"resource": f"job/{futures[future]}", "error": str(e)})
+        done += 1
+        if done % 100 == 0 or done == len(jobs):
+            print(f"  phases/items: {done}/{len(jobs)} done")
+
+jobs = list(job_map.values())
+
+# ── Other search views ────────────────────────────────────────────────────────
+print("\nFetching other data...")
 logged_times = search(8)
-# view 10 = invoices
 invoices = search(10)
-# view 11 = quotes
 quotes = search(11)
-# view 12 = companies
 companies = search(12)
-# view 13 = contacts
 contacts = search(13)
 
+# ── Save everything ───────────────────────────────────────────────────────────
 counts = {
     "organisation": 1 if organisation else 0,
     "users": save("users.json", users or []),
@@ -152,4 +207,4 @@ meta = {
 print(f"\nDone. Synced at {meta['last_synced']}")
 print(f"Record counts: {counts}")
 if errors:
-    print(f"Errors: {errors}")
+    print(f"Errors ({len(errors)}): {errors[:5]}")
