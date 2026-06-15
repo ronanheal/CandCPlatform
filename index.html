@@ -1210,7 +1210,7 @@ tr:hover .i-todo-btn{opacity:1;}
               </button>
               <button class="wbtn" id="wbtn-next"><i class="ti ti-chevron-right" style="font-size:13px;"></i></button>
             </div>
-            <div class="todo-summary" style="margin-left:16px;">To do: 3h30m &nbsp;·&nbsp; Done: 5h45m</div>
+            <div class="todo-summary" style="margin-left:16px;position:relative;cursor:default;" onmouseenter="showSumTip(this)" onmouseleave="hideSumTip(this)">To do: 3h30m &nbsp;·&nbsp; Done: 5h45m<div class="todo-sum-tip" id="todo-sum-tip" style="display:none;position:absolute;bottom:calc(100%+10px);left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;border-radius:8px;padding:14px 18px;white-space:nowrap;z-index:200;min-width:260px;box-shadow:0 4px 16px rgba(0,0,0,.25);font-size:12px;pointer-events:none;"></div></div>
             <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
               <!-- View toggle: List vs Calendar+Drawer -->
               <div class="todo-view-toggle" id="todo-view-toggle">
@@ -1271,6 +1271,7 @@ tr:hover .i-todo-btn{opacity:1;}
               <tbody id="jobs-tbody"></tbody>
             </table>
           </div>
+          <div id="jobs-footer-bar" style="display:flex;align-items:center;gap:8px;padding:10px 20px 10px 28px;border-top:3px solid var(--ink);background:var(--white);flex-shrink:0;min-height:40px;"></div>
           <div id="bulk-bar" style="display:none;position:sticky;bottom:16px;margin:0 auto;width:fit-content;background:var(--ink);color:#fff;border-radius:6px;padding:8px 14px;box-shadow:0 4px 16px rgba(0,0,0,.25);align-items:center;gap:10px;z-index:50;">
             <span id="bulk-count" style="font-size:12px;font-weight:500;margin-right:4px;">0 selected</span>
             <button class="bulk-btn" onclick="bulkLabelJobs()"><i class="ti ti-tag" style="font-size:12px;"></i> Label</button>
@@ -2388,6 +2389,8 @@ async function initStreamtime(){
   if(typeof renderInvoices==='function'&&document.querySelector('#jt-invoices')?.style.display!=='none')renderInvoices();
   if(typeof renderQuotes==='function'&&document.querySelector('#jt-quotes')?.style.display!=='none')renderQuotes();
   if(typeof renderClients==='function'&&document.querySelector('#view-jobs')?.classList.contains('active'))renderClients();
+  if(typeof renderTodo==='function'&&!document.getElementById('view-todo')?.classList.contains('hidden'))renderTodo();
+  if(typeof renderReporting==='function'&&document.getElementById('view-reporting')&&!document.getElementById('view-reporting').classList.contains('hidden'))renderReporting();
 }
 
 // Seed the global label list from any labels already on jobs
@@ -2598,7 +2601,7 @@ function navTo(v){
   if(v==='dashboard')renderDashboard();
   if(v==='todo')renderTodo();
   if(v==='jobs')renderJobs();
-  if(v==='reporting'){initReportingSelects();wireReportingFilters();setTimeout(renderReporting,50);}
+  if(v==='reporting'){_buildTabFilters(_reportTab||'business');wireReportingFilters();setTimeout(renderReporting,50);}
   if(v==='boards'){initBoardsData();setTimeout(renderBoards,50);}
   if(v==='settings')renderSettings();
   saveData();
@@ -2949,6 +2952,26 @@ function positionGlobalDivider(){
 }
 
 function switchBackToMe(){currentPerson=MY_PERSON;renderTodo();}
+function showSumTip(el){
+  const tip=document.getElementById('todo-sum-tip');if(!tip)return;
+  const data=getWeekData(currentPerson);
+  const stWeekTip=_getStWeekEntries(currentPerson,weekOffset);
+  const weekMon=new Date();const _wd2=(weekMon.getDay()+6)%7;
+  weekMon.setDate(weekMon.getDate()-_wd2+(weekOffset*7));weekMon.setHours(0,0,0,0);
+  let rows='<div style="display:grid;grid-template-columns:auto 70px 70px;gap:4px 16px;align-items:center;">';
+  rows+=`<div style="color:#888;font-size:10px;letter-spacing:.08em;text-transform:uppercase;">Day</div><div style="color:#888;font-size:10px;letter-spacing:.08em;text-transform:uppercase;text-align:right;">To Do</div><div style="color:#888;font-size:10px;letter-spacing:.08em;text-transform:uppercase;text-align:right;">Done</div>`;
+  [1,2,3,4,5].forEach((d,i)=>{
+    const tasks=data[d]||[];const stE=stWeekTip[d]||[];
+    const todoH=tasks.filter(t=>!t.done).reduce((s,t)=>s+(t.hours||0),0);
+    const doneH=tasks.filter(t=>t.done).reduce((s,t)=>s+(t.hours||0),0)+stE.reduce((s,e)=>s+(e.minutes||0)/60,0);
+    const colDate=new Date(weekMon);colDate.setDate(weekMon.getDate()+i);
+    const dn=['Monday','Tuesday','Wednesday','Thursday','Friday'][i];
+    rows+=`<div style="color:#aaa;">${dn} ${colDate.getDate()}</div><div style="text-align:right;color:${todoH>0?'#fff':'#555'};">${todoH>0?formatHrs(todoH):'0h'}</div><div style="text-align:right;color:${doneH>0?'#4CAF50':'#555'};">${doneH>0?formatHrs(doneH):'0h'}</div>`;
+  });
+  rows+='</div>';
+  tip.innerHTML=rows;tip.style.display='block';
+}
+function hideSumTip(el){const tip=document.getElementById('todo-sum-tip');if(tip)tip.style.display='none';}
 
 function renderTodo(){
   if(_todoViewMode==='calendar'){renderTodoCalendar();return;}
@@ -2967,6 +2990,14 @@ function renderTodo(){
     }
   }
   const wrap=document.getElementById('day-cols');wrap.innerHTML='';
+  wrap.oncontextmenu=null; // re-wire each render
+  wrap.addEventListener('contextmenu',ev=>{
+    if(ev.target.closest('.task-card')){return;} // let card's own handler take over
+    ev.preventDefault();
+    const col=ev.target.closest('[data-day]');
+    const day=col?parseInt(col.dataset.day):null;
+    openTodoModal(null,day);
+  },true);
   const data=getWeekData(currentPerson);
 
   // Week totals for summary bar (manual tasks + ST logged)
@@ -3101,7 +3132,27 @@ function renderTodo(){
 
 function formatHrs(h){if(!h||h===0)return'';const m=Math.round(h*60);const hh=Math.floor(m/60);const mm=m%60;return hh&&mm?`${hh}h ${mm}m`:hh?`${hh}h`:`${mm}m`;}
 
-const ITEM_ICONS={'Creative Direction':'ti-palette','Design & Artwork':'ti-pencil','Briefing & coordination':'ti-clipboard-list','Copywriting':'ti-writing','Video Editing':'ti-video','Proofing & spell check':'ti-eye','Artwork & file despatch':'ti-send','Contingency':'ti-alert-circle','Shot listing':'ti-camera','Website build':'ti-code','Leave':'ti-sun','Briefing':'ti-clipboard-list'};
+const ITEM_ICONS={
+  // Creative
+  'Creative Direction':'ti-palette','Design & Artwork':'ti-pencil','Artwork & file despatch':'ti-send',
+  'Illustration':'ti-pencil-star','Photo editing':'ti-photo-edit','Retouching':'ti-photo-edit',
+  // Copy & Content
+  'Copywriting':'ti-writing','Proofreading':'ti-eye','Proofing & spell check':'ti-eye',
+  'Content creation':'ti-article','Social media':'ti-social','Email marketing':'ti-mail',
+  // Production
+  'Video Editing':'ti-video','Animation':'ti-movie','Motion graphics':'ti-movie',
+  'Photography':'ti-camera','Shot listing':'ti-camera','Printing':'ti-printer',
+  // Strategy & Management
+  'Briefing':'ti-clipboard-list','Briefing & coordination':'ti-clipboard-list',
+  'Strategy':'ti-target','Account management':'ti-users','Project management':'ti-layout-kanban',
+  'Client communication':'ti-message-circle','Meetings':'ti-users',
+  // Tech
+  'Website build':'ti-code','Development':'ti-code','SEO':'ti-search',
+  'Analytics':'ti-chart-bar',
+  // Admin
+  'Contingency':'ti-alert-circle','Leave':'ti-sun','Training':'ti-school',
+  'Admin':'ti-clipboard','Finance':'ti-receipt',
+};
 
 function taskCardHeight(hours){
   if(!hours)return 56;
@@ -3145,7 +3196,7 @@ function createTaskCard(t,day,isDone){
     <div class="tc-top">
       ${_tiny?'':`<span class="tc-icon">${icon}</span>`}
       <span class="tc-title">${t.title}${(t.repeat||t.repeatGroup)?' <i class="ti ti-repeat" title="Repeating task" style="font-size:10px;color:var(--muted);"></i>':''}</span>
-      ${!_tiny&&showHours&&hrsLabel?`<span class="tc-hrs" id="hrs-${t.id}">${hrsLabel}</span>`:`<span class="tc-hrs" id="hrs-${t.id}" style="display:none;"></span>`}
+      ${hrsLabel?`<span class="tc-hrs" id="hrs-${t.id}">${hrsLabel}</span>`:`<span class="tc-hrs" id="hrs-${t.id}" style="display:none;"></span>`}
     </div>
     ${(!_tiny&&!_small&&(metaJob||metaItem))?`<div class="tc-meta">
       ${metaJob?`<span class="tc-job${jobIdNum?' clickable':''}" data-jid="${jobIdNum||''}">${jobLabel}</span>`:''}
@@ -4306,7 +4357,7 @@ function renderJobs(){
     coSel.innerHTML='<option value="">All clients</option>'+cos.map(c=>`<option value="${c}"${cur===c?' selected':''}>${c}</option>`).join('');
   }
   // Newest first by job number
-  const sorted=[...jobs].sort((a,b)=>Number(b.id)-Number(a.id));
+  const sorted=[...jobs].sort((a,b)=>{const na=Number(a.id)||0,nb=Number(b.id)||0;return nb-na;});
   sorted.forEach(j=>{
     if(hideArchived&&j.status==='archived')return;
     if(statusFilter!=='all'&&j.status!==statusFilter)return;
@@ -4365,6 +4416,27 @@ function renderJobs(){
       :emptyStateHTML('ti-filter-off','No jobs match','Nothing matches the current search or filters. Try clearing them.','','')}</td></tr>`;
   }
   updateBulkBar();
+  // Footer summary
+  let totalBudget=0,totalUsed=0,totalH=0,totalPlannedH=0,overBudgetCount=0;
+  sorted.forEach(j=>{
+    if(hideArchived&&j.status==='archived')return;
+    if(statusFilter!=='all'&&j.status!==statusFilter)return;
+    const jWf=j.workflowStatus||'live';
+    if(wfFilter!=='all'&&jWf!==wfFilter)return;
+    if(labelFilter&&!(j.labels||[]).includes(labelFilter))return;
+    if(companyFilter&&j.company!==companyFilter)return;
+    if(q&&!(`${j.id} ${j.name} ${j.company}`).toLowerCase().includes(q))return;
+    computeJobStats(j);
+    totalBudget+=(j._plannedSell||0);
+    totalUsed+=(j._sellUsed||0);
+    if((j._bPct||0)>=100)overBudgetCount++;
+  });
+  const footerEl=document.getElementById('jobs-footer-bar');
+  if(footerEl){
+    const overallPct=totalBudget>0?Math.round(totalUsed/totalBudget*100):0;
+    const barCol=overallPct>=100?'var(--red)':overallPct>=80?'#F57F17':'#4CAF50';
+    footerEl.innerHTML=`<span style="font-size:12px;color:var(--muted);">TOTAL (${shown})</span><div style="flex:1;max-width:300px;margin:0 20px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span>$${(totalUsed||0).toLocaleString('en-NZ',{minimumFractionDigits:2,maximumFractionDigits:2})}</span><span style="color:var(--muted);">/ $${(totalBudget||0).toLocaleString('en-NZ',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div><div style="height:4px;background:var(--faint);border-radius:2px;overflow:hidden;"><div style="width:${Math.min(100,overallPct)}%;height:100%;background:${barCol};border-radius:2px;"></div></div></div>${overBudgetCount?`<span style="font-size:11px;color:var(--red);">${overBudgetCount} over budget</span>`:''}`;
+  }
 }
 
 // ── Bulk actions on jobs list ──
