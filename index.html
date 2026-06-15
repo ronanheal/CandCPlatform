@@ -1970,8 +1970,14 @@ function savePeople(){
 }
 let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
-const APP_VERSION='2.9.2';
+const APP_VERSION='2.9.3';
 const CHANGELOG=[
+  {version:'2.9.3',date:'16 Jun 2026',title:'Job avatar stack shows active users only',items:[
+    'Avatar stack on job plan items now filters to active Streamtime users only',
+    'Hibernated and Deleted users are hidden from the main avatar row',
+    '+N overflow chip still shows inactive users in the tooltip, marked "(inactive)" so time history is preserved',
+    'userStatus (Active/Hibernated/Deleted) now stored on every user in stUsersById',
+  ]},
   {version:'2.9.2',date:'16 Jun 2026',title:'Fix ST card interactions, reporting, jobs sort, budget accuracy',items:[
     'Fixed: hover tooltip and right-click menu now work on Streamtime logged-time cards (same as manual tasks)',
     'Fixed: Reporting pages no longer blank — null filter elements no longer crash getFilteredTasks()',
@@ -2369,7 +2375,8 @@ async function initStreamtime(){
         const initials=((u.firstName||'?')[0]+(u.lastName||'?')[0]).toUpperCase();
         const color=COLS[i%COLS.length];
         const key='st_'+u.id;
-        stUsersById[u.id]={id:u.id,name,initials,color,key,email:u.email||''};
+        const userStatus=(u.userStatus?.name||'Active');
+        stUsersById[u.id]={id:u.id,name,initials,color,key,email:u.email||'',active:userStatus==='Active'};
         // Merge into platform people map if not already present
         if(!people[key]){
           people[key]={
@@ -5526,12 +5533,17 @@ function renderItems(phId,_readonly){
         _personMins[lt.userId].mins+=(lt.minutes||0);
       });
     }
-    // Build avatar stack for team members who logged time to this item
+    // Build avatar stack — active users shown as avatars, inactive included in +N tooltip only
     const _teamEntries=Object.values(_personMins).sort((a,b)=>b.mins-a.mins);
+    const _activeEntries=_teamEntries.filter(({u})=>u.active!==false);
+    const _inactiveEntries=_teamEntries.filter(({u})=>u.active===false);
     const MAX_AV=4;
-    const _avHTML=_teamEntries.slice(0,MAX_AV).map(({u,mins})=>`<span class="item-av" style="background:${u.color};">${u.initials}<span class="item-av-tip">${u.name}<br><span style="color:#aaa;">${_stFmtH(mins)}</span></span></span>`).join('');
-    const _moreList=_teamEntries.map(({u,mins})=>`${u.name}: ${_stFmtH(mins)}`).join('<br>');
-    const _moreAv=_teamEntries.length>MAX_AV?`<span class="item-av-more" style="position:relative;cursor:default;" title="">+${_teamEntries.length-MAX_AV}<span class="item-av-tip" style="min-width:160px;text-align:left;">${_moreList}</span></span>`:'';
+    const _avHTML=_activeEntries.slice(0,MAX_AV).map(({u,mins})=>`<span class="item-av" style="background:${u.color};">${u.initials}<span class="item-av-tip">${u.name}<br><span style="color:#aaa;">${_stFmtH(mins)}</span></span></span>`).join('');
+    const _moreActive=_activeEntries.length>MAX_AV?_activeEntries.slice(MAX_AV):[];
+    const _moreAll=[..._moreActive,..._inactiveEntries];
+    const _moreList=_moreAll.map(({u,mins})=>`${u.name}${u.active===false?' <span style="color:#666;font-size:9px;">(inactive)</span>':''}: ${_stFmtH(mins)}`).join('<br>');
+    const _moreCount=(_activeEntries.length-Math.min(MAX_AV,_activeEntries.length))+_inactiveEntries.length;
+    const _moreAv=_moreCount>0?`<span class="item-av-more" style="position:relative;cursor:default;">+${_moreCount}<span class="item-av-tip" style="min-width:160px;text-align:left;">${_moreList}</span></span>`:'';
     const teamCell=`<td><div class="item-av-stack">${_avHTML}${_moreAv}</div></td>`;
     const _loggedStr=_loggedH>0?formatHrs(_loggedH):'—';
     const _plannedH=parseHrsInput(item.hours)||0;
