@@ -1899,7 +1899,7 @@ function emptyStateHTML(icon,title,sub,ctaLabel,ctaOnclick){
     ${ctaLabel?`<button class="d-action primary" onclick="${ctaOnclick}"><i class="ti ti-plus" style="font-size:12px;"></i> ${ctaLabel}</button>`:''}
   </div>`;
 }
-let jobs=[{id:'6752',name:'SFF Brand Guidelines',company:'Silver Fern Farms',budget:'$13,625',budgetTotal:'$23,125',bPct:59,hours:'85h',hoursTotal:'143h',hPct:59,status:'inplay',billable:true,workflowStatus:'live',labels:['May','June','July','APPROVED'],notes:'Brand refresh for SFF New Zealand. Includes full guidelines, typography, colour system, and template suite. Approved budget $23,125.',activity:[],invNum:null,members:['ro','bee','jb']}];
+let jobs=[];
 let invCounter=1001;
 const SFF_PHASES=[
   {id:'p1',name:'Briefing + Brand Discovery',status:'complete',items:[
@@ -2114,7 +2114,7 @@ function saveData(){
       if(j)j.phases=JSON.parse(JSON.stringify(phases));
     }
     localStorage.setItem('cc_todo',JSON.stringify(todoData));
-    localStorage.setItem('cc_jobs',JSON.stringify(jobs));
+    // jobs are now sourced from Streamtime — not persisted locally
   }catch(e){}
 }
 function loadData(){
@@ -2136,10 +2136,76 @@ function loadData(){
       });
       todoData=loaded;
     }
-    const j=localStorage.getItem('cc_jobs');if(j)jobs=JSON.parse(j);
+    // jobs are sourced from Streamtime via initStreamtime() — not loaded from localStorage
   }catch(e){}
 }
 loadData();
+
+// ── Streamtime data ──────────────────────────────────────────────────────────
+const ST_BASE='https://raw.githubusercontent.com/ronanheal/CandCPlatform/streamtime-data';
+function _stFmtH(mins){return mins>=60?`${Math.floor(mins/60)}h${mins%60?mins%60+'m':''}`:mins>0?mins+'m':'0h';}
+function _mapStJob(j){
+  const statusMap={'In Play':'inplay','Complete':'complete','Paused':'paused','Archived':'archived'};
+  const wfMap={'In Play':'live','Complete':'completed','Paused':'live','Archived':'invoiced'};
+  const sName=j.jobStatus?.name||'In Play';
+  const loggedMins=j.totalLoggedMinutes||0;
+  const plannedMins=j.totalPlannedMinutes||0;
+  const sellUsed=Math.round(j.totalLoggedTimeExTax||0);
+  const plannedSell=Math.round(j.finalBudget||j.budget||j.totalPlannedTimeExTax||0);
+  const expUsed=Math.round(j.totalLoggedExpensesExTax||0);
+  const hPct=plannedMins>0?Math.round(loggedMins/plannedMins*100):0;
+  const bPct=plannedSell>0?Math.round(sellUsed/plannedSell*100):0;
+  return{
+    id:String(j.number||j.id),
+    _stId:j.id,
+    _streamtime:true,
+    name:j.name||'',
+    company:j.company?.name||'',
+    status:statusMap[sName]||'inplay',
+    workflowStatus:wfMap[sName]||'live',
+    billable:j.isBillable!==false,
+    labels:(j.jobLabels||[]).map(l=>l.name||l).filter(Boolean),
+    notes:'',
+    activity:[],
+    invNum:null,
+    members:(j.users||[]).map(u=>u.name||u.id),
+    phases:[],
+    // Pre-computed stats used by computeJobStats
+    _loggedMins:loggedMins,_plannedMins:plannedMins,
+    _sellUsed:sellUsed,_plannedSell:plannedSell,_expUsed:expUsed,
+    _hPct:hPct,_bPct:bPct,
+    _loggedH:_stFmtH(loggedMins),_plannedH:plannedMins>0?_stFmtH(plannedMins):'—',
+  };
+}
+function _mapStCompany(c){
+  return{id:'st-'+c.id,name:c.name,nickname:'',contact:'',email:'',phone:'',notes:''};
+}
+async function initStreamtime(){
+  const jobsView=document.getElementById('view-jobs');
+  if(jobsView){const tb=document.getElementById('jobs-tbody');if(tb)tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted);font-size:13px;"><i class="ti ti-loader" style="font-size:18px;display:block;margin:0 auto 8px;"></i>Loading jobs from Streamtime…</td></tr>`;}
+  try{
+    const [jobsRes,coRes]=await Promise.all([
+      fetch(`${ST_BASE}/jobs.json`),
+      fetch(`${ST_BASE}/companies.json`),
+    ]);
+    if(jobsRes.ok){
+      const raw=await jobsRes.json();
+      jobs=raw.map(_mapStJob);
+      jobs.forEach(j=>(j.labels||[]).forEach(l=>addGlobalLabel(l)));
+    }
+    if(coRes.ok){
+      const rawCo=await coRes.json();
+      // Merge: keep any locally-enriched clients, add new ones from Streamtime
+      rawCo.forEach(c=>{
+        if(!clientsData.find(x=>x.name===c.name))clientsData.push(_mapStCompany(c));
+      });
+    }
+  }catch(e){console.warn('Streamtime fetch failed:',e);}
+  // Re-render any views that are currently open
+  if(typeof renderJobs==='function')renderJobs();
+  if(typeof renderClients==='function'&&document.getElementById('view-jobs')?.classList.contains('active'))renderClients();
+}
+
 // Seed the global label list from any labels already on jobs
 jobs.forEach(j=>(j.labels||[]).forEach(l=>addGlobalLabel(l)));
 // Job numbers: always continue from the highest existing number, never reuse
@@ -4361,6 +4427,11 @@ function _refreshJobStats(){
 
 // Core stats computation — used by renderStats() AND renderJobs()
 function computeJobStats(j){
+  // Streamtime jobs already have pre-computed stats — return them directly
+  if(j._streamtime){
+    const fmtH=m=>m>=60?`${Math.floor(m/60)}h${m%60?m%60+'m':''}`:(m>0?m+'m':'0h');
+    return{plannedMins:j._plannedMins||0,plannedSell:j._plannedSell||0,loggedMins:j._loggedMins||0,sellUsed:j._sellUsed||0,expUsed:j._expUsed||0,hPct:j._hPct||0,bPct:j._bPct||0,fmtH};
+  }
   const phArr=j.id===activeJobId?(j.phases||phases||[]):(j.phases||[]);
   let plannedMins=0,plannedSell=0;
   phArr.forEach(ph=>{
@@ -6453,6 +6524,7 @@ function toggleQinvDetail(cardId){
 }
 
 navTo('dashboard');
+initStreamtime();
 
 // ============ REPORTING ENGINE ============
 let chartByPerson=null,chartByDay=null,chartByJob=null,chartByBudget=null;
