@@ -1210,15 +1210,19 @@ tr:hover .i-todo-btn{opacity:1;}
             <select class="cc-select" id="jobs-status-filter" onchange="renderJobs()">
               <option value="all">All statuses</option>
               <option value="inplay">In Play</option>
-              <option value="new">New</option>
+              <option value="paused">Paused</option>
               <option value="complete">Complete</option>
+              <option value="new">New</option>
             </select>
             <select class="cc-select" id="jobs-wf-filter" onchange="renderJobs()">
               <option value="all">All workflow</option>
-              <option value="quote">Quote</option>
               <option value="live">Live job</option>
               <option value="completed">Completed</option>
               <option value="invoiced">Invoiced</option>
+              <option value="quote">Quote</option>
+            </select>
+            <select class="cc-select" id="jobs-company-filter" onchange="renderJobs()">
+              <option value="">All clients</option>
             </select>
             <select class="cc-select" id="jobs-label-filter" onchange="renderJobs()">
               <option value="">All labels</option>
@@ -4202,6 +4206,7 @@ function renderJobs(){
   const statusFilter=(document.getElementById('jobs-status-filter')?.value)||'all';
   const wfFilter=(document.getElementById('jobs-wf-filter')?.value)||'all';
   const labelFilter=(document.getElementById('jobs-label-filter')?.value)||'';
+  const companyFilter=(document.getElementById('jobs-company-filter')?.value)||'';
   const q=_jobSearch;
   let shown=0;
   const hideArchived=document.getElementById('jobs-hide-archived')?.checked;
@@ -4211,12 +4216,22 @@ function renderJobs(){
     const cur=labelSel.value;
     labelSel.innerHTML='<option value="">All labels</option>'+globalLabels.map(l=>`<option value="${l.name}"${cur===l.name?' selected':''}>${l.name}</option>`).join('');
   }
-  jobs.forEach(j=>{
+  // Populate company dropdown
+  const coSel=document.getElementById('jobs-company-filter');
+  if(coSel){
+    const cur=coSel.value;
+    const cos=[...new Set(jobs.map(j=>j.company).filter(Boolean))].sort();
+    coSel.innerHTML='<option value="">All clients</option>'+cos.map(c=>`<option value="${c}"${cur===c?' selected':''}>${c}</option>`).join('');
+  }
+  // Newest first by job number
+  const sorted=[...jobs].sort((a,b)=>Number(b.id)-Number(a.id));
+  sorted.forEach(j=>{
     if(hideArchived&&j.status==='archived')return;
     if(statusFilter!=='all'&&j.status!==statusFilter)return;
     const jWf=j.workflowStatus||'live';
     if(wfFilter!=='all'&&jWf!==wfFilter)return;
     if(labelFilter&&!(j.labels||[]).includes(labelFilter))return;
+    if(companyFilter&&j.company!==companyFilter)return;
     if(q&&!(`${j.id} ${j.name} ${j.company}`).toLowerCase().includes(q))return;
     shown++;
     const sc=j.status==='inplay'?'sp-ip':j.status==='new'?'sp-new':'sp-co';
