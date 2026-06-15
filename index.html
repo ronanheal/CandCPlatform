@@ -3362,18 +3362,16 @@ function openEditTodoById(id,day){
 function populateTodoJobSelect(pre){
   const sel=document.getElementById('td-job');
   sel.innerHTML='<option value="">— Personal / no job —</option>';
-  jobs.forEach(j=>{const o=document.createElement('option');o.value=j.id;o.textContent=`${j.id} ${j.name}`;if(pre&&pre.includes(j.id))o.selected=true;sel.appendChild(o);});
+  const liveJobs=[...jobs].filter(j=>j.status==='inplay').sort((a,b)=>Number(b.id)-Number(a.id));
+  liveJobs.forEach(j=>{const o=document.createElement('option');o.value=j.id;o.textContent=`${j.id} ${j.name}`;if(pre&&pre.includes(j.id))o.selected=true;sel.appendChild(o);});
 }
 function updateJobLabel(){
   const sel=document.getElementById('td-job');
   const lbl=document.getElementById('td-job-lbl');
   if(!sel||!lbl)return;
   const jobId=sel.value;
+  lbl.textContent='Job';
   if(jobId){
-    const j=jobs.find(x=>x.id===jobId);
-    lbl.textContent=j?`Item (from ${j.company} job plan)`:'Item';
-  } else {
-    lbl.textContent='Item';
     // Reset item picker when no job selected
     if(!document.getElementById('td-item').value){
       _setItemPickerLabel('','');
