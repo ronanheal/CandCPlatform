@@ -2179,8 +2179,10 @@ function _getStWeekEntries(personKey,offset){
 }
 function _mapStJob(j){
   const statusMap={'In Play':'inplay','Complete':'complete','Paused':'paused','Archived':'archived'};
-  const wfMap={'In Play':'live','Complete':'completed','Paused':'live','Archived':'invoiced'};
   const sName=j.jobStatus?.name||'In Play';
+  const isDone=sName==='Complete'||sName==='Archived';
+  const hasInvoice=(j.totalIssuedInvoicesExTax||0)>0;
+  const wfMap={'In Play':'live','Paused':'live','Complete':hasInvoice?'invoiced':'completed','Archived':hasInvoice?'invoiced':'completed'};
   const loggedMins=j.totalLoggedMinutes||0;
   const plannedMins=j.totalPlannedMinutes||0;
   const sellUsed=Math.round(j.totalLoggedTimeExTax||0);
