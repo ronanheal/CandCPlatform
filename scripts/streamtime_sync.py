@@ -147,10 +147,19 @@ def fetch_job_detail(job):
     return job
 
 
-def save(filename, data):
+def save(filename, data, previous=None):
+    """Save data, but never overwrite with fewer records than we already have."""
+    count = len(data) if isinstance(data, list) else 1
+    if isinstance(data, list) and previous is not None:
+        prev_count = len(previous) if isinstance(previous, list) else 0
+        if count == 0 and prev_count > 0:
+            print(f"  SKIPPED {filename} — API returned 0, keeping {prev_count} existing")
+            return prev_count
+        if count < prev_count * 0.5:
+            print(f"  SKIPPED {filename} — {count} records vs {prev_count} existing (API error?), keeping existing")
+            return prev_count
     path = OUT_DIR / filename
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2))
-    count = len(data) if isinstance(data, list) else 1
     print(f"  saved {filename} ({count} records)")
     return count
 
@@ -264,26 +273,33 @@ progress_path.write_text(json.dumps(progress, indent=2))
 
 # ── 5. Other search views ─────────────────────────────────────────────────────
 print("\nFetching other data...")
+prev_logged_times = load_existing("logged_times.json")
+prev_invoices     = load_existing("invoices.json")
+prev_quotes       = load_existing("quotes.json")
+prev_companies    = load_existing("companies.json")
+prev_contacts     = load_existing("contacts.json")
+prev_users        = load_existing("users.json")
+
 logged_times = search(8)
-invoices = search(10)
-quotes = search(11)
-companies = search(12)
-contacts = search(13)
+invoices     = search(10)
+quotes       = search(11)
+companies    = search(12)
+contacts     = search(13)
 
 # ── 6. Save everything ────────────────────────────────────────────────────────
 jobs = list(job_map.values())
 counts = {
     "organisation": 1 if organisation else 0,
-    "users": save("users.json", users or []),
-    "roles": save("roles.json", roles or []),
-    "branches": save("branches.json", branches or []),
-    "rate_cards": save("rate_cards.json", rate_cards or []),
-    "jobs": save("jobs.json", jobs),
-    "logged_times": save("logged_times.json", logged_times),
-    "invoices": save("invoices.json", invoices),
-    "quotes": save("quotes.json", quotes),
-    "companies": save("companies.json", companies),
-    "contacts": save("contacts.json", contacts),
+    "users":        save("users.json",        users or [],        prev_users),
+    "roles":        save("roles.json",        roles or []),
+    "branches":     save("branches.json",     branches or []),
+    "rate_cards":   save("rate_cards.json",   rate_cards or []),
+    "jobs":         save("jobs.json",         jobs),
+    "logged_times": save("logged_times.json", logged_times,       prev_logged_times),
+    "invoices":     save("invoices.json",     invoices,           prev_invoices),
+    "quotes":       save("quotes.json",       quotes,             prev_quotes),
+    "companies":    save("companies.json",    companies,          prev_companies),
+    "contacts":     save("contacts.json",     contacts,           prev_contacts),
 }
 
 meta = {

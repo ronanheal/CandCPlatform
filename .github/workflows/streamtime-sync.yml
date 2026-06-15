@@ -22,9 +22,9 @@ jobs:
         run: |
           git fetch origin streamtime-data
           mkdir -p streamtime-data
-          # Copy existing JSON files so the script can merge rather than start fresh
-          git show origin/streamtime-data:jobs.json > streamtime-data/jobs.json 2>/dev/null || true
-          git show origin/streamtime-data:sync_progress.json > streamtime-data/sync_progress.json 2>/dev/null || true
+          for f in jobs.json logged_times.json invoices.json quotes.json companies.json contacts.json users.json sync_progress.json; do
+            git show origin/streamtime-data:$f > streamtime-data/$f 2>/dev/null || true
+          done
 
       - name: Run sync script
         run: python3 scripts/streamtime_sync.py
