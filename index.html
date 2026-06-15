@@ -2184,9 +2184,10 @@ async function initStreamtime(){
   const jobsView=document.getElementById('view-jobs');
   if(jobsView){const tb=document.getElementById('jobs-tbody');if(tb)tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted);font-size:13px;"><i class="ti ti-loader" style="font-size:18px;display:block;margin:0 auto 8px;"></i>Loading jobs from Streamtime…</td></tr>`;}
   try{
+    const _v='?v='+Date.now();
     const [jobsRes,coRes]=await Promise.all([
-      fetch(`${ST_BASE}/jobs.json`),
-      fetch(`${ST_BASE}/companies.json`),
+      fetch(`${ST_BASE}/jobs.json${_v}`),
+      fetch(`${ST_BASE}/companies.json${_v}`),
     ]);
     if(jobsRes.ok){
       const raw=await jobsRes.json();
