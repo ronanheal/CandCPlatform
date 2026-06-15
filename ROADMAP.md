@@ -1,113 +1,281 @@
-# C&C Platform — Roadmap to best-in-class
+# C&C Platform — Roadmap
 
-*Written 12 Jun 2026 at v2.2.0. Section-by-section state of play, then the push list.*
-
-The platform's job is twofold: a **rich visual read on the whole business** (where the money and hours are going) and a **daily booking/timesheet tool** each person actually enjoys using. Every idea below is judged against those two.
+*Codebase audit generated 16 Jun 2026 · v2.7.0*
 
 ---
 
-## Section reports
+## Data Available (what we pull from ST API)
 
-### Dashboard — solid core, one-way glass
-**Today:** KPI strip, Your Day, team cards grouped by team (respecting your profile preference), over-budget alerts. All live.
-**Gaps:** It reports but doesn't let you act — you can't tick a task done from Your Day, and the urgent count has nowhere to click through to.
-**Push:**
-- Tick/edit tasks directly from Your Day.
-- Make every KPI clickable (billable % → reporting filtered to this week; urgent count → a filtered task list).
-- A "this week for the studio" money line: sell value logged this week vs. weekly target — the single number an owner wants at 8am.
-- Monday morning view: who's overloaded / underloaded this week at a glance (capacity heat strip per person).
+Seven JSON files are fetched from the GitHub CDN (`streamtime-data` branch) on every load.
 
-### Todo / Schedule — the daily driver, nearly there
-**Today:** Week list with proportional time blocks, edge-resize, live divider scaling, drag between days, done drawer, calendar view with resize/duplicate, repeat tasks, reassignment, person switcher.
-**Gaps:** No multi-week visibility (next week exists only via arrows); no overdue concept — an unfinished Tuesday task just sits there as the week ages.
-**Push:**
-- **Rollover prompt:** Monday open → "You have 4 unfinished tasks from last week — move them to this week?" One click. This is the single biggest timesheet-hygiene win.
-- Capacity warnings while booking: adding a 3h task to a day already at 7h tints the day header.
-- Week templates ("typical WIP week") to stamp recurring structure.
-- Keyboard-first add: N opens the modal (done) — next, a quick-add row at the top of each day (type title, enter, done).
+### `jobs.json` — mapped via `_mapStJob()`
+Fields **used**: `id`, `number`, `name`, `company.name`, `jobStatus.name`, `isBillable`, `jobLabels[]`, `users[].name`, `phases[].name`, `phases[].jobPhaseStatus.name`, `phases[].items[].name`, `phases[].items[].totalLoggedMinutes`, `phases[].items[].totalPlannedMinutes`, `phases[].items[].sellRate`, `phases[].items[].jobItemStatus.name`, `looseItems[]`, `totalLoggedMinutes`, `totalPlannedMinutes`, `totalLoggedTimeExTax`, `finalBudget`, `budget`, `totalPlannedTimeExTax`, `totalLoggedExpensesExTax`, `totalIssuedInvoicesExTax`, `totalPaidInvoicesExTax`, `totalAwaitingPaymentInvoicesExTax`
 
-### Jobs list — good bones, needs financial glance
-**Today:** Search, filters, bulk actions, archived handling, live budget/hours bars, labels.
-**Push:**
-- Sort by any column (esp. budget % and hours %) — find the bleeding job in one click.
-- A "needs attention" smart filter: over 80% budget, no invoice, quote unanswered > 7 days.
-- Inline workflow advance from the list (the badge is already clickable in detail).
+Fields in raw ST response **not mapped or used**: `startDate`, `dueDate`, `description` (job brief), `jobType`, `purchaseOrderNumber`, `customFields[]`, phase-level date ranges, item-level `description`
 
-### Job plan — the heart; make items first-class
-**Today:** Phases/items with logged-vs-planned, live sell-used, Progress tab with per-person time table and reallocation, quote, invoice, activity.
-**Gaps:** Item ids vs names is now robust, but items still carry no state beyond open/complete; no way to see "remaining" budget per item at a glance.
-**Push:**
-- Per-item progress bar (logged/planned) directly in the row — colour shifts as it burns.
-- "Remaining" column toggle (planned − logged) — what's left to spend, the producer's question.
-- Phase-level rollups in the phase header (logged/planned per phase, not just sell).
-- Progress tab: date-range filter + CSV export (it's the timesheet audit view — it'll be asked for at invoice time).
-- Budget snapshot at quote-approval: freeze approved numbers so scope-creep is measurable against them.
+### `logged_times.json` — stored as `stLoggedTimes[]`
+Fields **used**: `id`, `userId`, `date`, `minutes`, `notes`, `itemName`, `job.id`, `job.name`, `job.number`, `isBillable`, `jobItemUser.jobItemId`
 
-### Quotes & invoices — print works; lifecycle next
-**Today:** Branded documents (real logo), print/PDF, status cycling, Xero CSV, GST, T&Cs, display options.
-**Push:**
-- Quote versioning: revise after client feedback without losing v1 (v1, v2 with a diff of totals).
-- Deposit / split invoicing: invoice 50% on approval, balance on delivery — very common agency pattern.
-- "Uninvoiced work" report: approved quotes + logged time minus what's been invoiced = the money you've earned but not asked for. Likely the highest-value single number in the whole product.
-- Payment terms and due-date tracking with an overdue flag in the invoices list.
+Fields **not surfaced**: `createdAt`, `updatedAt`, `approvedAt`, `approved` (approval status), `startTime`, `endTime`
 
-### Priority boards — fixed; now decide what they're for
-**Today:** Custom kanban (now properly isolated), client boards, people boards, all deletes working.
-**Push:**
-- Card → job-plan deep links on every card type (job cards have it; client/person cards should too).
-- A "Studio board" preset: one auto-board of all live jobs by workflow stage — the agency wall, zero setup.
-- WIP limits per column (soft warning when a column exceeds N cards).
+### `invoices.json` — stored as `stInvoices[]`
+Fields **used**: `id`, `company.name`, `jobId`, `jobName`, `jobNumber`, `sentDate`, `date` / `issueDate`, `totalAmountExTax`, `amount`, `status` / `invoiceStatus.name`
 
-### Reporting — charts exist; answers don't (yet)
-**Today:** Hours by person/day/job, budget vs actuals, CSV + Xero export, team filters.
-**Push:**
-- Utilisation report: billable % per person per week against a target — the number agencies actually manage by.
-- Client profitability: hours × rate vs. quoted, by client, over a period. Ranks your best and worst clients.
-- Date-range picker (not just relative periods) — month-end reporting needs "1–31 May".
-- Save a filter set as a named report ("Monthly client report") — one click each month.
+Fields **not surfaced**: `dueDate`, `lineItems[]`, `taxAmount`, `totalAmountIncTax`, `paidDate`, `notes`, `sentByUser`, `createdAt`
 
-### Clients — directory today, relationship record tomorrow
-**Push:**
-- Client-level financial summary: lifetime billed, active quote value, average margin (data already exists job-side).
-- Quiet-client flag: no active job in N weeks → surfaces on the dashboard as a nudge.
+### `quotes.json` — stored as `stQuotes[]`
+Fields **used**: `id`, `number`, `name`, `jobName`, `jobNumber`, `jobId`, `company.name`, `sentDate`, `sentByUser.name`
 
-### Settings — workspace vs profile split has begun
-**Push:**
-- Per-person default rate (feeds new items and utilisation reports).
-- Working days / hours per person (the `days` field exists; the day-cap is hardcoded at 8h).
-- Workspace-level: company details for documents (address/GST currently hardcoded in two templates), invoice numbering prefix, default markup %.
+Fields **not surfaced**: `approvedDate`, `declinedDate`, `expiryDate`, `totalAmountExTax`, `lineItems[]`, `taxAmount`, `totalAmountIncTax`, `quoteStatus.name` (the real approved/declined/draft/sent status — the platform currently derives status from `sentDate` alone)
+
+### `contacts.json` — stored as `stContacts[]`
+Fields **used**: `firstName`, `lastName`, `email`, `phone`, `mobile`, `company.id`, `company.name` — only to backfill the primary contact when building `clientsData`
+
+Fields **not surfaced**: `position` / `title`, secondary email, notes; only the first matching contact per company is used as primary — additional contacts are listed in client detail but are read-only
+
+### `companies.json` — mapped via `_mapStCompany()`
+Fields **used**: `id`, `name`
+
+Fields **not surfaced**: `website`, `address`, `phone`, `accountNumber`, `industry` / `type`, notes, `createdAt`
+
+### `users.json` — mapped into `stUsersById{}`
+Fields **used**: `id`, `firstName`, `lastName`, `displayName`, `email`, `roles[0].name`
+
+Fields **not surfaced**: `costRate`, `sellRate` (per-user billing rate), `capacity` (ST-defined daily hours), `startDate`, `phone`, `jobTitle`, `leaveBalance`, `active` status, ST-side team membership
 
 ---
 
-## Cross-cutting (the platform-level pushes)
+## Currently Wired (what's shown in the platform)
 
-1. **Undo.** Deletes are confirmed but final. A 10-second "Deleted — Undo" toast for tasks, items, phases, boards and jobs would remove the last bit of fear from daily use. Cheap to build (keep the spliced object + index).
-2. **Notifications surface.** The bell: urgent tasks, over-budget jobs, quotes pending > 7 days, invoices overdue. One feed, click-through to the thing. (Needs a half-day of UX thought first — what's *worth* interrupting for.)
-3. **Data safety.** Everything lives in one browser's localStorage. Before this becomes the system of record: Settings → "Export workspace" (one JSON file) and "Import workspace". An hour's work, existential insurance. Longer term, a tiny sync backend (even a single JSON blob on S3/KV with a shared key) gets the team one source of truth — currently each person's browser is its own island, which will bite the moment two people book time.
-4. **Multi-user reality check.** Related to #3: today "assign to Bianca" only means anything on *your* machine. Decide early whether v3 is "everyone uses one shared deployment with sync" or "per-person with nightly export merge" — it changes several designs (ids are already collision-proof, which helps).
-5. **The 10k-line ceiling.** v2.2 bought ~700 lines back. The single-file constraint still holds, but when the time comes: split to `app.js`/`app.css` needs only a trivial Vercel static config.
+### Dashboard
+- Good morning / date / week number greeting
+- KPIs: billable hours this week, non-billable hours this week (ST logged times + manual todos combined)
+- Today's tasks: done (including ST entries rendered as task cards) and to-do list
+- Team member cards: name, avatar, today's task blocks (done / to-do), foot stats (hours done / task count)
+- Alerts: over-budget jobs (jobs at ≥90% budget used)
+- Live jobs per client section
 
-## Suggested order
+### Todo (list + calendar)
+- Week view with Mon–Fri columns; week navigation (±weeks)
+- Manual task cards: title, hours, job link, item, note, urgent flag, repeat icon
+- ST logged time entries rendered as done cards with job chip, item name, billable colour, hours
+- Day capacity bar: todo / done / billable / non-billable split using ST logged hours
+- Drag-to-complete done divider with resize
+- Person switcher to view any team member's week
+- Calendar sub-view: time blocks proportional to hours, right-click context menu, edge-resize, alt+drag duplicate, show-completed toggle
 
-**Fixed since this was written (v2.3.0):** searchable client/item dropdowns, drop-at-indicator reordering, live divider gating, live calendar reflow on resize, repeat-on-edit, repeat icons, delete button placement, board card dedupe + live-view labelling.
+### Jobs (list + detail)
+- Jobs table: job number, name, company, budget bar (logged ex GST / planned ex GST), status pill, labels
+- Filters: search, status, labels; hide archived; bulk select (archive / delete / label)
+- Job detail **Plan tab**: phases and items with logged/planned hours, sell rate, sell used/total, status badge; phase collapse; drag-to-reorder items; per-item avatar stack with logged-hours tooltip; per-item progress bar (green/amber/red); non-billable lock badge
+- Job detail **Time tab**: all ST logged time entries for this job (person, date, item, note, hours)
+- Job detail **Expenses tab**: expense records with status badges (draft / approved / invoiced)
+- Job detail **Quotes tab**: ST quote list (number, name, status heuristic, sent date, sent by, budget)
+- Job detail **Invoices tab**: ST invoice records (company, inv #, job, sent date, status, amount inc GST)
+- Job detail **Activity tab**: manual activity log
+- Stats strip: hours logged/planned, sell used/planned, expenses, invoiced ex GST, paid ex GST
 
-**Shipped in v2.4.0 (15 Jun 2026):** linkified URLs in notes, todo notes → job brief read-only, client nicknames, quote approval auto-advances to Live, Completed workflow stage + To Be Invoiced tab, pause jobs/phases, dashboard "+" task buttons, client widget on dashboard, label filter in jobs list.
+### Jobs → Time sub-tab (top-level tab)
+- Full ST logged times across all jobs; period and person filters; per-person expandable groups
 
-| Phase | Items | Why first |
-|---|---|---|
-| **Next** | **Quoting & invoicing overhaul** — invoice from Job Plan / T&E / Quote picker; multi-quote select; quote versioning; deposit invoicing | Ronan's explicit top priority |
-| Then | Undo toasts · rollover prompt · workspace export/import | Daily-use trust + data safety |
-| Then | Uninvoiced-work report · per-item progress bars · utilisation report | The money answers |
-| Then | Notifications bell · saved filter presets | Workflow depth |
-| Later | Sync backend · client profitability · full filter set | Multi-user era |
+### Jobs → Quotes sub-tab
+- Quote list with search, client filter, status filter (derived from sentDate); expandable card detail
 
-### Quoting & invoicing overhaul — target design
+### Jobs → Invoices sub-tab
+- "To Be Invoiced" mode: completed jobs awaiting invoice (company, job, logged ex GST, ST invoiced ex GST)
+- "All Invoices" mode: ST invoices table (company, inv #, job, sent date, status, total inc GST)
 
-**Invoice creation flow** (matching agency workflow):
-- "Create invoice from…" picker with three paths:
-  - **Job Plan** — invoice selected items/phases at their planned sell value
-  - **Time & Expenses** — invoice from logged hours × rate + expenses (what's actually been done)
-  - **Quote** — invoice directly from an approved quote (dropdown when multiple quotes exist per job)
-- Multi-quote support: a job can hold multiple quote versions; the invoice picker shows all approved/pending quotes with their totals
-- Quote versioning: revise a sent quote without losing the original (v1, v2 with a total diff shown)
-- Deposit / split invoicing: 50% on approval, balance on delivery
+### Jobs → Clients sub-tab
+- Client cards: name, primary contact name/email/phone, ST contacts listed per company, active jobs with budget bars, lead assignment
+
+### Reporting (four sub-tabs, period filter)
+
+**Business:** total hours, billable hours, revenue invoiced, revenue paid, active jobs KPIs; hours-per-week trend bar chart; billable vs non-billable doughnut; over-budget job list
+
+**People:** per-person cards (hours, billable %); hours-by-person bar chart; hours-by-day-of-week chart; full breakdown table
+
+**Jobs:** hours-by-job bar chart; budget-used bar chart; scrollable job list with inline progress bars
+
+**Clients:** client cards (hours, jobs, revenue); hours-by-client bar chart; revenue-by-client bar chart
+
+All tabs: period filter (week / 2 weeks / month / quarter / year / all time); Export CSV
+
+### Boards
+- Board listing (client boards, people boards, custom boards)
+- Board detail: Kanban columns, drag-and-drop cards, add card (from job or blank), add/rename/delete column
+- People board: per-person lane with hours bar, capacity %, task count, urgent count, freetext notes field
+
+### Settings
+- Team member management (add / remove / edit; assign teams; role; capacity days)
+- Job plan item types management
+- Expense types management
+- My Profile: choose which teams appear on dashboard
+
+---
+
+## Not Yet Wired (data available but unused)
+
+### From `jobs.json`
+- **`startDate` / `dueDate`** — job dates are never mapped. No deadline view, no overdue detection in the Jobs list or Dashboard, no calendar population from job dates.
+- **Job `description` / brief** — the ST job description is not mapped. The platform has a local `notes` field but it is separate and not populated from ST.
+- **`purchaseOrderNumber`** — client PO number is not shown on job detail or invoices.
+- **Phase date ranges** — phase start/end dates from ST are not mapped or displayed.
+- **Item `description`** — line-item descriptions inside phases are ignored.
+- **`customFields[]`** — ST custom fields are dropped entirely.
+
+### From `logged_times.json`
+- **`approved` / `approvedAt`** — time entry approval status is fetched but never surfaced. No approval workflow or unapproved-time alert exists.
+- **`startTime` / `endTime`** — if ST exports these, they are not used. Only `minutes` (duration) is used.
+
+### From `invoices.json`
+- **`dueDate`** — not shown in the All Invoices table (only `sentDate` is displayed). Overdue logic on the To Be Invoiced tab uses only a locally set `invDueDate`, not the ST `dueDate`.
+- **`lineItems[]`** — ST invoice line items are not rendered anywhere. Invoice detail is built from the job plan, not from ST invoice lines.
+- **`taxAmount` / `totalAmountIncTax`** — the table shows `totalAmountExTax`. GST-inclusive totals are available but not displayed.
+- **`paidDate`** — the date payment was received is not stored or shown. No days-to-payment metric.
+- **`notes`** — invoice-level notes from ST are discarded.
+
+### From `quotes.json`
+- **`quoteStatus.name`** — the real approved/declined/draft/sent status is not used. The platform derives status only from `sentDate` (has sentDate = "sent", no sentDate = "draft"). Approved and declined states are invisible.
+- **`approvedDate` / `declinedDate`** — not surfaced.
+- **`expiryDate`** — quote expiry is not surfaced. No expiring-soon detection.
+- **`totalAmountExTax`** — quote value is not shown in the Quotes list or anywhere else.
+- **`lineItems[]`** — ST quote line items are not used; the platform generates its own quote from the job plan.
+
+### From `contacts.json`
+- **Multiple contacts per company** — only the first matching contact is used as primary; the rest are listed read-only in client detail with no add/edit/delete.
+- **`position` / `title`** — contact job titles are not shown.
+- **Contact `notes`** — discarded.
+
+### From `companies.json`
+- **`website`** — company website URL is not surfaced anywhere.
+- **`address`** — not stored or shown.
+- **`phone`** (company-level) — not used; only contact-level phone is shown.
+- **`accountNumber`** — not surfaced.
+- **`industry` / `type`** — discarded.
+
+### From `users.json`
+- **`costRate`** — staff cost rates from ST are not mapped. No profitability calculation exists anywhere in the platform.
+- **`sellRate`** — per-user default sell rate is not used (item sell rates are used instead).
+- **`capacity`** — ST-defined daily/weekly capacity per person is not read. The dashboard uses a hardcoded 30h/week billable target for everyone.
+- **`leaveBalance`** — not surfaced.
+- **`startDate`** — not used.
+
+---
+
+## Proposed Features (prioritised)
+
+### Quick Wins (1–2 days each)
+
+**1. Quote value and real status from ST**
+Surface `totalAmountExTax` from `stQuotes[]` as a column in the Quotes table. Replace the `sentDate` heuristic with `quoteStatus.name` (approved / declined / sent / draft) to show real status pills. Add `approvedDate` / `declinedDate` / `expiryDate` to the expanded detail row. All data is already fetched; only the render loop needs updating.
+
+**2. Invoice due date and overdue flag in All Invoices table**
+Map `dueDate` from `stInvoices[]` and add it as a column. Highlight rows where `dueDate < today` and `status !== 'Paid'` in red with a "Overdue Nd" badge (the logic already exists for local `invDueDate` — replicate it for the ST field).
+
+**3. Job start date and due date in job detail meta line**
+Map `startDate` and `dueDate` from `_mapStJob()` and show them in the job detail meta line alongside the team avatars. Add a "Due soon (≤7 days)" alert row on the Dashboard using the same red-bar alert list that shows over-budget jobs.
+
+**4. Company website link on client detail**
+Map `website` from `companies.json` into `_mapStCompany()` and render it as a clickable `<a href>` link on the client detail card. Trivial to wire — the field is in the response.
+
+**5. Quote expiry alert on Dashboard**
+Add a Dashboard alert (same red-bar list as over-budget jobs) for quotes that have `expiryDate` within 7 days and `quoteStatus.name` is not `approved`. Uses already-fetched data.
+
+**6. ST capacity per person replaces hardcoded 30h target**
+Read the `capacity` field from `users.json` during `initStreamtime()` and store it on each person in `stUsersById`. Use it in the Dashboard billable KPI bar and the day-column capacity bar on the Todo view instead of the hardcoded `totalTarget=30`.
+
+**7. Invoice paid date and paidDate column**
+Map `paidDate` from `stInvoices[]` and add a "Paid date" column to the All Invoices table. Use it to sort and filter paid invoices. This also enables a Days Sales Outstanding metric (average days from `sentDate` to `paidDate`).
+
+---
+
+### Medium (3–5 days each)
+
+**8. Profitability per job using costRate**
+Map `costRate` from `users.json` into `stUsersById`. In the Job detail stats strip, add a "Staff cost" stat: `Σ (lt.minutes/60 × costRate)` across all logged times for the job. Show gross margin = invoiced revenue − staff cost − expenses. This is the single highest-value data gap — all raw data is already fetched.
+
+**9. Time approval workflow**
+Surface `approved` / `approvedAt` from `stLoggedTimes[]`. Add an "Unapproved" filter to the Time sub-tab. Show a Dashboard alert "N unapproved time entries this week" when any entries have `approved === false`. A manager click writes approval status to localStorage (as a stopgap until write-back API exists).
+
+**10. Job due-date calendar / deadline view**
+Add a month-view calendar to the Dashboard or a new sidebar view. Populate it with job `dueDate`, quote `expiryDate`, and invoice `dueDate` values. Colour-code by type. This closes the "what's coming up" gap that is the most obvious absence for a production agency.
+
+**11. "Needs attention" smart filter in Jobs list**
+Add a filter button that shows: jobs over 80% budget used with no invoice, quotes with no response after 7 days (using `sentDate`), and jobs past their `dueDate` still marked In Play. Uses only already-computed fields (`_bPct`, `dueDate`, `sentDate`).
+
+**12. Per-client revenue trend in Clients reporting tab**
+Add a bar chart of invoiced revenue per month per client using `stInvoices` filtered by `company.name`. The Clients tab currently shows only a single total — a month-by-month breakdown answers "are we growing with this client?".
+
+**13. Utilisation report in People reporting tab**
+Add a utilisation table: per person per week, show `billable hours / capacity hours` as a percentage, coloured against a target (e.g. 75%). This is the number agencies actually manage by. Requires mapping `capacity` from `users.json` (Quick Win #6) as a prerequisite.
+
+**14. Contact management per client (add/edit)**
+Extend the client detail page to allow adding and editing contacts with `firstName`, `lastName`, `email`, `phone`, `position`. Write to localStorage until a write-back API exists. Currently contacts are read-only from ST; agencies routinely need to add direct contacts that are not yet in ST.
+
+---
+
+### Large (1+ week each)
+
+**15. Staff profitability and utilisation dashboard**
+Combine `costRate` (users), `stLoggedTimes` (hours by person), `stInvoices` (revenue by job), and `_plannedSell` (budget) to produce a proper P&L view. Per person: hours capacity vs logged, billable %, revenue generated (hours × sellRate), staff cost (hours × costRate), gross contribution. Per job: revenue, cost, margin %. Add as a "Profitability" sub-tab in Reporting. Currently impossible because `costRate` is not mapped — this is the roadblock item.
+
+**16. Job timeline / Gantt view**
+Using `startDate` and `dueDate` from jobs, and phase date ranges (once mapped), build a horizontal Gantt chart showing all live jobs on a timeline. Drag to reschedule writes to localStorage. Requires mapping phase dates and building a chart component (no suitable Chart.js type; would need SVG rendering or a library like frappe-gantt).
+
+**17. Quote-to-invoice pipeline funnel**
+Build a funnel view: Quotes sent → Approved → Jobs live → Jobs complete → Invoiced → Paid. Use `stQuotes` (with `approvedDate`), `jobs` (with status), and `stInvoices` (with `paidDate`). Show conversion rates and average time at each stage. This is the primary business-development metric an agency owner needs and is unavailable today.
+
+**18. ST write-back for time logging**
+The platform is currently read-only from ST. Add a "Log time" action on the Todo view and job detail that POSTs to the Streamtime API (`POST /logged-times`). Requires Streamtime API credentials (stored in a GitHub secret) and a small serverless proxy (Cloudflare Worker or Vercel Edge Function). This closes the loop between planning in C&C and logging in ST — currently the two are separate workflows.
+
+**19. Purchase order tracking**
+Map `purchaseOrderNumber` from `jobs.json`. Surface it on job detail, the invoices table, and the invoice print template. Add a PO filter to the Jobs list. This is a routine accounts-receivable need blocked only by the field not being mapped.
+
+**20. Workspace export / import and multi-user sync**
+Add Settings → "Export workspace" (one JSON blob of all localStorage: jobs, todos, boards, people) and "Import workspace". This is existential data insurance — currently a single browser's localStorage is the only copy of manual data. Longer term, sync a shared blob to a KV store or S3 bucket so all team members share one source of truth. The current `cc_jobs` / `cc_todo` localStorage keys are the starting point.
+
+---
+
+## Existing Roadmap Items (from CHANGELOG in codebase)
+
+Items from the `CHANGELOG` array in `index.html`, latest first:
+
+**v2.7.0 (16 Jun 2026):** Reporting redesign — four sub-tabs (Business / People / Jobs / Clients), per-tab CSV export, avatar overflow tooltip listing members and hours.
+
+**v2.6.0 (16 Jun 2026):** ST logged times fully unified — same card style in todo and calendar, clickable ST entry modal, day capacity bar counts ST hours, Dashboard and Reporting pull from ST as primary source, job plan non-billable lock badge.
+
+**v2.5.0 (15 Jun 2026):** Invoice overhaul — table design, "To Be Invoiced" filter, invoice ⋮ menu (view/open job/mark status/delete), overdue detection, phase delete undo toast, todo person picker team grouping, per-item progress bars.
+
+**v2.4.0 (15 Jun 2026):** Client nicknames, job pause, dashboard "+ task" button, Clients section on dashboard, label filter on jobs list, quote approval auto-advances job to Live, Completed workflow stage.
+
+**v2.3.0 (12 Jun 2026):** Searchable client/item dropdowns, drop-at-indicator reordering fixed, live divider rescaling, calendar live-reflow on resize, repeat-on-edit, board card deduplication + live-view labels.
+
+**v2.2.0 (12 Jun 2026):** Edge-resize restored, job number deduplication, board/column delete fixed, task modal delete restored, time view per-person groups collapsed, Settings My Profile section.
+
+**v2.1.0 (12 Jun 2026):** Job detail Progress tab (per-person time table with reallocation), C&C logo on quotes and invoices, team assignment in Settings, content-sized todo cards.
+
+**v2.0.0 (12 Jun 2026):** Global search (⌘K), persistent team members in Settings, quote/invoice print/PDF, bulk job actions, global labels, keyboard shortcuts, activity log.
+
+**v1.9.0 (10 Jun 2026):** Job plan stats live from phases, quote redesign (Streamtime-style), Create dropdown (item/phase/todo/expense/invoice/quote), Settings gear modal, calendar edge-resize and alt+drag, Clients Lead field, Expenses restyle.
+
+**v1.8.0 (10 Jun 2026):** Calendar done divider fix, drag between days, right-click context menus, inline expenses, toast notifications replacing alert(), people boards with capacity bars, Settings for item and expense types.
+
+**v1.7.0 (9 Jun 2026):** Calendar view, completed drawer, filter chips, board column types (Client/Person/Generic), job plan logged/planned hours column, workflow badge advance, expenses form rebuild, card live-resize.
+
+**v1.3.0 (9 Jun 2026):** Job plan fix, reporting chart fix, date picker in task modal, repeat tasks (never/N occurrences/until date), skip weekends, changelog introduced.
+
+**v1.2.0 (7 Jun 2026):** Jobs sub-tabs (Jobs / Time / Expenses / Quotes / Invoices / Clients), workflow stages Quote → Live → Invoiced, inline-editable plan items, task modal redesign.
+
+### Items from the previous ROADMAP.md (v2.2.0) still not shipped
+
+- **Rollover prompt:** Monday open → "4 unfinished tasks from last week — move them?" (highest todo hygiene win)
+- **"Uninvoiced work" report:** approved quotes + logged time minus invoiced = money earned but not asked for
+- **Quote versioning:** revise after client feedback without losing v1 (v1/v2 with total diff)
+- **Deposit / split invoicing:** 50% on approval, balance on delivery
+- **Studio board preset:** one auto-board of all live jobs by workflow stage, zero setup
+- **Date-range picker in Reporting:** month-end reporting needs "1–31 May" not just relative periods
+- **Workspace export/import:** Settings → Export/Import one JSON file (data safety)
+- **Capacity warnings while booking:** tint day header when adding to an already-full day
+- **Per-person default rate in Settings:** feeds new items and utilisation reports
+- **Working hours per person in Settings:** the `days` field exists; 8h/day is hardcoded
+- **Quiet-client flag:** no active job in N weeks → dashboard nudge
