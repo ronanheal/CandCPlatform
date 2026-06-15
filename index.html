@@ -892,7 +892,7 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
 .item-av:first-child{margin-left:0;}
 .item-av-tip{position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;font-size:11px;border-radius:5px;padding:5px 9px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:1000;min-width:120px;}
 .item-av-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1a1a1a;}
-.item-av:hover .item-av-tip{opacity:1;}
+.item-av:hover .item-av-tip,.item-av-more:hover .item-av-tip{opacity:1;}
 .item-av-more{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:7px;color:var(--muted);font-weight:600;border:1.5px solid var(--border);margin-left:-5px;background:var(--off);}
 .ph-nonbill-badge{font-size:10px;color:var(--muted);margin-left:6px;cursor:default;display:inline-flex;align-items:center;gap:3px;}
 /* Rich board job cards */
@@ -1970,8 +1970,16 @@ function savePeople(){
 }
 let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
-const APP_VERSION='2.9.1';
+const APP_VERSION='2.9.2';
 const CHANGELOG=[
+  {version:'2.9.2',date:'16 Jun 2026',title:'Fix ST card interactions, reporting, jobs sort, budget accuracy',items:[
+    'Fixed: hover tooltip and right-click menu now work on Streamtime logged-time cards (same as manual tasks)',
+    'Fixed: Reporting pages no longer blank — null filter elements no longer crash getFilteredTasks()',
+    'Fixed: Jobs always sort newest-first regardless of "hide archived" state (uses internal ST ID)',
+    'Fixed: +N avatar chip now shows full team hours breakdown on hover',
+    'Fixed: Job footer totals now include logged expenses in the used amount',
+    'Fixed: Planned budget now uses totalPlannedTimeExTax (matching Streamtime\'s Budget column)',
+  ]},
   {version:'2.9.1',date:'16 Jun 2026',title:'Accurate NZD costs',items:[
     'Fixed: monetary values from Streamtime now preserved with full cent precision (no more Math.round per job)',
     'Totals in the jobs footer now match Streamtime cent-for-cent',
@@ -2285,7 +2293,7 @@ function _mapStJob(j){
   const loggedMins=j.totalLoggedMinutes||0;
   const plannedMins=j.totalPlannedMinutes||0;
   const sellUsed=+(j.totalLoggedTimeExTax||0);
-  const plannedSell=+(j.finalBudget||j.budget||j.totalPlannedTimeExTax||0);
+  const plannedSell=+(j.totalPlannedTimeExTax||j.finalBudget||j.budget||0);
   const expUsed=+(j.totalLoggedExpensesExTax||0);
   const hPct=plannedMins>0?Math.round(loggedMins/plannedMins*100):0;
   const bPct=plannedSell>0?Math.round(sellUsed/plannedSell*100):0;
@@ -3337,71 +3345,73 @@ function createTaskCard(t,day,isDone){
     if(parent)_highlightDropTarget(e,parent);
   });
 
-  if(t._fromST)return card; // ST entries: no resize, no drag — click-to-view handled above
-  // Edge resize: top or bottom 7px = resize zone (drag to change hours)
-  const EDGE=7;
-  card.addEventListener('mousemove',e=>{
-    if(card.classList.contains('resizing'))return;
-    const rect=card.getBoundingClientRect();
-    const atEdge=e.clientY>=rect.bottom-EDGE||e.clientY<=rect.top+EDGE;
-    card.style.cursor=atEdge?'ns-resize':'pointer';
-  });
-  card.addEventListener('mouseleave',()=>{if(!card.classList.contains('resizing'))card.style.cursor='';});
-  card.addEventListener('mousedown',e=>{
-    const rect=card.getBoundingClientRect();
-    const atBottom=e.clientY>=rect.bottom-EDGE;
-    const atTop=e.clientY<=rect.top+EDGE;
-    if(!atBottom&&!atTop)return;
-    e.preventDefault();e.stopPropagation();
-    hideTodoTooltip();
-    _wasResized=false;
-    card.classList.add('resizing');card.draggable=false;
-    const startY=e.clientY,startH=card.offsetHeight,startHours=t.hours||1;
-    let curHours=startHours;
-    const onMove=ev=>{
-      if(Math.abs(ev.clientY-startY)>2)_wasResized=true;
-      const dy=atBottom?(ev.clientY-startY):(startY-ev.clientY);
-      const newH=Math.max(40,startH+dy);
-      const _px=Math.max(24,(todoSplitPx||360)/8);
-      curHours=Math.max(0.25,Math.min(8,Math.round((newH/_px)*4)/4));
-      const newCardH=taskCardHeight(curHours);
-      card.style.height=newCardH+'px';
-      const hrsEl=document.getElementById('hrs-'+t.id);
-      const _tiny2=newCardH<44;const _small2=newCardH<68;const _med2=newCardH<95;
-      const iconEl=card.querySelector('.tc-icon');
-      if(iconEl)iconEl.style.display=_tiny2?'none':'';
-      if(hrsEl){hrsEl.style.display=(_tiny2||!showHours)?'none':'';hrsEl.textContent=formatHrs(curHours);}
-      const metaEl=card.querySelector('.tc-meta');
-      if(metaEl)metaEl.style.display=(_tiny2||_small2)?'none':'';
-      const noteEl=card.querySelector('.tc-note');
-      if(noteEl)noteEl.style.display=(_tiny2||_small2||_med2)?'none':'';
-    };
-    const onUp=()=>{
-      document.removeEventListener('mousemove',onMove);
-      document.removeEventListener('mouseup',onUp);
-      card.classList.remove('resizing');card.draggable=true;
-      if(curHours!==startHours){
-        const wd=getWeekData(currentPerson);
-        const arr=wd[day]||[];
-        const task=arr.find(x=>x.id===t.id);
-        if(task){task.hours=curHours;t.hours=curHours;card.dataset.hours=curHours;saveData();_refreshJobStats();}
-        renderTodoHeader(day);
-        const sumEl=document.querySelector('.todo-summary');
-        let wTodo=0,wDone=0;
-        [1,2,3,4,5].forEach(d=>{(getWeekData(currentPerson)[d]||[]).forEach(x=>{if(x.done)wDone+=x.hours||0;else wTodo+=x.hours||0;});});
-        if(sumEl)sumEl.textContent=`To do: ${formatHrs(wTodo)||'0h'} · Done: ${formatHrs(wDone)||'0h'}`;
-      }
-    };
-    document.addEventListener('mousemove',onMove);
-    document.addEventListener('mouseup',onUp);
-  });
+  // Only manual tasks get edge-resize
+  if(!t._fromST){
+    // Edge resize: top or bottom 7px = resize zone (drag to change hours)
+    const EDGE=7;
+    card.addEventListener('mousemove',e=>{
+      if(card.classList.contains('resizing'))return;
+      const rect=card.getBoundingClientRect();
+      const atEdge=e.clientY>=rect.bottom-EDGE||e.clientY<=rect.top+EDGE;
+      card.style.cursor=atEdge?'ns-resize':'pointer';
+    });
+    card.addEventListener('mouseleave',()=>{if(!card.classList.contains('resizing'))card.style.cursor='';});
+    card.addEventListener('mousedown',e=>{
+      const rect=card.getBoundingClientRect();
+      const atBottom=e.clientY>=rect.bottom-EDGE;
+      const atTop=e.clientY<=rect.top+EDGE;
+      if(!atBottom&&!atTop)return;
+      e.preventDefault();e.stopPropagation();
+      hideTodoTooltip();
+      _wasResized=false;
+      card.classList.add('resizing');card.draggable=false;
+      const startY=e.clientY,startH=card.offsetHeight,startHours=t.hours||1;
+      let curHours=startHours;
+      const onMove=ev=>{
+        if(Math.abs(ev.clientY-startY)>2)_wasResized=true;
+        const dy=atBottom?(ev.clientY-startY):(startY-ev.clientY);
+        const newH=Math.max(40,startH+dy);
+        const _px=Math.max(24,(todoSplitPx||360)/8);
+        curHours=Math.max(0.25,Math.min(8,Math.round((newH/_px)*4)/4));
+        const newCardH=taskCardHeight(curHours);
+        card.style.height=newCardH+'px';
+        const hrsEl=document.getElementById('hrs-'+t.id);
+        const _tiny2=newCardH<44;const _small2=newCardH<68;const _med2=newCardH<95;
+        const iconEl=card.querySelector('.tc-icon');
+        if(iconEl)iconEl.style.display=_tiny2?'none':'';
+        if(hrsEl){hrsEl.style.display=(_tiny2||!showHours)?'none':'';hrsEl.textContent=formatHrs(curHours);}
+        const metaEl=card.querySelector('.tc-meta');
+        if(metaEl)metaEl.style.display=(_tiny2||_small2)?'none':'';
+        const noteEl=card.querySelector('.tc-note');
+        if(noteEl)noteEl.style.display=(_tiny2||_small2||_med2)?'none':'';
+      };
+      const onUp=()=>{
+        document.removeEventListener('mousemove',onMove);
+        document.removeEventListener('mouseup',onUp);
+        card.classList.remove('resizing');card.draggable=true;
+        if(curHours!==startHours){
+          const wd=getWeekData(currentPerson);
+          const arr=wd[day]||[];
+          const task=arr.find(x=>x.id===t.id);
+          if(task){task.hours=curHours;t.hours=curHours;card.dataset.hours=curHours;saveData();_refreshJobStats();}
+          renderTodoHeader(day);
+          const sumEl=document.querySelector('.todo-summary');
+          let wTodo=0,wDone=0;
+          [1,2,3,4,5].forEach(d=>{(getWeekData(currentPerson)[d]||[]).forEach(x=>{if(x.done)wDone+=x.hours||0;else wTodo+=x.hours||0;});});
+          if(sumEl)sumEl.textContent=`To do: ${formatHrs(wTodo)||'0h'} · Done: ${formatHrs(wDone)||'0h'}`;
+        }
+      };
+      document.addEventListener('mousemove',onMove);
+      document.addEventListener('mouseup',onUp);
+    });
+  }
 
-  // Tooltip on hover
+  // Tooltip on hover — ALL cards including ST
   card.addEventListener('mouseenter',e=>{if(!card.classList.contains('resizing'))showTodoTooltip(t,e.clientX,e.clientY);});
   card.addEventListener('mousemove',e=>{if(!card.classList.contains('resizing'))moveTodoTooltip(e.clientX,e.clientY);});
   card.addEventListener('mouseleave',hideTodoTooltip);
 
-  // Right-click context menu
+  // Right-click context menu — ALL cards including ST
   card.addEventListener('contextmenu',e=>{e.preventDefault();hideTodoTooltip();showTaskContextMenu(e,t,day);});
 
   return card;
@@ -4471,7 +4481,7 @@ function renderJobs(){
     coSel.innerHTML='<option value="">All clients</option>'+cos.map(c=>`<option value="${c}"${cur===c?' selected':''}>${c}</option>`).join('');
   }
   // Newest first by job number
-  const sorted=[...jobs].sort((a,b)=>{const na=Number(a.id)||0,nb=Number(b.id)||0;return nb-na;});
+  const sorted=[...jobs].sort((a,b)=>{const na=Number(a._stId||a.id)||0,nb=Number(b._stId||b.id)||0;return nb-na;});
   // Build full filtered list first (no DOM yet)
   const filteredJobs=[];
   sorted.forEach(j=>{
@@ -4569,7 +4579,7 @@ function renderJobs(){
   filteredJobs.forEach(j=>{
     computeJobStats(j);
     totalBudget+=(j._plannedSell||0);
-    totalUsed+=(j._sellUsed||0);
+    totalUsed+=(j._sellUsed||0)+(j._expUsed||0);
     if((j._bPct||0)>=100)overBudgetCount++;
   });
   const footerEl=document.getElementById('jobs-footer-bar');
@@ -7177,9 +7187,9 @@ function _getPeriodCutoff(){
 }
 
 function getFilteredTasks(){
-  const period=document.getElementById('r-period').value;
-  const person=document.getElementById('r-person').value;
-  const jobFilter=document.getElementById('r-job').value;
+  const period=(document.getElementById('r-period')?.value)||'month';
+  const person=(document.getElementById('r-person')?.value)||'all';
+  const jobFilter=(document.getElementById('r-job')?.value)||'all';
   let tasks=[];
   const now=new Date();
   let cutoffMs=0;
