@@ -2407,7 +2407,7 @@ function renderDashboard(){
     const stToday=(_getStWeekEntries(k,0)[todayDow]||[]);
     const stLoggedH=stToday.reduce((s,e)=>s+(e.minutes||0),0)/60;
     const taskBlocks=ttasks.slice(0,4).map(t=>`<div class="tc-block ${t.done?'done':t.urgent?'urgent':'todo'}">${t.title}${t.hours?' — '+formatHrs(t.hours):''}</div>`).join('');
-    const stBlocks=stToday.slice(0,3).map(e=>`<div class="tc-block done" style="border-left:2px solid #3498DB;opacity:.8;">${e.title}${e.minutes?' — '+_stFmtH(e.minutes):''}</div>`).join('');
+    const stBlocks=stToday.slice(0,3).map(e=>`<div class="tc-block done">${e.title}${e.minutes?' — '+_stFmtH(e.minutes):''}</div>`).join('');
     const urgCnt=ttodo.filter(t=>t.urgent).length;
     const totalBooked=todoH+doneH+stLoggedH;
     return`<div class="team-card" onclick="viewTeamTodo('${k}')">
@@ -2415,7 +2415,7 @@ function renderDashboard(){
         <button onclick="event.stopPropagation();openTodoModal(null,null,'${k}')" title="Add task for ${tp.name}" style="margin-left:8px;background:transparent;border:1px solid var(--border);border-radius:4px;width:22px;height:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted);font-size:13px;"><i class="ti ti-plus" style="font-size:11px;"></i></button>
       </div>
       <div class="tc-timeline">${taskBlocks||''}${stBlocks||(!taskBlocks?'<div style="font-size:12px;color:var(--muted);padding:4px 0;">No tasks today</div>':'')}</div>
-      <div class="tc-footer"><div class="tc-stat">Done <span>${formatHrs(doneH)||'0h'}</span></div><div class="tc-stat">To do <span>${formatHrs(todoH)||'0h'}</span></div>${stLoggedH>0?`<div class="tc-stat" style="color:#3498DB;">Logged <span>${formatHrs(stLoggedH)}</span></div>`:''}${urgCnt?`<div class="tc-stat" style="margin-left:auto;color:var(--red);font-size:11px;">${urgCnt} urgent</div>`:'<div class="tc-stat" style="margin-left:auto;font-size:11px;color:var(--muted);">On track</div>'}</div>
+      <div class="tc-footer"><div class="tc-stat">Done <span>${formatHrs(doneH+stLoggedH)||'0h'}</span></div><div class="tc-stat">To do <span>${formatHrs(todoH)||'0h'}</span></div>${urgCnt?`<div class="tc-stat" style="margin-left:auto;color:var(--red);font-size:11px;">${urgCnt} urgent</div>`:'<div class="tc-stat" style="margin-left:auto;font-size:11px;color:var(--muted);">On track</div>'}</div>
     </div>`;
   };
   let otherKeys=Object.keys(people).filter(k=>k!==MY_PERSON&&!people[k]._archived);
@@ -2871,7 +2871,7 @@ function renderTodo(){
   const stWeek=_getStWeekEntries(currentPerson,weekOffset);
   [1,2,3,4,5].forEach(d=>{(stWeek[d]||[]).forEach(e=>totalStH+=e.minutes/60);});
   const sumEl=document.querySelector('.todo-summary');
-  if(sumEl)sumEl.textContent=`To do: ${formatHrs(totalTodoH)||'0h'} · Done: ${formatHrs(totalDoneH)||'0h'}${totalStH>0?' · Logged: '+formatHrs(totalStH):''}`;
+  if(sumEl)sumEl.textContent=`To do: ${formatHrs(totalTodoH)||'0h'} · Done: ${formatHrs(totalDoneH+totalStH)||'0h'}`;
 
   const _dow=new Date().getDay();
   const todayDayNum=_dow===0?0:_dow;
@@ -2934,7 +2934,7 @@ function renderTodo(){
 
     todoTasks.forEach(t=>todoEl.appendChild(createTaskCard(t,d,false)));
     todoEl.scrollTop=todoEl.scrollHeight;
-    // ST logged entries for this day — read-only, shown in done section with blue indicator
+    // ST logged entries for this day — shown as regular done task cards
     const stEntries=_getStWeekEntries(currentPerson,weekOffset)[d]||[];
     if(doneTasks.length===0&&stEntries.length===0)doneEl.innerHTML='<div class="day-done-empty">—</div>';
     else{
@@ -2942,9 +2942,7 @@ function renderTodo(){
       stEntries.forEach(e=>{
         const el=document.createElement('div');
         el.className='task-card done';
-        el.style.cssText='border-left:2px solid #3498DB;opacity:.85;cursor:default;';
-        el.title='Logged in Streamtime';
-        el.innerHTML=`<div class="tc-title" style="font-size:12px;">${e.title}</div><div class="tc-meta-row">${e.jobNum?`<span class="tc-job">${e.jobNum}</span>`:''}<span style="font-size:11px;color:#3498DB;margin-left:auto;">${_stFmtH(e.minutes)} · ST</span></div>`;
+        el.innerHTML=`<div class="tc-title" style="font-size:12px;text-decoration:line-through;opacity:.6;">${e.title}</div><div class="tc-meta-row">${e.jobNum?`<span class="tc-job">${e.jobNum}</span>`:''}<span style="font-size:11px;color:var(--muted);margin-left:auto;">${_stFmtH(e.minutes)}</span></div>`;
         doneEl.appendChild(el);
       });
     }
