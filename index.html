@@ -2178,7 +2178,7 @@ function _getStWeekEntries(personKey,offset){
     if(!day)return;
     if(!result[day])result[day]=[];
     const jNum=lt.job?.number?String(lt.job.number):null;
-    result[day].push({minutes:lt.minutes||0,title:lt.itemName||lt.job?.name||'Untimed',jobNum:jNum,jobId:jNum,billable:lt.isBillable!==false});
+    result[day].push({minutes:lt.minutes||0,title:lt.notes||lt.itemName||lt.job?.name||'Untimed',itemName:lt.itemName||'',jobName:lt.job?.name||'',jobNum:jNum,jobId:jNum,billable:lt.isBillable!==false});
   });
   return result;
 }
@@ -2402,18 +2402,23 @@ function renderDashboard(){
   const greetStr=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
   const dateStr=`${dayNames[now.getDay()]} · ${now.getDate()} ${monthNames[now.getMonth()]} ${now.getFullYear()} · Week ${getWeekNum(now)}`;
   const p=people[MY_PERSON];
-  // Calc week hours
+  // Calc week hours (manual todos + ST logged time)
   const wd=getWeekData(MY_PERSON,0);
   let billH=0,nbillH=0;
   [1,2,3,4,5].forEach(d=>(wd[d]||[]).forEach(t=>{
     if(t.done){if(taskIsBillable(t))billH+=t.hours||0;else nbillH+=t.hours||0;}
+  }));
+  const _stWeekMine=_getStWeekEntries(MY_PERSON,0);
+  [1,2,3,4,5].forEach(d=>(_stWeekMine[d]||[]).forEach(e=>{
+    if(e.billable)billH+=(e.minutes||0)/60;else nbillH+=(e.minutes||0)/60;
   }));
   // Today's tasks — getDay() returns 0=Sun,1=Mon..5=Fri,6=Sat; todoData uses keys 1-5
   const _todayRaw=now.getDay();
   const todayDow=(_todayRaw>=1&&_todayRaw<=5)?_todayRaw:0; // 0 = weekend/no tasks
   const todayTasks=(todayDow>0?(wd[todayDow]||[]):[]);
   const todayTodo=todayTasks.filter(t=>!t.done);
-  const todayDone=todayTasks.filter(t=>t.done);
+  const _stTodayMine=todayDow>0?(_stWeekMine[todayDow]||[]):[];
+  const todayDone=[...todayTasks.filter(t=>t.done),..._stTodayMine.map(e=>({title:e.title,hours:(e.minutes||0)/60,done:true,_fromST:true}))];
   const urgentCount=todayTodo.filter(t=>t.urgent).length;
   const totalTarget=30;
   const billPct=Math.min(100,Math.round(billH/totalTarget*100));
@@ -2922,15 +2927,18 @@ function renderTodo(){
     const tasks=data[d]||[];
     const todoTasks=tasks.filter(t=>!t.done);
     const doneTasks=tasks.filter(t=>t.done);
+    const stDayEntries=stWeek[d]||[];
+    const stDayDoneH=stDayEntries.reduce((s,e)=>s+(e.minutes||0)/60,0);
+    const stDayBillDoneH=stDayEntries.filter(e=>e.billable).reduce((s,e)=>s+(e.minutes||0)/60,0);
     const dayTodoH=todoTasks.reduce((s,t)=>s+(t.hours||0),0);
-    const dayDoneH=doneTasks.reduce((s,t)=>s+(t.hours||0),0);
+    const dayDoneH=doneTasks.reduce((s,t)=>s+(t.hours||0),0)+stDayDoneH;
     const dayTotalH=dayTodoH+dayDoneH;
     const isOver=dayTotalH>DAY_CAP;
 
     // Billable split for capacity bar
     const billTodo=todoTasks.filter(taskIsBillable).reduce((s,t)=>s+(t.hours||0),0);
     const nbillTodo=Math.max(0,dayTodoH-billTodo);
-    const billDone=doneTasks.filter(taskIsBillable).reduce((s,t)=>s+(t.hours||0),0);
+    const billDone=doneTasks.filter(taskIsBillable).reduce((s,t)=>s+(t.hours||0),0)+stDayBillDoneH;
     const nbillDone=Math.max(0,dayDoneH-billDone);
     const bTodoW=Math.min(100,Math.round((billTodo/DAY_CAP)*100));
     const nTodoW=Math.min(100-bTodoW,Math.round((nbillTodo/DAY_CAP)*100));
@@ -2975,7 +2983,8 @@ function renderTodo(){
       stEntries.forEach(e=>{
         const el=document.createElement('div');
         el.className='task-card done';
-        el.innerHTML=`<div class="tc-title" style="font-size:12px;text-decoration:line-through;opacity:.6;">${e.title}</div><div class="tc-meta" style="margin-top:4px;">${e.jobNum?`<span class="tc-job${e.jobId?' clickable':''}" data-jid="${e.jobId||''}">${e.jobNum}</span>`:''}<span style="font-size:11px;color:var(--muted);margin-left:auto;">${_stFmtH(e.minutes)}</span></div>`;
+        const _stSubtitle=e.itemName&&e.itemName!==e.title?`<div style="font-size:11px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.itemName}</div>`:'';
+        el.innerHTML=`<div class="tc-title" style="font-size:12px;text-decoration:line-through;opacity:.6;">${e.title}</div>${_stSubtitle}<div class="tc-meta" style="margin-top:3px;">${e.jobNum?`<span class="tc-job${e.jobId?' clickable':''}" data-jid="${e.jobId||''}">${e.jobNum}${e.jobName?' '+e.jobName:''}</span>`:''}<span style="font-size:11px;color:var(--muted);margin-left:auto;">${_stFmtH(e.minutes)}</span></div>`;
         if(e.jobId){
           el.style.cursor='pointer';
           el.addEventListener('click',ev=>{
@@ -6426,7 +6435,7 @@ function _getTimeEntries(){
       return{
         personKey:u.key,personName:u.name,personColor:u.color,personInitials:u.initials,
         date:new Date((lt.date||'').slice(0,10)+'T12:00:00'),
-        title:lt.itemName||lt.job?.name||'',
+        title:lt.notes||lt.itemName||lt.job?.name||'',
         hours:(lt.minutes||0)/60,
         jobId:jobNum,
         done:(lt.loggedTimeStatus?.name||'Logged')==='Logged',
@@ -6842,12 +6851,45 @@ function getFilteredTasks(){
   const jobFilter=document.getElementById('r-job').value;
   let tasks=[];
   const now=new Date();
-  let cutoff=0;
-  if(period==='week')cutoff=now-7*86400000;
-  else if(period==='2weeks')cutoff=now-14*86400000;
-  else if(period==='month')cutoff=now-30*86400000;
-  else if(period==='quarter')cutoff=now-90*86400000;
-  
+  let cutoffMs=0;
+  if(period==='week')cutoffMs=now-7*86400000;
+  else if(period==='2weeks')cutoffMs=now-14*86400000;
+  else if(period==='month')cutoffMs=now-30*86400000;
+  else if(period==='quarter')cutoffMs=now-90*86400000;
+
+  // ST logged times (primary source)
+  if(stLoggedTimes.length){
+    stLoggedTimes.forEach(lt=>{
+      const u=stUsersById[lt.userId];
+      if(!u)return;
+      const pKey=u.key;
+      if(person&&person.startsWith('team:')){
+        if((people[pKey]?.team||'')!==person.slice(5))return;
+      }else if(person!=='all'&&pKey!==person)return;
+      const jobNum=lt.job?.number?String(lt.job.number):null;
+      if(jobFilter!=='all'&&jobFilter!==jobNum)return;
+      const d=new Date((lt.date||'').slice(0,10)+'T12:00:00');
+      if(cutoffMs&&d.getTime()<cutoffMs)return;
+      const dayNum=((d.getDay()+6)%7)+1;
+      if(dayNum<1||dayNum>5)return;
+      const weekMon=new Date(d);weekMon.setDate(d.getDate()-((d.getDay()+6)%7));weekMon.setHours(0,0,0,0);
+      tasks.push({
+        id:'st-lt-'+lt.id,
+        title:lt.notes||lt.itemName||lt.job?.name||'',
+        person:pKey,personName:u.name,
+        job:jobNum?(jobNum+(lt.job?.name?' '+lt.job.name:'')):'',
+        item:lt.itemName||'',
+        hours:(lt.minutes||0)/60,
+        done:true,urgent:false,
+        day:dayNum,
+        weekKey:weekMon.toISOString().split('T')[0],
+        _fromST:true,
+      });
+    });
+    return tasks;
+  }
+
+  // Fallback: manual todos from localStorage
   Object.keys(todoData).forEach(pKey=>{
     if(person&&person.startsWith('team:')){
       if((people[pKey]?.team||'')!==person.slice(5))return;
@@ -6860,10 +6902,9 @@ function getFilteredTasks(){
       for(let d=1;d<=5;d++){
         const dayTasks=weekDays[d]||[];
         dayTasks.forEach(t=>{
-          if(jobFilter!=='all'){
-            const jobMatch=t.job?t.job.includes(jobFilter):false;
-            if(!jobMatch)return;
-          }
+          if(jobFilter!=='all'){const jobMatch=t.job?t.job.includes(jobFilter):false;if(!jobMatch)return;}
+          const weekMon=new Date(weekKey+'T00:00:00');const taskDate=new Date(weekMon);taskDate.setDate(weekMon.getDate()+(d-1));
+          if(cutoffMs&&taskDate.getTime()<cutoffMs)return;
           tasks.push({...t,person:pKey,personName:people[pKey]?.name||pKey,day:d,weekKey});
         });
       }
