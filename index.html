@@ -4682,6 +4682,34 @@ function _jobTimeEntries(jobId){
       });
     });
   });
+  // Also include Streamtime logged time entries for this job
+  if(stLoggedTimes.length&&j._stId){
+    // Build item lookup: stItemId → {displayName, phase, rate}
+    const stItemMap={};
+    phArr.forEach(ph=>(ph.items||[]).forEach(it=>{
+      if(it._stId)stItemMap[it._stId]={displayName:it.name,phase:ph.name,rate:parseInt((it.rate||'$150').replace(/[$,]/g,''))||150};
+    }));
+    stLoggedTimes.forEach(lt=>{
+      if((lt.job?.id||lt.jobId)!==j._stId)return;
+      const stUser=stUsersById[lt.userId];
+      if(!stUser)return;
+      const itemId=lt.jobItemUser?.jobItemId;
+      const itemInfo=itemId?stItemMap[itemId]:null;
+      const mins=lt.minutes||0;
+      const rate=itemInfo?.rate||150;
+      const date=new Date((lt.date||'').slice(0,10)+'T12:00:00');
+      rows.push({
+        person:stUser.key,wk:null,day:null,id:'st-lt-'+lt.id,
+        title:lt.notes||'',
+        date,
+        item:itemInfo?itemInfo.displayName:(lt.itemName||'—'),
+        phase:itemInfo?.phase||'',
+        hours:mins/60,done:true,
+        sell:Math.round(mins/60*rate),
+        _fromST:true,
+      });
+    });
+  }
   rows.sort((a,b)=>a.date-b.date);
   return rows;
 }
@@ -4738,7 +4766,7 @@ function renderProgressTab(){
         <td style="text-align:center;"><span class="prog-status-dot ${r.done?'done':'sched'}" title="${r.done?'Logged (done)':'Scheduled (not done yet)'}"></span></td>
         <td style="text-align:right;white-space:nowrap;">${formatHrs(r.hours)||'0h'}</td>
         <td style="text-align:right;white-space:nowrap;">$${r.sell.toLocaleString()}</td>
-        <td style="width:30px;text-align:center;"><i class="ti ti-dots-vertical prog-row-menu" onclick="openReallocate(event,'${r.person}','${r.wk}',${r.day},'${r.id}')" title="Reallocate this time"></i></td>
+        <td style="width:30px;text-align:center;">${r._fromST?'':`<i class="ti ti-dots-vertical prog-row-menu" onclick="openReallocate(event,'${r.person}','${r.wk}',${r.day},'${r.id}')" title="Reallocate this time"></i>`}</td>
       </tr>`).join('');
     return`<tbody class="prog-group">
       <tr class="prog-group-hd" onclick="toggleProgGroup('${pKey}')">
