@@ -120,7 +120,9 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 /* Split layout */
 .todo-body{position:relative;}
 .day-todo-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-.day-todo{overflow-y:auto;padding:6px 8px;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;min-height:32px;flex:none;}
+.day-todo{overflow-y:hidden;padding:6px 8px;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;min-height:32px;flex:none;}
+.todo-overflow-pill{position:sticky;bottom:4px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);margin-top:4px;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0;}
+.todo-ov-btn{border:none;background:var(--ink);color:#fff;border-radius:4px;padding:2px 9px;font-size:10px;cursor:pointer;margin-left:10px;font-family:inherit;}
 .day-todo.drop-hi{background:#fffdf5;}
 .day-done{overflow-y:auto;padding:28px 8px 6px;display:flex;flex-direction:column;gap:4px;background:var(--off);flex:1;}
 .day-done.drop-hi{background:#f0fef4;}
@@ -2951,6 +2953,37 @@ function positionGlobalDivider(){
   gd.style.top=(headH+todoSplitPx)+'px';
 }
 
+function checkTodoOverflow(){
+  [1,2,3,4,5].forEach(d=>{
+    const col=document.getElementById('dtodo-'+d);
+    if(!col)return;
+    col.querySelector('.todo-overflow-pill')?.remove();
+    if(col.scrollHeight<=col.clientHeight+6)return;
+    const cards=[...col.querySelectorAll('.task-card')];
+    let accH=0,hiddenCount=0,hiddenH=0;
+    cards.forEach(c=>{
+      accH+=c.offsetHeight+4;
+      if(accH>todoSplitPx-12){hiddenCount++;hiddenH+=parseFloat(c.dataset.hours||0);}
+    });
+    if(hiddenCount===0)return;
+    const pill=document.createElement('div');
+    pill.className='todo-overflow-pill';
+    const lbl=hiddenH>0?`${hiddenCount} hidden · ${formatHrs(hiddenH)}`:`${hiddenCount} more task${hiddenCount>1?'s':''}`;
+    pill.innerHTML=`<span>${lbl}</span><button class="todo-ov-btn" onclick="expandTodoToFit()">View ↑</button>`;
+    col.appendChild(pill);
+  });
+}
+function expandTodoToFit(){
+  let maxSH=todoSplitPx;
+  [1,2,3,4,5].forEach(d=>{
+    const col=document.getElementById('dtodo-'+d);
+    if(col&&col.scrollHeight>maxSH)maxSH=col.scrollHeight;
+  });
+  todoSplitPx=maxSH+16;
+  document.querySelectorAll('.day-todo').forEach(el=>el.style.height=todoSplitPx+'px');
+  positionGlobalDivider();
+  checkTodoOverflow();
+}
 function switchBackToMe(){currentPerson=MY_PERSON;renderTodo();}
 function showSumTip(el){
   const tip=document.getElementById('todo-sum-tip');if(!tip)return;
@@ -3095,6 +3128,7 @@ function renderTodo(){
     gd.id='global-divider';
     gd.className='global-divider';
     gd.innerHTML='<span class="gd-label">Done</span><span class="gd-handle">⠿</span>';
+    gd.style.top=(58+todoSplitPx)+'px'; // pre-position to avoid flash at top
     document.querySelector('.todo-body').appendChild(gd);
     gd.addEventListener('mousedown',e=>{
       isDivDrag=true;divDragStartY=e.clientY;divDragStartPx=todoSplitPx;
@@ -3110,7 +3144,7 @@ function renderTodo(){
       onDropToSection(e,d,true);
     });
   }
-  setTimeout(positionGlobalDivider,0);
+  setTimeout(()=>{positionGlobalDivider();checkTodoOverflow();},0);
 
   // Empty week state — overlay invitation without breaking drag/drop targets
   const weekTaskCount=[1,2,3,4,5].reduce((s,d)=>s+((data[d]||[]).length),0);
@@ -4190,7 +4224,8 @@ document.addEventListener('mousemove',e=>{
 document.addEventListener('mouseup',()=>{
   if(isDivDrag){
     isDivDrag=false;document.body.style.cursor='';document.body.style.userSelect='';
-    renderTodo(); // re-render so card content gating matches the new scale
+    renderTodo();
+    setTimeout(checkTodoOverflow,50);
   }
 });
 
