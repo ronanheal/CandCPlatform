@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>c&c Platform — v6</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css"/>
+<script src="https://unpkg.com/lucide@0.525.0/dist/umd/lucide.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
@@ -2594,6 +2595,7 @@ function renderDashboard(){
     ${_clientsHTML?`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Active clients</div><div class="team-grid">${_clientsHTML}</div>`:''}
     ${alerts?`<div style="margin-top:28px;"><div class="section-label" style="margin-bottom:14px;">Over budget</div><div class="alert-list">${alerts}</div></div>`:''}
   `;
+  _renderIcons();
 }
 function navTo(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.add('hidden'));
@@ -3162,30 +3164,78 @@ function renderTodo(){
       body.appendChild(ov);
     }
   }
+  _renderIcons();
 }
 
 function formatHrs(h){if(!h||h===0)return'';const m=Math.round(h*60);const hh=Math.floor(m/60);const mm=m%60;return hh&&mm?`${hh}h ${mm}m`:hh?`${hh}h`:`${mm}m`;}
 
+const LUCIDE_MAP={
+  // UI chrome
+  'ti-plus':'plus','ti-x':'x','ti-check':'check','ti-trash':'trash-2',
+  'ti-search':'search','ti-settings':'settings','ti-archive':'archive',
+  'ti-filter':'filter','ti-filter-off':'filter-x','ti-copy':'copy',
+  'ti-external-link':'external-link','ti-refresh':'refresh-cw',
+  'ti-arrow-left':'arrow-left','ti-chevron-left':'chevron-left',
+  'ti-chevron-right':'chevron-right','ti-chevron-down':'chevron-down',
+  'ti-chevron-up':'chevron-up','ti-dots':'more-horizontal',
+  'ti-grip-vertical':'grip-vertical','ti-loader':'loader-2',
+  'ti-repeat':'repeat-2','ti-star':'star','ti-tag':'tag',
+  'ti-lock':'lock','ti-user':'user','ti-user-plus':'user-plus',
+  'ti-users':'users','ti-send':'send','ti-clock':'clock',
+  'ti-calendar':'calendar','ti-calendar-plus':'calendar-plus',
+  'ti-eye':'eye','ti-eye-off':'eye-off','ti-note':'sticky-note',
+  'ti-pause':'pause','ti-receipt':'receipt','ti-printer':'printer',
+  'ti-code':'code-2','ti-social':'share-2','ti-school':'graduation-cap',
+  'ti-mail':'mail','ti-message-circle':'message-circle','ti-sun':'sun',
+  'ti-building':'building-2','ti-briefcase':'briefcase',
+  'ti-file-invoice':'file-text','ti-circle-check':'circle-check',
+  'ti-circle-dot':'circle-dot','ti-alert-circle':'alert-circle',
+  'ti-checklist':'list-checks','ti-list-check':'list-checks',
+  'ti-list-details':'list','ti-layout-list':'layout-list',
+  'ti-layout-rows':'rows-3','ti-layout-kanban':'layout-dashboard',
+  'ti-layout-sidebar-right-collapse':'panel-right-close',
+  'ti-layout-sidebar-right-expand':'panel-right-open',
+  'ti-chart-bar':'bar-chart-2','ti-photo-edit':'image-plus',
+  'ti-movie':'film','ti-video':'video','ti-camera':'camera',
+  'ti-writing':'pen-line','ti-pencil':'pencil','ti-pencil-star':'pencil-line',
+  'ti-palette':'palette','ti-target':'target','ti-point':'dot',
+  'ti-clipboard-list':'clipboard-list',
+  // ITEM type icons (Lucide names for createTaskCard)
+  'Creative Direction':'palette','Design & Artwork':'pencil',
+  'Artwork & file despatch':'send','Illustration':'pencil-line',
+  'Photo editing':'image-plus','Retouching':'image-plus',
+  'Copywriting':'pen-line','Proofreading':'eye','Proofing & spell check':'eye',
+  'Content creation':'file-text','Social media':'share-2','Email marketing':'mail',
+  'Video Editing':'video','Animation':'film','Motion graphics':'film',
+  'Photography':'camera','Shot listing':'camera','Printing':'printer',
+  'Briefing':'clipboard-list','Briefing & coordination':'clipboard-list',
+  'Strategy':'target','Account management':'users','Project management':'layout-dashboard',
+  'Client communication':'message-circle','Meetings':'users',
+  'Website build':'code-2','Development':'code-2','SEO':'search',
+  'Analytics':'bar-chart-2','Contingency':'alert-circle','Leave':'sun',
+  'Training':'graduation-cap','Admin':'clipboard-list','Finance':'receipt',
+};
+function _icon(nameOrTi,size=14){
+  const lucide=LUCIDE_MAP[nameOrTi]||(nameOrTi.startsWith('ti-')?nameOrTi.replace('ti-',''):nameOrTi);
+  return `<i data-lucide="${lucide}" style="width:${size}px;height:${size}px;display:inline-flex;flex-shrink:0;vertical-align:middle;stroke-width:1.75;"></i>`;
+}
+function _renderIcons(root){
+  if(typeof lucide!=='undefined')lucide.createIcons({nameAttr:'data-lucide',nodes:root?[root]:undefined});
+}
+
 const ITEM_ICONS={
-  // Creative
-  'Creative Direction':'ti-palette','Design & Artwork':'ti-pencil','Artwork & file despatch':'ti-send',
-  'Illustration':'ti-pencil-star','Photo editing':'ti-photo-edit','Retouching':'ti-photo-edit',
-  // Copy & Content
-  'Copywriting':'ti-writing','Proofreading':'ti-eye','Proofing & spell check':'ti-eye',
-  'Content creation':'ti-article','Social media':'ti-social','Email marketing':'ti-mail',
-  // Production
-  'Video Editing':'ti-video','Animation':'ti-movie','Motion graphics':'ti-movie',
-  'Photography':'ti-camera','Shot listing':'ti-camera','Printing':'ti-printer',
-  // Strategy & Management
-  'Briefing':'ti-clipboard-list','Briefing & coordination':'ti-clipboard-list',
-  'Strategy':'ti-target','Account management':'ti-users','Project management':'ti-layout-kanban',
-  'Client communication':'ti-message-circle','Meetings':'ti-users',
-  // Tech
-  'Website build':'ti-code','Development':'ti-code','SEO':'ti-search',
-  'Analytics':'ti-chart-bar',
-  // Admin
-  'Contingency':'ti-alert-circle','Leave':'ti-sun','Training':'ti-school',
-  'Admin':'ti-clipboard','Finance':'ti-receipt',
+  'Creative Direction':'palette','Design & Artwork':'pencil','Artwork & file despatch':'send',
+  'Illustration':'pencil-line','Photo editing':'image-plus','Retouching':'image-plus',
+  'Copywriting':'pen-line','Proofreading':'eye','Proofing & spell check':'eye',
+  'Content creation':'file-text','Social media':'share-2','Email marketing':'mail',
+  'Video Editing':'video','Animation':'film','Motion graphics':'film',
+  'Photography':'camera','Shot listing':'camera','Printing':'printer',
+  'Briefing':'clipboard-list','Briefing & coordination':'clipboard-list',
+  'Strategy':'target','Account management':'users','Project management':'layout-dashboard',
+  'Client communication':'message-circle','Meetings':'users',
+  'Website build':'code-2','Development':'code-2','SEO':'search','Analytics':'bar-chart-2',
+  'Contingency':'alert-circle','Leave':'sun','Training':'graduation-cap',
+  'Admin':'clipboard-list','Finance':'receipt',
 };
 
 function taskCardHeight(hours){
@@ -3204,8 +3254,8 @@ function createTaskCard(t,day,isDone){
   card.dataset.hours=t.hours||'';
   if(t.hours)card.style.height=taskCardHeight(t.hours)+'px';
 
-  const iconCls=ITEM_ICONS[t.item]||(t.urgent?'ti-alert-circle':'ti-point');
-  const icon=`<i class="ti ${iconCls}" style="font-size:11px;color:var(--muted);"></i>`;
+  const _iconName=ITEM_ICONS[t.item]||(t.urgent?'alert-circle':'dot');
+  const icon=_icon(_iconName,13);
   const hrsLabel=t.hours?formatHrs(t.hours):'';
   const jobIdMatch=t.job?t.job.match(/^(\d+)/):null;
   const jobIdNum=jobIdMatch?jobIdMatch[1]:null;
@@ -4368,6 +4418,8 @@ function parseHrsInput(s){
 }
 
 let _jobSearch='';
+let _jobsRenderedCount=0;
+const JOBS_PAGE_SIZE=60;
 function filterJobs(q){_jobSearch=(q||'').toLowerCase();renderJobs();}
 function renderJobs(){
   const tbody=document.getElementById('jobs-tbody');tbody.innerHTML='';
@@ -4393,6 +4445,8 @@ function renderJobs(){
   }
   // Newest first by job number
   const sorted=[...jobs].sort((a,b)=>{const na=Number(a.id)||0,nb=Number(b.id)||0;return nb-na;});
+  // Build full filtered list first (no DOM yet)
+  const filteredJobs=[];
   sorted.forEach(j=>{
     if(hideArchived&&j.status==='archived')return;
     if(statusFilter!=='all'&&j.status!==statusFilter)return;
@@ -4401,66 +4455,91 @@ function renderJobs(){
     if(labelFilter&&!(j.labels||[]).includes(labelFilter))return;
     if(companyFilter&&j.company!==companyFilter)return;
     if(q&&!(`${j.id} ${j.name} ${j.company}`).toLowerCase().includes(q))return;
-    shown++;
-    const sc=j.status==='inplay'?'sp-ip':j.status==='new'?'sp-new':'sp-co';
-    const sl=j.status==='inplay'?'In Play':j.status==='new'?'New':j.status==='archived'?'Archived':'Complete';
-    computeJobStats(j);
-    const bPct=j._bPct||0;const hPct=j._hPct||0;
-    const bCol=bPct>=100?'var(--red)':bPct>=80?'#FF9800':'#4CAF50';
-    const hCol=hPct>=100?'var(--red)':hPct>=80?'#FF9800':'#4CAF50';
-    const billDot=j.billable===false?'<span style="width:6px;height:6px;border-radius:50%;background:#CBD5E1;display:inline-block;margin-right:5px;" title="Non-billable"></span>':'<span style="width:6px;height:6px;border-radius:50%;background:#4CAF50;display:inline-block;margin-right:5px;" title="Billable"></span>';
-    const labels=(j.labels||[]).slice(0,3).map(l=>{const c=labelColor(l);return`<span class="job-label-pip" style="background:${c}18;color:${c};border:1px solid ${c}44;">${l}</span>`;}).join('');
-    const notePrev=j.notes?`<div class="job-notes-preview" title="${j.notes.replace(/"/g,'&quot;')}">${linkify(j.notes.replace(/</g,'&lt;'))}</div>`:'';
-    const pausedBadge=j.paused?`<span class="paused-badge" style="margin-left:6px;"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>`:'';
-    const jPhases=j.id===activeJobId?phases:[];
-    const totalItems=jPhases.reduce((s,p)=>s+p.items.length,0);
-    const doneItems=jPhases.reduce((s,p)=>s+p.items.filter(i=>i.status==='complete').length,0);
-    const progHTML=totalItems>0?`<div class="job-prog-row"><div class="job-prog-bar"><div class="job-prog-fill" style="width:${Math.round(doneItems/totalItems*100)}%;background:#4CAF50;"></div></div><span>${doneItems}/${totalItems}</span></div>`:'';
-    const wfLabel=jWf==='quote'?'Quote':jWf==='completed'?'Completed':jWf==='invoiced'?'Invoiced':'Live job';
-    const wfCls=jWf==='quote'?'wf-quote':jWf==='completed'?'wf-completed':jWf==='invoiced'?'wf-invoiced':'wf-live';
-    const tr=document.createElement('tr');tr.onclick=()=>openJobDetail(j.id);
-    tr.innerHTML=`
-      <td style="width:32px;"><input type="checkbox" class="job-cb" data-id="${j.id}" onclick="event.stopPropagation();updateBulkBar()" style="accent-color:var(--red);cursor:pointer;"/></td>
-      <td style="min-width:220px;">
-        <div class="job-num-name"><span class="job-num">${j.id}</span><span class="job-name">${j.name}</span>${pausedBadge}</div>
-        ${notePrev}
-      </td>
-      <td><span class="job-co">${billDot}${j.company}</span></td>
-      <td>
-        <div class="bbar-wrap">
-          <div class="bbar-nums"><span style="font-weight:400;color:${bPct>=100?'var(--red)':'inherit'}">$${(j._sellUsed||0).toLocaleString()}</span><span class="bbar-of">/ $${(j._plannedSell||0).toLocaleString()}</span></div>
-          <div class="bbar-track"><div class="bbar-fill" style="width:${Math.min(bPct,100)}%;background:${bCol};"></div></div>
-          <div style="font-size:10px;color:${bPct>=100?'var(--red)':'var(--muted)'};">${bPct}%</div>
-        </div>
-      </td>
-      <td>
-        <div class="bbar-wrap">
-          <div class="bbar-nums"><span style="font-weight:400;color:${hPct>=100?'var(--red)':'inherit'}">${j._loggedH||'0h'}</span><span class="bbar-of">/ ${j._plannedH||'—'}</span></div>
-          <div class="bbar-track"><div class="bbar-fill" style="width:${Math.min(hPct,100)}%;background:${hCol};"></div></div>
-          <div style="font-size:10px;color:${hPct>=100?'var(--red)':'var(--muted)'};">${hPct}%</div>
-        </div>
-      </td>
-      <td><div class="job-labels-cell">${labels||'<span style="font-size:12px;color:var(--muted);">—</span>'}</div>${progHTML}</td>
-      <td><span class="wf-badge ${wfCls}">${wfLabel}</span></td>`;
-    tbody.appendChild(tr);
+    filteredJobs.push(j);
   });
+  shown=filteredJobs.length;
   document.getElementById('jobs-count').textContent=`${shown} job${shown!==1?'s':''} · NZD`;
+  // Disconnect any existing observer
+  if(window._jobsObserver){window._jobsObserver.disconnect();window._jobsObserver=null;}
+  _jobsRenderedCount=0;
+  function _renderJobsBatch(from,to){
+    const frag=document.createDocumentFragment();
+    for(let i=from;i<Math.min(to,filteredJobs.length);i++){
+      const j=filteredJobs[i];
+      const jWf=j.workflowStatus||'live';
+      const sc=j.status==='inplay'?'sp-ip':j.status==='new'?'sp-new':'sp-co';
+      const sl=j.status==='inplay'?'In Play':j.status==='new'?'New':j.status==='archived'?'Archived':'Complete';
+      computeJobStats(j);
+      const bPct=j._bPct||0;const hPct=j._hPct||0;
+      const bCol=bPct>=100?'var(--red)':bPct>=80?'#FF9800':'#4CAF50';
+      const hCol=hPct>=100?'var(--red)':hPct>=80?'#FF9800':'#4CAF50';
+      const billDot=j.billable===false?'<span style="width:6px;height:6px;border-radius:50%;background:#CBD5E1;display:inline-block;margin-right:5px;" title="Non-billable"></span>':'<span style="width:6px;height:6px;border-radius:50%;background:#4CAF50;display:inline-block;margin-right:5px;" title="Billable"></span>';
+      const labels=(j.labels||[]).slice(0,3).map(l=>{const c=labelColor(l);return`<span class="job-label-pip" style="background:${c}18;color:${c};border:1px solid ${c}44;">${l}</span>`;}).join('');
+      const notePrev=j.notes?`<div class="job-notes-preview" title="${j.notes.replace(/"/g,'&quot;')}">${linkify(j.notes.replace(/</g,'&lt;'))}</div>`:'';
+      const pausedBadge=j.paused?`<span class="paused-badge" style="margin-left:6px;"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>`:'';
+      const jPhases=j.id===activeJobId?phases:[];
+      const totalItems=jPhases.reduce((s,p)=>s+p.items.length,0);
+      const doneItems=jPhases.reduce((s,p)=>s+p.items.filter(i=>i.status==='complete').length,0);
+      const progHTML=totalItems>0?`<div class="job-prog-row"><div class="job-prog-bar"><div class="job-prog-fill" style="width:${Math.round(doneItems/totalItems*100)}%;background:#4CAF50;"></div></div><span>${doneItems}/${totalItems}</span></div>`:'';
+      const wfLabel=jWf==='quote'?'Quote':jWf==='completed'?'Completed':jWf==='invoiced'?'Invoiced':'Live job';
+      const wfCls=jWf==='quote'?'wf-quote':jWf==='completed'?'wf-completed':jWf==='invoiced'?'wf-invoiced':'wf-live';
+      const tr=document.createElement('tr');tr.onclick=()=>openJobDetail(j.id);
+      tr.innerHTML=`
+        <td style="width:32px;"><input type="checkbox" class="job-cb" data-id="${j.id}" onclick="event.stopPropagation();updateBulkBar()" style="accent-color:var(--red);cursor:pointer;"/></td>
+        <td style="min-width:220px;">
+          <div class="job-num-name"><span class="job-num">${j.id}</span><span class="job-name">${j.name}</span>${pausedBadge}</div>
+          ${notePrev}
+        </td>
+        <td><span class="job-co">${billDot}${j.company}</span></td>
+        <td>
+          <div class="bbar-wrap">
+            <div class="bbar-nums"><span style="font-weight:400;color:${bPct>=100?'var(--red)':'inherit'}">$${(j._sellUsed||0).toLocaleString()}</span><span class="bbar-of">/ $${(j._plannedSell||0).toLocaleString()}</span></div>
+            <div class="bbar-track"><div class="bbar-fill" style="width:${Math.min(bPct,100)}%;background:${bCol};"></div></div>
+            <div style="font-size:10px;color:${bPct>=100?'var(--red)':'var(--muted)'};">${bPct}%</div>
+          </div>
+        </td>
+        <td>
+          <div class="bbar-wrap">
+            <div class="bbar-nums"><span style="font-weight:400;color:${hPct>=100?'var(--red)':'inherit'}">${j._loggedH||'0h'}</span><span class="bbar-of">/ ${j._plannedH||'—'}</span></div>
+            <div class="bbar-track"><div class="bbar-fill" style="width:${Math.min(hPct,100)}%;background:${hCol};"></div></div>
+            <div style="font-size:10px;color:${hPct>=100?'var(--red)':'var(--muted)'};">${hPct}%</div>
+          </div>
+        </td>
+        <td><div class="job-labels-cell">${labels||'<span style="font-size:12px;color:var(--muted);">—</span>'}</div>${progHTML}</td>
+        <td><span class="wf-badge ${wfCls}">${wfLabel}</span></td>`;
+      frag.appendChild(tr);
+      _jobsRenderedCount=i+1;
+    }
+    tbody.appendChild(frag);
+    // Update/create sentinel
+    let sentinel=document.getElementById('jobs-load-sentinel');
+    if(_jobsRenderedCount<filteredJobs.length){
+      if(!sentinel){sentinel=document.createElement('tr');sentinel.id='jobs-load-sentinel';}
+      sentinel.innerHTML=`<td colspan="8" style="text-align:center;padding:16px;color:var(--muted);font-size:12px;">Showing ${_jobsRenderedCount} of ${filteredJobs.length} jobs — scroll for more</td>`;
+      tbody.appendChild(sentinel);
+      if(window._jobsObserver)window._jobsObserver.disconnect();
+      window._jobsObserver=new IntersectionObserver(entries=>{
+        if(entries[0].isIntersecting&&_jobsRenderedCount<filteredJobs.length){
+          sentinel.remove();
+          _renderJobsBatch(_jobsRenderedCount,_jobsRenderedCount+JOBS_PAGE_SIZE);
+        }
+      },{rootMargin:'200px'});
+      window._jobsObserver.observe(sentinel);
+    } else {
+      sentinel?.remove();
+      if(window._jobsObserver){window._jobsObserver.disconnect();window._jobsObserver=null;}
+    }
+  }
+  _renderJobsBatch(0,JOBS_PAGE_SIZE);
   if(shown===0){
     tbody.innerHTML=`<tr><td colspan="8">${jobs.length===0
       ?emptyStateHTML('ti-briefcase','No jobs yet','Jobs hold your phases, budgets, quotes and invoices. Create your first one to get started.','New job','openCreateJob()')
       :emptyStateHTML('ti-filter-off','No jobs match','Nothing matches the current search or filters. Try clearing them.','','')}</td></tr>`;
   }
   updateBulkBar();
-  // Footer summary
+  // Footer summary — filteredJobs already has stats computed from batch render
   let totalBudget=0,totalUsed=0,totalH=0,totalPlannedH=0,overBudgetCount=0;
-  sorted.forEach(j=>{
-    if(hideArchived&&j.status==='archived')return;
-    if(statusFilter!=='all'&&j.status!==statusFilter)return;
-    const jWf=j.workflowStatus||'live';
-    if(wfFilter!=='all'&&jWf!==wfFilter)return;
-    if(labelFilter&&!(j.labels||[]).includes(labelFilter))return;
-    if(companyFilter&&j.company!==companyFilter)return;
-    if(q&&!(`${j.id} ${j.name} ${j.company}`).toLowerCase().includes(q))return;
+  filteredJobs.forEach(j=>{
     computeJobStats(j);
     totalBudget+=(j._plannedSell||0);
     totalUsed+=(j._sellUsed||0);
@@ -4472,6 +4551,7 @@ function renderJobs(){
     const barCol=overallPct>=100?'var(--red)':overallPct>=80?'#F57F17':'#4CAF50';
     footerEl.innerHTML=`<span style="font-size:12px;color:var(--muted);">TOTAL (${shown})</span><div style="flex:1;max-width:300px;margin:0 20px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span>$${(totalUsed||0).toLocaleString('en-NZ',{minimumFractionDigits:2,maximumFractionDigits:2})}</span><span style="color:var(--muted);">/ $${(totalBudget||0).toLocaleString('en-NZ',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div><div style="height:4px;background:var(--faint);border-radius:2px;overflow:hidden;"><div style="width:${Math.min(100,overallPct)}%;height:100%;background:${barCol};border-radius:2px;"></div></div></div>${overBudgetCount?`<span style="font-size:11px;color:var(--red);">${overBudgetCount} over budget</span>`:''}`;
   }
+  _renderIcons();
 }
 
 // ── Bulk actions on jobs list ──
@@ -4553,6 +4633,7 @@ function openJobDetail(id){
   document.querySelectorAll('.view').forEach(el=>el.classList.add('hidden'));
   document.getElementById('view-detail').classList.remove('hidden');
   switchDTab(document.querySelector('.d-tab'),'plan');
+  _renderIcons();
 }
 function openPersonTodo(personKey){currentPerson=personKey;navTo('todo');}
 function openAddMemberPicker(jobId){
@@ -8022,6 +8103,7 @@ function showAddBoardItem(){openCreateBoard();}
 
 // navTo is fully defined above — no override needed here
 
+setTimeout(_renderIcons,50);
 </script>
 <!-- Calendar popup -->
 <div id="cal-popup" class="cal-popup">
