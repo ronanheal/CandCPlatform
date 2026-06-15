@@ -2257,9 +2257,9 @@ function _mapStJob(j){
   const wfMap={'In Play':'live','Paused':'live','Complete':hasInvoice?'invoiced':'completed','Archived':hasInvoice?'invoiced':'completed'};
   const loggedMins=j.totalLoggedMinutes||0;
   const plannedMins=j.totalPlannedMinutes||0;
-  const sellUsed=Math.round(j.totalLoggedTimeExTax||0);
-  const plannedSell=Math.round(j.finalBudget||j.budget||j.totalPlannedTimeExTax||0);
-  const expUsed=Math.round(j.totalLoggedExpensesExTax||0);
+  const sellUsed=+(j.totalLoggedTimeExTax||0);
+  const plannedSell=+(j.finalBudget||j.budget||j.totalPlannedTimeExTax||0);
+  const expUsed=+(j.totalLoggedExpensesExTax||0);
   const hPct=plannedMins>0?Math.round(loggedMins/plannedMins*100):0;
   const bPct=plannedSell>0?Math.round(sellUsed/plannedSell*100):0;
   return{
