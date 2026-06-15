@@ -322,6 +322,32 @@ button.detail-back{outline:none;}
 .r-filter-row{display:flex;gap:12px;margin-bottom:20px;align-items:center;flex-wrap:wrap;}
 .r-filter-row label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
 .r-filter-row select,.r-filter-row input{padding:6px 10px;border:1px solid var(--border);border-radius:3px;font-family:var(--font);font-size:12px;background:var(--white);}
+.r-subtab{background:none;border:none;border-bottom:2px solid transparent;padding:8px 16px;font-family:var(--font);font-size:13px;color:var(--muted);cursor:pointer;margin-bottom:-1px;transition:color .15s,border-color .15s;}
+.r-subtab:hover{color:var(--ink);}
+.r-subtab.on{color:var(--ink);border-bottom-color:var(--red);font-weight:500;}
+.r-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+.r-kpi-grid.cols3{grid-template-columns:repeat(3,1fr);}
+.r-kpi{background:var(--white);border:1px solid var(--border);padding:20px 24px;}
+.r-kpi-lbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.r-kpi-val{font-size:26px;font-weight:500;line-height:1;}
+.r-kpi-sub{font-size:12px;color:var(--muted);margin-top:5px;}
+.r-kpi-bar{height:3px;background:var(--faint);border-radius:2px;margin-top:12px;overflow:hidden;}
+.r-kpi-fill{height:100%;border-radius:2px;}
+.r-section{margin-bottom:32px;}
+.r-section-hd{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--faint);}
+.r-charts-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;}
+.r-charts-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:28px;}
+.r-people-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;}
+.r-person-card{background:var(--white);border:1px solid var(--border);padding:20px;display:flex;flex-direction:column;gap:6px;}
+.r-person-card-name{font-size:14px;font-weight:500;}
+.r-person-card-hours{font-size:22px;font-weight:500;}
+.r-person-card-meta{font-size:12px;color:var(--muted);}
+.r-job-row{display:grid;grid-template-columns:2fr 1fr 1fr 90px 80px;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--faint);}
+.r-job-row:last-child{border-bottom:none;}
+.r-job-hd{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-bottom:8px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:2fr 1fr 1fr 90px 80px;gap:12px;margin-bottom:4px;}
+.r-client-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.r-client-card{background:var(--white);border:1px solid var(--border);padding:20px;cursor:pointer;transition:border-color .15s;}
+.r-client-card:hover{border-color:#bbb;}
 .r-export-btn{background:var(--black);color:var(--white);border:none;padding:7px 14px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-family:var(--font);cursor:pointer;border-radius:2px;margin-left:auto;}
 .r-export-btn:hover{opacity:.85;}
 
@@ -1420,57 +1446,47 @@ tr:hover .i-todo-btn{opacity:1;}
         </div>
       </div>
       <!-- REPORTING -->
-      <div id="view-reporting" class="view hidden">
-        <div class="r-filter-row" style="padding:22px 28px 14px;border-bottom:1px solid var(--border);flex-shrink:0;gap:10px;display:flex;align-items:center;flex-wrap:wrap;">
-          <div style="flex:1;min-width:0;">
-            <div class="dash-greeting" style="font-size:24px;">Reporting</div>
-            <div class="dash-date" id="r-sub">All People · This Month</div>
-          </div>
-          <select class="filter-btn cc-select" id="r-period" style="min-width:130px;">
-            <option value="week">This week</option>
-            <option value="2weeks">Last 2 weeks</option>
-            <option value="month" selected>This month</option>
-            <option value="quarter">This quarter</option>
-            <option value="all">All time</option>
-          </select>
-          <select class="filter-btn cc-select" id="r-person" style="min-width:120px;">
-            <option value="all">All people</option>
-          </select>
-          <select class="filter-btn cc-select" id="r-job" style="min-width:140px;">
-            <option value="all">All jobs</option>
-          </select>
-          <button class="d-action" onclick="exportReportingCSV()"><i class="ti ti-download" style="font-size:12px"></i> CSV</button>
-        </div>
-        <div style="flex:1;overflow-y:auto;padding:24px 28px 40px;">
-          <!-- Person totals strip -->
-          <div class="r-person-total" id="r-person-totals"></div>
-          <!-- Charts row -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
-            <div class="r-chart-card">
-              <div class="r-chart-label">Hours by person</div>
-              <div style="height:180px;"><canvas id="chart-by-person"></canvas></div>
+      <div id="view-reporting" class="view hidden" style="display:flex;flex-direction:column;">
+        <!-- Header + sub-tabs -->
+        <div style="padding:20px 28px 0;border-bottom:1px solid var(--border);flex-shrink:0;">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px;">
+            <div>
+              <div class="dash-greeting" style="font-size:22px;">Reporting</div>
+              <div class="dash-date" id="r-sub" style="margin-top:2px;">Business overview</div>
             </div>
-            <div class="r-chart-card">
-              <div class="r-chart-label">Hours by day</div>
-              <div style="height:180px;"><canvas id="chart-by-day"></canvas></div>
-            </div>
-            <div class="r-chart-card">
-              <div class="r-chart-label">Hours by job</div>
-              <div style="height:180px;"><canvas id="chart-by-job"></canvas></div>
-            </div>
-            <div class="r-chart-card">
-              <div class="r-chart-label">Budget used by job</div>
-              <div style="height:180px;"><canvas id="chart-by-budget"></canvas></div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <select class="filter-btn cc-select" id="r-period" style="min-width:130px;">
+                <option value="week">This week</option>
+                <option value="2weeks">Last 2 weeks</option>
+                <option value="month" selected>This month</option>
+                <option value="quarter">This quarter</option>
+                <option value="year">This year</option>
+                <option value="all">All time</option>
+              </select>
+              <div id="r-tab-filters" style="display:flex;gap:8px;"></div>
+              <button class="d-action" onclick="exportReportTab()"><i class="ti ti-download" style="font-size:12px"></i> Export</button>
             </div>
           </div>
-          <!-- Task table -->
-          <div class="r-table-wrap">
-            <table class="r-table" id="r-table">
-              <thead><tr><th>Task</th><th>Person</th><th>Job</th><th>Day</th><th>Hours</th><th>Billable</th></tr></thead>
-              <tbody id="r-tbody"></tbody>
-            </table>
+          <div style="display:flex;gap:0;margin-bottom:-1px;">
+            <button class="r-subtab on" id="rt-business" onclick="switchReportTab('business')">Business</button>
+            <button class="r-subtab" id="rt-people" onclick="switchReportTab('people')">People</button>
+            <button class="r-subtab" id="rt-jobs" onclick="switchReportTab('jobs')">Jobs</button>
+            <button class="r-subtab" id="rt-clients" onclick="switchReportTab('clients')">Clients</button>
           </div>
         </div>
+        <!-- Tab panels -->
+        <div style="flex:1;overflow-y:auto;padding:28px 28px 48px;" id="r-scroll">
+          <div id="rp-business"></div>
+          <div id="rp-people" style="display:none;"></div>
+          <div id="rp-jobs" style="display:none;"></div>
+          <div id="rp-clients" style="display:none;"></div>
+        </div>
+        <!-- Hidden canvases kept for legacy chart destroy calls -->
+        <canvas id="chart-by-person" style="display:none;"></canvas>
+        <canvas id="chart-by-day" style="display:none;"></canvas>
+        <canvas id="chart-by-job" style="display:none;"></canvas>
+        <canvas id="chart-by-budget" style="display:none;"></canvas>
+        <tbody id="r-tbody" style="display:none;"></tbody>
       </div>
       <!-- BOARDS -->
       <div id="view-boards" class="view hidden">
@@ -1950,8 +1966,18 @@ function savePeople(){
 }
 let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
-const APP_VERSION='2.6.0';
+const APP_VERSION='2.7.0';
 const CHANGELOG=[
+  {version:'2.7.0',date:'16 Jun 2026',title:'Reporting redesign, non-billable clarity, avatar breakdown',items:[
+    'Reporting page now has four sub-tabs: Business, People, Jobs, Clients',
+    'Business tab: KPIs (total hours, billable %, revenue invoiced, active jobs), hours trend chart, billable split doughnut, over-budget job list',
+    'People tab: per-person cards with hours and billable %, hours-by-person bar chart, hours-by-day chart, full breakdown table',
+    'Jobs tab: filters by status and client, hours-by-job and budget-used charts, scrollable job list with inline progress bars',
+    'Clients tab: client cards with hours / jobs / revenue, hours and revenue charts',
+    'Export CSV scoped to the active tab and current filters',
+    'Non-billable items: hours column now shows just the logged hours without "/ 0h" — no more misleading red over-budget appearance',
+    '+N team avatar overflow chip now shows a hover tooltip listing every team member and their hours',
+  ]},
   {version:'2.6.0',date:'16 Jun 2026',title:'Streamtime data fully unified — todos, calendar, dashboard, reporting',items:[
     'ST logged time entries now render identically to manual tasks — same card style, hover tooltip, colours, and click-to-view modal',
     'Todo list: done cards from Streamtime show job chip, item name, billable colour, and hours — no longer plain grey blocks',
@@ -5279,7 +5305,8 @@ function renderItems(phId,_readonly){
     const _teamEntries=Object.values(_personMins).sort((a,b)=>b.mins-a.mins);
     const MAX_AV=4;
     const _avHTML=_teamEntries.slice(0,MAX_AV).map(({u,mins})=>`<span class="item-av" style="background:${u.color};">${u.initials}<span class="item-av-tip">${u.name}<br><span style="color:#aaa;">${_stFmtH(mins)}</span></span></span>`).join('');
-    const _moreAv=_teamEntries.length>MAX_AV?`<span class="item-av-more">+${_teamEntries.length-MAX_AV}</span>`:'';
+    const _moreList=_teamEntries.map(({u,mins})=>`${u.name}: ${_stFmtH(mins)}`).join('<br>');
+    const _moreAv=_teamEntries.length>MAX_AV?`<span class="item-av-more" style="position:relative;cursor:default;" title="">+${_teamEntries.length-MAX_AV}<span class="item-av-tip" style="min-width:160px;text-align:left;">${_moreList}</span></span>`:'';
     const teamCell=`<td><div class="item-av-stack">${_avHTML}${_moreAv}</div></td>`;
     const _loggedStr=_loggedH>0?formatHrs(_loggedH):'—';
     const _plannedH=parseHrsInput(item.hours)||0;
@@ -5290,11 +5317,11 @@ function renderItems(phId,_readonly){
     const nameCell=_readonly
       ?`<td class="i-name"><span>${item.name}</span>${noteIcon}</td>`
       :`<td class="i-name"><span class="item-editable" title="Click to rename" onclick="inlineEditItem(event,'${item.id}','${phId}','name')">${item.name}</span>${noteIcon}<button class="i-todo-btn" title="Add todo for this item" onclick="event.stopPropagation();ctxTarget={itemId:'${item.id}',phId:'${phId}'};ctxDo('todo')"><i class="ti ti-calendar-plus"></i></button></td>`;
+    const _showPlanned=_plannedH>0&&!(item.rate==='—'||item.rate==='$0');
     const hrsCell=`<td class="i-hrs ${_overLogged?'i-hrs-over':''}" style="text-align:right;white-space:nowrap;">
   <span style="font-weight:500;color:${_overLogged?'var(--red)':'inherit'}" title="Hours logged">${_loggedStr}</span>
-  <span class="i-sof"> / </span>
-  ${_readonly?`<span>${item.hours}</span>`:`<span class="item-editable" title="Click to edit planned hours" onclick="inlineEditItem(event,'${item.id}','${phId}','hours')">${item.hours}</span>`}
-  ${_plannedH>0?`<div class="item-prog"><div class="item-prog-fill" style="width:${Math.min(100,Math.round(_loggedH/_plannedH*100))}%;background:${_overLogged?'var(--red)':_loggedH/_plannedH>0.8?'#F57F17':'#4CAF50'};"></div></div>`:''}
+  ${_showPlanned?`<span class="i-sof"> / </span>${_readonly?`<span>${item.hours}</span>`:`<span class="item-editable" title="Click to edit planned hours" onclick="inlineEditItem(event,'${item.id}','${phId}','hours')">${item.hours}</span>`}`:''}
+  ${_showPlanned?`<div class="item-prog"><div class="item-prog-fill" style="width:${Math.min(100,Math.round(_loggedH/_plannedH*100))}%;background:${_overLogged?'var(--red)':_loggedH/_plannedH>0.8?'#F57F17':'#4CAF50'};"></div></div>`:''}
 </td>`;
     const _isNonBill=item.rate==='—'||item.rate==='$0';
     const rateCell=_isNonBill
@@ -6883,23 +6910,55 @@ initStreamtime();
 // ============ REPORTING ENGINE ============
 let chartByPerson=null,chartByDay=null,chartByJob=null,chartByBudget=null;
 
-function initReportingSelects(){
-  const ps=document.getElementById('r-person');
-  const js=document.getElementById('r-job');
-  ps.innerHTML='<option value="all">All People</option>';
-  [...new Set(Object.values(people).map(p=>p.team).filter(Boolean))].forEach(tn=>{
-    const o=document.createElement('option');o.value='team:'+tn;o.textContent=`Team — ${tn}`;
-    ps.appendChild(o);
-  });
-  Object.keys(people).forEach(k=>{
-    const o=document.createElement('option');o.value=k;o.textContent=people[k].name;
-    ps.appendChild(o);
-  });
-  js.innerHTML='<option value="all">All Jobs</option>';
-  jobs.forEach(j=>{
-    const o=document.createElement('option');o.value=j.id;o.textContent=`${j.name} (${j.id})`;
-    js.appendChild(o);
-  });
+let _reportTab='business';
+function initReportingSelects(){/* filters now built per-tab */}
+
+function switchReportTab(tab){
+  _reportTab=tab;
+  document.querySelectorAll('.r-subtab').forEach(b=>b.classList.toggle('on',b.id==='rt-'+tab));
+  ['business','people','jobs','clients'].forEach(t=>{const el=document.getElementById('rp-'+t);if(el)el.style.display=t===tab?'':'none';});
+  _buildTabFilters(tab);
+  renderReporting();
+}
+
+function _buildTabFilters(tab){
+  const wrap=document.getElementById('r-tab-filters');if(!wrap)return;
+  wrap.innerHTML='';
+  if(tab==='people'){
+    const stUserList=Object.values(stUsersById).sort((a,b)=>a.name.localeCompare(b.name));
+    const sel=document.createElement('select');sel.className='filter-btn cc-select';sel.id='r-person';
+    sel.innerHTML='<option value="all">All people</option>';
+    const teams=[...new Set(Object.values(people).map(p=>p.team).filter(Boolean))];
+    teams.forEach(tn=>{const o=document.createElement('option');o.value='team:'+tn;o.textContent=`Team: ${tn}`;sel.appendChild(o);});
+    stUserList.forEach(u=>{const o=document.createElement('option');o.value=u.key;o.textContent=u.name;sel.appendChild(o);});
+    sel.addEventListener('change',renderReporting);wrap.appendChild(sel);
+  }
+  if(tab==='jobs'){
+    const sel=document.createElement('select');sel.className='filter-btn cc-select';sel.id='r-job-status';
+    sel.innerHTML='<option value="all">All statuses</option><option value="inplay">In Play</option><option value="complete">Complete</option><option value="archived">Archived</option>';
+    sel.addEventListener('change',renderReporting);wrap.appendChild(sel);
+    const sel2=document.createElement('select');sel2.className='filter-btn cc-select';sel2.id='r-job-client';
+    sel2.innerHTML='<option value="all">All clients</option>';
+    [...new Set(jobs.map(j=>j.company).filter(Boolean))].sort().forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel2.appendChild(o);});
+    sel2.addEventListener('change',renderReporting);wrap.appendChild(sel2);
+  }
+  if(tab==='clients'){
+    const sel=document.createElement('select');sel.className='filter-btn cc-select';sel.id='r-client-sel';
+    sel.innerHTML='<option value="all">All clients</option>';
+    [...new Set(jobs.map(j=>j.company).filter(Boolean))].sort().forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
+    sel.addEventListener('change',renderReporting);wrap.appendChild(sel);
+  }
+}
+
+function _getPeriodCutoff(){
+  const period=document.getElementById('r-period')?.value||'month';
+  const now=Date.now();
+  if(period==='week')return now-7*86400000;
+  if(period==='2weeks')return now-14*86400000;
+  if(period==='month')return now-30*86400000;
+  if(period==='quarter')return now-90*86400000;
+  if(period==='year')return now-365*86400000;
+  return 0;
 }
 
 function getFilteredTasks(){
@@ -6971,133 +7030,283 @@ function getFilteredTasks(){
 }
 
 function fmtHrs(h){if(!h||h===0)return'0h';const m=Math.round(h*60);const hh=Math.floor(m/60);const mm=m%60;return hh&&mm?`${hh}h ${mm}m`:hh?`${hh}h`:`${mm}m`;}
+function fmtDollar(n){if(!n)return'$0';return n>=1000000?`$${(n/1000000).toFixed(1)}m`:n>=1000?`$${(n/1000).toFixed(0)}k`:`$${Math.round(n).toLocaleString()}`;}
+function destroyChart(c){if(c&&typeof c.destroy==='function'){try{c.destroy();}catch(e){}}return null;}
+let _rCharts={};
+function _makeChart(id,cfg){
+  _rCharts[id]=destroyChart(_rCharts[id]);
+  const el=document.getElementById(id);if(!el)return;
+  _rCharts[id]=new Chart(el,cfg);
+}
+const _chartOpts=(axis='y')=>({responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:axis==='y'}},y:{beginAtZero:true,grid:{color:'#f0f0f0'},ticks:{callback:v=>typeof v==='number'?fmtHrs(v):v}}}});
 
 function renderReporting(){
-  const tasks=getFilteredTasks();
-  updateWeekLabel();
-  
-  // Update subtitle
-  const personSel=document.getElementById('r-person');
-  const periodSel=document.getElementById('r-period');
-  const jobSel=document.getElementById('r-job');
-  const personLabel=personSel.value==='all'?'All People':people[personSel.value]?.name||personSel.value;
-  document.getElementById('r-sub').textContent=`${personLabel} · ${periodSel.value==='week'?'This Week':periodSel.value==='2weeks'?'Last 2 Weeks':periodSel.value==='month'?'This Month':periodSel.value==='quarter'?'This Quarter':'All Time'}`;
-
-  // Person totals
-  const personTotals={};
-  let grandTotal=0;
-  tasks.forEach(t=>{
-    if(!personTotals[t.person])personTotals[t.person]={hours:0,name:people[t.person]?.name||t.person,color:people[t.person]?.color||'#999'};
-    personTotals[t.person].hours+=t.hours||0;
-    grandTotal+=t.hours||0;
-  });
-  
-  const ptEl=document.getElementById('r-person-totals');
-  ptEl.innerHTML='';
-  Object.keys(personTotals).forEach(pk=>{
-    const pt=personTotals[pk];
-    const utilPct=Math.min(100,Math.round((pt.hours/100)*100));
-    ptEl.innerHTML+=`<div class="r-p-card"><div class="r-p-name">${pt.name}</div><div class="r-p-hours" style="color:${pt.color}">${fmtHrs(pt.hours)}</div><div class="r-p-util">${utilPct}% utilised</div><div class="r-p-bar"><div class="r-p-bar-fill" style="width:${utilPct}%;background:${pt.color};"></div></div></div>`;
-  });
-
-  // Chart: Hours by Person
-  const pLabels=Object.keys(personTotals).map(k=>personTotals[k].name);
-  const pHours=Object.values(personTotals).map(v=>v.hours);
-  const pColors=Object.values(personTotals).map(v=>v.color);
-  destroyChart(chartByPerson);
-  chartByPerson=new Chart(document.getElementById('chart-by-person'),{
-    type:'bar',
-    data:{labels:pLabels,datasets:[{data:pHours,backgroundColor:pColors,hoverBackgroundColor:pColors.map(c=>c+'cc')}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:'#f0f0f0'},ticks:{callback:v=>fmtHrs(v)}}}}
-  });
-
-  // Chart: Hours by Day
-  const dayTotals={};
-  tasks.forEach(t=>{dayTotals[t.day]=(dayTotals[t.day]||0)+(t.hours||0);});
-  const dayLabels=['Mon','Tue','Wed','Thu','Fri'];
-  const dayData=[1,2,3,4,5].map(d=>dayTotals[d]||0);
-  destroyChart(chartByDay);
-  chartByDay=new Chart(document.getElementById('chart-by-day'),{
-    type:'bar',
-    data:{labels:dayLabels,datasets:[{data:dayData,backgroundColor:'#ED1E24',hoverBackgroundColor:'#ED1E24cc'}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:'#f0f0f0'},ticks:{callback:v=>fmtHrs(v)}}}}
-  });
-
-  // Chart: Hours by Job
-  const jobTotals={};
-  tasks.forEach(t=>{
-    const job=t.job||'Personal';
-    jobTotals[job]=(jobTotals[job]||0)+(t.hours||0);
-  });
-  const jobLabels=Object.keys(jobTotals);
-  const jobHours=Object.values(jobTotals);
-  const jobPalette=['#ED1E24','#6B7FA3','#7B9E87','#C45D5D','#5D88C4','#C4A35D','#5DC48A','#8A5DC4'];
-  destroyChart(chartByJob);
-  chartByJob=new Chart(document.getElementById('chart-by-job'),{
-    type:'doughnut',
-    data:{labels:jobLabels,datasets:[{data:jobHours,backgroundColor:jobPalette.slice(0,jobLabels.length),hoverOffset:6}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},padding:10}}}}
-  });
-
-  // Chart: Budget usage by job
-  const budgetData=jobs.filter(j=>j.budgetTotal).slice(0,8).map(j=>({
-    name:j.name,usedPct:j.bPct||0,overBudget:j.bPct>100
-  }));
-  destroyChart(chartByBudget);
-  chartByBudget=new Chart(document.getElementById('chart-by-budget'),{
-    type:'bar',
-    data:{
-      labels:budgetData.map(b=>b.name.length>20?b.name.slice(0,20)+'…':b.name),
-      datasets:[{label:'Budget Used %',data:budgetData.map(b=>b.usedPct),
-        backgroundColor:budgetData.map(b=>b.overBudget?'#ED1E24':'#4CAF50'),
-        hoverBackgroundColor:budgetData.map(b=>b.overBudget?'#ED1E24cc':'#4CAF50cc')}]
-    },
-    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:120,grid:{color:'#f0f0f0'},ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}
-  });
-
-  // Data table
-  const tbody=document.getElementById('r-tbody');
-  if(tbody){
-    const dayNames=['','Mon','Tue','Wed','Thu','Fri'];
-    tbody.innerHTML=tasks.length===0
-      ?'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;">No tasks in this period.</td></tr>'
-      :tasks.map(t=>{
-        const done=t.done?`<span style="color:#2E7D32;font-size:11px;">✓ Done</span>`:`<span style="color:var(--muted);font-size:11px;">Pending</span>`;
-        const urgent=t.urgent&&!t.done?` <i class="ti ti-alert-circle" style="color:var(--red);font-size:11px;"></i>`:'';
-        return`<tr>
-          <td>${t.title||'—'}${urgent}</td>
-          <td style="font-size:12px;color:var(--muted);">${people[t.person]?.name||t.person}</td>
-          <td style="font-size:12px;color:var(--muted);">${t.job||'Personal'}</td>
-          <td style="font-size:12px;color:var(--muted);">${dayNames[t.day]||'—'}</td>
-          <td style="font-weight:500;">${fmtHrs(t.hours||0)}</td>
-          <td>${done}</td>
-        </tr>`;
-      }).join('');
-  }
-  saveData();
+  const period=document.getElementById('r-period')?.value||'month';
+  const pLabel={'week':'This Week','2weeks':'Last 2 Weeks','month':'This Month','quarter':'This Quarter','year':'This Year','all':'All Time'}[period]||'';
+  document.getElementById('r-sub').textContent={'business':'Business overview','people':'People','jobs':'Jobs','clients':'Clients'}[_reportTab]+' · '+pLabel;
+  if(_reportTab==='business')_renderBusinessReport();
+  else if(_reportTab==='people')_renderPeopleReport();
+  else if(_reportTab==='jobs')_renderJobsReport();
+  else if(_reportTab==='clients')_renderClientsReport();
 }
 
-function destroyChart(c){if(c&&typeof c.destroy==='function'){try{c.destroy();}catch(e){}}return null;}
+// ── BUSINESS ─────────────────────────────────────────────────────────────────
+function _renderBusinessReport(){
+  const el=document.getElementById('rp-business');if(!el)return;
+  const tasks=getFilteredTasks();
+  const cutoff=_getPeriodCutoff();
+  const totalH=tasks.reduce((s,t)=>s+(t.hours||0),0);
+  const billH=tasks.filter(t=>t.billable!==false&&t.job).reduce((s,t)=>s+(t.hours||0),0);
+  const nbillH=totalH-billH;
+  const liveJobs=jobs.filter(j=>j.status==='inplay');
+  const totalInvoiced=stInvoices.reduce((s,inv)=>{
+    const d=new Date((inv.date||inv.issueDate||'').slice(0,10)+'T12:00:00');
+    return s+((!cutoff||d>=cutoff)?(inv.totalAmountExTax||inv.amount||0):0);
+  },0);
+  const totalPaid=stInvoices.filter(inv=>{
+    const d=new Date((inv.date||inv.issueDate||'').slice(0,10)+'T12:00:00');
+    return(!cutoff||d>=cutoff)&&(inv.status==='Paid'||inv.invoiceStatus?.name==='Paid');
+  }).reduce((s,inv)=>s+(inv.totalAmountExTax||inv.amount||0),0);
+  const billPct=totalH>0?Math.round(billH/totalH*100):0;
 
-function exportReportingCSV(){
+  // Hours by week buckets for trend chart
+  const weekBuckets={};
+  tasks.forEach(t=>{
+    if(!t.weekKey)return;
+    weekBuckets[t.weekKey]=(weekBuckets[t.weekKey]||0)+(t.hours||0);
+  });
+  const wKeys=Object.keys(weekBuckets).sort();
+  const wLabels=wKeys.map(k=>{const d=new Date(k+'T00:00:00');return`${d.getDate()}/${d.getMonth()+1}`;});
+  const wData=wKeys.map(k=>weekBuckets[k]);
+
+  // Billable split for doughnut
+  const splitPalette=['#ED1E24','#6B7FA3'];
+
+  el.innerHTML=`
+    <div class="r-kpi-grid">
+      <div class="r-kpi"><div class="r-kpi-lbl">Total hours</div><div class="r-kpi-val">${fmtHrs(totalH)}</div><div class="r-kpi-sub">${billPct}% billable</div><div class="r-kpi-bar"><div class="r-kpi-fill" style="width:${billPct}%;background:var(--red);"></div></div></div>
+      <div class="r-kpi"><div class="r-kpi-lbl">Billable hours</div><div class="r-kpi-val">${fmtHrs(billH)}</div><div class="r-kpi-sub">${fmtHrs(nbillH)} non-billable</div><div class="r-kpi-bar"><div class="r-kpi-fill" style="width:${billPct}%;background:#4CAF50;"></div></div></div>
+      <div class="r-kpi"><div class="r-kpi-lbl">Revenue invoiced</div><div class="r-kpi-val">${fmtDollar(totalInvoiced)}</div><div class="r-kpi-sub">${fmtDollar(totalPaid)} paid</div><div class="r-kpi-bar"><div class="r-kpi-fill" style="width:${totalInvoiced>0?Math.min(100,Math.round(totalPaid/totalInvoiced*100)):0}%;background:#4CAF50;"></div></div></div>
+      <div class="r-kpi"><div class="r-kpi-lbl">Active jobs</div><div class="r-kpi-val">${liveJobs.length}</div><div class="r-kpi-sub">of ${jobs.length} total</div><div class="r-kpi-bar"><div class="r-kpi-fill" style="width:${Math.min(100,Math.round(liveJobs.length/Math.max(1,jobs.length)*100))}%;background:#3498DB;"></div></div></div>
+    </div>
+    <div class="r-charts-2">
+      <div class="r-chart-card"><div class="r-chart-h">Hours logged per week</div><div class="r-chart-wrap"><canvas id="rc-trend"></canvas></div></div>
+      <div class="r-chart-card"><div class="r-chart-h">Billable vs non-billable</div><div class="r-chart-wrap"><canvas id="rc-split"></canvas></div></div>
+    </div>
+    <div class="r-section">
+      <div class="r-section-hd">Over-budget jobs</div>
+      ${jobs.filter(j=>(j.bPct||0)>=90).sort((a,b)=>(b.bPct||0)-(a.bPct||0)).slice(0,10).map(j=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--faint);">
+          <span style="font-size:12px;color:var(--muted);width:50px;flex-shrink:0;">${j.id}</span>
+          <span style="flex:1;font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;color:var(--ink);" onclick="openJobDetail('${j.id}')">${j.name}</span>
+          <span style="font-size:12px;color:var(--muted);">${j.company||''}</span>
+          <div style="width:120px;height:6px;background:var(--faint);border-radius:3px;overflow:hidden;flex-shrink:0;"><div style="width:${Math.min(100,j.bPct||0)}%;height:100%;background:${(j.bPct||0)>=100?'var(--red)':'#F57F17'};border-radius:3px;"></div></div>
+          <span style="font-size:12px;font-weight:500;color:${(j.bPct||0)>=100?'var(--red)':'#F57F17'};width:42px;text-align:right;">${j.bPct||0}%</span>
+        </div>`).join('')||'<div style="color:var(--muted);font-size:13px;padding:16px 0;">No jobs near or over budget.</div>'}
+    </div>`;
+
+  _makeChart('rc-trend',{type:'bar',data:{labels:wLabels,datasets:[{data:wData,backgroundColor:'#ED1E24bb',hoverBackgroundColor:'#ED1E24'}]},options:_chartOpts()});
+  _makeChart('rc-split',{type:'doughnut',data:{labels:['Billable','Non-billable'],datasets:[{data:[billH,nbillH],backgroundColor:splitPalette,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12}}}}});
+}
+
+// ── PEOPLE ────────────────────────────────────────────────────────────────────
+function _renderPeopleReport(){
+  const el=document.getElementById('rp-people');if(!el)return;
+  const personFilter=document.getElementById('r-person')?.value||'all';
+  const tasks=getFilteredTasks();
+  const palette=['#ED1E24','#6B7FA3','#7B9E87','#C45D5D','#5D88C4','#C4A35D','#5DC48A','#8A5DC4'];
+
+  // Group by person
+  const byPerson={};
+  tasks.forEach(t=>{
+    const key=t.person;
+    const u=stUsersById[Object.values(stUsersById).find(x=>x.key===key)?.id]||null;
+    const name=u?.name||people[key]?.name||key;
+    const color=u?.color||people[key]?.color||'#999';
+    if(!byPerson[key])byPerson[key]={name,color,hours:0,billH:0,jobs:new Set()};
+    byPerson[key].hours+=t.hours||0;
+    if(t.billable!==false&&t.job)byPerson[key].billH+=t.hours||0;
+    if(t.job)byPerson[key].jobs.add(t.job.match(/^(\d+)/)?.[1]||t.job);
+  });
+
+  const entries=Object.entries(byPerson).sort((a,b)=>b[1].hours-a[1].hours);
+  const maxH=entries.length?entries[0][1].hours:1;
+  const pLabels=entries.map(([,v])=>v.name);
+  const pHours=entries.map(([,v])=>v.hours);
+  const pColors=entries.map(([,v])=>v.color);
+
+  // Hours by day of week
+  const dayTotals=[0,0,0,0,0];
+  tasks.forEach(t=>{if(t.day>=1&&t.day<=5)dayTotals[t.day-1]+=t.hours||0;});
+
+  el.innerHTML=`
+    <div class="r-people-grid">
+      ${entries.map(([k,v])=>{
+        const billPct=v.hours>0?Math.round(v.billH/v.hours*100):0;
+        const barW=Math.round(v.hours/maxH*100);
+        return`<div class="r-person-card">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+            <div style="width:32px;height:32px;border-radius:50%;background:${v.color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0;">${v.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div>
+            <div class="r-person-card-name">${v.name}</div>
+          </div>
+          <div class="r-person-card-hours">${fmtHrs(v.hours)}</div>
+          <div class="r-person-card-meta">${billPct}% billable · ${v.jobs.size} job${v.jobs.size!==1?'s':''}</div>
+          <div class="r-kpi-bar" style="margin-top:8px;"><div class="r-kpi-fill" style="width:${barW}%;background:${v.color};"></div></div>
+        </div>`;
+      }).join('')||'<div style="color:var(--muted);font-size:13px;grid-column:1/-1;padding:24px 0;">No data for this period.</div>'}
+    </div>
+    <div class="r-charts-2">
+      <div class="r-chart-card"><div class="r-chart-h">Hours by person</div><div class="r-chart-wrap"><canvas id="rc-people-bar"></canvas></div></div>
+      <div class="r-chart-card"><div class="r-chart-h">Hours by day of week</div><div class="r-chart-wrap"><canvas id="rc-people-day"></canvas></div></div>
+    </div>
+    <div class="r-section">
+      <div class="r-section-hd">Logged time breakdown</div>
+      <div class="r-table-wrap"><table class="r-table"><thead><tr><th>Person</th><th>Total hours</th><th>Billable</th><th>Non-billable</th><th>Jobs</th></tr></thead><tbody>
+        ${entries.map(([k,v])=>`<tr><td style="font-weight:500;">${v.name}</td><td>${fmtHrs(v.hours)}</td><td style="color:#4CAF50;">${fmtHrs(v.billH)}</td><td style="color:var(--muted);">${fmtHrs(v.hours-v.billH)}</td><td style="font-size:12px;color:var(--muted);">${v.jobs.size}</td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px;">No data.</td></tr>'}
+      </tbody></table></div>
+    </div>`;
+
+  _makeChart('rc-people-bar',{type:'bar',data:{labels:pLabels,datasets:[{data:pHours,backgroundColor:pColors}]},options:_chartOpts()});
+  _makeChart('rc-people-day',{type:'bar',data:{labels:['Mon','Tue','Wed','Thu','Fri'],datasets:[{data:dayTotals,backgroundColor:'#6B7FA3'}]},options:_chartOpts()});
+}
+
+// ── JOBS ──────────────────────────────────────────────────────────────────────
+function _renderJobsReport(){
+  const el=document.getElementById('rp-jobs');if(!el)return;
+  const statusFilter=document.getElementById('r-job-status')?.value||'all';
+  const clientFilter=document.getElementById('r-job-client')?.value||'all';
+  const tasks=getFilteredTasks();
+
+  // Hours per job from logged times
+  const hoursPerJob={};
+  tasks.forEach(t=>{
+    const jid=(t.job||'').match(/^(\d+)/)?.[1];
+    if(jid)hoursPerJob[jid]=(hoursPerJob[jid]||0)+(t.hours||0);
+  });
+
+  let filteredJobs=[...jobs];
+  if(statusFilter!=='all')filteredJobs=filteredJobs.filter(j=>j.status===statusFilter);
+  if(clientFilter!=='all')filteredJobs=filteredJobs.filter(j=>j.company===clientFilter);
+  filteredJobs.sort((a,b)=>(hoursPerJob[b.id]||0)-(hoursPerJob[a.id]||0));
+
+  // Budget chart: top 10 by budget usage
+  const budgetJobs=filteredJobs.filter(j=>j.bPct>0).sort((a,b)=>(b.bPct||0)-(a.bPct||0)).slice(0,10);
+  // Hours chart: top 10 by hours
+  const topHoursJobs=filteredJobs.filter(j=>hoursPerJob[j.id]).slice(0,10);
+
+  el.innerHTML=`
+    <div class="r-kpi-grid cols3">
+      <div class="r-kpi"><div class="r-kpi-lbl">Jobs shown</div><div class="r-kpi-val">${filteredJobs.length}</div><div class="r-kpi-sub">filtered from ${jobs.length} total</div></div>
+      <div class="r-kpi"><div class="r-kpi-lbl">Total hours logged</div><div class="r-kpi-val">${fmtHrs(Object.values(hoursPerJob).reduce((s,h)=>s+h,0))}</div><div class="r-kpi-sub">across filtered jobs</div></div>
+      <div class="r-kpi"><div class="r-kpi-lbl">Over budget</div><div class="r-kpi-val" style="color:var(--red);">${filteredJobs.filter(j=>(j.bPct||0)>=100).length}</div><div class="r-kpi-sub">jobs at 100%+ budget</div></div>
+    </div>
+    <div class="r-charts-2">
+      <div class="r-chart-card"><div class="r-chart-h">Hours by job (top 10)</div><div class="r-chart-wrap"><canvas id="rc-jobs-hrs"></canvas></div></div>
+      <div class="r-chart-card"><div class="r-chart-h">Budget used % (top 10)</div><div class="r-chart-wrap"><canvas id="rc-jobs-budget"></canvas></div></div>
+    </div>
+    <div class="r-section">
+      <div class="r-section-hd">All jobs</div>
+      <div class="r-job-hd"><span>Job</span><span>Client</span><span>Hours logged</span><span>Budget</span><span>Status</span></div>
+      ${filteredJobs.slice(0,50).map(j=>{
+        const h=hoursPerJob[j.id]||0;
+        const bPct=j.bPct||0;
+        const statusCls={'inplay':'wf-badge live','complete':'wf-badge completed','archived':'wf-badge completed','paused':'wf-badge live'}[j.status]||'wf-badge';
+        const statusLbl={'inplay':'In Play','complete':'Complete','archived':'Archived','paused':'Paused'}[j.status]||j.status;
+        return`<div class="r-job-row">
+          <span style="cursor:pointer;" onclick="openJobDetail('${j.id}')"><span style="font-size:11px;color:var(--muted);margin-right:6px;">${j.id}</span><span style="font-size:13px;">${j.name}</span></span>
+          <span style="font-size:12px;color:var(--muted);">${j.company||'—'}</span>
+          <span style="font-size:13px;font-weight:500;">${h>0?fmtHrs(h):'—'}</span>
+          <div style="display:flex;align-items:center;gap:6px;"><div style="width:60px;height:5px;background:var(--faint);border-radius:3px;overflow:hidden;"><div style="width:${Math.min(100,bPct)}%;height:100%;background:${bPct>=100?'var(--red)':bPct>=80?'#F57F17':'#4CAF50'};"></div></div><span style="font-size:11px;color:var(--muted);">${bPct}%</span></div>
+          <span class="${statusCls}" style="font-size:10px;">${statusLbl}</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+
+  _makeChart('rc-jobs-hrs',{type:'bar',data:{labels:topHoursJobs.map(j=>j.name.slice(0,20)),datasets:[{data:topHoursJobs.map(j=>hoursPerJob[j.id]||0),backgroundColor:'#6B7FA3'}]},options:{...(_chartOpts()),indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{callback:v=>fmtHrs(v)}},y:{grid:{display:false}}}}});
+  _makeChart('rc-jobs-budget',{type:'bar',data:{labels:budgetJobs.map(j=>j.name.slice(0,20)),datasets:[{data:budgetJobs.map(j=>j.bPct||0),backgroundColor:budgetJobs.map(j=>(j.bPct||0)>=100?'#ED1E24':'#4CAF50')}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:120,ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}});
+}
+
+// ── CLIENTS ───────────────────────────────────────────────────────────────────
+function _renderClientsReport(){
+  const el=document.getElementById('rp-clients');if(!el)return;
+  const clientFilter=document.getElementById('r-client-sel')?.value||'all';
+  const tasks=getFilteredTasks();
+  const palette=['#6B7FA3','#7B9E87','#C4956A','#9B59B6','#E67E22','#1ABC9C','#3498DB','#E74C3C','#F39C12','#888888'];
+
+  // Hours per client from logged times
+  const byClient={};
+  tasks.forEach(t=>{
+    const jid=(t.job||'').match(/^(\d+)/)?.[1];
+    if(!jid)return;
+    const j=jobs.find(x=>x.id===jid);
+    const co=j?.company||'Unknown';
+    if(!byClient[co])byClient[co]={hours:0,jobs:new Set(),revenue:0};
+    byClient[co].hours+=t.hours||0;
+    byClient[co].jobs.add(jid);
+  });
+  // Add revenue from invoices
+  stInvoices.forEach(inv=>{
+    const co=inv.company?.name||inv.companyName||'';
+    if(co&&byClient[co])byClient[co].revenue+=(inv.totalAmountExTax||inv.amount||0);
+  });
+
+  let entries=Object.entries(byClient).sort((a,b)=>b[1].hours-a[1].hours);
+  if(clientFilter!=='all')entries=entries.filter(([co])=>co===clientFilter);
+  const clrIdx=(co)=>palette[Object.keys(byClient).indexOf(co)%palette.length];
+
+  el.innerHTML=`
+    <div class="r-client-grid" style="margin-bottom:28px;">
+      ${entries.slice(0,9).map(([co,v])=>{
+        const cl=clientsData.find(c=>c.name===co);
+        const initials=(cl?.nickname||(co.match(/\b\w/g)||[co[0]]).join('')).slice(0,2).toUpperCase();
+        return`<div class="r-client-card" onclick="navTo('clients')">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <div style="width:36px;height:36px;border-radius:50%;background:${clrIdx(co)};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;flex-shrink:0;">${initials}</div>
+            <div style="font-size:14px;font-weight:500;line-height:1.2;">${cl?.nickname||co}</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
+            <div><div style="font-size:18px;font-weight:500;">${fmtHrs(v.hours)}</div><div style="font-size:10px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-top:2px;">Hours</div></div>
+            <div><div style="font-size:18px;font-weight:500;">${v.jobs.size}</div><div style="font-size:10px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-top:2px;">Jobs</div></div>
+            <div><div style="font-size:18px;font-weight:500;">${fmtDollar(v.revenue)}</div><div style="font-size:10px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-top:2px;">Invoiced</div></div>
+          </div>
+        </div>`;
+      }).join('')||'<div style="color:var(--muted);font-size:13px;grid-column:1/-1;padding:24px 0;">No client data for this period.</div>'}
+    </div>
+    <div class="r-charts-2">
+      <div class="r-chart-card"><div class="r-chart-h">Hours by client</div><div class="r-chart-wrap"><canvas id="rc-client-hrs"></canvas></div></div>
+      <div class="r-chart-card"><div class="r-chart-h">Revenue by client</div><div class="r-chart-wrap"><canvas id="rc-client-rev"></canvas></div></div>
+    </div>`;
+
+  const cLabels=entries.slice(0,10).map(([co])=>co.slice(0,20));
+  const cHours=entries.slice(0,10).map(([,v])=>v.hours);
+  const cRev=entries.slice(0,10).map(([,v])=>v.revenue);
+  const cColors=entries.slice(0,10).map(([co])=>clrIdx(co));
+  _makeChart('rc-client-hrs',{type:'doughnut',data:{labels:cLabels,datasets:[{data:cHours,backgroundColor:cColors,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},padding:10}}}}});
+  _makeChart('rc-client-rev',{type:'bar',data:{labels:cLabels,datasets:[{data:cRev,backgroundColor:cColors}]},options:{...(_chartOpts()),scales:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{callback:v=>fmtDollar(v)}}}}});
+}
+
+function exportReportTab(){
   const tasks=getFilteredTasks();
   if(tasks.length===0){alert('No data to export.');return;}
-  let csv='Person,Task,Job,Item,Hours,Status,Day\n';
+  let csv='Person,Title,Job,Item,Hours,Billable,Date\n';
   tasks.forEach(t=>{
-    csv+=`${people[t.person]?.name||t.person},"${(t.title||'').replace(/"/g,'""')}","${(t.job||'').replace(/"/g,'""')}","${(t.item||'').replace(/"/g,'""')}",${fmtHrs(t.hours||0)},${t.done?'Done':'Pending'},${['','Mon','Tue','Wed','Thu','Fri'][t.day]||t.day}\n`;
+    const u=Object.values(stUsersById).find(x=>x.key===t.person);
+    const name=u?.name||people[t.person]?.name||t.person;
+    const date=t.weekKey?new Date(t.weekKey+'T00:00:00'):new Date();date.setDate(date.getDate()+(( t.day||1)-1));
+    csv+=`"${name}","${(t.title||'').replace(/"/g,'""')}","${(t.job||'').replace(/"/g,'""')}","${(t.item||'').replace(/"/g,'""')}",${(t.hours||0).toFixed(2)},${t.billable!==false?'Yes':'No'},${date.toISOString().slice(0,10)}\n`;
   });
   const blob=new Blob([csv],{type:'text/csv'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`report_${new Date().toISOString().slice(0,10)}.csv`;
+  const a=document.createElement('a');a.href=url;a.download=`report_${_reportTab}_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();URL.revokeObjectURL(url);
 }
 
-// Wire up filter listeners (idempotent)
+// Legacy alias kept for backward compat
+function exportReportingCSV(){exportReportTab();}
+
 function wireReportingFilters(){
-  ['r-period','r-person','r-job'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el&&!el.dataset.wired){el.addEventListener('change',renderReporting);el.dataset.wired='1';}
-  });
+  const el=document.getElementById('r-period');
+  if(el&&!el.dataset.wired){el.addEventListener('change',renderReporting);el.dataset.wired='1';}
 }
 // ============ BOARDS ENGINE (redesigned) ============
 let boardsData={briefed:[],inprogress:[],review:[],approved:[],complete:[]};
