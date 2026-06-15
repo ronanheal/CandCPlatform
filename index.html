@@ -1950,8 +1950,21 @@ function savePeople(){
 }
 let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
-const APP_VERSION='2.5.0';
+const APP_VERSION='2.6.0';
 const CHANGELOG=[
+  {version:'2.6.0',date:'16 Jun 2026',title:'Streamtime data fully unified — todos, calendar, dashboard, reporting',items:[
+    'ST logged time entries now render identically to manual tasks — same card style, hover tooltip, colours, and click-to-view modal',
+    'Todo list: done cards from Streamtime show job chip, item name, billable colour, and hours — no longer plain grey blocks',
+    'Todo calendar: ST entries appear in the Completed drawer and are clickable',
+    'Clicking any ST card opens a modal showing all entry details (title, hours, job, item) with a Streamtime source badge',
+    'Day capacity bar now counts ST logged hours in the done/billable split — bar fills correctly',
+    'Dashboard "Billable this week" and "My tasks today" include ST logged time',
+    'Reporting charts and table now pull from Streamtime logged_times as primary source with period/person/job filters',
+    'Job time tab entry titles now show the note written in Streamtime (not just item name)',
+    'Job plan: team avatar stack per item — shows who logged time with hover showing name + hours',
+    'Job plan: non-billable phases show lock badge and $0 / $0 with a tooltip, matching Streamtime display',
+    'ST done cards link directly to the relevant job when clicked',
+  ]},
   {version:'2.5.0',date:'15 Jun 2026',title:'Invoice overhaul, person picker teams, item progress bars, undo',items:[
     'Invoices page redesigned as a table with Company, Issue date, Inv #, Job, Due date, Status, Amount columns',
     '"To Be Invoiced" filter built into Invoices page — shows completed jobs ready to bill; "All Invoices" shows full history',
@@ -2187,7 +2200,22 @@ function _getStWeekEntries(personKey,offset){
     if(!day)return;
     if(!result[day])result[day]=[];
     const jNum=lt.job?.number?String(lt.job.number):null;
-    result[day].push({minutes:lt.minutes||0,title:lt.notes||lt.itemName||lt.job?.name||'Untimed',itemName:lt.itemName||'',jobName:lt.job?.name||'',jobNum:jNum,jobId:jNum,billable:lt.isBillable!==false});
+    result[day].push({
+      id:'st-lt-'+lt.id,
+      title:lt.notes||lt.itemName||lt.job?.name||'Untimed',
+      hours:(lt.minutes||0)/60,
+      done:true,urgent:false,personal:false,
+      job:jNum||'',
+      item:lt.itemName||'',
+      note:lt.notes||'',
+      person:personKey,
+      _fromST:true,
+      // legacy fields used by dashboard/capacity code
+      minutes:lt.minutes||0,
+      jobNum:jNum,jobId:jNum,
+      jobName:lt.job?.name||'',itemName:lt.itemName||'',
+      billable:lt.isBillable!==false,
+    });
   });
   return result;
 }
@@ -2671,6 +2699,9 @@ function renderTodoCalendar(){
     if(t.done)doneTasks.push({...t,day:d});
     else allActive.push({...t,day:d});
   });});
+  // Add ST logged entries as done tasks
+  const stWeekCal=_getStWeekEntries(currentPerson,weekOffset);
+  [1,2,3,4,5].forEach(d=>{(stWeekCal[d]||[]).forEach(e=>doneTasks.push({...e,day:d}));});
   // Filters
   if(_calFilterUrgentOnly)allActive=allActive.filter(t=>t.urgent);
   if(!_calFilterPersonal)allActive=allActive.filter(t=>!t.personal);
@@ -2989,22 +3020,7 @@ function renderTodo(){
     if(doneTasks.length===0&&stEntries.length===0)doneEl.innerHTML='<div class="day-done-empty">—</div>';
     else{
       doneTasks.forEach(t=>doneEl.appendChild(createTaskCard(t,d,true)));
-      stEntries.forEach(e=>{
-        const el=document.createElement('div');
-        el.className='task-card done';
-        const _stSubtitle=e.itemName&&e.itemName!==e.title?`<div style="font-size:11px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.itemName}</div>`:'';
-        el.innerHTML=`<div class="tc-title" style="font-size:12px;text-decoration:line-through;opacity:.6;">${e.title}</div>${_stSubtitle}<div class="tc-meta" style="margin-top:3px;">${e.jobNum?`<span class="tc-job${e.jobId?' clickable':''}" data-jid="${e.jobId||''}">${e.jobNum}${e.jobName?' '+e.jobName:''}</span>`:''}<span style="font-size:11px;color:var(--muted);margin-left:auto;">${_stFmtH(e.minutes)}</span></div>`;
-        if(e.jobId){
-          el.style.cursor='pointer';
-          el.addEventListener('click',ev=>{
-            if(ev.target.closest('.tc-job'))return; // handled below
-            openJobDetail(e.jobId);
-          });
-          const jEl=el.querySelector('.tc-job.clickable');
-          if(jEl)jEl.addEventListener('click',ev=>{ev.stopPropagation();openJobDetail(e.jobId);});
-        }
-        doneEl.appendChild(el);
-      });
+      stEntries.forEach(e=>doneEl.appendChild(createTaskCard(e,d,true)));
     }
 
     todoEl.addEventListener('dragover',e=>{e.preventDefault();todoEl.classList.add('drop-hi');_highlightDropTarget(e,todoEl);});
@@ -3072,7 +3088,7 @@ function taskCardHeight(hours){
 function createTaskCard(t,day,isDone){
   const card=document.createElement('div');
   card.className='task-card'+(isDone?' done-c':'')+(t.urgent&&!isDone?' urgent-c':'');
-  card.draggable=true;
+  card.draggable=!t._fromST;
   card.dataset.taskId=t.id;card.dataset.day=day;
   card.dataset.hours=t.hours||'';
   if(t.hours)card.style.height=taskCardHeight(t.hours)+'px';
@@ -3133,6 +3149,7 @@ function createTaskCard(t,day,isDone){
     if(parent)_highlightDropTarget(e,parent);
   });
 
+  if(t._fromST)return card; // ST entries: no resize, no drag — click-to-view handled above
   // Edge resize: top or bottom 7px = resize zone (drag to change hours)
   const EDGE=7;
   card.addEventListener('mousemove',e=>{
@@ -3382,6 +3399,14 @@ function onDropToSection(e,toDay,markDone){
 
 function openEditTodo(t,day){editTask(t,day);}
 function openEditTodoById(id,day){
+  // ST entries are not in todoData — find them from the week entries
+  if(id&&id.startsWith('st-lt-')){
+    const sw=_getStWeekEntries(currentPerson,weekOffset);
+    for(let d=1;d<=5;d++){const e=(sw[d]||[]).find(x=>x.id===id);if(e){editTask(e,d||day);return;}}
+    // Check calTaskMap as fallback
+    const cm=window._calTaskMap&&window._calTaskMap[id];if(cm)editTask(cm,cm.day||day);
+    return;
+  }
   const wd=getWeekData(currentPerson);
   const t=(wd[day]||[]).find(x=>x.id===id);
   if(t)editTask(t,day);
@@ -3793,9 +3818,16 @@ function editTask(t,day){
   const dateStr=`${now.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][now.getMonth()]} ${now.getFullYear()}`;
   document.getElementById('td-ts-text').innerHTML=`Created by <strong>${people[currentPerson]?.name||'you'}</strong> · ${dateStr}<br>Last modified by <strong>${people[currentPerson]?.name||'you'}</strong> · just now`;
   document.getElementById('td-timestamps').style.display='';
-  document.getElementById('td-modal-title').textContent='Edit task';
-  document.getElementById('td-save-lbl').textContent='Save changes';
-  document.getElementById('edit-task-btn').style.display='inline-block';
+  if(t._fromST){
+    document.getElementById('td-modal-title').textContent='Streamtime entry';
+    document.getElementById('td-save-lbl').textContent='Close';
+    document.getElementById('edit-task-btn').style.display='none';
+    document.getElementById('td-ts-text').innerHTML=`Logged in <strong>Streamtime</strong> · synced to platform<br><span style="color:var(--muted);">Changes here won't sync back to Streamtime.</span>`;
+  } else {
+    document.getElementById('td-modal-title').textContent='Edit task';
+    document.getElementById('td-save-lbl').textContent='Save changes';
+    document.getElementById('edit-task-btn').style.display='inline-block';
+  }
   document.getElementById('todo-modal').classList.add('on');
   setTimeout(()=>document.getElementById('td-task').focus(),50);
 }
