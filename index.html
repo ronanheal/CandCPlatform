@@ -1970,8 +1970,35 @@ function savePeople(){
 }
 let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
-const APP_VERSION='2.7.0';
+const APP_VERSION='2.9.1';
 const CHANGELOG=[
+  {version:'2.9.1',date:'16 Jun 2026',title:'Accurate NZD costs',items:[
+    'Fixed: monetary values from Streamtime now preserved with full cent precision (no more Math.round per job)',
+    'Totals in the jobs footer now match Streamtime cent-for-cent',
+  ]},
+  {version:'2.9.0',date:'16 Jun 2026',title:'Lucide icons, jobs lazy loading, data roadmap',items:[
+    'Site-wide icon library migrated to Lucide — crisp SVG icons replace Tabler font icons',
+    'ITEM_ICONS expanded to 30+ job type mappings (palette, video, film, camera, pen-line, etc.)',
+    'Jobs page now lazy-loads in batches of 60 — first render is instant, more load as you scroll',
+    'IntersectionObserver sentinel shows "Showing X of Y — scroll for more" with auto-load on scroll',
+    'ROADMAP.md written: full audit of all 7 ST datasets, what\'s wired vs available, 20 proposed features',
+    'Key data gaps identified: user capacity, profitability, job deadlines, quote status, invoice due dates',
+  ]},
+  {version:'2.8.1',date:'16 Jun 2026',title:'Todo overflow pill and divider flash fix',items:[
+    'When done bar is dragged up and todos overflow: sticky pill shows "N hidden · Xh" with View ↑ button',
+    'View ↑ button expands the divider just enough to reveal all hidden tasks',
+    'Fixed: done bar no longer flashes at y=0 when clicking a task card (pre-positioned before DOM insert)',
+    'Overflow pill updates live after every drag-end',
+  ]},
+  {version:'2.8.0',date:'16 Jun 2026',title:'Reporting fixed, todo improvements, jobs footer totals',items:[
+    'Fixed: reporting pages no longer blank — nav now calls _buildTabFilters on first load',
+    'Fixed: ST data now loads immediately on site open (not only after visiting todo tab)',
+    'Todo task cards always show hours regardless of card height',
+    'Todo summary bar: hover to see per-day breakdown (Mon–Fri, To Do / Done columns)',
+    'Right-click anywhere on todo board background → Add task menu at that day',
+    'Jobs footer bar: TOTAL (N) with $used / $budget progress bar and over-budget count',
+    'Jobs sort is NaN-safe — non-numeric IDs sort to bottom consistently',
+  ]},
   {version:'2.7.0',date:'16 Jun 2026',title:'Reporting redesign, non-billable clarity, avatar breakdown',items:[
     'Reporting page now has four sub-tabs: Business, People, Jobs, Clients',
     'Business tab: KPIs (total hours, billable %, revenue invoiced, active jobs), hours trend chart, billable split doughnut, over-budget job list',
