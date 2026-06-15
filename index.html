@@ -4317,7 +4317,8 @@ function openJobDetail(id){
   if(!j.lead){const cl=clientsData.find(c=>c.name===j.company);if(cl&&cl.lead)j.lead=cl.lead;}
   const leadPerson=j.lead&&people[j.lead]?people[j.lead]:null;
   const leadHtml=leadPerson?`<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;"><div style="width:16px;height:16px;border-radius:50%;background:${leadPerson.color};display:inline-flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:600;">${leadPerson.initials}</div> ${leadPerson.name}</span> · `:'';
-  document.getElementById('d-meta-line').innerHTML=`${j.id} · ${j.company} · ${leadHtml}${j.billable?'Billable':'Non-billable'} &nbsp;<span class="wf-badge ${wfCls}" style="cursor:pointer;user-select:none;" title="Click to advance workflow stage" onclick="advanceWorkflow('${id}')">${wfLabel} <i class="ti ti-arrow-right" style="font-size:9px;vertical-align:middle;"></i></span>`+(j.paused?' &nbsp;<span class="paused-badge"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>':'');
+  const archivedBadge=j.status==='archived'?' &nbsp;<span class="paused-badge" style="background:#F5F5F5;color:#757575;border-color:#E0E0E0;"><i class="ti ti-archive" style="font-size:9px;"></i> Archived</span>':'';
+  document.getElementById('d-meta-line').innerHTML=`${j.id} · ${j.company} · ${leadHtml}${j.billable?'Billable':'Non-billable'} &nbsp;<span class="wf-badge ${wfCls}" style="cursor:pointer;user-select:none;" title="Click to advance workflow stage" onclick="advanceWorkflow('${id}')">${wfLabel} <i class="ti ti-arrow-right" style="font-size:9px;vertical-align:middle;"></i></span>`+(j.paused?' &nbsp;<span class="paused-badge"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>':'')+archivedBadge;
   document.getElementById('d-title-text').textContent=j.name;
   document.getElementById('d-hours-sell').textContent='';
   activeLabels=j.labels?[...j.labels]:[];
@@ -5185,6 +5186,12 @@ function renderItems(phId){
         });
       });
     });
+    // Also add ST logged time for this item
+    if(item._stId&&stLoggedTimes.length){
+      stLoggedTimes.forEach(lt=>{
+        if(lt.jobItemUser?.jobItemId===item._stId)_loggedH+=(lt.minutes||0)/60;
+      });
+    }
     const _loggedStr=_loggedH>0?formatHrs(_loggedH):'—';
     const _plannedH=parseHrsInput(item.hours)||0;
     const _overLogged=_loggedH>_plannedH&&_plannedH>0;
