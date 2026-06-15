@@ -2213,8 +2213,21 @@ async function initStreamtime(){
       rawU.forEach((u,i)=>{
         const name=[u.firstName,u.lastName].filter(Boolean).join(' ')||u.displayName||'Unknown';
         const initials=((u.firstName||'?')[0]+(u.lastName||'?')[0]).toUpperCase();
-        stUsersById[u.id]={id:u.id,name,initials,color:COLS[i%COLS.length],key:'st_'+u.id,email:u.email||''};
+        const color=COLS[i%COLS.length];
+        const key='st_'+u.id;
+        stUsersById[u.id]={id:u.id,name,initials,color,key,email:u.email||''};
+        // Merge into platform people map if not already present
+        if(!people[key]){
+          people[key]={
+            name,initials,color,
+            role:u.roles?.[0]?.name||u.role?.name||'',
+            days:[1,2,3,4,5],
+            _stId:u.id,
+            _fromStreamtime:true,
+          };
+        }
       });
+      savePeople();
     }
     // Contacts
     if(ctRes.ok)stContacts=await ctRes.json();
