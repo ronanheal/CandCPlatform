@@ -195,11 +195,19 @@ ALL_STATUSES = 'job_status in ["In Play","Complete","Paused","Archived"]'
 fresh_jobs = search(7, query=ALL_STATUSES, additional_data=["company"])
 print(f"  {len(fresh_jobs)} total jobs fetched")
 
-# Merge with existing jobs.json so we keep previously fetched phases/items
+# Safety: if jobs returned 0 (rate limit / API error), fall back to existing data
+# and skip the detail fetch + progress update entirely this run.
 existing_jobs = load_existing("jobs.json")
+if len(fresh_jobs) == 0 and len(existing_jobs) > 0:
+    print(f"  WARNING: API returned 0 jobs — keeping {len(existing_jobs)} existing and skipping this run")
+    fresh_jobs = existing_jobs  # use existing so other saves still work
+    skip_detail = True
+else:
+    skip_detail = False
+
 existing_by_id = {j["id"]: j for j in existing_jobs if isinstance(j, dict)}
 
-# Build merged job map — fresh top-level data wins, but preserve phases/items
+# Merge: fresh top-level data wins, but preserve any previously fetched phases/items
 job_map = {}
 for j in fresh_jobs:
     jid = j["id"]
@@ -228,12 +236,13 @@ needs_detail = [j for j in fresh_jobs if j["id"] not in detail_done]
 active_statuses = {"In Play", "Paused"}
 active_jobs = [j for j in fresh_jobs if (j.get("jobStatus") or {}).get("name") in active_statuses]
 
-if backfill_complete:
-    # Ongoing mode: refresh active jobs every run
+if skip_detail:
+    batch = []
+    print(f"\nSkipping detail fetch (jobs API returned 0)...")
+elif backfill_complete:
     batch = active_jobs
     print(f"\nBackfill complete — refreshing {len(batch)} active jobs' detail...")
 else:
-    # Backfill mode: process next BATCH_SIZE jobs that still need detail
     batch = needs_detail[:BATCH_SIZE]
     print(f"\nBackfill mode: {len(detail_done)}/{len(fresh_jobs)} done, fetching next {len(batch)}...")
 
@@ -256,20 +265,22 @@ with ThreadPoolExecutor(max_workers=CONCURRENCY) as pool:
 print(f"  phases/items: {fetched_count}/{len(batch)} done this run")
 
 # Check if backfill is now complete
-all_ids = {j["id"] for j in fresh_jobs}
-backfill_complete = all_ids.issubset(detail_done)
-if backfill_complete:
-    print("  ✓ Backfill complete — all jobs now have phases+items")
-
-# Save progress
-progress = {
-    "detail_done": list(detail_done),
-    "backfill_complete": backfill_complete,
-    "total_jobs": len(fresh_jobs),
-    "detail_count": len(detail_done),
-    "last_run": datetime.now(timezone.utc).isoformat(),
-}
-progress_path.write_text(json.dumps(progress, indent=2))
+if not skip_detail:
+    all_ids = {j["id"] for j in fresh_jobs}
+    backfill_complete = len(all_ids) > 0 and all_ids.issubset(detail_done)
+    if backfill_complete:
+        print("  ✓ Backfill complete — all jobs now have phases+items")
+    # Save progress only when we have real data
+    progress = {
+        "detail_done": list(detail_done),
+        "backfill_complete": backfill_complete,
+        "total_jobs": len(fresh_jobs),
+        "detail_count": len(detail_done),
+        "last_run": datetime.now(timezone.utc).isoformat(),
+    }
+    progress_path.write_text(json.dumps(progress, indent=2))
+else:
+    print("  Skipped progress update (no fresh jobs data)")
 
 # ── 5. Other search views ─────────────────────────────────────────────────────
 print("\nFetching other data...")
@@ -279,12 +290,14 @@ prev_quotes       = load_existing("quotes.json")
 prev_companies    = load_existing("companies.json")
 prev_contacts     = load_existing("contacts.json")
 prev_users        = load_existing("users.json")
+prev_expenses     = load_existing("expenses.json")
 
 logged_times = search(8)
 invoices     = search(10)
 quotes       = search(11)
 companies    = search(12)
 contacts     = search(13)
+expenses     = search(9)   # view 9 = logged expenses (cost entries against jobs)
 
 # ── 6. Save everything ────────────────────────────────────────────────────────
 jobs = list(job_map.values())
@@ -300,6 +313,7 @@ counts = {
     "quotes":       save("quotes.json",       quotes,             prev_quotes),
     "companies":    save("companies.json",    companies,          prev_companies),
     "contacts":     save("contacts.json",     contacts,           prev_contacts),
+    "expenses":     save("expenses.json",     expenses,           prev_expenses),
 }
 
 meta = {

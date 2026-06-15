@@ -2150,6 +2150,25 @@ let stContacts=[];
 let stUsersById={};   // userId → {name,initials,color,key}
 let _stIdToJobNum={}; // Streamtime internal job ID → job number string
 function _stFmtH(mins){return mins>=60?`${Math.floor(mins/60)}h${mins%60?mins%60+'m':''}`:mins>0?mins+'m':'0h';}
+// Returns ST logged entries for a person this week, grouped by day number 1-5 (Mon-Fri)
+function _getStWeekEntries(personKey,offset){
+  if(!stLoggedTimes.length)return{};
+  offset=offset||0;
+  const stUser=Object.values(stUsersById).find(u=>u.key===personKey);
+  if(!stUser)return{};
+  const mon=new Date();const dow=(mon.getDay()+6)%7;
+  mon.setDate(mon.getDate()-dow+(offset*7));mon.setHours(0,0,0,0);
+  const result={};
+  stLoggedTimes.forEach(lt=>{
+    if(lt.userId!==stUser.id)return;
+    const d=new Date((lt.date||'').slice(0,10)+'T12:00:00');
+    const day=Math.round((d-mon)/86400000)+1;
+    if(day<1||day>5)return;
+    if(!result[day])result[day]=[];
+    result[day].push({minutes:lt.minutes||0,title:lt.itemName||lt.job?.name||'Untimed',jobNum:lt.job?.number?String(lt.job.number):null,billable:lt.isBillable!==false});
+  });
+  return result;
+}
 function _mapStJob(j){
   const statusMap={'In Play':'inplay','Complete':'complete','Paused':'paused','Archived':'archived'};
   const wfMap={'In Play':'live','Complete':'completed','Paused':'live','Archived':'invoiced'};
@@ -2384,14 +2403,19 @@ function renderDashboard(){
     const tp=people[k];const twd=getWeekData(k,0);const ttasks=(twd[todayDow]||[]);
     const tdone=ttasks.filter(t=>t.done);const ttodo=ttasks.filter(t=>!t.done);
     const doneH=tdone.reduce((s,t)=>s+(t.hours||0),0);const todoH=ttodo.reduce((s,t)=>s+(t.hours||0),0);
-    const taskBlocks=ttasks.slice(0,5).map(t=>`<div class="tc-block ${t.done?'done':t.urgent?'urgent':'todo'}">${t.title}${t.hours?' — '+formatHrs(t.hours):''}</div>`).join('');
+    // Streamtime logged entries for today
+    const stToday=(_getStWeekEntries(k,0)[todayDow]||[]);
+    const stLoggedH=stToday.reduce((s,e)=>s+(e.minutes||0),0)/60;
+    const taskBlocks=ttasks.slice(0,4).map(t=>`<div class="tc-block ${t.done?'done':t.urgent?'urgent':'todo'}">${t.title}${t.hours?' — '+formatHrs(t.hours):''}</div>`).join('');
+    const stBlocks=stToday.slice(0,3).map(e=>`<div class="tc-block done" style="border-left:2px solid #3498DB;opacity:.8;">${e.title}${e.minutes?' — '+_stFmtH(e.minutes):''}</div>`).join('');
     const urgCnt=ttodo.filter(t=>t.urgent).length;
+    const totalBooked=todoH+doneH+stLoggedH;
     return`<div class="team-card" onclick="viewTeamTodo('${k}')">
-      <div class="tc-head"><div class="tc-av" style="background:${tp.color};">${tp.initials}</div><div><div class="tc-name">${tp.name}</div></div><div class="tc-meta">${formatHrs(todoH+doneH)||'0h'} booked</div>
+      <div class="tc-head"><div class="tc-av" style="background:${tp.color};">${tp.initials}</div><div><div class="tc-name">${tp.name}</div></div><div class="tc-meta">${formatHrs(totalBooked)||'0h'} booked</div>
         <button onclick="event.stopPropagation();openTodoModal(null,null,'${k}')" title="Add task for ${tp.name}" style="margin-left:8px;background:transparent;border:1px solid var(--border);border-radius:4px;width:22px;height:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted);font-size:13px;"><i class="ti ti-plus" style="font-size:11px;"></i></button>
       </div>
-      <div class="tc-timeline">${taskBlocks||'<div style="font-size:12px;color:var(--muted);padding:4px 0;">No tasks today</div>'}</div>
-      <div class="tc-footer"><div class="tc-stat">Done <span>${formatHrs(doneH)||'0h'}</span></div><div class="tc-stat">To do <span>${formatHrs(todoH)||'0h'}</span></div>${urgCnt?`<div class="tc-stat" style="margin-left:auto;color:var(--red);font-size:11px;">${urgCnt} urgent</div>`:'<div class="tc-stat" style="margin-left:auto;font-size:11px;color:var(--muted);">On track</div>'}</div>
+      <div class="tc-timeline">${taskBlocks||''}${stBlocks||(!taskBlocks?'<div style="font-size:12px;color:var(--muted);padding:4px 0;">No tasks today</div>':'')}</div>
+      <div class="tc-footer"><div class="tc-stat">Done <span>${formatHrs(doneH)||'0h'}</span></div><div class="tc-stat">To do <span>${formatHrs(todoH)||'0h'}</span></div>${stLoggedH>0?`<div class="tc-stat" style="color:#3498DB;">Logged <span>${formatHrs(stLoggedH)}</span></div>`:''}${urgCnt?`<div class="tc-stat" style="margin-left:auto;color:var(--red);font-size:11px;">${urgCnt} urgent</div>`:'<div class="tc-stat" style="margin-left:auto;font-size:11px;color:var(--muted);">On track</div>'}</div>
     </div>`;
   };
   let otherKeys=Object.keys(people).filter(k=>k!==MY_PERSON);
@@ -2841,11 +2865,13 @@ function renderTodo(){
   const wrap=document.getElementById('day-cols');wrap.innerHTML='';
   const data=getWeekData(currentPerson);
 
-  // Week totals for summary bar
-  let totalTodoH=0,totalDoneH=0;
+  // Week totals for summary bar (manual tasks + ST logged)
+  let totalTodoH=0,totalDoneH=0,totalStH=0;
   [1,2,3,4,5].forEach(d=>{(data[d]||[]).forEach(t=>{if(t.done)totalDoneH+=t.hours||0;else totalTodoH+=t.hours||0;});});
+  const stWeek=_getStWeekEntries(currentPerson,weekOffset);
+  [1,2,3,4,5].forEach(d=>{(stWeek[d]||[]).forEach(e=>totalStH+=e.minutes/60);});
   const sumEl=document.querySelector('.todo-summary');
-  if(sumEl)sumEl.textContent=`To do: ${formatHrs(totalTodoH)||'0h'} · Done: ${formatHrs(totalDoneH)||'0h'}`;
+  if(sumEl)sumEl.textContent=`To do: ${formatHrs(totalTodoH)||'0h'} · Done: ${formatHrs(totalDoneH)||'0h'}${totalStH>0?' · Logged: '+formatHrs(totalStH):''}`;
 
   const _dow=new Date().getDay();
   const todayDayNum=_dow===0?0:_dow;
@@ -2907,10 +2933,21 @@ function renderTodo(){
     const doneEl=document.getElementById('ddone-'+d);
 
     todoTasks.forEach(t=>todoEl.appendChild(createTaskCard(t,d,false)));
-    // Anchor todo tasks to the divider line: scroll to bottom so newest task is nearest the line
     todoEl.scrollTop=todoEl.scrollHeight;
-    if(doneTasks.length===0)doneEl.innerHTML='<div class="day-done-empty">—</div>';
-    else doneTasks.forEach(t=>doneEl.appendChild(createTaskCard(t,d,true)));
+    // ST logged entries for this day — read-only, shown in done section with blue indicator
+    const stEntries=_getStWeekEntries(currentPerson,weekOffset)[d]||[];
+    if(doneTasks.length===0&&stEntries.length===0)doneEl.innerHTML='<div class="day-done-empty">—</div>';
+    else{
+      doneTasks.forEach(t=>doneEl.appendChild(createTaskCard(t,d,true)));
+      stEntries.forEach(e=>{
+        const el=document.createElement('div');
+        el.className='task-card done';
+        el.style.cssText='border-left:2px solid #3498DB;opacity:.85;cursor:default;';
+        el.title='Logged in Streamtime';
+        el.innerHTML=`<div class="tc-title" style="font-size:12px;">${e.title}</div><div class="tc-meta-row">${e.jobNum?`<span class="tc-job">${e.jobNum}</span>`:''}<span style="font-size:11px;color:#3498DB;margin-left:auto;">${_stFmtH(e.minutes)} · ST</span></div>`;
+        doneEl.appendChild(el);
+      });
+    }
 
     todoEl.addEventListener('dragover',e=>{e.preventDefault();todoEl.classList.add('drop-hi');_highlightDropTarget(e,todoEl);});
     todoEl.addEventListener('dragleave',e=>{if(!todoEl.contains(e.relatedTarget)){todoEl.classList.remove('drop-hi');_clearDropIndicators();}});

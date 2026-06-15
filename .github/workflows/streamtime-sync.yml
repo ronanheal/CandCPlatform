@@ -22,7 +22,7 @@ jobs:
         run: |
           git fetch origin streamtime-data
           mkdir -p streamtime-data
-          for f in jobs.json logged_times.json invoices.json quotes.json companies.json contacts.json users.json sync_progress.json; do
+          for f in jobs.json logged_times.json invoices.json quotes.json companies.json contacts.json users.json expenses.json sync_progress.json; do
             git show origin/streamtime-data:$f > streamtime-data/$f 2>/dev/null || true
           done
 
