@@ -816,6 +816,28 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
 .tm-job-brief{background:var(--off);border:1px solid var(--border);border-radius:3px;padding:10px 12px;font-size:12px;color:var(--muted);line-height:1.5;}
 .tm-job-brief a{color:var(--red);text-decoration:underline;}
 .paused-warn{background:#FFF3E0;border:1px solid #FFE0B2;border-radius:3px;padding:9px 12px;font-size:12px;color:#E65100;margin-top:12px;display:none;}
+/* ── Invoice page redesign ────────────────────────────────── */
+.inv-mode-bar{display:flex;gap:0;border:1px solid var(--border);border-radius:4px;overflow:hidden;flex-shrink:0;}
+.inv-mode-btn{padding:5px 14px;font-size:12px;background:var(--white);border:none;cursor:pointer;color:var(--muted);font-family:var(--font);letter-spacing:.01em;}
+.inv-mode-btn.on{background:var(--ink);color:var(--white);}
+.inv-table{width:100%;border-collapse:collapse;}
+.inv-th{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:400;padding:9px 16px;text-align:left;background:var(--off);border-bottom:2px solid var(--border);white-space:nowrap;position:sticky;top:0;z-index:2;}
+.inv-tr{border-bottom:1px solid var(--border);transition:background .1s;}
+.inv-tr:hover{background:var(--off);}
+.inv-td{padding:11px 16px;font-size:13px;vertical-align:middle;}
+.inv-pill.overdue{background:#FFEBEE;color:#C62828;border:1px solid #EF9A9A;}
+.inv-pill.voided{background:#F5F5F5;color:#9E9E9E;border:1px solid #E0E0E0;text-decoration:line-through;}
+.inv-tbi-row{display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid var(--border);}
+.inv-tbi-row:hover{background:var(--off);}
+.inv-ctx-btn{background:none;border:none;cursor:pointer;color:var(--muted);padding:4px 6px;border-radius:3px;font-size:14px;}
+.inv-ctx-btn:hover{background:var(--off);color:var(--ink);}
+/* ── Item progress bar ───────────────────────────────────── */
+.item-prog{height:2px;border-radius:1px;margin-top:3px;background:var(--border);overflow:hidden;}
+.item-prog-fill{height:2px;border-radius:1px;}
+/* ── Undo toast ──────────────────────────────────────────── */
+.toast-undo{background:none;border:none;color:#fff;text-decoration:underline;cursor:pointer;font-size:12px;padding:0;margin-left:8px;font-family:var(--font);}
+/* ── Todo assign menu team headers ──────────────────────── */
+.tao-team-hdr{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:8px 14px 4px;font-weight:500;}
 /* ── Clients panel ────────────────────────────────────────── */
 .clients-wrap{padding:28px 32px;overflow-y:auto;}
 .clients-toolbar{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
@@ -1174,7 +1196,6 @@ tr:hover .i-todo-btn{opacity:1;}
       <div id="view-jobs" class="view hidden">
         <div class="jobs-subnav">
           <div class="jsn-tab on" data-tab="jobs" onclick="switchJobsTab('jobs')">Jobs</div>
-          <div class="jsn-tab" data-tab="tobeinvoiced" onclick="switchJobsTab('tobeinvoiced')">To Be Invoiced</div>
           <div class="jsn-tab" data-tab="time" onclick="switchJobsTab('time')">Time</div>
           <div class="jsn-tab" data-tab="expenses" onclick="switchJobsTab('expenses')">Expenses</div>
           <div class="jsn-tab" data-tab="quotes" onclick="switchJobsTab('quotes')">Quotes</div>
@@ -1287,18 +1308,16 @@ tr:hover .i-todo-btn{opacity:1;}
         <div id="jt-invoices" class="jt-panel" style="display:none;">
           <div class="qinv-wrap">
             <div class="qinv-toolbar">
-              <div class="jobs-search"><i class="ti ti-search"></i><input id="invoices-search-inp" placeholder="Search invoices…" oninput="renderInvoices(this.value)"/></div>
-              <select class="cc-select" id="invoices-status" onchange="renderInvoices()">
-                <option value="all">All statuses</option>
-                <option value="draft">Draft</option>
-                <option value="sent">Sent</option>
-                <option value="paid">Paid</option>
-              </select>
-              <select class="cc-select" id="invoices-client" onchange="renderInvoices()"><option value="all">All clients</option></select>
-              <span class="jobs-count" id="invoices-count"></span>
-              <span class="jobs-count" id="invoices-total" style="margin-left:auto;font-size:13px;font-weight:400;"></span>
+              <div class="inv-mode-bar">
+                <button class="inv-mode-btn on" id="inv-mode-tbi" onclick="setInvMode('tobeinvoiced')">To Be Invoiced</button>
+                <button class="inv-mode-btn" id="inv-mode-all" onclick="setInvMode('all')">All Invoices</button>
+              </div>
+              <div class="jobs-search" id="inv-search-wrap" style="display:none;"><i class="ti ti-search"></i><input id="invoices-search-inp" placeholder="Search invoices…" oninput="renderInvoices()"/></div>
+              <select class="cc-select" id="invoices-client" style="display:none;" onchange="renderInvoices()"><option value="all">All clients</option></select>
+              <span class="jobs-count" id="invoices-count" style="margin-left:auto;"></span>
+              <span class="jobs-count" id="invoices-total" style="font-size:13px;font-weight:400;"></span>
             </div>
-            <div id="invoices-list"></div>
+            <div id="invoices-list" style="overflow-y:auto;flex:1;"></div>
           </div>
         </div>
         <!-- CLIENTS panel -->
@@ -1536,6 +1555,17 @@ tr:hover .i-todo-btn{opacity:1;}
   <div class="ctx-r" onclick="ctxDo('member')"><i class="ti ti-user-plus"></i> Add team member</div>
   <div class="ctx-sep"></div>
   <div class="ctx-r danger" onclick="ctxDo('delete')"><i class="ti ti-trash"></i> Delete item</div>
+</div>
+<!-- Invoice context menu -->
+<div class="ctx" id="inv-ctx">
+  <div class="ctx-r" onclick="doInvCtx('view')"><i class="ti ti-file-invoice"></i> View invoice</div>
+  <div class="ctx-r" onclick="doInvCtx('openjob')"><i class="ti ti-external-link"></i> Open job</div>
+  <div style="border-top:1px solid var(--border);margin:4px 0;"></div>
+  <div class="ctx-r" onclick="doInvCtx('draft')"><i class="ti ti-circle-dashed"></i> Mark as Draft</div>
+  <div class="ctx-r" onclick="doInvCtx('sent')"><i class="ti ti-send"></i> Mark as Sent</div>
+  <div class="ctx-r" onclick="doInvCtx('paid')"><i class="ti ti-circle-check"></i> Mark as Paid</div>
+  <div style="border-top:1px solid var(--border);margin:4px 0;"></div>
+  <div class="ctx-r danger" onclick="doInvCtx('delete')"><i class="ti ti-trash"></i> Delete invoice</div>
 </div>
 <div class="pctx" id="pctx">
   <div class="pctx-r" onclick="pctxDo('rename')"><i class="ti ti-pencil"></i> Rename phase</div>
@@ -1907,8 +1937,18 @@ function savePeople(){
 }
 let currentPerson='ro';
 const MY_PERSON='ro'; // the logged-in user
-const APP_VERSION='2.4.0';
+const APP_VERSION='2.5.0';
 const CHANGELOG=[
+  {version:'2.5.0',date:'15 Jun 2026',title:'Invoice overhaul, person picker teams, item progress bars, undo',items:[
+    'Invoices page redesigned as a table with Company, Issue date, Inv #, Job, Due date, Status, Amount columns',
+    '"To Be Invoiced" filter built into Invoices page — shows completed jobs ready to bill; "All Invoices" shows full history',
+    'Invoice ⋮ menu: view, open job, mark as Draft/Sent/Paid, delete invoice record',
+    'Overdue invoices auto-detected and shown in red when past due date and not paid',
+    'Todo person picker now groups team members by team with headers',
+    'Job plan: each item shows a thin progress bar — green/amber/red based on logged vs planned hours',
+    'Phase delete now shows an 8-second Undo toast instead of a confirm dialog',
+    '"To Be Invoiced" subnav tab removed — functionality merged into Invoices tab',
+  ]},
   {version:'2.4.0',date:'15 Jun 2026',title:'Client nicknames, job status overhaul, pause, dashboard task adding',items:[
     'URLs in job notes and task notes are now clickable hyperlinks',
     'Todo task modal: removed per-task notes; job\'s own brief now shows as read-only context when a job is selected',
@@ -2288,25 +2328,26 @@ function navTo(v){
   if(v==='settings')renderSettings();
   saveData();
 }
+let _invMode='tobeinvoiced'; // 'tobeinvoiced' | 'all'
+function setInvMode(mode){
+  _invMode=mode;
+  document.getElementById('inv-mode-tbi')?.classList.toggle('on',mode==='tobeinvoiced');
+  document.getElementById('inv-mode-all')?.classList.toggle('on',mode==='all');
+  const showSearch=mode==='all';
+  const sw=document.getElementById('inv-search-wrap');if(sw)sw.style.display=showSearch?'':'none';
+  const cl=document.getElementById('invoices-client');if(cl)cl.style.display=showSearch?'':'none';
+  if(mode==='all')initInvoicesClientFilter();
+  renderInvoices();
+}
 function switchJobsTab(tab){
   document.querySelectorAll('.jsn-tab').forEach(el=>el.classList.toggle('on',el.dataset.tab===tab));
   document.querySelectorAll('.jt-panel').forEach(el=>el.style.display='none');
-  if(tab==='tobeinvoiced'){
-    // Reuse the jobs panel with wf filter set to 'completed'
-    const panel=document.getElementById('jt-jobs');
-    if(panel){panel.style.display='flex';panel.style.flexDirection='column';}
-    const wfSel=document.getElementById('jobs-wf-filter');if(wfSel)wfSel.value='completed';
-    renderJobs();
-    return;
-  }
-  // When switching away from tobeinvoiced, reset the wf filter
-  if(tab==='jobs'){const wfSel=document.getElementById('jobs-wf-filter');if(wfSel&&wfSel.value==='completed')wfSel.value='all';}
   const panel=document.getElementById('jt-'+tab);
   if(panel){panel.style.display='flex';panel.style.flexDirection='column';}
   if(tab==='jobs')renderJobs();
   if(tab==='time'){initTimeFilters();renderTime();}
   if(tab==='quotes'){initQuotesClientFilter();renderQuotes();}
-  if(tab==='invoices'){initInvoicesClientFilter();renderInvoices();}
+  if(tab==='invoices'){setInvMode(_invMode||'tobeinvoiced');}
   if(tab==='clients')renderClients();
 }
 function initQuotesClientFilter(){
@@ -3805,7 +3846,11 @@ function openTodoAssignMenu(){
   const menu=document.getElementById('tm-assign-menu');
   if(menu.classList.contains('open')){menu.classList.remove('open');return;}
   menu.innerHTML='';
-  Object.keys(people).forEach(key=>{
+  const allKeys=Object.keys(people);
+  // Group by team
+  const teams=[...new Set(allKeys.map(k=>people[k].team||'').filter(Boolean))];
+  const noTeam=allKeys.filter(k=>!people[k].team);
+  function addPersonRow(key){
     const p=people[key];
     const div=document.createElement('div');
     div.className='tm-assign-opt';
@@ -3815,10 +3860,24 @@ function openTodoAssignMenu(){
       document.getElementById('td-pav').style.background=p.color;
       document.getElementById('td-pav').textContent=p.initials;
       document.getElementById('td-pname').textContent=p.name;
+      const pgl=document.getElementById('td-pav-lg');if(pgl){pgl.textContent=p.initials;pgl.style.background=p.color;}
+      const pnl=document.getElementById('td-pname-lg');if(pnl)pnl.textContent=p.name;
       menu.classList.remove('open');
     };
     menu.appendChild(div);
-  });
+  }
+  if(teams.length>0){
+    teams.forEach(tn=>{
+      const members=allKeys.filter(k=>people[k].team===tn);
+      if(!members.length)return;
+      const hdr=document.createElement('div');hdr.className='tao-team-hdr';hdr.textContent=tn;
+      menu.appendChild(hdr);
+      members.forEach(addPersonRow);
+    });
+    noTeam.forEach(addPersonRow);
+  } else {
+    allKeys.forEach(addPersonRow);
+  }
   menu.classList.add('open');
 }
 document.addEventListener('click',e=>{
@@ -4889,6 +4948,7 @@ function renderItems(phId){
   <span style="font-weight:500;color:${_overLogged?'var(--red)':'inherit'}" title="Hours logged from completed todos">${_loggedStr}</span>
   <span class="i-sof"> / </span>
   <span class="item-editable" title="Click to edit planned hours" onclick="inlineEditItem(event,'${item.id}','${phId}','hours')">${item.hours}</span>
+  ${_plannedH>0?`<div class="item-prog"><div class="item-prog-fill" style="width:${Math.min(100,Math.round(_loggedH/_plannedH*100))}%;background:${_overLogged?'var(--red)':_loggedH/_plannedH>0.8?'#F57F17':'#4CAF50'};"></div></div>`:''}
 </td>
 <td class="i-rate" style="font-size:12px;color:var(--muted);text-align:right;"><span class="item-editable" title="Click to edit rate" onclick="inlineEditItem(event,'${item.id}','${phId}','rate')">${item.rate}</span></td>
 <td class="i-sell"><span style="font-weight:400;" title="Sell value of logged time">${_usedDisp}</span> <span class="i-sof">/ ${item.total}</span></td>
@@ -5121,7 +5181,14 @@ function showPctx(e,phId){
 }
 function pctxDo(a){
   document.getElementById('pctx').classList.remove('on');if(!pctxTarget)return;
-  if(a==='delete'){ccConfirm('Delete this phase and all its items?',()=>{phases=phases.filter(p=>p.id!==pctxTarget);renderPhases();saveData();},'Delete',true);}
+  if(a==='delete'){
+    const _phIdx=phases.findIndex(p=>p.id===pctxTarget);
+    const _phSnap=JSON.parse(JSON.stringify(phases[_phIdx]));
+    phases.splice(_phIdx,1);renderPhases();saveData();
+    let _undone=false;
+    toast(`Phase deleted <button class="toast-undo" onclick="_undoPhaseDelete('${pctxTarget}',${_phIdx})">Undo</button>`,'info',8000);
+    window['_undoPhaseDelete']=(id,idx)=>{if(_undone)return;_undone=true;phases.splice(idx,0,_phSnap);renderPhases();saveData();toast('Phase restored','success');};
+  }
   else if(a==='additem')showAddItemForm(pctxTarget);
   else if(a==='rename'){const ph=phases.find(p=>p.id===pctxTarget);const n=prompt('Rename phase:',ph.name);if(n?.trim()){ph.name=n.trim();renderPhases();saveData();}}
   else if(a==='complete'){const ph=phases.find(p=>p.id===pctxTarget);ph.status=ph.status==='complete'?'open':'complete';renderPhases();saveData();}
@@ -5328,13 +5395,13 @@ function createJob(){
 }
 // ---- ACTIVITY LOGGING ----
 // ── Toast notification system ────────────────────────────────────────────────
-function toast(msg,type='info'){
+function toast(msg,type='info',duration=3200){
   const t=document.createElement('div');
   t.className='cc-toast'+(type!=='info'?' toast-'+type:'');
-  t.textContent=msg;
+  t.innerHTML=msg; // supports HTML for undo links
   document.body.appendChild(t);
   setTimeout(()=>t.classList.add('on'),10);
-  setTimeout(()=>{t.classList.remove('on');setTimeout(()=>t.remove(),320);},3200);
+  setTimeout(()=>{t.classList.remove('on');setTimeout(()=>t.remove(),320);},duration);
 }
 // ── Generic styled confirm (replaces window.confirm) ─────────────────────────
 function ccConfirm(msg,onYes,yesLabel='Confirm',danger=false){
@@ -5381,7 +5448,7 @@ function renderActivityTab(){
 // ---- INVOICE GENERATION ----
 function openInvoice(){
   const j=jobs.find(x=>x.id===activeJobId);if(!j)return;
-  if(!j.invNum){j.invNum=invCounter++;saveData();}
+  if(!j.invNum){j.invNum=invCounter++;if(!j.invIssueDate)j.invIssueDate=new Date().toISOString().slice(0,10);if(!j.invDueDate){const _dd=new Date();_dd.setDate(_dd.getDate()+30);j.invDueDate=_dd.toISOString().slice(0,10);}saveData();}
   document.getElementById('inv-top-t').textContent=`Invoice #${j.invNum} — ${j.id} ${j.name}`;
   const statusEl=document.getElementById('inv-status');
   if(statusEl)statusEl.value=j.invStatus||'draft';
@@ -5944,7 +6011,7 @@ document.addEventListener('keydown',e=>{
   }
 });
 
-document.addEventListener('click',()=>{document.getElementById('ctx').classList.remove('on');document.getElementById('pctx').classList.remove('on');});
+document.addEventListener('click',()=>{document.getElementById('ctx').classList.remove('on');document.getElementById('pctx').classList.remove('on');document.getElementById('inv-ctx')?.classList.remove('on');});
 ['create-modal','todo-modal','inv-modal'].forEach(id=>{document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id))document.getElementById(id).classList.remove('on');});});
 
 // ═══════════════════════════════════════════════════════════════
@@ -6244,88 +6311,126 @@ function saveQuoteStatus(jobId,val){
 // ═══════════════════════════════════════════════════════════════
 //  INVOICES VIEW
 // ═══════════════════════════════════════════════════════════════
-function renderInvoices(q){
-  const search=(q||document.getElementById('invoices-search-inp')?.value||'').toLowerCase();
-  const statusFilter=document.getElementById('invoices-status')?.value||'all';
-  const clientFilter=document.getElementById('invoices-client')?.value||'all';
+let _invCtxJobId=null;
+function showInvCtx(e,jobId){
+  e.stopPropagation();
+  _invCtxJobId=jobId;
+  const m=document.getElementById('inv-ctx');
+  m.style.display='none';m.classList.remove('on');
+  const r=e.currentTarget.getBoundingClientRect();
+  m.style.cssText=`position:fixed;left:${r.right-180}px;top:${r.bottom+4}px;display:block;`;
+  m.classList.add('on');
+}
+function doInvCtx(a){
+  document.getElementById('inv-ctx').classList.remove('on');
+  const id=_invCtxJobId;if(!id)return;
+  const j=jobs.find(x=>x.id===id);if(!j)return;
+  if(a==='view'){const prev=activeJobId;activeJobId=id;if(!j.invNum){j.invNum=invCounter++;saveData();}openInvoice();if(id!==prev)activeJobId=prev;}
+  else if(a==='openjob'){openJobDetail(id);}
+  else if(a==='draft'||a==='sent'||a==='paid'){saveInvStatusForJob(id,a);}
+  else if(a==='delete'){
+    ccConfirm(`Remove invoice #${j.invNum} from ${j.name}? This only removes the invoice record — the job remains.`,()=>{
+      j.invNum=null;j.invStatus=null;j.invDueDate=null;j.invTotal=null;
+      saveData();renderInvoices();
+      toast('Invoice removed','info');
+    },'Remove',true);
+  }
+}
+function _invStatusPill(j){
+  const s=j.invStatus||'draft';
+  if(s==='paid')return `<span class="inv-pill paid">Paid</span>`;
+  if(s==='voided')return `<span class="inv-pill voided">Voided</span>`;
+  // Check overdue: sent but past due date
+  if(s==='sent'&&j.invDueDate){
+    const due=new Date(j.invDueDate);const now=new Date();now.setHours(0,0,0,0);
+    if(due<now){const days=Math.round((now-due)/(86400000));return `<span class="inv-pill overdue">Overdue ${days}d</span>`;}
+  }
+  if(s==='sent')return `<span class="inv-pill sent">Sent</span>`;
+  return `<span class="inv-pill draft">Draft</span>`;
+}
+function renderInvoices(){
+  const list=document.getElementById('invoices-list');if(!list)return;
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fmtDate(iso){if(!iso)return'—';const d=new Date(iso);return`${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;}
 
-  // Populate client filter
-  const cSel=document.getElementById('invoices-client');
-  if(cSel&&cSel.options.length<=1){
-    const clients=[...new Set(jobs.map(j=>j.company))].sort();
-    clients.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;cSel.appendChild(o);});
+  if(_invMode==='tobeinvoiced'){
+    // Show completed jobs awaiting invoice
+    const tbiJobs=jobs.filter(j=>j.workflowStatus==='completed');
+    document.getElementById('invoices-count').textContent=`${tbiJobs.length} job${tbiJobs.length!==1?'s':''} to invoice`;
+    document.getElementById('invoices-total').textContent='';
+    if(!tbiJobs.length){
+      list.innerHTML=emptyStateHTML('ti-circle-check','Nothing to invoice','Jobs marked Completed will appear here, ready to raise an invoice against.','','');
+      return;
+    }
+    list.innerHTML=`<table class="inv-table"><thead><tr>
+      <th class="inv-th">Company</th><th class="inv-th">Job</th><th class="inv-th">Budget</th><th class="inv-th">Invoice status</th><th class="inv-th" style="text-align:right;"></th>
+    </tr></thead><tbody>${tbiJobs.map(j=>{
+      const hasInv=!!j.invNum;
+      const statusHtml=hasInv?_invStatusPill(j):'<span class="inv-pill draft" style="opacity:.5;">Not created</span>';
+      return`<tr class="inv-tr">
+        <td class="inv-td" style="color:var(--muted);font-size:12px;">${j.company}</td>
+        <td class="inv-td"><span style="font-size:11px;color:var(--muted);margin-right:6px;">${j.id}</span>${j.name}</td>
+        <td class="inv-td" style="font-variant-numeric:tabular-nums;">${j.budgetTotal||j.budget||'—'}</td>
+        <td class="inv-td">${statusHtml}</td>
+        <td class="inv-td" style="text-align:right;white-space:nowrap;">
+          <button class="d-action primary" style="font-size:11px;padding:4px 10px;" onclick="openInvoiceForJob('${j.id}')"><i class="ti ti-file-invoice" style="font-size:11px;"></i> ${hasInv?'View':'Create'} invoice</button>
+          ${hasInv?`<button class="inv-ctx-btn" onclick="showInvCtx(event,'${j.id}')"><i class="ti ti-dots-vertical"></i></button>`:''}
+        </td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+    return;
   }
 
+  // All Invoices mode — table of invoiced jobs
+  const search=(document.getElementById('invoices-search-inp')?.value||'').toLowerCase();
+  const clientFilter=document.getElementById('invoices-client')?.value||'all';
   let invJobs=jobs.filter(j=>j.invNum);
   if(search)invJobs=invJobs.filter(j=>(`${j.invNum} ${j.id} ${j.name} ${j.company}`).toLowerCase().includes(search));
-  if(statusFilter!=='all')invJobs=invJobs.filter(j=>(j.invStatus||'draft')===statusFilter);
   if(clientFilter!=='all')invJobs=invJobs.filter(j=>j.company===clientFilter);
+  // Sort: newest first (by invNum desc)
+  invJobs=invJobs.slice().sort((a,b)=>(b.invNum||0)-(a.invNum||0));
 
-  const totalInvoiced=invJobs.reduce((s,j)=>s+parseInt((j.budgetTotal||'0').replace(/[$,]/g,'')||0),0);
-  const paidTotal=invJobs.filter(j=>j.invStatus==='paid').reduce((s,j)=>s+parseInt((j.budgetTotal||'0').replace(/[$,]/g,'')||0),0);
-
+  const totalEx=invJobs.reduce((s,j)=>s+(j.invTotal||parseInt((j.budgetTotal||'0').replace(/[$,]/g,''))||0),0);
+  const paidTotal=invJobs.filter(j=>j.invStatus==='paid').reduce((s,j)=>s+(j.invTotal||parseInt((j.budgetTotal||'0').replace(/[$,]/g,''))||0),0);
   document.getElementById('invoices-count').textContent=`${invJobs.length} invoice${invJobs.length!==1?'s':''}`;
   const totEl=document.getElementById('invoices-total');
-  if(totEl)totEl.innerHTML=`$${totalInvoiced.toLocaleString()} total &nbsp;·&nbsp; <span style="color:#2E7D32;">$${paidTotal.toLocaleString()} paid</span>`;
+  if(totEl)totEl.innerHTML=invJobs.length?`$${Math.round(totalEx*1.15).toLocaleString()} total &nbsp;·&nbsp; <span style="color:#2E7D32;">$${Math.round(paidTotal*1.15).toLocaleString()} paid</span>`:'';
 
-  const list=document.getElementById('invoices-list');
-  if(!list)return;
-  if(!invJobs.length){list.innerHTML='<div style="padding:40px 28px;font-size:13px;color:var(--muted);">No invoices found. Generate one from a job\'s invoice button.</div>';return;}
-
-  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  list.innerHTML=invJobs.map(j=>{
-    const total=parseInt((j.budgetTotal||'0').replace(/[$,]/g,'')||0);
-    const gst=Math.round(total*0.15);
-    const totalGst=total+gst;
-    const status=j.invStatus||'draft';
-    const now=new Date();
-    const dateStr=`${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
-    const isActive=j.id===activeJobId;
-    const phData=isActive?phases:SFF_PHASES;
-    const phRows=(isActive?phData:[]).map(ph=>{
-      const phTotal=ph.items.reduce((s,i)=>s+parseInt((i.total||'0').replace(/[$,]/g,'')||0),0);
-      const lines=ph.items.map(i=>`<tr><td style="padding-left:32px;">${i.name}</td><td style="text-align:right;">${i.total}</td><td style="text-align:right;"></td></tr>`).join('');
-      return`<tr class="qinv-ph-row"><td><strong>${ph.name}</strong></td><td style="text-align:right;">$${phTotal.toLocaleString()}</td><td></td></tr>${lines}`;
-    }).join('')||`<tr><td colspan="3" style="color:var(--muted);font-size:12px;padding:12px 20px;">Open job to see full invoice breakdown.</td></tr>`;
-
-    return`<div class="qinv-card" id="icard-${j.id}">
-      <div class="qinv-card-head" onclick="toggleQinvDetail('icard-${j.id}')">
-        <span class="qinv-card-num">#${j.invNum}</span>
-        <span class="qinv-card-name">${j.name}</span>
-        <span class="qinv-card-co">${j.company}</span>
-        <span class="qinv-card-val">$${totalGst.toLocaleString()} <span style="font-size:11px;color:var(--muted);">inc GST</span></span>
-        <span class="qinv-card-status"><span class="inv-pill ${status}">${status.charAt(0).toUpperCase()+status.slice(1)}</span></span>
-        <span class="qinv-card-date">${dateStr}</span>
-        <i class="ti ti-chevron-down" style="font-size:12px;color:var(--muted);transition:transform .15s;" id="ichv-${j.id}"></i>
-      </div>
-      <div class="qinv-detail" id="idet-${j.id}">
-        <table class="qinv-detail-table">
-          <thead><tr><th>Description</th><th style="text-align:right;">Amount ex GST</th><th style="text-align:right;">Notes</th></tr></thead>
-          <tbody>${phRows}</tbody>
-          <tfoot>
-            <tr style="border-top:1px solid var(--border);"><td>Subtotal</td><td style="text-align:right;">$${total.toLocaleString()}</td><td></td></tr>
-            <tr><td>GST 15%</td><td style="text-align:right;">$${gst.toLocaleString()}</td><td></td></tr>
-            <tr class="qinv-total-row"><td><strong>Total inc GST</strong></td><td style="text-align:right;"><strong>$${totalGst.toLocaleString()}</strong></td><td></td></tr>
-          </tfoot>
-        </table>
-        <div class="qinv-actions">
-          <button class="d-action" onclick="openJobDetail('${j.id}')"><i class="ti ti-external-link" style="font-size:12px;"></i> Open job</button>
-          <button class="d-action" onclick="openInvoiceForJob('${j.id}')"><i class="ti ti-file-invoice" style="font-size:12px;"></i> View invoice</button>
-          <select class="filter-btn" style="font-size:11px;" onchange="saveInvStatusForJob('${j.id}',this.value)">
-            <option value="draft" ${(j.invStatus||'draft')==='draft'?'selected':''}>Draft</option>
-            <option value="sent" ${j.invStatus==='sent'?'selected':''}>Sent</option>
-            <option value="paid" ${j.invStatus==='paid'?'selected':''}>Paid</option>
-          </select>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
+  if(!invJobs.length){
+    list.innerHTML=emptyStateHTML('ti-file-invoice','No invoices yet','Invoices appear here once created from a job. Switch to "To Be Invoiced" to see what\'s ready to bill.','','');
+    return;
+  }
+  list.innerHTML=`<table class="inv-table"><thead><tr>
+    <th class="inv-th">Company</th>
+    <th class="inv-th">Inv #</th>
+    <th class="inv-th">Job</th>
+    <th class="inv-th">Issue date</th>
+    <th class="inv-th">Due date</th>
+    <th class="inv-th">Status</th>
+    <th class="inv-th" style="text-align:right;">Amount inc GST</th>
+    <th class="inv-th" style="width:32px;"></th>
+  </tr></thead><tbody>${invJobs.map(j=>{
+    const exGst=j.invTotal||parseInt((j.budgetTotal||'0').replace(/[$,]/g,''))||0;
+    const incGst=Math.round(exGst*1.15);
+    const issueDate=j.invIssueDate||new Date().toISOString().slice(0,10);
+    const dueDate=j.invDueDate||(()=>{const d=new Date(issueDate);d.setDate(d.getDate()+30);return d.toISOString().slice(0,10);})();
+    return`<tr class="inv-tr">
+      <td class="inv-td" style="color:var(--muted);font-size:12px;">${j.company}</td>
+      <td class="inv-td" style="font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;">INV-${j.invNum}</td>
+      <td class="inv-td"><span style="font-size:11px;color:var(--muted);margin-right:4px;">${j.id}</span>${j.name}</td>
+      <td class="inv-td" style="font-size:12px;color:var(--muted);">${fmtDate(issueDate)}</td>
+      <td class="inv-td" style="font-size:12px;${j.invStatus!=='paid'&&dueDate<new Date().toISOString().slice(0,10)?'color:#C62828;font-weight:500;':'color:var(--muted);'}">${fmtDate(dueDate)}</td>
+      <td class="inv-td">${_invStatusPill(j)}</td>
+      <td class="inv-td" style="text-align:right;font-family:var(--serif);font-size:14px;font-variant-numeric:tabular-nums;">$${incGst.toLocaleString()}</td>
+      <td class="inv-td" style="padding-left:4px;"><button class="inv-ctx-btn" onclick="showInvCtx(event,'${j.id}')"><i class="ti ti-dots-vertical"></i></button></td>
+    </tr>`;
+  }).join('')}</tbody></table>`;
 }
 function openInvoiceForJob(id){
   const prev=activeJobId;
   activeJobId=id;
   const j=jobs.find(x=>x.id===id);if(!j)return;
-  if(!j.invNum){j.invNum=invCounter++;saveData();}
+  if(!j.invNum){j.invNum=invCounter++;if(!j.invIssueDate)j.invIssueDate=new Date().toISOString().slice(0,10);if(!j.invDueDate){const _dd=new Date();_dd.setDate(_dd.getDate()+30);j.invDueDate=_dd.toISOString().slice(0,10);}saveData();}
   openInvoice();
   // restore activeJobId if we didn't open the job detail
   if(id!==prev)activeJobId=prev;
@@ -6333,8 +6438,11 @@ function openInvoiceForJob(id){
 function saveInvStatusForJob(jobId,val){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
   j.invStatus=val;
+  if(!j.invIssueDate)j.invIssueDate=new Date().toISOString().slice(0,10);
+  if(!j.invDueDate){const d=new Date();d.setDate(d.getDate()+30);j.invDueDate=d.toISOString().slice(0,10);}
   if((val==='sent'||val==='paid')&&!j.invTotal){computeJobStats(j);j.invTotal=j._plannedSell||0;}
   saveData();renderInvoices();
+  toast(`Invoice marked as ${val}`,'success');
 }
 function toggleQinvDetail(cardId){
   const base=cardId.replace('qcard-','').replace('icard-','');
