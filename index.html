@@ -5152,22 +5152,27 @@ function _taskMatchesItem(tt,item,allPhases){
 }
 function renderPhases(){
   const c=document.getElementById('phases-wrap');c.innerHTML='';
+  const _j=jobs.find(x=>x.id===activeJobId);
+  const _readonly=_j&&(_j.status==='archived'||_j.status==='complete');
   phases.forEach(ph=>{
     const el=document.createElement('div');el.className='phase';el.id='pw_'+ph.id;
     const sell=pSell(ph);const hrs=pHrs(ph);const cnt=ph.items.length;
     const statusIcon=ph.status==='complete'?'<i class="ti ti-circle-check" style="color:#4CAF50;font-size:13px;"></i>':'<i class="ti ti-circle-dot" style="color:#ED1E24;font-size:13px;"></i>';
     const pausedTag=ph.paused?`<span class="paused-badge" style="margin-right:4px;"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>`:'';
-    el.innerHTML=`<div class="phase-head" onclick="togglePhase('${ph.id}')" style="${ph.paused?'opacity:.65;':''}"><i class="ti ti-chevron-down ph-chv"></i><span class="ph-n">${ph.name}</span>${pausedTag}<span class="ph-cnt">${cnt} item${cnt!==1?'s':''}</span><div class="ph-inf"><span class="ph-meta">${hrs} · ${sell}</span>${statusIcon}<i class="ti ti-dots ph-mb" onclick="showPctx(event,'${ph.id}')"></i></div></div><table class="items-t" id="it_${ph.id}"><thead><tr><th style="width:22px;"></th><th>Item</th><th style="width:120px;text-align:right;" title="Logged (done todos) / Planned hours">Hours</th><th style="width:75px;text-align:right;">Rate</th><th style="width:140px;text-align:right;">Sell</th><th style="width:90px;text-align:right;">Status</th><th style="width:26px;"></th></tr></thead><tbody id="ib_${ph.id}"></tbody></table><div class="plan-row-actions"><div class="add-i-row" onclick="showAddItemForm('${ph.id}')"><i class="ti ti-plus" style="font-size:11px"></i> Add item</div><div class="add-i-row" style="border-left:1px solid var(--border);" onclick="showAddExpenseInline('${ph.id}')"><i class="ti ti-receipt" style="font-size:11px"></i> Add expense</div></div>`;
-    c.appendChild(el);renderItems(ph.id);
+    const addActions=_readonly?'':`<div class="plan-row-actions"><div class="add-i-row" onclick="showAddItemForm('${ph.id}')"><i class="ti ti-plus" style="font-size:11px"></i> Add item</div><div class="add-i-row" style="border-left:1px solid var(--border);" onclick="showAddExpenseInline('${ph.id}')"><i class="ti ti-receipt" style="font-size:11px"></i> Add expense</div></div>`;
+    const phMenu=_readonly?'':`<i class="ti ti-dots ph-mb" onclick="showPctx(event,'${ph.id}')"></i>`;
+    el.innerHTML=`<div class="phase-head" onclick="togglePhase('${ph.id}')" style="${ph.paused?'opacity:.65;':''}"><i class="ti ti-chevron-down ph-chv"></i><span class="ph-n">${ph.name}</span>${pausedTag}<span class="ph-cnt">${cnt} item${cnt!==1?'s':''}</span><div class="ph-inf"><span class="ph-meta">${hrs} · ${sell}</span>${statusIcon}${phMenu}</div></div><table class="items-t" id="it_${ph.id}"><thead><tr><th style="width:22px;"></th><th>Item</th><th style="width:120px;text-align:right;" title="Logged (done todos) / Planned hours">Hours</th><th style="width:75px;text-align:right;">Rate</th><th style="width:140px;text-align:right;">Sell</th><th style="width:90px;text-align:right;">Status</th><th style="width:26px;"></th></tr></thead><tbody id="ib_${ph.id}"></tbody></table>${addActions}`;
+    c.appendChild(el);renderItems(ph.id,_readonly);
   });
 }
 function pHrs(ph){let m=0;ph.items.forEach(i=>{const x=i.hours.match(/(\d+)h(?:(\d+)m)?/);if(x)m+=parseInt(x[1])*60+(parseInt(x[2])||0);});return m>=60?`${Math.floor(m/60)}h${m%60?m%60+'m':''}`:(m||0)+'m';}
 function pSell(ph){const u=ph.items.reduce((a,i)=>a+parseInt((i.used||'0').replace(/[$,]/g,'')||0),0);const t=ph.items.reduce((a,i)=>a+parseInt((i.total||'0').replace(/[$,]/g,'')||0),0);return`$${u.toLocaleString()} / $${t.toLocaleString()}`;}
-function renderItems(phId){
+function renderItems(phId,_readonly){
   const ph=phases.find(p=>p.id===phId);const tbody=document.getElementById('ib_'+phId);tbody.innerHTML='';
+  if(_readonly===undefined){const _j=jobs.find(x=>x.id===activeJobId);_readonly=_j&&(_j.status==='archived'||_j.status==='complete');}
   const COLS=7; // grip | item | hours(logged/plan) | rate | sell | status | menu
   ph.items.forEach(item=>{
-    const tr=document.createElement('tr');tr.id='item_'+item.id;tr.draggable=true;tr.dataset.itemId=item.id;tr.dataset.phId=phId;
+    const tr=document.createElement('tr');tr.id='item_'+item.id;tr.draggable=!_readonly;tr.dataset.itemId=item.id;tr.dataset.phId=phId;
     if(item.note)tr.classList.add('item-has-note');
     const iCls=item.status==='complete'?'ib-c':'ib-p';
     const iLbl=item.status==='complete'?'Complete':'Open';
@@ -5198,18 +5203,25 @@ function renderItems(phId){
     // Live sell-used from logged hours × rate (falls back to stored value)
     const _rateN=parseInt((item.rate||'$150').replace(/[$,]/g,''))||150;
     const _usedDisp=_loggedH>0?'$'+Math.round(_loggedH*_rateN).toLocaleString():(item.used||'$0');
-    tr.innerHTML=`<td><i class="ti ti-grip-vertical" style="color:var(--border);font-size:13px;cursor:grab;"></i></td>
-<td class="i-name"><span class="item-editable" title="Click to rename" onclick="inlineEditItem(event,'${item.id}','${phId}','name')">${item.name}</span>${noteIcon}<button class="i-todo-btn" title="Add todo for this item" onclick="event.stopPropagation();ctxTarget={itemId:'${item.id}',phId:'${phId}'};ctxDo('todo')"><i class="ti ti-calendar-plus"></i></button></td>
-<td class="i-hrs ${_overLogged?'i-hrs-over':''}" style="text-align:right;white-space:nowrap;">
-  <span style="font-weight:500;color:${_overLogged?'var(--red)':'inherit'}" title="Hours logged from completed todos">${_loggedStr}</span>
+    const nameCell=_readonly
+      ?`<td class="i-name"><span>${item.name}</span>${noteIcon}</td>`
+      :`<td class="i-name"><span class="item-editable" title="Click to rename" onclick="inlineEditItem(event,'${item.id}','${phId}','name')">${item.name}</span>${noteIcon}<button class="i-todo-btn" title="Add todo for this item" onclick="event.stopPropagation();ctxTarget={itemId:'${item.id}',phId:'${phId}'};ctxDo('todo')"><i class="ti ti-calendar-plus"></i></button></td>`;
+    const hrsCell=`<td class="i-hrs ${_overLogged?'i-hrs-over':''}" style="text-align:right;white-space:nowrap;">
+  <span style="font-weight:500;color:${_overLogged?'var(--red)':'inherit'}" title="Hours logged">${_loggedStr}</span>
   <span class="i-sof"> / </span>
-  <span class="item-editable" title="Click to edit planned hours" onclick="inlineEditItem(event,'${item.id}','${phId}','hours')">${item.hours}</span>
+  ${_readonly?`<span>${item.hours}</span>`:`<span class="item-editable" title="Click to edit planned hours" onclick="inlineEditItem(event,'${item.id}','${phId}','hours')">${item.hours}</span>`}
   ${_plannedH>0?`<div class="item-prog"><div class="item-prog-fill" style="width:${Math.min(100,Math.round(_loggedH/_plannedH*100))}%;background:${_overLogged?'var(--red)':_loggedH/_plannedH>0.8?'#F57F17':'#4CAF50'};"></div></div>`:''}
-</td>
-<td class="i-rate" style="font-size:12px;color:var(--muted);text-align:right;"><span class="item-editable" title="Click to edit rate" onclick="inlineEditItem(event,'${item.id}','${phId}','rate')">${item.rate}</span></td>
+</td>`;
+    const rateCell=_readonly
+      ?`<td class="i-rate" style="font-size:12px;color:var(--muted);text-align:right;">${item.rate}</td>`
+      :`<td class="i-rate" style="font-size:12px;color:var(--muted);text-align:right;"><span class="item-editable" title="Click to edit rate" onclick="inlineEditItem(event,'${item.id}','${phId}','rate')">${item.rate}</span></td>`;
+    const statusCell=_readonly
+      ?`<td style="text-align:right"><span class="i-badge ${iCls}">${iLbl}</span></td><td></td>`
+      :`<td style="text-align:right"><span class="i-badge ${iCls}" style="cursor:pointer;" title="Click to toggle" onclick="toggleItemStatus('${item.id}','${phId}',event)">${iLbl}</span></td><td><i class="ti ti-dots" style="font-size:14px;color:var(--muted);cursor:pointer;" onclick="showCtx(event,'${item.id}','${phId}')"></i></td>`;
+    tr.innerHTML=`<td>${_readonly?'':' <i class="ti ti-grip-vertical" style="color:var(--border);font-size:13px;cursor:grab;"></i>'}</td>
+${nameCell}${hrsCell}${rateCell}
 <td class="i-sell"><span style="font-weight:400;" title="Sell value of logged time">${_usedDisp}</span> <span class="i-sof">/ ${item.total}</span></td>
-<td style="text-align:right"><span class="i-badge ${iCls}" style="cursor:pointer;" title="Click to toggle" onclick="toggleItemStatus('${item.id}','${phId}',event)">${iLbl}</span></td>
-<td><i class="ti ti-dots" style="font-size:14px;color:var(--muted);cursor:pointer;" onclick="showCtx(event,'${item.id}','${phId}')"></i></td>`;
+${statusCell}`;
     tr.addEventListener('dragstart',e=>{dragSrc=tr;tr.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
     tr.addEventListener('dragover',e=>e.preventDefault());
     tr.addEventListener('drop',e=>{e.stopPropagation();if(dragSrc===tr)return;const sp=phases.find(p=>p.id===dragSrc.dataset.phId);const tp=phases.find(p=>p.id===tr.dataset.phId);const si=sp.items.findIndex(i=>i.id===dragSrc.dataset.itemId);const ti=tp.items.findIndex(i=>i.id===tr.dataset.itemId);const[mv]=sp.items.splice(si,1);tp.items.splice(ti,0,mv);renderPhases();});
