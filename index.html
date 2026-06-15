@@ -857,6 +857,15 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
 /* Time table note rows */
 .te-note-row{font-size:11px;color:var(--muted);padding:3px 16px 6px 36px;display:flex;align-items:flex-start;gap:5px;line-height:1.4;}
 .te-note-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--muted);margin-left:5px;vertical-align:middle;}
+/* Item team avatar stack */
+.item-av-stack{display:flex;align-items:center;gap:0;position:relative;}
+.item-av{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:8px;color:#fff;font-weight:600;border:1.5px solid var(--bg);margin-left:-5px;cursor:default;position:relative;flex-shrink:0;}
+.item-av:first-child{margin-left:0;}
+.item-av-tip{position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;font-size:11px;border-radius:5px;padding:5px 9px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:1000;min-width:120px;}
+.item-av-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1a1a1a;}
+.item-av:hover .item-av-tip{opacity:1;}
+.item-av-more{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:7px;color:var(--muted);font-weight:600;border:1.5px solid var(--border);margin-left:-5px;background:var(--off);}
+.ph-nonbill-badge{font-size:10px;color:var(--muted);margin-left:6px;cursor:default;display:inline-flex;align-items:center;gap:3px;}
 /* Rich board job cards */
 .bc-rich{cursor:pointer;transition:box-shadow .15s,border-color .15s;}
 .bc-rich:hover{border-color:#bbb;box-shadow:0 3px 12px rgba(0,0,0,.08);}
@@ -5191,7 +5200,9 @@ function renderPhases(){
     const pausedTag=ph.paused?`<span class="paused-badge" style="margin-right:4px;"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>`:'';
     const addActions=_readonly?'':`<div class="plan-row-actions"><div class="add-i-row" onclick="showAddItemForm('${ph.id}')"><i class="ti ti-plus" style="font-size:11px"></i> Add item</div><div class="add-i-row" style="border-left:1px solid var(--border);" onclick="showAddExpenseInline('${ph.id}')"><i class="ti ti-receipt" style="font-size:11px"></i> Add expense</div></div>`;
     const phMenu=_readonly?'':`<i class="ti ti-dots ph-mb" onclick="showPctx(event,'${ph.id}')"></i>`;
-    el.innerHTML=`<div class="phase-head" onclick="togglePhase('${ph.id}')" style="${ph.paused?'opacity:.65;':''}"><i class="ti ti-chevron-down ph-chv"></i><span class="ph-n">${ph.name}</span>${pausedTag}<span class="ph-cnt">${cnt} item${cnt!==1?'s':''}</span><div class="ph-inf"><span class="ph-meta">${hrs} · ${sell}</span>${statusIcon}${phMenu}</div></div><table class="items-t" id="it_${ph.id}"><thead><tr><th style="width:22px;"></th><th>Item</th><th style="width:120px;text-align:right;" title="Logged (done todos) / Planned hours">Hours</th><th style="width:75px;text-align:right;">Rate</th><th style="width:140px;text-align:right;">Sell</th><th style="width:90px;text-align:right;">Status</th><th style="width:26px;"></th></tr></thead><tbody id="ib_${ph.id}"></tbody></table>${addActions}`;
+    const allNonBill=ph.items.length>0&&ph.items.every(i=>i.rate==='—'||i.rate==='$0');
+    const nonBillBadge=allNonBill?`<span class="ph-nonbill-badge" title="This phase's items are all non-billable. Figures will not be included in used or planned sell totals."><i class="ti ti-lock" style="font-size:10px;"></i> Non-billable</span>`:'';
+    el.innerHTML=`<div class="phase-head" onclick="togglePhase('${ph.id}')" style="${ph.paused?'opacity:.65;':''}"><i class="ti ti-chevron-down ph-chv"></i><span class="ph-n">${ph.name}</span>${pausedTag}${nonBillBadge}<span class="ph-cnt">${cnt} item${cnt!==1?'s':''}</span><div class="ph-inf"><span class="ph-meta">${hrs} · ${allNonBill?'$0 / $0':sell}</span>${statusIcon}${phMenu}</div></div><table class="items-t" id="it_${ph.id}"><thead><tr><th style="width:22px;"></th><th>Item</th><th style="width:90px;">Team</th><th style="width:120px;text-align:right;" title="Logged / Planned hours">Hours</th><th style="width:75px;text-align:right;">Rate</th><th style="width:140px;text-align:right;">Sell</th><th style="width:90px;text-align:right;">Status</th><th style="width:26px;"></th></tr></thead><tbody id="ib_${ph.id}"></tbody></table>${addActions}`;
     c.appendChild(el);renderItems(ph.id,_readonly);
   });
 }
@@ -5200,7 +5211,7 @@ function pSell(ph){const u=ph.items.reduce((a,i)=>a+parseInt((i.used||'0').repla
 function renderItems(phId,_readonly){
   const ph=phases.find(p=>p.id===phId);const tbody=document.getElementById('ib_'+phId);tbody.innerHTML='';
   if(_readonly===undefined){const _j=jobs.find(x=>x.id===activeJobId);_readonly=_j&&(_j.status==='archived'||_j.status==='complete');}
-  const COLS=7; // grip | item | hours(logged/plan) | rate | sell | status | menu
+  const COLS=8; // grip | item | team | hours(logged/plan) | rate | sell | status | menu
   ph.items.forEach(item=>{
     const tr=document.createElement('tr');tr.id='item_'+item.id;tr.draggable=!_readonly;tr.dataset.itemId=item.id;tr.dataset.phId=phId;
     if(item.note)tr.classList.add('item-has-note');
@@ -5221,12 +5232,23 @@ function renderItems(phId,_readonly){
         });
       });
     });
-    // Also add ST logged time for this item
+    // Also add ST logged time for this item, and build per-person breakdown
+    const _personMins={};
     if(item._stId&&stLoggedTimes.length){
       stLoggedTimes.forEach(lt=>{
-        if(lt.jobItemUser?.jobItemId===item._stId)_loggedH+=(lt.minutes||0)/60;
+        if(lt.jobItemUser?.jobItemId!==item._stId)return;
+        _loggedH+=(lt.minutes||0)/60;
+        const u=stUsersById[lt.userId];if(!u)return;
+        _personMins[lt.userId]=(_personMins[lt.userId]||{u,mins:0});
+        _personMins[lt.userId].mins+=(lt.minutes||0);
       });
     }
+    // Build avatar stack for team members who logged time to this item
+    const _teamEntries=Object.values(_personMins).sort((a,b)=>b.mins-a.mins);
+    const MAX_AV=4;
+    const _avHTML=_teamEntries.slice(0,MAX_AV).map(({u,mins})=>`<span class="item-av" style="background:${u.color};">${u.initials}<span class="item-av-tip">${u.name}<br><span style="color:#aaa;">${_stFmtH(mins)}</span></span></span>`).join('');
+    const _moreAv=_teamEntries.length>MAX_AV?`<span class="item-av-more">+${_teamEntries.length-MAX_AV}</span>`:'';
+    const teamCell=`<td><div class="item-av-stack">${_avHTML}${_moreAv}</div></td>`;
     const _loggedStr=_loggedH>0?formatHrs(_loggedH):'—';
     const _plannedH=parseHrsInput(item.hours)||0;
     const _overLogged=_loggedH>_plannedH&&_plannedH>0;
@@ -5242,15 +5264,18 @@ function renderItems(phId,_readonly){
   ${_readonly?`<span>${item.hours}</span>`:`<span class="item-editable" title="Click to edit planned hours" onclick="inlineEditItem(event,'${item.id}','${phId}','hours')">${item.hours}</span>`}
   ${_plannedH>0?`<div class="item-prog"><div class="item-prog-fill" style="width:${Math.min(100,Math.round(_loggedH/_plannedH*100))}%;background:${_overLogged?'var(--red)':_loggedH/_plannedH>0.8?'#F57F17':'#4CAF50'};"></div></div>`:''}
 </td>`;
-    const rateCell=_readonly
-      ?`<td class="i-rate" style="font-size:12px;color:var(--muted);text-align:right;">${item.rate}</td>`
-      :`<td class="i-rate" style="font-size:12px;color:var(--muted);text-align:right;"><span class="item-editable" title="Click to edit rate" onclick="inlineEditItem(event,'${item.id}','${phId}','rate')">${item.rate}</span></td>`;
+    const _isNonBill=item.rate==='—'||item.rate==='$0';
+    const rateCell=_isNonBill
+      ?`<td class="i-rate" style="font-size:12px;color:var(--muted);text-align:right;" title="Non-billable"><i class="ti ti-lock" style="font-size:12px;"></i></td>`
+      :_readonly
+        ?`<td class="i-rate" style="font-size:12px;color:var(--muted);text-align:right;">${item.rate}</td>`
+        :`<td class="i-rate" style="font-size:12px;color:var(--muted);text-align:right;"><span class="item-editable" title="Click to edit rate" onclick="inlineEditItem(event,'${item.id}','${phId}','rate')">${item.rate}</span></td>`;
     const statusCell=_readonly
       ?`<td style="text-align:right"><span class="i-badge ${iCls}">${iLbl}</span></td><td></td>`
       :`<td style="text-align:right"><span class="i-badge ${iCls}" style="cursor:pointer;" title="Click to toggle" onclick="toggleItemStatus('${item.id}','${phId}',event)">${iLbl}</span></td><td><i class="ti ti-dots" style="font-size:14px;color:var(--muted);cursor:pointer;" onclick="showCtx(event,'${item.id}','${phId}')"></i></td>`;
     tr.innerHTML=`<td>${_readonly?'':' <i class="ti ti-grip-vertical" style="color:var(--border);font-size:13px;cursor:grab;"></i>'}</td>
-${nameCell}${hrsCell}${rateCell}
-<td class="i-sell"><span style="font-weight:400;" title="Sell value of logged time">${_usedDisp}</span> <span class="i-sof">/ ${item.total}</span></td>
+${nameCell}${teamCell}${hrsCell}${rateCell}
+<td class="i-sell"><span style="font-weight:400;" title="Sell value of logged time">${_isNonBill?'—':_usedDisp}</span> <span class="i-sof">${_isNonBill?'':' / '+item.total}</span></td>
 ${statusCell}`;
     tr.addEventListener('dragstart',e=>{dragSrc=tr;tr.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
     tr.addEventListener('dragover',e=>e.preventDefault());
