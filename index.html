@@ -2989,8 +2989,10 @@ function renderTodo(){
 
   // Empty week state — overlay invitation without breaking drag/drop targets
   const weekTaskCount=[1,2,3,4,5].reduce((s,d)=>s+((data[d]||[]).length),0);
+  const stWeekEntries=_getStWeekEntries(currentPerson,0);
+  const stWeekCount=[1,2,3,4,5].reduce((s,d)=>s+(stWeekEntries[d]||[]).length,0);
   document.getElementById('todo-empty-overlay')?.remove();
-  if(weekTaskCount===0){
+  if(weekTaskCount===0&&stWeekCount===0){
     const body=document.querySelector('.todo-body');
     if(body){
       const ov=document.createElement('div');
