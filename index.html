@@ -653,7 +653,7 @@ button.detail-back{outline:none;}
 
 /* Person switcher dropdown */
 .ps-dropdown{position:relative;}
-.ps-menu{position:fixed;background:var(--white);border:1px solid var(--border);border-radius:3px;box-shadow:0 6px 24px rgba(0,0,0,.12);z-index:900;min-width:240px;padding:4px 0;display:none;}
+.ps-menu{position:fixed;background:var(--white);border:1px solid var(--border);border-radius:3px;box-shadow:0 6px 24px rgba(0,0,0,.12);z-index:900;min-width:240px;padding:4px 0;display:none;max-height:70vh;overflow-y:auto;}
 .ps-menu.on{display:block;}
 .ps-search-wrap{padding:8px 12px 6px;border-bottom:1px solid var(--border);}
 .ps-search-inp{width:100%;border:1px solid var(--border);border-radius:3px;padding:5px 9px;font-size:12px;font-family:var(--font);outline:none;background:var(--off);}
@@ -2418,7 +2418,7 @@ function renderDashboard(){
       <div class="tc-footer"><div class="tc-stat">Done <span>${formatHrs(doneH)||'0h'}</span></div><div class="tc-stat">To do <span>${formatHrs(todoH)||'0h'}</span></div>${stLoggedH>0?`<div class="tc-stat" style="color:#3498DB;">Logged <span>${formatHrs(stLoggedH)}</span></div>`:''}${urgCnt?`<div class="tc-stat" style="margin-left:auto;color:var(--red);font-size:11px;">${urgCnt} urgent</div>`:'<div class="tc-stat" style="margin-left:auto;font-size:11px;color:var(--muted);">On track</div>'}</div>
     </div>`;
   };
-  let otherKeys=Object.keys(people).filter(k=>k!==MY_PERSON);
+  let otherKeys=Object.keys(people).filter(k=>k!==MY_PERSON&&!people[k]._archived);
   const dashPref=people[MY_PERSON].dashTeams||[];
   if(dashPref.length)otherKeys=otherKeys.filter(k=>dashPref.includes(people[k].team));
   const teamNames=[...new Set(otherKeys.map(k=>people[k].team).filter(Boolean))];
@@ -3659,7 +3659,7 @@ function renderPSMenu(query){
   menu.querySelectorAll('.ps-person,.ps-co-hd').forEach(el=>el.remove());
   const q=(query||'').toLowerCase();
   const hd=document.createElement('div');hd.className='ps-co-hd';hd.textContent='Content & Co';menu.appendChild(hd);
-  Object.keys(people).forEach(key=>{
+  Object.keys(people).filter(k=>!people[k]._archived).forEach(key=>{
     const p=people[key];
     if(q&&!p.name.toLowerCase().includes(q)&&!(p.role||'').toLowerCase().includes(q))return;
     const el=document.createElement('div');
@@ -5937,21 +5937,26 @@ function saveNewClient(btn){
 function renderSettings(){
   const wrap=document.getElementById('settings-scroll');if(!wrap)return;
   const COLORS=['#ED1E24','#6B7FA3','#7B9E87','#C4956A','#9B59B6','#E67E22','#1ABC9C','#E74C3C','#3498DB','#F39C12'];
-  const teamRows=Object.keys(people).map(key=>{
+  const _personRow=(key,archived)=>{
     const p=people[key];
-    return`<div class="sett-person" id="sp-${key}">
+    if(!!p._archived!==archived)return'';
+    return`<div class="sett-person" id="sp-${key}" style="${archived?'opacity:.55;':''}">
       <div class="sp-av" style="background:${p.color};width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#fff;flex-shrink:0;">${p.initials}</div>
       <div style="flex:1;min-width:0;">
         <input class="sett-inp" value="${p.name}" placeholder="Name" onchange="updatePerson('${key}','name',this.value)" style="font-size:14px;font-weight:400;width:100%;border:none;outline:none;background:transparent;font-family:var(--font);color:var(--ink);">
         <input class="sett-inp sett-inp-sm" value="${p.role||''}" placeholder="Role" onchange="updatePerson('${key}','role',this.value)" style="font-size:12px;color:var(--muted);width:100%;border:none;outline:none;background:transparent;font-family:var(--font);">
       </div>
-      <input list="team-name-list" value="${p.team||''}" placeholder="Team…" onchange="updatePerson('${key}','team',this.value.trim())" title="Team — groups this person on the dashboard and in reporting" style="width:110px;font-size:12px;font-family:var(--font);color:var(--ink);border:1px solid var(--border);border-radius:4px;padding:5px 8px;background:var(--off);outline:none;flex-shrink:0;">
+      <input list="team-name-list" value="${p.team||''}" placeholder="Team…" onchange="updatePerson('${key}','team',this.value.trim())" title="Team" style="width:110px;font-size:12px;font-family:var(--font);color:var(--ink);border:1px solid var(--border);border-radius:4px;padding:5px 8px;background:var(--off);outline:none;flex-shrink:0;">
       <div class="color-swatches" style="display:flex;gap:4px;flex-wrap:wrap;max-width:120px;">
         ${COLORS.map(c=>`<div onclick="updatePerson('${key}','color','${c}')" style="width:16px;height:16px;border-radius:50%;background:${c};cursor:pointer;border:${p.color===c?'2px solid var(--ink)':'2px solid transparent'};flex-shrink:0;"></div>`).join('')}
       </div>
-      ${key!==MY_PERSON?`<button onclick="deletePerson('${key}')" title="Remove ${p.name}" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:6px;margin-left:4px;flex-shrink:0;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--muted)'"><i class="ti ti-trash" style="font-size:14px;"></i></button>`:''}
+      ${key!==MY_PERSON?`<button onclick="toggleArchivePerson('${key}')" title="${archived?'Restore':'Archive'} ${p.name}" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:6px;flex-shrink:0;" onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--muted)'"><i class="ti ti-${archived?'rotate':'archive'}" style="font-size:14px;"></i></button>`:''}
     </div>`;
-  }).join('');
+  };
+  const activeKeys=Object.keys(people).filter(k=>!people[k]._archived);
+  const archivedKeys=Object.keys(people).filter(k=>people[k]._archived);
+  const teamRows=activeKeys.map(k=>_personRow(k,false)).join('');
+  const archivedRows=archivedKeys.map(k=>_personRow(k,true)).join('');
   wrap.innerHTML=`
     <div style="margin-bottom:28px;">
       <div class="dash-greeting">Settings</div>
@@ -6029,7 +6034,21 @@ function renderSettings(){
         </div>
       </div>
     </div>
+    ${archivedRows?`
     <div style="margin-top:28px;">
+      <div class="section-label" style="margin-bottom:14px;">Archived accounts <span style="font-size:11px;color:var(--muted);font-weight:300;">${archivedKeys.length} hidden from todo &amp; dashboard</span></div>
+      <div style="background:var(--white);border:1px solid var(--border);">${archivedRows}</div>
+    </div>`:''}
+    <div style="margin-top:28px;">
+      <div class="section-label" style="margin-bottom:14px;">Data</div>
+      <div style="background:var(--white);border:1px solid var(--border);padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div><div style="font-size:13px;">Planned tasks</div><div style="font-size:11px;color:var(--muted);">Clears all manually-planned tasks from the todo board. Streamtime logged time is unaffected.</div></div>
+          <button class="d-action" style="flex-shrink:0;margin-left:16px;color:var(--red);border-color:var(--red);" onclick="if(confirm('Clear all planned tasks? This cannot be undone.')){todoData={};saveData();renderTodo();toast('All planned tasks cleared','success');}">Clear tasks</button>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:20px;">
       <div class="section-label" style="margin-bottom:14px;">About</div>
       <div style="background:var(--white);border:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
         <div>
@@ -6098,6 +6117,12 @@ function saveNewPerson(){
   personStatus[key]='available';
   savePeople();populatePersonSwitcher();renderSettings();
   toast(`${name} added to the team`,'success');
+}
+function toggleArchivePerson(key){
+  const p=people[key];if(!p||key===MY_PERSON)return;
+  p._archived=!p._archived;
+  savePeople();populatePersonSwitcher();renderSettings();
+  toast(`${p.name} ${p._archived?'archived':'restored'}`,'success');
 }
 function deletePerson(key){
   const p=people[key];if(!p)return;
