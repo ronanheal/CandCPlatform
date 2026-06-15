@@ -2146,6 +2146,7 @@ const ST_BASE='https://raw.githubusercontent.com/ronanheal/CandCPlatform/streamt
 let stLoggedTimes=[];
 let stInvoices=[];
 let stQuotes=[];
+let stContacts=[];
 let stUsersById={};   // userId → {name,initials,color,key}
 let _stIdToJobNum={}; // Streamtime internal job ID → job number string
 function _stFmtH(mins){return mins>=60?`${Math.floor(mins/60)}h${mins%60?mins%60+'m':''}`:mins>0?mins+'m':'0h';}
@@ -2185,21 +2186,25 @@ function _mapStJob(j){
     _stAwaitingPayment:Math.round(j.totalAwaitingPaymentInvoicesExTax||0),
   };
 }
-function _mapStCompany(c){
-  return{id:'st-'+c.id,name:c.name,nickname:'',contact:'',email:'',phone:'',notes:''};
+function _mapStCompany(c,contacts){
+  // Find primary contact for this company from contacts array
+  const co=contacts?contacts.find(x=>x.company?.id===c.id||x.company?.name===c.name):null;
+  const name=co?[co.firstName,co.lastName].filter(Boolean).join(' '):'';
+  return{id:'st-'+c.id,_stId:c.id,name:c.name,nickname:'',contact:name,email:co?.email||'',phone:co?.phone||co?.mobile||'',notes:''};
 }
 async function initStreamtime(){
   const tb=document.getElementById('jobs-tbody');
   if(tb)tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted);font-size:13px;"><i class="ti ti-loader" style="font-size:18px;display:block;margin:0 auto 8px;"></i>Loading from Streamtime…</td></tr>`;
   try{
     const _v='?v='+Date.now();
-    const [jobsRes,coRes,ltRes,invRes,qtRes,usersRes]=await Promise.all([
+    const [jobsRes,coRes,ltRes,invRes,qtRes,usersRes,ctRes]=await Promise.all([
       fetch(`${ST_BASE}/jobs.json${_v}`),
       fetch(`${ST_BASE}/companies.json${_v}`),
       fetch(`${ST_BASE}/logged_times.json${_v}`),
       fetch(`${ST_BASE}/invoices.json${_v}`),
       fetch(`${ST_BASE}/quotes.json${_v}`),
       fetch(`${ST_BASE}/users.json${_v}`),
+      fetch(`${ST_BASE}/contacts.json${_v}`),
     ]);
     // Users — build lookup map first (needed for time entries)
     if(usersRes.ok){
@@ -2211,6 +2216,8 @@ async function initStreamtime(){
         stUsersById[u.id]={id:u.id,name,initials,color:COLS[i%COLS.length],key:'st_'+u.id,email:u.email||''};
       });
     }
+    // Contacts
+    if(ctRes.ok)stContacts=await ctRes.json();
     // Jobs
     if(jobsRes.ok){
       const raw=await jobsRes.json();
@@ -2220,10 +2227,24 @@ async function initStreamtime(){
         if(j._stId)_stIdToJobNum[j._stId]=j.id;
       });
     }
-    // Companies / clients
+    // Companies / clients — merge with contacts for email/phone/contact name
     if(coRes.ok){
       const rawCo=await coRes.json();
-      rawCo.forEach(c=>{if(!clientsData.find(x=>x.name===c.name))clientsData.push(_mapStCompany(c));});
+      rawCo.forEach(c=>{
+        const existing=clientsData.find(x=>x.name===c.name);
+        if(existing){
+          // Backfill contact info if not manually set
+          if(!existing.contact||!existing.email){
+            const mapped=_mapStCompany(c,stContacts);
+            if(!existing.contact&&mapped.contact)existing.contact=mapped.contact;
+            if(!existing.email&&mapped.email)existing.email=mapped.email;
+            if(!existing.phone&&mapped.phone)existing.phone=mapped.phone;
+            if(!existing._stId)existing._stId=c.id;
+          }
+        }else{
+          clientsData.push(_mapStCompany(c,stContacts));
+        }
+      });
     }
     // Logged times
     if(ltRes.ok)stLoggedTimes=await ltRes.json();
@@ -2233,6 +2254,7 @@ async function initStreamtime(){
     if(qtRes.ok)stQuotes=await qtRes.json();
   }catch(e){console.warn('Streamtime fetch failed:',e);}
   // Re-render open views
+  if(typeof renderDashboard==='function'&&document.getElementById('view-dashboard')?.classList.contains('active'))renderDashboard();
   if(typeof renderJobs==='function')renderJobs();
   if(typeof renderTime==='function'&&document.querySelector('#jt-time')?.style.display!=='none'){initTimeFilters();renderTime();}
   if(typeof renderInvoices==='function'&&document.querySelector('#jt-invoices')?.style.display!=='none')renderInvoices();
@@ -2374,6 +2396,20 @@ function renderDashboard(){
   }else{
     teamHTML=otherKeys.map(_teamCard).join('');
   }
+  // Streamtime business KPIs
+  const liveJobs=jobs.filter(j=>j.status==='inplay');
+  const totalInvoiced=jobs.reduce((s,j)=>s+(j._stInvoiced||0),0);
+  const totalPaid=jobs.reduce((s,j)=>s+(j._stPaid||0),0);
+  const totalAwaiting=jobs.reduce((s,j)=>s+(j._stAwaitingPayment||0),0);
+  const totalSell=jobs.reduce((s,j)=>s+(j._sellUsed||0),0);
+  const fmtDollar=n=>n>=1000000?`$${(n/1000000).toFixed(1)}m`:n>=1000?`$${(n/1000).toFixed(0)}k`:`$${n.toLocaleString()}`;
+  const stKPIs=jobs.length?`
+    <div class="section-label" style="margin-top:28px;margin-bottom:12px;">Business overview</div>
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-label">Active jobs</div><div class="kpi-val">${liveJobs.length}</div><div class="kpi-sub">of ${jobs.length} total</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${Math.min(100,Math.round(liveJobs.length/jobs.length*100))}%;background:var(--red);"></div></div></div>
+      <div class="kpi"><div class="kpi-label">Invoiced</div><div class="kpi-val">${fmtDollar(totalInvoiced)}</div><div class="kpi-sub">${fmtDollar(totalPaid)} paid · ${fmtDollar(totalAwaiting)} awaiting</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${totalInvoiced>0?Math.min(100,Math.round(totalPaid/totalInvoiced*100)):0}%;background:#4CAF50;"></div></div></div>
+      <div class="kpi"><div class="kpi-label">Revenue logged</div><div class="kpi-val">${fmtDollar(totalSell)}</div><div class="kpi-sub">billable time ex tax</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${totalSell>0?Math.min(100,Math.round(totalInvoiced/totalSell*100)):0}%;background:#3498DB;"></div></div></div>
+    </div>`:'';
   // Over budget alerts
   const alerts=jobs.filter(j=>(j.bPct||0)>=100||((j.hPct||0)>=100)).map(j=>`<div class="alert"><i class="ti ti-alert-triangle" style="color:var(--red);font-size:16px;flex-shrink:0;"></i><div><div class="alert-job">${j.id} ${j.name}</div><div class="alert-detail">${(j.bPct||0)>=100?`Budget ${j.bPct}% used · over sell`:`Hours ${j.hPct}% of plan`}</div></div></div>`).join('');
   // Client cards — one per client with active jobs
@@ -2411,8 +2447,9 @@ function renderDashboard(){
     <div class="section-label" style="margin-bottom:12px;">Your day <button onclick="openTodoModal(null,null,'${MY_PERSON}')" title="Add task" style="background:transparent;border:1px solid var(--border);border-radius:4px;padding:1px 8px;cursor:pointer;font-size:11px;color:var(--muted);font-family:var(--font);margin-left:8px;vertical-align:middle;">+ Add task</button></div>
     <div class="my-todos" style="margin-bottom:28px;">${todoRows||'<div class="my-todo-item" style="color:var(--muted);font-size:13px;"><i class="ti ti-sun" style="font-size:16px;margin-right:10px;"></i>No tasks scheduled today.</div>'}</div>
     ${teamHTML?`<div class="section-label" style="margin-bottom:14px;">Team · today</div><div class="team-grid">${teamHTML}</div>`:''}
-    ${_clientsHTML?`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Clients</div><div class="team-grid">${_clientsHTML}</div>`:''}
-    ${alerts?`<div style="margin-top:28px;" class="section-label" style="margin-bottom:14px;">Over budget</div><div class="alert-list">${alerts}</div>`:''}
+    ${stKPIs}
+    ${_clientsHTML?`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Active clients</div><div class="team-grid">${_clientsHTML}</div>`:''}
+    ${alerts?`<div style="margin-top:28px;"><div class="section-label" style="margin-bottom:14px;">Over budget</div><div class="alert-list">${alerts}</div></div>`:''}
   `;
 }
 function navTo(v){
@@ -5680,17 +5717,23 @@ function renderClients(){
     ${clientsData.length===0?emptyStateHTML('ti-building','No clients yet','Clients are created automatically when you add a job, or add one here to get a head start.','Add client','openNewClientModal()'):''}
     ${clientsData.length>0&&filtered.length===0?emptyStateHTML('ti-filter-off','No clients match','Nothing matches that search.','',''):''}
     <div class="clients-grid" ${clientsData.length===0?'style="display:none;"':''}>
-      ${filtered.map(c=>`
-        <div class="client-card-full" onclick="openClientDetail('${c.id}')">
+      ${filtered.map(c=>{
+        const cjobs=jobs.filter(j=>j.company===c.name);
+        const totalInvoiced=cjobs.reduce((a,j)=>a+(j._stInvoiced||0),0);
+        const totalPaid=cjobs.reduce((a,j)=>a+(j._stPaid||0),0);
+        const fmtD=n=>n>=1000?`$${(n/1000).toFixed(0)}k`:(n?`$${n}`:'');
+        return`<div class="client-card-full" onclick="openClientDetail('${c.id}')">
           <div class="ccf-name">${c.nickname?`<span style="font-weight:500;">${c.nickname}</span> <span style="font-size:12px;color:var(--muted);font-weight:300;">— ${c.name}</span>`:c.name}</div>
           <div class="ccf-contact">${c.contact||'<span style="color:#bbb;">No contact added</span>'}</div>
           <div class="ccf-meta">
             <span><strong>${jobCount(c.name)}</strong> jobs</span>
             <span><strong>${activeJobCount(c.name)}</strong> active</span>
+            ${totalInvoiced?`<span style="color:var(--ink);">${fmtD(totalInvoiced)} invoiced</span>`:''}
+            ${totalPaid?`<span style="color:#4CAF50;">${fmtD(totalPaid)} paid</span>`:''}
             ${c.lead&&people[c.lead]?`<span style="color:var(--muted);">Lead: ${people[c.lead].name}</span>`:''}
-            ${c.email?`<span>${c.email}</span>`:''}
           </div>
-        </div>`).join('')}
+        </div>`;
+      }).join('')}
       <div class="client-add-card" onclick="openNewClientModal()">
         <i class="ti ti-plus"></i> Add new client
       </div>
@@ -5702,12 +5745,18 @@ function openClientDetail(id){
   const c=clientsData.find(x=>x.id===id);if(!c)return;
   _activeClientId=id;
   const clientJobs=jobs.filter(j=>j.company===c.name);
-  const totalHrs=clientJobs.reduce((a,j)=>a+(parseFloat((j.hours||'0').replace(/[^\d.]/g,''))||0),0);
-  const totalBudget=clientJobs.reduce((a,j)=>a+(parseFloat((j.budgetTotal||'0').replace(/[$,]/g,''))||0),0);
+  const activeJobs=clientJobs.filter(j=>j.status!=='complete'&&j.status!=='archived');
+  const totalInvoiced=clientJobs.reduce((a,j)=>a+(j._stInvoiced||0),0);
+  const totalPaid=clientJobs.reduce((a,j)=>a+(j._stPaid||0),0);
+  const totalSell=clientJobs.reduce((a,j)=>a+(j._sellUsed||0),0);
+  const totalBudget=clientJobs.reduce((a,j)=>a+(j._plannedSell||0),0);
+  const fmtD=n=>n?`$${n.toLocaleString()}`:'—';
+  // All contacts for this company
+  const coContacts=stContacts.filter(ct=>ct.company?.name===c.name||ct.company?.id===c._stId);
   // Populate header
   document.getElementById('cd-view-name').textContent=c.name;
-  document.getElementById('cd-view-meta').textContent=`${clientJobs.length} job${clientJobs.length!==1?'s':''} · ${clientJobs.filter(j=>j.status!=='complete').length} active`;
-  // Info strip: editable fields
+  document.getElementById('cd-view-meta').textContent=`${clientJobs.length} job${clientJobs.length!==1?'s':''} · ${activeJobs.length} active · ${fmtD(totalInvoiced)} invoiced`;
+  // Info strip
   document.getElementById('cd-info-strip').innerHTML=`
     <div style="flex:1;min-width:120px;">
       <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Short name</div>
@@ -5732,18 +5781,38 @@ function openClientDetail(id){
         ${Object.keys(people).map(k=>`<option value="${k}" ${c.lead===k?'selected':''}>${people[k].name} · ${people[k].role}</option>`).join('')}
       </select>
     </div>
-    <div style="min-width:80px;text-align:center;">
-      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Total budget</div>
-      <div style="font-size:16px;font-weight:500;">$${totalBudget.toLocaleString()}</div>
+    <div style="min-width:200px;display:flex;gap:20px;">
+      <div style="text-align:center;"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Revenue logged</div><div style="font-size:15px;font-weight:500;">${fmtD(totalSell)}</div></div>
+      <div style="text-align:center;"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Invoiced</div><div style="font-size:15px;font-weight:500;">${fmtD(totalInvoiced)}</div></div>
+      <div style="text-align:center;"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Paid</div><div style="font-size:15px;font-weight:500;color:#4CAF50;">${fmtD(totalPaid)}</div></div>
     </div>
   `;
+  // Contacts section
+  const contactsHTML=coContacts.length?`
+    <div style="margin-bottom:20px;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px;">Contacts (${coContacts.length})</div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;">
+        ${coContacts.map(ct=>{
+          const name=[ct.firstName,ct.lastName].filter(Boolean).join(' ')||'Unknown';
+          return`<div style="background:var(--off);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:12px;min-width:160px;">
+            <div style="font-weight:500;margin-bottom:2px;">${name}</div>
+            ${ct.jobTitle?`<div style="color:var(--muted);font-size:11px;">${ct.jobTitle}</div>`:''}
+            ${ct.email?`<div style="color:var(--muted);font-size:11px;">${ct.email}</div>`:''}
+            ${ct.phone||ct.mobile?`<div style="color:var(--muted);font-size:11px;">${ct.phone||ct.mobile}</div>`:''}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`:'';
   // Jobs list
   const jobsList=document.getElementById('cd-jobs-list');
-  jobsList.innerHTML=clientJobs.length===0?`<div style="font-size:13px;color:var(--muted);padding:24px 0;">No jobs yet for this client.</div>`
+  jobsList.innerHTML=(contactsHTML)+(clientJobs.length===0?`<div style="font-size:13px;color:var(--muted);padding:24px 0;">No jobs yet for this client.</div>`
     :clientJobs.map(j=>{
-      const wfLabel=j.workflowStatus==='quote'?'Quote':j.workflowStatus==='completed'?'Completed':j.workflowStatus==='invoiced'?'Invoiced':'Live job';
+      const wfLabel=j.workflowStatus==='quote'?'Quote':j.workflowStatus==='completed'?'Completed':j.workflowStatus==='invoiced'?'Invoiced':'Live';
       const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='completed'?'wf-completed':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
-      const hPct=j.hPct||0;
+      const hPct=j._hPct||j.hPct||0;
+      const loggedH=j._loggedH||j.hours||'0h';
+      const plannedH=j._plannedH||j.hoursTotal||'—';
+      const sell=j._sellUsed?`$${j._sellUsed.toLocaleString()}`:(j.budget||'—');
       return`<div class="cd-job-row" onclick="openJobDetail('${j.id}')">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
           <span class="job-num">${j.id}</span>
@@ -5755,11 +5824,11 @@ function openClientDetail(id){
           <div style="flex:1;background:var(--off);border-radius:2px;height:3px;overflow:hidden;">
             <div style="height:100%;width:${hPct}%;background:${hPct>90?'var(--red)':'var(--ink)'};border-radius:2px;"></div>
           </div>
-          <span style="font-size:11px;color:var(--muted);white-space:nowrap;">${j.hours||'0h'} / ${j.hoursTotal||'—'}</span>
-          <span style="font-size:11px;color:var(--muted);white-space:nowrap;">${j.budget||'—'}</span>
+          <span style="font-size:11px;color:var(--muted);white-space:nowrap;">${loggedH} / ${plannedH}</span>
+          <span style="font-size:11px;color:var(--muted);white-space:nowrap;">${sell}</span>
         </div>
       </div>`;
-    }).join('');
+    }).join(''));
   // Switch views
   document.getElementById('clients-list-view').style.display='none';
   document.getElementById('client-detail-view').style.display='flex';
