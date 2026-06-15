@@ -2,8 +2,8 @@ name: Streamtime Sync
 
 on:
   schedule:
-    - cron: '*/30 * * * *'  # every 30 minutes
-  workflow_dispatch:          # allow manual trigger from GitHub UI
+    - cron: '0 * * * *'  # every hour on the hour
+  workflow_dispatch:       # allow manual trigger from GitHub UI
 
 jobs:
   sync:
@@ -18,6 +18,14 @@ jobs:
           ref: main
           fetch-depth: 0
 
+      - name: Restore previous data + progress from streamtime-data branch
+        run: |
+          git fetch origin streamtime-data
+          mkdir -p streamtime-data
+          # Copy existing JSON files so the script can merge rather than start fresh
+          git show origin/streamtime-data:jobs.json > streamtime-data/jobs.json 2>/dev/null || true
+          git show origin/streamtime-data:sync_progress.json > streamtime-data/sync_progress.json 2>/dev/null || true
+
       - name: Run sync script
         run: python3 scripts/streamtime_sync.py
         env:
@@ -25,10 +33,9 @@ jobs:
 
       - name: Push data files to streamtime-data branch
         run: |
-          # Check out the streamtime-data branch into a separate worktree
           git worktree add ../data-branch origin/streamtime-data
 
-          # Copy the freshly generated JSON files into the worktree
+          # Copy all generated JSON files including progress tracker
           cp streamtime-data/*.json ../data-branch/
 
           cd ../data-branch

@@ -1,10 +1,27 @@
 #!/usr/bin/env python3
 """
-Streamtime API sync script.
-Pulls ALL data from the Streamtime API (live + archived) and writes JSON files
-to ./streamtime-data/. Phases and items are fetched for every job using a
-thread pool so the full pull completes in ~5 minutes.
-Requires STREAMTIME_API_KEY env var. Run via GitHub Actions on a cron schedule.
+Streamtime API sync script — staged detail fetching.
+
+Every hourly run:
+  1. Refreshes all top-level data (jobs, times, invoices, quotes, companies,
+     contacts, users) — ~10 API calls total.
+  2. Reads sync_progress.json from the data branch to find which job IDs
+     already have phases+items fetched.
+  3. Fetches phases+items for the next batch of jobs (BATCH_SIZE per run),
+     merging results into jobs.json.
+  4. Updates sync_progress.json so the next run continues from where this
+     one stopped.
+
+Rate limit: 720 req/hour.
+  ~10 calls for top-level data
+  BATCH_SIZE=300 jobs × 2 calls = 600 calls
+  Total per run ≈ 610 — safely under 720.
+
+With 2,400 jobs the full backfill takes ~8 hourly runs (~8 hours).
+After all jobs have detail, subsequent runs still refresh top-level data
+and re-fetch phases+items only for "In Play"/"Paused" jobs each time.
+
+Requires STREAMTIME_API_KEY env var. Run via GitHub Actions on an hourly cron.
 """
 
 import json
@@ -17,7 +34,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 API_BASE = "https://api.streamtime.net/v1"
-# Use the Streamtime subdomain for endpoints that require it
 ST_SUBDOMAIN = "https://contentco.app.streamtime.net/api/v1"
 API_KEY = os.environ["STREAMTIME_API_KEY"]
 OUT_DIR = Path("streamtime-data")
@@ -28,8 +44,9 @@ HEADERS = {
     "Content-Type": "application/json",
 }
 
-CONCURRENCY = 10   # parallel requests for per-job detail fetches
-RETRY_DELAY = 2    # seconds between retries
+CONCURRENCY = 8   # parallel phase/item fetches
+RETRY_DELAY = 2   # seconds between retries
+BATCH_SIZE = 300  # jobs to fetch detail for per run (~600 API calls)
 
 errors = []
 
@@ -42,7 +59,8 @@ def get(path, base=API_BASE):
                 return json.loads(resp.read())
         except urllib.error.HTTPError as e:
             if e.code == 429:
-                time.sleep(10)
+                print(f"  rate limited on {path}, waiting 30s...")
+                time.sleep(30)
                 continue
             if attempt < 2:
                 time.sleep(RETRY_DELAY)
@@ -83,7 +101,8 @@ def search(view_id, query="", additional_data=None):
                 break
             except urllib.error.HTTPError as e:
                 if e.code == 429:
-                    time.sleep(10)
+                    print(f"  rate limited on search view={view_id}, waiting 30s...")
+                    time.sleep(30)
                     continue
                 if attempt < 2:
                     time.sleep(RETRY_DELAY)
@@ -111,11 +130,10 @@ def search(view_id, query="", additional_data=None):
 
 
 def fetch_job_detail(job):
-    """Fetch phases and items for a single job and attach them."""
+    """Fetch phases and items for a single job and attach them inline."""
     jid = job["id"]
     phases = get(f"/jobs/{jid}/job_phases", base=ST_SUBDOMAIN) or []
     items = get(f"/jobs/{jid}/job_items", base=ST_SUBDOMAIN) or []
-    # Nest items under their phase
     phase_map = {p["id"]: {**p, "items": []} for p in phases}
     loose_items = []
     for item in items:
@@ -137,7 +155,18 @@ def save(filename, data):
     return count
 
 
-# ── Simple reference endpoints ────────────────────────────────────────────────
+def load_existing(filename):
+    """Load an existing JSON file from the data dir, return [] or {} on miss."""
+    path = OUT_DIR / filename
+    if path.exists():
+        try:
+            return json.loads(path.read_text())
+        except Exception:
+            pass
+    return []
+
+
+# ── 1. Reference endpoints ────────────────────────────────────────────────────
 print("Fetching reference endpoints...")
 organisation = get("/organisation")
 users = get("/users")
@@ -151,31 +180,89 @@ save("roles.json", roles or [])
 save("branches.json", branches or [])
 save("rate_cards.json", rate_cards or [])
 
-# ── All jobs — live + archived ────────────────────────────────────────────────
+# ── 2. All top-level job data ─────────────────────────────────────────────────
 print("\nFetching all jobs (live + archived)...")
 ALL_STATUSES = 'job_status in ["In Play","Complete","Paused","Archived"]'
-jobs = search(7, query=ALL_STATUSES, additional_data=["company"])
-print(f"  {len(jobs)} total jobs fetched")
+fresh_jobs = search(7, query=ALL_STATUSES, additional_data=["company"])
+print(f"  {len(fresh_jobs)} total jobs fetched")
 
-# ── Per-job phases and items (parallel) ──────────────────────────────────────
-print(f"\nFetching phases + items for all {len(jobs)} jobs ({CONCURRENCY} concurrent)...")
-job_map = {j["id"]: j for j in jobs}
-done = 0
+# Merge with existing jobs.json so we keep previously fetched phases/items
+existing_jobs = load_existing("jobs.json")
+existing_by_id = {j["id"]: j for j in existing_jobs if isinstance(j, dict)}
+
+# Build merged job map — fresh top-level data wins, but preserve phases/items
+job_map = {}
+for j in fresh_jobs:
+    jid = j["id"]
+    prev = existing_by_id.get(jid, {})
+    if "phases" in prev:
+        j["phases"] = prev["phases"]
+        j["looseItems"] = prev.get("looseItems", [])
+    job_map[jid] = j
+
+# ── 3. Load progress and decide which jobs need detail this run ───────────────
+progress_path = OUT_DIR / "sync_progress.json"
+progress = {}
+if progress_path.exists():
+    try:
+        progress = json.loads(progress_path.read_text())
+    except Exception:
+        pass
+
+detail_done = set(progress.get("detail_done", []))
+backfill_complete = progress.get("backfill_complete", False)
+
+# Jobs that still need phases/items fetched
+needs_detail = [j for j in fresh_jobs if j["id"] not in detail_done]
+
+# After backfill is done, always re-fetch active jobs to keep them fresh
+active_statuses = {"In Play", "Paused"}
+active_jobs = [j for j in fresh_jobs if (j.get("jobStatus") or {}).get("name") in active_statuses]
+
+if backfill_complete:
+    # Ongoing mode: refresh active jobs every run
+    batch = active_jobs
+    print(f"\nBackfill complete — refreshing {len(batch)} active jobs' detail...")
+else:
+    # Backfill mode: process next BATCH_SIZE jobs that still need detail
+    batch = needs_detail[:BATCH_SIZE]
+    print(f"\nBackfill mode: {len(detail_done)}/{len(fresh_jobs)} done, fetching next {len(batch)}...")
+
+# ── 4. Fetch phases + items for this batch ────────────────────────────────────
+fetched_count = 0
 with ThreadPoolExecutor(max_workers=CONCURRENCY) as pool:
-    futures = {pool.submit(fetch_job_detail, j): j["id"] for j in jobs}
+    futures = {pool.submit(fetch_job_detail, job_map[j["id"]]): j["id"] for j in batch if j["id"] in job_map}
     for future in as_completed(futures):
+        jid = futures[future]
         try:
             updated = future.result()
-            job_map[updated["id"]] = updated
+            job_map[jid] = updated
+            detail_done.add(jid)
+            fetched_count += 1
         except Exception as e:
-            errors.append({"resource": f"job/{futures[future]}", "error": str(e)})
-        done += 1
-        if done % 100 == 0 or done == len(jobs):
-            print(f"  phases/items: {done}/{len(jobs)} done")
+            errors.append({"resource": f"job/{jid}", "error": str(e)})
+        if fetched_count % 50 == 0 and fetched_count > 0:
+            print(f"  phases/items: {fetched_count}/{len(batch)} done this run")
 
-jobs = list(job_map.values())
+print(f"  phases/items: {fetched_count}/{len(batch)} done this run")
 
-# ── Other search views ────────────────────────────────────────────────────────
+# Check if backfill is now complete
+all_ids = {j["id"] for j in fresh_jobs}
+backfill_complete = all_ids.issubset(detail_done)
+if backfill_complete:
+    print("  ✓ Backfill complete — all jobs now have phases+items")
+
+# Save progress
+progress = {
+    "detail_done": list(detail_done),
+    "backfill_complete": backfill_complete,
+    "total_jobs": len(fresh_jobs),
+    "detail_count": len(detail_done),
+    "last_run": datetime.now(timezone.utc).isoformat(),
+}
+progress_path.write_text(json.dumps(progress, indent=2))
+
+# ── 5. Other search views ─────────────────────────────────────────────────────
 print("\nFetching other data...")
 logged_times = search(8)
 invoices = search(10)
@@ -183,7 +270,8 @@ quotes = search(11)
 companies = search(12)
 contacts = search(13)
 
-# ── Save everything ───────────────────────────────────────────────────────────
+# ── 6. Save everything ────────────────────────────────────────────────────────
+jobs = list(job_map.values())
 counts = {
     "organisation": 1 if organisation else 0,
     "users": save("users.json", users or []),
@@ -201,10 +289,13 @@ counts = {
 meta = {
     "last_synced": datetime.now(timezone.utc).isoformat(),
     "record_counts": counts,
+    "backfill_complete": backfill_complete,
+    "detail_progress": f"{len(detail_done)}/{len(fresh_jobs)} jobs have phases+items",
     "errors": errors,
 }
 (OUT_DIR / "sync_meta.json").write_text(json.dumps(meta, indent=2))
 print(f"\nDone. Synced at {meta['last_synced']}")
 print(f"Record counts: {counts}")
+print(f"Detail progress: {meta['detail_progress']}")
 if errors:
     print(f"Errors ({len(errors)}): {errors[:5]}")
