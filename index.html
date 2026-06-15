@@ -2204,7 +2204,29 @@ function _mapStJob(j){
     activity:[],
     invNum:null,
     members:(j.users||[]).map(u=>u.name||u.id),
-    phases:[],
+    phases:(j.phases||[]).map(ph=>({
+      id:'st-ph-'+ph.id,
+      name:ph.name||'Phase',
+      status:ph.jobPhaseStatus?.name==='Complete'?'complete':'open',
+      paused:ph.jobPhaseStatus?.name==='Paused',
+      items:(ph.items||[]).map(it=>{
+        const logM=it.totalLoggedMinutes||0;const planM=it.totalPlannedMinutes||0;
+        const rate=it.sellRate||0;
+        const usedSell=Math.round(logM/60*rate);const planSell=Math.round(planM/60*rate);
+        const stStatus=it.jobItemStatus?.name||'';
+        return{
+          id:'st-it-'+it.id,
+          name:it.name||'Item',
+          hours:_stFmtH(logM),
+          rate:rate?'$'+rate:'—',
+          used:usedSell?'$'+usedSell.toLocaleString():'$0',
+          total:planSell?'$'+planSell.toLocaleString():'—',
+          status:stStatus==='Complete'?'complete':stStatus==='In Progress'?'inprogress':'open',
+          _stId:it.id,
+          _planMins:planM,_logMins:logM,
+        };
+      }),
+    })),
     // Pre-computed stats used by computeJobStats
     _loggedMins:loggedMins,_plannedMins:plannedMins,
     _sellUsed:sellUsed,_plannedSell:plannedSell,_expUsed:expUsed,
