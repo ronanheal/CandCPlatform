@@ -1228,7 +1228,7 @@ tr:hover .i-todo-btn{opacity:1;}
           </div>
           <div class="jobs-table-wrap">
             <table class="jobs-table">
-              <thead><tr><th style="width:32px;"><input type="checkbox" id="jobs-cb-all" onclick="toggleAllJobCbs(this.checked)" style="accent-color:var(--red);cursor:pointer;"></th><th>Job</th><th>Company</th><th>Budget</th><th>Hours</th><th>Labels / Progress</th><th>Workflow</th><th>Status</th></tr></thead>
+              <thead><tr><th style="width:32px;"><input type="checkbox" id="jobs-cb-all" onclick="toggleAllJobCbs(this.checked)" style="accent-color:var(--red);cursor:pointer;"></th><th>Job</th><th>Company</th><th>Budget</th><th>Hours</th><th>Labels / Progress</th><th>Status</th></tr></thead>
               <tbody id="jobs-tbody"></tbody>
             </table>
           </div>
@@ -4238,8 +4238,7 @@ function renderJobs(){
         </div>
       </td>
       <td><div class="job-labels-cell">${labels||'<span style="font-size:12px;color:var(--muted);">—</span>'}</div>${progHTML}</td>
-      <td><span class="wf-badge ${wfCls}">${wfLabel}</span></td>
-      <td><span class="status-pill ${sc}">${sl}</span></td>`;
+      <td><span class="wf-badge ${wfCls}">${wfLabel}</span></td>`;
     tbody.appendChild(tr);
   });
   document.getElementById('jobs-count').textContent=`${shown} job${shown!==1?'s':''} · NZD`;
@@ -4759,7 +4758,7 @@ function openReallocate(ev,person,wk,day,taskId){
   document.getElementById('realloc-modal')?.remove();
   const modal=document.createElement('div');
   modal.className='modal-bg on';modal.id='realloc-modal';
-  const jobOpts=jobs.filter(x=>x.status!=='archived').map(x=>`<option value="${x.id}" ${x.id===(t.jobId||'')?'selected':''}>${x.id} ${x.name}</option>`).join('');
+  const jobOpts=jobs.filter(x=>x.status==='inplay').map(x=>`<option value="${x.id}" ${x.id===(t.jobId||'')?'selected':''}>${x.id} ${x.name}</option>`).join('');
   modal.innerHTML=`<div class="modal" style="max-width:420px;">
     <div class="modal-hd"><span class="modal-hd-title">Reallocate time</span><button class="modal-x" onclick="document.getElementById('realloc-modal').remove()"><i class="ti ti-x"></i></button></div>
     <div class="modal-bd" style="padding:16px 20px;">
