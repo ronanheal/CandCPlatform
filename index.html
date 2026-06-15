@@ -1920,14 +1920,14 @@ const SFF_PHASES=[
   ]}
 ];
 let phases=JSON.parse(JSON.stringify(SFF_PHASES));
-const DEFAULT_PEOPLE={
-  ro:{name:'Ronan',initials:'RO',color:'#ED1E24',days:[1,2,3,4,5],role:'Creative Director'},
-  bee:{name:'Bianca',initials:'BE',color:'#6B7FA3',days:[1,2,3,4,5],role:'Account Manager'},
-  jb:{name:'JB',initials:'JB',color:'#7B9E87',days:[1,2,3,4,5],role:'Copywriter'}
-};
+const DEFAULT_PEOPLE={};
 let people=(function(){
-  try{const s=JSON.parse(localStorage.getItem('cc_people')||'null');if(s&&Object.keys(s).length)return s;}catch(e){}
-  return JSON.parse(JSON.stringify(DEFAULT_PEOPLE));
+  try{const s=JSON.parse(localStorage.getItem('cc_people')||'null');if(s&&Object.keys(s).length){
+    // Archive legacy local-only accounts so they don't appear in switcher/dashboard
+    ['ro','bee','jb'].forEach(k=>{if(s[k]&&!s[k]._fromStreamtime)s[k]._archived=true;});
+    return s;
+  }}catch(e){}
+  return {};
 })();
 function savePeople(){
   try{
@@ -1935,8 +1935,8 @@ function savePeople(){
     localStorage.setItem('cc_person_status',JSON.stringify(personStatus));
   }catch(e){}
 }
-let currentPerson='ro';
-const MY_PERSON='ro'; // the logged-in user
+let currentPerson='st_114330';
+const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 const APP_VERSION='2.5.0';
 const CHANGELOG=[
   {version:'2.5.0',date:'15 Jun 2026',title:'Invoice overhaul, person picker teams, item progress bars, undo',items:[
@@ -2156,14 +2156,20 @@ function _getStWeekEntries(personKey,offset){
   offset=offset||0;
   const stUser=Object.values(stUsersById).find(u=>u.key===personKey);
   if(!stUser)return{};
+  // Build a map of date strings → day numbers for this week (avoids timezone math)
   const mon=new Date();const dow=(mon.getDay()+6)%7;
   mon.setDate(mon.getDate()-dow+(offset*7));mon.setHours(0,0,0,0);
+  const dateToDay={};
+  for(let i=0;i<5;i++){
+    const d=new Date(mon);d.setDate(mon.getDate()+i);
+    dateToDay[d.toISOString().slice(0,10)]=i+1;
+  }
   const result={};
   stLoggedTimes.forEach(lt=>{
     if(lt.userId!==stUser.id)return;
-    const d=new Date((lt.date||'').slice(0,10)+'T12:00:00');
-    const day=Math.round((d-mon)/86400000)+1;
-    if(day<1||day>5)return;
+    const dateStr=(lt.date||'').slice(0,10);
+    const day=dateToDay[dateStr];
+    if(!day)return;
     if(!result[day])result[day]=[];
     result[day].push({minutes:lt.minutes||0,title:lt.itemName||lt.job?.name||'Untimed',jobNum:lt.job?.number?String(lt.job.number):null,billable:lt.isBillable!==false});
   });
