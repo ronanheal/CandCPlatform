@@ -2177,7 +2177,8 @@ function _getStWeekEntries(personKey,offset){
     const day=dateToDay[dateStr];
     if(!day)return;
     if(!result[day])result[day]=[];
-    result[day].push({minutes:lt.minutes||0,title:lt.itemName||lt.job?.name||'Untimed',jobNum:lt.job?.number?String(lt.job.number):null,billable:lt.isBillable!==false});
+    const jNum=lt.job?.number?String(lt.job.number):null;
+    result[day].push({minutes:lt.minutes||0,title:lt.itemName||lt.job?.name||'Untimed',jobNum:jNum,jobId:jNum,billable:lt.isBillable!==false});
   });
   return result;
 }
@@ -2974,7 +2975,16 @@ function renderTodo(){
       stEntries.forEach(e=>{
         const el=document.createElement('div');
         el.className='task-card done';
-        el.innerHTML=`<div class="tc-title" style="font-size:12px;text-decoration:line-through;opacity:.6;">${e.title}</div><div class="tc-meta-row">${e.jobNum?`<span class="tc-job">${e.jobNum}</span>`:''}<span style="font-size:11px;color:var(--muted);margin-left:auto;">${_stFmtH(e.minutes)}</span></div>`;
+        el.innerHTML=`<div class="tc-title" style="font-size:12px;text-decoration:line-through;opacity:.6;">${e.title}</div><div class="tc-meta" style="margin-top:4px;">${e.jobNum?`<span class="tc-job${e.jobId?' clickable':''}" data-jid="${e.jobId||''}">${e.jobNum}</span>`:''}<span style="font-size:11px;color:var(--muted);margin-left:auto;">${_stFmtH(e.minutes)}</span></div>`;
+        if(e.jobId){
+          el.style.cursor='pointer';
+          el.addEventListener('click',ev=>{
+            if(ev.target.closest('.tc-job'))return; // handled below
+            openJobDetail(e.jobId);
+          });
+          const jEl=el.querySelector('.tc-job.clickable');
+          if(jEl)jEl.addEventListener('click',ev=>{ev.stopPropagation();openJobDetail(e.jobId);});
+        }
         doneEl.appendChild(el);
       });
     }
