@@ -229,12 +229,12 @@ if progress_path.exists():
 detail_done = set(progress.get("detail_done", []))
 backfill_complete = progress.get("backfill_complete", False)
 
-# Jobs that still need phases/items fetched
-needs_detail = [j for j in fresh_jobs if j["id"] not in detail_done]
-
-# After backfill is done, always re-fetch active jobs to keep them fresh
+# Jobs that still need phases/items fetched — active jobs first, then rest
 active_statuses = {"In Play", "Paused"}
 active_jobs = [j for j in fresh_jobs if (j.get("jobStatus") or {}).get("name") in active_statuses]
+needs_detail_active = [j for j in active_jobs if j["id"] not in detail_done]
+needs_detail_rest   = [j for j in fresh_jobs if j["id"] not in detail_done and (j.get("jobStatus") or {}).get("name") not in active_statuses]
+needs_detail = needs_detail_active + needs_detail_rest
 
 if skip_detail:
     batch = []
@@ -244,7 +244,7 @@ elif backfill_complete:
     print(f"\nBackfill complete — refreshing {len(batch)} active jobs' detail...")
 else:
     batch = needs_detail[:BATCH_SIZE]
-    print(f"\nBackfill mode: {len(detail_done)}/{len(fresh_jobs)} done, fetching next {len(batch)}...")
+    print(f"\nBackfill mode: {len(detail_done)}/{len(fresh_jobs)} done, fetching next {len(batch)} (active first)...")
 
 # ── 4. Fetch phases + items for this batch ────────────────────────────────────
 fetched_count = 0
