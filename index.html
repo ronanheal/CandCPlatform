@@ -123,6 +123,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .day-todo-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .day-todo{overflow-y:hidden;padding:6px 8px;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;min-height:32px;flex:none;}
 .todo-overflow-pill{position:sticky;bottom:4px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);margin-top:4px;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0;}
+.done-overflow-pill{position:sticky;bottom:4px;display:flex;align-items:center;justify-content:space-between;background:rgba(245,247,250,.97);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);margin-top:4px;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0;}
 .todo-ov-btn{border:none;background:var(--ink);color:#fff;border-radius:4px;padding:2px 9px;font-size:10px;cursor:pointer;margin-left:10px;font-family:inherit;}
 .day-todo.drop-hi{background:#fffdf5;}
 .day-done{overflow-y:auto;padding:28px 8px 6px;display:flex;flex-direction:column;gap:4px;background:var(--off);flex:1;}
@@ -1345,6 +1346,7 @@ tr:hover .i-todo-btn{opacity:1;}
                 <option value="draft">Draft</option>
                 <option value="sent">Sent</option>
                 <option value="approved">Approved</option>
+                <option value="declined">Declined</option>
               </select>
               <select class="cc-select" id="quotes-client" onchange="renderQuotes()"><option value="all">All clients</option></select>
               <span class="jobs-count" id="quotes-count"></span>
@@ -1975,8 +1977,21 @@ function savePeople(){
 }
 let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
-const APP_VERSION='2.9.4';
+const APP_VERSION='2.9.5';
 const CHANGELOG=[
+  {version:'2.9.5',date:'16 Jun 2026',title:'ST task drag, done-bar resize, job budgets, quick wins',items:[
+    'ST logged-time tasks are now draggable — drag to another day or to To Do; always clones (ST is read-only)',
+    'Done-bar drag now resizes both todo AND done cards based on their zone height',
+    'Done zone collapse pill: "N done hidden · Xh · View ↓" when done area is too small',
+    'Job phase budget hours fixed — phases now show planned/budgeted hours not logged hours',
+    'Job detail: due date badge in meta line; overdue and due-within-7-days highlighted',
+    'Dashboard: new Deadlines section lists overdue and due-soon live jobs',
+    'Quotes: real ST status (Approved / Declined / Sent / Draft); value, expiry, approved/declined dates shown',
+    'Quotes: Expiring soon / Expired badges on quotes near or past expiry date',
+    'Invoices: due date column; overdue highlighted in red with day count; real ST status used',
+    'Clients: website link from ST shown on client detail page',
+    'Users: ST capacity (hours/day) now mapped from users.json',
+  ]},
   {version:'2.9.4',date:'16 Jun 2026',title:'Todo: arrow keys, drag fixes, data warning',items:[
     'Arrow keys ← → navigate between weeks on the todo view',
     'Alt+drag to duplicate tasks to another day (existing feature now documented in changelog)',
@@ -2329,6 +2344,8 @@ function _mapStJob(j){
     notes:'',
     activity:[],
     invNum:null,
+    startDate:j.startDate||null,
+    dueDate:j.dueDate||null,
     members:(j.users||[]).map(u=>u.name||u.id),
     phases:(()=>{
       const _mapItem=it=>{
@@ -2336,7 +2353,7 @@ function _mapStJob(j){
         const rate=it.sellRate||0;
         const usedSell=Math.round(logM/60*rate);const planSell=Math.round(planM/60*rate);
         const stStatus=it.jobItemStatus?.name||'';
-        return{id:'st-it-'+it.id,name:it.name||'Item',hours:_stFmtH(logM),rate:rate?'$'+rate:'—',used:usedSell?'$'+usedSell.toLocaleString():'$0',total:planSell?'$'+planSell.toLocaleString():'—',status:stStatus==='Complete'?'complete':stStatus==='In Progress'?'inprogress':'open',_stId:it.id,_planMins:planM,_logMins:logM};
+        return{id:'st-it-'+it.id,name:it.name||'Item',hours:planM>0?_stFmtH(planM):'—',rate:rate?'$'+rate:'—',used:usedSell?'$'+usedSell.toLocaleString():'$0',total:planSell?'$'+planSell.toLocaleString():'—',status:stStatus==='Complete'?'complete':stStatus==='In Progress'?'inprogress':'open',_stId:it.id,_planMins:planM,_logMins:logM};
       };
       const mapped=(j.phases||[]).map(ph=>({
         id:'st-ph-'+ph.id,name:ph.name||'Phase',
@@ -2363,7 +2380,7 @@ function _mapStCompany(c,contacts){
   // Find primary contact for this company from contacts array
   const co=contacts?contacts.find(x=>x.company?.id===c.id||x.company?.name===c.name):null;
   const name=co?[co.firstName,co.lastName].filter(Boolean).join(' '):'';
-  return{id:'st-'+c.id,_stId:c.id,name:c.name,nickname:'',contact:name,email:co?.email||'',phone:co?.phone||co?.mobile||'',notes:''};
+  return{id:'st-'+c.id,_stId:c.id,name:c.name,nickname:'',contact:name,email:co?.email||'',phone:co?.phone||co?.mobile||'',website:c.website||'',notes:''};
 }
 async function initStreamtime(){
   const tb=document.getElementById('jobs-tbody');
@@ -2389,7 +2406,8 @@ async function initStreamtime(){
         const color=COLS[i%COLS.length];
         const key='st_'+u.id;
         const userStatus=(u.userStatus?.name||'Active');
-        stUsersById[u.id]={id:u.id,name,initials,color,key,email:u.email||'',active:userStatus==='Active'};
+        const capacityH=u.capacity!=null?u.capacity/60:8; // ST stores capacity in minutes
+        stUsersById[u.id]={id:u.id,name,initials,color,key,email:u.email||'',active:userStatus==='Active',capacityH};
         // Merge into platform people map if not already present
         if(!people[key]){
           people[key]={
@@ -3045,6 +3063,41 @@ function expandTodoToFit(){
   positionGlobalDivider();
   checkTodoOverflow();
 }
+function checkDoneOverflow(){
+  [1,2,3,4,5].forEach(d=>{
+    const col=document.getElementById('ddone-'+d);
+    if(!col)return;
+    col.querySelector('.done-overflow-pill')?.remove();
+    if(col.scrollHeight<=col.clientHeight+6)return;
+    const cards=[...col.querySelectorAll('.task-card')];
+    const doneH=col.clientHeight;
+    let accH=0,hiddenCount=0,hiddenHrs=0;
+    cards.forEach(c=>{
+      accH+=c.offsetHeight+4;
+      if(accH>doneH-12){hiddenCount++;hiddenHrs+=parseFloat(c.dataset.hours||0);}
+    });
+    if(hiddenCount===0)return;
+    const pill=document.createElement('div');
+    pill.className='done-overflow-pill';
+    const lbl=hiddenHrs>0?`${hiddenCount} done hidden · ${formatHrs(hiddenHrs)}`:`${hiddenCount} more done`;
+    pill.innerHTML=`<span>${lbl}</span><button class="todo-ov-btn" onclick="shrinkDoneToFit()">View ↓</button>`;
+    col.appendChild(pill);
+  });
+}
+function shrinkDoneToFit(){
+  // Pull divider up enough to reveal all done items
+  let maxDoneScroll=0;
+  [1,2,3,4,5].forEach(d=>{
+    const col=document.getElementById('ddone-'+d);
+    if(col&&col.scrollHeight>maxDoneScroll)maxDoneScroll=col.scrollHeight;
+  });
+  const bodyH=document.querySelector('.todo-body')?.offsetHeight||700;
+  todoSplitPx=Math.max(60,bodyH-maxDoneScroll-40);
+  document.querySelectorAll('.day-todo').forEach(el=>el.style.height=todoSplitPx+'px');
+  positionGlobalDivider();
+  checkDoneOverflow();
+  checkTodoOverflow();
+}
 function switchBackToMe(){currentPerson=MY_PERSON;renderTodo();}
 function showSumTip(el){
   const tip=document.getElementById('todo-sum-tip');if(!tip)return;
@@ -3205,7 +3258,7 @@ function renderTodo(){
       onDropToSection(e,d,true);
     });
   }
-  setTimeout(()=>{positionGlobalDivider();checkTodoOverflow();},0);
+  setTimeout(()=>{positionGlobalDivider();checkTodoOverflow();checkDoneOverflow();},0);
 
   // Empty week state — overlay invitation without breaking drag/drop targets
   const weekTaskCount=[1,2,3,4,5].reduce((s,d)=>s+((data[d]||[]).length),0);
@@ -3308,7 +3361,7 @@ function taskCardHeight(hours){
 function createTaskCard(t,day,isDone){
   const card=document.createElement('div');
   card.className='task-card'+(isDone?' done-c':'')+(t.urgent&&!isDone?' urgent-c':'');
-  card.draggable=!t._fromST;
+  card.draggable=true;
   card.dataset.taskId=t.id;card.dataset.day=day;
   card.dataset.hours=t.hours||'';
   if(t.hours)card.style.height=taskCardHeight(t.hours)+'px';
@@ -3360,7 +3413,7 @@ function createTaskCard(t,day,isDone){
     if(card.classList.contains('resizing')){e.preventDefault();return;}
     dragSrc=card;card.classList.add('dragging-c');
     e.dataTransfer.effectAllowed='move';
-    e.dataTransfer.setData('text/plain',JSON.stringify({taskId:t.id,fromDay:day}));
+    e.dataTransfer.setData('text/plain',JSON.stringify({taskId:t.id,fromDay:day,_fromST:!!t._fromST,_stTask:t._fromST?t:null}));
   });
   card.addEventListener('dragend',()=>{card.classList.remove('dragging-c');_clearDropIndicators();document.querySelectorAll('.drop-hi,.div-drop-hi').forEach(el=>el.classList.remove('drop-hi','div-drop-hi'));});
   card.addEventListener('dragover',e=>{
@@ -3586,8 +3639,17 @@ function onDropToSection(e,toDay,markDone){
   document.querySelectorAll('.drop-hi,.div-drop-hi').forEach(el=>el.classList.remove('drop-hi','div-drop-hi'));
   try{
     const data=JSON.parse(e.dataTransfer.getData('text/plain'));
-    const{taskId,fromDay}=data;
+    const{taskId,fromDay,_fromST,_stTask}=data;
     const wd=getWeekData(currentPerson);
+    // ST tasks are read-only in Streamtime — always clone into local data
+    if(_fromST&&_stTask){
+      const clone={..._stTask,id:uid('t'),done:markDone,_fromST:undefined};
+      delete clone._fromST;
+      if(!wd[toDay])wd[toDay]=[];
+      if(insertIdx>=0)wd[toDay].splice(insertIdx,0,clone);else wd[toDay].push(clone);
+      saveData();renderTodo();toast('Copied to '+(markDone?'Done':'To Do'));
+      return;
+    }
     const fromArr=wd[fromDay]||[];
     const idx=fromArr.findIndex(t=>t.id===taskId);
     if(idx===-1)return;
@@ -4319,11 +4381,23 @@ document.addEventListener('mousemove',e=>{
   // Rescale every task card live so heights stay relative to their hours,
   // and gate the content (icon/hours/meta/note) at the same thresholds the
   // renderer uses — so cards tidy themselves WHILE you drag, not after
+  // Resize todo cards using todoSplitPx (taskCardHeight already uses it)
   document.querySelectorAll('.day-todo .task-card').forEach(c=>{
-    const h=parseFloat(c.dataset.hours);
-    if(!h)return;
-    const ch=Math.max(52,taskCardHeight(h));
-    c.style.height=ch+'px';
+    const h=parseFloat(c.dataset.hours);if(!h)return;
+    const ch=taskCardHeight(h);c.style.height=ch+'px';
+    const tiny=ch<44,small=ch<68,med=ch<95;
+    const ic=c.querySelector('.tc-icon');if(ic)ic.style.display=tiny?'none':'';
+    const hr=c.querySelector('.tc-hrs');if(hr)hr.style.display=tiny?'none':'';
+    const me=c.querySelector('.tc-meta');if(me)me.style.display=(tiny||small)?'none':'';
+    const no=c.querySelector('.tc-note');if(no)no.style.display=(tiny||small||med)?'none':'';
+  });
+  // Resize done cards using the done zone's actual available height
+  const _doneEl=document.querySelector('.day-done');
+  const _donePx=Math.max(80,_doneEl?_doneEl.offsetHeight:200);
+  const _donePxPerHr=Math.max(24,_donePx/8);
+  document.querySelectorAll('.day-done .task-card').forEach(c=>{
+    const h=parseFloat(c.dataset.hours);if(!h)return;
+    const ch=Math.max(40,Math.round(h*_donePxPerHr));c.style.height=ch+'px';
     const tiny=ch<44,small=ch<68,med=ch<95;
     const ic=c.querySelector('.tc-icon');if(ic)ic.style.display=tiny?'none':'';
     const hr=c.querySelector('.tc-hrs');if(hr)hr.style.display=tiny?'none':'';
@@ -4336,7 +4410,7 @@ document.addEventListener('mouseup',()=>{
   if(isDivDrag){
     isDivDrag=false;document.body.style.cursor='';document.body.style.userSelect='';
     renderTodo();
-    setTimeout(checkTodoOverflow,50);
+    setTimeout(()=>{checkTodoOverflow();checkDoneOverflow();},50);
   }
 });
 
@@ -4663,7 +4737,13 @@ function openJobDetail(id){
   const leadPerson=j.lead&&people[j.lead]?people[j.lead]:null;
   const leadHtml=leadPerson?`<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;"><div style="width:16px;height:16px;border-radius:50%;background:${leadPerson.color};display:inline-flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:600;">${leadPerson.initials}</div> ${leadPerson.name}</span> · `:'';
   const archivedBadge=j.status==='archived'?' &nbsp;<span class="paused-badge" style="background:#F5F5F5;color:#757575;border-color:#E0E0E0;"><i class="ti ti-archive" style="font-size:9px;"></i> Archived</span>':'';
-  document.getElementById('d-meta-line').innerHTML=`${j.id} · ${j.company} · ${leadHtml}${j.billable?'Billable':'Non-billable'} &nbsp;<span class="wf-badge ${wfCls}" style="cursor:pointer;user-select:none;" title="Click to advance workflow stage" onclick="advanceWorkflow('${id}')">${wfLabel} <i class="ti ti-arrow-right" style="font-size:9px;vertical-align:middle;"></i></span>`+(j.paused?' &nbsp;<span class="paused-badge"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>':'')+archivedBadge;
+  const _now=new Date();_now.setHours(0,0,0,0);
+  const _due=j.dueDate?new Date(j.dueDate):null;
+  const _dueStr=_due?fmtDate(j.dueDate):'';
+  const _dueSoon=_due&&(_due-_now)/(86400000)<=7&&_due>=_now&&j.status==='inplay';
+  const _overdue=_due&&_due<_now&&j.status==='inplay';
+  const _dueBadge=_overdue?` &nbsp;<span class="paused-badge" style="background:#FFEBEE;color:#C62828;border-color:#EF9A9A;" title="Job overdue"><i class="ti ti-alert-triangle" style="font-size:9px;"></i> Overdue${_dueStr?' · '+_dueStr:''}</span>`:_dueSoon?` &nbsp;<span class="paused-badge" style="background:#FFF9C4;color:#E65100;border-color:#FFE082;" title="Due within 7 days"><i class="ti ti-clock" style="font-size:9px;"></i> Due ${_dueStr}</span>`:_dueStr?` &nbsp;<span style="font-size:11px;color:var(--muted);">Due ${_dueStr}</span>`:'';
+  document.getElementById('d-meta-line').innerHTML=`${j.id} · ${j.company} · ${leadHtml}${j.billable?'Billable':'Non-billable'} &nbsp;<span class="wf-badge ${wfCls}" style="cursor:pointer;user-select:none;" title="Click to advance workflow stage" onclick="advanceWorkflow('${id}')">${wfLabel} <i class="ti ti-arrow-right" style="font-size:9px;vertical-align:middle;"></i></span>`+(j.paused?' &nbsp;<span class="paused-badge"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>':'')+archivedBadge+_dueBadge;
   document.getElementById('d-title-text').textContent=j.name;
   document.getElementById('d-hours-sell').textContent='';
   activeLabels=j.labels?[...j.labels]:[];
@@ -6268,6 +6348,10 @@ function openClientDetail(id){
       <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Phone</div>
       <input class="form-inp" style="width:100%;font-size:12px;padding:4px 8px;" value="${c.phone||''}" placeholder="+64 …" oninput="updateClientField('${c.id}','phone',this.value)">
     </div>
+    <div style="flex:1;min-width:160px;">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Website</div>
+      ${c.website?`<a href="${c.website}" target="_blank" rel="noopener" style="font-size:12px;color:var(--ink);text-decoration:underline;text-underline-offset:2px;word-break:break-all;">${c.website.replace(/^https?:\/\//,'')}</a>`:`<span style="font-size:12px;color:var(--muted);">—</span>`}
+    </div>
     <div style="flex:1;min-width:140px;">
       <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Lead</div>
       <select class="filter-btn" style="width:100%;font-size:12px;" onchange="updateClientField('${c.id}','lead',this.value)">
@@ -6970,10 +7054,16 @@ function renderQuotes(q){
   let quotes=stQuotes.length?[...stQuotes]:[];
   if(search)quotes=quotes.filter(qt=>(`${qt.id} ${qt.number||''} ${qt.name||''} ${qt.company?.name||''} ${qt.jobName||''}`).toLowerCase().includes(search));
   if(clientFilter!=='all')quotes=quotes.filter(qt=>(qt.company?.name||'')===clientFilter);
-  // Derive status: sent if sentDate present
-  const derivedStatus=qt=>qt.sentDate?'sent':'draft';
-  if(statusFilter!=='all')quotes=quotes.filter(qt=>derivedStatus(qt)===statusFilter);
+  // Use real ST quoteStatus.name; fall back to sentDate heuristic for older records
+  const qtRealStatus=qt=>{
+    const s=(qt.quoteStatus?.name||'').toLowerCase();
+    if(s==='approved')return'approved';if(s==='declined')return'declined';
+    if(s==='sent'||qt.sentDate)return'sent';return'draft';
+  };
+  if(statusFilter!=='all')quotes=quotes.filter(qt=>qtRealStatus(qt)===statusFilter);
   quotes.sort((a,b)=>b.id-a.id);
+
+  const today=new Date();today.setHours(0,0,0,0);
 
   document.getElementById('quotes-count').textContent=`${quotes.length} quote${quotes.length!==1?'s':''}`;
 
@@ -6983,20 +7073,28 @@ function renderQuotes(q){
     return;
   }
 
-  // Match quote to job to get budget value
   const jobByStId={};jobs.forEach(j=>{if(j._stId)jobByStId[j._stId]=j;});
+  const _qtStatusPill=s=>{
+    if(s==='approved')return'<span class="inv-pill approved">Approved</span>';
+    if(s==='declined')return'<span class="inv-pill" style="background:#FFF3E0;color:#E65100;border:1px solid #FFCC80;">Declined</span>';
+    if(s==='sent')return'<span class="inv-pill sent">Sent</span>';
+    return'<span class="inv-pill draft">Draft</span>';
+  };
 
   list.innerHTML=quotes.map(qt=>{
-    const status=derivedStatus(qt);
+    const status=qtRealStatus(qt);
     const job=jobByStId[qt.jobId];
-    const budget=job?job._plannedSell:null;
+    const qtValue=qt.totalAmountExTax!=null?qt.totalAmountExTax:(job?job._plannedSell:null);
+    const expiry=qt.expiryDate?new Date(qt.expiryDate):null;
+    const expiringSoon=expiry&&status!=='approved'&&status!=='declined'&&(expiry-today)/(86400000)<=7&&expiry>=today;
+    const expired=expiry&&status!=='approved'&&status!=='declined'&&expiry<today;
     return`<div class="qinv-card" id="qcard-${qt.id}">
       <div class="qinv-card-head" onclick="toggleQinvDetail('qcard-${qt.id}')">
         <span class="qinv-card-num">${qt.number||qt.id}</span>
         <span class="qinv-card-name">${qt.name||qt.jobName||'—'}</span>
         <span class="qinv-card-co">${qt.company?.name||'—'}</span>
-        <span class="qinv-card-val">${budget!=null?'$'+budget.toLocaleString():'—'}</span>
-        <span class="qinv-card-status"><span class="inv-pill ${status}">${status==='sent'?'Sent':'Draft'}</span></span>
+        <span class="qinv-card-val">${qtValue!=null?'$'+Math.round(qtValue).toLocaleString():'—'}</span>
+        <span class="qinv-card-status">${_qtStatusPill(status)}${expiringSoon?'<span class="inv-pill overdue" style="margin-left:4px;">Expiring soon</span>':''}${expired?'<span class="inv-pill overdue" style="margin-left:4px;">Expired</span>':''}</span>
         <span class="qinv-card-date">${fmtDate(qt.sentDate)}</span>
         <i class="ti ti-chevron-down" style="font-size:12px;color:var(--muted);transition:transform .15s;" id="qchv-${qt.id}"></i>
       </div>
@@ -7006,7 +7104,10 @@ function renderQuotes(q){
           <span><strong>Job:</strong> ${qt.jobNumber?'#'+qt.jobNumber+' ':''} ${qt.jobName||'—'}</span>
           <span><strong>Sent by:</strong> ${qt.sentByUser?.name||'—'}</span>
           <span><strong>Sent:</strong> ${fmtDate(qt.sentDate)}</span>
-          ${budget!=null?`<span><strong>Budget:</strong> $${budget.toLocaleString()} ex GST</span>`:''}
+          ${qt.approvedDate?`<span><strong>Approved:</strong> ${fmtDate(qt.approvedDate)}</span>`:''}
+          ${qt.declinedDate?`<span><strong>Declined:</strong> ${fmtDate(qt.declinedDate)}</span>`:''}
+          ${expiry?`<span><strong>Expires:</strong> ${fmtDate(qt.expiryDate)}</span>`:''}
+          ${qtValue!=null?`<span><strong>Value:</strong> $${Math.round(qtValue).toLocaleString()} ex GST</span>`:''}
         </div>
         <div class="qinv-actions">
           ${job?`<button class="d-action" onclick="openJobDetail('${job.id}')"><i class="ti ti-external-link" style="font-size:12px;"></i> Open job</button>`:''}
@@ -7113,25 +7214,44 @@ function renderInvoices(){
     list.innerHTML=emptyStateHTML('ti-file-invoice','No invoices',msg,'','');
     return;
   }
+  const _invNow=new Date();_invNow.setHours(0,0,0,0);
+  const _invStatus=i=>{
+    const s=(i.invoiceStatus?.name||i.status||'').toLowerCase();
+    if(s==='paid')return'paid';if(s==='voided')return'voided';
+    const due=i.dueDate?new Date(i.dueDate):null;
+    if(due&&due<_invNow&&s!=='paid')return'overdue';
+    if(i.sentDate)return'sent';return'draft';
+  };
+  const _invStatusPill=i=>{
+    const s=_invStatus(i);
+    if(s==='paid')return'<span class="inv-pill paid">Paid</span>';
+    if(s==='voided')return'<span class="inv-pill voided">Voided</span>';
+    if(s==='overdue'){const days=Math.round((_invNow-new Date(i.dueDate))/86400000);return`<span class="inv-pill overdue">Overdue ${days}d</span>`;}
+    if(s==='sent')return'<span class="inv-pill sent">Sent</span>';
+    return'<span class="inv-pill draft">Draft</span>';
+  };
   list.innerHTML=`<table class="inv-table"><thead><tr>
     <th class="inv-th">Company</th>
     <th class="inv-th">Inv #</th>
     <th class="inv-th">Job</th>
     <th class="inv-th">Sent date</th>
+    <th class="inv-th">Due date</th>
     <th class="inv-th">Status</th>
-    <th class="inv-th" style="text-align:right;">Job invoiced inc GST</th>
+    <th class="inv-th" style="text-align:right;">Amount inc GST</th>
   </tr></thead><tbody>${inv.map(i=>{
-    const sent=i.sentDate||null;
-    const status=sent?'<span class="inv-pill sent">Sent</span>':'<span class="inv-pill draft">Draft</span>';
     const job=jobByStId[i.jobId];
-    const jobInvoiced=job?Math.round((job._stInvoiced||0)*1.15):null;
-    return`<tr class="inv-tr">
+    const amt=i.totalAmountExTax!=null?Math.round(i.totalAmountExTax*1.15):(job?Math.round((job._stInvoiced||0)*1.15):null);
+    const dueStr=i.dueDate?fmtDate(i.dueDate):'—';
+    const isPaid=_invStatus(i)==='paid';
+    const isOverdue=_invStatus(i)==='overdue';
+    return`<tr class="inv-tr"${isOverdue?' style="background:#fff8f8;"':''}>
       <td class="inv-td" style="color:var(--muted);font-size:12px;">${i.company?.name||'—'}</td>
       <td class="inv-td" style="font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;">${i.id}</td>
       <td class="inv-td"><span style="font-size:11px;color:var(--muted);margin-right:4px;">${i.jobNumber||''}</span>${i.jobName||'—'}</td>
-      <td class="inv-td" style="font-size:12px;color:var(--muted);">${fmtDate(sent)}</td>
-      <td class="inv-td">${status}</td>
-      <td class="inv-td" style="text-align:right;font-family:var(--serif);font-size:14px;font-variant-numeric:tabular-nums;">${jobInvoiced!=null?'$'+jobInvoiced.toLocaleString():'—'}</td>
+      <td class="inv-td" style="font-size:12px;color:var(--muted);">${fmtDate(i.sentDate)}</td>
+      <td class="inv-td" style="font-size:12px;color:${isOverdue?'var(--red)':'var(--muted)'};">${dueStr}</td>
+      <td class="inv-td">${_invStatusPill(i)}</td>
+      <td class="inv-td" style="text-align:right;font-family:var(--serif);font-size:14px;font-variant-numeric:tabular-nums;">${amt!=null?'$'+amt.toLocaleString():'—'}</td>
     </tr>`;
   }).join('')}</tbody></table>`;
 }
@@ -7360,7 +7480,26 @@ function _renderBusinessReport(){
           <div style="width:120px;height:6px;background:var(--faint);border-radius:3px;overflow:hidden;flex-shrink:0;"><div style="width:${Math.min(100,j.bPct||0)}%;height:100%;background:${(j.bPct||0)>=100?'var(--red)':'#F57F17'};border-radius:3px;"></div></div>
           <span style="font-size:12px;font-weight:500;color:${(j.bPct||0)>=100?'var(--red)':'#F57F17'};width:42px;text-align:right;">${j.bPct||0}%</span>
         </div>`).join('')||'<div style="color:var(--muted);font-size:13px;padding:16px 0;">No jobs near or over budget.</div>'}
-    </div>`;
+    </div>
+    ${(()=>{
+      const _dn=new Date();_dn.setHours(0,0,0,0);
+      const dueSoon=jobs.filter(j=>j.dueDate&&j.status==='inplay').map(j=>({j,d:new Date(j.dueDate)})).filter(({d})=>(d-_dn)/86400000<=7&&d>=_dn).sort((a,b)=>a.d-b.d);
+      const overdue=jobs.filter(j=>j.dueDate&&j.status==='inplay').map(j=>({j,d:new Date(j.dueDate)})).filter(({d})=>d<_dn).sort((a,b)=>a.d-b.d);
+      if(!dueSoon.length&&!overdue.length)return'';
+      const rows=[...overdue,...dueSoon].slice(0,10).map(({j,d})=>{
+        const daysLeft=Math.round((d-_dn)/86400000);
+        const over=daysLeft<0;
+        const lbl=over?`Overdue ${Math.abs(daysLeft)}d`:`Due in ${daysLeft}d`;
+        const col=over?'var(--red)':'#E65100';
+        return`<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--faint);">
+          <span style="font-size:12px;color:var(--muted);width:50px;flex-shrink:0;">${j.id}</span>
+          <span style="flex:1;font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;color:var(--ink);" onclick="openJobDetail('${j.id}')">${j.name}</span>
+          <span style="font-size:12px;color:var(--muted);">${j.company||''}</span>
+          <span style="font-size:11px;font-weight:500;color:${col};white-space:nowrap;">${lbl}</span>
+        </div>`;
+      }).join('');
+      return`<div class="r-section"><div class="r-section-hd">Deadlines</div>${rows}</div>`;
+    })()}`;
 
   _makeChart('rc-trend',{type:'bar',data:{labels:wLabels,datasets:[{data:wData,backgroundColor:'#ED1E24bb',hoverBackgroundColor:'#ED1E24'}]},options:_chartOpts()});
   _makeChart('rc-split',{type:'doughnut',data:{labels:['Billable','Non-billable'],datasets:[{data:[billH,nbillH],backgroundColor:splitPalette,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12}}}}});
