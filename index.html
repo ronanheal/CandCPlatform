@@ -1993,8 +1993,14 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.10.1';
+const APP_VERSION='2.10.2';
 const CHANGELOG=[
+  {version:'2.10.2',date:'17 Jun 2026',title:'Planned assignment hours & notes fix',items:[
+    'Fixed planned ST assignment hours — total minutes now divided by working days in span (was showing total on every day)',
+    'Item description now used as card note on planned assignments',
+    'Item estimated dates used as fallback when assignment has no start/end dates',
+    'Duplicate info lookup removed from inner loop',
+  ]},
   {version:'2.10.1',date:'16 Jun 2026',title:'Done divider, NaN fix, expenses & paused phases',items:[
     'Fixed NaN in phase header sell totals — em-dash items (no planned hours) now correctly count as $0',
     'Fixed expenses not loading from ST — corrected field names (jobNumber, costRate, loggedExpenseStatus)',
@@ -2380,38 +2386,50 @@ function _getStWeekAssignments(personKey,offset){
   const pad=n=>String(n).padStart(2,'0');
   const weekDates=[];
   for(let i=0;i<5;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);weekDates.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`);}
-  // Build jobItem name lookup from loaded jobs
+  // Build jobItem lookup from loaded jobs (includes description for notes + item dates)
   const itemLookup={};
   jobs.forEach(j=>{
     (j.phases||[]).forEach(ph=>{
       (ph.items||[]).forEach(it=>{
-        if(it._stId)itemLookup[it._stId]={name:it.name,jobName:j.name,jobNum:j.id,jobId:j._stId};
+        if(it._stId)itemLookup[it._stId]={
+          name:it.name,jobName:j.name,jobNum:j.id,jobId:j._stId,
+          note:it.description||'',
+          itemStart:(it.estimatedStartDate||it.earliestStartDate||'').slice(0,10),
+          itemEnd:(it.estimatedEndDate||it.latestEndDate||'').slice(0,10),
+        };
       });
     });
   });
   const result={};
+  // Count working days (Mon–Fri) between two date strings inclusive
+  const _workDays=(s,e)=>{let c=0,d=new Date(s+'T00:00:00');const ed=new Date(e+'T00:00:00');while(d<=ed){const dw=d.getDay();if(dw>0&&dw<6)c++;d.setDate(d.getDate()+1);}return Math.max(1,c);};
   stJobAssignments.forEach(a=>{
     if(a.userId!==stUser.id)return;
     if(a.jobItemUserStatus?.name==='Complete')return;
     const start=(a.earliestStartDate||'').slice(0,10);
     const end=(a.latestEndDate||'').slice(0,10);
-    if(!start&&!end)return;
+    const info=itemLookup[a.jobItemId]||{};
+    // Use assignment dates, fall back to item estimated dates
+    const effectiveStart=start||end||info.itemStart||'';
+    const effectiveEnd=end||start||info.itemEnd||'';
+    if(!effectiveStart)return;
+    // Daily rate = total incomplete (or planned) minutes ÷ working days in span
+    const totalMins=(a.totalIncompleteMinutes||0)>0?a.totalIncompleteMinutes:(a.totalPlannedMinutes||0);
+    const spanDays=_workDays(effectiveStart,effectiveEnd);
+    const dailyH=Math.round((totalMins/spanDays)/60*4)/4; // round to nearest 15m
+    const hoursForDay=Math.max(0.25,dailyH);
     weekDates.forEach((dateStr,i)=>{
-      if((start&&dateStr<start)||(end&&dateStr>end))return;
+      if(dateStr<effectiveStart||dateStr>effectiveEnd)return;
       const day=i+1;
       if(!result[day])result[day]=[];
-      const info=itemLookup[a.jobItemId]||{};
-      const plannedH=(a.totalPlannedMinutes||0)/60;
-      const incompleteH=(a.totalIncompleteMinutes||0)/60;
-      const hoursForDay=Math.max(0.5,Math.round((incompleteH>0?incompleteH:plannedH)*10)/10);
       result[day].push({
         id:'st-assign-'+a.id+'-'+day,
         title:info.name||'Assigned task',
-        hours:hoursForDay>0?hoursForDay:null,
+        hours:hoursForDay,
         done:false,urgent:false,personal:false,
         job:info.jobNum||'',
         item:info.name||'',
-        note:'',
+        note:info.note||'',
         person:personKey,
         _fromST:true,
         _stAssignment:true,
