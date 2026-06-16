@@ -1192,6 +1192,11 @@ tr:hover .i-todo-btn{opacity:1;}
       <!-- TODO -->
       <div id="view-todo" class="view hidden">
         <div class="todo-view">
+          <div id="st-data-warn" style="display:none;align-items:center;gap:10px;background:#2a1a0e;border:1px solid #7c4a1e;color:#e8a46a;font-size:12px;padding:8px 14px;border-radius:8px;margin:8px 16px 0;">
+            <i class="ti ti-alert-triangle" style="font-size:14px;flex-shrink:0;"></i>
+            <span>Streamtime time data couldn't be loaded — logged times may be missing or outdated. This usually resolves after the next hourly sync.</span>
+            <button onclick="document.getElementById('st-data-warn').style.display='none'" style="margin-left:auto;background:none;border:none;color:#e8a46a;cursor:pointer;font-size:16px;line-height:1;padding:0;">&times;</button>
+          </div>
           <div class="todo-banner hidden" id="todo-banner">
             <i class="ti ti-eye" style="font-size:13px;"></i>
             <span id="todo-banner-text">You're viewing someone's To Do list.</span>
@@ -1213,7 +1218,7 @@ tr:hover .i-todo-btn{opacity:1;}
               </button>
               <button class="wbtn" id="wbtn-next"><i class="ti ti-chevron-right" style="font-size:13px;"></i></button>
             </div>
-            <div class="todo-summary" style="margin-left:16px;position:relative;cursor:default;" onmouseenter="showSumTip(this)" onmouseleave="hideSumTip(this)">To do: 3h30m &nbsp;·&nbsp; Done: 5h45m<div class="todo-sum-tip" id="todo-sum-tip" style="display:none;position:absolute;bottom:calc(100%+10px);left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;border-radius:8px;padding:14px 18px;white-space:nowrap;z-index:200;min-width:260px;box-shadow:0 4px 16px rgba(0,0,0,.25);font-size:12px;pointer-events:none;"></div></div>
+            <div class="todo-summary" style="margin-left:16px;position:relative;cursor:default;" onmouseenter="showSumTip(this)" onmouseleave="hideSumTip(this)"><span id="todo-sum-text">To do: 0h · Done: 0h</span><div class="todo-sum-tip" id="todo-sum-tip" style="display:none;position:absolute;bottom:calc(100%+10px);left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;border-radius:8px;padding:14px 18px;white-space:nowrap;z-index:200;min-width:260px;box-shadow:0 4px 16px rgba(0,0,0,.25);font-size:12px;pointer-events:none;"></div></div>
             <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
               <!-- View toggle: List vs Calendar+Drawer -->
               <div class="todo-view-toggle" id="todo-view-toggle">
@@ -1970,8 +1975,16 @@ function savePeople(){
 }
 let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
-const APP_VERSION='2.9.3';
+const APP_VERSION='2.9.4';
 const CHANGELOG=[
+  {version:'2.9.4',date:'16 Jun 2026',title:'Todo: arrow keys, drag fixes, data warning',items:[
+    'Arrow keys ← → navigate between weeks on the todo view',
+    'Alt+drag to duplicate tasks to another day (existing feature now documented in changelog)',
+    'Done-bar drag: task cards in the Done zone no longer shrink/hide content while dragging',
+    'Todo cards stay at least 52px tall while dragging the done bar — info stays visible',
+    'Warning banner shown when Streamtime logged-time data fails to load',
+    'Streamtime sync script: 180s timeout, 500-record pages, backup file, exponential retry for large datasets',
+  ]},
   {version:'2.9.3',date:'16 Jun 2026',title:'Job avatar stack shows active users only',items:[
     'Avatar stack on job plan items now filters to active Streamtime users only',
     'Hibernated and Deleted users are hidden from the main avatar row',
@@ -2422,6 +2435,10 @@ async function initStreamtime(){
     }
     // Logged times
     if(ltRes.ok)stLoggedTimes=await ltRes.json();
+    if(!stLoggedTimes.length){
+      const b=document.getElementById('st-data-warn');
+      if(b)b.style.display='flex';
+    }
     // Invoices
     if(invRes.ok)stInvoices=await invRes.json();
     // Quotes
@@ -3082,7 +3099,7 @@ function renderTodo(){
   [1,2,3,4,5].forEach(d=>{(data[d]||[]).forEach(t=>{if(t.done)totalDoneH+=t.hours||0;else totalTodoH+=t.hours||0;});});
   const stWeek=_getStWeekEntries(currentPerson,weekOffset);
   [1,2,3,4,5].forEach(d=>{(stWeek[d]||[]).forEach(e=>totalStH+=e.minutes/60);});
-  const sumEl=document.querySelector('.todo-summary');
+  const sumEl=document.getElementById('todo-sum-text');
   if(sumEl)sumEl.textContent=`To do: ${formatHrs(totalTodoH)||'0h'} · Done: ${formatHrs(totalDoneH+totalStH)||'0h'}`;
 
   const _dow=new Date().getDay();
@@ -3296,7 +3313,7 @@ function createTaskCard(t,day,isDone){
   card.dataset.hours=t.hours||'';
   if(t.hours)card.style.height=taskCardHeight(t.hours)+'px';
 
-  const _iconName=ITEM_ICONS[t.item]||(t.urgent?'alert-circle':'dot');
+  const _iconName=ITEM_ICONS[t.item]||(t.urgent?'alert-circle':t._fromST?'clock':'circle-dot');
   const icon=_icon(_iconName,13);
   const hrsLabel=t.hours?formatHrs(t.hours):'';
   const jobIdMatch=t.job?t.job.match(/^(\d+)/):null;
@@ -3402,7 +3419,7 @@ function createTaskCard(t,day,isDone){
           const task=arr.find(x=>x.id===t.id);
           if(task){task.hours=curHours;t.hours=curHours;card.dataset.hours=curHours;saveData();_refreshJobStats();}
           renderTodoHeader(day);
-          const sumEl=document.querySelector('.todo-summary');
+          const sumEl=document.getElementById('todo-sum-text');
           let wTodo=0,wDone=0;
           [1,2,3,4,5].forEach(d=>{(getWeekData(currentPerson)[d]||[]).forEach(x=>{if(x.done)wDone+=x.hours||0;else wTodo+=x.hours||0;});});
           if(sumEl)sumEl.textContent=`To do: ${formatHrs(wTodo)||'0h'} · Done: ${formatHrs(wDone)||'0h'}`;
@@ -4109,7 +4126,7 @@ function showTodoTooltip(t,x,y){
     ${t.item?`<div class="tt-row"><span class="tt-label">Item</span><span>${t.item}</span></div>`:''}
     <div class="tt-row"><span class="tt-label">Hours</span><span>${t.hours?formatHrs(t.hours):'—'}</span></div>
     <div class="tt-row"><span class="tt-label">Status</span><span>${statusTxt} · ${billTxt}</span></div>
-    ${t.note?`<div class="tt-row" style="margin-top:4px;padding-top:4px;border-top:1px solid #333;"><span style="color:#999;">${t.note}</span></div>`:''}`;
+    ${t.note&&t.note!==t.title?`<div class="tt-row" style="margin-top:4px;padding-top:4px;border-top:1px solid #333;"><span style="color:#999;">${t.note}</span></div>`:''}`;
   tt.classList.add('on');
   moveTodoTooltip(x,y);
 }
@@ -4302,10 +4319,10 @@ document.addEventListener('mousemove',e=>{
   // Rescale every task card live so heights stay relative to their hours,
   // and gate the content (icon/hours/meta/note) at the same thresholds the
   // renderer uses — so cards tidy themselves WHILE you drag, not after
-  document.querySelectorAll('.day-todo .task-card,.day-done .task-card').forEach(c=>{
+  document.querySelectorAll('.day-todo .task-card').forEach(c=>{
     const h=parseFloat(c.dataset.hours);
     if(!h)return;
-    const ch=taskCardHeight(h);
+    const ch=Math.max(52,taskCardHeight(h));
     c.style.height=ch+'px';
     const tiny=ch<44,small=ch<68,med=ch<95;
     const ic=c.querySelector('.tc-icon');if(ic)ic.style.display=tiny?'none':'';
@@ -6685,6 +6702,9 @@ document.addEventListener('keydown',e=>{
       openTodoModal(null,dow>=1&&dow<=5?dow:1);
     }
   }
+  const todoActive=!document.getElementById('view-todo').classList.contains('hidden');
+  if(todoActive&&e.key==='ArrowLeft'){e.preventDefault();toggleWeek(-1);}
+  if(todoActive&&e.key==='ArrowRight'){e.preventDefault();toggleWeek(1);}
 });
 
 document.addEventListener('click',()=>{document.getElementById('ctx').classList.remove('on');document.getElementById('pctx').classList.remove('on');document.getElementById('inv-ctx')?.classList.remove('on');});

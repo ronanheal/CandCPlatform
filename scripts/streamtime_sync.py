@@ -75,11 +75,11 @@ def get(path, base=API_BASE):
             return None
 
 
-def search(view_id, query="", additional_data=None):
+def search(view_id, query="", additional_data=None, timeout=120):
     """Paginate through a search view and return all records."""
     all_records = []
     offset = 0
-    limit = 1000
+    limit = 500  # smaller pages to avoid timeouts on large views
     body = {"query": query, "limit": limit}
     if additional_data:
         body["additionalData"] = additional_data
@@ -94,9 +94,9 @@ def search(view_id, query="", additional_data=None):
             method="POST",
         )
         result = None
-        for attempt in range(3):
+        for attempt in range(4):  # extra retry for large views
             try:
-                with urllib.request.urlopen(req, timeout=60) as resp:
+                with urllib.request.urlopen(req, timeout=timeout) as resp:
                     result = json.loads(resp.read())
                 break
             except urllib.error.HTTPError as e:
@@ -104,14 +104,16 @@ def search(view_id, query="", additional_data=None):
                     print(f"  rate limited on search view={view_id}, waiting 30s...")
                     time.sleep(30)
                     continue
-                if attempt < 2:
-                    time.sleep(RETRY_DELAY)
+                if attempt < 3:
+                    time.sleep(RETRY_DELAY * (attempt + 1))
                     continue
                 errors.append({"resource": f"search?search_view={view_id}", "error": f"HTTP {e.code}"})
                 return all_records
             except Exception as e:
-                if attempt < 2:
-                    time.sleep(RETRY_DELAY)
+                if attempt < 3:
+                    wait = RETRY_DELAY * (attempt + 1)
+                    print(f"  timeout/error on view={view_id} offset={offset}, retrying in {wait}s... ({e})")
+                    time.sleep(wait)
                     continue
                 errors.append({"resource": f"search?search_view={view_id}", "error": str(e)})
                 return all_records
@@ -147,14 +149,29 @@ def fetch_job_detail(job):
     return job
 
 
-def save(filename, data, previous=None):
+def save(filename, data, previous=None, min_records=0):
     """Save data, but never overwrite with fewer records than we already have."""
     count = len(data) if isinstance(data, list) else 1
     if isinstance(data, list) and previous is not None:
         prev_count = len(previous) if isinstance(previous, list) else 0
-        if count == 0 and prev_count > 0:
+        # Also check for a backup file if previous was already empty
+        if prev_count == 0:
+            backup_path = OUT_DIR / (filename + ".bak")
+            if backup_path.exists():
+                try:
+                    backup = json.loads(backup_path.read_text())
+                    prev_count = len(backup) if isinstance(backup, list) else 0
+                    if prev_count > 0:
+                        previous = backup
+                        print(f"  Using backup for {filename} ({prev_count} records)")
+                except Exception:
+                    pass
+        if count == 0 and (prev_count > 0 or min_records > 0):
             print(f"  SKIPPED {filename} — API returned 0, keeping {prev_count} existing")
-            return prev_count
+            if prev_count > 0:
+                path = OUT_DIR / filename
+                path.write_text(json.dumps(previous, ensure_ascii=False, indent=2))
+            return max(prev_count, 0)
         if count < prev_count * 0.5:
             print(f"  SKIPPED {filename} — {count} records vs {prev_count} existing (API error?), keeping existing")
             return prev_count
@@ -292,7 +309,12 @@ prev_contacts     = load_existing("contacts.json")
 prev_users        = load_existing("users.json")
 prev_expenses     = load_existing("expenses.json")
 
-logged_times = search(8)
+logged_times = search(8, timeout=180)  # large dataset, extra time
+# Back up a good copy so we can recover if the next sync times out
+if len(logged_times) > 100:
+    backup_path = OUT_DIR / "logged_times.json.bak"
+    backup_path.write_text(json.dumps(logged_times, ensure_ascii=False))
+    print(f"  backed up {len(logged_times)} logged_times records")
 invoices     = search(10)
 quotes       = search(11)
 companies    = search(12)
