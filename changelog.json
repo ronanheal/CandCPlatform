@@ -1,9 +1,25 @@
 {
-  "generated_at": "2026-06-16T21:20:28.886849+00:00",
-  "current_version": "2.10.2",
+  "generated_at": "2026-06-16T21:31:33.650990+00:00",
+  "current_version": "2.10.4",
   "releases": [
     {
-      "version": "2.10.2",
+      "version": "2.10.4",
+      "date": "17 Jun 2026",
+      "title": "Todo/done dedup, notes fix, hours per day",
+      "items": [
+        "Fixed: manual todo tasks no longer show as todo when ST has already logged time for the same job+item on the same day — they move to the done zone",
+        "Fixed: ST planned assignment hours now divided across days active this week (not total on every day)",
+        "Fixed: item description now included in mapped job items — assignment cards show notes correctly",
+        "Dedup applied in both list view and calendar view"
+      ],
+      "sections": [
+        "Jobs",
+        "Jobs → Time",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.10.3",
       "date": "17 Jun 2026",
       "title": "Planned assignment hours & notes fix",
       "items": [
