@@ -83,8 +83,50 @@ platform_meta = {
     "vercel_url": "https://cand-c-platform.vercel.app",
     "repo": "ronanheal/CandCPlatform",
     "data_branch": "streamtime-data",
-    # Preserve work_in_progress from previous meta if not overridden
     "work_in_progress": existing_meta.get("work_in_progress", []),
 }
 meta_path.write_text(json.dumps(platform_meta, indent=2, ensure_ascii=False))
 print(f"platform_meta.json: version {app_version}")
+
+# ── Roadmap ───────────────────────────────────────────────────────────────────
+roadmap_src = Path("ROADMAP.md").read_text(encoding="utf-8") if Path("ROADMAP.md").exists() else ""
+
+roadmap_items = []
+if roadmap_src:
+    current_category = ""
+    category_order = {"Quick Wins": 1, "Medium": 2, "Large": 3}
+    for line in roadmap_src.splitlines():
+        # Category headers like "### Quick Wins (1–2 days each)"
+        cat_match = re.match(r"^###\s+(Quick Wins|Medium|Large)", line)
+        if cat_match:
+            current_category = cat_match.group(1)
+            continue
+        # Items like "**1. Quote value and real status from ST**" or "**0a. Dashboard...**"
+        item_match = re.match(r"^\*\*(\w+)\.\s+(.+?)\*\*$", line)
+        if item_match and current_category:
+            num = item_match.group(1)
+            title = item_match.group(2)
+            roadmap_items.append({
+                "id": num,
+                "title": title,
+                "category": current_category,
+                "sort": category_order.get(current_category, 9),
+                "status": "planned",
+            })
+
+# Mark items done if their title keywords appear in changelog
+done_keywords = set()
+for rel in releases:
+    for item in rel["items"]:
+        for w in item.lower().split():
+            if len(w) > 4:
+                done_keywords.add(w)
+
+for r in roadmap_items:
+    words = [w for w in r["title"].lower().split() if len(w) > 4]
+    if words and sum(1 for w in words if w in done_keywords) >= 2:
+        r["status"] = "done"
+
+roadmap_path = OUT_DIR / "roadmap.json"
+roadmap_path.write_text(json.dumps(roadmap_items, indent=2, ensure_ascii=False))
+print(f"roadmap.json: {len(roadmap_items)} items")

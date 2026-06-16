@@ -133,11 +133,11 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .zb-count{font-size:13px;font-weight:600;color:var(--ink);}
 .zb-hrs{font-size:12px;color:var(--muted);}
 .zb-view{border:none;background:none;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer;padding:0;font-family:inherit;text-align:left;text-decoration:underline;text-underline-offset:2px;}
-.day-done{overflow-y:hidden;padding:6px 8px 6px;display:flex;flex-direction:column;gap:4px;background:var(--off);flex:1;position:relative;}
+.day-done{overflow-y:hidden;padding:24px 8px 6px;display:flex;flex-direction:column;gap:4px;background:var(--off);flex:1;position:relative;}
 .day-done.drop-hi{background:#f0fef4;}
 .day-done-empty{padding:6px 0;font-size:11px;color:var(--border);text-align:center;}
 /* Global done divider */
-.global-divider{position:absolute;left:0;right:0;height:22px;background:var(--faint);border-top:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;cursor:ns-resize;user-select:none;z-index:20;}
+.global-divider{position:absolute;left:0;right:0;height:22px;background:#E8E5E0;border-top:1px solid #CCC9C3;border-bottom:1px solid #CCC9C3;display:flex;align-items:center;padding:0 14px;cursor:ns-resize;user-select:none;z-index:20;}
 .global-divider.div-drop-hi{background:var(--done);border-color:#A5D6A7;}
 .gd-label{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
 .gd-handle{margin-left:auto;font-size:11px;color:var(--border);line-height:1;}
@@ -1993,8 +1993,16 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.10.0';
+const APP_VERSION='2.10.1';
 const CHANGELOG=[
+  {version:'2.10.1',date:'16 Jun 2026',title:'Done divider, NaN fix, expenses & paused phases',items:[
+    'Fixed NaN in phase header sell totals — em-dash items (no planned hours) now correctly count as $0',
+    'Fixed expenses not loading from ST — corrected field names (jobNumber, costRate, loggedExpenseStatus)',
+    'Fixed paused phases from ST — phases where all items are Paused now render as paused',
+    'Done divider bar now has a distinct warm grey colour so it stands out from the background',
+    'Removed the "N done hidden" overflow pill from the done zone (redundant with bucket view)',
+    'Fixed done cards clipping behind divider bar — restored 24px top padding on done zone',
+  ]},
   {version:'2.10.0',date:'16 Jun 2026',title:'Bug fixes, collapsible settings & card improvements',items:[
     'Fixed jobs not opening when job has no phases or is missing data (null guard + ST jobs default to empty phases)',
     'Fixed expenses tab — now shows expenses from Streamtime data (stExpenses) merged with manual entries, with ST badge',
@@ -2452,12 +2460,17 @@ function _mapStJob(j){
         const stStatus=it.jobItemStatus?.name||'';
         return{id:'st-it-'+it.id,name:it.name||'Item',hours:planM>0?_stFmtH(planM):'—',rate:rate?'$'+rate:'—',used:usedSell?'$'+usedSell.toLocaleString():'$0',total:planSell?'$'+planSell.toLocaleString():'—',status:stStatus==='Complete'?'complete':stStatus==='In Progress'?'inprogress':'open',_stId:it.id,_planMins:planM,_logMins:logM};
       };
-      const mapped=(j.phases||[]).map(ph=>({
-        id:'st-ph-'+ph.id,name:ph.name||'Phase',
-        status:ph.jobPhaseStatus?.name==='Complete'||ph.status==='Complete'?'complete':'open',
-        paused:ph.jobPhaseStatus?.name==='Paused'||ph.status==='Paused',
-        items:(ph.items||[]).map(_mapItem),
-      }));
+      const mapped=(j.phases||[]).map(ph=>{
+        const mappedItems=(ph.items||[]).map(_mapItem);
+        const phStatusName=ph.jobPhaseStatus?.name||ph.status||'';
+        const allItemsPaused=mappedItems.length>0&&(ph.items||[]).every(it=>(it.jobItemStatus?.name||it.status||'')==='Paused');
+        return{
+          id:'st-ph-'+ph.id,name:ph.name||'Phase',
+          status:phStatusName==='Complete'?'complete':'open',
+          paused:phStatusName==='Paused'||allItemsPaused,
+          items:mappedItems,
+        };
+      });
       if((j.looseItems||[]).length){
         mapped.push({id:'st-ph-loose-'+j.id,name:'General',status:'open',paused:false,items:j.looseItems.map(_mapItem)});
       }
@@ -3216,19 +3229,6 @@ function checkDoneOverflow(){
     }
     // Restore hidden cards if we were in bucket mode
     cards.forEach(c=>c.style.display='');
-    // Overflow pill for moderate overflow
-    if(col.scrollHeight<=doneH+6)return;
-    let accH=0,hiddenCount=0,hiddenHrs=0;
-    cards.forEach(c=>{
-      accH+=c.offsetHeight+4;
-      if(accH>doneH-12){hiddenCount++;hiddenHrs+=parseFloat(c.dataset.hours||0);}
-    });
-    if(hiddenCount===0)return;
-    const pill=document.createElement('div');
-    pill.className='done-overflow-pill';
-    const lbl=hiddenHrs>0?`${hiddenCount} done hidden · ${formatHrs(hiddenHrs)}`:`${hiddenCount} more done`;
-    pill.innerHTML=`<span>${lbl}</span><button class="todo-ov-btn" onclick="shrinkDoneToFit()">View ↓</button>`;
-    col.appendChild(pill);
   });
 }
 function shrinkDoneToFit(){
@@ -5737,7 +5737,12 @@ function renderPhases(){
   });
 }
 function pHrs(ph){let m=0;ph.items.forEach(i=>{const x=i.hours.match(/(\d+)h(?:(\d+)m)?/);if(x)m+=parseInt(x[1])*60+(parseInt(x[2])||0);});return m>=60?`${Math.floor(m/60)}h${m%60?m%60+'m':''}`:(m||0)+'m';}
-function pSell(ph){const u=ph.items.reduce((a,i)=>a+parseInt((i.used||'0').replace(/[$,]/g,'')||0),0);const t=ph.items.reduce((a,i)=>a+parseInt((i.total||'0').replace(/[$,]/g,'')||0),0);return`$${u.toLocaleString()} / $${t.toLocaleString()}`;}
+function pSell(ph){
+  const _parse=s=>{const n=parseInt((s||'0').replace(/[^0-9]/g,''));return isNaN(n)?0:n;};
+  const u=ph.items.reduce((a,i)=>a+_parse(i.used),0);
+  const t=ph.items.reduce((a,i)=>a+_parse(i.total),0);
+  return`$${u.toLocaleString()} / $${t.toLocaleString()}`;
+}
 function renderItems(phId,_readonly){
   const ph=phases.find(p=>p.id===phId);const tbody=document.getElementById('ib_'+phId);tbody.innerHTML='';
   if(_readonly===undefined){const _j=jobs.find(x=>x.id===activeJobId);_readonly=_j&&(_j.status==='archived'||_j.status==='complete');}
@@ -6145,17 +6150,17 @@ function renderExpenses(){
   // Merge local manual expenses + ST expenses for this job
   const localExps=(j.expenses||[]).map(e=>({...e,_source:'local'}));
   const stJobExps=(stExpenses||[]).filter(e=>{
-    const eid=String(e.job?.id||e.jobId||'');
-    return eid&&(eid===String(j._stId)||eid===String(j.id));
+    // expenses.json uses jobNumber (string job number) and jobId (ST internal id)
+    return String(e.jobNumber)===String(j.id)||String(e.jobId)===String(j._stId);
   }).map(e=>({
     id:'st-exp-'+e.id,
-    desc:e.description||e.name||'Expense',
-    date:e.date||(e.createdAt||'').slice(0,10)||null,
+    desc:e.description||e.itemName||'Expense',
+    date:e.date||null,
     qty:e.quantity||1,
-    cost:+(e.cost||e.unitCost||e.totalExTax||0),
-    markup:0,
-    sell:+(e.totalExTax||e.cost||0),
-    status:(e.expenseStatus?.name||'').toLowerCase()||'draft',
+    cost:+(e.costRate||0),
+    markup:+(e.markup||0),
+    sell:+(e.totalExTax||0),
+    status:(e.loggedExpenseStatus||'draft').toLowerCase(),
     _source:'st',
     _stId:e.id,
   }));
