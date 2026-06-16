@@ -301,13 +301,15 @@ else:
 
 # ── 5. Other search views ─────────────────────────────────────────────────────
 print("\nFetching other data...")
-prev_logged_times = load_existing("logged_times.json")
-prev_invoices     = load_existing("invoices.json")
-prev_quotes       = load_existing("quotes.json")
-prev_companies    = load_existing("companies.json")
-prev_contacts     = load_existing("contacts.json")
-prev_users        = load_existing("users.json")
-prev_expenses     = load_existing("expenses.json")
+prev_logged_times    = load_existing("logged_times.json")
+prev_invoices        = load_existing("invoices.json")
+prev_quotes          = load_existing("quotes.json")
+prev_companies       = load_existing("companies.json")
+prev_contacts        = load_existing("contacts.json")
+prev_users           = load_existing("users.json")
+prev_expenses        = load_existing("expenses.json")
+prev_job_assignments = load_existing("job_assignments.json")
+prev_milestones      = load_existing("milestones.json")
 
 logged_times = search(8, timeout=180)  # large dataset, extra time
 # Back up a good copy so we can recover if the next sync times out
@@ -321,28 +323,40 @@ companies    = search(12)
 contacts     = search(13)
 expenses     = search(9)   # view 9 = logged expenses (cost entries against jobs)
 
+# View 17 = job_item_users: per-person planned assignments against active job items.
+# Filter to active jobs only (~2500 records vs 28k total) using underscore-separated field name.
+ACTIVE_ASSIGNMENTS_QUERY = 'job_status in ["In Play","Paused"]'
+job_assignments = search(17, query=ACTIVE_ASSIGNMENTS_QUERY)
+print(f"  job_assignments (active jobs only): {len(job_assignments)} records")
+
+# View 18 = milestones: named date markers on jobs (~6 records currently)
+milestones = search(18)
+print(f"  milestones: {len(milestones)} records")
+
 # ── 6. Save everything ────────────────────────────────────────────────────────
 jobs = list(job_map.values())
 counts = {
-    "organisation": 1 if organisation else 0,
-    "users":        save("users.json",        users or [],        prev_users),
-    "roles":        save("roles.json",        roles or []),
-    "branches":     save("branches.json",     branches or []),
-    "rate_cards":   save("rate_cards.json",   rate_cards or []),
-    "jobs":         save("jobs.json",         jobs),
-    "logged_times": save("logged_times.json", logged_times,       prev_logged_times),
-    "invoices":     save("invoices.json",     invoices,           prev_invoices),
-    "quotes":       save("quotes.json",       quotes,             prev_quotes),
-    "companies":    save("companies.json",    companies,          prev_companies),
-    "contacts":     save("contacts.json",     contacts,           prev_contacts),
-    "expenses":     save("expenses.json",     expenses,           prev_expenses),
+    "organisation":    1 if organisation else 0,
+    "users":           save("users.json",           users or [],        prev_users),
+    "roles":           save("roles.json",           roles or []),
+    "branches":        save("branches.json",        branches or []),
+    "rate_cards":      save("rate_cards.json",      rate_cards or []),
+    "jobs":            save("jobs.json",            jobs),
+    "logged_times":    save("logged_times.json",    logged_times,       prev_logged_times),
+    "invoices":        save("invoices.json",        invoices,           prev_invoices),
+    "quotes":          save("quotes.json",          quotes,             prev_quotes),
+    "companies":       save("companies.json",       companies,          prev_companies),
+    "contacts":        save("contacts.json",        contacts,           prev_contacts),
+    "expenses":        save("expenses.json",        expenses,           prev_expenses),
+    "job_assignments": save("job_assignments.json", job_assignments,    prev_job_assignments),
+    "milestones":      save("milestones.json",      milestones,         prev_milestones),
 }
 
 meta = {
     "last_synced": datetime.now(timezone.utc).isoformat(),
     "record_counts": counts,
     "backfill_complete": backfill_complete,
-    "detail_progress": f"{len(detail_done)}/{len(fresh_jobs)} jobs have phases+items",
+    "detail_progress":  f"{len(detail_done)}/{len(fresh_jobs)} jobs have phases+items",
     "errors": errors,
 }
 (OUT_DIR / "sync_meta.json").write_text(json.dumps(meta, indent=2))

@@ -121,7 +121,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 /* Split layout */
 .todo-body{position:relative;}
 .day-todo-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-.day-todo{overflow-y:hidden;padding:6px 8px;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;min-height:32px;flex:none;}
+.day-todo{overflow:hidden;padding:6px 8px;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;min-height:32px;flex:none;}
 .todo-overflow-pill{position:sticky;bottom:4px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);margin-top:4px;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0;}
 .done-overflow-pill{position:sticky;bottom:4px;display:flex;align-items:center;justify-content:space-between;background:rgba(245,247,250,.97);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);margin-top:4px;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0;}
 .todo-ov-btn{border:none;background:var(--ink);color:#fff;border-radius:4px;padding:2px 9px;font-size:10px;cursor:pointer;margin-left:10px;font-family:inherit;}
@@ -133,8 +133,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .zb-count{font-size:13px;font-weight:600;color:var(--ink);}
 .zb-hrs{font-size:12px;color:var(--muted);}
 .zb-view{border:none;background:none;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer;padding:0;font-family:inherit;text-align:left;text-decoration:underline;text-underline-offset:2px;}
-.day-done{overflow-y:auto;padding:28px 8px 6px;display:flex;flex-direction:column;gap:4px;background:var(--off);flex:1;position:relative;}
-.day-done::before{content:'Done';position:absolute;bottom:4px;right:6px;font-size:52px;font-weight:700;color:rgba(0,0,0,.04);pointer-events:none;line-height:1;user-select:none;}
+.day-done{overflow-y:hidden;padding:28px 8px 6px;display:flex;flex-direction:column;gap:4px;background:var(--off);flex:1;position:relative;}
 .day-done.drop-hi{background:#f0fef4;}
 .day-done-empty{padding:6px 0;font-size:11px;color:var(--border);text-align:center;}
 /* Global done divider */
@@ -154,10 +153,11 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 /* Resize handle */
 .task-card.resizing{cursor:ns-resize !important;user-select:none;}
 /* Task cards */
-.task-card{background:var(--white);border:1px solid var(--border);padding:8px 10px;cursor:pointer;transition:border-color .15s;user-select:none;}
+.task-card{background:var(--white);border:1px solid var(--border);padding:8px 10px;cursor:pointer;transition:border-color .15s;user-select:none;overflow:hidden;}
 .task-card:hover{border-color:#aaa;}
 .task-card.done-c{background:var(--done);border-color:#b2dfb2;}
 .task-card.urgent-c{border-left:3px solid var(--red);}
+.task-card.assign-c{border-left:3px solid #7B9E87;background:#f6faf7;}
 .task-card.dragging-c{opacity:.2;}
 .task-card.drop-above{border-top:2px solid var(--red);margin-top:2px;}
 .tc-top{display:flex;align-items:flex-start;gap:6px;}
@@ -1985,8 +1985,15 @@ function savePeople(){
 }
 let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
-const APP_VERSION='2.9.6';
+const APP_VERSION='2.9.7';
 const CHANGELOG=[
+  {version:'2.9.7',date:'16 Jun 2026',title:'Data fixes, expenses & assignments sync',items:[
+    'Fixed job due dates — now correctly reads estimatedStartDate/estimatedEndDate from ST (deadline badges now work)',
+    'Fixed user capacity — reads hoursWorkedMonday…Friday per-day values instead of null capacity field',
+    'Fixed user billableRate — mapped from correct ST field',
+    'Sync now pulls expenses (view 9), job assignments/planned hours (view 17), milestones (view 18)',
+    'ST planned assignments now appear in the Todo zone — shows what you\'re scheduled to work on this week',
+  ]},
   {version:'2.9.6',date:'16 Jun 2026',title:'Zone buckets, fill-to-zone cards, paused jobs fix',items:[
     'Todo/Done zones collapse to summary buckets ("N To Do\'s · Xh · view") when dragged too small',
     'Done zone shows "N Done · Xh · view" bucket with View ↓ to expand',
@@ -2288,7 +2295,10 @@ let stLoggedTimes=[];
 let stInvoices=[];
 let stQuotes=[];
 let stContacts=[];
-let stUsersById={};   // userId → {name,initials,color,key}
+let stExpenses=[];        // logged expenses from ST view 9
+let stJobAssignments=[];  // job_item_users: who is assigned to what item (view 17)
+let stMilestones=[];      // job milestones (view 18)
+let stUsersById={};   // userId → {name,initials,color,key,capacityH,billableRate}
 let _stIdToJobNum={}; // Streamtime internal job ID → job number string
 function _stFmtH(mins){return mins>=60?`${Math.floor(mins/60)}h${mins%60?mins%60+'m':''}`:mins>0?mins+'m':'0h';}
 // Returns ST logged entries for a person this week, grouped by day number 1-5 (Mon-Fri)
@@ -2334,6 +2344,60 @@ function _getStWeekEntries(personKey,offset){
   });
   return result;
 }
+// Returns job assignments for the person keyed by day (1-5), same shape as task cards.
+// An assignment spans earliestStartDate..latestEndDate; show it on any day in the week that falls in that range.
+function _getStWeekAssignments(personKey,offset){
+  if(!stJobAssignments.length)return{};
+  const stUser=Object.values(stUsersById).find(u=>u.key===personKey);
+  if(!stUser)return{};
+  // Compute Mon–Fri date strings for this week
+  const mon=new Date();const dow=(mon.getDay()+6)%7;
+  mon.setDate(mon.getDate()-dow+(offset*7));mon.setHours(0,0,0,0);
+  const pad=n=>String(n).padStart(2,'0');
+  const weekDates=[];
+  for(let i=0;i<5;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);weekDates.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`);}
+  // Build jobItem name lookup from loaded jobs
+  const itemLookup={};
+  jobs.forEach(j=>{
+    (j.phases||[]).forEach(ph=>{
+      (ph.items||[]).forEach(it=>{
+        if(it._stId)itemLookup[it._stId]={name:it.name,jobName:j.name,jobNum:j.id,jobId:j._stId};
+      });
+    });
+  });
+  const result={};
+  stJobAssignments.forEach(a=>{
+    if(a.userId!==stUser.id)return;
+    if(a.jobItemUserStatus?.name==='Complete')return;
+    const start=(a.earliestStartDate||'').slice(0,10);
+    const end=(a.latestEndDate||'').slice(0,10);
+    if(!start&&!end)return;
+    weekDates.forEach((dateStr,i)=>{
+      if((start&&dateStr<start)||(end&&dateStr>end))return;
+      const day=i+1;
+      if(!result[day])result[day]=[];
+      const info=itemLookup[a.jobItemId]||{};
+      const plannedH=(a.totalPlannedMinutes||0)/60;
+      const incompleteH=(a.totalIncompleteMinutes||0)/60;
+      const hoursForDay=Math.max(0.5,Math.round((incompleteH>0?incompleteH:plannedH)*10)/10);
+      result[day].push({
+        id:'st-assign-'+a.id+'-'+day,
+        title:info.name||'Assigned task',
+        hours:hoursForDay>0?hoursForDay:null,
+        done:false,urgent:false,personal:false,
+        job:info.jobNum||'',
+        item:info.name||'',
+        note:'',
+        person:personKey,
+        _fromST:true,
+        _stAssignment:true,
+        jobName:info.jobName||'',
+        billable:true,
+      });
+    });
+  });
+  return result;
+}
 function _mapStJob(j){
   const statusMap={'In Play':'inplay','Complete':'complete','Paused':'inplay','Archived':'archived'};
   const sName=j.jobStatus?.name||'In Play';
@@ -2360,8 +2424,8 @@ function _mapStJob(j){
     notes:'',
     activity:[],
     invNum:null,
-    startDate:j.startDate||null,
-    dueDate:j.dueDate||null,
+    startDate:j.estimatedStartDate||null,
+    dueDate:j.estimatedEndDate||null,
     paused:sName==='Paused',
     members:(j.users||[]).map(u=>u.name||u.id),
     phases:(()=>{
@@ -2404,7 +2468,7 @@ async function initStreamtime(){
   if(tb)tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted);font-size:13px;"><i class="ti ti-loader" style="font-size:18px;display:block;margin:0 auto 8px;"></i>Loading from Streamtime…</td></tr>`;
   try{
     const _v='?v='+Date.now();
-    const [jobsRes,coRes,ltRes,invRes,qtRes,usersRes,ctRes]=await Promise.all([
+    const [jobsRes,coRes,ltRes,invRes,qtRes,usersRes,ctRes,expRes,assignRes,msRes]=await Promise.all([
       fetch(`${ST_BASE}/jobs.json${_v}`),
       fetch(`${ST_BASE}/companies.json${_v}`),
       fetch(`${ST_BASE}/logged_times.json${_v}`),
@@ -2412,6 +2476,9 @@ async function initStreamtime(){
       fetch(`${ST_BASE}/quotes.json${_v}`),
       fetch(`${ST_BASE}/users.json${_v}`),
       fetch(`${ST_BASE}/contacts.json${_v}`),
+      fetch(`${ST_BASE}/expenses.json${_v}`),
+      fetch(`${ST_BASE}/job_assignments.json${_v}`),
+      fetch(`${ST_BASE}/milestones.json${_v}`),
     ]);
     // Users — build lookup map first (needed for time entries)
     if(usersRes.ok){
@@ -2423,8 +2490,10 @@ async function initStreamtime(){
         const color=COLS[i%COLS.length];
         const key='st_'+u.id;
         const userStatus=(u.userStatus?.name||'Active');
-        const capacityH=u.capacity!=null?u.capacity/60:8; // ST stores capacity in minutes
-        stUsersById[u.id]={id:u.id,name,initials,color,key,email:u.email||'',active:userStatus==='Active',capacityH};
+        const weekH=(u.hoursWorkedMonday||0)+(u.hoursWorkedTuesday||0)+(u.hoursWorkedWednesday||0)+(u.hoursWorkedThursday||0)+(u.hoursWorkedFriday||0);
+        const capacityH=weekH>0?weekH/5:8;
+        const billableRate=u.billableRate||0;
+        stUsersById[u.id]={id:u.id,name,initials,color,key,email:u.email||'',active:userStatus==='Active',capacityH,billableRate};
         // Merge into platform people map if not already present
         if(!people[key]){
           people[key]={
@@ -2443,8 +2512,14 @@ async function initStreamtime(){
     // Jobs
     if(jobsRes.ok){
       const raw=await jobsRes.json();
+      // Snapshot manual platform overrides before rebuild (paused, etc.)
+      const _prevPaused={};
+      jobs.forEach(j=>{if(j.paused&&!j._streamtime)_prevPaused[j.id]=true;});
+      // Also preserve manual-paused flag on ST jobs (set via job settings UI)
+      jobs.forEach(j=>{if(j.paused&&j._streamtime&&j._manualPaused)_prevPaused[j.id]=true;});
       jobs=raw.map(_mapStJob);
       jobs.forEach(j=>{
+        if(_prevPaused[j.id]){j.paused=true;j._manualPaused=true;}
         (j.labels||[]).forEach(l=>addGlobalLabel(l));
         if(j._stId)_stIdToJobNum[j._stId]=j.id;
       });
@@ -2478,6 +2553,12 @@ async function initStreamtime(){
     if(invRes.ok)stInvoices=await invRes.json();
     // Quotes
     if(qtRes.ok)stQuotes=await qtRes.json();
+    // Expenses
+    if(expRes.ok)stExpenses=await expRes.json();
+    // Job assignments (planned hours per person per item)
+    if(assignRes.ok)stJobAssignments=await assignRes.json();
+    // Milestones
+    if(msRes.ok)stMilestones=await msRes.json();
   }catch(e){console.warn('Streamtime fetch failed:',e);}
   // Re-render open views
   if(typeof renderDashboard==='function'&&document.getElementById('view-dashboard')?.classList.contains('active'))renderDashboard();
@@ -3077,6 +3158,7 @@ function expandTodoToFit(){
   });
   todoSplitPx=maxSH+16;
   document.querySelectorAll('.day-todo').forEach(el=>el.style.height=todoSplitPx+'px');
+  document.querySelectorAll('.task-card[data-hours]').forEach(c=>{const h=parseFloat(c.dataset.hours);if(h)c.style.height=taskCardHeight(h)+'px';});
   positionGlobalDivider();
   checkTodoOverflow();
 }
@@ -3184,6 +3266,7 @@ function renderTodo(){
   let totalTodoH=0,totalDoneH=0,totalStH=0;
   [1,2,3,4,5].forEach(d=>{(data[d]||[]).forEach(t=>{if(t.done)totalDoneH+=t.hours||0;else totalTodoH+=t.hours||0;});});
   const stWeek=_getStWeekEntries(currentPerson,weekOffset);
+  const stAssignWeek=_getStWeekAssignments(currentPerson,weekOffset);
   [1,2,3,4,5].forEach(d=>{(stWeek[d]||[]).forEach(e=>totalStH+=e.minutes/60);});
   const sumEl=document.getElementById('todo-sum-text');
   if(sumEl)sumEl.textContent=`To do: ${formatHrs(totalTodoH)||'0h'} · Done: ${formatHrs(totalDoneH+totalStH)||'0h'}`;
@@ -3207,7 +3290,8 @@ function renderTodo(){
     const stDayEntries=stWeek[d]||[];
     const stDayDoneH=stDayEntries.reduce((s,e)=>s+(e.minutes||0)/60,0);
     const stDayBillDoneH=stDayEntries.filter(e=>e.billable).reduce((s,e)=>s+(e.minutes||0)/60,0);
-    const dayTodoH=todoTasks.reduce((s,t)=>s+(t.hours||0),0);
+    const stAssignDay=stAssignWeek[d]||[];
+    const dayTodoH=todoTasks.reduce((s,t)=>s+(t.hours||0),0)+stAssignDay.reduce((s,a)=>s+(a.hours||0),0);
     const dayDoneH=doneTasks.reduce((s,t)=>s+(t.hours||0),0)+stDayDoneH;
     const dayTotalH=dayTodoH+dayDoneH;
     const isOver=dayTotalH>DAY_CAP;
@@ -3260,21 +3344,23 @@ function renderTodo(){
       if(todoTasks.length>0){
         const bk=document.createElement('div');
         bk.className='zone-bucket'+(isToday?' zone-bucket-today':'');
-        bk.innerHTML=`<div class="zb-count">${todoTasks.length} To Do${todoTasks.length!==1?"'s":''}</div><div class="zb-hrs">${formatHrs(dayTodoH)||'—'}</div><button class="zb-view" onclick="expandTodoToFit()">view</button>`;
+        const zbCount=todoTasks.length+stAssignDay.length;
+        bk.innerHTML=`<div class="zb-count">${zbCount} To Do${zbCount!==1?"'s":''}</div><div class="zb-hrs">${formatHrs(dayTodoH)||'—'}</div><button class="zb-view" onclick="expandTodoToFit()">view</button>`;
         todoEl.appendChild(bk);
       } else {
         todoEl.innerHTML='<div class="day-done-empty">—</div>';
       }
     } else {
-      todoTasks.forEach(t=>todoEl.appendChild(createTaskCard(t,d,false,dayTodoH)));
+      todoTasks.forEach(t=>todoEl.appendChild(createTaskCard(t,d,false)));
+      stAssignDay.forEach(a=>todoEl.appendChild(createTaskCard(a,d,false)));
       todoEl.scrollTop=todoEl.scrollHeight;
     }
 
     if(doneTasks.length===0&&stEntries.length===0){
       doneEl.innerHTML='<div class="day-done-empty">—</div>';
     } else {
-      doneTasks.forEach(t=>doneEl.appendChild(createTaskCard(t,d,true,allDoneH)));
-      stEntries.forEach(e=>doneEl.appendChild(createTaskCard(e,d,true,allDoneH)));
+      doneTasks.forEach(t=>doneEl.appendChild(createTaskCard(t,d,true)));
+      stEntries.forEach(e=>doneEl.appendChild(createTaskCard(e,d,true)));
     }
 
     todoEl.addEventListener('dragover',e=>{e.preventDefault();todoEl.classList.add('drop-hi');_highlightDropTarget(e,todoEl);});
@@ -3400,26 +3486,23 @@ const ITEM_ICONS={
   'Admin':'clipboard-list','Finance':'receipt',
 };
 
-function taskCardHeight(hours, totalDayH){
+function taskCardHeight(hours){
   if(!hours)return 56;
-  // Fill the zone: cards stretch proportionally so their total equals the zone height.
-  // If total task hours > 8h, cards shrink below the zone (overflow pill handles the rest).
-  const effectiveTotal=Math.max(0.5,totalDayH||8);
-  const fillH=effectiveTotal<8?effectiveTotal:8; // don't stretch beyond 8h worth
-  const pxPerHr=Math.max(24,(todoSplitPx||360)/fillH);
-  return Math.max(40,Math.round(hours*pxPerHr));
+  // Absolute scale: divider position represents a full workday (8h).
+  // 1h always = todoSplitPx/8 pixels regardless of how many tasks exist.
+  const pxPerHr=Math.max(16,(todoSplitPx||360)/8);
+  return Math.max(32,Math.round(hours*pxPerHr));
 }
 
-function createTaskCard(t,day,isDone,totalDayH){
+function createTaskCard(t,day,isDone){
   const card=document.createElement('div');
-  card.className='task-card'+(isDone?' done-c':'')+(t.urgent&&!isDone?' urgent-c':'');
+  card.className='task-card'+(isDone?' done-c':'')+(t.urgent&&!isDone?' urgent-c':'')+(t._stAssignment?' assign-c':'');
   card.draggable=true;
   card.dataset.taskId=t.id;card.dataset.day=day;
   card.dataset.hours=t.hours||'';
-  if(totalDayH!=null)card.dataset.totalDayH=totalDayH;
-  if(t.hours)card.style.height=taskCardHeight(t.hours,totalDayH)+'px';
+  if(t.hours)card.style.height=taskCardHeight(t.hours)+'px';
 
-  const _iconName=ITEM_ICONS[t.item]||(t.urgent?'alert-circle':t._fromST?'clock':'circle-dot');
+  const _iconName=ITEM_ICONS[t.item]||(t.urgent?'alert-circle':t._stAssignment?'calendar-time':t._fromST?'clock':'circle-dot');
   const icon=_icon(_iconName,13);
   const hrsLabel=t.hours?formatHrs(t.hours):'';
   const jobIdMatch=t.job?t.job.match(/^(\d+)/):null;
@@ -3435,24 +3518,18 @@ function createTaskCard(t,day,isDone,totalDayH){
   const metaJob=showJob&&jobLabel;
   const metaItem=showItem&&t.item;
 
-  // Show/hide content based on card height
-  const _ch=t.hours?taskCardHeight(t.hours,totalDayH):56;
-  const _tiny=_ch<44;   // title only
-  const _small=_ch<68;  // title + hours
-  const _med=_ch<95;    // + job/item
-
   card.innerHTML=`
     <div class="tc-top">
-      ${_tiny?'':`<span class="tc-icon">${icon}</span>`}
+      <span class="tc-icon">${icon}</span>
       <span class="tc-title">${t.title}${(t.repeat||t.repeatGroup)?' <i class="ti ti-repeat" title="Repeating task" style="font-size:10px;color:var(--muted);"></i>':''}</span>
-      ${hrsLabel?`<span class="tc-hrs" id="hrs-${t.id}">${hrsLabel}</span>`:`<span class="tc-hrs" id="hrs-${t.id}" style="display:none;"></span>`}
+      ${hrsLabel?`<span class="tc-hrs" id="hrs-${t.id}">${hrsLabel}</span>`:''}
     </div>
-    ${(!_tiny&&!_small&&(metaJob||metaItem))?`<div class="tc-meta">
+    ${(metaJob||metaItem)?`<div class="tc-meta">
       ${metaJob?`<span class="tc-job${jobIdNum?' clickable':''}" data-jid="${jobIdNum||''}">${jobLabel}</span>`:''}
       ${metaJob&&metaItem?'<span class="tc-sep"></span>':''}
       ${metaItem?`<span class="tc-item-tag">${t.item}</span>`:''}
     </div>`:''}
-    ${(!_tiny&&!_small&&!_med&&showNote&&t.note)?`<div class="tc-note">${t.note}</div>`:''}`;
+    ${(showNote&&t.note)?`<div class="tc-note">${t.note}</div>`:''}`;
 
   const jEl=card.querySelector('.tc-job.clickable');
   if(jEl)jEl.addEventListener('click',e=>{e.stopPropagation();openJobDetail(jEl.dataset.jid);});
@@ -4426,45 +4503,15 @@ function closeChangelog(evt){
 }
 
 // Global divider drag handlers
-const _applyCardResize=(card,ch)=>{
-  card.style.height=ch+'px';
-  const tiny=ch<44,small=ch<68,med=ch<95;
-  const ic=card.querySelector('.tc-icon');if(ic)ic.style.display=tiny?'none':'';
-  const hr=card.querySelector('.tc-hrs');if(hr)hr.style.display=tiny?'none':'';
-  const me=card.querySelector('.tc-meta');if(me)me.style.display=(tiny||small)?'none':'';
-  const no=card.querySelector('.tc-note');if(no)no.style.display=(tiny||small||med)?'none':'';
-};
 document.addEventListener('mousemove',e=>{
   if(!isDivDrag)return;
   const delta=e.clientY-divDragStartY;
   todoSplitPx=Math.max(32,divDragStartPx+delta);
   document.querySelectorAll('.day-todo').forEach(el=>el.style.height=todoSplitPx+'px');
-  const BUCKET_PX=110;
-  // When crossing the bucket threshold, trigger a full re-render (debounced)
-  if(todoSplitPx<BUCKET_PX){
-    // Show buckets — defer to renderTodo after drag ends
-  } else {
-    // Resize todo cards per-day using fill logic
-    [1,2,3,4,5].forEach(d=>{
-      const dayCards=[...document.querySelectorAll(`#dtodo-${d} .task-card`)];
-      const totalH=dayCards.reduce((s,c)=>s+parseFloat(c.dataset.hours||0),0);
-      dayCards.forEach(c=>{
-        const h=parseFloat(c.dataset.hours);if(!h)return;
-        _applyCardResize(c,taskCardHeight(h,totalH));
-      });
-    });
-  }
-  // Resize done cards per-day using done zone fill logic
-  const _doneEl=document.querySelector('.day-done');
-  const _donePx=Math.max(80,_doneEl?_doneEl.offsetHeight:200);
-  [1,2,3,4,5].forEach(d=>{
-    const dCards=[...document.querySelectorAll(`#ddone-${d} .task-card`)];
-    const totalDoneH=dCards.reduce((s,c)=>s+parseFloat(c.dataset.hours||0),0);
-    const donePxPerHr=Math.max(24,_donePx/Math.max(0.5,Math.min(8,totalDoneH)));
-    dCards.forEach(c=>{
-      const h=parseFloat(c.dataset.hours);if(!h)return;
-      _applyCardResize(c,Math.max(40,Math.round(h*donePxPerHr)));
-    });
+  // Resize all task cards using absolute scale (same formula as renderTodo)
+  document.querySelectorAll('.task-card[data-hours]').forEach(c=>{
+    const h=parseFloat(c.dataset.hours);if(!h)return;
+    c.style.height=taskCardHeight(h)+'px';
   });
   positionGlobalDivider();
 });
@@ -4988,6 +5035,7 @@ function saveJobSettings(){
   j.contact=(document.getElementById('jsett-contact')?.value||'').trim();
   j.billable=document.getElementById('jsett-billable')?.checked;
   j.paused=document.getElementById('jsett-paused')?.checked||false;
+  j._manualPaused=j.paused;
   j.workflowStatus=document.getElementById('jsett-wf')?.value||j.workflowStatus;
   j.lead=document.getElementById('jsett-lead')?.value||null;
   saveData();
