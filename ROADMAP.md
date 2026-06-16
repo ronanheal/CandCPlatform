@@ -166,6 +166,27 @@ All tabs: period filter (week / 2 weeks / month / quarter / year / all time); Ex
 
 ### Quick Wins (1–2 days each)
 
+**0a. Dashboard customisation section in Settings**
+Add a "Dashboard" section in Settings with toggles per person: show/hide Teams block, Business KPIs, Clients block; choose which clients appear on the dashboard. Store preferences in `people[MY_PERSON].dashSettings`. Note: admin-across-accounts (pushing these preferences to all users) is a future feature — for now each user sets their own.
+
+**0b. Todo — day indicator inside column box**
+The day-of-week / date label currently sits above the column pushing content down. Move it inside the column box as an overlay or top-pinned label (position:absolute) so it doesn't affect card layout or total zone height.
+
+**0c. Todo — overflow bucket fix**
+Confirm overflow bucket triggers correctly when total card heights exceed `todoSplitPx`. Currently bucket threshold logic may be off after the absolute-scale card resize refactor.
+
+**0d. Calendar — time line alignment fix**
+Hour grid lines in the calendar sub-view are misaligned with card positions. Audit the `pxPerHr` calculation used for grid lines vs card heights and ensure they use the same base value.
+
+**0e. Jobs — more filter options**
+Add filters to the Jobs list: date range (start/due), lead person, team, workflow stage (Quote/Live/Completed/Invoiced), budget health (on track / at risk / over). All data fields are already mapped.
+
+**0f. Clients — more filters + stats**
+Add to the Clients list: search by contact name/email, filter by active/inactive, sort by hours or revenue. Show per-client stats chips (total logged hours, invoiced revenue, active job count).
+
+**0g. Clients — add/edit UI for company fields**
+Build an edit form on client detail for website, phone, address, notes. Write to localStorage until ST write-back exists. (Same scope as roadmap item #14 but for company fields, not contacts.)
+
 **1. Quote value and real status from ST**
 Surface `totalAmountExTax` from `stQuotes[]` as a column in the Quotes table. Replace the `sentDate` heuristic with `quoteStatus.name` (approved / declined / sent / draft) to show real status pills. Add `approvedDate` / `declinedDate` / `expiryDate` to the expanded detail row. All data is already fetched; only the render loop needs updating.
 
