@@ -1993,9 +1993,15 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.10.2';
+const APP_VERSION='2.10.4';
 const CHANGELOG=[
-  {version:'2.10.2',date:'17 Jun 2026',title:'Planned assignment hours & notes fix',items:[
+  {version:'2.10.4',date:'17 Jun 2026',title:'Todo/done dedup, notes fix, hours per day',items:[
+    'Fixed: manual todo tasks no longer show as todo when ST has already logged time for the same job+item on the same day — they move to the done zone',
+    'Fixed: ST planned assignment hours now divided across days active this week (not total on every day)',
+    'Fixed: item description now included in mapped job items — assignment cards show notes correctly',
+    'Dedup applied in both list view and calendar view',
+  ]},
+  {version:'2.10.3',date:'17 Jun 2026',title:'Planned assignment hours & notes fix',items:[
     'Fixed planned ST assignment hours — total minutes now divided by working days in span (was showing total on every day)',
     'Item description now used as card note on planned assignments',
     'Item estimated dates used as fallback when assignment has no start/end dates',
@@ -2415,7 +2421,9 @@ function _getStWeekAssignments(personKey,offset){
     if(!effectiveStart)return;
     // Use remaining (incomplete) hours if set, otherwise total planned
     const totalMins=(a.totalIncompleteMinutes||0)>0?a.totalIncompleteMinutes:(a.totalPlannedMinutes||0);
-    const hoursForDay=Math.round(totalMins/60*4)/4||null; // round to nearest 15m, null if zero
+    // Divide total hours across however many week-days fall within the assignment range
+    const weekDaysInRange=weekDates.filter(d=>d>=effectiveStart&&d<=effectiveEnd).length||1;
+    const hoursForDay=Math.round(totalMins/weekDaysInRange/60*4)/4||null;
     weekDates.forEach((dateStr,i)=>{
       if(dateStr<effectiveStart||dateStr>effectiveEnd)return;
       const day=i+1;
@@ -2474,7 +2482,7 @@ function _mapStJob(j){
         const rate=it.sellRate||0;
         const usedSell=Math.round(logM/60*rate);const planSell=Math.round(planM/60*rate);
         const stStatus=it.jobItemStatus?.name||'';
-        return{id:'st-it-'+it.id,name:it.name||'Item',hours:planM>0?_stFmtH(planM):'—',rate:rate?'$'+rate:'—',used:usedSell?'$'+usedSell.toLocaleString():'$0',total:planSell?'$'+planSell.toLocaleString():'—',status:stStatus==='Complete'?'complete':stStatus==='In Progress'?'inprogress':'open',_stId:it.id,_planMins:planM,_logMins:logM};
+        return{id:'st-it-'+it.id,name:it.name||'Item',hours:planM>0?_stFmtH(planM):'—',rate:rate?'$'+rate:'—',used:usedSell?'$'+usedSell.toLocaleString():'$0',total:planSell?'$'+planSell.toLocaleString():'—',status:stStatus==='Complete'?'complete':stStatus==='In Progress'?'inprogress':'open',description:it.description||'',_stId:it.id,_planMins:planM,_logMins:logM};
       };
       const mapped=(j.phases||[]).map(ph=>{
         const mappedItems=(ph.items||[]).map(_mapItem);
@@ -2968,9 +2976,18 @@ function renderTodoCalendar(){
     if(t.done)doneTasks.push({...t,day:d});
     else allActive.push({...t,day:d});
   });});
-  // Add ST logged entries as done tasks
+  // Add ST logged entries as done tasks; dedup matching manual todos into done
   const stWeekCal=_getStWeekEntries(currentPerson,weekOffset);
-  [1,2,3,4,5].forEach(d=>{(stWeekCal[d]||[]).forEach(e=>doneTasks.push({...e,day:d}));});
+  const _calLtKey=(e,d)=>{const n=(e.job||'').match(/^(\d+)/)?.[1]||e.job||'';return d+'|'+n+'|'+(e.item||e.itemName||'').toLowerCase();};
+  const calLoggedSet=new Set();
+  [1,2,3,4,5].forEach(d=>{(stWeekCal[d]||[]).forEach(e=>{doneTasks.push({...e,day:d});calLoggedSet.add(_calLtKey(e,d));});});
+  // Move manual todos that ST has logged into done zone
+  allActive=allActive.filter(t=>{
+    if(!t.job||!t.item)return true;
+    const n=(t.job||'').match(/^(\d+)/)?.[1]||t.job||'';
+    if(calLoggedSet.has((t.day||0)+'|'+n+'|'+(t.item||'').toLowerCase())){doneTasks.push({...t,done:true});return false;}
+    return true;
+  });
   // Filters
   if(_calFilterUrgentOnly)allActive=allActive.filter(t=>t.urgent);
   if(!_calFilterPersonal)allActive=allActive.filter(t=>!t.personal);
@@ -3339,6 +3356,10 @@ function renderTodo(){
     const stDayDoneH=stDayEntries.reduce((s,e)=>s+(e.minutes||0)/60,0);
     const stDayBillDoneH=stDayEntries.filter(e=>e.billable).reduce((s,e)=>s+(e.minutes||0)/60,0);
     const stAssignDay=stAssignWeek[d]||[];
+    // Dedup: if ST logged time covers job+item, remove matching manual todos & assignments
+    const _ltKey=e=>{ const n=(e.job||'').match(/^(\d+)/)?.[1]||e.job||''; return n+'|'+(e.item||e.itemName||'').toLowerCase(); };
+    const loggedKeys=new Set(stDayEntries.map(_ltKey));
+    const _isDone=t=>{ const n=(t.job||'').match(/^(\d+)/)?.[1]||t.job||''; return loggedKeys.has(n+'|'+(t.item||'').toLowerCase()); };
     const dayTodoH=todoTasks.reduce((s,t)=>s+(t.hours||0),0)+stAssignDay.reduce((s,a)=>s+(a.hours||0),0);
     const dayDoneH=doneTasks.reduce((s,t)=>s+(t.hours||0),0)+stDayDoneH;
     const dayTotalH=dayTodoH+dayDoneH;
@@ -3383,31 +3404,37 @@ function renderTodo(){
     const doneEl=document.getElementById('ddone-'+d);
 
     const BUCKET_PX=110; // collapse to summary bucket below this height
-    // ST logged entries for this day
-    const stEntries=_getStWeekEntries(currentPerson,weekOffset)[d]||[];
-    const allDoneH=dayDoneH; // already computed above
+    // ST logged entries for this day (re-use stDayEntries computed above)
+    const stEntries=stDayEntries;
+
+    // Apply dedup: filter out manual todos and ST assignments that ST has already logged
+    const activeTodos=todoTasks.filter(t=>!(t.job&&t.item&&_isDone(t)));
+    const activeAssign=stAssignDay.filter(a=>!_isDone(a));
+    // Manual tasks that ST has logged move to done zone
+    const dedupedDone=[...doneTasks,...todoTasks.filter(t=>t.job&&t.item&&_isDone(t)).map(t=>({...t,done:true}))];
 
     if(todoSplitPx<BUCKET_PX){
       // Todo zone too small — show summary bucket
-      if(todoTasks.length>0){
+      if(activeTodos.length>0||activeAssign.length>0){
         const bk=document.createElement('div');
         bk.className='zone-bucket'+(isToday?' zone-bucket-today':'');
-        const zbCount=todoTasks.length+stAssignDay.length;
-        bk.innerHTML=`<div class="zb-count">${zbCount} To Do${zbCount!==1?"'s":''}</div><div class="zb-hrs">${formatHrs(dayTodoH)||'—'}</div><button class="zb-view" onclick="expandTodoToFit()">view</button>`;
+        const zbCount=activeTodos.length+activeAssign.length;
+        const zbH=activeTodos.reduce((s,t)=>s+(t.hours||0),0)+activeAssign.reduce((s,a)=>s+(a.hours||0),0);
+        bk.innerHTML=`<div class="zb-count">${zbCount} To Do${zbCount!==1?"'s":''}</div><div class="zb-hrs">${formatHrs(zbH)||'—'}</div><button class="zb-view" onclick="expandTodoToFit()">view</button>`;
         todoEl.appendChild(bk);
       } else {
         todoEl.innerHTML='<div class="day-done-empty">—</div>';
       }
     } else {
-      todoTasks.forEach(t=>todoEl.appendChild(createTaskCard(t,d,false)));
-      stAssignDay.forEach(a=>todoEl.appendChild(createTaskCard(a,d,false)));
+      activeTodos.forEach(t=>todoEl.appendChild(createTaskCard(t,d,false)));
+      activeAssign.forEach(a=>todoEl.appendChild(createTaskCard(a,d,false)));
       todoEl.scrollTop=todoEl.scrollHeight;
     }
 
-    if(doneTasks.length===0&&stEntries.length===0){
+    if(dedupedDone.length===0&&stEntries.length===0){
       doneEl.innerHTML='<div class="day-done-empty">—</div>';
     } else {
-      doneTasks.forEach(t=>doneEl.appendChild(createTaskCard(t,d,true)));
+      dedupedDone.forEach(t=>doneEl.appendChild(createTaskCard(t,d,true)));
       stEntries.forEach(e=>doneEl.appendChild(createTaskCard(e,d,true)));
     }
 
