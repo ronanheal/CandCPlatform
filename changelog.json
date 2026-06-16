@@ -1,7 +1,25 @@
 {
-  "generated_at": "2026-06-16T03:38:09.247343+00:00",
-  "current_version": "2.10.0",
+  "generated_at": "2026-06-16T03:49:20.059792+00:00",
+  "current_version": "2.10.1",
   "releases": [
+    {
+      "version": "2.10.1",
+      "date": "16 Jun 2026",
+      "title": "Done divider, NaN fix, expenses & paused phases",
+      "items": [
+        "Fixed NaN in phase header sell totals — em-dash items (no planned hours) now correctly count as $0",
+        "Fixed expenses not loading from ST — corrected field names (jobNumber, costRate, loggedExpenseStatus)",
+        "Fixed paused phases from ST — phases where all items are Paused now render as paused",
+        "Done divider bar now has a distinct warm grey colour so it stands out from the background",
+        "Removed the \"N done hidden\" overflow pill from the done zone (redundant with bucket view)",
+        "Fixed done cards clipping behind divider bar — restored 24px top padding on done zone"
+      ],
+      "sections": [
+        "Jobs",
+        "Jobs → Time",
+        "Todo"
+      ]
+    },
     {
       "version": "2.10.0",
       "date": "16 Jun 2026",
