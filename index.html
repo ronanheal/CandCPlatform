@@ -6762,29 +6762,35 @@ function saveGhToken(){
 async function publishConfig(){
   const token=localStorage.getItem('cc_gh_token');
   if(!token){toast('Add a GitHub token first','warn');return;}
-  const config={
-    people,
-    globalLabels,
-    LINE_ITEMS,
-    EXPENSE_ITEMS,
-    published_at:new Date().toISOString(),
-    published_by:people[MY_PERSON]?.name||MY_PERSON,
-  };
-  const content=btoa(unescape(encodeURIComponent(JSON.stringify(config,null,2))));
-  // Get current file SHA (needed for update)
   const REPO='ronanheal/CandCPlatform';
   const BRANCH='streamtime-data';
   const PATH='platform_config.json';
+  const HEADERS={Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json','Content-Type':'application/json'};
   const btn=document.querySelector('[onclick="publishConfig()"]');
-  if(btn){btn.disabled=true;btn.textContent='Publishing…';}
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader" style="font-size:12px"></i> Publishing…';}
   try{
+    // Always fetch current SHA first — required whether creating or updating
+    const getRes=await fetch(`https://api.github.com/repos/${REPO}/contents/${PATH}?ref=${BRANCH}&t=${Date.now()}`,{headers:HEADERS});
     let sha=null;
-    const getRes=await fetch(`https://api.github.com/repos/${REPO}/contents/${PATH}?ref=${BRANCH}`,{headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json'}});
     if(getRes.ok){const d=await getRes.json();sha=d.sha;}
-    const body={message:`config: publish workspace settings ${new Date().toISOString()}`,content,branch:BRANCH};
+    else if(getRes.status!==404){const e=await getRes.json();throw new Error('GET failed: '+(e.message||getRes.status));}
+
+    const config={people,globalLabels,LINE_ITEMS,EXPENSE_ITEMS,published_at:new Date().toISOString(),published_by:people[MY_PERSON]?.name||MY_PERSON};
+    const content=btoa(unescape(encodeURIComponent(JSON.stringify(config,null,2))));
+    const body={message:`config: publish workspace settings`,content,branch:BRANCH};
     if(sha)body.sha=sha;
-    const putRes=await fetch(`https://api.github.com/repos/${REPO}/contents/${PATH}`,{method:'PUT',headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify(body)});
-    if(!putRes.ok){const e=await putRes.json();throw new Error(e.message||putRes.status);}
+
+    const putRes=await fetch(`https://api.github.com/repos/${REPO}/contents/${PATH}`,{method:'PUT',headers:HEADERS,body:JSON.stringify(body)});
+    if(putRes.status===409){
+      // SHA is stale (branch moved) — fetch fresh SHA and retry once
+      const getRes2=await fetch(`https://api.github.com/repos/${REPO}/contents/${PATH}?ref=${BRANCH}&t=${Date.now()}`,{headers:HEADERS});
+      if(getRes2.ok){const d=await getRes2.json();body.sha=d.sha;}
+      const retry=await fetch(`https://api.github.com/repos/${REPO}/contents/${PATH}`,{method:'PUT',headers:HEADERS,body:JSON.stringify(body)});
+      if(!retry.ok){const e=await retry.json();throw new Error(e.message||retry.status);}
+    } else if(!putRes.ok){
+      const e=await putRes.json();throw new Error(e.message||putRes.status);
+    }
+
     const ts=new Date().toISOString();
     localStorage.setItem('cc_config_published_at',ts);
     const el=document.getElementById('gh-sync-status');
