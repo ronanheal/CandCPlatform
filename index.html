@@ -1985,6 +1985,8 @@ function savePeople(){
 }
 let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
+// Ensure a minimal stub exists so first render doesn't crash on empty localStorage
+if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
 const APP_VERSION='2.9.7';
 const CHANGELOG=[
   {version:'2.9.7',date:'16 Jun 2026',title:'Data fixes, expenses & assignments sync',items:[
