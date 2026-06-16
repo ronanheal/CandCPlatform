@@ -126,7 +126,15 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .done-overflow-pill{position:sticky;bottom:4px;display:flex;align-items:center;justify-content:space-between;background:rgba(245,247,250,.97);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);margin-top:4px;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0;}
 .todo-ov-btn{border:none;background:var(--ink);color:#fff;border-radius:4px;padding:2px 9px;font-size:10px;cursor:pointer;margin-left:10px;font-family:inherit;}
 .day-todo.drop-hi{background:#fffdf5;}
-.day-done{overflow-y:auto;padding:28px 8px 6px;display:flex;flex-direction:column;gap:4px;background:var(--off);flex:1;}
+/* Zone buckets — collapsed summary when zone is too small for cards */
+.zone-bucket{display:flex;flex-direction:column;justify-content:center;gap:4px;padding:10px 12px;height:100%;box-sizing:border-box;border-radius:4px;background:var(--white);border:1px solid var(--border);}
+.zone-bucket-today{background:#FFFDE7;border-color:#FFE082;}
+.zone-bucket.done-bucket{background:var(--off);}
+.zb-count{font-size:13px;font-weight:600;color:var(--ink);}
+.zb-hrs{font-size:12px;color:var(--muted);}
+.zb-view{border:none;background:none;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer;padding:0;font-family:inherit;text-align:left;text-decoration:underline;text-underline-offset:2px;}
+.day-done{overflow-y:auto;padding:28px 8px 6px;display:flex;flex-direction:column;gap:4px;background:var(--off);flex:1;position:relative;}
+.day-done::before{content:'Done';position:absolute;bottom:4px;right:6px;font-size:52px;font-weight:700;color:rgba(0,0,0,.04);pointer-events:none;line-height:1;user-select:none;}
 .day-done.drop-hi{background:#f0fef4;}
 .day-done-empty{padding:6px 0;font-size:11px;color:var(--border);text-align:center;}
 /* Global done divider */
@@ -1977,8 +1985,16 @@ function savePeople(){
 }
 let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
-const APP_VERSION='2.9.5';
+const APP_VERSION='2.9.6';
 const CHANGELOG=[
+  {version:'2.9.6',date:'16 Jun 2026',title:'Zone buckets, fill-to-zone cards, paused jobs fix',items:[
+    'Todo/Done zones collapse to summary buckets ("N To Do\'s · Xh · view") when dragged too small',
+    'Done zone shows "N Done · Xh · view" bucket with View ↓ to expand',
+    'Task cards now fill their zone — cards stretch proportionally so total height equals zone height',
+    'Progressive info: icon/hours/job/note hide/show smoothly as cards resize during drag',
+    'Done zone watermark "Done" text in background when cards are present',
+    'ST Paused jobs now show as In Play + Paused badge (matching platform pause behaviour)',
+  ]},
   {version:'2.9.5',date:'16 Jun 2026',title:'ST task drag, done-bar resize, job budgets, quick wins',items:[
     'ST logged-time tasks are now draggable — drag to another day or to To Do; always clones (ST is read-only)',
     'Done-bar drag now resizes both todo AND done cards based on their zone height',
@@ -2319,7 +2335,7 @@ function _getStWeekEntries(personKey,offset){
   return result;
 }
 function _mapStJob(j){
-  const statusMap={'In Play':'inplay','Complete':'complete','Paused':'paused','Archived':'archived'};
+  const statusMap={'In Play':'inplay','Complete':'complete','Paused':'inplay','Archived':'archived'};
   const sName=j.jobStatus?.name||'In Play';
   const isDone=sName==='Complete'||sName==='Archived';
   const hasInvoice=(j.totalIssuedInvoicesExTax||0)>0;
@@ -2346,6 +2362,7 @@ function _mapStJob(j){
     invNum:null,
     startDate:j.startDate||null,
     dueDate:j.dueDate||null,
+    paused:sName==='Paused',
     members:(j.users||[]).map(u=>u.name||u.id),
     phases:(()=>{
       const _mapItem=it=>{
@@ -3064,13 +3081,29 @@ function expandTodoToFit(){
   checkTodoOverflow();
 }
 function checkDoneOverflow(){
+  const BUCKET_PX=110;
   [1,2,3,4,5].forEach(d=>{
     const col=document.getElementById('ddone-'+d);
     if(!col)return;
     col.querySelector('.done-overflow-pill')?.remove();
-    if(col.scrollHeight<=col.clientHeight+6)return;
-    const cards=[...col.querySelectorAll('.task-card')];
+    col.querySelector('.done-bucket')?.remove();
     const doneH=col.clientHeight;
+    const cards=[...col.querySelectorAll('.task-card')];
+    if(!cards.length)return;
+    // Bucket mode: done zone too small — replace cards with summary
+    if(doneH<BUCKET_PX){
+      const totalHrs=cards.reduce((s,c)=>s+parseFloat(c.dataset.hours||0),0);
+      cards.forEach(c=>c.style.display='none');
+      const bk=document.createElement('div');
+      bk.className='zone-bucket done-bucket';
+      bk.innerHTML=`<div class="zb-count">${cards.length} Done</div><div class="zb-hrs">${formatHrs(totalHrs)||'—'}</div><button class="zb-view" onclick="shrinkDoneToFit()">view</button>`;
+      col.appendChild(bk);
+      return;
+    }
+    // Restore hidden cards if we were in bucket mode
+    cards.forEach(c=>c.style.display='');
+    // Overflow pill for moderate overflow
+    if(col.scrollHeight<=doneH+6)return;
     let accH=0,hiddenCount=0,hiddenHrs=0;
     cards.forEach(c=>{
       accH+=c.offsetHeight+4;
@@ -3217,14 +3250,31 @@ function renderTodo(){
     const todoEl=document.getElementById('dtodo-'+d);
     const doneEl=document.getElementById('ddone-'+d);
 
-    todoTasks.forEach(t=>todoEl.appendChild(createTaskCard(t,d,false)));
-    todoEl.scrollTop=todoEl.scrollHeight;
-    // ST logged entries for this day — shown as regular done task cards
+    const BUCKET_PX=110; // collapse to summary bucket below this height
+    // ST logged entries for this day
     const stEntries=_getStWeekEntries(currentPerson,weekOffset)[d]||[];
-    if(doneTasks.length===0&&stEntries.length===0)doneEl.innerHTML='<div class="day-done-empty">—</div>';
-    else{
-      doneTasks.forEach(t=>doneEl.appendChild(createTaskCard(t,d,true)));
-      stEntries.forEach(e=>doneEl.appendChild(createTaskCard(e,d,true)));
+    const allDoneH=dayDoneH; // already computed above
+
+    if(todoSplitPx<BUCKET_PX){
+      // Todo zone too small — show summary bucket
+      if(todoTasks.length>0){
+        const bk=document.createElement('div');
+        bk.className='zone-bucket'+(isToday?' zone-bucket-today':'');
+        bk.innerHTML=`<div class="zb-count">${todoTasks.length} To Do${todoTasks.length!==1?"'s":''}</div><div class="zb-hrs">${formatHrs(dayTodoH)||'—'}</div><button class="zb-view" onclick="expandTodoToFit()">view</button>`;
+        todoEl.appendChild(bk);
+      } else {
+        todoEl.innerHTML='<div class="day-done-empty">—</div>';
+      }
+    } else {
+      todoTasks.forEach(t=>todoEl.appendChild(createTaskCard(t,d,false,dayTodoH)));
+      todoEl.scrollTop=todoEl.scrollHeight;
+    }
+
+    if(doneTasks.length===0&&stEntries.length===0){
+      doneEl.innerHTML='<div class="day-done-empty">—</div>';
+    } else {
+      doneTasks.forEach(t=>doneEl.appendChild(createTaskCard(t,d,true,allDoneH)));
+      stEntries.forEach(e=>doneEl.appendChild(createTaskCard(e,d,true,allDoneH)));
     }
 
     todoEl.addEventListener('dragover',e=>{e.preventDefault();todoEl.classList.add('drop-hi');_highlightDropTarget(e,todoEl);});
@@ -3350,21 +3400,24 @@ const ITEM_ICONS={
   'Admin':'clipboard-list','Finance':'receipt',
 };
 
-function taskCardHeight(hours){
+function taskCardHeight(hours, totalDayH){
   if(!hours)return 56;
-  // Scale proportionally: 8h fills the todo column height, so dragging the
-  // Done divider rescales every card while keeping them relative to time
-  const pxPerHr=Math.max(24,(todoSplitPx||360)/8);
+  // Fill the zone: cards stretch proportionally so their total equals the zone height.
+  // If total task hours > 8h, cards shrink below the zone (overflow pill handles the rest).
+  const effectiveTotal=Math.max(0.5,totalDayH||8);
+  const fillH=effectiveTotal<8?effectiveTotal:8; // don't stretch beyond 8h worth
+  const pxPerHr=Math.max(24,(todoSplitPx||360)/fillH);
   return Math.max(40,Math.round(hours*pxPerHr));
 }
 
-function createTaskCard(t,day,isDone){
+function createTaskCard(t,day,isDone,totalDayH){
   const card=document.createElement('div');
   card.className='task-card'+(isDone?' done-c':'')+(t.urgent&&!isDone?' urgent-c':'');
   card.draggable=true;
   card.dataset.taskId=t.id;card.dataset.day=day;
   card.dataset.hours=t.hours||'';
-  if(t.hours)card.style.height=taskCardHeight(t.hours)+'px';
+  if(totalDayH!=null)card.dataset.totalDayH=totalDayH;
+  if(t.hours)card.style.height=taskCardHeight(t.hours,totalDayH)+'px';
 
   const _iconName=ITEM_ICONS[t.item]||(t.urgent?'alert-circle':t._fromST?'clock':'circle-dot');
   const icon=_icon(_iconName,13);
@@ -3383,7 +3436,7 @@ function createTaskCard(t,day,isDone){
   const metaItem=showItem&&t.item;
 
   // Show/hide content based on card height
-  const _ch=t.hours?taskCardHeight(t.hours):56;
+  const _ch=t.hours?taskCardHeight(t.hours,totalDayH):56;
   const _tiny=_ch<44;   // title only
   const _small=_ch<68;  // title + hours
   const _med=_ch<95;    // + job/item
@@ -4373,36 +4426,45 @@ function closeChangelog(evt){
 }
 
 // Global divider drag handlers
+const _applyCardResize=(card,ch)=>{
+  card.style.height=ch+'px';
+  const tiny=ch<44,small=ch<68,med=ch<95;
+  const ic=card.querySelector('.tc-icon');if(ic)ic.style.display=tiny?'none':'';
+  const hr=card.querySelector('.tc-hrs');if(hr)hr.style.display=tiny?'none':'';
+  const me=card.querySelector('.tc-meta');if(me)me.style.display=(tiny||small)?'none':'';
+  const no=card.querySelector('.tc-note');if(no)no.style.display=(tiny||small||med)?'none':'';
+};
 document.addEventListener('mousemove',e=>{
   if(!isDivDrag)return;
   const delta=e.clientY-divDragStartY;
   todoSplitPx=Math.max(32,divDragStartPx+delta);
   document.querySelectorAll('.day-todo').forEach(el=>el.style.height=todoSplitPx+'px');
-  // Rescale every task card live so heights stay relative to their hours,
-  // and gate the content (icon/hours/meta/note) at the same thresholds the
-  // renderer uses — so cards tidy themselves WHILE you drag, not after
-  // Resize todo cards using todoSplitPx (taskCardHeight already uses it)
-  document.querySelectorAll('.day-todo .task-card').forEach(c=>{
-    const h=parseFloat(c.dataset.hours);if(!h)return;
-    const ch=taskCardHeight(h);c.style.height=ch+'px';
-    const tiny=ch<44,small=ch<68,med=ch<95;
-    const ic=c.querySelector('.tc-icon');if(ic)ic.style.display=tiny?'none':'';
-    const hr=c.querySelector('.tc-hrs');if(hr)hr.style.display=tiny?'none':'';
-    const me=c.querySelector('.tc-meta');if(me)me.style.display=(tiny||small)?'none':'';
-    const no=c.querySelector('.tc-note');if(no)no.style.display=(tiny||small||med)?'none':'';
-  });
-  // Resize done cards using the done zone's actual available height
+  const BUCKET_PX=110;
+  // When crossing the bucket threshold, trigger a full re-render (debounced)
+  if(todoSplitPx<BUCKET_PX){
+    // Show buckets — defer to renderTodo after drag ends
+  } else {
+    // Resize todo cards per-day using fill logic
+    [1,2,3,4,5].forEach(d=>{
+      const dayCards=[...document.querySelectorAll(`#dtodo-${d} .task-card`)];
+      const totalH=dayCards.reduce((s,c)=>s+parseFloat(c.dataset.hours||0),0);
+      dayCards.forEach(c=>{
+        const h=parseFloat(c.dataset.hours);if(!h)return;
+        _applyCardResize(c,taskCardHeight(h,totalH));
+      });
+    });
+  }
+  // Resize done cards per-day using done zone fill logic
   const _doneEl=document.querySelector('.day-done');
   const _donePx=Math.max(80,_doneEl?_doneEl.offsetHeight:200);
-  const _donePxPerHr=Math.max(24,_donePx/8);
-  document.querySelectorAll('.day-done .task-card').forEach(c=>{
-    const h=parseFloat(c.dataset.hours);if(!h)return;
-    const ch=Math.max(40,Math.round(h*_donePxPerHr));c.style.height=ch+'px';
-    const tiny=ch<44,small=ch<68,med=ch<95;
-    const ic=c.querySelector('.tc-icon');if(ic)ic.style.display=tiny?'none':'';
-    const hr=c.querySelector('.tc-hrs');if(hr)hr.style.display=tiny?'none':'';
-    const me=c.querySelector('.tc-meta');if(me)me.style.display=(tiny||small)?'none':'';
-    const no=c.querySelector('.tc-note');if(no)no.style.display=(tiny||small||med)?'none':'';
+  [1,2,3,4,5].forEach(d=>{
+    const dCards=[...document.querySelectorAll(`#ddone-${d} .task-card`)];
+    const totalDoneH=dCards.reduce((s,c)=>s+parseFloat(c.dataset.hours||0),0);
+    const donePxPerHr=Math.max(24,_donePx/Math.max(0.5,Math.min(8,totalDoneH)));
+    dCards.forEach(c=>{
+      const h=parseFloat(c.dataset.hours);if(!h)return;
+      _applyCardResize(c,Math.max(40,Math.round(h*donePxPerHr)));
+    });
   });
   positionGlobalDivider();
 });
@@ -4602,8 +4664,8 @@ function renderJobs(){
     for(let i=from;i<Math.min(to,filteredJobs.length);i++){
       const j=filteredJobs[i];
       const jWf=j.workflowStatus||'live';
-      const sc=j.status==='inplay'?'sp-ip':j.status==='new'?'sp-new':'sp-co';
-      const sl=j.status==='inplay'?'In Play':j.status==='new'?'New':j.status==='archived'?'Archived':'Complete';
+      const sc=j.status==='inplay'||j.status==='paused'?'sp-ip':j.status==='new'?'sp-new':'sp-co';
+      const sl=j.status==='inplay'||j.status==='paused'?'In Play':j.status==='new'?'New':j.status==='archived'?'Archived':'Complete';
       computeJobStats(j);
       const bPct=j._bPct||0;const hPct=j._hPct||0;
       const bCol=bPct>=100?'var(--red)':bPct>=80?'#FF9800':'#4CAF50';
