@@ -2413,11 +2413,9 @@ function _getStWeekAssignments(personKey,offset){
     const effectiveStart=start||end||info.itemStart||'';
     const effectiveEnd=end||start||info.itemEnd||'';
     if(!effectiveStart)return;
-    // Daily rate = total incomplete (or planned) minutes ÷ working days in span
+    // Use remaining (incomplete) hours if set, otherwise total planned
     const totalMins=(a.totalIncompleteMinutes||0)>0?a.totalIncompleteMinutes:(a.totalPlannedMinutes||0);
-    const spanDays=_workDays(effectiveStart,effectiveEnd);
-    const dailyH=Math.round((totalMins/spanDays)/60*4)/4; // round to nearest 15m
-    const hoursForDay=Math.max(0.25,dailyH);
+    const hoursForDay=Math.round(totalMins/60*4)/4||null; // round to nearest 15m, null if zero
     weekDates.forEach((dateStr,i)=>{
       if(dateStr<effectiveStart||dateStr>effectiveEnd)return;
       const day=i+1;
