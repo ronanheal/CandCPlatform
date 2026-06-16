@@ -133,7 +133,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .zb-count{font-size:13px;font-weight:600;color:var(--ink);}
 .zb-hrs{font-size:12px;color:var(--muted);}
 .zb-view{border:none;background:none;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer;padding:0;font-family:inherit;text-align:left;text-decoration:underline;text-underline-offset:2px;}
-.day-done{overflow-y:hidden;padding:28px 8px 6px;display:flex;flex-direction:column;gap:4px;background:var(--off);flex:1;position:relative;}
+.day-done{overflow-y:hidden;padding:6px 8px 6px;display:flex;flex-direction:column;gap:4px;background:var(--off);flex:1;position:relative;}
 .day-done.drop-hi{background:#f0fef4;}
 .day-done-empty{padding:6px 0;font-size:11px;color:var(--border);text-align:center;}
 /* Global done divider */
@@ -153,7 +153,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 /* Resize handle */
 .task-card.resizing{cursor:ns-resize !important;user-select:none;}
 /* Task cards */
-.task-card{background:var(--white);border:1px solid var(--border);padding:8px 10px;cursor:pointer;transition:border-color .15s;user-select:none;overflow:hidden;}
+.task-card{background:var(--white);border:1px solid var(--border);padding:8px 10px;cursor:pointer;transition:border-color .15s;user-select:none;overflow:hidden;min-height:52px;box-sizing:border-box;}
 .task-card:hover{border-color:#aaa;}
 .task-card.done-c{background:var(--done);border-color:#b2dfb2;}
 .task-card.urgent-c{border-left:3px solid var(--red);}
@@ -597,6 +597,12 @@ button.detail-back{outline:none;}
 .inv-editable{border-bottom:1px dashed var(--border);cursor:text;outline:none;min-width:60px;display:inline-block;}
 .inv-editable:focus{border-bottom-color:var(--ink);}
 /* Settings */
+.sett-section-hd{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;margin-bottom:14px;}
+.sett-section-hd .section-label{margin-bottom:0;}
+.sett-section-body{display:block;}
+.sett-section-body.collapsed{display:none;}
+.sett-section-hd .ss-chv{font-size:11px;color:var(--muted);transition:transform .15s;flex-shrink:0;}
+.sett-section-hd.collapsed .ss-chv{transform:rotate(-90deg);}
 .sett-person{display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--border);}
 .sett-person:last-child{border-bottom:none;}
 .sett-inp{border:none;outline:none;background:transparent;font-family:var(--font);color:var(--ink);padding:2px 0;width:100%;}
@@ -1987,8 +1993,16 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.9.7';
+const APP_VERSION='2.10.0';
 const CHANGELOG=[
+  {version:'2.10.0',date:'16 Jun 2026',title:'Bug fixes, collapsible settings & card improvements',items:[
+    'Fixed jobs not opening when job has no phases or is missing data (null guard + ST jobs default to empty phases)',
+    'Fixed expenses tab — now shows expenses from Streamtime data (stExpenses) merged with manual entries, with ST badge',
+    'Fixed paused phases from ST — handles both jobPhaseStatus and status field names from subdomain API',
+    'Removed Done zone watermark leftover padding',
+    'Todo cards now have a minimum height (52px) so title + hours are always readable',
+    'Settings sections are now collapsible — Team open by default, all others collapsed',
+  ]},
   {version:'2.9.7',date:'16 Jun 2026',title:'Data fixes, expenses & assignments sync',items:[
     'Fixed job due dates — now correctly reads estimatedStartDate/estimatedEndDate from ST (deadline badges now work)',
     'Fixed user capacity — reads hoursWorkedMonday…Friday per-day values instead of null capacity field',
@@ -2440,8 +2454,8 @@ function _mapStJob(j){
       };
       const mapped=(j.phases||[]).map(ph=>({
         id:'st-ph-'+ph.id,name:ph.name||'Phase',
-        status:ph.jobPhaseStatus?.name==='Complete'?'complete':'open',
-        paused:ph.jobPhaseStatus?.name==='Paused',
+        status:ph.jobPhaseStatus?.name==='Complete'||ph.status==='Complete'?'complete':'open',
+        paused:ph.jobPhaseStatus?.name==='Paused'||ph.status==='Paused',
         items:(ph.items||[]).map(_mapItem),
       }));
       if((j.looseItems||[]).length){
@@ -3509,7 +3523,7 @@ function taskCardHeight(hours){
   // Absolute scale: divider position represents a full workday (8h).
   // 1h always = todoSplitPx/8 pixels regardless of how many tasks exist.
   const pxPerHr=Math.max(16,(todoSplitPx||360)/8);
-  return Math.max(32,Math.round(hours*pxPerHr));
+  return Math.max(52,Math.round(hours*pxPerHr));
 }
 
 function createTaskCard(t,day,isDone){
@@ -4856,6 +4870,7 @@ function bulkLabelJobs(){
 
 function openJobDetail(id){
   activeJobId=id;const j=jobs.find(x=>x.id===id);
+  if(!j){toast('Job not found','warn');return;}
   const isNew=!j.budget||j.budget==='$0';
   const wfLabel=j.workflowStatus==='quote'?'Quote':j.workflowStatus==='completed'?'Completed':j.workflowStatus==='invoiced'?'Invoiced':'Live job';
   const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='completed'?'wf-completed':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
@@ -4894,8 +4909,8 @@ function openJobDetail(id){
   if(j.phases&&j.phases.length){
     phases=JSON.parse(JSON.stringify(j.phases));
   } else {
-    phases=isNew?[]:JSON.parse(JSON.stringify(SFF_PHASES));
-    if(j)j.phases=JSON.parse(JSON.stringify(phases));
+    phases=isNew||j._streamtime?[]:JSON.parse(JSON.stringify(SFF_PHASES));
+    j.phases=JSON.parse(JSON.stringify(phases));
   }
   renderStats(j);renderPhases();renderExpenses();
   document.querySelectorAll('.view').forEach(el=>el.classList.add('hidden'));
@@ -6127,7 +6142,24 @@ function renderExpenses(){
   const j=jobs.find(x=>x.id===activeJobId);
   const wrap=document.getElementById('exp-wrap');
   if(!wrap||!j)return;
-  const exps=j.expenses||[];
+  // Merge local manual expenses + ST expenses for this job
+  const localExps=(j.expenses||[]).map(e=>({...e,_source:'local'}));
+  const stJobExps=(stExpenses||[]).filter(e=>{
+    const eid=String(e.job?.id||e.jobId||'');
+    return eid&&(eid===String(j._stId)||eid===String(j.id));
+  }).map(e=>({
+    id:'st-exp-'+e.id,
+    desc:e.description||e.name||'Expense',
+    date:e.date||(e.createdAt||'').slice(0,10)||null,
+    qty:e.quantity||1,
+    cost:+(e.cost||e.unitCost||e.totalExTax||0),
+    markup:0,
+    sell:+(e.totalExTax||e.cost||0),
+    status:(e.expenseStatus?.name||'').toLowerCase()||'draft',
+    _source:'st',
+    _stId:e.id,
+  }));
+  const exps=[...localExps,...stJobExps];
   if(!exps.length){wrap.style.display='none';return;}
   wrap.style.display='';
   const total=exps.reduce((a,e)=>a+(e.sell||0),0);
@@ -6140,16 +6172,21 @@ function renderExpenses(){
   </div>`;
   const expRows=exps.map(e=>{
     const status=e.status||'draft';
-    const sTotal=Math.round(e.sell*e.qty);
+    const qty=e.qty||1;
+    const cost=e.cost||0;
+    const markup=e.markup||0;
+    const unitSell=markup?Math.round(cost*(1+markup/100)):e.sell||cost;
+    const sTotal=Math.round(unitSell*qty);
+    const canEdit=e._source==='local';
     return`<tr>
-      <td style="font-weight:500;">${e.desc}</td>
+      <td style="font-weight:500;">${e.desc||e.description||'—'}${e._source==='st'?'<span style="font-size:9px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">ST</span>':''}</td>
       <td style="color:var(--muted);">${e.date?new Date(e.date+'T00:00:00').toLocaleDateString('en-NZ',{day:'numeric',month:'short',year:'2-digit'}):'-'}</td>
-      <td style="text-align:center;">${e.qty}</td>
-      <td>$${e.cost.toLocaleString()}</td>
-      <td style="color:var(--muted);">${e.markup?e.markup+'%':'—'}</td>
-      <td>$${Math.round(e.cost*(1+e.markup/100)).toLocaleString()}</td>
+      <td style="text-align:center;">${qty}</td>
+      <td>$${cost.toLocaleString()}</td>
+      <td style="color:var(--muted);">${markup?markup+'%':'—'}</td>
+      <td>$${unitSell.toLocaleString()}</td>
       <td style="text-align:right;font-weight:500;">$${sTotal.toLocaleString()}</td>
-      <td style="text-align:right;"><span class="exp-badg ${status}" style="cursor:pointer;" onclick="cycleExpenseStatus('${e.id}')" title="Click to change status">${status.charAt(0).toUpperCase()+status.slice(1)}</span></td>
+      <td style="text-align:right;">${canEdit?`<span class="exp-badg ${status}" style="cursor:pointer;" onclick="cycleExpenseStatus('${e.id}')" title="Click to change status">${status.charAt(0).toUpperCase()+status.slice(1)}</span>`:`<span class="exp-badg ${status}">${status.charAt(0).toUpperCase()+status.slice(1)}</span>`}</td>
     </tr>`;
   }).join('');
   wrap.innerHTML=`${expHead}
@@ -6641,100 +6678,147 @@ function renderSettings(){
         })()}
       </div>
     </div>
-    <div class="section-label" style="margin-bottom:14px;">Workspace · Team</div>
-    <datalist id="team-name-list">${[...new Set(Object.values(people).map(p=>p.team).filter(Boolean))].map(t=>`<option value="${t}">`).join('')}</datalist>
-    <div style="background:var(--white);border:1px solid var(--border);">
-      ${teamRows}
-      <div style="padding:12px 16px;border-top:1px solid var(--border);">
-        <button class="d-action" onclick="showAddPersonForm()"><i class="ti ti-plus" style="font-size:12px"></i> Add team member</button>
-      </div>
+    <div class="sett-section-hd" id="ssh-team" onclick="toggleSettSection('team')">
+      <i class="ti ti-chevron-down ss-chv"></i>
+      <span class="section-label">Workspace · Team</span>
     </div>
-    <div id="add-person-form" style="display:none;margin-top:12px;padding:14px 16px;background:var(--white);border:1px solid var(--border);">
-      <div style="display:flex;gap:12px;align-items:flex-end;">
-        <div style="flex:1;"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Name</div><input id="ap-name" class="filter-btn" style="width:100%;font-size:13px;" placeholder="Full name"></div>
-        <div style="flex:1;"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Role</div><input id="ap-role" class="filter-btn" style="width:100%;font-size:13px;" placeholder="e.g. Designer"></div>
-        <button class="d-action primary" onclick="saveNewPerson()">Add</button>
-        <button class="d-action" onclick="document.getElementById('add-person-form').style.display='none'">Cancel</button>
+    <div class="sett-section-body" id="ssb-team">
+      <datalist id="team-name-list">${[...new Set(Object.values(people).map(p=>p.team).filter(Boolean))].map(t=>`<option value="${t}">`).join('')}</datalist>
+      <div style="background:var(--white);border:1px solid var(--border);">
+        ${teamRows}
+        <div style="padding:12px 16px;border-top:1px solid var(--border);">
+          <button class="d-action" onclick="showAddPersonForm()"><i class="ti ti-plus" style="font-size:12px"></i> Add team member</button>
+        </div>
+      </div>
+      <div id="add-person-form" style="display:none;margin-top:12px;padding:14px 16px;background:var(--white);border:1px solid var(--border);">
+        <div style="display:flex;gap:12px;align-items:flex-end;">
+          <div style="flex:1;"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Name</div><input id="ap-name" class="filter-btn" style="width:100%;font-size:13px;" placeholder="Full name"></div>
+          <div style="flex:1;"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Role</div><input id="ap-role" class="filter-btn" style="width:100%;font-size:13px;" placeholder="e.g. Designer"></div>
+          <button class="d-action primary" onclick="saveNewPerson()">Add</button>
+          <button class="d-action" onclick="document.getElementById('add-person-form').style.display='none'">Cancel</button>
+        </div>
       </div>
     </div>
     <div style="margin-top:28px;">
-      <div class="section-label" style="margin-bottom:14px;">Job Plan Items</div>
-      <div style="background:var(--white);border:1px solid var(--border);padding:14px 16px 10px;">
-        <div id="sett-items-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${LINE_ITEMS.map(item=>`<span class="sett-chip">${item}<button onclick="removeSettItem('line','${item.replace(/'/g,"\\'")}',this)" style="background:none;border:none;cursor:pointer;font-size:10px;color:var(--muted);margin-left:4px;padding:0 2px;">&times;</button></span>`).join('')}</div>
-        <div style="display:flex;gap:8px;">
-          <input id="sett-item-new" class="form-inp" placeholder="Add new item type…" style="flex:1;" onkeydown="if(event.key==='Enter')addSettItem('line')">
-          <button class="d-action" onclick="addSettItem('line')"><i class="ti ti-plus" style="font-size:11px"></i> Add</button>
+      <div class="sett-section-hd collapsed" id="ssh-items" onclick="toggleSettSection('items')">
+        <i class="ti ti-chevron-down ss-chv"></i>
+        <span class="section-label">Job Plan Items</span>
+      </div>
+      <div class="sett-section-body collapsed" id="ssb-items">
+        <div style="background:var(--white);border:1px solid var(--border);padding:14px 16px 10px;">
+          <div id="sett-items-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${LINE_ITEMS.map(item=>`<span class="sett-chip">${item}<button onclick="removeSettItem('line','${item.replace(/'/g,"\\'")}',this)" style="background:none;border:none;cursor:pointer;font-size:10px;color:var(--muted);margin-left:4px;padding:0 2px;">&times;</button></span>`).join('')}</div>
+          <div style="display:flex;gap:8px;">
+            <input id="sett-item-new" class="form-inp" placeholder="Add new item type…" style="flex:1;" onkeydown="if(event.key==='Enter')addSettItem('line')">
+            <button class="d-action" onclick="addSettItem('line')"><i class="ti ti-plus" style="font-size:11px"></i> Add</button>
+          </div>
         </div>
       </div>
     </div>
     <div style="margin-top:20px;">
-      <div class="section-label" style="margin-bottom:14px;">Expense Types</div>
-      <div style="background:var(--white);border:1px solid var(--border);padding:14px 16px 10px;">
-        <div id="sett-exp-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${EXPENSE_ITEMS.map(item=>`<span class="sett-chip">${item}<button onclick="removeSettItem('exp','${item.replace(/'/g,"\\'")}',this)" style="background:none;border:none;cursor:pointer;font-size:10px;color:var(--muted);margin-left:4px;padding:0 2px;">&times;</button></span>`).join('')}</div>
-        <div style="display:flex;gap:8px;">
-          <input id="sett-exp-new" class="form-inp" placeholder="Add new expense type…" style="flex:1;" onkeydown="if(event.key==='Enter')addSettItem('exp')">
-          <button class="d-action" onclick="addSettItem('exp')"><i class="ti ti-plus" style="font-size:11px"></i> Add</button>
+      <div class="sett-section-hd collapsed" id="ssh-exptypes" onclick="toggleSettSection('exptypes')">
+        <i class="ti ti-chevron-down ss-chv"></i>
+        <span class="section-label">Expense Types</span>
+      </div>
+      <div class="sett-section-body collapsed" id="ssb-exptypes">
+        <div style="background:var(--white);border:1px solid var(--border);padding:14px 16px 10px;">
+          <div id="sett-exp-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${EXPENSE_ITEMS.map(item=>`<span class="sett-chip">${item}<button onclick="removeSettItem('exp','${item.replace(/'/g,"\\'")}',this)" style="background:none;border:none;cursor:pointer;font-size:10px;color:var(--muted);margin-left:4px;padding:0 2px;">&times;</button></span>`).join('')}</div>
+          <div style="display:flex;gap:8px;">
+            <input id="sett-exp-new" class="form-inp" placeholder="Add new expense type…" style="flex:1;" onkeydown="if(event.key==='Enter')addSettItem('exp')">
+            <button class="d-action" onclick="addSettItem('exp')"><i class="ti ti-plus" style="font-size:11px"></i> Add</button>
+          </div>
         </div>
       </div>
     </div>
     <div style="margin-top:20px;">
-      <div class="section-label" style="margin-bottom:14px;">Labels</div>
-      <div style="background:var(--white);border:1px solid var(--border);padding:14px 16px 10px;">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Used across jobs. Click a swatch to recolour, &times; to remove.</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${globalLabels.map((l,i)=>`<span class="sett-chip" style="background:${l.color}18;color:${l.color};border:1px solid ${l.color}44;">
-          <span onclick="cycleLabelColor(${i})" title="Change colour" style="width:10px;height:10px;border-radius:50%;background:${l.color};display:inline-block;margin-right:5px;cursor:pointer;vertical-align:middle;"></span>${l.name}
-          <button onclick="removeGlobalLabel(${i})" style="background:none;border:none;cursor:pointer;font-size:10px;color:${l.color};margin-left:4px;padding:0 2px;">&times;</button></span>`).join('')||'<span style="font-size:12px;color:var(--muted);">No labels yet.</span>'}</div>
-        <div style="display:flex;gap:8px;">
-          <input id="sett-label-new" class="form-inp" placeholder="Add new label…" style="flex:1;" onkeydown="if(event.key==='Enter')addSettLabel()">
-          <button class="d-action" onclick="addSettLabel()"><i class="ti ti-plus" style="font-size:11px"></i> Add</button>
+      <div class="sett-section-hd collapsed" id="ssh-labels" onclick="toggleSettSection('labels')">
+        <i class="ti ti-chevron-down ss-chv"></i>
+        <span class="section-label">Labels</span>
+      </div>
+      <div class="sett-section-body collapsed" id="ssb-labels">
+        <div style="background:var(--white);border:1px solid var(--border);padding:14px 16px 10px;">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Used across jobs. Click a swatch to recolour, &times; to remove.</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${globalLabels.map((l,i)=>`<span class="sett-chip" style="background:${l.color}18;color:${l.color};border:1px solid ${l.color}44;">
+            <span onclick="cycleLabelColor(${i})" title="Change colour" style="width:10px;height:10px;border-radius:50%;background:${l.color};display:inline-block;margin-right:5px;cursor:pointer;vertical-align:middle;"></span>${l.name}
+            <button onclick="removeGlobalLabel(${i})" style="background:none;border:none;cursor:pointer;font-size:10px;color:${l.color};margin-left:4px;padding:0 2px;">&times;</button></span>`).join('')||'<span style="font-size:12px;color:var(--muted);">No labels yet.</span>'}</div>
+          <div style="display:flex;gap:8px;">
+            <input id="sett-label-new" class="form-inp" placeholder="Add new label…" style="flex:1;" onkeydown="if(event.key==='Enter')addSettLabel()">
+            <button class="d-action" onclick="addSettLabel()"><i class="ti ti-plus" style="font-size:11px"></i> Add</button>
+          </div>
         </div>
       </div>
     </div>
     ${archivedRows?`
     <div style="margin-top:28px;">
-      <div class="section-label" style="margin-bottom:14px;">Archived accounts <span style="font-size:11px;color:var(--muted);font-weight:300;">${archivedKeys.length} hidden from todo &amp; dashboard</span></div>
-      <div style="background:var(--white);border:1px solid var(--border);">${archivedRows}</div>
+      <div class="sett-section-hd collapsed" id="ssh-archived" onclick="toggleSettSection('archived')">
+        <i class="ti ti-chevron-down ss-chv"></i>
+        <span class="section-label">Archived accounts <span style="font-size:11px;color:var(--muted);font-weight:300;">${archivedKeys.length} hidden from todo &amp; dashboard</span></span>
+      </div>
+      <div class="sett-section-body collapsed" id="ssb-archived">
+        <div style="background:var(--white);border:1px solid var(--border);">${archivedRows}</div>
+      </div>
     </div>`:''}
     <div style="margin-top:28px;">
-      <div class="section-label" style="margin-bottom:14px;">Workspace sync</div>
-      <div style="background:var(--white);border:1px solid var(--border);padding:16px;display:flex;flex-direction:column;gap:14px;">
-        <div style="font-size:12px;color:var(--muted);line-height:1.5;">Publish your team config (people, labels, item types) to GitHub so everyone sees the same setup automatically. Requires a GitHub personal access token with <strong>Contents: Read and write</strong> on this repo.</div>
-        <div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">GitHub personal access token</div>
-          <div style="display:flex;gap:8px;">
-            <input id="gh-token-inp" type="password" class="form-inp" placeholder="github_pat_…" style="flex:1;font-family:monospace;font-size:12px;" value="${localStorage.getItem('cc_gh_token')||''}">
-            <button class="d-action" onclick="saveGhToken()">Save</button>
-          </div>
-          <div style="font-size:11px;color:var(--muted);margin-top:4px;">Stored in your browser only — never committed to the repo.</div>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding-top:4px;border-top:1px solid var(--border);">
+      <div class="sett-section-hd collapsed" id="ssh-sync" onclick="toggleSettSection('sync')">
+        <i class="ti ti-chevron-down ss-chv"></i>
+        <span class="section-label">Workspace sync</span>
+      </div>
+      <div class="sett-section-body collapsed" id="ssb-sync">
+        <div style="background:var(--white);border:1px solid var(--border);padding:16px;display:flex;flex-direction:column;gap:14px;">
+          <div style="font-size:12px;color:var(--muted);line-height:1.5;">Publish your team config (people, labels, item types) to GitHub so everyone sees the same setup automatically. Requires a GitHub personal access token with <strong>Contents: Read and write</strong> on this repo.</div>
           <div>
-            <div style="font-size:13px;">Publish config</div>
-            <div style="font-size:11px;color:var(--muted);" id="gh-sync-status">${(()=>{const t=localStorage.getItem('cc_config_published_at');return t?'Last published '+new Date(t).toLocaleString():'Not yet published';})()}</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">GitHub personal access token</div>
+            <div style="display:flex;gap:8px;">
+              <input id="gh-token-inp" type="password" class="form-inp" placeholder="github_pat_…" style="flex:1;font-family:monospace;font-size:12px;" value="${localStorage.getItem('cc_gh_token')||''}">
+              <button class="d-action" onclick="saveGhToken()">Save</button>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">Stored in your browser only — never committed to the repo.</div>
           </div>
-          <button class="d-action primary" style="flex-shrink:0;margin-left:16px;" onclick="publishConfig()"><i class="ti ti-cloud-upload" style="font-size:12px"></i> Publish now</button>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding-top:4px;border-top:1px solid var(--border);">
+            <div>
+              <div style="font-size:13px;">Publish config</div>
+              <div style="font-size:11px;color:var(--muted);" id="gh-sync-status">${(()=>{const t=localStorage.getItem('cc_config_published_at');return t?'Last published '+new Date(t).toLocaleString():'Not yet published';})()}</div>
+            </div>
+            <button class="d-action primary" style="flex-shrink:0;margin-left:16px;" onclick="publishConfig()"><i class="ti ti-cloud-upload" style="font-size:12px"></i> Publish now</button>
+          </div>
         </div>
       </div>
     </div>
     <div style="margin-top:20px;">
-      <div class="section-label" style="margin-bottom:14px;">Data</div>
-      <div style="background:var(--white);border:1px solid var(--border);padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <div><div style="font-size:13px;">Planned tasks</div><div style="font-size:11px;color:var(--muted);">Clears all manually-planned tasks from the todo board. Streamtime logged time is unaffected.</div></div>
-          <button class="d-action" style="flex-shrink:0;margin-left:16px;color:var(--red);border-color:var(--red);" onclick="if(confirm('Clear all planned tasks? This cannot be undone.')){todoData={};saveData();renderTodo();toast('All planned tasks cleared','success');}">Clear tasks</button>
+      <div class="sett-section-hd collapsed" id="ssh-data" onclick="toggleSettSection('data')">
+        <i class="ti ti-chevron-down ss-chv"></i>
+        <span class="section-label">Data</span>
+      </div>
+      <div class="sett-section-body collapsed" id="ssb-data">
+        <div style="background:var(--white);border:1px solid var(--border);padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div><div style="font-size:13px;">Planned tasks</div><div style="font-size:11px;color:var(--muted);">Clears all manually-planned tasks from the todo board. Streamtime logged time is unaffected.</div></div>
+            <button class="d-action" style="flex-shrink:0;margin-left:16px;color:var(--red);border-color:var(--red);" onclick="if(confirm('Clear all planned tasks? This cannot be undone.')){todoData={};saveData();renderTodo();toast('All planned tasks cleared','success');}">Clear tasks</button>
+          </div>
         </div>
       </div>
     </div>
     <div style="margin-top:20px;">
-      <div class="section-label" style="margin-bottom:14px;">About</div>
-      <div style="background:var(--white);border:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
-        <div>
-          <div style="font-size:13px;font-weight:500;margin-bottom:2px;">C&C Platform <span style="font-weight:400;color:var(--muted);">v${APP_VERSION}</span></div>
-          <div style="font-size:11px;color:var(--muted);">Content & Co internal management tool</div>
+      <div class="sett-section-hd collapsed" id="ssh-about" onclick="toggleSettSection('about')">
+        <i class="ti ti-chevron-down ss-chv"></i>
+        <span class="section-label">About</span>
+      </div>
+      <div class="sett-section-body collapsed" id="ssb-about">
+        <div style="background:var(--white);border:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:13px;font-weight:500;margin-bottom:2px;">C&C Platform <span style="font-weight:400;color:var(--muted);">v${APP_VERSION}</span></div>
+            <div style="font-size:11px;color:var(--muted);">Content & Co internal management tool</div>
+          </div>
+          <button class="d-action" onclick="showChangelog()"><i class="ti ti-history" style="font-size:12px"></i> View changelog</button>
         </div>
-        <button class="d-action" onclick="showChangelog()"><i class="ti ti-history" style="font-size:12px"></i> View changelog</button>
       </div>
     </div>`;
+}
+function toggleSettSection(id){
+  const hd=document.getElementById('ssh-'+id);
+  const body=document.getElementById('ssb-'+id);
+  if(!hd||!body)return;
+  const collapsed=body.classList.toggle('collapsed');
+  hd.classList.toggle('collapsed',collapsed);
 }
 function saveGhToken(){
   const val=(document.getElementById('gh-token-inp')?.value||'').trim();
