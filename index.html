@@ -2566,21 +2566,14 @@ async function initStreamtime(){
       const cfgRes=await fetch(`${ST_BASE}/platform_config.json${_v}`);
       if(cfgRes.ok){
         const cfg=await cfgRes.json();
-        // Only apply if newer than what we have and not our own publish
-        const lastPublished=cfg.published_at||'';
-        const lastApplied=localStorage.getItem('cc_config_applied_at')||'';
-        const isOwnPublish=cfg.published_by===people[MY_PERSON]?.name;
-        if(lastPublished>lastApplied&&!isOwnPublish){
-          // Apply all people from config wholesale (teams, archived state, colors, roles etc)
-          Object.entries(cfg.people||{}).forEach(([k,v])=>{
-            people[k]={...(people[k]||{}), ...v};
-          });
+        // Always apply unless this is your own machine (don't overwrite what you just published)
+        const isOwnPublish=cfg.published_by===people[MY_PERSON]?.name&&!!localStorage.getItem('cc_gh_token');
+        if(!isOwnPublish){
+          Object.entries(cfg.people||{}).forEach(([k,v])=>{people[k]={...(people[k]||{}),...v};});
           if(cfg.globalLabels?.length)globalLabels=cfg.globalLabels;
           if(cfg.LINE_ITEMS?.length)LINE_ITEMS=cfg.LINE_ITEMS;
           if(cfg.EXPENSE_ITEMS?.length)EXPENSE_ITEMS=cfg.EXPENSE_ITEMS;
           savePeople();
-          localStorage.setItem('cc_config_applied_at',lastPublished);
-          console.log('Platform config applied from',cfg.published_by,'at',lastPublished);
         }
       }
     }catch(e){console.warn('platform_config fetch failed:',e);}
