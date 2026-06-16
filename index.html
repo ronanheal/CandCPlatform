@@ -2561,6 +2561,38 @@ async function initStreamtime(){
     if(assignRes.ok)stJobAssignments=await assignRes.json();
     // Milestones
     if(msRes.ok)stMilestones=await msRes.json();
+    // Platform config (people, labels, item types) published by admin
+    try{
+      const cfgRes=await fetch(`${ST_BASE}/platform_config.json${_v}`);
+      if(cfgRes.ok){
+        const cfg=await cfgRes.json();
+        // Only apply if newer than what we have and not our own publish
+        const lastPublished=cfg.published_at||'';
+        const lastApplied=localStorage.getItem('cc_config_applied_at')||'';
+        const isOwnPublish=cfg.published_by===people[MY_PERSON]?.name;
+        if(lastPublished>lastApplied&&!isOwnPublish){
+          // Merge people: preserve local tasks/settings, fill in missing people from config
+          Object.entries(cfg.people||{}).forEach(([k,v])=>{
+            if(!people[k])people[k]=v;
+            else{
+              // Update display fields but don't overwrite local-only data
+              people[k].name=v.name||people[k].name;
+              people[k].initials=v.initials||people[k].initials;
+              people[k].color=v.color||people[k].color;
+              people[k].role=v.role||people[k].role;
+              people[k].team=v.team||people[k].team;
+              people[k].days=v.days||people[k].days;
+            }
+          });
+          if(cfg.globalLabels?.length)globalLabels=cfg.globalLabels;
+          if(cfg.LINE_ITEMS?.length)LINE_ITEMS=cfg.LINE_ITEMS;
+          if(cfg.EXPENSE_ITEMS?.length)EXPENSE_ITEMS=cfg.EXPENSE_ITEMS;
+          savePeople();
+          localStorage.setItem('cc_config_applied_at',lastPublished);
+          console.log('Platform config applied from',cfg.published_by,'at',lastPublished);
+        }
+      }
+    }catch(e){console.warn('platform_config fetch failed:',e);}
   }catch(e){console.warn('Streamtime fetch failed:',e);}
   // Re-render open views
   if(typeof renderDashboard==='function'&&document.getElementById('view-dashboard')?.classList.contains('active'))renderDashboard();
@@ -6680,6 +6712,27 @@ function renderSettings(){
       <div style="background:var(--white);border:1px solid var(--border);">${archivedRows}</div>
     </div>`:''}
     <div style="margin-top:28px;">
+      <div class="section-label" style="margin-bottom:14px;">Workspace sync</div>
+      <div style="background:var(--white);border:1px solid var(--border);padding:16px;display:flex;flex-direction:column;gap:14px;">
+        <div style="font-size:12px;color:var(--muted);line-height:1.5;">Publish your team config (people, labels, item types) to GitHub so everyone sees the same setup automatically. Requires a GitHub personal access token with <strong>Contents: Read and write</strong> on this repo.</div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">GitHub personal access token</div>
+          <div style="display:flex;gap:8px;">
+            <input id="gh-token-inp" type="password" class="form-inp" placeholder="github_pat_…" style="flex:1;font-family:monospace;font-size:12px;" value="${localStorage.getItem('cc_gh_token')||''}">
+            <button class="d-action" onclick="saveGhToken()">Save</button>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;">Stored in your browser only — never committed to the repo.</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-top:4px;border-top:1px solid var(--border);">
+          <div>
+            <div style="font-size:13px;">Publish config</div>
+            <div style="font-size:11px;color:var(--muted);" id="gh-sync-status">${(()=>{const t=localStorage.getItem('cc_config_published_at');return t?'Last published '+new Date(t).toLocaleString():'Not yet published';})()}</div>
+          </div>
+          <button class="d-action primary" style="flex-shrink:0;margin-left:16px;" onclick="publishConfig()"><i class="ti ti-cloud-upload" style="font-size:12px"></i> Publish now</button>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:20px;">
       <div class="section-label" style="margin-bottom:14px;">Data</div>
       <div style="background:var(--white);border:1px solid var(--border);padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
         <div style="display:flex;align-items:center;justify-content:space-between;">
@@ -6699,6 +6752,51 @@ function renderSettings(){
       </div>
     </div>`;
 }
+function saveGhToken(){
+  const val=(document.getElementById('gh-token-inp')?.value||'').trim();
+  if(val)localStorage.setItem('cc_gh_token',val);
+  else localStorage.removeItem('cc_gh_token');
+  toast(val?'Token saved':'Token cleared','success');
+}
+
+async function publishConfig(){
+  const token=localStorage.getItem('cc_gh_token');
+  if(!token){toast('Add a GitHub token first','warn');return;}
+  const config={
+    people,
+    globalLabels,
+    LINE_ITEMS,
+    EXPENSE_ITEMS,
+    published_at:new Date().toISOString(),
+    published_by:people[MY_PERSON]?.name||MY_PERSON,
+  };
+  const content=btoa(unescape(encodeURIComponent(JSON.stringify(config,null,2))));
+  // Get current file SHA (needed for update)
+  const REPO='ronanheal/CandCPlatform';
+  const BRANCH='streamtime-data';
+  const PATH='platform_config.json';
+  const btn=document.querySelector('[onclick="publishConfig()"]');
+  if(btn){btn.disabled=true;btn.textContent='Publishing…';}
+  try{
+    let sha=null;
+    const getRes=await fetch(`https://api.github.com/repos/${REPO}/contents/${PATH}?ref=${BRANCH}`,{headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json'}});
+    if(getRes.ok){const d=await getRes.json();sha=d.sha;}
+    const body={message:`config: publish workspace settings ${new Date().toISOString()}`,content,branch:BRANCH};
+    if(sha)body.sha=sha;
+    const putRes=await fetch(`https://api.github.com/repos/${REPO}/contents/${PATH}`,{method:'PUT',headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!putRes.ok){const e=await putRes.json();throw new Error(e.message||putRes.status);}
+    const ts=new Date().toISOString();
+    localStorage.setItem('cc_config_published_at',ts);
+    const el=document.getElementById('gh-sync-status');
+    if(el)el.textContent='Last published '+new Date(ts).toLocaleString();
+    toast('Config published — team will see it on next load','success');
+  }catch(e){
+    toast('Publish failed: '+e.message,'warn');
+  }finally{
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-cloud-upload" style="font-size:12px"></i> Publish now';}
+  }
+}
+
 function addSettItem(type){
   const inputId=type==='line'?'sett-item-new':'sett-exp-new';
   const val=(document.getElementById(inputId)?.value||'').trim();
