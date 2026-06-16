@@ -2571,18 +2571,9 @@ async function initStreamtime(){
         const lastApplied=localStorage.getItem('cc_config_applied_at')||'';
         const isOwnPublish=cfg.published_by===people[MY_PERSON]?.name;
         if(lastPublished>lastApplied&&!isOwnPublish){
-          // Merge people: preserve local tasks/settings, fill in missing people from config
+          // Apply all people from config wholesale (teams, archived state, colors, roles etc)
           Object.entries(cfg.people||{}).forEach(([k,v])=>{
-            if(!people[k])people[k]=v;
-            else{
-              // Update display fields but don't overwrite local-only data
-              people[k].name=v.name||people[k].name;
-              people[k].initials=v.initials||people[k].initials;
-              people[k].color=v.color||people[k].color;
-              people[k].role=v.role||people[k].role;
-              people[k].team=v.team||people[k].team;
-              people[k].days=v.days||people[k].days;
-            }
+            people[k]={...(people[k]||{}), ...v};
           });
           if(cfg.globalLabels?.length)globalLabels=cfg.globalLabels;
           if(cfg.LINE_ITEMS?.length)LINE_ITEMS=cfg.LINE_ITEMS;
