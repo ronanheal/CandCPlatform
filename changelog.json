@@ -1,7 +1,27 @@
 {
-  "generated_at": "2026-06-16T03:11:27.572171+00:00",
-  "current_version": "2.9.7",
+  "generated_at": "2026-06-16T03:38:09.247343+00:00",
+  "current_version": "2.10.0",
   "releases": [
+    {
+      "version": "2.10.0",
+      "date": "16 Jun 2026",
+      "title": "Bug fixes, collapsible settings & card improvements",
+      "items": [
+        "Fixed jobs not opening when job has no phases or is missing data (null guard + ST jobs default to empty phases)",
+        "Fixed expenses tab — now shows expenses from Streamtime data (stExpenses) merged with manual entries, with ST badge",
+        "Fixed paused phases from ST — handles both jobPhaseStatus and status field names from subdomain API",
+        "Removed Done zone watermark leftover padding",
+        "Todo cards now have a minimum height (52px) so title + hours are always readable",
+        "Settings sections are now collapsible — Team open by default, all others collapsed"
+      ],
+      "sections": [
+        "Data",
+        "Jobs",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
     {
       "version": "2.9.7",
       "date": "16 Jun 2026",
