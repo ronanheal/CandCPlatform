@@ -1007,7 +1007,7 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:var(--white
 .cal-filter-chip.on{background:var(--ink);border-color:var(--ink);color:#fff;}
 .todo-cal-body{flex:1;display:flex;overflow:hidden;min-height:0;}
 .cal-time-axis{width:48px;flex-shrink:0;padding-top:44px;border-right:1px solid var(--border);}
-.cal-time-slot{height:60px;display:flex;align-items:flex-start;justify-content:flex-end;padding-right:8px;font-size:9px;color:var(--muted);letter-spacing:.03em;}
+.cal-time-slot{height:64px;display:flex;align-items:flex-start;justify-content:flex-end;padding-right:8px;font-size:9px;color:var(--muted);letter-spacing:.03em;}
 .cal-day-cols{flex:1;display:flex;overflow-x:auto;}
 .cal-day-col{flex:1;min-width:130px;border-right:1px solid var(--border);display:flex;flex-direction:column;position:relative;}
 .cal-day-head{height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--white);}
@@ -1292,6 +1292,13 @@ tr:hover .i-todo-btn{opacity:1;}
             </select>
             <select class="cc-select" id="jobs-label-filter" onchange="renderJobs()">
               <option value="">All labels</option>
+            </select>
+            <select class="cc-select" id="jobs-health-filter" onchange="renderJobs()">
+              <option value="all">All health</option>
+              <option value="ontrack">On track (&lt;80%)</option>
+              <option value="atrisk">At risk (80–100%)</option>
+              <option value="over">Over budget</option>
+              <option value="attention">Needs attention</option>
             </select>
             <label class="filter-btn" style="cursor:pointer;"><input type="checkbox" id="jobs-hide-archived" checked style="margin-right:5px;accent-color:var(--red)" onchange="renderJobs()"/> Hide archived</label>
             <span class="jobs-count" id="jobs-count">1 job · NZD</span>
@@ -2503,10 +2510,17 @@ function _mapStJob(j){
   };
 }
 function _mapStCompany(c,contacts){
-  // Find primary contact for this company from contacts array
-  const co=contacts?contacts.find(x=>x.companyId===c.id||x.company?.id===c.id||x.company?.name===c.name):null;
+  // All contacts for this company (for the read/edit list)
+  const coContacts=(contacts||[]).filter(x=>x.companyId===c.id||x.company?.id===c.id||x.company?.name===c.name);
+  const co=coContacts[0]||null;
   const name=co?[co.firstName,co.lastName].filter(Boolean).join(' '):'';
-  return{id:'st-'+c.id,_stId:c.id,name:c.name,nickname:'',contact:name,email:co?.email||'',phone:co?.phone||co?.phoneNumber||co?.mobile||'',website:c.website||'',notes:''};
+  const addr=c.physicalAddress||c.postalAddress;
+  const addrStr=addr?[addr.line1,addr.line2,addr.city,addr.country].filter(Boolean).join(', '):'';
+  return{id:'st-'+c.id,_stId:c.id,name:c.name,nickname:'',contact:name,
+    email:co?.email||'',phone:co?.phone||co?.phoneNumber||co?.mobile||'',
+    website:c.websiteAddress||c.website||'',companyPhone:c.phone1||c.phone2||'',
+    address:addrStr,notes:c.notes||'',
+    contacts:coContacts.map(x=>({id:x.id,firstName:x.firstName||'',lastName:x.lastName||'',email:x.email||'',phone:x.phoneNumber||x.phone||'',position:x.position||x.jobTitle||''}))};
 }
 async function initStreamtime(){
   const tb=document.getElementById('jobs-tbody');
@@ -2799,7 +2813,7 @@ function renderDashboard(){
       <div class="kpi"><div class="kpi-label">Revenue logged</div><div class="kpi-val">${fmtDollar(totalSell)}</div><div class="kpi-sub">billable time ex tax</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${totalSell>0?Math.min(100,Math.round(totalInvoiced/totalSell*100)):0}%;background:#3498DB;"></div></div></div>
     </div>`:'';
   // Over budget alerts
-  const alerts=jobs.filter(j=>(j.bPct||0)>=100||((j.hPct||0)>=100)).map(j=>`<div class="alert"><i class="ti ti-alert-triangle" style="color:var(--red);font-size:16px;flex-shrink:0;"></i><div><div class="alert-job">${j.id} ${j.name}</div><div class="alert-detail">${(j.bPct||0)>=100?`Budget ${j.bPct}% used · over sell`:`Hours ${j.hPct}% of plan`}</div></div></div>`).join('');
+  const alerts=jobs.filter(j=>j.status==='inplay'&&((j._bPct||0)>=100||((j._hPct||0)>=100))).sort((a,b)=>(b._bPct||0)-(a._bPct||0)).slice(0,12).map(j=>`<div class="alert"><i class="ti ti-alert-triangle" style="color:var(--red);font-size:16px;flex-shrink:0;"></i><div><div class="alert-job">${j.id} ${j.name}</div><div class="alert-detail">${(j._bPct||0)>=100?`Budget ${j._bPct}% used · over sell`:`Hours ${j._hPct}% of plan`}</div></div></div>`).join('');
   // Client cards — one per client with active jobs
   const _activeClients=[...new Set(jobs.filter(j=>j.status!=='archived'&&j.status!=='complete').map(j=>j.company).filter(Boolean))];
   const _clientsHTML=_activeClients.map(co=>{
@@ -4724,7 +4738,16 @@ function renderJobs(){
   const wfFilter=(document.getElementById('jobs-wf-filter')?.value)||'all';
   const labelFilter=(document.getElementById('jobs-label-filter')?.value)||'';
   const companyFilter=(document.getElementById('jobs-company-filter')?.value)||'';
+  const healthFilter=(document.getElementById('jobs-health-filter')?.value)||'all';
   const q=_jobSearch;
+  const _todayJ=new Date();_todayJ.setHours(0,0,0,0);
+  const _jobHealth=j=>{const p=Math.max(j._bPct||0,j._hPct||0);return p>=100?'over':p>=80?'atrisk':'ontrack';};
+  const _jobNeedsAttention=j=>{
+    if(j.status!=='inplay')return false;
+    const overBudgetNoInv=(j._bPct||0)>=80&&!(j._stInvoiced>0);
+    const overdue=j.dueDate&&new Date(j.dueDate)<_todayJ;
+    return overBudgetNoInv||overdue;
+  };
   let shown=0;
   const hideArchived=document.getElementById('jobs-hide-archived')?.checked;
   // Populate label dropdown
@@ -4751,6 +4774,11 @@ function renderJobs(){
     if(wfFilter!=='all'&&jWf!==wfFilter)return;
     if(labelFilter&&!(j.labels||[]).includes(labelFilter))return;
     if(companyFilter&&j.company!==companyFilter)return;
+    if(healthFilter!=='all'){
+      if(j._bPct===undefined&&typeof computeJobStats==='function')computeJobStats(j);
+      if(healthFilter==='attention'){if(!_jobNeedsAttention(j))return;}
+      else if(_jobHealth(j)!==healthFilter)return;
+    }
     if(q&&!(`${j.id} ${j.name} ${j.company}`).toLowerCase().includes(q))return;
     filteredJobs.push(j);
   });
@@ -6557,14 +6585,30 @@ function renderClients(){
     }
   });
   const search=(document.getElementById('clients-search-inp')?.value||'').toLowerCase();
-  const filtered=clientsData.filter(c=>!search||c.name.toLowerCase().includes(search));
+  const sortBy=(document.getElementById('clients-sort')?.value)||'name';
+  const activeOnly=document.getElementById('clients-active-only')?.checked;
   // Count jobs per client
   function jobCount(name){return jobs.filter(j=>j.company===name).length;}
-  function activeJobCount(name){return jobs.filter(j=>j.company===name&&j.status!=='complete').length;}
+  function activeJobCount(name){return jobs.filter(j=>j.company===name&&j.status!=='complete'&&j.status!=='archived').length;}
+  function clientInvoiced(name){return jobs.filter(j=>j.company===name).reduce((a,j)=>a+(j._stInvoiced||0),0);}
+  let filtered=clientsData.filter(c=>{
+    if(activeOnly&&activeJobCount(c.name)===0)return false;
+    if(!search)return true;
+    return c.name.toLowerCase().includes(search)||(c.contact||'').toLowerCase().includes(search)||(c.email||'').toLowerCase().includes(search);
+  });
+  if(sortBy==='jobs')filtered.sort((a,b)=>jobCount(b.name)-jobCount(a.name));
+  else if(sortBy==='revenue')filtered.sort((a,b)=>clientInvoiced(b.name)-clientInvoiced(a.name));
+  else filtered.sort((a,b)=>a.name.localeCompare(b.name));
 
   wrap.innerHTML=`
     <div class="clients-toolbar">
-      <div class="jobs-search"><i class="ti ti-search"></i><input id="clients-search-inp" placeholder="Search clients…" oninput="renderClients()"/></div>
+      <div class="jobs-search"><i class="ti ti-search"></i><input id="clients-search-inp" placeholder="Search name, contact or email…" value="${search.replace(/"/g,'&quot;')}" oninput="renderClients()"/></div>
+      <select class="cc-select" id="clients-sort" onchange="renderClients()">
+        <option value="name"${sortBy==='name'?' selected':''}>Sort: Name</option>
+        <option value="jobs"${sortBy==='jobs'?' selected':''}>Sort: Most jobs</option>
+        <option value="revenue"${sortBy==='revenue'?' selected':''}>Sort: Revenue</option>
+      </select>
+      <label class="filter-btn" style="cursor:pointer;"><input type="checkbox" id="clients-active-only"${activeOnly?' checked':''} style="margin-right:5px;accent-color:var(--red)" onchange="renderClients()"/> Active only</label>
       <button class="d-action primary" onclick="openNewClientModal()"><i class="ti ti-plus" style="font-size:12px;"></i> Add client</button>
     </div>
     ${clientsData.length===0?emptyStateHTML('ti-building','No clients yet','Clients are created automatically when you add a job, or add one here to get a head start.','Add client','openNewClientModal()'):''}
@@ -7875,13 +7919,13 @@ function _renderBusinessReport(){
     </div>
     <div class="r-section">
       <div class="r-section-hd">Over-budget jobs</div>
-      ${jobs.filter(j=>(j.bPct||0)>=90).sort((a,b)=>(b.bPct||0)-(a.bPct||0)).slice(0,10).map(j=>`
+      ${jobs.filter(j=>j.status==='inplay'&&(j._bPct||0)>=90).sort((a,b)=>(b._bPct||0)-(a._bPct||0)).slice(0,10).map(j=>`
         <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--faint);">
           <span style="font-size:12px;color:var(--muted);width:50px;flex-shrink:0;">${j.id}</span>
           <span style="flex:1;font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;color:var(--ink);" onclick="openJobDetail('${j.id}')">${j.name}</span>
           <span style="font-size:12px;color:var(--muted);">${j.company||''}</span>
-          <div style="width:120px;height:6px;background:var(--faint);border-radius:3px;overflow:hidden;flex-shrink:0;"><div style="width:${Math.min(100,j.bPct||0)}%;height:100%;background:${(j.bPct||0)>=100?'var(--red)':'#F57F17'};border-radius:3px;"></div></div>
-          <span style="font-size:12px;font-weight:500;color:${(j.bPct||0)>=100?'var(--red)':'#F57F17'};width:42px;text-align:right;">${j.bPct||0}%</span>
+          <div style="width:120px;height:6px;background:var(--faint);border-radius:3px;overflow:hidden;flex-shrink:0;"><div style="width:${Math.min(100,j._bPct||0)}%;height:100%;background:${(j._bPct||0)>=100?'var(--red)':'#F57F17'};border-radius:3px;"></div></div>
+          <span style="font-size:12px;font-weight:500;color:${(j._bPct||0)>=100?'var(--red)':'#F57F17'};width:42px;text-align:right;">${j._bPct||0}%</span>
         </div>`).join('')||'<div style="color:var(--muted);font-size:13px;padding:16px 0;">No jobs near or over budget.</div>'}
     </div>
     ${(()=>{
