@@ -1,7 +1,24 @@
 {
-  "generated_at": "2026-06-16T21:31:33.650990+00:00",
-  "current_version": "2.10.4",
+  "generated_at": "2026-06-17T00:09:40.219397+00:00",
+  "current_version": "2.10.5",
   "releases": [
+    {
+      "version": "2.10.5",
+      "date": "17 Jun 2026",
+      "title": "Fix assignment clutter and dedup accuracy",
+      "items": [
+        "Assignment filter: skip items with 0 planned/incomplete minutes (nothing to show)",
+        "Assignment filter: skip retainer-style items spanning more than 30 days (they were flooding every week)",
+        "Dedup now uses week-level matching — if a job+item was logged on any day this week, matching todo/assignment cards are removed from all days (not just the day the time was logged)",
+        "Day header stats (To do / Done) now reflect post-dedup values",
+        "Calendar view dedup also upgraded to week-level matching"
+      ],
+      "sections": [
+        "Jobs",
+        "Jobs → Time",
+        "Todo"
+      ]
+    },
     {
       "version": "2.10.4",
       "date": "17 Jun 2026",
