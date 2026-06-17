@@ -1,7 +1,38 @@
 {
-  "generated_at": "2026-06-17T19:56:25.893025+00:00",
-  "current_version": "2.15.0",
+  "generated_at": "2026-06-17T20:09:33.511005+00:00",
+  "current_version": "2.16.0",
   "releases": [
+    {
+      "version": "2.16.0",
+      "date": "18 Jun 2026",
+      "title": "Full roadmap sweep — address, expiry alerts, DSO, invoice filters, date range, capacity, studio board, uninvoiced report",
+      "items": [
+        "Client detail: company address shown when mapped from Streamtime",
+        "Invoice print: client address appears on the tax invoice when available",
+        "Dashboard: \"Quotes expiring soon\" alert card — quotes expiring within 14 days appear in Needs attention",
+        "Invoices: PO number column in All Invoices table — linked from job PO",
+        "Invoices: status filter (Overdue / Sent / Awaiting / Paid / Draft / Voided) in All Invoices",
+        "Invoices: DSO (Days Sales Outstanding) shown in toolbar — average days from sent to paid",
+        "Reporting: custom date-range picker — select any From/To dates for precise period analysis",
+        "Todo: day header tints amber when person is at or over capacity for the day",
+        "Todo: day capacity now uses per-person Hrs/day from Settings (not hardcoded 8h)",
+        "Boards: \"Studio board\" one-click preset — creates a board of all live jobs grouped by workflow stage (Quote / Live / Completed / Invoiced)",
+        "Reporting → Business: Uninvoiced work table — all jobs with a gap between revenue logged and invoiced, sorted by gap size"
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
     {
       "version": "2.15.0",
       "date": "18 Jun 2026",
