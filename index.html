@@ -1993,8 +1993,15 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.10.4';
+const APP_VERSION='2.10.5';
 const CHANGELOG=[
+  {version:'2.10.5',date:'17 Jun 2026',title:'Fix assignment clutter and dedup accuracy',items:[
+    'Assignment filter: skip items with 0 planned/incomplete minutes (nothing to show)',
+    'Assignment filter: skip retainer-style items spanning more than 30 days (they were flooding every week)',
+    'Dedup now uses week-level matching — if a job+item was logged on any day this week, matching todo/assignment cards are removed from all days (not just the day the time was logged)',
+    'Day header stats (To do / Done) now reflect post-dedup values',
+    'Calendar view dedup also upgraded to week-level matching',
+  ]},
   {version:'2.10.4',date:'17 Jun 2026',title:'Todo/done dedup, notes fix, hours per day',items:[
     'Fixed: manual todo tasks no longer show as todo when ST has already logged time for the same job+item on the same day — they move to the done zone',
     'Fixed: ST planned assignment hours now divided across days active this week (not total on every day)',
@@ -2421,6 +2428,10 @@ function _getStWeekAssignments(personKey,offset){
     if(!effectiveStart)return;
     // Use remaining (incomplete) hours if set, otherwise total planned
     const totalMins=(a.totalIncompleteMinutes||0)>0?a.totalIncompleteMinutes:(a.totalPlannedMinutes||0);
+    if(!totalMins)return; // nothing planned or remaining — skip
+    // Skip long-span retainer items (span > 30 days) — they pollute every week in their range
+    const spanDays=(new Date(effectiveEnd+' 00:00')-new Date(effectiveStart+' 00:00'))/(86400000);
+    if(spanDays>30)return;
     // Divide total hours across however many week-days fall within the assignment range
     const weekDaysInRange=weekDates.filter(d=>d>=effectiveStart&&d<=effectiveEnd).length||1;
     const hoursForDay=Math.round(totalMins/weekDaysInRange/60*4)/4||null;
@@ -2978,14 +2989,15 @@ function renderTodoCalendar(){
   });});
   // Add ST logged entries as done tasks; dedup matching manual todos into done
   const stWeekCal=_getStWeekEntries(currentPerson,weekOffset);
-  const _calLtKey=(e,d)=>{const n=(e.job||'').match(/^(\d+)/)?.[1]||e.job||'';return d+'|'+n+'|'+(e.item||e.itemName||'').toLowerCase();};
+  // Build week-level dedup set (job+item logged anywhere this week)
+  const _calLtKey=e=>{const n=(e.job||'').match(/^(\d+)/)?.[1]||e.job||'';return n+'|'+(e.item||e.itemName||'').toLowerCase();};
   const calLoggedSet=new Set();
-  [1,2,3,4,5].forEach(d=>{(stWeekCal[d]||[]).forEach(e=>{doneTasks.push({...e,day:d});calLoggedSet.add(_calLtKey(e,d));});});
-  // Move manual todos that ST has logged into done zone
+  [1,2,3,4,5].forEach(d=>{(stWeekCal[d]||[]).forEach(e=>{doneTasks.push({...e,day:d});calLoggedSet.add(_calLtKey(e));});});
+  // Move manual todos that ST has logged this week into done zone
   allActive=allActive.filter(t=>{
     if(!t.job||!t.item)return true;
     const n=(t.job||'').match(/^(\d+)/)?.[1]||t.job||'';
-    if(calLoggedSet.has((t.day||0)+'|'+n+'|'+(t.item||'').toLowerCase())){doneTasks.push({...t,done:true});return false;}
+    if(calLoggedSet.has(n+'|'+(t.item||'').toLowerCase())){doneTasks.push({...t,done:true});return false;}
     return true;
   });
   // Filters
@@ -3333,6 +3345,11 @@ function renderTodo(){
   const stWeek=_getStWeekEntries(currentPerson,weekOffset);
   const stAssignWeek=_getStWeekAssignments(currentPerson,weekOffset);
   [1,2,3,4,5].forEach(d=>{(stWeek[d]||[]).forEach(e=>totalStH+=e.minutes/60);});
+  // Build week-level dedup set: job+item combos logged anywhere this week
+  const _mkLtKey=e=>{const n=(e.job||'').match(/^(\d+)/)?.[1]||e.job||'';return n+'|'+(e.item||e.itemName||'').toLowerCase();};
+  const weekLoggedKeys=new Set();
+  [1,2,3,4,5].forEach(d=>{(stWeek[d]||[]).forEach(e=>weekLoggedKeys.add(_mkLtKey(e)));});
+  const _weekLogged=t=>{const n=(t.job||'').match(/^(\d+)/)?.[1]||t.job||'';return t.job&&t.item&&weekLoggedKeys.has(n+'|'+(t.item||'').toLowerCase());};
   const sumEl=document.getElementById('todo-sum-text');
   if(sumEl)sumEl.textContent=`To do: ${formatHrs(totalTodoH)||'0h'} · Done: ${formatHrs(totalDoneH+totalStH)||'0h'}`;
 
@@ -3356,11 +3373,11 @@ function renderTodo(){
     const stDayDoneH=stDayEntries.reduce((s,e)=>s+(e.minutes||0)/60,0);
     const stDayBillDoneH=stDayEntries.filter(e=>e.billable).reduce((s,e)=>s+(e.minutes||0)/60,0);
     const stAssignDay=stAssignWeek[d]||[];
-    // Dedup: if ST logged time covers job+item, remove matching manual todos & assignments
-    const _ltKey=e=>{ const n=(e.job||'').match(/^(\d+)/)?.[1]||e.job||''; return n+'|'+(e.item||e.itemName||'').toLowerCase(); };
-    const loggedKeys=new Set(stDayEntries.map(_ltKey));
-    const _isDone=t=>{ const n=(t.job||'').match(/^(\d+)/)?.[1]||t.job||''; return loggedKeys.has(n+'|'+(t.item||'').toLowerCase()); };
-    const dayTodoH=todoTasks.reduce((s,t)=>s+(t.hours||0),0)+stAssignDay.reduce((s,a)=>s+(a.hours||0),0);
+    // Dedup using week-level logged set (if job+item was logged anywhere this week, hide todo/assignment)
+    const activeTodos=todoTasks.filter(t=>!_weekLogged(t));
+    const activeAssign=stAssignDay.filter(a=>!_weekLogged(a));
+    const dedupedDone=[...doneTasks,...todoTasks.filter(t=>_weekLogged(t)).map(t=>({...t,done:true}))];
+    const dayTodoH=activeTodos.reduce((s,t)=>s+(t.hours||0),0)+activeAssign.reduce((s,a)=>s+(a.hours||0),0);
     const dayDoneH=doneTasks.reduce((s,t)=>s+(t.hours||0),0)+stDayDoneH;
     const dayTotalH=dayTodoH+dayDoneH;
     const isOver=dayTotalH>DAY_CAP;
@@ -3404,14 +3421,7 @@ function renderTodo(){
     const doneEl=document.getElementById('ddone-'+d);
 
     const BUCKET_PX=110; // collapse to summary bucket below this height
-    // ST logged entries for this day (re-use stDayEntries computed above)
     const stEntries=stDayEntries;
-
-    // Apply dedup: filter out manual todos and ST assignments that ST has already logged
-    const activeTodos=todoTasks.filter(t=>!(t.job&&t.item&&_isDone(t)));
-    const activeAssign=stAssignDay.filter(a=>!_isDone(a));
-    // Manual tasks that ST has logged move to done zone
-    const dedupedDone=[...doneTasks,...todoTasks.filter(t=>t.job&&t.item&&_isDone(t)).map(t=>({...t,done:true}))];
 
     if(todoSplitPx<BUCKET_PX){
       // Todo zone too small — show summary bucket
