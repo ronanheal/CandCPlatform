@@ -2004,12 +2004,49 @@ function savePeople(){
     localStorage.setItem('cc_person_status',JSON.stringify(personStatus));
   }catch(e){}
 }
+// ── Workspace backup (export / import all local data) ─────────────────────────
+const WORKSPACE_KEYS=['cc_people','cc_person_status','cc_clients','cc_boards','cc_labels','cc_line_items','cc_expense_items','cc_config_published_at'];
+function exportWorkspace(){
+  const blob={_app:'cc-platform',_version:APP_VERSION,_exportedAt:new Date().toISOString(),data:{}};
+  WORKSPACE_KEYS.forEach(k=>{const v=localStorage.getItem(k);if(v!=null)blob.data[k]=v;});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(blob,null,2)],{type:'application/json'}));
+  a.download=`cc-workspace-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);a.click();a.remove();
+  toast('Workspace exported','success');
+}
+function importWorkspace(file){
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const blob=JSON.parse(e.target.result);
+      if(!blob||blob._app!=='cc-platform'||!blob.data)throw new Error('Not a C&C workspace file');
+      ccConfirm(`Restore this workspace backup from ${blob._exportedAt?new Date(blob._exportedAt).toLocaleString():'unknown date'}? This overwrites your current people, boards, clients and config in this browser.`,()=>{
+        Object.entries(blob.data).forEach(([k,v])=>{if(WORKSPACE_KEYS.includes(k))localStorage.setItem(k,v);});
+        toast('Workspace restored — reloading…','success');
+        setTimeout(()=>location.reload(),900);
+      },'Restore',true);
+    }catch(err){toast('Import failed: '+err.message,'warn');}
+  };
+  reader.readAsText(file);
+}
 let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.13.0';
+const APP_VERSION='2.14.0';
 const CHANGELOG=[
+  {version:'2.14.0',date:'17 Jun 2026',title:'Big roadmap push — data fixes, intelligence & analytics',items:[
+    'Fixed a Streamtime sync bug that had quotes and invoices swapped — the Quotes tab now shows real quote status & value, and Invoices show real status, due date, paid date and overdue flags.',
+    'Dashboard "Needs attention": jobs due/overdue, overdue invoices, quotes awaiting response, uninvoiced work, and quiet clients — all from live data.',
+    'Dashboard customisation: show/hide the Needs attention, Team, Business KPIs and Clients blocks (Settings → Dashboard).',
+    'Reporting: utilisation % per person (billable vs capacity), monthly client revenue trend, and a quote→cash pipeline funnel.',
+    'Jobs list: budget-health filter (on track / at risk / over / needs attention). Fixed over-budget alerts that were silently empty.',
+    'Clients: search by name/contact/email, sort by jobs or revenue, active-only filter; company website now shows and links.',
+    'Calendar: hour gridlines now align with cards.',
+    'Workspace backup: export/import all local data as a JSON file (Settings → Data).',
+  ]},
   {version:'2.13.0',date:'17 Jun 2026',title:'Card colours, urgent fix, activity & expense detail',items:[
     'Every todo card now shares one design; the left border colour shows status — green billable, amber non-billable, red urgent — matching the dashboard bars.',
     'Fixed: marking a task urgent now actually shows red (a styling conflict was hiding it).',
@@ -2851,6 +2888,9 @@ function renderDashboard(){
   const overdueInv=(stInvoices||[]).filter(i=>{const s=(i.invoiceStatus?.name||'').toLowerCase();return i.dueDate&&new Date(i.dueDate)<_t0&&s!=='paid'&&s!=='voided';}).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate)).slice(0,12);
   const awaitingQuotes=(stQuotes||[]).filter(q=>{const s=(typeof q.quoteStatus==='string'?q.quoteStatus:q.quoteStatus?.name||'').toLowerCase();return s.includes('pending')&&q.sentDate&&_inDays(q.sentDate)<=-7;}).sort((a,b)=>new Date(a.sentDate)-new Date(b.sentDate)).slice(0,12);
   const uninvoiced=_liveJobs.filter(j=>(j._sellUsed||0)-(j._stInvoiced||0)>=500&&(j._bPct||0)>=80).sort((a,b)=>((b._sellUsed||0)-(b._stInvoiced||0))-((a._sellUsed||0)-(a._stInvoiced||0))).slice(0,10);
+  // Quiet clients: had jobs before, but nothing in play now
+  const _coAll={};jobs.forEach(j=>{if(!j.company)return;(_coAll[j.company]=_coAll[j.company]||{total:0,live:0}); _coAll[j.company].total++; if(j.status==='inplay')_coAll[j.company].live++;});
+  const quietClients=Object.entries(_coAll).filter(([,v])=>v.total>=2&&v.live===0).map(([co,v])=>({label:co,meta:`${v.total} past`,jid:null})).slice(0,10);
   const _attCard=(title,items,color)=>items.length?`<div style="flex:1;min-width:220px;background:var(--white);border:1px solid var(--border);border-left:3px solid ${color};border-radius:6px;padding:12px 14px;"><div style="font-size:11px;font-weight:600;margin-bottom:8px;">${title} <span style="color:var(--muted);font-weight:400;">${items.length}</span></div>${items.map(x=>`<div style="font-size:12px;padding:3px 0;display:flex;justify-content:space-between;gap:10px;cursor:${x.jid?'pointer':'default'};" ${x.jid?`onclick="openJobDetail('${x.jid}')"`:''}><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.label}</span><span style="color:${color};flex-shrink:0;">${x.meta}</span></div>`).join('')}</div>`:'';
   const dh=people[MY_PERSON].dashHide||[];const _show=k=>!dh.includes(k);
   const deadlinesHTML=_show('deadlines')?[
@@ -2858,6 +2898,7 @@ function renderDashboard(){
     _attCard('Overdue invoices',overdueInv.map(i=>({label:`${i.company?.name||i.jobName||'—'}`,meta:`${-_inDays(i.dueDate)}d`,jid:null})),'var(--red)'),
     _attCard('Quotes awaiting response',awaitingQuotes.map(q=>({label:`${q.company?.name||q.jobName||(q.jobNumber?'Job '+q.jobNumber:q.name)||'—'}`,meta:`${-_inDays(q.sentDate)}d`,jid:null})),'#6B7FA3'),
     _attCard('Uninvoiced work',uninvoiced.map(j=>({label:`${j.id} ${j.name}`,meta:'$'+Math.round((j._sellUsed||0)-(j._stInvoiced||0)).toLocaleString(),jid:j.id})),'#9C6FD6'),
+    _attCard('Quiet clients',quietClients,'#888888'),
   ].filter(Boolean).join(''):'';
   wrap.innerHTML=`
     <div style="margin-bottom:28px;">
@@ -6982,10 +7023,18 @@ function renderSettings(){
         <span class="section-label">Data</span>
       </div>
       <div class="sett-section-body collapsed" id="ssb-data">
-        <div style="background:var(--white);border:1px solid var(--border);padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+        <div style="background:var(--white);border:1px solid var(--border);padding:14px 16px;display:flex;flex-direction:column;gap:14px;">
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div><div style="font-size:13px;">Todo board source</div><div style="font-size:11px;color:var(--muted);">The Todo board reads live from Streamtime. Edits you make on the board apply locally and revert on refresh until Streamtime write-back is enabled.</div></div>
             <button class="d-action" style="flex-shrink:0;margin-left:16px;" onclick="resetTodoStore();renderTodo();toast('Reloaded from Streamtime','success');">Reload from ST</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);padding-top:14px;">
+            <div><div style="font-size:13px;">Workspace backup</div><div style="font-size:11px;color:var(--muted);">Export everything stored in this browser (people, boards, clients, labels, config, job notes) as a JSON file — or restore from one.</div></div>
+            <div style="display:flex;gap:8px;flex-shrink:0;margin-left:16px;">
+              <button class="d-action" onclick="exportWorkspace()"><i class="ti ti-download" style="font-size:12px"></i> Export</button>
+              <button class="d-action" onclick="document.getElementById('ws-import-file').click()"><i class="ti ti-upload" style="font-size:12px"></i> Import</button>
+              <input type="file" id="ws-import-file" accept="application/json" style="display:none;" onchange="importWorkspace(this.files[0])">
+            </div>
           </div>
         </div>
       </div>
