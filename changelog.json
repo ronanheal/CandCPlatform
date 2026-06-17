@@ -1,7 +1,31 @@
 {
-  "generated_at": "2026-06-17T02:42:46.580653+00:00",
-  "current_version": "2.11.1",
+  "generated_at": "2026-06-17T03:50:46.077046+00:00",
+  "current_version": "2.12.0",
   "releases": [
+    {
+      "version": "2.12.0",
+      "date": "17 Jun 2026",
+      "title": "Streamtime is the source of truth",
+      "items": [
+        "The Todo board now reads entirely from Streamtime — scheduled blocks are your to-dos, logged blocks are done. The old manual-task layer is gone.",
+        "Everything is editable: drag, resize, edit, mark done, move between days. Changes apply instantly but are local — they revert on refresh until Streamtime write-back is added.",
+        "Dashboard now counts planned to-dos, not just done: \"Billable this week\" shows done + planned against your real Streamtime weekly capacity.",
+        "Team blocks and \"My tasks today\" now show each person\\'s scheduled Streamtime to-dos.",
+        "Todo buckets are now per-day: a day collapses to a summary only when its own cards can\\'t fit — light days keep showing cards even when a busy day buckets.",
+        "The bucket \"View\" button now glides the divider smoothly to reveal that zone.",
+        "Calendar: done blocks now stack above to-do blocks for each day."
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
     {
       "version": "2.11.1",
       "date": "17 Jun 2026",
