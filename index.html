@@ -7452,11 +7452,13 @@ function renderQuotes(q){
   let quotes=stQuotes.length?[...stQuotes]:[];
   if(search)quotes=quotes.filter(qt=>(`${qt.id} ${qt.number||''} ${qt.name||''} ${qt.company?.name||''} ${qt.jobName||''}`).toLowerCase().includes(search));
   if(clientFilter!=='all')quotes=quotes.filter(qt=>(qt.company?.name||'')===clientFilter);
-  // Use real ST quoteStatus.name; fall back to sentDate heuristic for older records
+  // ST quoteStatus is a string ("Approved" / "Draft" / "Pending Approval")
   const qtRealStatus=qt=>{
-    const s=(qt.quoteStatus?.name||'').toLowerCase();
-    if(s==='approved')return'approved';if(s==='declined')return'declined';
-    if(s==='sent'||qt.sentDate)return'sent';return'draft';
+    const s=(typeof qt.quoteStatus==='string'?qt.quoteStatus:qt.quoteStatus?.name||'').toLowerCase();
+    if(s.includes('approv')&&!s.includes('pending'))return'approved';
+    if(s.includes('declin'))return'declined';
+    if(s.includes('pending')||s==='sent'||qt.sentDate)return'sent';
+    return'draft';
   };
   if(statusFilter!=='all')quotes=quotes.filter(qt=>qtRealStatus(qt)===statusFilter);
   quotes.sort((a,b)=>b.id-a.id);
@@ -7617,7 +7619,8 @@ function renderInvoices(){
     const s=(i.invoiceStatus?.name||i.status||'').toLowerCase();
     if(s==='paid')return'paid';if(s==='voided')return'voided';
     const due=i.dueDate?new Date(i.dueDate):null;
-    if(due&&due<_invNow&&s!=='paid')return'overdue';
+    if(due&&due<_invNow)return'overdue';
+    if(s.includes('awaiting'))return'awaiting';
     if(i.sentDate)return'sent';return'draft';
   };
   const _invStatusPill=i=>{
@@ -7625,6 +7628,7 @@ function renderInvoices(){
     if(s==='paid')return'<span class="inv-pill paid">Paid</span>';
     if(s==='voided')return'<span class="inv-pill voided">Voided</span>';
     if(s==='overdue'){const days=Math.round((_invNow-new Date(i.dueDate))/86400000);return`<span class="inv-pill overdue">Overdue ${days}d</span>`;}
+    if(s==='awaiting')return'<span class="inv-pill sent">Awaiting</span>';
     if(s==='sent')return'<span class="inv-pill sent">Sent</span>';
     return'<span class="inv-pill draft">Draft</span>';
   };
@@ -7634,20 +7638,21 @@ function renderInvoices(){
     <th class="inv-th">Job</th>
     <th class="inv-th">Sent date</th>
     <th class="inv-th">Due date</th>
+    <th class="inv-th">Paid date</th>
     <th class="inv-th">Status</th>
     <th class="inv-th" style="text-align:right;">Amount inc GST</th>
   </tr></thead><tbody>${inv.map(i=>{
     const job=jobByStId[i.jobId];
-    const amt=i.totalAmountExTax!=null?Math.round(i.totalAmountExTax*1.15):(job?Math.round((job._stInvoiced||0)*1.15):null);
+    const amt=i.totalAmountIncTax!=null?Math.round(i.totalAmountIncTax):(i.totalAmountExTax!=null?Math.round(i.totalAmountExTax*1.15):(job?Math.round((job._stInvoiced||0)*1.15):null));
     const dueStr=i.dueDate?fmtDate(i.dueDate):'—';
-    const isPaid=_invStatus(i)==='paid';
     const isOverdue=_invStatus(i)==='overdue';
     return`<tr class="inv-tr"${isOverdue?' style="background:#fff8f8;"':''}>
       <td class="inv-td" style="color:var(--muted);font-size:12px;">${i.company?.name||'—'}</td>
-      <td class="inv-td" style="font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;">${i.id}</td>
+      <td class="inv-td" style="font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;">${i.number||i.id}</td>
       <td class="inv-td"><span style="font-size:11px;color:var(--muted);margin-right:4px;">${i.jobNumber||''}</span>${i.jobName||'—'}</td>
       <td class="inv-td" style="font-size:12px;color:var(--muted);">${fmtDate(i.sentDate)}</td>
       <td class="inv-td" style="font-size:12px;color:${isOverdue?'var(--red)':'var(--muted)'};">${dueStr}</td>
+      <td class="inv-td" style="font-size:12px;color:${i.paidDate?'#2E7D32':'var(--muted)'};">${i.paidDate?fmtDate(i.paidDate):'—'}</td>
       <td class="inv-td">${_invStatusPill(i)}</td>
       <td class="inv-td" style="text-align:right;font-family:var(--serif);font-size:14px;font-variant-numeric:tabular-nums;">${amt!=null?'$'+amt.toLocaleString():'—'}</td>
     </tr>`;

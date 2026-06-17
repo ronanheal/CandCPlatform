@@ -317,8 +317,9 @@ if len(logged_times) > 100:
     backup_path = OUT_DIR / "logged_times.json.bak"
     backup_path.write_text(json.dumps(logged_times, ensure_ascii=False))
     print(f"  backed up {len(logged_times)} logged_times records")
-invoices     = search(10)
-quotes       = search(11)
+# Note: search view 10 = quotes, view 11 = invoices (do not swap these)
+quotes       = search(10)
+invoices     = search(11)
 companies    = search(12)
 contacts     = search(13)
 expenses     = search(9)   # view 9 = logged expenses (cost entries against jobs)
