@@ -1,6 +1,40 @@
 # C&C Platform — Roadmap
 
 *Codebase audit generated 16 Jun 2026 · v2.7.0*
+*Status refreshed 17 Jun 2026 · v2.14.0 — see "Shipped since the audit" below.*
+
+---
+
+## Shipped since the audit (v2.8–v2.14)
+
+The Streamtime sync, todo board, dashboard, jobs, clients and reporting have all
+advanced well past the original audit. Notable items now **live**:
+
+- **Streamtime is the todo board's source of truth** — scheduled blocks = to-dos, logged
+  blocks = done; everything editable in-memory (reverts on refresh).
+- **Sync bug fixed:** invoices & quotes views were swapped — now corrected, so quote
+  status/value and invoice status/due/paid/overdue are all real.
+- **Quick Wins shipped:** 0c overflow bucket (per-day + uniform-done), 0d calendar gridline
+  align, 0e jobs budget-health/needs-attention filter, 0f client filters+stats, 0g/4 company
+  website + editable fields, 1 quote value/status, 2 invoice due/overdue, 3 job due dates +
+  dashboard deadlines, 6 ST capacity target, 7 invoice paid date, 0a dashboard block toggles.
+- **Medium shipped:** 11 needs-attention, 12 per-client revenue trend, 13 utilisation,
+  17 pipeline funnel, plus uninvoiced-work and quiet-client surfaces; 20 workspace export/import.
+- **Job detail:** Activity tab pulls Streamtime contributors; people picker searchable +
+  auto-adds anyone who logged time; expenses can be itemised into editable sub-lines.
+
+**Data-blocked (need Streamtime-side data or sync changes), still open:**
+- **8 / 15 profitability margin** — `costRate` is 0 for 36/37 users in ST (cost can't be
+  computed; utilisation/revenue is done instead).
+- **9 time approval** — `approved`/`approvedAt` not in the synced logged-times view.
+- **5 quote expiry alert** — quotes have no `expiryDate` in the synced view (used
+  "pending >7 days" instead).
+
+**Deferred (need infra / a charting lib):**
+- **16 Gantt** (timeline lib), **18 ST write-back** (serverless proxy + credentials),
+  reporting date-range picker (relative periods cover it for now).
+
+The sections below are the original 16 Jun audit and may be stale where the above overrides them.
 
 ---
 
