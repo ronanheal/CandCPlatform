@@ -2708,6 +2708,13 @@ function getWeekData(person,offset){
 // Drop all cached/edited weeks so the next render re-seeds fresh from Streamtime.
 // Called after ST data finishes loading (and on demand) so the board reflects ST truth.
 function resetTodoStore(){todoData={};}
+// A person's weekly capacity in hours from their Streamtime working hours (fallback 30h).
+function personWeeklyCap(key){
+  const sid=people[key]?._stId;
+  const dailyH=(sid&&stUsersById[sid]?.capacityH)||0;
+  const days=(people[key]?.days||[1,2,3,4,5]).length;
+  return dailyH>0?Math.round(dailyH*days):30;
+}
 function taskIsBillable(task){
   if(!task.job)return false;
   const m=task.job.match(/^(\d+)/);
@@ -7856,6 +7863,7 @@ function getFilteredTasks(){
         item:lt.itemName||'',
         hours:(lt.minutes||0)/60,
         done:true,urgent:false,
+        billable:lt.job?.isBillable!==false,
         day:dayNum,
         weekKey:weekMon.toISOString().split('T')[0],
         _fromST:true,
@@ -7918,14 +7926,15 @@ function _renderBusinessReport(){
   const billH=tasks.filter(t=>t.billable!==false&&t.job).reduce((s,t)=>s+(t.hours||0),0);
   const nbillH=totalH-billH;
   const liveJobs=jobs.filter(j=>j.status==='inplay');
+  const _invDate=inv=>new Date(((inv.invoiceDate||inv.sentDate||'')+'').slice(0,10)+'T12:00:00');
   const totalInvoiced=stInvoices.reduce((s,inv)=>{
-    const d=new Date((inv.date||inv.issueDate||'').slice(0,10)+'T12:00:00');
-    return s+((!cutoff||d>=cutoff)?(inv.totalAmountExTax||inv.amount||0):0);
+    const d=_invDate(inv);
+    return s+((!cutoff||d>=cutoff)?(inv.totalAmountExTax||0):0);
   },0);
   const totalPaid=stInvoices.filter(inv=>{
-    const d=new Date((inv.date||inv.issueDate||'').slice(0,10)+'T12:00:00');
-    return(!cutoff||d>=cutoff)&&(inv.status==='Paid'||inv.invoiceStatus?.name==='Paid');
-  }).reduce((s,inv)=>s+(inv.totalAmountExTax||inv.amount||0),0);
+    const d=_invDate(inv);
+    return(!cutoff||d>=cutoff)&&(inv.invoiceStatus?.name==='Paid');
+  }).reduce((s,inv)=>s+(inv.totalAmountExTax||0),0);
   const billPct=totalH>0?Math.round(billH/totalH*100):0;
 
   // Hours by week buckets for trend chart
@@ -7952,6 +7961,29 @@ function _renderBusinessReport(){
       <div class="r-chart-card"><div class="r-chart-h">Hours logged per week</div><div class="r-chart-wrap"><canvas id="rc-trend"></canvas></div></div>
       <div class="r-chart-card"><div class="r-chart-h">Billable vs non-billable</div><div class="r-chart-wrap"><canvas id="rc-split"></canvas></div></div>
     </div>
+    ${(function(){
+      const qStr=q=>(typeof q.quoteStatus==='string'?q.quoteStatus:q.quoteStatus?.name||'').toLowerCase();
+      const quotesSent=(stQuotes||[]).filter(q=>q.sentDate||qStr(q).includes('approv')||qStr(q).includes('pending'));
+      const quotesApproved=(stQuotes||[]).filter(q=>qStr(q).includes('approv')&&!qStr(q).includes('pending'));
+      const jobsLive=jobs.filter(j=>j.status==='inplay');
+      const jobsComplete=jobs.filter(j=>j.workflowStatus==='completed'||j.status==='complete');
+      const invoiced=(stInvoices||[]).filter(i=>{const s=(i.invoiceStatus?.name||'').toLowerCase();return s&&s!=='draft'&&s!=='voided';});
+      const paid=(stInvoices||[]).filter(i=>(i.invoiceStatus?.name||'').toLowerCase()==='paid');
+      // [label, count, colour, conversionBaseIndex] — conv only shown where the ratio is meaningful
+      const stages=[['Quotes sent',quotesSent.length,'#6B7FA3',null],['Approved',quotesApproved.length,'#7B9E87',0],['Jobs live',jobsLive.length,'#3498DB',null],['Completed',jobsComplete.length,'#C4956A',null],['Invoiced',invoiced.length,'#9C6FD6',null],['Paid',paid.length,'#4CAF50',4]];
+      const max=Math.max(...stages.map(s=>s[1]),1);
+      return `<div class="r-section"><div class="r-section-hd">Pipeline funnel <span style="text-transform:none;letter-spacing:0;color:var(--muted);">— volume by stage (all time)</span></div>
+        ${stages.map((s)=>{
+          const base=s[3]!=null?stages[s[3]][1]:null;
+          const conv=base&&base>0?Math.round(s[1]/base*100):null;
+          return`<div style="display:flex;align-items:center;gap:12px;padding:5px 0;">
+            <span style="width:90px;font-size:12px;color:var(--muted);flex-shrink:0;">${s[0]}</span>
+            <div style="flex:1;height:22px;background:var(--faint);border-radius:4px;overflow:hidden;"><div style="width:${Math.round(s[1]/max*100)}%;height:100%;background:${s[2]};border-radius:4px;min-width:2px;"></div></div>
+            <span style="width:44px;text-align:right;font-weight:500;font-size:13px;">${s[1]}</span>
+            <span style="width:90px;text-align:right;font-size:11px;color:var(--muted);">${conv!=null?conv+'% of '+stages[s[3]][0].toLowerCase():''}</span>
+          </div>`;
+        }).join('')}</div>`;
+    })()}
     <div class="r-section">
       <div class="r-section-hd">Over-budget jobs</div>
       ${jobs.filter(j=>j.status==='inplay'&&(j._bPct||0)>=90).sort((a,b)=>(b._bPct||0)-(a._bPct||0)).slice(0,10).map(j=>`
@@ -7991,6 +8023,8 @@ function _renderBusinessReport(){
 function _renderPeopleReport(){
   const el=document.getElementById('rp-people');if(!el)return;
   const personFilter=document.getElementById('r-person')?.value||'all';
+  const _period=document.getElementById('r-period')?.value||'month';
+  const _periodWeeks={week:1,'2weeks':2,month:4.3,quarter:13}[_period]||4.3;
   const tasks=getFilteredTasks();
   const palette=['#ED1E24','#6B7FA3','#7B9E87','#C45D5D','#5D88C4','#C4A35D','#5DC48A','#8A5DC4'];
 
@@ -8038,9 +8072,14 @@ function _renderPeopleReport(){
       <div class="r-chart-card"><div class="r-chart-h">Hours by day of week</div><div class="r-chart-wrap"><canvas id="rc-people-day"></canvas></div></div>
     </div>
     <div class="r-section">
-      <div class="r-section-hd">Logged time breakdown</div>
-      <div class="r-table-wrap"><table class="r-table"><thead><tr><th>Person</th><th>Total hours</th><th>Billable</th><th>Non-billable</th><th>Jobs</th></tr></thead><tbody>
-        ${entries.map(([k,v])=>`<tr><td style="font-weight:500;">${v.name}</td><td>${fmtHrs(v.hours)}</td><td style="color:#4CAF50;">${fmtHrs(v.billH)}</td><td style="color:var(--muted);">${fmtHrs(v.hours-v.billH)}</td><td style="font-size:12px;color:var(--muted);">${v.jobs.size}</td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:24px;">No data.</td></tr>'}
+      <div class="r-section-hd">Utilisation &amp; logged time <span style="text-transform:none;letter-spacing:0;color:var(--muted);">— billable hours vs capacity over the period</span></div>
+      <div class="r-table-wrap"><table class="r-table"><thead><tr><th>Person</th><th>Total hours</th><th>Billable</th><th>Non-billable</th><th>Capacity</th><th>Utilisation</th><th>Jobs</th></tr></thead><tbody>
+        ${entries.map(([k,v])=>{
+          const cap=Math.round(personWeeklyCap(k)*_periodWeeks);
+          const util=cap>0?Math.round(v.billH/cap*100):0;
+          const uCol=util>=75?'#4CAF50':util>=50?'#FF9800':'var(--red)';
+          return`<tr><td style="font-weight:500;">${v.name}</td><td>${fmtHrs(v.hours)}</td><td style="color:#4CAF50;">${fmtHrs(v.billH)}</td><td style="color:var(--muted);">${fmtHrs(v.hours-v.billH)}</td><td style="color:var(--muted);">${cap}h</td><td><span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:46px;height:6px;background:var(--faint);border-radius:3px;overflow:hidden;display:inline-block;"><span style="display:block;width:${Math.min(100,util)}%;height:100%;background:${uCol};"></span></span><span style="color:${uCol};font-weight:500;font-size:12px;">${util}%</span></span></td><td style="font-size:12px;color:var(--muted);">${v.jobs.size}</td></tr>`;
+        }).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;">No data.</td></tr>'}
       </tbody></table></div>
     </div>`;
 
@@ -8068,7 +8107,7 @@ function _renderJobsReport(){
   filteredJobs.sort((a,b)=>(hoursPerJob[b.id]||0)-(hoursPerJob[a.id]||0));
 
   // Budget chart: top 10 by budget usage
-  const budgetJobs=filteredJobs.filter(j=>j.bPct>0).sort((a,b)=>(b.bPct||0)-(a.bPct||0)).slice(0,10);
+  const budgetJobs=filteredJobs.filter(j=>j._bPct>0).sort((a,b)=>(b.bPct||0)-(a.bPct||0)).slice(0,10);
   // Hours chart: top 10 by hours
   const topHoursJobs=filteredJobs.filter(j=>hoursPerJob[j.id]).slice(0,10);
 
@@ -8076,7 +8115,7 @@ function _renderJobsReport(){
     <div class="r-kpi-grid cols3">
       <div class="r-kpi"><div class="r-kpi-lbl">Jobs shown</div><div class="r-kpi-val">${filteredJobs.length}</div><div class="r-kpi-sub">filtered from ${jobs.length} total</div></div>
       <div class="r-kpi"><div class="r-kpi-lbl">Total hours logged</div><div class="r-kpi-val">${fmtHrs(Object.values(hoursPerJob).reduce((s,h)=>s+h,0))}</div><div class="r-kpi-sub">across filtered jobs</div></div>
-      <div class="r-kpi"><div class="r-kpi-lbl">Over budget</div><div class="r-kpi-val" style="color:var(--red);">${filteredJobs.filter(j=>(j.bPct||0)>=100).length}</div><div class="r-kpi-sub">jobs at 100%+ budget</div></div>
+      <div class="r-kpi"><div class="r-kpi-lbl">Over budget</div><div class="r-kpi-val" style="color:var(--red);">${filteredJobs.filter(j=>(j._bPct||0)>=100).length}</div><div class="r-kpi-sub">jobs at 100%+ budget</div></div>
     </div>
     <div class="r-charts-2">
       <div class="r-chart-card"><div class="r-chart-h">Hours by job (top 10)</div><div class="r-chart-wrap"><canvas id="rc-jobs-hrs"></canvas></div></div>
@@ -8087,7 +8126,7 @@ function _renderJobsReport(){
       <div class="r-job-hd"><span>Job</span><span>Client</span><span>Hours logged</span><span>Budget</span><span>Status</span></div>
       ${filteredJobs.slice(0,50).map(j=>{
         const h=hoursPerJob[j.id]||0;
-        const bPct=j.bPct||0;
+        const bPct=j._bPct||0;
         const statusCls={'inplay':'wf-badge live','complete':'wf-badge completed','archived':'wf-badge completed','paused':'wf-badge live'}[j.status]||'wf-badge';
         const statusLbl={'inplay':'In Play','complete':'Complete','archived':'Archived','paused':'Paused'}[j.status]||j.status;
         return`<div class="r-job-row">
@@ -8101,7 +8140,7 @@ function _renderJobsReport(){
     </div>`;
 
   _makeChart('rc-jobs-hrs',{type:'bar',data:{labels:topHoursJobs.map(j=>j.name.slice(0,20)),datasets:[{data:topHoursJobs.map(j=>hoursPerJob[j.id]||0),backgroundColor:'#6B7FA3'}]},options:{...(_chartOpts()),indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{callback:v=>fmtHrs(v)}},y:{grid:{display:false}}}}});
-  _makeChart('rc-jobs-budget',{type:'bar',data:{labels:budgetJobs.map(j=>j.name.slice(0,20)),datasets:[{data:budgetJobs.map(j=>j.bPct||0),backgroundColor:budgetJobs.map(j=>(j.bPct||0)>=100?'#ED1E24':'#4CAF50')}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:120,ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}});
+  _makeChart('rc-jobs-budget',{type:'bar',data:{labels:budgetJobs.map(j=>j.name.slice(0,20)),datasets:[{data:budgetJobs.map(j=>j._bPct||0),backgroundColor:budgetJobs.map(j=>(j._bPct||0)>=100?'#ED1E24':'#4CAF50')}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:120,ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}});
 }
 
 // ── CLIENTS ───────────────────────────────────────────────────────────────────
@@ -8153,7 +8192,22 @@ function _renderClientsReport(){
     <div class="r-charts-2">
       <div class="r-chart-card"><div class="r-chart-h">Hours by client</div><div class="r-chart-wrap"><canvas id="rc-client-hrs"></canvas></div></div>
       <div class="r-chart-card"><div class="r-chart-h">Revenue by client</div><div class="r-chart-wrap"><canvas id="rc-client-rev"></canvas></div></div>
-    </div>`;
+    </div>
+    <div class="r-chart-card" style="margin-top:18px;"><div class="r-chart-h">Monthly invoiced revenue${clientFilter!=='all'?' — '+clientFilter:' (all clients)'}</div><div class="r-chart-wrap"><canvas id="rc-client-trend"></canvas></div></div>`;
+
+  // ── Monthly revenue trend (last 12 months) ──
+  const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const trendMonths=[];const _tm=new Date();_tm.setDate(1);
+  for(let i=11;i>=0;i--){const d=new Date(_tm);d.setMonth(_tm.getMonth()-i);trendMonths.push({key:`${d.getFullYear()}-${d.getMonth()}`,label:`${MO[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`});}
+  const trendMap={};trendMonths.forEach(m=>trendMap[m.key]=0);
+  stInvoices.forEach(inv=>{
+    const co=inv.company?.name||'';
+    if(clientFilter!=='all'&&co!==clientFilter)return;
+    const ds=inv.invoiceDate||inv.sentDate;if(!ds)return;
+    const d=new Date(ds);const k=`${d.getFullYear()}-${d.getMonth()}`;
+    if(k in trendMap)trendMap[k]+=(inv.totalAmountExTax||0);
+  });
+  _makeChart('rc-client-trend',{type:'bar',data:{labels:trendMonths.map(m=>m.label),datasets:[{data:trendMonths.map(m=>trendMap[m.key]),backgroundColor:'#7B9E87'}]},options:{...(_chartOpts()),scales:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{callback:v=>fmtDollar(v)}}}}});
 
   const cLabels=entries.slice(0,10).map(([co])=>co.slice(0,20));
   const cHours=entries.slice(0,10).map(([,v])=>v.hours);
