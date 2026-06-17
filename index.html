@@ -1993,8 +1993,16 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.10.5';
+const APP_VERSION='2.10.6';
 const CHANGELOG=[
+  {version:'2.10.6',date:'17 Jun 2026',title:'Assignment dedup, notes, and display fixes',items:[
+    'Assignments now appear once per week on their first applicable day — no more repeating the same card Mon–Fri',
+    'Assignment card notes: uses item description when available, falls back to most recent logged-time note for same job+item',
+    'Removed dedup between ST assignments and logged times — assignments show remaining work, logged entries show done work; these coexist correctly',
+    'Manual todo dedup now per-day only: a manual task for job+item moves to done if time was logged against that exact job+item on that same day',
+    'Removed 30-day span filter — retainer and long-running assignments correctly appear again',
+    'Calendar view uses same per-day manual-todo dedup logic (ST assignments never deduped)',
+  ]},
   {version:'2.10.5',date:'17 Jun 2026',title:'Fix assignment clutter and dedup accuracy',items:[
     'Assignment filter: skip items with 0 planned/incomplete minutes (nothing to show)',
     'Assignment filter: skip retainer-style items spanning more than 30 days (they were flooding every week)',
@@ -2388,7 +2396,7 @@ function _getStWeekEntries(personKey,offset){
   return result;
 }
 // Returns job assignments for the person keyed by day (1-5), same shape as task cards.
-// An assignment spans earliestStartDate..latestEndDate; show it on any day in the week that falls in that range.
+// Each assignment appears only once — on the FIRST weekday that falls in its date range.
 function _getStWeekAssignments(personKey,offset){
   if(!stJobAssignments.length)return{};
   const stUser=Object.values(stUsersById).find(u=>u.key===personKey);
@@ -2399,7 +2407,7 @@ function _getStWeekAssignments(personKey,offset){
   const pad=n=>String(n).padStart(2,'0');
   const weekDates=[];
   for(let i=0;i<5;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);weekDates.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`);}
-  // Build jobItem lookup from loaded jobs (includes description for notes + item dates)
+  // Build jobItem lookup from loaded jobs (includes description + estimated dates)
   const itemLookup={};
   jobs.forEach(j=>{
     (j.phases||[]).forEach(ph=>{
@@ -2413,9 +2421,14 @@ function _getStWeekAssignments(personKey,offset){
       });
     });
   });
+  // Build most-recent-note lookup from logged_times (best-effort note for assignment cards)
+  const ltNoteByKey={};
+  stLoggedTimes.forEach(lt=>{
+    if(!lt.notes)return;
+    const k=String(lt.job?.number||'')+'|'+(lt.itemName||'').toLowerCase();
+    if(!ltNoteByKey[k]||(lt.date||'')>(ltNoteByKey[k].date||''))ltNoteByKey[k]={note:lt.notes,date:lt.date||''};
+  });
   const result={};
-  // Count working days (Mon–Fri) between two date strings inclusive
-  const _workDays=(s,e)=>{let c=0,d=new Date(s+'T00:00:00');const ed=new Date(e+'T00:00:00');while(d<=ed){const dw=d.getDay();if(dw>0&&dw<6)c++;d.setDate(d.getDate()+1);}return Math.max(1,c);};
   stJobAssignments.forEach(a=>{
     if(a.userId!==stUser.id)return;
     if(a.jobItemUserStatus?.name==='Complete')return;
@@ -2426,34 +2439,32 @@ function _getStWeekAssignments(personKey,offset){
     const effectiveStart=start||end||info.itemStart||'';
     const effectiveEnd=end||start||info.itemEnd||'';
     if(!effectiveStart)return;
-    // Use remaining (incomplete) hours if set, otherwise total planned
+    // Skip if nothing planned or remaining
     const totalMins=(a.totalIncompleteMinutes||0)>0?a.totalIncompleteMinutes:(a.totalPlannedMinutes||0);
-    if(!totalMins)return; // nothing planned or remaining — skip
-    // Skip long-span retainer items (span > 30 days) — they pollute every week in their range
-    const spanDays=(new Date(effectiveEnd+' 00:00')-new Date(effectiveStart+' 00:00'))/(86400000);
-    if(spanDays>30)return;
-    // Divide total hours across however many week-days fall within the assignment range
-    const weekDaysInRange=weekDates.filter(d=>d>=effectiveStart&&d<=effectiveEnd).length||1;
-    const hoursForDay=Math.round(totalMins/weekDaysInRange/60*4)/4||null;
-    weekDates.forEach((dateStr,i)=>{
-      if(dateStr<effectiveStart||dateStr>effectiveEnd)return;
-      const day=i+1;
-      if(!result[day])result[day]=[];
-      result[day].push({
-        id:'st-assign-'+a.id+'-'+day,
-        title:info.name||'Assigned task',
-        hours:hoursForDay,
+    if(!totalMins)return;
+    // Show on the FIRST weekday that falls in this assignment's range (avoids duplication)
+    const firstIdx=weekDates.findIndex(d=>d>=effectiveStart&&d<=effectiveEnd);
+    if(firstIdx===-1)return;
+    const day=firstIdx+1;
+    const hours=Math.round(totalMins/60*4)/4||null;
+    // Note: prefer item description, fall back to most recent logged-time note for same job+item
+    const ltKey=(info.jobNum||'')+'|'+(info.name||'').toLowerCase();
+    const note=info.note||(ltNoteByKey[ltKey]?.note||'');
+    if(!result[day])result[day]=[];
+    result[day].push({
+        id:'st-assign-'+a.id,
+        title:note||info.name||'Assigned task',
+        hours:hours,
         done:false,urgent:false,personal:false,
         job:info.jobNum||'',
         item:info.name||'',
-        note:info.note||'',
+        note:note,
         person:personKey,
         _fromST:true,
         _stAssignment:true,
         jobName:info.jobName||'',
         billable:true,
       });
-    });
   });
   return result;
 }
@@ -2987,17 +2998,20 @@ function renderTodoCalendar(){
     if(t.done)doneTasks.push({...t,day:d});
     else allActive.push({...t,day:d});
   });});
-  // Add ST logged entries as done tasks; dedup matching manual todos into done
+  // Add ST logged entries as done tasks; per-day dedup for manual todos only
   const stWeekCal=_getStWeekEntries(currentPerson,weekOffset);
-  // Build week-level dedup set (job+item logged anywhere this week)
-  const _calLtKey=e=>{const n=(e.job||'').match(/^(\d+)/)?.[1]||e.job||'';return n+'|'+(e.item||e.itemName||'').toLowerCase();};
-  const calLoggedSet=new Set();
-  [1,2,3,4,5].forEach(d=>{(stWeekCal[d]||[]).forEach(e=>{doneTasks.push({...e,day:d});calLoggedSet.add(_calLtKey(e));});});
-  // Move manual todos that ST has logged this week into done zone
+  // Build per-day logged keys for manual-todo dedup (ST assignments are never deduped)
+  const calLoggedByDay={};
+  [1,2,3,4,5].forEach(d=>{
+    const s=new Set();
+    (stWeekCal[d]||[]).forEach(e=>{doneTasks.push({...e,day:d});const n=(e.job||'').match(/^(\d+)/)?.[1]||e.job||'';s.add(n+'|'+(e.item||e.itemName||'').toLowerCase());});
+    calLoggedByDay[d]=s;
+  });
+  // Move manual todos (not ST assignments) that have a same-day log entry into done zone
   allActive=allActive.filter(t=>{
-    if(!t.job||!t.item)return true;
+    if(t._stAssignment||!t.job||!t.item)return true;
     const n=(t.job||'').match(/^(\d+)/)?.[1]||t.job||'';
-    if(calLoggedSet.has(n+'|'+(t.item||'').toLowerCase())){doneTasks.push({...t,done:true});return false;}
+    if((calLoggedByDay[t.day||0]||new Set()).has(n+'|'+(t.item||'').toLowerCase())){doneTasks.push({...t,done:true});return false;}
     return true;
   });
   // Filters
@@ -3373,10 +3387,13 @@ function renderTodo(){
     const stDayDoneH=stDayEntries.reduce((s,e)=>s+(e.minutes||0)/60,0);
     const stDayBillDoneH=stDayEntries.filter(e=>e.billable).reduce((s,e)=>s+(e.minutes||0)/60,0);
     const stAssignDay=stAssignWeek[d]||[];
-    // Dedup using week-level logged set (if job+item was logged anywhere this week, hide todo/assignment)
-    const activeTodos=todoTasks.filter(t=>!_weekLogged(t));
-    const activeAssign=stAssignDay.filter(a=>!_weekLogged(a));
-    const dedupedDone=[...doneTasks,...todoTasks.filter(t=>_weekLogged(t)).map(t=>({...t,done:true}))];
+    // Per-day dedup for MANUAL todos only: if same job+item was logged in ST on this exact day, move to done
+    // ST assignments are NOT deduped — their totalIncompleteMinutes already reflects remaining work
+    const dayLoggedKeys=new Set(stDayEntries.map(e=>{const n=(e.job||'').match(/^(\d+)/)?.[1]||e.job||'';return n+'|'+(e.item||'').toLowerCase();}));
+    const _dayLogged=t=>{if(!t.job||!t.item)return false;const n=(t.job||'').match(/^(\d+)/)?.[1]||t.job||'';return dayLoggedKeys.has(n+'|'+(t.item||'').toLowerCase());};
+    const activeTodos=todoTasks.filter(t=>!_dayLogged(t));
+    const activeAssign=stAssignDay; // no dedup — assignments show their own remaining hours
+    const dedupedDone=[...doneTasks,...todoTasks.filter(t=>_dayLogged(t)).map(t=>({...t,done:true}))];
     const dayTodoH=activeTodos.reduce((s,t)=>s+(t.hours||0),0)+activeAssign.reduce((s,a)=>s+(a.hours||0),0);
     const dayDoneH=doneTasks.reduce((s,t)=>s+(t.hours||0),0)+stDayDoneH;
     const dayTotalH=dayTodoH+dayDoneH;
