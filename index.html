@@ -122,6 +122,9 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .todo-body{position:relative;}
 .day-todo-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .day-todo{overflow:hidden;padding:6px 8px;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;min-height:32px;flex:none;}
+/* Smooth glide only when triggered by a bucket "view" button (not during live drag) */
+.day-todo.animating{transition:height .26s cubic-bezier(.4,0,.2,1);}
+.global-divider.animating{transition:top .26s cubic-bezier(.4,0,.2,1);}
 .todo-overflow-pill{position:sticky;bottom:4px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.96);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);margin-top:4px;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0;}
 .done-overflow-pill{position:sticky;bottom:4px;display:flex;align-items:center;justify-content:space-between;background:rgba(245,247,250,.97);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);margin-top:4px;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0;}
 .todo-ov-btn{border:none;background:var(--ink);color:#fff;border-radius:4px;padding:2px 9px;font-size:10px;cursor:pointer;margin-left:10px;font-family:inherit;}
@@ -1996,8 +1999,17 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.11.1';
+const APP_VERSION='2.12.0';
 const CHANGELOG=[
+  {version:'2.12.0',date:'17 Jun 2026',title:'Streamtime is the source of truth',items:[
+    'The Todo board now reads entirely from Streamtime — scheduled blocks are your to-dos, logged blocks are done. The old manual-task layer is gone.',
+    'Everything is editable: drag, resize, edit, mark done, move between days. Changes apply instantly but are local — they revert on refresh until Streamtime write-back is added.',
+    'Dashboard now counts planned to-dos, not just done: "Billable this week" shows done + planned against your real Streamtime weekly capacity.',
+    'Team blocks and "My tasks today" now show each person\'s scheduled Streamtime to-dos.',
+    'Todo buckets are now per-day: a day collapses to a summary only when its own cards can\'t fit — light days keep showing cards even when a busy day buckets.',
+    'The bucket "View" button now glides the divider smoothly to reveal that zone.',
+    'Calendar: done blocks now stack above to-do blocks for each day.',
+  ]},
   {version:'2.11.1',date:'17 Jun 2026',title:'Todo bucket timing, today line, billable accuracy',items:[
     'Todo bucket now appears as soon as a day\'s tasks no longer fit at a readable size (not only when the divider is dragged near the top)',
     'Fixed: the "today" red indicator no longer adds height to that column\'s header, so the done divider and padding line up across all days',
@@ -2290,73 +2302,27 @@ let personStatus=(function(){
   return s;
 })();
 let weekOffset=0;
-const DAYS_DATA={
-  ro:{
-    1:[{id:'t1',title:'Public Holiday',job:'',item:'Leave',hours:8,done:true,billable:false}],
-    2:[{id:'t2',title:'Send v1 by EOP to Maya',job:'6752 SFF Brand Guidelines',jobId:'6752',item:'Design & Artwork',hours:2,done:true,urgent:true,billable:true},{id:'t3',title:'Monday WIP',job:'House',item:'Briefing',hours:1,done:true,billable:false},{id:'t4',title:'Carcass Poster Amends',job:'6752 SFF Brand Guidelines',jobId:'6752',item:'Design & Artwork',hours:1.5,done:false,billable:true}],
-    3:[{id:'t5',title:'Wednesday WIP',job:'House',item:'Briefing',hours:1,done:true,billable:false},{id:'t6',title:'Working through guideline amends',job:'6752 SFF Brand Guidelines',jobId:'6752',item:'Design & Artwork',hours:3,done:true,billable:true},{id:'t7',title:'Trade Deck Amends',job:'',item:'',hours:1,done:false,billable:false}],
-    4:[{id:'t8',title:'Crest Amends',job:'',item:'',hours:1,done:true,billable:false},{id:'t9',title:'Replotting the Master Plan Map',job:'6922 The Links',item:'Website build',hours:2.17,done:false,billable:true}],
-    5:[{id:'t10',title:'Friday WIP',job:'House',item:'Briefing',hours:1,done:false,billable:false},{id:'t11',title:'C&C streamline discussion',job:'6774 House',item:'Briefing',hours:1,done:false,urgent:true,billable:false},{id:'t12',title:'Sourcing last couple images',job:'6752 SFF Brand Guidelines',jobId:'6752',item:'Design & Artwork',hours:1.5,done:false,billable:true}]
-  },
-  bee:{
-    1:[],
-    2:[{id:'b1',title:'Amazon GA deep dive',job:'',item:'',hours:2,done:true,billable:false},{id:'b2',title:'Tuesday team WIP',job:'House',item:'Briefing',hours:1,done:false,billable:false}],
-    3:[{id:'b3',title:'Wednesday WIP',job:'House',item:'Briefing',hours:1,done:true,billable:false},{id:'b4',title:'Finishing report to share',job:'',item:'',hours:2,done:false,billable:false},{id:'b5',title:'Client WIP',job:'',item:'',hours:1,done:false,billable:false}],
-    4:[{id:'b6',title:'Billing support',job:'',item:'',hours:0.5,done:true,billable:false},{id:'b7',title:'PR Google',job:'',item:'',hours:1,done:false,billable:false},{id:'b8',title:'Team delegations',job:'',item:'',hours:1.5,done:false,billable:false}],
-    5:[{id:'b9',title:'Updates to report',job:'',item:'',hours:1.5,done:true,billable:false},{id:'b10',title:'Friday WIP',job:'House',item:'Briefing',hours:1,done:false,billable:false},{id:'b11',title:'Budget actuals for May',job:'',item:'',hours:1.5,done:false,urgent:true,billable:false}]
-  },
-  jb:{
-    1:[],
-    2:[{id:'j1',title:'Implementing copy feedback',job:'',item:'',hours:2,done:true,billable:true},{id:'j2',title:'Comms back to client',job:'',item:'',hours:1,done:false,billable:false}],
-    3:[{id:'j3',title:'Wednesday WIP',job:'House',item:'Briefing',hours:1,done:true,billable:false},{id:'j4',title:'SFF LinkedIn content',job:'6752 SFF Brand Guidelines',jobId:'6752',item:'Copywriting',hours:2,done:false,billable:true}],
-    4:[{id:'j5',title:'NPF AU Bundle push',job:'',item:'Copywriting',hours:2,done:true,billable:true},{id:'j6',title:'Formthotics induction',job:'',item:'',hours:1,done:false,billable:false}],
-    5:[{id:'j7',title:'Friday WIP',job:'House',item:'Briefing',hours:1,done:false,billable:false},{id:'j8',title:'Performance WIP',job:'',item:'',hours:1.5,done:true,billable:false}]
-  }
-};
-// Wrap DAYS_DATA in current week key for proper week-keyed storage
-let todoData=(function(){
-  const d=new Date();const dow=(d.getDay()+6)%7;d.setDate(d.getDate()-dow);d.setHours(0,0,0,0);
-  const wk=d.toISOString().split('T')[0];
-  const td={};
-  Object.keys(DAYS_DATA).forEach(person=>{td[person]={};td[person][wk]=JSON.parse(JSON.stringify(DAYS_DATA[person]));});
-  return td;
-})();
+// Todo data is the single in-memory store for the Todo board. It is seeded lazily from
+// Streamtime per (person, week) in getWeekData() — scheduled blocks become to-dos, logged
+// blocks become done. Edits (drag / edit / delete / create) mutate this in memory only;
+// nothing is persisted, so a refresh re-seeds from Streamtime and reverts any local edits.
+// Streamtime is the source of truth; write-back to ST is a future phase.
+let todoData={};
 let editingTaskId=null,editingDay=null;
 function saveData(){
+  // Todo edits are intentionally NOT persisted — ST is the source of truth and the board
+  // re-seeds on refresh. We still mirror the active job's plan back into the in-memory
+  // jobs array so the todo item picker sees the latest plan within the session.
   try{
-    // Persist phases back to the active job before saving (empty plans too,
-    // so the todo item picker always sees the latest plan)
     if(activeJobId&&Array.isArray(phases)){
       const j=jobs.find(x=>x.id===activeJobId);
       if(j)j.phases=JSON.parse(JSON.stringify(phases));
     }
-    localStorage.setItem('cc_todo',JSON.stringify(todoData));
-    // jobs are now sourced from Streamtime — not persisted locally
   }catch(e){}
 }
-function loadData(){
-  try{
-    const t=localStorage.getItem('cc_todo');
-    if(t){
-      const loaded=JSON.parse(t);
-      // Migrate old flat format {person:{1:[...],2:[...]}} → week-keyed format
-      const d=new Date();const dow=(d.getDay()+6)%7;d.setDate(d.getDate()-dow);d.setHours(0,0,0,0);
-      const wk=d.toISOString().split('T')[0];
-      let migrated=false;
-      Object.keys(loaded).forEach(person=>{
-        const personData=loaded[person];
-        // If keys are 1-5 (flat format), wrap in current week key
-        const keys=Object.keys(personData);
-        if(keys.length>0&&keys.every(k=>/^[1-5]$/.test(k))){
-          loaded[person]={};loaded[person][wk]=personData;migrated=true;
-        }
-      });
-      todoData=loaded;
-    }
-    // jobs are sourced from Streamtime via initStreamtime() — not loaded from localStorage
-  }catch(e){}
-}
-loadData();
+// One-time cleanup: purge the legacy persisted manual-task store. The Todo board is now
+// seeded from Streamtime each session, so any old cc_todo data is stale and unused.
+try{localStorage.removeItem('cc_todo');}catch(e){}
 
 // ── Streamtime data ──────────────────────────────────────────────────────────
 const ST_BASE='https://raw.githubusercontent.com/ronanheal/CandCPlatform/streamtime-data';
@@ -2642,6 +2608,9 @@ async function initStreamtime(){
       }
     }catch(e){console.warn('platform_config fetch failed:',e);}
   }catch(e){console.warn('Streamtime fetch failed:',e);}
+  // ST data is now loaded — drop any weeks seeded before it arrived so the Todo board
+  // re-seeds fresh from Streamtime.
+  resetTodoStore();
   // Re-render open views
   if(typeof renderDashboard==='function'&&document.getElementById('view-dashboard')?.classList.contains('active'))renderDashboard();
   if(typeof renderJobs==='function')renderJobs();
@@ -2685,29 +2654,30 @@ function getWeekKey(offset){
   d.setHours(0,0,0,0);
   return d.toISOString().split('T')[0];
 }
+// Build a fresh week of tasks for a person straight from Streamtime:
+// scheduled blocks → to-dos (done:false), logged blocks → done (done:true).
+function seedWeekFromST(person,offset){
+  const week={1:[],2:[],3:[],4:[],5:[]};
+  const todos=_getStWeekAssignments(person,offset); // scheduled → to-do
+  const done=_getStWeekEntries(person,offset);      // logged → done
+  [1,2,3,4,5].forEach(d=>{
+    (todos[d]||[]).forEach(t=>week[d].push({...t}));
+    (done[d]||[]).forEach(e=>week[d].push({...e}));
+  });
+  return week;
+}
 function getWeekData(person,offset){
   if(offset===undefined)offset=weekOffset;
   const k=getWeekKey(offset);
   if(!todoData[person])todoData[person]={};
-  if(!todoData[person][k])todoData[person][k]={1:[],2:[],3:[],4:[],5:[]};
+  // Lazily seed this (person, week) from Streamtime on first access, then cache the
+  // (possibly edited) result in memory for the rest of the session.
+  if(!todoData[person][k])todoData[person][k]=seedWeekFromST(person,offset);
   return todoData[person][k];
 }
-function migrateTodoData(){
-  // Old format: todoData[person][1..5] = tasks[]
-  // New format: todoData[person]['YYYY-MM-DD'][1..5] = tasks[]
-  const k0=getWeekKey(0);
-  Object.keys(todoData).forEach(pk=>{
-    const d=todoData[pk];
-    if(!d)return;
-    if(Array.isArray(d[1])){
-      const m={};m[k0]={};
-      for(let i=1;i<=5;i++)m[k0][i]=d[i]||[];
-      todoData[pk]=m;
-    }
-  });
-  saveData();
-}
-migrateTodoData();
+// Drop all cached/edited weeks so the next render re-seeds fresh from Streamtime.
+// Called after ST data finishes loading (and on demand) so the board reflects ST truth.
+function resetTodoStore(){todoData={};}
 function taskIsBillable(task){
   if(!task.job)return false;
   const m=task.job.match(/^(\d+)/);
@@ -2728,25 +2698,27 @@ function renderDashboard(){
   const greetStr=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
   const dateStr=`${dayNames[now.getDay()]} · ${now.getDate()} ${monthNames[now.getMonth()]} ${now.getFullYear()} · Week ${getWeekNum(now)}`;
   const p=people[MY_PERSON];
-  // Calc week hours (manual todos + ST logged time)
+  // Week hours — all tasks now come from the ST-seeded store (done = logged, todo = scheduled).
+  // Count both done and planned (to-do) so the stats reflect committed work, not just done.
   const wd=getWeekData(MY_PERSON,0);
-  let billH=0,nbillH=0;
+  let billDoneH=0,nbillDoneH=0,billTodoH=0,nbillTodoH=0;
   [1,2,3,4,5].forEach(d=>(wd[d]||[]).forEach(t=>{
-    if(t.done){if(taskIsBillable(t))billH+=t.hours||0;else nbillH+=t.hours||0;}
+    const bill=t.billable!==false;
+    if(t.done){if(bill)billDoneH+=t.hours||0;else nbillDoneH+=t.hours||0;}
+    else{if(bill)billTodoH+=t.hours||0;else nbillTodoH+=t.hours||0;}
   }));
-  const _stWeekMine=_getStWeekEntries(MY_PERSON,0);
-  [1,2,3,4,5].forEach(d=>(_stWeekMine[d]||[]).forEach(e=>{
-    if(e.billable)billH+=(e.minutes||0)/60;else nbillH+=(e.minutes||0)/60;
-  }));
+  const billH=billDoneH+billTodoH,nbillH=nbillDoneH+nbillTodoH;
   // Today's tasks — getDay() returns 0=Sun,1=Mon..5=Fri,6=Sat; todoData uses keys 1-5
   const _todayRaw=now.getDay();
   const todayDow=(_todayRaw>=1&&_todayRaw<=5)?_todayRaw:0; // 0 = weekend/no tasks
   const todayTasks=(todayDow>0?(wd[todayDow]||[]):[]);
   const todayTodo=todayTasks.filter(t=>!t.done);
-  const _stTodayMine=todayDow>0?(_stWeekMine[todayDow]||[]):[];
-  const todayDone=[...todayTasks.filter(t=>t.done),..._stTodayMine.map(e=>({title:e.title,hours:(e.minutes||0)/60,done:true,_fromST:true}))];
+  const todayDone=todayTasks.filter(t=>t.done);
   const urgentCount=todayTodo.filter(t=>t.urgent).length;
-  const totalTarget=30;
+  // Billable target from each person's Streamtime weekly capacity (fallback 30h).
+  // stUsersById is keyed by the numeric ST user id, held on people[k]._stId.
+  const _personWeeklyCap=k=>{const sid=people[k]?._stId;const dailyH=(sid&&stUsersById[sid]?.capacityH)||0;const days=(people[k]?.days||[1,2,3,4,5]).length;return dailyH>0?Math.round(dailyH*days):30;};
+  const totalTarget=_personWeeklyCap(MY_PERSON);
   const billPct=Math.min(100,Math.round(billH/totalTarget*100));
   const nbillPct=Math.min(100,Math.round(nbillH/8*100));
   // Today's task rows
@@ -2765,21 +2737,20 @@ function renderDashboard(){
   // Team cards — grouped by each person's team when teams are defined
   const _teamCard=k=>{
     const tp=people[k];const twd=getWeekData(k,0);const ttasks=(twd[todayDow]||[]);
+    // Tasks (todo + done) all come from the ST-seeded store now
     const tdone=ttasks.filter(t=>t.done);const ttodo=ttasks.filter(t=>!t.done);
     const doneH=tdone.reduce((s,t)=>s+(t.hours||0),0);const todoH=ttodo.reduce((s,t)=>s+(t.hours||0),0);
-    // Streamtime logged entries for today
-    const stToday=(_getStWeekEntries(k,0)[todayDow]||[]);
-    const stLoggedH=stToday.reduce((s,e)=>s+(e.minutes||0),0)/60;
-    const taskBlocks=ttasks.slice(0,4).map(t=>`<div class="tc-block ${t.done?'done':t.urgent?'urgent':'todo'}">${t.title}${t.hours?' — '+formatHrs(t.hours):''}</div>`).join('');
-    const stBlocks=stToday.slice(0,3).map(e=>`<div class="tc-block done">${e.title}${e.minutes?' — '+_stFmtH(e.minutes):''}</div>`).join('');
+    // Show to-dos first, then done, so planned work is visible at a glance
+    const ordered=[...ttodo,...tdone];
+    const taskBlocks=ordered.slice(0,5).map(t=>`<div class="tc-block ${t.done?'done':t.urgent?'urgent':'todo'}">${t.title}${t.hours?' — '+formatHrs(t.hours):''}</div>`).join('');
     const urgCnt=ttodo.filter(t=>t.urgent).length;
-    const totalBooked=todoH+doneH+stLoggedH;
+    const totalBooked=todoH+doneH;
     return`<div class="team-card" onclick="viewTeamTodo('${k}')">
       <div class="tc-head"><div class="tc-av" style="background:${tp.color};">${tp.initials}</div><div><div class="tc-name">${tp.name}</div></div><div class="tc-meta">${formatHrs(totalBooked)||'0h'} booked</div>
         <button onclick="event.stopPropagation();openTodoModal(null,null,'${k}')" title="Add task for ${tp.name}" style="margin-left:8px;background:transparent;border:1px solid var(--border);border-radius:4px;width:22px;height:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted);font-size:13px;"><i class="ti ti-plus" style="font-size:11px;"></i></button>
       </div>
-      <div class="tc-timeline">${taskBlocks||''}${stBlocks||(!taskBlocks?'<div style="font-size:12px;color:var(--muted);padding:4px 0;">No tasks today</div>':'')}</div>
-      <div class="tc-footer"><div class="tc-stat">Done <span>${formatHrs(doneH+stLoggedH)||'0h'}</span></div><div class="tc-stat">To do <span>${formatHrs(todoH)||'0h'}</span></div>${urgCnt?`<div class="tc-stat" style="margin-left:auto;color:var(--red);font-size:11px;">${urgCnt} urgent</div>`:'<div class="tc-stat" style="margin-left:auto;font-size:11px;color:var(--muted);">On track</div>'}</div>
+      <div class="tc-timeline">${taskBlocks||'<div style="font-size:12px;color:var(--muted);padding:4px 0;">No tasks today</div>'}</div>
+      <div class="tc-footer"><div class="tc-stat">Done <span>${formatHrs(doneH)||'0h'}</span></div><div class="tc-stat">To do <span>${formatHrs(todoH)||'0h'}</span></div>${urgCnt?`<div class="tc-stat" style="margin-left:auto;color:var(--red);font-size:11px;">${urgCnt} urgent</div>`:'<div class="tc-stat" style="margin-left:auto;font-size:11px;color:var(--muted);">On track</div>'}</div>
     </div>`;
   };
   let otherKeys=Object.keys(people).filter(k=>k!==MY_PERSON&&!people[k]._archived);
@@ -2841,7 +2812,7 @@ function renderDashboard(){
       <div class="dash-rule"></div>
     </div>
     <div class="kpi-row">
-      <div class="kpi"><div class="kpi-label">Billable this week</div><div class="kpi-val">${formatHrs(billH)||'0h'}</div><div class="kpi-sub">of ${totalTarget}h target</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${billPct}%;background:${billPct>=100?'var(--red)':billPct>=80?'#FF9800':'#4CAF50'};"></div></div></div>
+      <div class="kpi"><div class="kpi-label">Billable this week</div><div class="kpi-val">${formatHrs(billH)||'0h'}</div><div class="kpi-sub">${formatHrs(billDoneH)||'0h'} done · ${formatHrs(billTodoH)||'0h'} planned · of ${totalTarget}h</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${billPct}%;background:${billPct>=100?'var(--red)':billPct>=80?'#FF9800':'#4CAF50'};"></div></div></div>
       <div class="kpi"><div class="kpi-label">Non-billable</div><div class="kpi-val">${formatHrs(nbillH)||'0h'}</div><div class="kpi-sub">internal & admin</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${nbillPct}%;background:#FF9800;"></div></div></div>
       <div class="kpi"><div class="kpi-label">My tasks today</div><div class="kpi-val">${todayTodo.length}</div><div class="kpi-sub">${urgentCount?urgentCount+' urgent · ':''}${todayDone.length} done</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${todayTasks.length?Math.round(todayDone.length/todayTasks.length*100):0}%;background:var(--red);"></div></div></div>
     </div>
@@ -2937,7 +2908,9 @@ function toggleCalFilter(key){
 
 function _buildCalDayBlocks(tasksForDay,d,showDone){
   let slotCursor=0;
-  return tasksForDay.map(t=>{
+  // Done blocks stack first (earlier in the day), then to-dos below them
+  const ordered=[...tasksForDay].sort((a,b)=>(b.done?1:0)-(a.done?1:0));
+  return ordered.map(t=>{
     const h=t.hours||1;
     const topPx=slotCursor;
     const heightPx=Math.max(26,h*CAL_PX_PER_HOUR);
@@ -2984,30 +2957,12 @@ function renderTodoCalendar(){
   const weekMon=new Date();const _wd=(weekMon.getDay()+6)%7;
   weekMon.setDate(weekMon.getDate()-_wd+(weekOffset*7));weekMon.setHours(0,0,0,0);
 
+  // All tasks come from the ST-seeded store (scheduled → todo, logged → done)
   let allActive=[];const doneTasks=[];
   [1,2,3,4,5].forEach(d=>{(data[d]||[]).forEach(t=>{
     if(t.done)doneTasks.push({...t,day:d});
     else allActive.push({...t,day:d});
   });});
-  // Add ST logged entries as done tasks; per-day dedup for manual todos only
-  const stWeekCal=_getStWeekEntries(currentPerson,weekOffset);
-  // Build per-day logged keys for manual-todo dedup (ST assignments are never deduped)
-  const calLoggedByDay={};
-  [1,2,3,4,5].forEach(d=>{
-    const s=new Set();
-    (stWeekCal[d]||[]).forEach(e=>{doneTasks.push({...e,day:d});const n=(e.job||'').match(/^(\d+)/)?.[1]||e.job||'';s.add(n+'|'+(e.item||e.itemName||'').toLowerCase());});
-    calLoggedByDay[d]=s;
-  });
-  // Move manual todos (not ST assignments) that have a same-day log entry into done zone
-  allActive=allActive.filter(t=>{
-    if(t._stAssignment||!t.job||!t.item)return true;
-    const n=(t.job||'').match(/^(\d+)/)?.[1]||t.job||'';
-    if((calLoggedByDay[t.day||0]||new Set()).has(n+'|'+(t.item||'').toLowerCase())){doneTasks.push({...t,done:true});return false;}
-    return true;
-  });
-  // Add ST scheduled ToDo blocks as active (todo) tasks — each on its own day
-  const stAssignCal=_getStWeekAssignments(currentPerson,weekOffset);
-  [1,2,3,4,5].forEach(d=>{(stAssignCal[d]||[]).forEach(a=>allActive.push({...a,day:d}));});
   // Filters
   if(_calFilterUrgentOnly)allActive=allActive.filter(t=>t.urgent);
   if(!_calFilterPersonal)allActive=allActive.filter(t=>!t.personal);
@@ -3228,8 +3183,6 @@ function positionGlobalDivider(){
   gd.style.top=(headH+todoSplitPx)+'px';
 }
 
-const ZONE_BUCKET_PX=110;
-const ZONE_BUCKET_EDGE_RATIO=.15;
 function zoneCardHours(cards){
   return cards.reduce((sum,c)=>sum+parseFloat(c.dataset.hours||0),0);
 }
@@ -3239,15 +3192,10 @@ function restoreZoneCards(col,bucketSelector){
   col.querySelector('.done-overflow-pill')?.remove();
   col.querySelectorAll('.task-card').forEach(c=>c.style.display='');
 }
-function getSplitBucketMode(){
+function _todoUsableH(){
   const body=document.querySelector('.todo-body');
-  const firstHead=document.querySelector('.day-head');
-  const bodyH=body?body.offsetHeight:0;
-  const headH=firstHead?firstHead.offsetHeight:58;
-  const usableH=Math.max(0,bodyH-headH);
-  const threshold=Math.max(ZONE_BUCKET_PX,Math.round(usableH*ZONE_BUCKET_EDGE_RATIO));
-  const doneH=Math.max(0,usableH-todoSplitPx);
-  return{todo:todoSplitPx<=threshold,done:doneH<=threshold,threshold,doneH,usableH};
+  const headH=document.querySelector('.day-head')?.offsetHeight||58;
+  return Math.max(0,(body?body.offsetHeight:0)-headH);
 }
 function buildZoneBucket(type,cards,isToday){
   const totalHrs=zoneCardHours(cards);
@@ -3265,84 +3213,70 @@ function buildZoneBucket(type,cards,isToday){
 // The todo zone uses justify-content:flex-end + overflow:hidden, so overflowing
 // cards clip at the TOP and scrollHeight never exceeds clientHeight. Detect overflow
 // instead by asking: can every card fit at its minimum readable height (MIN_CARD_PX)?
-const MIN_CARD_PX=52, CARD_GAP_PX=4, ZONE_PAD_PX=12;
-function todoColumnsOverflow(cols){
-  return cols.some(col=>{
-    const n=col.querySelectorAll('.task-card').length;
-    if(!n)return false;
-    const needed=n*MIN_CARD_PX+(n-1)*CARD_GAP_PX+ZONE_PAD_PX;
-    return needed>col.clientHeight+2;
-  });
-}
-function checkTodoOverflow(){
-  const cols=[1,2,3,4,5].map(d=>document.getElementById('dtodo-'+d)).filter(Boolean);
-  cols.forEach(col=>restoreZoneCards(col,'.todo-bucket'));
-  const mode=getSplitBucketMode();
-  const shouldBucket=mode.todo||todoColumnsOverflow(cols);
-  if(!shouldBucket)return;
+const MIN_CARD_PX=52, CARD_GAP_PX=4, ZONE_PAD_PX=12, DONE_PAD_PX=42, COMFORT_CARD_PX=66;
+// A zone is "cramped" when its cards can't fit at the minimum readable height.
+function _zoneNeeded(n,pad){return n*MIN_CARD_PX+(n-1)*CARD_GAP_PX+pad;}
+// Per-column bucketing: a single day collapses to a bucket only when ITS own cards can't
+// fit at the minimum readable height. Light days keep showing cards even if a heavy day
+// (e.g. a 9-task day) buckets. This is what "only when either gets cramped" means.
+function _bucketCramped(prefix,bucketSel,pad,type){
+  const cols=[1,2,3,4,5].map(d=>document.getElementById(prefix+d)).filter(Boolean);
   cols.forEach(col=>{
-    const cards=[...col.querySelectorAll('.task-card')];
-    if(!cards.length)return;
-    cards.forEach(c=>c.style.display='none');
-    const isToday=col.closest('.day-col')?.classList.contains('today');
-    col.appendChild(buildZoneBucket('todo',cards,isToday));
+    restoreZoneCards(col,bucketSel);
+    const n=col.querySelectorAll('.task-card').length;
+    if(n>0&&_zoneNeeded(n,pad)>col.clientHeight+2){
+      const cards=[...col.querySelectorAll('.task-card')];
+      cards.forEach(c=>c.style.display='none');
+      const isToday=col.closest('.day-col')?.classList.contains('today');
+      col.appendChild(buildZoneBucket(type,cards,isToday));
+    }
   });
 }
-function expandTodoToFit(){
-  let maxSH=todoSplitPx;
-  [1,2,3,4,5].forEach(d=>{
-    const col=document.getElementById('dtodo-'+d);
-    if(col)restoreZoneCards(col,'.todo-bucket');
-    if(col&&col.scrollHeight>maxSH)maxSH=col.scrollHeight;
-  });
-  todoSplitPx=maxSH+16;
-  document.querySelectorAll('.day-todo').forEach(el=>el.style.height=todoSplitPx+'px');
+function checkTodoOverflow(){_bucketCramped('dtodo-','.todo-bucket',ZONE_PAD_PX,'todo');}
+function checkDoneOverflow(){_bucketCramped('ddone-','.done-bucket',DONE_PAD_PX,'done');}
+// Animate the divider/split to a target todo-zone height, then re-check buckets.
+function animateSplit(targetPx){
+  const usable=_todoUsableH();
+  targetPx=Math.max(80,Math.min(targetPx,usable-80));
+  const todos=document.querySelectorAll('.day-todo');
+  const gd=document.getElementById('global-divider');
+  todos.forEach(el=>el.classList.add('animating'));
+  if(gd)gd.classList.add('animating');
+  todoSplitPx=Math.round(targetPx);
+  todos.forEach(el=>el.style.height=todoSplitPx+'px');
   document.querySelectorAll('.task-card[data-hours]').forEach(c=>{const h=parseFloat(c.dataset.hours);if(h)c.style.height=taskCardHeight(h)+'px';});
   positionGlobalDivider();
-  checkTodoOverflow();
+  setTimeout(()=>{
+    todos.forEach(el=>el.classList.remove('animating'));
+    if(gd)gd.classList.remove('animating');
+    checkTodoOverflow();checkDoneOverflow();
+  },280);
 }
-function checkDoneOverflow(){
-  const cols=[1,2,3,4,5].map(d=>document.getElementById('ddone-'+d)).filter(Boolean);
-  cols.forEach(col=>restoreZoneCards(col,'.done-bucket'));
-  const mode=getSplitBucketMode();
-  const shouldBucket=mode.done||cols.some(col=>col.scrollHeight>col.clientHeight+6||col.clientHeight<ZONE_BUCKET_PX);
-  if(!shouldBucket)return;
-  cols.forEach(col=>{
-    const cards=[...col.querySelectorAll('.task-card')];
-    if(!cards.length)return;
-    cards.forEach(c=>c.style.display='none');
-    const isToday=col.closest('.day-col')?.classList.contains('today');
-    col.appendChild(buildZoneBucket('done',cards,isToday));
-  });
+// "View todos" — glide the divider down so every to-do card fits at a comfortable size.
+function expandTodoToFit(){
+  let needed=120;
+  [1,2,3,4,5].forEach(d=>{const col=document.getElementById('dtodo-'+d);if(!col)return;const n=col.querySelectorAll('.task-card').length;if(n)needed=Math.max(needed,n*COMFORT_CARD_PX+(n-1)*CARD_GAP_PX+ZONE_PAD_PX);});
+  animateSplit(needed);
 }
+// "View done" — glide the divider up so every done card fits.
 function shrinkDoneToFit(){
-  // Pull divider up enough to reveal all done items
-  let maxDoneScroll=0;
-  [1,2,3,4,5].forEach(d=>{
-    const col=document.getElementById('ddone-'+d);
-    if(col)restoreZoneCards(col,'.done-bucket');
-    if(col&&col.scrollHeight>maxDoneScroll)maxDoneScroll=col.scrollHeight;
-  });
-  const bodyH=document.querySelector('.todo-body')?.offsetHeight||700;
-  todoSplitPx=Math.max(60,bodyH-maxDoneScroll-40);
-  document.querySelectorAll('.day-todo').forEach(el=>el.style.height=todoSplitPx+'px');
-  positionGlobalDivider();
-  checkDoneOverflow();
-  checkTodoOverflow();
+  const usable=_todoUsableH();
+  let needed=120;
+  [1,2,3,4,5].forEach(d=>{const col=document.getElementById('ddone-'+d);if(!col)return;restoreZoneCards(col,'.done-bucket');const n=col.querySelectorAll('.task-card').length;if(n)needed=Math.max(needed,n*COMFORT_CARD_PX+(n-1)*CARD_GAP_PX+DONE_PAD_PX);});
+  animateSplit(usable-needed);
 }
 function switchBackToMe(){currentPerson=MY_PERSON;renderTodo();}
 function showSumTip(el){
   const tip=document.getElementById('todo-sum-tip');if(!tip)return;
   const data=getWeekData(currentPerson);
-  const stWeekTip=_getStWeekEntries(currentPerson,weekOffset);
   const weekMon=new Date();const _wd2=(weekMon.getDay()+6)%7;
   weekMon.setDate(weekMon.getDate()-_wd2+(weekOffset*7));weekMon.setHours(0,0,0,0);
   let rows='<div style="display:grid;grid-template-columns:auto 70px 70px;gap:4px 16px;align-items:center;">';
   rows+=`<div style="color:#888;font-size:10px;letter-spacing:.08em;text-transform:uppercase;">Day</div><div style="color:#888;font-size:10px;letter-spacing:.08em;text-transform:uppercase;text-align:right;">To Do</div><div style="color:#888;font-size:10px;letter-spacing:.08em;text-transform:uppercase;text-align:right;">Done</div>`;
   [1,2,3,4,5].forEach((d,i)=>{
-    const tasks=data[d]||[];const stE=stWeekTip[d]||[];
+    const tasks=data[d]||[];
     const todoH=tasks.filter(t=>!t.done).reduce((s,t)=>s+(t.hours||0),0);
-    const doneH=tasks.filter(t=>t.done).reduce((s,t)=>s+(t.hours||0),0)+stE.reduce((s,e)=>s+(e.minutes||0)/60,0);
+    const doneH=tasks.filter(t=>t.done).reduce((s,t)=>s+(t.hours||0),0);
     const colDate=new Date(weekMon);colDate.setDate(weekMon.getDate()+i);
     const dn=['Monday','Tuesday','Wednesday','Thursday','Friday'][i];
     rows+=`<div style="color:#aaa;">${dn} ${colDate.getDate()}</div><div style="text-align:right;color:${todoH>0?'#fff':'#555'};">${todoH>0?formatHrs(todoH):'0h'}</div><div style="text-align:right;color:${doneH>0?'#4CAF50':'#555'};">${doneH>0?formatHrs(doneH):'0h'}</div>`;
@@ -3379,21 +3313,15 @@ function renderTodo(){
   },true);
   const data=getWeekData(currentPerson);
 
-  // Week totals for summary bar (manual tasks + ST logged)
-  let totalTodoH=0,totalDoneH=0,totalStH=0;
+  // Week totals for summary bar (all tasks come from the ST-seeded store)
+  let totalTodoH=0,totalDoneH=0;
   [1,2,3,4,5].forEach(d=>{(data[d]||[]).forEach(t=>{if(t.done)totalDoneH+=t.hours||0;else totalTodoH+=t.hours||0;});});
-  const stWeek=_getStWeekEntries(currentPerson,weekOffset);
-  const stAssignWeek=_getStWeekAssignments(currentPerson,weekOffset);
-  [1,2,3,4,5].forEach(d=>{(stWeek[d]||[]).forEach(e=>totalStH+=e.minutes/60);});
-  // Scheduled ST ToDos count toward the "to do" total
-  [1,2,3,4,5].forEach(d=>{(stAssignWeek[d]||[]).forEach(a=>totalTodoH+=a.hours||0);});
   const sumEl=document.getElementById('todo-sum-text');
-  if(sumEl)sumEl.textContent=`To do: ${formatHrs(totalTodoH)||'0h'} · Done: ${formatHrs(totalDoneH+totalStH)||'0h'}`;
+  if(sumEl)sumEl.textContent=`To do: ${formatHrs(totalTodoH)||'0h'} · Done: ${formatHrs(totalDoneH)||'0h'}`;
 
   const _dow=new Date().getDay();
   const todayDayNum=_dow===0?0:_dow;
   const DAY_CAP=8;
-  const splitBucketMode=getSplitBucketMode();
 
   // Build week date numbers for header display
   const weekMon=new Date();const _wd=(weekMon.getDay()+6)%7;
@@ -3407,26 +3335,16 @@ function renderTodo(){
     const tasks=data[d]||[];
     const todoTasks=tasks.filter(t=>!t.done);
     const doneTasks=tasks.filter(t=>t.done);
-    const stDayEntries=stWeek[d]||[];
-    const stDayDoneH=stDayEntries.reduce((s,e)=>s+(e.minutes||0)/60,0);
-    const stDayBillDoneH=stDayEntries.filter(e=>e.billable).reduce((s,e)=>s+(e.minutes||0)/60,0);
-    const stAssignDay=stAssignWeek[d]||[];
-    // Per-day dedup for MANUAL todos only: if same job+item was logged in ST on this exact day, move to done
-    // ST assignments are NOT deduped — their totalIncompleteMinutes already reflects remaining work
-    const dayLoggedKeys=new Set(stDayEntries.map(e=>{const n=(e.job||'').match(/^(\d+)/)?.[1]||e.job||'';return n+'|'+(e.item||'').toLowerCase();}));
-    const _dayLogged=t=>{if(!t.job||!t.item)return false;const n=(t.job||'').match(/^(\d+)/)?.[1]||t.job||'';return dayLoggedKeys.has(n+'|'+(t.item||'').toLowerCase());};
-    const activeTodos=todoTasks.filter(t=>!_dayLogged(t));
-    const activeAssign=stAssignDay; // no dedup — assignments show their own remaining hours
-    const dedupedDone=[...doneTasks,...todoTasks.filter(t=>_dayLogged(t)).map(t=>({...t,done:true}))];
-    const dayTodoH=activeTodos.reduce((s,t)=>s+(t.hours||0),0)+activeAssign.reduce((s,a)=>s+(a.hours||0),0);
-    const dayDoneH=doneTasks.reduce((s,t)=>s+(t.hours||0),0)+stDayDoneH;
+    const dayTodoH=todoTasks.reduce((s,t)=>s+(t.hours||0),0);
+    const dayDoneH=doneTasks.reduce((s,t)=>s+(t.hours||0),0);
     const dayTotalH=dayTodoH+dayDoneH;
     const isOver=dayTotalH>DAY_CAP;
 
-    // Billable split for capacity bar
-    const billTodo=todoTasks.filter(taskIsBillable).reduce((s,t)=>s+(t.hours||0),0);
+    // Billable split for capacity bar (task.billable is set when seeded from ST)
+    const _isBill=t=>t.billable!==false;
+    const billTodo=todoTasks.filter(_isBill).reduce((s,t)=>s+(t.hours||0),0);
     const nbillTodo=Math.max(0,dayTodoH-billTodo);
-    const billDone=doneTasks.filter(taskIsBillable).reduce((s,t)=>s+(t.hours||0),0)+stDayBillDoneH;
+    const billDone=doneTasks.filter(_isBill).reduce((s,t)=>s+(t.hours||0),0);
     const nbillDone=Math.max(0,dayDoneH-billDone);
     const bTodoW=Math.min(100,Math.round((billTodo/DAY_CAP)*100));
     const nTodoW=Math.min(100-bTodoW,Math.round((nbillTodo/DAY_CAP)*100));
@@ -3461,28 +3379,19 @@ function renderTodo(){
     const todoEl=document.getElementById('dtodo-'+d);
     const doneEl=document.getElementById('ddone-'+d);
 
-    const stEntries=stDayEntries;
-    const todoCards=[...activeTodos,...activeAssign];
-
-    if(splitBucketMode.todo){
-      // Todo zone is globally compressed — show summary bucket in every populated day
-      if(todoCards.length>0){
-        const tmpCards=todoCards.map(t=>({dataset:{hours:t.hours||0}}));
-        todoEl.appendChild(buildZoneBucket('todo',tmpCards,isToday));
-      }else{
-        todoEl.innerHTML='<div class="day-done-empty">—</div>';
-      }
+    // Always render cards; checkTodoOverflow/checkDoneOverflow collapse a zone to a
+    // bucket only when it's genuinely cramped (cards can't fit at a readable size).
+    if(todoTasks.length===0){
+      todoEl.innerHTML='<div class="day-done-empty">—</div>';
     } else {
-      activeTodos.forEach(t=>todoEl.appendChild(createTaskCard(t,d,false)));
-      activeAssign.forEach(a=>todoEl.appendChild(createTaskCard(a,d,false)));
+      todoTasks.forEach(t=>todoEl.appendChild(createTaskCard(t,d,false)));
       todoEl.scrollTop=todoEl.scrollHeight;
     }
 
-    if(dedupedDone.length===0&&stEntries.length===0){
+    if(doneTasks.length===0){
       doneEl.innerHTML='<div class="day-done-empty">—</div>';
     } else {
-      dedupedDone.forEach(t=>doneEl.appendChild(createTaskCard(t,d,true)));
-      stEntries.forEach(e=>doneEl.appendChild(createTaskCard(e,d,true)));
+      doneTasks.forEach(t=>doneEl.appendChild(createTaskCard(t,d,true)));
     }
 
     todoEl.addEventListener('dragover',e=>{e.preventDefault();todoEl.classList.add('drop-hi');_highlightDropTarget(e,todoEl);});
@@ -3520,10 +3429,8 @@ function renderTodo(){
 
   // Empty week state — overlay invitation without breaking drag/drop targets
   const weekTaskCount=[1,2,3,4,5].reduce((s,d)=>s+((data[d]||[]).length),0);
-  const stWeekEntries=_getStWeekEntries(currentPerson,0);
-  const stWeekCount=[1,2,3,4,5].reduce((s,d)=>s+(stWeekEntries[d]||[]).length,0);
   document.getElementById('todo-empty-overlay')?.remove();
-  if(weekTaskCount===0&&stWeekCount===0){
+  if(weekTaskCount===0){
     const body=document.querySelector('.todo-body');
     if(body){
       const ov=document.createElement('div');
@@ -3665,7 +3572,7 @@ function createTaskCard(t,day,isDone){
     if(card.classList.contains('resizing')){e.preventDefault();return;}
     dragSrc=card;card.classList.add('dragging-c');
     e.dataTransfer.effectAllowed='move';
-    e.dataTransfer.setData('text/plain',JSON.stringify({taskId:t.id,fromDay:day,_fromST:!!t._fromST,_stTask:t._fromST?t:null}));
+    e.dataTransfer.setData('text/plain',JSON.stringify({taskId:t.id,fromDay:day}));
   });
   card.addEventListener('dragend',()=>{card.classList.remove('dragging-c');_clearDropIndicators();document.querySelectorAll('.drop-hi,.div-drop-hi').forEach(el=>el.classList.remove('drop-hi','div-drop-hi'));});
   card.addEventListener('dragover',e=>{
@@ -3674,8 +3581,8 @@ function createTaskCard(t,day,isDone){
     if(parent)_highlightDropTarget(e,parent);
   });
 
-  // Only manual tasks get edge-resize
-  if(!t._fromST){
+  // Edge-resize is available on every card (edits are in-memory, revert on refresh)
+  {
     // Edge resize: top or bottom 7px = resize zone (drag to change hours)
     const EDGE=7;
     card.addEventListener('mousemove',e=>{
@@ -3891,17 +3798,9 @@ function onDropToSection(e,toDay,markDone){
   document.querySelectorAll('.drop-hi,.div-drop-hi').forEach(el=>el.classList.remove('drop-hi','div-drop-hi'));
   try{
     const data=JSON.parse(e.dataTransfer.getData('text/plain'));
-    const{taskId,fromDay,_fromST,_stTask}=data;
+    const{taskId,fromDay}=data;
     const wd=getWeekData(currentPerson);
-    // ST tasks are read-only in Streamtime — always clone into local data
-    if(_fromST&&_stTask){
-      const clone={..._stTask,id:uid('t'),done:markDone,_fromST:undefined};
-      delete clone._fromST;
-      if(!wd[toDay])wd[toDay]=[];
-      if(insertIdx>=0)wd[toDay].splice(insertIdx,0,clone);else wd[toDay].push(clone);
-      saveData();renderTodo();toast('Copied to '+(markDone?'Done':'To Do'));
-      return;
-    }
+    // All tasks (ST-seeded included) live in todoData — move them in place
     const fromArr=wd[fromDay]||[];
     const idx=fromArr.findIndex(t=>t.id===taskId);
     if(idx===-1)return;
@@ -3935,17 +3834,13 @@ function onDropToSection(e,toDay,markDone){
 
 function openEditTodo(t,day){editTask(t,day);}
 function openEditTodoById(id,day){
-  // ST entries are not in todoData — find them from the week entries
-  if(id&&id.startsWith('st-lt-')){
-    const sw=_getStWeekEntries(currentPerson,weekOffset);
-    for(let d=1;d<=5;d++){const e=(sw[d]||[]).find(x=>x.id===id);if(e){editTask(e,d||day);return;}}
-    // Check calTaskMap as fallback
-    const cm=window._calTaskMap&&window._calTaskMap[id];if(cm)editTask(cm,cm.day||day);
-    return;
-  }
   const wd=getWeekData(currentPerson);
-  const t=(wd[day]||[]).find(x=>x.id===id);
-  if(t)editTask(t,day);
+  // Tasks all live in todoData now; search the given day first, then the whole week
+  let t=(wd[day]||[]).find(x=>x.id===id);
+  let foundDay=day;
+  if(!t){for(let d=1;d<=5;d++){const f=(wd[d]||[]).find(x=>x.id===id);if(f){t=f;foundDay=d;break;}}}
+  if(!t){const cm=window._calTaskMap&&window._calTaskMap[id];if(cm){t=cm;foundDay=cm.day||day;}}
+  if(t)editTask(t,foundDay);
 }
 
 function populateTodoJobSelect(pre){
@@ -4354,15 +4249,12 @@ function editTask(t,day){
   const dateStr=`${now.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][now.getMonth()]} ${now.getFullYear()}`;
   document.getElementById('td-ts-text').innerHTML=`Created by <strong>${people[currentPerson]?.name||'you'}</strong> · ${dateStr}<br>Last modified by <strong>${people[currentPerson]?.name||'you'}</strong> · just now`;
   document.getElementById('td-timestamps').style.display='';
+  document.getElementById('td-modal-title').textContent=t._fromST?'Streamtime task':'Edit task';
+  document.getElementById('td-save-lbl').textContent='Save changes';
+  document.getElementById('edit-task-btn').style.display='inline-block';
   if(t._fromST){
-    document.getElementById('td-modal-title').textContent='Streamtime entry';
-    document.getElementById('td-save-lbl').textContent='Close';
-    document.getElementById('edit-task-btn').style.display='none';
-    document.getElementById('td-ts-text').innerHTML=`Logged in <strong>Streamtime</strong> · synced to platform<br><span style="color:var(--muted);">Changes here won't sync back to Streamtime.</span>`;
-  } else {
-    document.getElementById('td-modal-title').textContent='Edit task';
-    document.getElementById('td-save-lbl').textContent='Save changes';
-    document.getElementById('edit-task-btn').style.display='inline-block';
+    // ST tasks are editable in-memory; changes are local and revert on refresh until ST write-back exists
+    document.getElementById('td-ts-text').innerHTML=`From <strong>Streamtime</strong> · edits apply locally<br><span style="color:var(--muted);">Changes won't sync back to Streamtime yet — they revert on refresh.</span>`;
   }
   document.getElementById('todo-modal').classList.add('on');
   setTimeout(()=>document.getElementById('td-task').focus(),50);
@@ -5322,52 +5214,37 @@ function _jobTimeEntries(jobId){
   const itemIndex=[];
   phArr.forEach(ph=>(ph.items||[]).forEach(it=>itemIndex.push({id:it.id,name:(it.name||'').trim().toLowerCase(),displayName:it.name,phase:ph.name,rate:parseInt((it.rate||'$150').replace(/[$,]/g,''))||150})));
   const rows=[];
-  Object.keys(todoData).forEach(pKey=>{
-    const pd=todoData[pKey];if(!pd)return;
-    Object.keys(pd).forEach(wk=>{
-      const wd=pd[wk];if(!wd)return;
-      [1,2,3,4,5].forEach(d=>{
-        (wd[d]||[]).forEach(t=>{
-          if(!(t.jobId===jobId||(t.job&&t.job.includes(jobId))))return;
-          const date=new Date(wk+'T00:00:00');date.setDate(date.getDate()+(d-1));
-          const match=(t.itemId&&itemIndex.find(x=>x.id===t.itemId))||itemIndex.find(x=>x.name&&(t.item||'').trim().toLowerCase()===x.name);
-          rows.push({
-            person:pKey,wk,day:d,id:t.id,title:t.title,date,
-            item:match?match.displayName:(t.item||'—'),
-            phase:match?match.phase:'',
-            hours:t.hours||0,done:!!t.done,
-            sell:Math.round((t.hours||0)*(match?match.rate:150)),
-          });
-        });
-      });
+  // Streamtime is the source of truth: scheduled blocks (to-do) + logged entries (done).
+  // Build ST item lookup once: stItemId → {displayName, phase, rate}.
+  const stItemMap={};
+  phArr.forEach(ph=>(ph.items||[]).forEach(it=>{
+    if(it._stId)stItemMap[it._stId]={displayName:it.name,phase:ph.name,rate:parseInt((it.rate||'$150').replace(/[$,]/g,''))||150};
+  }));
+  // Scheduled (to-do) blocks for this job
+  if(stScheduledTodos.length&&j._stId){
+    stScheduledTodos.forEach(td=>{
+      if(String(td.jobId)!==String(j._stId)&&String(td.jobNumber)!==String(jobId))return;
+      const stUser=stUsersById[td.userId];if(!stUser)return;
+      const itemInfo=td.jobItemId?stItemMap[td.jobItemId]:null;
+      const mins=td.minutes||0;const rate=itemInfo?.rate||150;
+      const date=new Date((td.date||'').slice(0,10)+'T12:00:00');
+      rows.push({person:stUser.key,wk:null,day:null,id:'st-todo-'+td.id,title:td.notes||'',date,
+        item:itemInfo?itemInfo.displayName:(td.itemName||'—'),phase:itemInfo?.phase||'',
+        hours:mins/60,done:false,sell:Math.round(mins/60*rate),_fromST:true});
     });
-  });
-  // Also include Streamtime logged time entries for this job
+  }
+  // Logged (done) entries for this job
   if(stLoggedTimes.length&&j._stId){
-    // Build item lookup: stItemId → {displayName, phase, rate}
-    const stItemMap={};
-    phArr.forEach(ph=>(ph.items||[]).forEach(it=>{
-      if(it._stId)stItemMap[it._stId]={displayName:it.name,phase:ph.name,rate:parseInt((it.rate||'$150').replace(/[$,]/g,''))||150};
-    }));
     stLoggedTimes.forEach(lt=>{
       if((lt.job?.id||lt.jobId)!==j._stId)return;
-      const stUser=stUsersById[lt.userId];
-      if(!stUser)return;
+      const stUser=stUsersById[lt.userId];if(!stUser)return;
       const itemId=lt.jobItemUser?.jobItemId;
       const itemInfo=itemId?stItemMap[itemId]:null;
-      const mins=lt.minutes||0;
-      const rate=itemInfo?.rate||150;
+      const mins=lt.minutes||0;const rate=itemInfo?.rate||150;
       const date=new Date((lt.date||'').slice(0,10)+'T12:00:00');
-      rows.push({
-        person:stUser.key,wk:null,day:null,id:'st-lt-'+lt.id,
-        title:lt.notes||'',
-        date,
-        item:itemInfo?itemInfo.displayName:(lt.itemName||'—'),
-        phase:itemInfo?.phase||'',
-        hours:mins/60,done:true,
-        sell:Math.round(mins/60*rate),
-        _fromST:true,
-      });
+      rows.push({person:stUser.key,wk:null,day:null,id:'st-lt-'+lt.id,title:lt.notes||'',date,
+        item:itemInfo?itemInfo.displayName:(lt.itemName||'—'),phase:itemInfo?.phase||'',
+        hours:mins/60,done:true,sell:Math.round(mins/60*rate),_fromST:true});
     });
   }
   rows.sort((a,b)=>a.date-b.date);
@@ -6886,8 +6763,8 @@ function renderSettings(){
       <div class="sett-section-body collapsed" id="ssb-data">
         <div style="background:var(--white);border:1px solid var(--border);padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
           <div style="display:flex;align-items:center;justify-content:space-between;">
-            <div><div style="font-size:13px;">Planned tasks</div><div style="font-size:11px;color:var(--muted);">Clears all manually-planned tasks from the todo board. Streamtime logged time is unaffected.</div></div>
-            <button class="d-action" style="flex-shrink:0;margin-left:16px;color:var(--red);border-color:var(--red);" onclick="if(confirm('Clear all planned tasks? This cannot be undone.')){todoData={};saveData();renderTodo();toast('All planned tasks cleared','success');}">Clear tasks</button>
+            <div><div style="font-size:13px;">Todo board source</div><div style="font-size:11px;color:var(--muted);">The Todo board reads live from Streamtime. Edits you make on the board apply locally and revert on refresh until Streamtime write-back is enabled.</div></div>
+            <button class="d-action" style="flex-shrink:0;margin-left:16px;" onclick="resetTodoStore();renderTodo();toast('Reloaded from Streamtime','success');">Reload from ST</button>
           </div>
         </div>
       </div>
