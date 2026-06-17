@@ -1,7 +1,29 @@
 {
-  "generated_at": "2026-06-17T00:26:53.483707+00:00",
-  "current_version": "2.10.6",
+  "generated_at": "2026-06-17T01:08:21.990045+00:00",
+  "current_version": "2.11.0",
   "releases": [
+    {
+      "version": "2.11.0",
+      "date": "17 Jun 2026",
+      "title": "Real scheduled ToDo blocks from Streamtime",
+      "items": [
+        "Todo board now reads actual Streamtime \"Scheduled\" ToDo blocks — each planned block shows with its own note, exact date, and exact minutes",
+        "Notes pull through correctly: the block note (e.g. \"🥫 RECORP - New Can Spec Sheet\") is the task title",
+        "Multiple blocks for the same job+item are kept as separate tasks (each is its own scheduled block)",
+        "No more aggregate/spanning assignments cluttering every day — blocks sit only on their real scheduled day",
+        "Done column reads \"Logged\" blocks; to-do column reads \"Scheduled\" blocks — Streamtime moves a block between them when completed, so no duplication",
+        "Removed the per-block note duplication on cards (note shown once, as the title)",
+        "New data file scheduled_todos.json synced hourly from Streamtime"
+      ],
+      "sections": [
+        "Boards",
+        "Data",
+        "Jobs",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
     {
       "version": "2.10.6",
       "date": "17 Jun 2026",
