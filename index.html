@@ -1399,8 +1399,18 @@ tr:hover .i-todo-btn{opacity:1;}
               </div>
               <div class="jobs-search" id="inv-search-wrap" style="display:none;"><i class="ti ti-search"></i><input id="invoices-search-inp" placeholder="Search invoices…" oninput="renderInvoices()"/></div>
               <select class="cc-select" id="invoices-client" style="display:none;" onchange="renderInvoices()"><option value="all">All clients</option></select>
+              <select class="cc-select" id="invoices-status-filter" style="display:none;" onchange="renderInvoices()">
+                <option value="all">All statuses</option>
+                <option value="overdue">Overdue</option>
+                <option value="sent">Sent</option>
+                <option value="awaiting">Awaiting</option>
+                <option value="paid">Paid</option>
+                <option value="draft">Draft</option>
+                <option value="voided">Voided</option>
+              </select>
               <span class="jobs-count" id="invoices-count" style="margin-left:auto;"></span>
               <span class="jobs-count" id="invoices-total" style="font-size:13px;font-weight:400;"></span>
+              <span class="jobs-count" id="invoices-dso" style="font-size:12px;color:var(--muted);"></span>
             </div>
             <div id="invoices-list" style="overflow-y:auto;flex:1;"></div>
           </div>
@@ -1521,14 +1531,20 @@ tr:hover .i-todo-btn{opacity:1;}
               <div class="dash-date" id="r-sub" style="margin-top:2px;">Business overview</div>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
-              <select class="filter-btn cc-select" id="r-period" style="min-width:130px;">
+              <select class="filter-btn cc-select" id="r-period" style="min-width:130px;" onchange="document.getElementById('r-custom-range').style.display=this.value==='custom'?'flex':'none';renderReporting()">
                 <option value="week">This week</option>
                 <option value="2weeks">Last 2 weeks</option>
                 <option value="month" selected>This month</option>
                 <option value="quarter">This quarter</option>
                 <option value="year">This year</option>
                 <option value="all">All time</option>
+                <option value="custom">Custom range…</option>
               </select>
+              <div id="r-custom-range" style="display:none;align-items:center;gap:6px;">
+                <input type="date" id="r-from" class="filter-btn" style="font-size:11px;padding:5px 8px;" onchange="renderReporting()">
+                <span style="font-size:11px;color:var(--muted);">→</span>
+                <input type="date" id="r-to" class="filter-btn" style="font-size:11px;padding:5px 8px;" onchange="renderReporting()">
+              </div>
               <div id="r-tab-filters" style="display:flex;gap:8px;"></div>
               <button class="d-action" onclick="exportReportTab()"><i class="ti ti-download" style="font-size:12px"></i> Export</button>
             </div>
@@ -1563,6 +1579,9 @@ tr:hover .i-todo-btn{opacity:1;}
             <button class="d-action primary" onclick="openCreateBoard()"><i class="ti ti-plus" style="font-size:12px;"></i> New board</button>
           </div>
           <div class="dash-rule" style="margin:14px 0 24px;"></div>
+          <div style="margin-bottom:20px;display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="d-action" onclick="createStudioPreset()" title="Auto-board: all live jobs grouped by workflow stage"><i class="ti ti-layout-kanban" style="font-size:12px;"></i> Studio board (live jobs)</button>
+          </div>
           <div id="boards-list-grid"></div>
         </div>
         <!-- BOARD DETAIL -->
@@ -2077,8 +2096,21 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.15.0';
+const APP_VERSION='2.16.0';
 const CHANGELOG=[
+  {version:'2.16.0',date:'18 Jun 2026',title:'Full roadmap sweep — address, expiry alerts, DSO, invoice filters, date range, capacity, studio board, uninvoiced report',items:[
+    'Client detail: company address shown when mapped from Streamtime',
+    'Invoice print: client address appears on the tax invoice when available',
+    'Dashboard: "Quotes expiring soon" alert card — quotes expiring within 14 days appear in Needs attention',
+    'Invoices: PO number column in All Invoices table — linked from job PO',
+    'Invoices: status filter (Overdue / Sent / Awaiting / Paid / Draft / Voided) in All Invoices',
+    'Invoices: DSO (Days Sales Outstanding) shown in toolbar — average days from sent to paid',
+    'Reporting: custom date-range picker — select any From/To dates for precise period analysis',
+    'Todo: day header tints amber when person is at or over capacity for the day',
+    'Todo: day capacity now uses per-person Hrs/day from Settings (not hardcoded 8h)',
+    'Boards: "Studio board" one-click preset — creates a board of all live jobs grouped by workflow stage (Quote / Live / Completed / Invoiced)',
+    'Reporting → Business: Uninvoiced work table — all jobs with a gap between revenue logged and invoiced, sorted by gap size',
+  ]},
   {version:'2.15.0',date:'18 Jun 2026',title:'PO tracking, deadline calendar, rollover prompt, contact management, per-person rates',items:[
     'Jobs: PO filter (All / Has PO / No PO) — instantly see which jobs have a purchase order',
     'Jobs: PO number shown in status column of jobs table for quick scanning',
@@ -2937,6 +2969,7 @@ function renderDashboard(){
   const dueJobs=_liveJobs.filter(j=>j.dueDate&&_inDays(j.dueDate)<=7).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate)).slice(0,12);
   const overdueInv=(stInvoices||[]).filter(i=>{const s=(i.invoiceStatus?.name||'').toLowerCase();return i.dueDate&&new Date(i.dueDate)<_t0&&s!=='paid'&&s!=='voided';}).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate)).slice(0,12);
   const awaitingQuotes=(stQuotes||[]).filter(q=>{const s=(typeof q.quoteStatus==='string'?q.quoteStatus:q.quoteStatus?.name||'').toLowerCase();return s.includes('pending')&&q.sentDate&&_inDays(q.sentDate)<=-7;}).sort((a,b)=>new Date(a.sentDate)-new Date(b.sentDate)).slice(0,12);
+  const expiringQuotes=(stQuotes||[]).filter(q=>{const s=(typeof q.quoteStatus==='string'?q.quoteStatus:q.quoteStatus?.name||'').toLowerCase();if(s.includes('approved')||s.includes('declined'))return false;return q.expiryDate&&_inDays(q.expiryDate)<=14&&_inDays(q.expiryDate)>=-1;}).sort((a,b)=>new Date(a.expiryDate)-new Date(b.expiryDate)).slice(0,12);
   const uninvoiced=_liveJobs.filter(j=>(j._sellUsed||0)-(j._stInvoiced||0)>=500&&(j._bPct||0)>=80).sort((a,b)=>((b._sellUsed||0)-(b._stInvoiced||0))-((a._sellUsed||0)-(a._stInvoiced||0))).slice(0,10);
   // Quiet clients: had jobs before, but nothing in play now
   const _coAll={};jobs.forEach(j=>{if(!j.company)return;(_coAll[j.company]=_coAll[j.company]||{total:0,live:0}); _coAll[j.company].total++; if(j.status==='inplay')_coAll[j.company].live++;});
@@ -2947,6 +2980,7 @@ function renderDashboard(){
     _attCard('Jobs due / overdue',dueJobs.map(j=>({label:`${j.id} ${j.name}`,meta:_inDays(j.dueDate)<0?`${-_inDays(j.dueDate)}d over`:_inDays(j.dueDate)===0?'today':`${_inDays(j.dueDate)}d`,jid:j.id})),'#E65100'),
     _attCard('Overdue invoices',overdueInv.map(i=>({label:`${i.company?.name||i.jobName||'—'}`,meta:`${-_inDays(i.dueDate)}d`,jid:null})),'var(--red)'),
     _attCard('Quotes awaiting response',awaitingQuotes.map(q=>({label:`${q.company?.name||q.jobName||(q.jobNumber?'Job '+q.jobNumber:q.name)||'—'}`,meta:`${-_inDays(q.sentDate)}d`,jid:null})),'#6B7FA3'),
+    _attCard('Quotes expiring soon',expiringQuotes.map(q=>({label:`${q.company?.name||q.jobName||(q.jobNumber?'Job '+q.jobNumber:q.name)||'—'}`,meta:_inDays(q.expiryDate)<=0?'expired':_inDays(q.expiryDate)===0?'today':`${_inDays(q.expiryDate)}d`,jid:null})),'#F57C00'),
     _attCard('Uninvoiced work',uninvoiced.map(j=>({label:`${j.id} ${j.name}`,meta:'$'+Math.round((j._sellUsed||0)-(j._stInvoiced||0)).toLocaleString(),jid:j.id})),'#9C6FD6'),
     _attCard('Quiet clients',quietClients,'#888888'),
   ].filter(Boolean).join(''):'';
@@ -2992,6 +3026,7 @@ function setInvMode(mode){
   const showSearch=mode==='all';
   const sw=document.getElementById('inv-search-wrap');if(sw)sw.style.display=showSearch?'':'none';
   const cl=document.getElementById('invoices-client');if(cl)cl.style.display=showSearch?'':'none';
+  const sf=document.getElementById('invoices-status-filter');if(sf)sf.style.display=showSearch?'':'none';
   if(mode==='all')initInvoicesClientFilter();
   renderInvoices();
 }
@@ -3483,7 +3518,7 @@ function renderTodo(){
 
   const _dow=new Date().getDay();
   const todayDayNum=_dow===0?0:_dow;
-  const DAY_CAP=8;
+  const DAY_CAP=people[currentPerson]?.hoursPerDay||8;
 
   // Build week date numbers for header display
   const weekMon=new Date();const _wd=(weekMon.getDay()+6)%7;
@@ -3524,7 +3559,7 @@ function renderTodo(){
     }
 
     col.innerHTML=`
-      <div class="day-head">
+      <div class="day-head"${isWork&&isOver?' style="background:#FFF3E0;"':''}>
         <div class="day-head-row">
           <div><div class="day-name">${DAY_NAMES[i]}</div><div class="day-num ${isToday?'today-red':''}">${calDate}</div></div>
           ${isWork?`<button class="day-add-btn" onclick="openTodoModal(null,${d})"><i class="ti ti-plus" style="font-size:9px"></i> Add New</button>`:''}
@@ -6679,7 +6714,10 @@ function renderInvoice(j){
         <div style="margin-bottom:8px;">${ccLogoSVG(36)}</div>
         <div style="font-size:11px;color:var(--muted);line-height:1.7;">NZ Ltd<br>Level 1, 53 Fort Street, Auckland<br>GST 116710013</div>
       </div>
-      <div style="font-size:22px;font-family:var(--serif);font-weight:400;">Tax Invoice</div>
+      <div style="text-align:right;">
+        <div style="font-size:22px;font-family:var(--serif);font-weight:400;">Tax Invoice</div>
+        ${(()=>{const ci=clientsData.find(c=>c.name===j.company);return ci&&ci.address?`<div style="font-size:11px;color:var(--muted);line-height:1.6;margin-top:6px;">${ci.address.replace(/\n/g,'<br>')}</div>`:'';})()}
+      </div>
     </div>
     <div class="inv-meta-grid">
       <div><div class="inv-ml">Job number</div><div class="inv-mv">${j.id}</div></div>
@@ -6816,6 +6854,10 @@ function openClientDetail(id){
       <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Website</div>
       ${c.website?`<a href="${c.website}" target="_blank" rel="noopener" style="font-size:12px;color:var(--ink);text-decoration:underline;text-underline-offset:2px;word-break:break-all;">${c.website.replace(/^https?:\/\//,'')}</a>`:`<span style="font-size:12px;color:var(--muted);">—</span>`}
     </div>
+    ${c.address?`<div style="flex:1;min-width:160px;">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Address</div>
+      <div style="font-size:12px;color:var(--ink);line-height:1.4;">${c.address.replace(/\n/g,'<br>')}</div>
+    </div>`:''}
     <div style="flex:1;min-width:140px;">
       <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Lead</div>
       <select class="filter-btn" style="width:100%;font-size:12px;" onchange="updateClientField('${c.id}','lead',this.value)">
@@ -7879,13 +7921,18 @@ function renderInvoices(){
   // All Invoices — from Streamtime stInvoices
   const search=(document.getElementById('invoices-search-inp')?.value||'').toLowerCase();
   const clientFilter=document.getElementById('invoices-client')?.value||'all';
+  const statusFilter=document.getElementById('invoices-status-filter')?.value||'all';
 
   // Build a job lookup for amounts (keyed by Streamtime internal job ID)
   const jobByStId={};jobs.forEach(j=>{if(j._stId)jobByStId[j._stId]=j;});
 
+  const _invNowEarly=new Date();_invNowEarly.setHours(0,0,0,0);
+  const _getInvStatus=i=>{const s=(i.invoiceStatus?.name||i.status||'').toLowerCase();if(s==='paid')return'paid';if(s==='voided')return'voided';const due=i.dueDate?new Date(i.dueDate):null;if(due&&due<_invNowEarly)return'overdue';if(s.includes('awaiting'))return'awaiting';if(i.sentDate)return'sent';return'draft';};
+
   let inv=stInvoices.length?[...stInvoices]:[];
   if(search)inv=inv.filter(i=>(`${i.id} ${i.jobNumber||''} ${i.jobName||''} ${i.company?.name||''}`).toLowerCase().includes(search));
   if(clientFilter!=='all')inv=inv.filter(i=>(i.company?.name||'')=== clientFilter);
+  if(statusFilter!=='all')inv=inv.filter(i=>_getInvStatus(i)===statusFilter);
   inv.sort((a,b)=>b.id-a.id);
 
   // Populate client filter dropdown
@@ -7925,17 +7972,25 @@ function renderInvoices(){
     if(s==='sent')return'<span class="inv-pill sent">Sent</span>';
     return'<span class="inv-pill draft">Draft</span>';
   };
+  // DSO metric: average days from sent to paid for paid invoices
+  const paidInvs=inv.filter(i=>i.paidDate&&i.sentDate);
+  const dso=paidInvs.length?Math.round(paidInvs.reduce((s,i)=>s+(new Date(i.paidDate)-new Date(i.sentDate))/86400000,0)/paidInvs.length):null;
+  const dsoEl=document.getElementById('invoices-dso');
+  if(dsoEl)dsoEl.innerHTML=dso!=null?`DSO <strong>${dso}d</strong>`:'';
+
   list.innerHTML=`<table class="inv-table"><thead><tr>
     <th class="inv-th">Company</th>
     <th class="inv-th">Inv #</th>
     <th class="inv-th">Job</th>
+    <th class="inv-th">PO</th>
     <th class="inv-th">Sent date</th>
     <th class="inv-th">Due date</th>
     <th class="inv-th">Paid date</th>
     <th class="inv-th">Status</th>
     <th class="inv-th" style="text-align:right;">Amount inc GST</th>
   </tr></thead><tbody>${inv.map(i=>{
-    const job=jobByStId[i.jobId];
+    const job=jobByStId[i.jobId]||jobs.find(j=>j.id===String(i.jobNumber));
+    const po=job?.po||'';
     const amt=i.totalAmountIncTax!=null?Math.round(i.totalAmountIncTax):(i.totalAmountExTax!=null?Math.round(i.totalAmountExTax*1.15):(job?Math.round((job._stInvoiced||0)*1.15):null));
     const dueStr=i.dueDate?fmtDate(i.dueDate):'—';
     const isOverdue=_invStatus(i)==='overdue';
@@ -7943,6 +7998,7 @@ function renderInvoices(){
       <td class="inv-td" style="color:var(--muted);font-size:12px;">${i.company?.name||'—'}</td>
       <td class="inv-td" style="font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;">${i.number||i.id}</td>
       <td class="inv-td"><span style="font-size:11px;color:var(--muted);margin-right:4px;">${i.jobNumber||''}</span>${i.jobName||'—'}</td>
+      <td class="inv-td" style="font-size:12px;color:var(--muted);">${po||'—'}</td>
       <td class="inv-td" style="font-size:12px;color:var(--muted);">${fmtDate(i.sentDate)}</td>
       <td class="inv-td" style="font-size:12px;color:${isOverdue?'var(--red)':'var(--muted)'};">${dueStr}</td>
       <td class="inv-td" style="font-size:12px;color:${i.paidDate?'#2E7D32':'var(--muted)'};">${i.paidDate?fmtDate(i.paidDate):'—'}</td>
@@ -8031,7 +8087,13 @@ function _getPeriodCutoff(){
   if(period==='month')return now-30*86400000;
   if(period==='quarter')return now-90*86400000;
   if(period==='year')return now-365*86400000;
+  if(period==='custom'){const f=document.getElementById('r-from')?.value;return f?new Date(f+'T00:00:00').getTime():0;}
   return 0;
+}
+function _getPeriodCeiling(){
+  const period=document.getElementById('r-period')?.value||'month';
+  if(period==='custom'){const t=document.getElementById('r-to')?.value;return t?new Date(t+'T23:59:59').getTime():Date.now();}
+  return Date.now();
 }
 
 function getFilteredTasks(){
@@ -8040,11 +8102,14 @@ function getFilteredTasks(){
   const jobFilter=(document.getElementById('r-job')?.value)||'all';
   let tasks=[];
   const now=new Date();
-  let cutoffMs=0;
-  if(period==='week')cutoffMs=now-7*86400000;
-  else if(period==='2weeks')cutoffMs=now-14*86400000;
-  else if(period==='month')cutoffMs=now-30*86400000;
-  else if(period==='quarter')cutoffMs=now-90*86400000;
+  let cutoffMs=_getPeriodCutoff();
+  const ceilingMs=_getPeriodCeiling();
+  if(period!=='custom'){
+    if(period==='week')cutoffMs=now-7*86400000;
+    else if(period==='2weeks')cutoffMs=now-14*86400000;
+    else if(period==='month')cutoffMs=now-30*86400000;
+    else if(period==='quarter')cutoffMs=now-90*86400000;
+  }
 
   // ST logged times (primary source)
   if(stLoggedTimes.length){
@@ -8059,6 +8124,7 @@ function getFilteredTasks(){
       if(jobFilter!=='all'&&jobFilter!==jobNum)return;
       const d=new Date((lt.date||'').slice(0,10)+'T12:00:00');
       if(cutoffMs&&d.getTime()<cutoffMs)return;
+      if(period==='custom'&&d.getTime()>ceilingMs)return;
       const dayNum=((d.getDay()+6)%7)+1;
       if(dayNum<1||dayNum>5)return;
       const weekMon=new Date(d);weekMon.setDate(d.getDate()-((d.getDay()+6)%7));weekMon.setHours(0,0,0,0);
@@ -8190,6 +8256,30 @@ function _renderBusinessReport(){
             <span style="width:90px;text-align:right;font-size:11px;color:var(--muted);">${conv!=null?conv+'% of '+stages[s[3]][0].toLowerCase():''}</span>
           </div>`;
         }).join('')}</div>`;
+    })()}
+    ${(function(){
+      const uninvJobs=jobs.filter(j=>{const gap=(j._sellUsed||0)-(j._stInvoiced||0);return gap>=100;}).sort((a,b)=>((b._sellUsed||0)-(b._stInvoiced||0))-((a._sellUsed||0)-(a._stInvoiced||0)));
+      const totalUninv=uninvJobs.reduce((s,j)=>s+Math.max(0,(j._sellUsed||0)-(j._stInvoiced||0)),0);
+      if(!uninvJobs.length)return'';
+      return`<div class="r-section"><div class="r-section-hd">Uninvoiced work <span style="text-transform:none;letter-spacing:0;color:var(--muted);">— revenue logged but not yet invoiced · ${fmtDollar(totalUninv)} total</span></div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead><tr style="border-bottom:1px solid var(--border);">
+            <th style="text-align:left;padding:6px 10px 6px 0;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:400;">Job</th>
+            <th style="text-align:left;padding:6px 10px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:400;">Client</th>
+            <th style="text-align:right;padding:6px 0 6px 10px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:400;">Revenue logged</th>
+            <th style="text-align:right;padding:6px 0 6px 10px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:400;">Invoiced</th>
+            <th style="text-align:right;padding:6px 0 6px 10px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:400;">Gap</th>
+          </tr></thead><tbody>
+          ${uninvJobs.slice(0,15).map(j=>{const gap=(j._sellUsed||0)-(j._stInvoiced||0);return`<tr style="border-bottom:1px solid var(--faint);cursor:pointer;" onclick="openJobDetail('${j.id}')">
+            <td style="padding:7px 10px 7px 0;"><span class="job-num" style="font-size:10px;">${j.id}</span> ${j.name}</td>
+            <td style="padding:7px 10px;color:var(--muted);">${j.company}</td>
+            <td style="padding:7px 0 7px 10px;text-align:right;">$${(j._sellUsed||0).toLocaleString()}</td>
+            <td style="padding:7px 0 7px 10px;text-align:right;color:var(--muted);">$${(j._stInvoiced||0).toLocaleString()}</td>
+            <td style="padding:7px 0 7px 10px;text-align:right;font-weight:500;color:#9C6FD6;">$${Math.round(gap).toLocaleString()}</td>
+          </tr>`;}).join('')}
+          </tbody>
+        </table>
+      </div>`;
     })()}
     <div class="r-section">
       <div class="r-section-hd">Over-budget jobs</div>
@@ -9048,6 +9138,26 @@ function saveNewBoard(){
 }
 function deleteBoard(id){
   ccConfirm('Delete this board?',()=>{boardsList=boardsList.filter(b=>b.id!==id);saveBoardsData();renderBoardsList();},'Delete',true);
+}
+function createStudioPreset(){
+  const stages=[
+    {key:'quote',label:'Quote'},
+    {key:'live',label:'Live'},
+    {key:'completed',label:'Completed'},
+    {key:'invoiced',label:'Invoiced'},
+  ];
+  const liveJobs=jobs.filter(j=>j.status!=='archived');
+  const cols=stages.map(s=>{
+    const stageJobs=liveJobs.filter(j=>{
+      const wf=j.workflowStatus||'live';
+      if(s.key==='live')return wf==='live';
+      return wf===s.key;
+    });
+    return{id:uid('c'),name:s.label,cards:stageJobs.map(j=>({id:uid('k'),text:`${j.id} ${j.name}`,jobId:j.id}))};
+  });
+  const b={id:uid('b'),name:'Studio · '+new Date().toLocaleDateString('en-NZ',{day:'numeric',month:'short'}),type:'custom',columns:cols};
+  boardsList.push(b);saveBoardsData();closeCreateBoard();renderBoardsList();
+  setTimeout(()=>openBoard(b.id),100);
 }
 function showAddBoardItem(){openCreateBoard();}
 
