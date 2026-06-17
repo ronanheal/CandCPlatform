@@ -1,7 +1,26 @@
 {
-  "generated_at": "2026-06-17T01:42:09.056258+00:00",
-  "current_version": "2.11.0",
+  "generated_at": "2026-06-17T02:42:46.580653+00:00",
+  "current_version": "2.11.1",
   "releases": [
+    {
+      "version": "2.11.1",
+      "date": "17 Jun 2026",
+      "title": "Todo bucket timing, today line, billable accuracy",
+      "items": [
+        "Todo bucket now appears as soon as a day\\'s tasks no longer fit at a readable size (not only when the divider is dragged near the top)",
+        "Fixed: the \"today\" red indicator no longer adds height to that column\\'s header, so the done divider and padding line up across all days",
+        "More consistent breathing room under the done divider",
+        "Fixed billable accuracy: logged-time billable status is read from the job (was always counting as billable) — dashboard billable hours and capacity bars are now correct"
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Jobs",
+        "Jobs → Time",
+        "Reporting",
+        "Todo"
+      ]
+    },
     {
       "version": "2.11.0",
       "date": "17 Jun 2026",
