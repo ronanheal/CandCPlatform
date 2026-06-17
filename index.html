@@ -108,7 +108,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .day-cols{flex:1;display:flex;overflow-x:auto;}
 .day-col{flex:0 0 0;min-width:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
 .day-col.workday{flex:1;}
-.day-col.today .day-head{border-top:3px solid var(--red);}
+.day-col.today .day-head{box-shadow:inset 0 3px 0 var(--red);}
 .day-head{padding:8px 8px 6px;border-bottom:1px solid var(--border);background:var(--white);flex-shrink:0;}
 .day-head-row{display:flex;align-items:center;justify-content:space-between;gap:6px;}
 .day-name{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
@@ -126,14 +126,15 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .done-overflow-pill{position:sticky;bottom:4px;display:flex;align-items:center;justify-content:space-between;background:rgba(245,247,250,.97);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);margin-top:4px;box-shadow:0 2px 8px rgba(0,0,0,.08);flex-shrink:0;}
 .todo-ov-btn{border:none;background:var(--ink);color:#fff;border-radius:4px;padding:2px 9px;font-size:10px;cursor:pointer;margin-left:10px;font-family:inherit;}
 .day-todo.drop-hi{background:#fffdf5;}
-/* Zone buckets — collapsed summary when zone is too small for cards */
+/* Zone buckets — collapsed summary when a zone cannot show all cards */
 .zone-bucket{display:flex;flex-direction:column;justify-content:center;gap:4px;padding:10px 12px;height:100%;box-sizing:border-box;border-radius:4px;background:var(--white);border:1px solid var(--border);}
 .zone-bucket-today{background:#FFFDE7;border-color:#FFE082;}
+.zone-bucket.todo-bucket{min-height:72px;}
 .zone-bucket.done-bucket{background:var(--off);}
 .zb-count{font-size:13px;font-weight:600;color:var(--ink);}
 .zb-hrs{font-size:12px;color:var(--muted);}
 .zb-view{border:none;background:none;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer;padding:0;font-family:inherit;text-align:left;text-decoration:underline;text-underline-offset:2px;}
-.day-done{overflow-y:hidden;padding:24px 8px 6px;display:flex;flex-direction:column;gap:4px;background:var(--off);flex:1;position:relative;}
+.day-done{overflow-y:hidden;padding:34px 8px 10px;display:flex;flex-direction:column;gap:4px;background:var(--off);flex:1;position:relative;}
 .day-done.drop-hi{background:#f0fef4;}
 .day-done-empty{padding:6px 0;font-size:11px;color:var(--border);text-align:center;}
 /* Global done divider */
@@ -2513,9 +2514,9 @@ function _mapStJob(j){
 }
 function _mapStCompany(c,contacts){
   // Find primary contact for this company from contacts array
-  const co=contacts?contacts.find(x=>x.company?.id===c.id||x.company?.name===c.name):null;
+  const co=contacts?contacts.find(x=>x.companyId===c.id||x.company?.id===c.id||x.company?.name===c.name):null;
   const name=co?[co.firstName,co.lastName].filter(Boolean).join(' '):'';
-  return{id:'st-'+c.id,_stId:c.id,name:c.name,nickname:'',contact:name,email:co?.email||'',phone:co?.phone||co?.mobile||'',website:c.website||'',notes:''};
+  return{id:'st-'+c.id,_stId:c.id,name:c.name,nickname:'',contact:name,email:co?.email||'',phone:co?.phone||co?.phoneNumber||co?.mobile||'',website:c.website||'',notes:''};
 }
 async function initStreamtime(){
   const tb=document.getElementById('jobs-tbody');
@@ -2586,7 +2587,7 @@ async function initStreamtime(){
         const existing=clientsData.find(x=>x.name===c.name);
         if(existing){
           // Backfill contact info if not manually set
-          if(!existing.contact||!existing.email){
+          if(!existing.contact||!existing.email||!existing.phone){
             const mapped=_mapStCompany(c,stContacts);
             if(!existing.contact&&mapped.contact)existing.contact=mapped.contact;
             if(!existing.email&&mapped.email)existing.email=mapped.email;
@@ -3219,30 +3220,45 @@ function positionGlobalDivider(){
   gd.style.top=(headH+todoSplitPx)+'px';
 }
 
+const ZONE_BUCKET_PX=110;
+function taskDataStackHeight(tasks){
+  if(!tasks||!tasks.length)return 0;
+  return 12+tasks.reduce((sum,t)=>sum+taskCardHeight(t.hours||0)+4,0);
+}
+function shouldBucketTaskData(tasks,visiblePx){
+  return !!(tasks&&tasks.length)&&(visiblePx<ZONE_BUCKET_PX||taskDataStackHeight(tasks)>visiblePx-6);
+}
+function zoneCardHours(cards){
+  return cards.reduce((sum,c)=>sum+parseFloat(c.dataset.hours||0),0);
+}
+function restoreZoneCards(col,bucketSelector){
+  col.querySelector(bucketSelector)?.remove();
+  col.querySelector('.todo-overflow-pill')?.remove();
+  col.querySelector('.done-overflow-pill')?.remove();
+  col.querySelectorAll('.task-card').forEach(c=>c.style.display='');
+}
+
 function checkTodoOverflow(){
   [1,2,3,4,5].forEach(d=>{
     const col=document.getElementById('dtodo-'+d);
     if(!col)return;
-    col.querySelector('.todo-overflow-pill')?.remove();
-    if(col.scrollHeight<=col.clientHeight+6)return;
+    restoreZoneCards(col,'.todo-bucket');
+    if(col.scrollHeight<=col.clientHeight+6&&col.clientHeight>=ZONE_BUCKET_PX)return;
     const cards=[...col.querySelectorAll('.task-card')];
-    let accH=0,hiddenCount=0,hiddenH=0;
-    cards.forEach(c=>{
-      accH+=c.offsetHeight+4;
-      if(accH>todoSplitPx-12){hiddenCount++;hiddenH+=parseFloat(c.dataset.hours||0);}
-    });
-    if(hiddenCount===0)return;
-    const pill=document.createElement('div');
-    pill.className='todo-overflow-pill';
-    const lbl=hiddenH>0?`${hiddenCount} hidden · ${formatHrs(hiddenH)}`:`${hiddenCount} more task${hiddenCount>1?'s':''}`;
-    pill.innerHTML=`<span>${lbl}</span><button class="todo-ov-btn" onclick="expandTodoToFit()">View ↑</button>`;
-    col.appendChild(pill);
+    if(!cards.length)return;
+    const totalHrs=zoneCardHours(cards);
+    cards.forEach(c=>c.style.display='none');
+    const bk=document.createElement('div');
+    bk.className='zone-bucket todo-bucket';
+    bk.innerHTML=`<div class="zb-count">${cards.length} To Do${cards.length!==1?"'s":''}</div><div class="zb-hrs">${formatHrs(totalHrs)||'—'}</div><button class="zb-view" onclick="expandTodoToFit()">view</button>`;
+    col.appendChild(bk);
   });
 }
 function expandTodoToFit(){
   let maxSH=todoSplitPx;
   [1,2,3,4,5].forEach(d=>{
     const col=document.getElementById('dtodo-'+d);
+    if(col)restoreZoneCards(col,'.todo-bucket');
     if(col&&col.scrollHeight>maxSH)maxSH=col.scrollHeight;
   });
   todoSplitPx=maxSH+16;
@@ -3252,18 +3268,16 @@ function expandTodoToFit(){
   checkTodoOverflow();
 }
 function checkDoneOverflow(){
-  const BUCKET_PX=110;
   [1,2,3,4,5].forEach(d=>{
     const col=document.getElementById('ddone-'+d);
     if(!col)return;
-    col.querySelector('.done-overflow-pill')?.remove();
-    col.querySelector('.done-bucket')?.remove();
+    restoreZoneCards(col,'.done-bucket');
     const doneH=col.clientHeight;
     const cards=[...col.querySelectorAll('.task-card')];
     if(!cards.length)return;
-    // Bucket mode: done zone too small — replace cards with summary
-    if(doneH<BUCKET_PX){
-      const totalHrs=cards.reduce((s,c)=>s+parseFloat(c.dataset.hours||0),0);
+    // Bucket mode: done zone too small or cards overflow the visible area.
+    if(doneH<ZONE_BUCKET_PX||col.scrollHeight>col.clientHeight+6){
+      const totalHrs=zoneCardHours(cards);
       cards.forEach(c=>c.style.display='none');
       const bk=document.createElement('div');
       bk.className='zone-bucket done-bucket';
@@ -3280,6 +3294,7 @@ function shrinkDoneToFit(){
   let maxDoneScroll=0;
   [1,2,3,4,5].forEach(d=>{
     const col=document.getElementById('ddone-'+d);
+    if(col)restoreZoneCards(col,'.done-bucket');
     if(col&&col.scrollHeight>maxDoneScroll)maxDoneScroll=col.scrollHeight;
   });
   const bodyH=document.querySelector('.todo-body')?.offsetHeight||700;
@@ -3419,16 +3434,16 @@ function renderTodo(){
     const todoEl=document.getElementById('dtodo-'+d);
     const doneEl=document.getElementById('ddone-'+d);
 
-    const BUCKET_PX=110; // collapse to summary bucket below this height
     const stEntries=stDayEntries;
+    const todoCards=[...activeTodos,...activeAssign];
 
-    if(todoSplitPx<BUCKET_PX){
-      // Todo zone too small — show summary bucket
-      if(activeTodos.length>0||activeAssign.length>0){
+    if(shouldBucketTaskData(todoCards,todoSplitPx)){
+      // Todo zone too small or overflowing — show summary bucket
+      if(todoCards.length>0){
         const bk=document.createElement('div');
-        bk.className='zone-bucket'+(isToday?' zone-bucket-today':'');
-        const zbCount=activeTodos.length+activeAssign.length;
-        const zbH=activeTodos.reduce((s,t)=>s+(t.hours||0),0)+activeAssign.reduce((s,a)=>s+(a.hours||0),0);
+        bk.className='zone-bucket todo-bucket'+(isToday?' zone-bucket-today':'');
+        const zbCount=todoCards.length;
+        const zbH=todoCards.reduce((s,t)=>s+(t.hours||0),0);
         bk.innerHTML=`<div class="zb-count">${zbCount} To Do${zbCount!==1?"'s":''}</div><div class="zb-hrs">${formatHrs(zbH)||'—'}</div><button class="zb-view" onclick="expandTodoToFit()">view</button>`;
         todoEl.appendChild(bk);
       } else {
@@ -3514,7 +3529,7 @@ const LUCIDE_MAP={
   'ti-repeat':'repeat-2','ti-star':'star','ti-tag':'tag',
   'ti-lock':'lock','ti-user':'user','ti-user-plus':'user-plus',
   'ti-users':'users','ti-send':'send','ti-clock':'clock',
-  'ti-calendar':'calendar','ti-calendar-plus':'calendar-plus',
+  'ti-calendar':'calendar','ti-calendar-plus':'calendar-plus','calendar-time':'calendar-clock',
   'ti-eye':'eye','ti-eye-off':'eye-off','ti-note':'sticky-note',
   'ti-pause':'pause','ti-receipt':'receipt','ti-printer':'printer',
   'ti-code':'code-2','ti-social':'share-2','ti-school':'graduation-cap',
@@ -6548,7 +6563,7 @@ function openClientDetail(id){
   const totalBudget=clientJobs.reduce((a,j)=>a+(j._plannedSell||0),0);
   const fmtD=n=>n?`$${n.toLocaleString()}`:'—';
   // All contacts for this company
-  const coContacts=stContacts.filter(ct=>ct.company?.name===c.name||ct.company?.id===c._stId);
+  const coContacts=stContacts.filter(ct=>ct.companyId===c._stId||ct.company?.name===c.name||ct.company?.id===c._stId);
   // Populate header
   document.getElementById('cd-view-name').textContent=c.name;
   document.getElementById('cd-view-meta').textContent=`${clientJobs.length} job${clientJobs.length!==1?'s':''} · ${activeJobs.length} active · ${fmtD(totalInvoiced)} invoiced`;
@@ -6596,9 +6611,9 @@ function openClientDetail(id){
           const name=[ct.firstName,ct.lastName].filter(Boolean).join(' ')||'Unknown';
           return`<div style="background:var(--off);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:12px;min-width:160px;">
             <div style="font-weight:500;margin-bottom:2px;">${name}</div>
-            ${ct.jobTitle?`<div style="color:var(--muted);font-size:11px;">${ct.jobTitle}</div>`:''}
+            ${ct.jobTitle||ct.position?`<div style="color:var(--muted);font-size:11px;">${ct.jobTitle||ct.position}</div>`:''}
             ${ct.email?`<div style="color:var(--muted);font-size:11px;">${ct.email}</div>`:''}
-            ${ct.phone||ct.mobile?`<div style="color:var(--muted);font-size:11px;">${ct.phone||ct.mobile}</div>`:''}
+            ${ct.phone||ct.phoneNumber||ct.mobile?`<div style="color:var(--muted);font-size:11px;">${ct.phone||ct.phoneNumber||ct.mobile}</div>`:''}
           </div>`;
         }).join('')}
       </div>
