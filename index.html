@@ -1993,8 +1993,17 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.10.6';
+const APP_VERSION='2.11.0';
 const CHANGELOG=[
+  {version:'2.11.0',date:'17 Jun 2026',title:'Real scheduled ToDo blocks from Streamtime',items:[
+    'Todo board now reads actual Streamtime "Scheduled" ToDo blocks — each planned block shows with its own note, exact date, and exact minutes',
+    'Notes pull through correctly: the block note (e.g. "🥫 RECORP - New Can Spec Sheet") is the task title',
+    'Multiple blocks for the same job+item are kept as separate tasks (each is its own scheduled block)',
+    'No more aggregate/spanning assignments cluttering every day — blocks sit only on their real scheduled day',
+    'Done column reads "Logged" blocks; to-do column reads "Scheduled" blocks — Streamtime moves a block between them when completed, so no duplication',
+    'Removed the per-block note duplication on cards (note shown once, as the title)',
+    'New data file scheduled_todos.json synced hourly from Streamtime',
+  ]},
   {version:'2.10.6',date:'17 Jun 2026',title:'Assignment dedup, notes, and display fixes',items:[
     'Assignments now appear once per week on their first applicable day — no more repeating the same card Mon–Fri',
     'Assignment card notes: uses item description when available, falls back to most recent logged-time note for same job+item',
@@ -2349,6 +2358,7 @@ let stContacts=[];
 let stExpenses=[];        // logged expenses from ST view 9
 let stJobAssignments=[];  // job_item_users: who is assigned to what item (view 17)
 let stMilestones=[];      // job milestones (view 18)
+let stScheduledTodos=[];  // scheduled ToDo blocks (view 8, status=Scheduled) — planned work with per-block notes
 let stUsersById={};   // userId → {name,initials,color,key,capacityH,billableRate}
 let _stIdToJobNum={}; // Streamtime internal job ID → job number string
 function _stFmtH(mins){return mins>=60?`${Math.floor(mins/60)}h${mins%60?mins%60+'m':''}`:mins>0?mins+'m':'0h';}
@@ -2383,7 +2393,7 @@ function _getStWeekEntries(personKey,offset){
       done:true,urgent:false,personal:false,
       job:jNum||'',
       item:lt.itemName||'',
-      note:lt.notes||'',
+      note:'', // note is used as the title; don't duplicate it on a second line
       person:personKey,
       _fromST:true,
       // legacy fields used by dashboard/capacity code
@@ -2395,75 +2405,44 @@ function _getStWeekEntries(personKey,offset){
   });
   return result;
 }
-// Returns job assignments for the person keyed by day (1-5), same shape as task cards.
-// Each assignment appears only once — on the FIRST weekday that falls in its date range.
+// Returns scheduled ToDo blocks for the person keyed by day (1-5), same shape as task cards.
+// Each scheduled block (Streamtime status "Scheduled") is a discrete planned task with its own
+// date, minutes and per-block note. Multiple blocks for the same job+item are kept separate.
 function _getStWeekAssignments(personKey,offset){
-  if(!stJobAssignments.length)return{};
+  if(!stScheduledTodos.length)return{};
   const stUser=Object.values(stUsersById).find(u=>u.key===personKey);
   if(!stUser)return{};
-  // Compute Mon–Fri date strings for this week
+  // Map this week's Mon–Fri date strings → day number (1-5)
   const mon=new Date();const dow=(mon.getDay()+6)%7;
   mon.setDate(mon.getDate()-dow+(offset*7));mon.setHours(0,0,0,0);
   const pad=n=>String(n).padStart(2,'0');
-  const weekDates=[];
-  for(let i=0;i<5;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);weekDates.push(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`);}
-  // Build jobItem lookup from loaded jobs (includes description + estimated dates)
-  const itemLookup={};
-  jobs.forEach(j=>{
-    (j.phases||[]).forEach(ph=>{
-      (ph.items||[]).forEach(it=>{
-        if(it._stId)itemLookup[it._stId]={
-          name:it.name,jobName:j.name,jobNum:j.id,jobId:j._stId,
-          note:it.description||'',
-          itemStart:(it.estimatedStartDate||it.earliestStartDate||'').slice(0,10),
-          itemEnd:(it.estimatedEndDate||it.latestEndDate||'').slice(0,10),
-        };
-      });
-    });
-  });
-  // Build most-recent-note lookup from logged_times (best-effort note for assignment cards)
-  const ltNoteByKey={};
-  stLoggedTimes.forEach(lt=>{
-    if(!lt.notes)return;
-    const k=String(lt.job?.number||'')+'|'+(lt.itemName||'').toLowerCase();
-    if(!ltNoteByKey[k]||(lt.date||'')>(ltNoteByKey[k].date||''))ltNoteByKey[k]={note:lt.notes,date:lt.date||''};
-  });
+  const dateToDay={};
+  for(let i=0;i<5;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);dateToDay[`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`]=i+1;}
+  // jobNumber → billable lookup (from loaded jobs)
   const result={};
-  stJobAssignments.forEach(a=>{
-    if(a.userId!==stUser.id)return;
-    if(a.jobItemUserStatus?.name==='Complete')return;
-    const start=(a.earliestStartDate||'').slice(0,10);
-    const end=(a.latestEndDate||'').slice(0,10);
-    const info=itemLookup[a.jobItemId]||{};
-    // Use assignment dates, fall back to item estimated dates
-    const effectiveStart=start||end||info.itemStart||'';
-    const effectiveEnd=end||start||info.itemEnd||'';
-    if(!effectiveStart)return;
-    // Skip if nothing planned or remaining
-    const totalMins=(a.totalIncompleteMinutes||0)>0?a.totalIncompleteMinutes:(a.totalPlannedMinutes||0);
-    if(!totalMins)return;
-    // Show on the FIRST weekday that falls in this assignment's range (avoids duplication)
-    const firstIdx=weekDates.findIndex(d=>d>=effectiveStart&&d<=effectiveEnd);
-    if(firstIdx===-1)return;
-    const day=firstIdx+1;
-    const hours=Math.round(totalMins/60*4)/4||null;
-    // Note: prefer item description, fall back to most recent logged-time note for same job+item
-    const ltKey=(info.jobNum||'')+'|'+(info.name||'').toLowerCase();
-    const note=info.note||(ltNoteByKey[ltKey]?.note||'');
+  stScheduledTodos.forEach(t=>{
+    if(t.userId!==stUser.id)return;
+    const day=dateToDay[(t.date||'').slice(0,10)];
+    if(!day)return;
+    const note=t.notes||t.scheduleNotes||'';
+    const jNum=t.jobNumber?String(t.jobNumber):'';
     if(!result[day])result[day]=[];
     result[day].push({
-        id:'st-assign-'+a.id,
-        title:note||info.name||'Assigned task',
-        hours:hours,
+        id:'st-todo-'+t.id,
+        title:note||t.itemName||'Scheduled task',
+        hours:(t.minutes||0)/60,
         done:false,urgent:false,personal:false,
-        job:info.jobNum||'',
-        item:info.name||'',
-        note:note,
+        job:jNum,
+        item:t.itemName||'',
+        note:'', // note is used as the title; don't duplicate it on a second line
         person:personKey,
         _fromST:true,
         _stAssignment:true,
-        jobName:info.jobName||'',
-        billable:true,
+        _stScheduled:true,
+        _stItemId:t.jobItemId,
+        jobName:t.jobName||'',
+        minutes:t.minutes||0,
+        billable:t.isBillable!==false,
       });
   });
   return result;
@@ -2543,7 +2522,7 @@ async function initStreamtime(){
   if(tb)tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted);font-size:13px;"><i class="ti ti-loader" style="font-size:18px;display:block;margin:0 auto 8px;"></i>Loading from Streamtime…</td></tr>`;
   try{
     const _v='?v='+Date.now();
-    const [jobsRes,coRes,ltRes,invRes,qtRes,usersRes,ctRes,expRes,assignRes,msRes]=await Promise.all([
+    const [jobsRes,coRes,ltRes,invRes,qtRes,usersRes,ctRes,expRes,assignRes,msRes,schedRes]=await Promise.all([
       fetch(`${ST_BASE}/jobs.json${_v}`),
       fetch(`${ST_BASE}/companies.json${_v}`),
       fetch(`${ST_BASE}/logged_times.json${_v}`),
@@ -2554,6 +2533,7 @@ async function initStreamtime(){
       fetch(`${ST_BASE}/expenses.json${_v}`),
       fetch(`${ST_BASE}/job_assignments.json${_v}`),
       fetch(`${ST_BASE}/milestones.json${_v}`),
+      fetch(`${ST_BASE}/scheduled_todos.json${_v}`),
     ]);
     // Users — build lookup map first (needed for time entries)
     if(usersRes.ok){
@@ -2634,6 +2614,8 @@ async function initStreamtime(){
     if(assignRes.ok)stJobAssignments=await assignRes.json();
     // Milestones
     if(msRes.ok)stMilestones=await msRes.json();
+    // Scheduled ToDo blocks (planned work with per-block notes) — powers the Todo board
+    if(schedRes&&schedRes.ok)stScheduledTodos=await schedRes.json();
     // Platform config (people, labels, item types) published by admin
     try{
       const cfgRes=await fetch(`${ST_BASE}/platform_config.json${_v}`);
@@ -3014,6 +2996,9 @@ function renderTodoCalendar(){
     if((calLoggedByDay[t.day||0]||new Set()).has(n+'|'+(t.item||'').toLowerCase())){doneTasks.push({...t,done:true});return false;}
     return true;
   });
+  // Add ST scheduled ToDo blocks as active (todo) tasks — each on its own day
+  const stAssignCal=_getStWeekAssignments(currentPerson,weekOffset);
+  [1,2,3,4,5].forEach(d=>{(stAssignCal[d]||[]).forEach(a=>allActive.push({...a,day:d}));});
   // Filters
   if(_calFilterUrgentOnly)allActive=allActive.filter(t=>t.urgent);
   if(!_calFilterPersonal)allActive=allActive.filter(t=>!t.personal);
@@ -3359,11 +3344,8 @@ function renderTodo(){
   const stWeek=_getStWeekEntries(currentPerson,weekOffset);
   const stAssignWeek=_getStWeekAssignments(currentPerson,weekOffset);
   [1,2,3,4,5].forEach(d=>{(stWeek[d]||[]).forEach(e=>totalStH+=e.minutes/60);});
-  // Build week-level dedup set: job+item combos logged anywhere this week
-  const _mkLtKey=e=>{const n=(e.job||'').match(/^(\d+)/)?.[1]||e.job||'';return n+'|'+(e.item||e.itemName||'').toLowerCase();};
-  const weekLoggedKeys=new Set();
-  [1,2,3,4,5].forEach(d=>{(stWeek[d]||[]).forEach(e=>weekLoggedKeys.add(_mkLtKey(e)));});
-  const _weekLogged=t=>{const n=(t.job||'').match(/^(\d+)/)?.[1]||t.job||'';return t.job&&t.item&&weekLoggedKeys.has(n+'|'+(t.item||'').toLowerCase());};
+  // Scheduled ST ToDos count toward the "to do" total
+  [1,2,3,4,5].forEach(d=>{(stAssignWeek[d]||[]).forEach(a=>totalTodoH+=a.hours||0);});
   const sumEl=document.getElementById('todo-sum-text');
   if(sumEl)sumEl.textContent=`To do: ${formatHrs(totalTodoH)||'0h'} · Done: ${formatHrs(totalDoneH+totalStH)||'0h'}`;
 

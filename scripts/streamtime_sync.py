@@ -333,6 +333,27 @@ print(f"  job_assignments (active jobs only): {len(job_assignments)} records")
 milestones = search(18)
 print(f"  milestones: {len(milestones)} records")
 
+# View 8 with logged_time_status = 1 = "Scheduled" ToDo blocks (planned, not yet logged).
+# Each is a discrete scheduled block with its own date, minutes, and per-block note.
+# This is what powers the Todo board's "to do" column (the done column uses status 2 = Logged).
+raw_scheduled = search(8, query='logged_time_status = 1', timeout=120)
+# Slim to only the fields the Todo board needs (full job objects make this huge)
+scheduled_todos = [{
+    "id": t.get("id"),
+    "userId": t.get("userId"),
+    "date": (t.get("date") or "")[:10],
+    "minutes": t.get("minutes") or 0,
+    "notes": t.get("notes"),
+    "scheduleNotes": t.get("scheduleNotes"),
+    "itemName": t.get("itemName"),
+    "jobItemId": (t.get("jobItemUser") or {}).get("jobItemId"),
+    "jobId": (t.get("job") or {}).get("id"),
+    "jobNumber": (t.get("job") or {}).get("number"),
+    "jobName": (t.get("job") or {}).get("name"),
+    "isBillable": (t.get("job") or {}).get("isBillable", True),
+} for t in raw_scheduled]
+print(f"  scheduled_todos (status=Scheduled): {len(scheduled_todos)} records")
+
 # ── 6. Save everything ────────────────────────────────────────────────────────
 jobs = list(job_map.values())
 counts = {
@@ -350,6 +371,7 @@ counts = {
     "expenses":        save("expenses.json",        expenses,           prev_expenses),
     "job_assignments": save("job_assignments.json", job_assignments,    prev_job_assignments),
     "milestones":      save("milestones.json",      milestones,         prev_milestones),
+    "scheduled_todos": save("scheduled_todos.json", scheduled_todos,    load_existing("scheduled_todos.json")),
 }
 
 meta = {
