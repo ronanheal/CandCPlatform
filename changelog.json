@@ -1,7 +1,35 @@
 {
-  "generated_at": "2026-06-17T07:54:08.062049+00:00",
-  "current_version": "2.13.0",
+  "generated_at": "2026-06-17T09:19:49.853893+00:00",
+  "current_version": "2.14.0",
   "releases": [
+    {
+      "version": "2.14.0",
+      "date": "17 Jun 2026",
+      "title": "Big roadmap push — data fixes, intelligence & analytics",
+      "items": [
+        "Fixed a Streamtime sync bug that had quotes and invoices swapped — the Quotes tab now shows real quote status & value, and Invoices show real status, due date, paid date and overdue flags.",
+        "Dashboard \"Needs attention\": jobs due/overdue, overdue invoices, quotes awaiting response, uninvoiced work, and quiet clients — all from live data.",
+        "Dashboard customisation: show/hide the Needs attention, Team, Business KPIs and Clients blocks (Settings → Dashboard).",
+        "Reporting: utilisation % per person (billable vs capacity), monthly client revenue trend, and a quote→cash pipeline funnel.",
+        "Jobs list: budget-health filter (on track / at risk / over / needs attention). Fixed over-budget alerts that were silently empty.",
+        "Clients: search by name/contact/email, sort by jobs or revenue, active-only filter; company website now shows and links.",
+        "Calendar: hour gridlines now align with cards.",
+        "Workspace backup: export/import all local data as a JSON file (Settings → Data)."
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
     {
       "version": "2.13.0",
       "date": "17 Jun 2026",
