@@ -162,8 +162,10 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .task-card{background:var(--white);border:1px solid var(--border);padding:8px 10px;cursor:pointer;transition:border-color .15s;user-select:none;overflow:hidden;min-height:52px;box-sizing:border-box;}
 .task-card:hover{border-color:#aaa;}
 .task-card.done-c{background:var(--done);border-color:#b2dfb2;}
-.task-card.urgent-c{border-left:3px solid var(--red);}
-.task-card.assign-c{border-left:3px solid #7B9E87;background:#f6faf7;}
+/* Status conveyed only by the left border colour (matches the dashboard bars) */
+.task-card.tc-bill{border-left:3px solid #4CAF50;}
+.task-card.tc-nonbill{border-left:3px solid #FF9800;}
+.task-card.tc-urgent{border-left:3px solid var(--red);}
 .task-card.dragging-c{opacity:.2;}
 .task-card.drop-above{border-top:2px solid var(--red);margin-top:2px;}
 .tc-top{display:flex;align-items:flex-start;gap:6px;}
@@ -1999,8 +2001,21 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.12.0';
+const APP_VERSION='2.13.0';
 const CHANGELOG=[
+  {version:'2.13.0',date:'17 Jun 2026',title:'Card colours, urgent fix, activity & expense detail',items:[
+    'Every todo card now shares one design; the left border colour shows status — green billable, amber non-billable, red urgent — matching the dashboard bars.',
+    'Fixed: marking a task urgent now actually shows red (a styling conflict was hiding it).',
+    'Done buckets now collapse uniformly across the week (triggered by the lightest day) for a calmer view.',
+    'Dashboard loads fully on first open (no need to visit To Do first), and uses your real Streamtime weekly capacity (e.g. 40h) instead of a fixed 30h.',
+    'Dashboard stat bars now read green when healthy; the billable bar fills green toward your capacity.',
+    '"Add more time?" follow-up now pre-fills the new task with the job, item, hours and title.',
+    'Task notes now fall back to the Streamtime schedule note, so more notes come through; repeating tasks show as their individual dated blocks.',
+    'Job team: the + picker is now searchable and active-only, and anyone who has logged or scheduled time on the job is added automatically.',
+    'Job Activity tab now lists everyone who logged time on the job (from Streamtime), with their notes and dates.',
+    'Expenses: a single expense line (e.g. Disbursements) can be itemised into editable sub-lines that total up — see job 6964. Edits are local for now.',
+    'Job detail shows the PO number when Streamtime has one.',
+  ]},
   {version:'2.12.0',date:'17 Jun 2026',title:'Streamtime is the source of truth',items:[
     'The Todo board now reads entirely from Streamtime — scheduled blocks are your to-dos, logged blocks are done. The old manual-task layer is gone.',
     'Everything is editable: drag, resize, edit, mark done, move between days. Changes apply instantly but are local — they revert on refresh until Streamtime write-back is added.',
@@ -2363,7 +2378,7 @@ function _getStWeekEntries(personKey,offset){
     const jNum=lt.job?.number?String(lt.job.number):null;
     result[day].push({
       id:'st-lt-'+lt.id,
-      title:lt.notes||lt.itemName||lt.job?.name||'Untimed',
+      title:lt.notes||lt.scheduleNotes||lt.itemName||lt.job?.name||'Untimed',
       hours:(lt.minutes||0)/60,
       done:true,urgent:false,personal:false,
       job:jNum||'',
@@ -2450,6 +2465,7 @@ function _mapStJob(j){
     invNum:null,
     startDate:j.estimatedStartDate||null,
     dueDate:j.estimatedEndDate||null,
+    po:j.purchaseOrderNumber||'',
     paused:sName==='Paused',
     members:(j.users||[]).map(u=>u.name||u.id),
     phases:(()=>{
@@ -2612,12 +2628,12 @@ async function initStreamtime(){
   // re-seeds fresh from Streamtime.
   resetTodoStore();
   // Re-render open views
-  if(typeof renderDashboard==='function'&&document.getElementById('view-dashboard')?.classList.contains('active'))renderDashboard();
+  if(typeof renderDashboard==='function'&&!document.getElementById('view-dashboard')?.classList.contains('hidden'))renderDashboard();
   if(typeof renderJobs==='function')renderJobs();
   if(typeof renderTime==='function'&&document.querySelector('#jt-time')?.style.display!=='none'){initTimeFilters();renderTime();}
   if(typeof renderInvoices==='function'&&document.querySelector('#jt-invoices')?.style.display!=='none')renderInvoices();
   if(typeof renderQuotes==='function'&&document.querySelector('#jt-quotes')?.style.display!=='none')renderQuotes();
-  if(typeof renderClients==='function'&&document.querySelector('#view-jobs')?.classList.contains('active'))renderClients();
+  if(typeof renderClients==='function'&&!document.getElementById('view-jobs')?.classList.contains('hidden'))renderClients();
   if(typeof renderTodo==='function'&&!document.getElementById('view-todo')?.classList.contains('hidden'))renderTodo();
   if(typeof renderReporting==='function'&&document.getElementById('view-reporting')&&!document.getElementById('view-reporting').classList.contains('hidden'))renderReporting();
 }
@@ -2812,9 +2828,9 @@ function renderDashboard(){
       <div class="dash-rule"></div>
     </div>
     <div class="kpi-row">
-      <div class="kpi"><div class="kpi-label">Billable this week</div><div class="kpi-val">${formatHrs(billH)||'0h'}</div><div class="kpi-sub">${formatHrs(billDoneH)||'0h'} done · ${formatHrs(billTodoH)||'0h'} planned · of ${totalTarget}h</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${billPct}%;background:${billPct>=100?'var(--red)':billPct>=80?'#FF9800':'#4CAF50'};"></div></div></div>
+      <div class="kpi"><div class="kpi-label">Billable this week</div><div class="kpi-val">${formatHrs(billH)||'0h'}</div><div class="kpi-sub">${formatHrs(billDoneH)||'0h'} done · ${formatHrs(billTodoH)||'0h'} planned · of ${totalTarget}h</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${billPct}%;background:${billPct>=120?'var(--red)':'#4CAF50'};"></div></div></div>
       <div class="kpi"><div class="kpi-label">Non-billable</div><div class="kpi-val">${formatHrs(nbillH)||'0h'}</div><div class="kpi-sub">internal & admin</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${nbillPct}%;background:#FF9800;"></div></div></div>
-      <div class="kpi"><div class="kpi-label">My tasks today</div><div class="kpi-val">${todayTodo.length}</div><div class="kpi-sub">${urgentCount?urgentCount+' urgent · ':''}${todayDone.length} done</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${todayTasks.length?Math.round(todayDone.length/todayTasks.length*100):0}%;background:var(--red);"></div></div></div>
+      <div class="kpi"><div class="kpi-label">My tasks today</div><div class="kpi-val">${todayTodo.length}</div><div class="kpi-sub">${urgentCount?urgentCount+' urgent · ':''}${todayDone.length} done</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${todayTasks.length?Math.round(todayDone.length/todayTasks.length*100):0}%;background:${urgentCount?'var(--red)':'#4CAF50'};"></div></div></div>
     </div>
     <div class="section-label" style="margin-bottom:12px;">Your day <button onclick="openTodoModal(null,null,'${MY_PERSON}')" title="Add task" style="background:transparent;border:1px solid var(--border);border-radius:4px;padding:1px 8px;cursor:pointer;font-size:11px;color:var(--muted);font-family:var(--font);margin-left:8px;vertical-align:middle;">+ Add task</button></div>
     <div class="my-todos" style="margin-bottom:28px;">${todoRows||'<div class="my-todo-item" style="color:var(--muted);font-size:13px;"><i class="ti ti-sun" style="font-size:16px;margin-right:10px;"></i>No tasks scheduled today.</div>'}</div>
@@ -3219,21 +3235,36 @@ function _zoneNeeded(n,pad){return n*MIN_CARD_PX+(n-1)*CARD_GAP_PX+pad;}
 // Per-column bucketing: a single day collapses to a bucket only when ITS own cards can't
 // fit at the minimum readable height. Light days keep showing cards even if a heavy day
 // (e.g. a 9-task day) buckets. This is what "only when either gets cramped" means.
+// Per-column bucketing: a single day collapses only when ITS own cards can't fit. Light
+// days keep showing cards even if a heavy day buckets.
 function _bucketCramped(prefix,bucketSel,pad,type){
   const cols=[1,2,3,4,5].map(d=>document.getElementById(prefix+d)).filter(Boolean);
   cols.forEach(col=>{
     restoreZoneCards(col,bucketSel);
     const n=col.querySelectorAll('.task-card').length;
-    if(n>0&&_zoneNeeded(n,pad)>col.clientHeight+2){
-      const cards=[...col.querySelectorAll('.task-card')];
-      cards.forEach(c=>c.style.display='none');
-      const isToday=col.closest('.day-col')?.classList.contains('today');
-      col.appendChild(buildZoneBucket(type,cards,isToday));
-    }
+    if(n>0&&_zoneNeeded(n,pad)>col.clientHeight+2)_collapseToBucket(col,type);
   });
 }
+// Uniform bucketing: all populated columns collapse together, triggered by the column with
+// the FEWEST cards (so the row stays consistent — "less hectic"). Used for the Done zone.
+function _bucketUniform(prefix,bucketSel,pad,type){
+  const cols=[1,2,3,4,5].map(d=>document.getElementById(prefix+d)).filter(Boolean);
+  cols.forEach(col=>restoreZoneCards(col,bucketSel));
+  const populated=cols.filter(col=>col.querySelectorAll('.task-card').length>0);
+  if(!populated.length)return;
+  const smallestNeeded=Math.min(...populated.map(col=>_zoneNeeded(col.querySelectorAll('.task-card').length,pad)));
+  const zoneH=populated[0].clientHeight;
+  if(smallestNeeded>zoneH+2)populated.forEach(col=>_collapseToBucket(col,type));
+}
+function _collapseToBucket(col,type){
+  const cards=[...col.querySelectorAll('.task-card')];
+  if(!cards.length)return;
+  cards.forEach(c=>c.style.display='none');
+  const isToday=col.closest('.day-col')?.classList.contains('today');
+  col.appendChild(buildZoneBucket(type,cards,isToday));
+}
 function checkTodoOverflow(){_bucketCramped('dtodo-','.todo-bucket',ZONE_PAD_PX,'todo');}
-function checkDoneOverflow(){_bucketCramped('ddone-','.done-bucket',DONE_PAD_PX,'done');}
+function checkDoneOverflow(){_bucketUniform('ddone-','.done-bucket',DONE_PAD_PX,'done');}
 // Animate the divider/split to a target todo-zone height, then re-check buckets.
 function animateSplit(targetPx){
   const usable=_todoUsableH();
@@ -3525,13 +3556,15 @@ function taskCardHeight(hours){
 
 function createTaskCard(t,day,isDone){
   const card=document.createElement('div');
-  card.className='task-card'+(isDone?' done-c':'')+(t.urgent&&!isDone?' urgent-c':'')+(t._stAssignment?' assign-c':'');
+  const _bill=(t.billable!==false)&&taskIsBillable(t);
+  const _statusClass=(t.urgent&&!isDone)?'tc-urgent':(_bill?'tc-bill':'tc-nonbill');
+  card.className='task-card'+(isDone?' done-c':'')+' '+_statusClass;
   card.draggable=true;
   card.dataset.taskId=t.id;card.dataset.day=day;
   card.dataset.hours=t.hours||'';
   if(t.hours)card.style.height=taskCardHeight(t.hours)+'px';
 
-  const _iconName=ITEM_ICONS[t.item]||(t.urgent?'alert-circle':t._stAssignment?'calendar-time':t._fromST?'clock':'circle-dot');
+  const _iconName=ITEM_ICONS[t.item]||(t.urgent?'alert-circle':'circle-dot');
   const icon=_icon(_iconName,13);
   const hrsLabel=t.hours?formatHrs(t.hours):'';
   const jobIdMatch=t.job?t.job.match(/^(\d+)/):null;
@@ -3687,7 +3720,7 @@ function tcmShowReassign(btn){
   document.getElementById('tcm-reassign-panel')?.remove();
   const sub=document.createElement('div');sub.id='tcm-reassign-panel';
   sub.style.cssText='padding:4px 0;border-top:1px solid var(--border);';
-  sub.innerHTML=Object.keys(people).filter(k=>k!==currentPerson).map(k=>{
+  sub.innerHTML=Object.keys(people).filter(k=>k!==currentPerson&&!people[k]._archived).map(k=>{
     const p=people[k];
     return`<div class="tcm-person-row" onclick="closeTaskContextMenu();reassignTask(window._ctxTask,window._ctxDay,'${k}')">
       <div class="tcm-pav" style="background:${p.color};">${p.initials}</div>
@@ -4308,12 +4341,18 @@ function closeFup(yes){
   if(yes){
     const t=_fupTask;
     const jobId=t&&t.job?(t.job.match(/^(\d+)/)||[])[1]:null;
-    const day=t?editingDay||5:5;
+    const day=t?(editingDay||5):5;
     openTodoModal(jobId,day);
-    // Pre-fill item type too
-    if(t&&t.item){
-      const si=document.getElementById('td-item');
-      if(si)si.value=t.item;
+    // Prefill the new task from the one that was just completed
+    if(t){
+      const ti=document.getElementById('td-task');if(ti)ti.value=t.title||'';
+      const hi=document.getElementById('td-hours');if(hi&&t.hours)hi.value=formatHrs(t.hours);
+      if(t.item){
+        const si=document.getElementById('td-item');if(si)si.value=t.item;
+        if(typeof _setItemPickerLabel==='function')_setItemPickerLabel(t.item,t.itemId||'');
+        const ii=document.getElementById('td-item-id');if(ii)ii.value=t.itemId||'';
+      }
+      updateJobLabel();
     }
   }
   _fupTask=null;
@@ -4867,7 +4906,7 @@ function openJobDetail(id){
   const _dueSoon=_due&&(_due-_now)/(86400000)<=7&&_due>=_now&&j.status==='inplay';
   const _overdue=_due&&_due<_now&&j.status==='inplay';
   const _dueBadge=_overdue?` &nbsp;<span class="paused-badge" style="background:#FFEBEE;color:#C62828;border-color:#EF9A9A;" title="Job overdue"><i class="ti ti-alert-triangle" style="font-size:9px;"></i> Overdue${_dueStr?' · '+_dueStr:''}</span>`:_dueSoon?` &nbsp;<span class="paused-badge" style="background:#FFF9C4;color:#E65100;border-color:#FFE082;" title="Due within 7 days"><i class="ti ti-clock" style="font-size:9px;"></i> Due ${_dueStr}</span>`:_dueStr?` &nbsp;<span style="font-size:11px;color:var(--muted);">Due ${_dueStr}</span>`:'';
-  document.getElementById('d-meta-line').innerHTML=`${j.id} · ${j.company} · ${leadHtml}${j.billable?'Billable':'Non-billable'} &nbsp;<span class="wf-badge ${wfCls}" style="cursor:pointer;user-select:none;" title="Click to advance workflow stage" onclick="advanceWorkflow('${id}')">${wfLabel} <i class="ti ti-arrow-right" style="font-size:9px;vertical-align:middle;"></i></span>`+(j.paused?' &nbsp;<span class="paused-badge"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>':'')+archivedBadge+_dueBadge;
+  document.getElementById('d-meta-line').innerHTML=`${j.id} · ${j.company} · ${leadHtml}${j.billable?'Billable':'Non-billable'}${j.po?` · PO ${j.po}`:''} &nbsp;<span class="wf-badge ${wfCls}" style="cursor:pointer;user-select:none;" title="Click to advance workflow stage" onclick="advanceWorkflow('${id}')">${wfLabel} <i class="ti ti-arrow-right" style="font-size:9px;vertical-align:middle;"></i></span>`+(j.paused?' &nbsp;<span class="paused-badge"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>':'')+archivedBadge+_dueBadge;
   document.getElementById('d-title-text').textContent=j.name;
   document.getElementById('d-hours-sell').textContent='';
   activeLabels=j.labels?[...j.labels]:[];
@@ -4875,7 +4914,9 @@ function openJobDetail(id){
   // Render team members
   const membersRow=document.getElementById('d-members-row');
   if(membersRow){
-    if(!j.members||!j.members.length)j.members=['ro'];
+    // Auto-add anyone who has logged or scheduled time on this job in Streamtime
+    const stMembers=_jobStMemberKeys(j);
+    j.members=[...new Set([...(j.members||[]).filter(k=>people[k]),...stMembers])];
     membersRow.innerHTML=j.members.map(k=>{
       const p=people[k];if(!p)return'';
       return`<div class="d-av" style="background:${p.color};cursor:pointer;" title="${p.name}" onclick="openPersonTodo('${k}')">${p.initials}</div>`;
@@ -4903,19 +4944,31 @@ function openJobDetail(id){
 function openPersonTodo(personKey){currentPerson=personKey;navTo('todo');}
 function openAddMemberPicker(jobId){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
-  if(!j.members)j.members=['ro'];
+  if(!j.members)j.members=[];
   const modal=document.createElement('div');
   modal.className='modal-bg on';
-  const opts=Object.keys(people).map(k=>{
+  modal.innerHTML=`<div class="modal" style="max-width:340px;"><div class="modal-hd"><span class="modal-hd-title">Team on this job</span><button class="modal-x" onclick="this.closest('.modal-bg').remove()"><i class="ti ti-x"></i></button></div>
+    <div style="padding:10px 14px 4px;"><input id="amp-search" placeholder="Search team…" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;font-family:inherit;outline:none;" oninput="_renderAddMemberRows('${jobId}',this.value)"></div>
+    <div id="amp-rows" style="padding:6px 0;max-height:50vh;overflow-y:auto;"></div></div>`;
+  document.body.appendChild(modal);
+  _renderAddMemberRows(jobId,'');
+  setTimeout(()=>document.getElementById('amp-search')?.focus(),50);
+}
+function _renderAddMemberRows(jobId,query){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  const box=document.getElementById('amp-rows');if(!box)return;
+  const q=(query||'').toLowerCase();
+  // Active accounts only, members first
+  const keys=Object.keys(people).filter(k=>!people[k]._archived&&(!q||people[k].name.toLowerCase().includes(q)||(people[k].role||'').toLowerCase().includes(q)))
+    .sort((a,b)=>(j.members.includes(b)?1:0)-(j.members.includes(a)?1:0)||people[a].name.localeCompare(people[b].name));
+  box.innerHTML=keys.map(k=>{
     const p=people[k];const on=j.members.includes(k);
     return`<div style="display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;background:${on?'var(--off)':'#fff'};" onclick="toggleJobMember('${jobId}','${k}',this)">
       <div class="d-av" style="background:${p.color};flex-shrink:0;">${p.initials}</div>
       <span style="flex:1;font-size:13px;">${p.name}</span>
       ${on?'<i class="ti ti-check" style="color:var(--red);font-size:12px;"></i>':''}
     </div>`;
-  }).join('');
-  modal.innerHTML=`<div class="modal" style="max-width:320px;"><div class="modal-hd"><span class="modal-hd-title">Team on this job</span><button class="modal-x" onclick="this.closest('.modal-bg').remove()"><i class="ti ti-x"></i></button></div><div style="padding:8px 0;">${opts}</div></div>`;
-  document.body.appendChild(modal);
+  }).join('')||'<div style="padding:14px 16px;font-size:12px;color:var(--muted);">No matches.</div>';
 }
 function toggleJobMember(jobId,personKey,rowEl){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
@@ -5201,6 +5254,15 @@ function switchDTab(el,tab){
   if(tab==='progress')renderProgressTab();
   if(tab==='quote')renderQuoteTab();
   if(tab==='activity')renderActivityTab();
+}
+
+// Person keys of everyone who has logged or scheduled time on a job in Streamtime
+function _jobStMemberKeys(j){
+  if(!j||!j._stId)return [];
+  const ids=new Set();
+  stLoggedTimes.forEach(lt=>{if((lt.job?.id||lt.jobId)===j._stId&&lt.userId)ids.add(lt.userId);});
+  stScheduledTodos.forEach(td=>{if((String(td.jobId)===String(j._stId)||String(td.jobNumber)===String(j.id))&&td.userId)ids.add(td.userId);});
+  return [...ids].map(uid=>stUsersById[uid]?.key).filter(k=>k&&people[k]);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -6110,6 +6172,44 @@ function saveExpense(jid){
   document.getElementById('exp-modal')?.remove();
   renderExpenses();
 }
+// Editable expense sub-lines (in-memory only; revert on refresh until ST write-back)
+let _expSubEdits={};   // expenseId -> [{label,amount}]
+let _expExpanded={};   // expenseId -> bool
+function _parseExpenseSubs(desc){
+  if(!desc)return [];
+  return desc.split(/\n+/).map(line=>{
+    line=line.trim();if(!line)return null;
+    const amts=[...line.matchAll(/\$\s*([\d,]+(?:\.\d+)?)/g)].map(m=>parseFloat(m[1].replace(/,/g,'')));
+    const amount=Math.round(amts.reduce((a,b)=>a+b,0)*100)/100;
+    // strip the trailing amount expression (and an optional "x N") to get the label
+    let label=line.replace(/\s*[-–]\s*(?:x\s*\d+\s*[-–]?\s*)?\$[\d,].*$/i,'').trim();
+    if(!label)label=line;
+    return {label,amount,raw:line};
+  }).filter(Boolean);
+}
+function _expSubs(e){
+  if(_expSubEdits[e.id])return _expSubEdits[e.id];
+  return _parseExpenseSubs(e.desc||e.description||'');
+}
+function _ensureExpSubEdits(id){
+  if(!_expSubEdits[id]){
+    const j=jobs.find(x=>x.id===activeJobId);
+    const all=[...(j?.expenses||[]).map(e=>({...e,_source:'local'})),...(window.__lastStExps||[])];
+    const e=all.find(x=>x.id===id)||{id};
+    _expSubEdits[id]=_parseExpenseSubs(e.desc||e.description||'').map(s=>({label:s.label,amount:s.amount}));
+  }
+  return _expSubEdits[id];
+}
+function _setExpSub(id,idx,field,val){
+  const subs=_ensureExpSubEdits(id);
+  if(subs[idx])subs[idx][field]=field==='amount'?(parseFloat(val)||0):val;
+  // Live-update the itemised total without re-rendering (preserves input focus)
+  const el=document.getElementById('exp-subtotal-'+id);
+  if(el){const sum=subs.reduce((a,s)=>a+(+s.amount||0),0);el.textContent='$'+sum.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
+}
+function _addExpSub(id){_ensureExpSubEdits(id).push({label:'',amount:0});renderExpenses();}
+function _removeExpSub(id,idx){const s=_ensureExpSubEdits(id);s.splice(idx,1);renderExpenses();}
+function toggleExpSubs(id){_expExpanded[id]=!_expExpanded[id];renderExpenses();}
 function renderExpenses(){
   const j=jobs.find(x=>x.id===activeJobId);
   const wrap=document.getElementById('exp-wrap');
@@ -6132,6 +6232,7 @@ function renderExpenses(){
     _stId:e.id,
   }));
   const exps=[...localExps,...stJobExps];
+  window.__lastStExps=stJobExps; // for the sub-line edit helper
   if(!exps.length){wrap.style.display='none';return;}
   wrap.style.display='';
   const total=exps.reduce((a,e)=>a+(e.sell||0),0);
@@ -6150,8 +6251,14 @@ function renderExpenses(){
     const unitSell=markup?Math.round(cost*(1+markup/100)):e.sell||cost;
     const sTotal=Math.round(unitSell*qty);
     const canEdit=e._source==='local';
-    return`<tr>
-      <td style="font-weight:500;">${e.desc||e.description||'—'}${e._source==='st'?'<span style="font-size:9px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">ST</span>':''}</td>
+    const subs=_expSubs(e);
+    const hasSubs=subs.length>1;
+    const open=!!_expExpanded[e.id];
+    const descCell=hasSubs
+      ? `<span style="cursor:pointer;" onclick="toggleExpSubs('${e.id}')"><i class="ti ti-chevron-${open?'down':'right'}" style="font-size:11px;color:var(--muted);margin-right:4px;"></i>${e.desc||'—'}</span><span style="font-size:9px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">${subs.length} lines</span>`
+      : `${e.desc||e.description||'—'}`;
+    let html=`<tr>
+      <td style="font-weight:500;">${descCell}${e._source==='st'?'<span style="font-size:9px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">ST</span>':''}</td>
       <td style="color:var(--muted);">${e.date?new Date(e.date+'T00:00:00').toLocaleDateString('en-NZ',{day:'numeric',month:'short',year:'2-digit'}):'-'}</td>
       <td style="text-align:center;">${qty}</td>
       <td>$${cost.toLocaleString()}</td>
@@ -6160,6 +6267,25 @@ function renderExpenses(){
       <td style="text-align:right;font-weight:500;">$${sTotal.toLocaleString()}</td>
       <td style="text-align:right;">${canEdit?`<span class="exp-badg ${status}" style="cursor:pointer;" onclick="cycleExpenseStatus('${e.id}')" title="Click to change status">${status.charAt(0).toUpperCase()+status.slice(1)}</span>`:`<span class="exp-badg ${status}">${status.charAt(0).toUpperCase()+status.slice(1)}</span>`}</td>
     </tr>`;
+    if(hasSubs&&open){
+      const subSum=subs.reduce((a,s)=>a+(+s.amount||0),0);
+      const diff=Math.round((sTotal-subSum)*100)/100;
+      const subRows=subs.map((s,i)=>`<div style="display:flex;gap:8px;align-items:center;padding:3px 0;">
+        <input value="${(s.label||'').replace(/"/g,'&quot;')}" placeholder="Description" oninput="_setExpSub('${e.id}',${i},'label',this.value)" style="flex:1;border:1px solid var(--border);border-radius:4px;padding:4px 7px;font-size:12px;font-family:inherit;">
+        <span style="color:var(--muted);font-size:12px;">$</span>
+        <input value="${s.amount||0}" type="number" step="0.01" oninput="_setExpSub('${e.id}',${i},'amount',this.value)" style="width:90px;border:1px solid var(--border);border-radius:4px;padding:4px 7px;font-size:12px;font-family:inherit;text-align:right;">
+        <i class="ti ti-x" onclick="_removeExpSub('${e.id}',${i})" style="cursor:pointer;color:var(--muted);font-size:12px;" title="Remove line"></i>
+      </div>`).join('');
+      html+=`<tr class="exp-subs-row"><td colspan="8" style="background:var(--off);padding:10px 16px;">
+        <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Itemised — edits are local until written back to Streamtime</div>
+        ${subRows}
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+          <span class="add-e-row" style="margin:0;" onclick="_addExpSub('${e.id}')"><i class="ti ti-plus" style="font-size:11px"></i> Add line</span>
+          <span style="font-size:12px;">Itemised total: <strong id="exp-subtotal-${e.id}">$${subSum.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>${Math.abs(diff)>=0.01?` <span style="color:${diff>0?'#FF9800':'var(--red)'};">(${diff>0?'$'+diff.toFixed(2)+' unallocated':'$'+Math.abs(diff).toFixed(2)+' over'})</span>`:' <span style="color:#4CAF50;">✓ matches</span>'}</span>
+        </div>
+      </td></tr>`;
+    }
+    return html;
   }).join('');
   wrap.innerHTML=`${expHead}
   <table class="exp-t">
@@ -6283,17 +6409,33 @@ function logActivity(jobId,personKey,action,detail){
 function renderActivityTab(){
   const el=document.getElementById('dtab-activity');if(!el)return;
   const j=jobs.find(x=>x.id===activeJobId);
-  if(!j||!j.activity||j.activity.length===0){
+  if(!j){el.innerHTML='';return;}
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  // Merge local activity events with synthesised Streamtime time entries on this job
+  const events=[];
+  (j.activity||[]).forEach(a=>events.push({ts:a.ts,personKey:a.personKey,detail:a.detail}));
+  if(j._stId){
+    stLoggedTimes.forEach(lt=>{
+      if((lt.job?.id||lt.jobId)!==j._stId)return;
+      const stUser=stUsersById[lt.userId];if(!stUser)return;
+      const ts=lt.date?new Date(lt.date.slice(0,10)+'T12:00:00').getTime():0;
+      const note=lt.notes||lt.scheduleNotes||'';
+      const item=lt.itemName?` on <strong>${lt.itemName}</strong>`:'';
+      events.push({ts,personKey:stUser.key,detail:`Logged <strong>${formatHrs((lt.minutes||0)/60)||'0h'}</strong>${item}${note?` — ${note}`:''}`,_st:true});
+    });
+  }
+  if(!events.length){
     el.innerHTML='<div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:18px;">Activity</div><div style="font-size:13px;color:var(--muted);">No activity yet on this job.</div>';
     return;
   }
-  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const rows=j.activity.map(a=>{
+  events.sort((a,b)=>b.ts-a.ts);
+  const now=new Date();
+  const rows=events.map(a=>{
     const p=people[a.personKey]||{initials:'??',color:'#999',name:a.personKey};
     const d=new Date(a.ts);
-    const now=new Date();const dDiff=Math.floor((now-d)/86400000);
-    const timeStr=dDiff===0?`Today, ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`:dDiff===1?`Yesterday`:(`${d.getDate()} ${MONTHS[d.getMonth()]}`);
-    return`<div class="act-row"><div class="d-av" style="background:${p.color};flex-shrink:0;">${p.initials}</div><div><div class="act-text">${a.detail}</div><div class="act-time">${timeStr}</div></div></div>`;
+    const dDiff=Math.floor((now-d)/86400000);
+    const timeStr=!a.ts?'':dDiff===0?`Today, ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`:dDiff===1?`Yesterday`:(`${d.getDate()} ${MONTHS[d.getMonth()]}`);
+    return`<div class="act-row"><div class="d-av" style="background:${p.color};flex-shrink:0;">${p.initials}</div><div><div class="act-text">${a.detail}</div><div class="act-time">${p.name} · ${timeStr}</div></div></div>`;
   }).join('');
   el.innerHTML=`<div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:18px;">Activity</div>${rows}`;
 }
