@@ -1267,6 +1267,7 @@ tr:hover .i-todo-btn{opacity:1;}
           <div class="jsn-tab" data-tab="quotes" onclick="switchJobsTab('quotes')">Quotes</div>
           <div class="jsn-tab" data-tab="invoices" onclick="switchJobsTab('invoices')">Invoices</div>
           <div class="jsn-tab" data-tab="clients" onclick="switchJobsTab('clients')">Clients</div>
+          <div class="jsn-tab" data-tab="deadlines" onclick="switchJobsTab('deadlines')">Deadlines</div>
           <button class="d-action primary" style="margin-left:auto;" onclick="openCreateJob()"><i class="ti ti-plus" style="font-size:13px"></i> New job</button>
         </div>
         <!-- JOBS panel -->
@@ -1299,6 +1300,11 @@ tr:hover .i-todo-btn{opacity:1;}
               <option value="atrisk">At risk (80–100%)</option>
               <option value="over">Over budget</option>
               <option value="attention">Needs attention</option>
+            </select>
+            <select class="cc-select" id="jobs-po-filter" onchange="renderJobs()">
+              <option value="all">All PO</option>
+              <option value="has">Has PO</option>
+              <option value="none">No PO</option>
             </select>
             <label class="filter-btn" style="cursor:pointer;"><input type="checkbox" id="jobs-hide-archived" checked style="margin-right:5px;accent-color:var(--red)" onchange="renderJobs()"/> Hide archived</label>
             <span class="jobs-count" id="jobs-count">1 job · NZD</span>
@@ -1422,6 +1428,26 @@ tr:hover .i-todo-btn{opacity:1;}
               <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Jobs</div>
               <div id="cd-jobs-list"></div>
             </div>
+          </div>
+        </div>
+        <!-- DEADLINES panel -->
+        <div id="jt-deadlines" class="jt-panel scroll" style="display:none;padding:24px 28px 40px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+            <div>
+              <div class="dash-greeting" style="font-size:22px;">Deadlines</div>
+              <div class="dash-date" id="dcal-sub">Job due dates &amp; invoice due dates</div>
+            </div>
+            <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+              <button class="d-action" onclick="deadlinesCalNav(-1)"><i class="ti ti-chevron-left" style="font-size:13px;"></i></button>
+              <span id="dcal-month-lbl" style="font-size:13px;min-width:110px;text-align:center;"></span>
+              <button class="d-action" onclick="deadlinesCalNav(1)"><i class="ti ti-chevron-right" style="font-size:13px;"></i></button>
+              <button class="d-action" onclick="_dcalOffset=0;renderDeadlinesCal()">Today</button>
+            </div>
+          </div>
+          <div id="dcal-grid"></div>
+          <div id="dcal-legend" style="display:flex;gap:16px;margin-top:16px;font-size:11px;color:var(--muted);">
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#E65100;margin-right:4px;vertical-align:middle;"></span>Job due</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--red);margin-right:4px;vertical-align:middle;"></span>Invoice due</span>
           </div>
         </div>
       </div>
@@ -1837,6 +1863,22 @@ tr:hover .i-todo-btn{opacity:1;}
 </div>
 
 <!-- CHANGELOG MODAL -->
+<div class="modal-bg" id="rollover-modal" onclick="if(event.target===this)closeRollover()">
+  <div class="cl-modal" style="max-width:400px;">
+    <div class="cl-hd">
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:.06em;">New week</div>
+        <div style="font-size:18px;font-family:var(--serif);font-weight:600;">Tasks from last week</div>
+      </div>
+      <button class="tm-x" onclick="closeRollover()" style="min-width:auto;padding:6px;"><i class="ti ti-x"></i></button>
+    </div>
+    <div style="padding:20px 24px;font-size:13px;color:var(--ink);" id="rollover-body"></div>
+    <div class="cl-ft" style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="d-action" onclick="closeRollover()">Dismiss</button>
+      <button class="tm-btn-save" onclick="rolloverViewLastWeek()" style="min-width:120px;">View last week</button>
+    </div>
+  </div>
+</div>
 <div class="modal-bg" id="changelog-modal" onclick="closeChangelog(event)">
   <div class="cl-modal">
     <div class="cl-hd">
@@ -2035,8 +2077,16 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.14.0';
+const APP_VERSION='2.15.0';
 const CHANGELOG=[
+  {version:'2.15.0',date:'18 Jun 2026',title:'PO tracking, deadline calendar, rollover prompt, contact management, per-person rates',items:[
+    'Jobs: PO filter (All / Has PO / No PO) — instantly see which jobs have a purchase order',
+    'Jobs: PO number shown in status column of jobs table for quick scanning',
+    'New Deadlines tab — month-view calendar of all job due dates and unpaid invoice due dates, colour-coded and clickable',
+    'Monday rollover prompt — on the first open each Monday, shows count of unfinished tasks from last week with quick link to review them',
+    'Clients: Add / edit / delete local contacts per client (alongside read-only Streamtime contacts)',
+    'Settings: per-person Hours/day and Rate $/h fields — sets working hours and default hourly rate for each team member',
+  ]},
   {version:'2.14.0',date:'17 Jun 2026',title:'Big roadmap push — data fixes, intelligence & analytics',items:[
     'Fixed a Streamtime sync bug that had quotes and invoices swapped — the Quotes tab now shows real quote status & value, and Invoices show real status, due date, paid date and overdue flags.',
     'Dashboard "Needs attention": jobs due/overdue, overdue invoices, quotes awaiting response, uninvoiced work, and quiet clients — all from live data.',
@@ -2955,6 +3005,7 @@ function switchJobsTab(tab){
   if(tab==='quotes'){initQuotesClientFilter();renderQuotes();}
   if(tab==='invoices'){setInvMode(_invMode||'tobeinvoiced');}
   if(tab==='clients')renderClients();
+  if(tab==='deadlines')renderDeadlinesCal();
 }
 function initQuotesClientFilter(){
   const cSel=document.getElementById('quotes-client');
@@ -4606,7 +4657,28 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(seenVer!==APP_VERSION){
     setTimeout(()=>showChangelog(),600);
   }
+  // Rollover prompt: show once per Monday after ST data loads
+  const _now=new Date();
+  if(_now.getDay()===1){
+    const monKey=_now.toISOString().slice(0,10);
+    if(localStorage.getItem('cc_rollover_seen')!==monKey){
+      setTimeout(()=>checkRolloverPrompt(monKey),3000);
+    }
+  }
 });
+
+function checkRolloverPrompt(monKey){
+  const lastWk=getWeekData(MY_PERSON,-1);
+  let incomplete=0;
+  [1,2,3,4,5].forEach(d=>(lastWk[d]||[]).forEach(t=>{if(!t.done)incomplete++;}));
+  if(!incomplete)return;
+  const body=document.getElementById('rollover-body');
+  if(body)body.innerHTML=`You had <strong>${incomplete} unfinished task${incomplete!==1?'s':''}</strong> last week. Want to review them?`;
+  document.getElementById('rollover-modal')?.classList.add('on');
+  localStorage.setItem('cc_rollover_seen',monKey);
+}
+function closeRollover(){document.getElementById('rollover-modal')?.classList.remove('on');}
+function rolloverViewLastWeek(){closeRollover();weekOffset=-1;navTo('todo');updateWeekLabel();renderTodo();}
 
 function showChangelog(){
   const body=document.getElementById('cl-body');
@@ -4805,6 +4877,7 @@ function renderJobs(){
   const labelFilter=(document.getElementById('jobs-label-filter')?.value)||'';
   const companyFilter=(document.getElementById('jobs-company-filter')?.value)||'';
   const healthFilter=(document.getElementById('jobs-health-filter')?.value)||'all';
+  const poFilter=(document.getElementById('jobs-po-filter')?.value)||'all';
   const q=_jobSearch;
   const _todayJ=new Date();_todayJ.setHours(0,0,0,0);
   const _jobHealth=j=>{const p=Math.max(j._bPct||0,j._hPct||0);return p>=100?'over':p>=80?'atrisk':'ontrack';};
@@ -4845,6 +4918,8 @@ function renderJobs(){
       if(healthFilter==='attention'){if(!_jobNeedsAttention(j))return;}
       else if(_jobHealth(j)!==healthFilter)return;
     }
+    if(poFilter==='has'&&!j.po)return;
+    if(poFilter==='none'&&j.po)return;
     if(q&&!(`${j.id} ${j.name} ${j.company}`).toLowerCase().includes(q))return;
     filteredJobs.push(j);
   });
@@ -4897,7 +4972,7 @@ function renderJobs(){
           </div>
         </td>
         <td><div class="job-labels-cell">${labels||'<span style="font-size:12px;color:var(--muted);">—</span>'}</div>${progHTML}</td>
-        <td><span class="wf-badge ${wfCls}">${wfLabel}</span></td>`;
+        <td><span class="wf-badge ${wfCls}">${wfLabel}</span>${j.po?`<div style="font-size:10px;color:var(--muted);margin-top:3px;">PO ${j.po}</div>`:''}</td>`;
       frag.appendChild(tr);
       _jobsRenderedCount=i+1;
     }
@@ -6754,22 +6829,35 @@ function openClientDetail(id){
       <div style="text-align:center;"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Paid</div><div style="font-size:15px;font-weight:500;color:#4CAF50;">${fmtD(totalPaid)}</div></div>
     </div>
   `;
-  // Contacts section
-  const contactsHTML=coContacts.length?`
+  // Contacts section — ST contacts (read-only) + local contacts (editable)
+  const localContacts=c.localContacts||[];
+  const allContactCount=coContacts.length+localContacts.length;
+  const stContactsHTML=coContacts.map(ct=>{
+    const name=[ct.firstName,ct.lastName].filter(Boolean).join(' ')||'Unknown';
+    return`<div style="background:var(--off);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:12px;min-width:160px;">
+      <div style="font-weight:500;margin-bottom:2px;">${name}</div>
+      ${ct.jobTitle||ct.position?`<div style="color:var(--muted);font-size:11px;">${ct.jobTitle||ct.position}</div>`:''}
+      ${ct.email?`<div style="color:var(--muted);font-size:11px;">${ct.email}</div>`:''}
+      ${ct.phone||ct.phoneNumber||ct.mobile?`<div style="color:var(--muted);font-size:11px;">${ct.phone||ct.phoneNumber||ct.mobile}</div>`:''}
+      <div style="font-size:10px;color:#bbb;margin-top:4px;">Streamtime</div>
+    </div>`;
+  }).join('');
+  const localContactsHTML=localContacts.map((ct,i)=>`
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:12px;min-width:180px;position:relative;">
+      <button onclick="deleteClientContact('${id}',${i})" style="position:absolute;top:6px;right:6px;background:none;border:none;cursor:pointer;color:var(--muted);padding:0;font-size:12px;" title="Remove"><i class="ti ti-x"></i></button>
+      <input placeholder="Name" value="${ct.name||''}" oninput="updateLocalContact('${id}',${i},'name',this.value)" style="width:100%;border:none;border-bottom:1px dashed var(--border);outline:none;font-size:12px;font-weight:500;font-family:var(--font);margin-bottom:4px;background:transparent;">
+      <input placeholder="Role / position" value="${ct.role||''}" oninput="updateLocalContact('${id}',${i},'role',this.value)" style="width:100%;border:none;border-bottom:1px dashed var(--border);outline:none;font-size:11px;color:var(--muted);font-family:var(--font);margin-bottom:4px;background:transparent;">
+      <input placeholder="email@company.com" value="${ct.email||''}" oninput="updateLocalContact('${id}',${i},'email',this.value)" style="width:100%;border:none;border-bottom:1px dashed var(--border);outline:none;font-size:11px;color:var(--muted);font-family:var(--font);margin-bottom:4px;background:transparent;">
+      <input placeholder="Phone" value="${ct.phone||''}" oninput="updateLocalContact('${id}',${i},'phone',this.value)" style="width:100%;border:none;outline:none;font-size:11px;color:var(--muted);font-family:var(--font);background:transparent;">
+    </div>`).join('');
+  const contactsHTML=`
     <div style="margin-bottom:20px;">
-      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px;">Contacts (${coContacts.length})</div>
-      <div style="display:flex;flex-wrap:wrap;gap:10px;">
-        ${coContacts.map(ct=>{
-          const name=[ct.firstName,ct.lastName].filter(Boolean).join(' ')||'Unknown';
-          return`<div style="background:var(--off);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:12px;min-width:160px;">
-            <div style="font-weight:500;margin-bottom:2px;">${name}</div>
-            ${ct.jobTitle||ct.position?`<div style="color:var(--muted);font-size:11px;">${ct.jobTitle||ct.position}</div>`:''}
-            ${ct.email?`<div style="color:var(--muted);font-size:11px;">${ct.email}</div>`:''}
-            ${ct.phone||ct.phoneNumber||ct.mobile?`<div style="color:var(--muted);font-size:11px;">${ct.phone||ct.phoneNumber||ct.mobile}</div>`:''}
-          </div>`;
-        }).join('')}
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">Contacts${allContactCount?` (${allContactCount})`:''}</div>
+        <button class="d-action" onclick="addClientContact('${id}')" style="margin-left:auto;"><i class="ti ti-plus" style="font-size:11px;"></i> Add contact</button>
       </div>
-    </div>`:'';
+      <div style="display:flex;flex-wrap:wrap;gap:10px;">${stContactsHTML}${localContactsHTML}</div>
+    </div>`;
   // Jobs list
   const jobsList=document.getElementById('cd-jobs-list');
   jobsList.innerHTML=(contactsHTML)+(clientJobs.length===0?`<div style="font-size:13px;color:var(--muted);padding:24px 0;">No jobs yet for this client.</div>`
@@ -6816,6 +6904,21 @@ function updateClientField(id,field,val){
   const c=clientsData.find(x=>x.id===id);if(!c)return;
   c[field]=val;saveClientsData();
 }
+function addClientContact(id){
+  const c=clientsData.find(x=>x.id===id);if(!c)return;
+  if(!c.localContacts)c.localContacts=[];
+  c.localContacts.push({name:'',role:'',email:'',phone:''});
+  saveClientsData();openClientDetail(id);
+}
+function deleteClientContact(id,idx){
+  const c=clientsData.find(x=>x.id===id);if(!c||!c.localContacts)return;
+  c.localContacts.splice(idx,1);saveClientsData();openClientDetail(id);
+}
+function updateLocalContact(id,idx,field,val){
+  const c=clientsData.find(x=>x.id===id);if(!c||!c.localContacts)return;
+  if(!c.localContacts[idx])return;
+  c.localContacts[idx][field]=val;saveClientsData();
+}
 
 function openNewClientModal(){
   const modal=document.createElement('div');
@@ -6851,6 +6954,53 @@ function saveNewClient(btn){
   if(njco&&![...njco.options].find(o=>o.value===name)){const o=document.createElement('option');o.value=name;o.textContent=name;njco.appendChild(o);}
 }
 // ---- SETTINGS / TEAM MANAGEMENT ----
+let _dcalOffset=0;
+function deadlinesCalNav(dir){_dcalOffset+=dir;renderDeadlinesCal();}
+function renderDeadlinesCal(){
+  const grid=document.getElementById('dcal-grid');if(!grid)return;
+  const now=new Date();
+  const base=new Date(now.getFullYear(),now.getMonth()+_dcalOffset,1);
+  const yr=base.getFullYear(),mo=base.getMonth();
+  const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  document.getElementById('dcal-month-lbl').textContent=`${MONTHS[mo]} ${yr}`;
+  // Build event map keyed by YYYY-MM-DD
+  const events={};
+  const addEv=(dateStr,ev)=>{if(!dateStr)return;const k=dateStr.slice(0,10);if(!events[k])events[k]=[];events[k].push(ev);};
+  // Job due dates
+  (_liveJobs||jobs).filter(j=>j.dueDate).forEach(j=>{
+    addEv(j.dueDate,{label:`${j.id} ${j.name}`,color:'#E65100',jid:j.id,type:'job'});
+  });
+  // Invoice due dates
+  (stInvoices||[]).filter(i=>i.dueDate).forEach(i=>{
+    const s=(i.invoiceStatus?.name||'').toLowerCase();
+    if(s==='paid'||s==='voided')return;
+    addEv(i.dueDate,{label:i.company?.name||i.jobName||'Invoice',color:'var(--red)',jid:null,type:'inv'});
+  });
+  // Calendar grid
+  const firstDay=new Date(yr,mo,1);
+  // Monday=0 offset
+  let startDow=(firstDay.getDay()+6)%7; // 0=Mon
+  const daysInMonth=new Date(yr,mo+1,0).getDate();
+  const todayStr=new Date().toISOString().slice(0,10);
+  let html=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);">`;
+  DAYS.forEach(d=>{html+=`<div style="background:var(--off);padding:6px 8px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:center;">${d}</div>`;});
+  // empty cells before 1st
+  for(let i=0;i<startDow;i++)html+=`<div style="background:var(--white);min-height:80px;"></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const dStr=`${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=dStr===todayStr;
+    const evs=events[dStr]||[];
+    html+=`<div style="background:var(--white);min-height:80px;padding:6px 6px 4px;${isToday?'outline:2px solid var(--red);outline-offset:-2px;':''}">
+      <div style="font-size:12px;font-weight:${isToday?600:400};color:${isToday?'var(--red)':'var(--ink)'};margin-bottom:4px;">${d}</div>
+      ${evs.slice(0,3).map(ev=>`<div onclick="${ev.jid?`openJobDetail('${ev.jid}')`:''}" style="font-size:10px;background:${ev.color};color:#fff;border-radius:2px;padding:1px 4px;margin-bottom:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;${ev.jid?'cursor:pointer;':''}" title="${ev.label}">${ev.label}</div>`).join('')}
+      ${evs.length>3?`<div style="font-size:10px;color:var(--muted);">+${evs.length-3} more</div>`:''}
+    </div>`;
+  }
+  html+=`</div>`;
+  grid.innerHTML=html;
+}
+
 function renderSettings(){
   const wrap=document.getElementById('settings-scroll');if(!wrap)return;
   const COLORS=['#ED1E24','#6B7FA3','#7B9E87','#C4956A','#9B59B6','#E67E22','#1ABC9C','#E74C3C','#3498DB','#F39C12'];
@@ -6864,6 +7014,14 @@ function renderSettings(){
         <input class="sett-inp sett-inp-sm" value="${p.role||''}" placeholder="Role" onchange="updatePerson('${key}','role',this.value)" style="font-size:12px;color:var(--muted);width:100%;border:none;outline:none;background:transparent;font-family:var(--font);">
       </div>
       <input list="team-name-list" value="${p.team||''}" placeholder="Team…" onchange="updatePerson('${key}','team',this.value.trim())" title="Team" style="width:110px;font-size:12px;font-family:var(--font);color:var(--ink);border:1px solid var(--border);border-radius:4px;padding:5px 8px;background:var(--off);outline:none;flex-shrink:0;">
+      <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Hrs/day</div>
+        <input type="number" min="1" max="24" step="0.5" value="${p.hoursPerDay||8}" title="Working hours per day" onchange="updatePerson('${key}','hoursPerDay',parseFloat(this.value)||8)" style="width:60px;font-size:12px;font-family:var(--font);color:var(--ink);border:1px solid var(--border);border-radius:4px;padding:5px 8px;background:var(--off);outline:none;">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Rate $/h</div>
+        <input type="number" min="0" step="5" value="${p.rate||''}" placeholder="—" title="Default hourly rate" onchange="updatePerson('${key}','rate',parseFloat(this.value)||0)" style="width:72px;font-size:12px;font-family:var(--font);color:var(--ink);border:1px solid var(--border);border-radius:4px;padding:5px 8px;background:var(--off);outline:none;">
+      </div>
       <div class="color-swatches" style="display:flex;gap:4px;flex-wrap:wrap;max-width:120px;">
         ${COLORS.map(c=>`<div onclick="updatePerson('${key}','color','${c}')" style="width:16px;height:16px;border-radius:50%;background:${c};cursor:pointer;border:${p.color===c?'2px solid var(--ink)':'2px solid transparent'};flex-shrink:0;"></div>`).join('')}
       </div>
