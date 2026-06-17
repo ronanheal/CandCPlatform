@@ -1,7 +1,25 @@
 {
-  "generated_at": "2026-06-17T00:09:40.219397+00:00",
-  "current_version": "2.10.5",
+  "generated_at": "2026-06-17T00:26:53.483707+00:00",
+  "current_version": "2.10.6",
   "releases": [
+    {
+      "version": "2.10.6",
+      "date": "17 Jun 2026",
+      "title": "Assignment dedup, notes, and display fixes",
+      "items": [
+        "Assignments now appear once per week on their first applicable day — no more repeating the same card Mon–Fri",
+        "Assignment card notes: uses item description when available, falls back to most recent logged-time note for same job+item",
+        "Removed dedup between ST assignments and logged times — assignments show remaining work, logged entries show done work; these coexist correctly",
+        "Manual todo dedup now per-day only: a manual task for job+item moves to done if time was logged against that exact job+item on that same day",
+        "Removed 30-day span filter — retainer and long-running assignments correctly appear again",
+        "Calendar view uses same per-day manual-todo dedup logic (ST assignments never deduped)"
+      ],
+      "sections": [
+        "Jobs",
+        "Jobs → Time",
+        "Todo"
+      ]
+    },
     {
       "version": "2.10.5",
       "date": "17 Jun 2026",
