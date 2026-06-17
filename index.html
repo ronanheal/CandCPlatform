@@ -1996,8 +1996,14 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.11.0';
+const APP_VERSION='2.11.1';
 const CHANGELOG=[
+  {version:'2.11.1',date:'17 Jun 2026',title:'Todo bucket timing, today line, billable accuracy',items:[
+    'Todo bucket now appears as soon as a day\'s tasks no longer fit at a readable size (not only when the divider is dragged near the top)',
+    'Fixed: the "today" red indicator no longer adds height to that column\'s header, so the done divider and padding line up across all days',
+    'More consistent breathing room under the done divider',
+    'Fixed billable accuracy: logged-time billable status is read from the job (was always counting as billable) — dashboard billable hours and capacity bars are now correct',
+  ]},
   {version:'2.11.0',date:'17 Jun 2026',title:'Real scheduled ToDo blocks from Streamtime',items:[
     'Todo board now reads actual Streamtime "Scheduled" ToDo blocks — each planned block shows with its own note, exact date, and exact minutes',
     'Notes pull through correctly: the block note (e.g. "🥫 RECORP - New Can Spec Sheet") is the task title',
@@ -2403,7 +2409,7 @@ function _getStWeekEntries(personKey,offset){
       minutes:lt.minutes||0,
       jobNum:jNum,jobId:jNum,
       jobName:lt.job?.name||'',itemName:lt.itemName||'',
-      billable:lt.isBillable!==false,
+      billable:lt.job?.isBillable!==false, // isBillable lives on the job, not the entry
     });
   });
   return result;
@@ -3256,11 +3262,23 @@ function buildZoneBucket(type,cards,isToday){
   return bk;
 }
 
+// The todo zone uses justify-content:flex-end + overflow:hidden, so overflowing
+// cards clip at the TOP and scrollHeight never exceeds clientHeight. Detect overflow
+// instead by asking: can every card fit at its minimum readable height (MIN_CARD_PX)?
+const MIN_CARD_PX=52, CARD_GAP_PX=4, ZONE_PAD_PX=12;
+function todoColumnsOverflow(cols){
+  return cols.some(col=>{
+    const n=col.querySelectorAll('.task-card').length;
+    if(!n)return false;
+    const needed=n*MIN_CARD_PX+(n-1)*CARD_GAP_PX+ZONE_PAD_PX;
+    return needed>col.clientHeight+2;
+  });
+}
 function checkTodoOverflow(){
   const cols=[1,2,3,4,5].map(d=>document.getElementById('dtodo-'+d)).filter(Boolean);
   cols.forEach(col=>restoreZoneCards(col,'.todo-bucket'));
   const mode=getSplitBucketMode();
-  const shouldBucket=mode.todo||cols.some(col=>col.scrollHeight>col.clientHeight+6||col.clientHeight<ZONE_BUCKET_PX);
+  const shouldBucket=mode.todo||todoColumnsOverflow(cols);
   if(!shouldBucket)return;
   cols.forEach(col=>{
     const cards=[...col.querySelectorAll('.task-card')];
