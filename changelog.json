@@ -1,7 +1,97 @@
 {
-  "generated_at": "2026-06-17T20:09:33.511005+00:00",
-  "current_version": "2.16.0",
+  "generated_at": "2026-06-17T22:27:07.332313+00:00",
+  "current_version": "2.19.0",
   "releases": [
+    {
+      "version": "2.19.0",
+      "date": "18 Jun 2026",
+      "title": "Settings overhaul, invoice merge, client folder nav, reporting filters, data connections, bug fixes",
+      "items": [
+        "Settings: replaced accordion layout with sidebar navigation — My Profile, Team, Workspace Defaults, Job Items, Labels, Workspace Sync, Data, About tabs",
+        "Team tab: rich member card grid showing role, cost rate, billable rate, and hours/day per person",
+        "Team tab: click any team member card to open a detail slide-out panel with full profile editing — name, role, team, cost rate, hours/day, colour picker, archive",
+        "My Profile tab: inline editing of name, role, team, colour, cost rate and hours/day — no redirect to Team tab",
+        "My Profile tab: click avatar in sidenav profile card to open My Profile tab directly",
+        "My Profile tab: dashboard team filter toggles and block visibility controls — changes now live-update the dashboard immediately (bug fix)",
+        "Data tab: Streamtime connection card with live sync counts; \"coming soon\" integrations — Xero, Google Calendar, Slack, Google Sheets",
+        "Invoices: merged \"To Be Invoiced\" and \"All Invoices\" tabs into a single view — Uninvoiced jobs appears as a collapsible section above the invoice table when the checkbox is ticked",
+        "Jobs: Uninvoiced chip filter now works correctly — finds completed jobs with no invoicing",
+        "Clients: group folder headers are now clickable — navigates to a full sub-view of that group with header stats and individual client cards; Back button returns to main client list",
+        "Reporting: Business tab company filter — filter all KPIs, charts and the YoY table by a single client",
+        "Reporting: Year-over-year revenue breakdown table on Business tab — shows invoiced and paid totals for every year across all historical ST data",
+        "Reporting: People, Jobs, and Clients tabs now have data-driven filter selects populated from the live dataset",
+        "Bug fix: Settings sidenav profile card now updates instantly when you change your name or colour on the My Profile tab",
+        "Bug fix: Uninvoiced jobs (TBI) filter no longer shows already-invoiced completed jobs"
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.18.0",
+      "date": "18 Jun 2026",
+      "title": "Jobs filters, client groups, quote detail drawer, activity timeline, studio board fix, default cost rate in Settings",
+      "items": [
+        "Jobs: replaced 6 dropdown filters with stackable chip filter system — filter by status, workflow, company, label, health, PO, lead, member, billable, due/start date range, budget range",
+        "Jobs: group by Company, Status, Workflow, or Lead — same preset save/load as Quotes and Invoices",
+        "Clients: master client grouping — set a Group field on any client, clients with the same group are shown under a shared header in the list with combined job and revenue stats",
+        "Clients: group field searchable and editable in client detail info strip; autocomplete from existing groups",
+        "Quotes + Invoices: click \"View detail\" on any quote or invoice card to open a slide-out drawer with full ST data (dates, amounts, PO, linked job, open job button)",
+        "Job detail Quote tab: Streamtime quotes linked to this job shown above the quote document as a clickable list — supports multiple quotes per job",
+        "Activity tab: full timeline redesign — date-group headers (Today, Yesterday, weekday name, full date), card layout with avatar, Streamtime vs local badge, and time stamp",
+        "Studio board: fixed — the Studio board preset now creates live job cards with hours/budget bars, workflow badge, and team avatars instead of plain note cards",
+        "Settings: new Workspace Defaults section — set company-wide default cost rate and invoice payment terms; default cost rate is used wherever Streamtime returns $0 for a user",
+        "All $150 hardcoded cost rate fallbacks now read from the workspace default setting",
+        "Dropdown (cc-select) styling: refined arrow, hover state, focus ring — consistent across all panels"
+      ],
+      "sections": [
+        "Boards",
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.17.0",
+      "date": "18 Jun 2026",
+      "title": "Smart filter system for Quotes and Invoices — stackable filters, group-by, saved presets, job numbers, $150 default cost rate",
+      "items": [
+        "Quotes and Invoices: stackable AND filter chips — filter by status, company, job number, job name, PO, lead, value/amount range, sent/due/paid/expiry date ranges",
+        "Filter chips are saveable as named presets (stored in localStorage, one click to reload)",
+        "Group by Status, Company, or Job on both Quotes and Invoices tables",
+        "Job number now shown prominently on every quote card header (#jobNum chip below quote number)",
+        "Job number shown with # prefix in invoice table Job column",
+        "Quote search now includes job number in scope",
+        "All historical quotes and invoices visible — no date cutoff applied",
+        "Default cost rate set to $150/h when Streamtime returns 0 for a user (resolves profitability data gap)",
+        "PO number on invoices now reads from invoice purchaseOrderNumber field first, then falls back to linked job PO"
+      ],
+      "sections": [
+        "Boards",
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Todo"
+      ]
+    },
     {
       "version": "2.16.0",
       "date": "18 Jun 2026",
