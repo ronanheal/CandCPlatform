@@ -2835,6 +2835,23 @@ function renderDashboard(){
       <div class="tc-timeline">${jobPills}${moreCount}</div>
     </div>`;
   }).filter(Boolean).join('');
+  // ── Needs attention: deadlines, overdue invoices, quotes awaiting response, uninvoiced ──
+  const _t0=new Date();_t0.setHours(0,0,0,0);
+  const _inDays=d=>Math.round((new Date(d)-_t0)/86400000);
+  const _fmtDay=d=>{const x=new Date(d);return`${x.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][x.getMonth()]}`;};
+  const _liveJobs=jobs.filter(j=>j.status==='inplay');
+  const dueJobs=_liveJobs.filter(j=>j.dueDate&&_inDays(j.dueDate)<=7).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate)).slice(0,12);
+  const overdueInv=(stInvoices||[]).filter(i=>{const s=(i.invoiceStatus?.name||'').toLowerCase();return i.dueDate&&new Date(i.dueDate)<_t0&&s!=='paid'&&s!=='voided';}).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate)).slice(0,12);
+  const awaitingQuotes=(stQuotes||[]).filter(q=>{const s=(typeof q.quoteStatus==='string'?q.quoteStatus:q.quoteStatus?.name||'').toLowerCase();return s.includes('pending')&&q.sentDate&&_inDays(q.sentDate)<=-7;}).sort((a,b)=>new Date(a.sentDate)-new Date(b.sentDate)).slice(0,12);
+  const uninvoiced=_liveJobs.filter(j=>(j._sellUsed||0)-(j._stInvoiced||0)>=500&&(j._bPct||0)>=80).sort((a,b)=>((b._sellUsed||0)-(b._stInvoiced||0))-((a._sellUsed||0)-(a._stInvoiced||0))).slice(0,10);
+  const _attCard=(title,items,color)=>items.length?`<div style="flex:1;min-width:220px;background:var(--white);border:1px solid var(--border);border-left:3px solid ${color};border-radius:6px;padding:12px 14px;"><div style="font-size:11px;font-weight:600;margin-bottom:8px;">${title} <span style="color:var(--muted);font-weight:400;">${items.length}</span></div>${items.map(x=>`<div style="font-size:12px;padding:3px 0;display:flex;justify-content:space-between;gap:10px;cursor:${x.jid?'pointer':'default'};" ${x.jid?`onclick="openJobDetail('${x.jid}')"`:''}><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.label}</span><span style="color:${color};flex-shrink:0;">${x.meta}</span></div>`).join('')}</div>`:'';
+  const dh=people[MY_PERSON].dashHide||[];const _show=k=>!dh.includes(k);
+  const deadlinesHTML=_show('deadlines')?[
+    _attCard('Jobs due / overdue',dueJobs.map(j=>({label:`${j.id} ${j.name}`,meta:_inDays(j.dueDate)<0?`${-_inDays(j.dueDate)}d over`:_inDays(j.dueDate)===0?'today':`${_inDays(j.dueDate)}d`,jid:j.id})),'#E65100'),
+    _attCard('Overdue invoices',overdueInv.map(i=>({label:`${i.company?.name||i.jobName||'—'}`,meta:`${-_inDays(i.dueDate)}d`,jid:null})),'var(--red)'),
+    _attCard('Quotes awaiting response',awaitingQuotes.map(q=>({label:`${q.company?.name||q.jobName||(q.jobNumber?'Job '+q.jobNumber:q.name)||'—'}`,meta:`${-_inDays(q.sentDate)}d`,jid:null})),'#6B7FA3'),
+    _attCard('Uninvoiced work',uninvoiced.map(j=>({label:`${j.id} ${j.name}`,meta:'$'+Math.round((j._sellUsed||0)-(j._stInvoiced||0)).toLocaleString(),jid:j.id})),'#9C6FD6'),
+  ].filter(Boolean).join(''):'';
   wrap.innerHTML=`
     <div style="margin-bottom:28px;">
       <div class="dash-greeting">${greetStr}, ${p?.name||'Ronan'}.</div>
@@ -2848,9 +2865,10 @@ function renderDashboard(){
     </div>
     <div class="section-label" style="margin-bottom:12px;">Your day <button onclick="openTodoModal(null,null,'${MY_PERSON}')" title="Add task" style="background:transparent;border:1px solid var(--border);border-radius:4px;padding:1px 8px;cursor:pointer;font-size:11px;color:var(--muted);font-family:var(--font);margin-left:8px;vertical-align:middle;">+ Add task</button></div>
     <div class="my-todos" style="margin-bottom:28px;">${todoRows||'<div class="my-todo-item" style="color:var(--muted);font-size:13px;"><i class="ti ti-sun" style="font-size:16px;margin-right:10px;"></i>No tasks scheduled today.</div>'}</div>
-    ${teamHTML?`<div class="section-label" style="margin-bottom:14px;">Team · today</div><div class="team-grid">${teamHTML}</div>`:''}
-    ${stKPIs}
-    ${_clientsHTML?`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Active clients</div><div class="team-grid">${_clientsHTML}</div>`:''}
+    ${deadlinesHTML?`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Needs attention</div><div style="display:flex;flex-wrap:wrap;gap:14px;">${deadlinesHTML}</div>`:''}
+    ${_show('team')&&teamHTML?`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Team · today</div><div class="team-grid">${teamHTML}</div>`:''}
+    ${_show('kpis')?stKPIs:''}
+    ${_show('clients')&&_clientsHTML?`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Active clients</div><div class="team-grid">${_clientsHTML}</div>`:''}
     ${alerts?`<div style="margin-top:28px;"><div class="section-label" style="margin-bottom:14px;">Over budget</div><div class="alert-list">${alerts}</div></div>`:''}
   `;
   _renderIcons();
@@ -6835,6 +6853,16 @@ function renderSettings(){
           }).join('');
         })()}
       </div>
+      <div style="font-size:11px;color:var(--muted);margin:14px 0 8px;">Dashboard blocks <span style="color:#B8B3AB;">— hide sections you don't want</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        ${(function(){
+          const dh=people[MY_PERSON].dashHide||[];
+          return [['deadlines','Needs attention'],['team','Team · today'],['kpis','Business KPIs'],['clients','Active clients']].map(([k,lbl])=>{
+            const on=!dh.includes(k);
+            return`<button onclick="toggleDashBlock('${k}')" class="filter-btn" style="cursor:pointer;font-size:12px;${on?'background:var(--ink);color:#fff;border-color:var(--ink);':''}">${on?'✓ ':''}${lbl}</button>`;
+          }).join('');
+        })()}
+      </div>
     </div>
     <div class="sett-section-hd" id="ssh-team" onclick="toggleSettSection('team')">
       <i class="ti ti-chevron-down ss-chv"></i>
@@ -7063,6 +7091,13 @@ function toggleDashTeam(tn){
   if(!me.dashTeams)me.dashTeams=[];
   const i=me.dashTeams.indexOf(tn);
   if(i===-1)me.dashTeams.push(tn);else me.dashTeams.splice(i,1);
+  savePeople();renderSettings();
+}
+function toggleDashBlock(k){
+  const me=people[MY_PERSON];
+  if(!me.dashHide)me.dashHide=[];
+  const i=me.dashHide.indexOf(k);
+  if(i===-1)me.dashHide.push(k);else me.dashHide.splice(i,1);
   savePeople();renderSettings();
 }
 function showAddPersonForm(){document.getElementById('add-person-form').style.display='';document.getElementById('ap-name')?.focus();}
