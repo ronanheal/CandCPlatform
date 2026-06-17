@@ -114,3 +114,51 @@
 - **Deploy** — push to `main` → Vercel auto-deploys in ~30s
 - **Persistence** — localStorage only; workspace export/import added in v2.14.0 for backup
 - **Write-back** — platform is read-only from ST today; write-back requires serverless proxy
+
+---
+
+## Machine-readable index (parsed by generate_meta.py → roadmap.json → Google Sheet)
+
+*Do not rename these headers or item format — the sync script depends on them.*
+
+### Quick Wins (1–2 days each)
+
+**QW1. Quote value column and real status from ST**
+**QW2. Invoice due date column and overdue badge in All Invoices table**
+**QW3. Job start date and due date in job detail meta line and Dashboard deadline alerts**
+**QW4. Company website link on client detail card**
+**QW5. Quote expiry alert on Dashboard**
+**QW6. ST capacity per person replaces hardcoded 30h week target**
+**QW7. Invoice paid date column and Days Sales Outstanding metric**
+**QW8. Purchase order number on job detail and invoice table**
+**P1. Monday rollover prompt — move unfinished tasks from last week**
+**P3. Studio board preset — auto-board of all live jobs by workflow stage**
+**P4. Date-range picker in Reporting**
+**P6. Capacity warnings while booking — tint day header when full**
+**P7. Working hours per person in Settings**
+**P8. Quiet-client flag — no active job in N weeks nudge**
+**F1. Better filtering on Invoices**
+**0a. Dashboard customisation section in Settings**
+**0e. Jobs — more filter options**
+**0f. Clients — more filters and stats**
+**0g. Clients — add and edit UI for company fields**
+
+### Medium (3–5 days each)
+
+**M1. Profitability per job — staff cost vs revenue vs expenses**
+**M2. Time approval workflow — surface unapproved entries and alert on Dashboard**
+**M3. Job due-date calendar and deadline view**
+**M4. Needs attention smart filter in Jobs list**
+**M5. Per-client revenue trend month-by-month in Reporting Clients**
+**M6. Utilisation report — billable percentage vs capacity per person per week**
+**M7. Contact management — add and edit contacts per client**
+**P2. Uninvoiced work report — approved quotes plus time minus invoiced**
+**F2. Detailed expense input against budget — track individual purchases**
+
+### Large (1+ week each)
+
+**L1. Staff profitability and utilisation dashboard — P&L view**
+**L2. Job timeline Gantt view**
+**L3. Quote-to-invoice pipeline funnel**
+**L4. ST write-back — log time directly from platform to Streamtime**
+**L5. Purchase order tracking — PO filter and print on invoice**
