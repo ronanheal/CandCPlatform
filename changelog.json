@@ -1,7 +1,35 @@
 {
-  "generated_at": "2026-06-17T03:50:46.077046+00:00",
-  "current_version": "2.12.0",
+  "generated_at": "2026-06-17T07:54:08.062049+00:00",
+  "current_version": "2.13.0",
   "releases": [
+    {
+      "version": "2.13.0",
+      "date": "17 Jun 2026",
+      "title": "Card colours, urgent fix, activity & expense detail",
+      "items": [
+        "Every todo card now shares one design; the left border colour shows status — green billable, amber non-billable, red urgent — matching the dashboard bars.",
+        "Fixed: marking a task urgent now actually shows red (a styling conflict was hiding it).",
+        "Done buckets now collapse uniformly across the week (triggered by the lightest day) for a calmer view.",
+        "Dashboard loads fully on first open (no need to visit To Do first), and uses your real Streamtime weekly capacity (e.g. 40h) instead of a fixed 30h.",
+        "Dashboard stat bars now read green when healthy; the billable bar fills green toward your capacity.",
+        "\"Add more time?\" follow-up now pre-fills the new task with the job, item, hours and title.",
+        "Task notes now fall back to the Streamtime schedule note, so more notes come through; repeating tasks show as their individual dated blocks.",
+        "Job team: the + picker is now searchable and active-only, and anyone who has logged or scheduled time on the job is added automatically.",
+        "Job Activity tab now lists everyone who logged time on the job (from Streamtime), with their notes and dates.",
+        "Expenses: a single expense line (e.g. Disbursements) can be itemised into editable sub-lines that total up — see job 6964. Edits are local for now.",
+        "Job detail shows the PO number when Streamtime has one."
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
     {
       "version": "2.12.0",
       "date": "17 Jun 2026",
