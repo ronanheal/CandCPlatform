@@ -1,7 +1,31 @@
 {
-  "generated_at": "2026-06-18T02:49:53.704438+00:00",
-  "current_version": "2.20.0",
+  "generated_at": "2026-06-18T22:06:51.049590+00:00",
+  "current_version": "2.20.1",
   "releases": [
+    {
+      "version": "2.20.1",
+      "date": "19 Jun 2026",
+      "title": "Job detail crash fix, Progress reallocate restored, budget total fix, expenses data fix, todo cleanup",
+      "items": [
+        "Fixed: jobs with a due date set failed to open at all (job detail crashed on a missing fmtDate reference) — affected job 6860 and others",
+        "Fixed: Progress tab reallocate menu (⋮) was hidden on every row, ST-sourced or not — restored, and fixed the underlying week lookup so it actually finds the entry to move",
+        "Fixed: Quote tab stacked a duplicate \"Streamtime Quotes\" block every time you switched tabs and back — was inserted outside the area that gets cleared on re-render",
+        "Fixed: Jobs list budget total didn\\'t match Streamtime — was reading totalPlannedTimeExTax first instead of finalBudget",
+        "Fixed: Expenses list showed $0 cost/sell and always \"Draft\" status — was reading the wrong field names from the Streamtime export (totalCost/totalExTax/itemName, status is a plain string not an object)",
+        "Fixed: \"Hours\" view setting had no effect on initial render — only worked while actively resizing a card",
+        "Fixed: \"Notes\" view setting now actually hides the note text baked into task titles, falling back to the item/job name — relabelled \"Notes (in task title)\" for clarity",
+        "View settings panel now shows a \"drag to reorder\" hint and a visible grip icon on each row",
+        "Removed: Log Time button (Todo bar + job detail), Plan My Week, and My Items panel — redundant with Add Task"
+      ],
+      "sections": [
+        "Data",
+        "Jobs",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
     {
       "version": "2.20.0",
       "date": "18 Jun 2026",
