@@ -1,10 +1,48 @@
 # C&C Platform — Roadmap
 
-*Last updated 18 Jun 2026 · v2.18.0*
+*Last updated 18 Jun 2026 · v2.20.0*
 
 ---
 
-## What's Live (v2.16.0)
+## Phase Strategy
+
+| Phase | Status | Description |
+|---|---|---|
+| **Phase 1** | ✅ Live | Streamtime is source of truth. Platform reads ST data and displays everything correctly. |
+| **Phase 2** | 🔄 In progress | Native data creation (jobs, time, expenses, quotes, invoices). DB stub layer built — localStorage now, real API when ready. |
+| **Phase 3** | ⏳ Future | ST retired. Platform is the source of all data. `initStreamtime()` deleted, internal shape unchanged. |
+
+---
+
+## Phase 2 — Native Creation (stubs built, API-ready)
+
+The following features are live in the UI with a localStorage stub. Swapping to a real database requires only changing the `db*` functions — all modals, validation, and render logic stays identical.
+
+| Feature | UI | Stub | API-ready |
+|---|---|---|---|
+| Log time entry | ✅ Full modal (date, job, item, hours, notes, person) | ✅ `dbCreateTimeEntry()` | 🔄 swap for `POST /api/time` |
+| Create job | ✅ Full modal (exists since v2.13.0) | ✅ `dbCreateJob()` | 🔄 swap for `POST /api/jobs` |
+| Add phase to job | ✅ Modal from job detail | ✅ `dbCreatePhase()` | 🔄 swap for `POST /api/phases` |
+| Add item to phase | ✅ Modal (name, hours, rate) | ✅ `dbCreateItem()` | 🔄 swap for `POST /api/items` |
+| Add expense | ✅ Modal (job, desc, cost, sell) | ✅ `dbCreateExpense()` | 🔄 swap for `POST /api/expenses` |
+| Schedule view | ✅ Team week-at-a-glance, capacity bars | — reads existing data | — |
+| Global Search ⌘K | ✅ Jobs, clients, invoices, quotes | — reads existing data | — |
+| Expenses list | ✅ Cross-job list, filters, search | — reads existing data | — |
+| My Items panel | ✅ All items assigned to you across jobs | — reads existing data | — |
+| Plan My Week | ✅ Auto-distributes items across Mon–Fri | — writes to local week store | 🔄 swap for `POST /api/schedule` |
+
+### Phase 2 still to build
+| Feature | Notes |
+|---|---|
+| Create quote natively | Modal + PDF preview |
+| Create invoice natively | Modal + Xero push |
+| Job timeline / Gantt | Needs phase date ranges from ST first |
+| @mentions + notifications | Needs real-time backend |
+| Starred items persistent panel | Exists in localStorage, needs panel UI |
+
+---
+
+## What's Live (v2.16.0+)
 
 ### Data mapped from Streamtime
 | Field | Source | Status |
@@ -68,6 +106,15 @@
 | F12 | Activity tab timeline redesign | Jobs → Activity | v2.18.0 |
 | F13 | Studio board fixed — live job cards instead of note cards | Boards | v2.18.0 |
 | F14 | Default cost rate + payment terms in Settings → Workspace Defaults | Settings | v2.18.0 |
+| F15 | Log Time — native time entry modal from Todo + job detail | Todo / Jobs | v2.20.0 |
+| F16 | Schedule view — team week-at-a-glance with capacity bars | Schedule (new nav) | v2.20.0 |
+| F17 | Global Search ⌘K — cross-entity search (jobs/clients/invoices/quotes) | Global | v2.20.0 |
+| F18 | Expenses list — cross-job view with filters, search, cost/sell totals | Jobs → Expenses | v2.20.0 |
+| F19 | My Items panel — all job items assigned to current user | Todo | v2.20.0 |
+| F20 | Plan My Week — auto-distribute items across Mon–Fri by capacity | Todo | v2.20.0 |
+| F21 | Add Phase + Add Item — native creation on job detail | Jobs → Job Plan | v2.20.0 |
+| F22 | Add Expense — modal from Expenses tab | Jobs → Expenses | v2.20.0 |
+| F23 | DB stub layer — all create functions API-ready (`db*` pattern) | Architecture | v2.20.0 |
 | 0a | Dashboard block toggles in Settings | Settings | v2.14.0 |
 | 0e | Jobs — more filter options (health, workflow, label, PO) | Jobs | v2.14.0 |
 | 0f | Clients — search + stats | Jobs → Clients | v2.14.0 |
@@ -125,7 +172,8 @@
 - **Data source** — 7 JSON files fetched from GitHub CDN (`streamtime-data` branch), refreshed hourly
 - **Deploy** — push to `main` → Vercel auto-deploys in ~30s
 - **Persistence** — localStorage only; workspace export/import added in v2.14.0 for backup
-- **Write-back** — platform is read-only from ST today; write-back requires serverless proxy
+- **Write-back** — DB stub layer added v2.20.0; `db*` functions use localStorage now, swap `fetch('/api/...')` for Phase 2 backend
+- **Phase 2 backend** — when ready: Vercel Edge Functions or similar, one endpoint per entity (jobs/time/phases/items/expenses)
 
 ---
 
