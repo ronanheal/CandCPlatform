@@ -817,12 +817,14 @@ button.detail-back{outline:none;}
 /* View settings panel */
 .vsp{position:fixed;background:var(--white);border:1px solid var(--border);border-radius:4px;box-shadow:0 6px 24px rgba(0,0,0,.12);z-index:900;width:220px;display:none;padding:0;}
 .vsp.on{display:block;}
-.vsp-title{padding:10px 14px 8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);}
+.vsp-title{padding:10px 14px 8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.vsp-hint{padding:0 14px 8px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:4px;}
+.vsp-hint i{font-size:12px;}
 .vsp-item{display:flex;align-items:center;padding:8px 14px;gap:10px;cursor:grab;}
 .vsp-item:hover{background:var(--off);}
 .vsp-item label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);cursor:pointer;flex:1;}
 .vsp-item label input[type=checkbox]{accent-color:var(--ink);}
-.vsp-grip{font-size:14px;color:var(--border);flex-shrink:0;cursor:grab;}
+.vsp-grip{font-size:14px;color:var(--muted);flex-shrink:0;cursor:grab;}
 .vsp-item.dragging{opacity:.4;}
 .ps-person{padding:8px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;transition:background .1s;}
 .ps-person:hover{background:var(--off);}
@@ -1333,8 +1335,6 @@ tr:hover .i-todo-btn{opacity:1;}
                 <button class="tvt-btn" id="tvt-cal" onclick="setTodoView('calendar')" title="Calendar view"><i class="ti ti-calendar-week" style="font-size:12px;"></i></button>
               </div>
               <button class="wbtn" id="vsp-btn" title="View settings" onclick="toggleVSP(event)" style="padding:5px 7px;"><i class="ti ti-adjustments-horizontal" style="font-size:13px;pointer-events:none;"></i></button>
-              <button class="tb-btn ghost" onclick="openLogTime()" style="font-size:11px;padding:6px 12px;"><i class="ti ti-clock" style="font-size:11px;margin-right:4px;"></i>Log time</button>
-              <button class="tb-btn ghost" onclick="openMyItems()" style="font-size:11px;padding:6px 12px;"><i class="ti ti-list-check" style="font-size:11px;margin-right:4px;"></i>My items</button>
               <button class="tb-btn ghost" onclick="openTodoModal(null,5)" style="font-size:11px;padding:6px 12px;">+ Add task</button>
             </div>
           </div>
@@ -1549,7 +1549,6 @@ tr:hover .i-todo-btn{opacity:1;}
               <div class="detail-actions">
                 <button class="d-action" onclick="openJobSettingsModal()"><i class="ti ti-settings" style="font-size:13px"></i></button>
                 <button class="d-action" onclick="showJobDotMenu(event)"><i class="ti ti-dots" style="font-size:13px"></i></button>
-                <button class="d-action" onclick="openLogTime(activeJobId)"><i class="ti ti-clock" style="font-size:13px"></i> Log time</button>
                 <button class="d-action" onclick="openInvoice()"><i class="ti ti-file-invoice" style="font-size:13px"></i> Invoice</button>
                 <div class="create-item-wrap" style="position:relative;display:inline-block;">
                   <button class="d-action primary" onclick="toggleCreateItemMenu(event)"><i class="ti ti-plus" style="font-size:12px"></i> Create <i class="ti ti-chevron-down" style="font-size:10px;margin-left:2px;"></i></button>
@@ -2228,8 +2227,19 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.20.0';
+const APP_VERSION='2.20.1';
 const CHANGELOG=[
+  {version:'2.20.1',date:'19 Jun 2026',title:'Job detail crash fix, Progress reallocate restored, budget total fix, expenses data fix, todo cleanup',items:[
+    'Fixed: jobs with a due date set failed to open at all (job detail crashed on a missing fmtDate reference) — affected job 6860 and others',
+    'Fixed: Progress tab reallocate menu (⋮) was hidden on every row, ST-sourced or not — restored, and fixed the underlying week lookup so it actually finds the entry to move',
+    'Fixed: Quote tab stacked a duplicate "Streamtime Quotes" block every time you switched tabs and back — was inserted outside the area that gets cleared on re-render',
+    'Fixed: Jobs list budget total didn\'t match Streamtime — was reading totalPlannedTimeExTax first instead of finalBudget',
+    'Fixed: Expenses list showed $0 cost/sell and always "Draft" status — was reading the wrong field names from the Streamtime export (totalCost/totalExTax/itemName, status is a plain string not an object)',
+    'Fixed: "Hours" view setting had no effect on initial render — only worked while actively resizing a card',
+    'Fixed: "Notes" view setting now actually hides the note text baked into task titles, falling back to the item/job name — relabelled "Notes (in task title)" for clarity',
+    'View settings panel now shows a "drag to reorder" hint and a visible grip icon on each row',
+    'Removed: Log Time button (Todo bar + job detail), Plan My Week, and My Items panel — redundant with Add Task',
+  ]},
   {version:'2.20.0',date:'18 Jun 2026',title:'Phase 2 foundations — Log Time, Schedule, My Items, Global Search, Expenses list, Add Phase/Item',items:[
     'New: Log Time — create time entries natively from the Todo bar (persists locally, Phase 2 API-ready)',
     'New: My Items panel — see all job items assigned to you across all active jobs',
@@ -2684,8 +2694,9 @@ function _getStWeekEntries(personKey,offset){
     dateToDay[key]=i+1;
   }
   const result={};
+  const _uid=String(stUser.id);
   stLoggedTimes.forEach(lt=>{
-    if(lt.userId!==stUser.id)return;
+    if(String(lt.userId)!==_uid)return;
     const dateStr=(lt.date||'').slice(0,10);
     const day=dateToDay[dateStr];
     if(!day)return;
@@ -2694,6 +2705,7 @@ function _getStWeekEntries(personKey,offset){
     result[day].push({
       id:'st-lt-'+lt.id,
       title:lt.notes||lt.scheduleNotes||lt.itemName||lt.job?.name||'Untimed',
+      titleNoNote:lt.itemName||lt.job?.name||'Untimed', // shown when the Notes view setting is off
       hours:(lt.minutes||0)/60,
       done:true,urgent:false,personal:false,
       job:jNum||'',
@@ -2735,6 +2747,7 @@ function _getStWeekAssignments(personKey,offset){
     result[day].push({
         id:'st-todo-'+t.id,
         title:note||t.itemName||'Scheduled task',
+        titleNoNote:t.itemName||t.jobName||'Scheduled task', // shown when the Notes view setting is off
         hours:(t.minutes||0)/60,
         done:false,urgent:false,personal:false,
         job:jNum,
@@ -2761,7 +2774,7 @@ function _mapStJob(j){
   const loggedMins=j.totalLoggedMinutes||0;
   const plannedMins=j.totalPlannedMinutes||0;
   const sellUsed=+(j.totalLoggedTimeExTax||0);
-  const plannedSell=+(j.totalPlannedTimeExTax||j.finalBudget||j.budget||0);
+  const plannedSell=+(j.finalBudget||j.totalPlannedTimeExTax||j.budget||0); // finalBudget matches Streamtime's own budget total exactly
   const expUsed=+(j.totalLoggedExpensesExTax||0);
   const hPct=plannedMins>0?Math.round(loggedMins/plannedMins*100):0;
   const bPct=plannedSell>0?Math.round(sellUsed/plannedSell*100):0;
@@ -3262,133 +3275,6 @@ function renderSchedule(){
       </table>
     </div>`;
 }
-// ── Log Time ──
-function openLogTime(prefillJobId){
-  const modal=document.getElementById('log-time-modal');if(!modal)return;
-  document.getElementById('lt-date').value=new Date().toISOString().slice(0,10);
-  document.getElementById('lt-hours').value='';
-  document.getElementById('lt-notes').value='';
-  const pSel=document.getElementById('lt-person');
-  pSel.innerHTML=Object.keys(people).filter(k=>!people[k]._archived).map(k=>`<option value="${k}" ${k===MY_PERSON?'selected':''}>${people[k].name}</option>`).join('');
-  const jInp=document.getElementById('lt-job');
-  if(prefillJobId){const j=jobs.find(x=>x.id===prefillJobId);jInp.value=j?`${j.id} ${j.name}`:'';_ltFillItems();}
-  else{jInp.value='';}
-  attachCombo(jInp,jobs.filter(j=>j.status==='inplay').map(j=>`${j.id} ${j.name}`));
-  modal.style.display='flex';
-  setTimeout(()=>document.getElementById('lt-date').focus(),50);
-}
-function closeLogTime(){const m=document.getElementById('log-time-modal');if(m)m.style.display='none';}
-function _ltFillItems(){
-  const val=document.getElementById('lt-job')?.value||'';
-  const m=val.match(/^(\d+)/);const jid=m?m[1]:null;
-  const j=jid?jobs.find(x=>x.id===jid):null;
-  const sel=document.getElementById('lt-item');if(!sel)return;
-  let opts='<option value="">— No item —</option>';
-  (j?.phases||[]).forEach(ph=>(ph.items||[]).forEach(it=>{opts+=`<option value="${it.id}" data-name="${(it.name||'').replace(/"/g,'&quot;')}">${ph.name} — ${it.name}</option>`;}));
-  sel.innerHTML=opts;
-}
-async function submitLogTime(){
-  const dateVal=document.getElementById('lt-date').value;
-  const hoursVal=parseFloat(document.getElementById('lt-hours').value)||0;
-  const notes=document.getElementById('lt-notes').value.trim();
-  const person=document.getElementById('lt-person').value;
-  const jobVal=document.getElementById('lt-job').value;
-  const itemSel=document.getElementById('lt-item');
-  const itemName=itemSel?.options[itemSel.selectedIndex]?.dataset?.name||itemSel?.value||'';
-  if(!hoursVal){toast('Enter hours to log','error');return;}
-  if(!dateVal){toast('Enter a date','error');return;}
-  const jm=jobVal.match(/^(\d+)/);const jid=jm?jm[1]:null;
-  const j=jid?jobs.find(x=>x.id===jid):null;
-  const stU=Object.values(stUsersById).find(u=>u.key===person);
-  await dbCreateTimeEntry({
-    userId:stU?.id||null,
-    date:dateVal,
-    hours:hoursVal,
-    minutes:Math.round(hoursVal*60),
-    notes,
-    job:j?{id:j._stId||jid,number:parseInt(jid,10),name:j.name}:null,
-    jobId:jid,
-    itemName,
-    isBillable:j?j.billable!==false:true,
-    _local:true,
-    person,
-  });
-  logActivity(jid||'',person,`Logged ${formatHrs(hoursVal)}`,notes||itemName||'');
-  closeLogTime();
-  resetTodoStore();
-  if(!document.getElementById('view-todo')?.classList.contains('hidden'))renderTodo();
-  if(!document.getElementById('view-dashboard')?.classList.contains('hidden'))renderDashboard();
-  toast(`Logged ${formatHrs(hoursVal)}${j?' on '+j.name:''}`, 'success');
-}
-// ── My Items ──
-function openMyItems(){
-  const panel=document.getElementById('my-items-panel');if(!panel)return;
-  panel.style.display='flex';
-  _renderMyItems();
-}
-function closeMyItems(){const p=document.getElementById('my-items-panel');if(p)p.style.display='none';}
-function _renderMyItems(){
-  const el=document.getElementById('my-items-list');if(!el)return;
-  const items=[];
-  jobs.filter(j=>j.status==='inplay').forEach(j=>{
-    (j.phases||[]).forEach(ph=>{
-      (ph.items||[]).forEach(it=>{
-        if((j.members||[]).includes(MY_PERSON)||(it.team||[]).includes(MY_PERSON)){
-          const planH=it._planMins?it._planMins/60:parseFloat(it.hours)||0;
-          const logH=it._logMins?it._logMins/60:0;
-          const remaining=Math.max(0,planH-logH);
-          items.push({jobId:j.id,jobName:j.name,company:j.company,phaseName:ph.name,itemName:it.name,itemId:it.id,planH,logH,remaining,status:it.status||'open',dueDate:j.dueDate||null});
-        }
-      });
-    });
-  });
-  if(!items.length){el.innerHTML='<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px;">No open items assigned to you.</div>';return;}
-  items.sort((a,b)=>{if(a.status==='complete'&&b.status!=='complete')return 1;if(b.status==='complete'&&a.status!=='complete')return-1;return(a.dueDate||'9')<(b.dueDate||'9')?-1:1;});
-  el.innerHTML=items.filter(it=>it.status!=='complete').slice(0,30).map(it=>`
-    <div style="background:var(--off);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:8px;cursor:pointer;" onclick="closeMyItems();openJobDetail('${it.jobId}')">
-      <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">${it.company} · ${it.phaseName}</div>
-      <div style="font-size:13px;font-weight:500;margin-bottom:4px;">${it.itemName}</div>
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);">
-        <span>${it.jobId} ${it.jobName.slice(0,24)}${it.jobName.length>24?'…':''}</span>
-        <span>${it.remaining>0?formatHrs(it.remaining)+' left':it.planH>0?'Done':'—'}</span>
-      </div>
-    </div>`).join('')||'<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px;">All clear!</div>';
-}
-function planMyWeek(){
-  const wd=getWeekData(MY_PERSON,weekOffset);
-  const stU=stUsersById[people[MY_PERSON]?._stId];
-  const capH=(stU?.capacityH)||people[MY_PERSON]?.hoursPerDay||8;
-  const items=[];
-  jobs.filter(j=>j.status==='inplay').forEach(j=>{
-    (j.phases||[]).forEach(ph=>{
-      (ph.items||[]).forEach(it=>{
-        if((j.members||[]).includes(MY_PERSON)){
-          const planH=it._planMins?it._planMins/60:parseFloat(it.hours)||0;
-          const logH=it._logMins?it._logMins/60:0;
-          const remaining=Math.max(0,planH-logH);
-          if(remaining>0&&it.status!=='complete')items.push({title:`${it.name} — ${j.name}`,hours:Math.min(remaining,capH),job:j.id,item:it.name,billable:j.billable!==false});
-        }
-      });
-    });
-  });
-  if(!items.length){toast('No remaining items to schedule','info');return;}
-  let itemIdx=0;
-  [1,2,3,4,5].forEach(day=>{
-    const existing=(wd[day]||[]).filter(t=>!t.done).reduce((s,t)=>s+(t.hours||0),0);
-    let avail=Math.max(0,capH-existing);
-    if(!wd[day])wd[day]=[];
-    while(avail>0.25&&itemIdx<items.length){
-      const it=items[itemIdx];
-      const block=Math.min(avail,it.hours);
-      wd[day].push({id:uid('t'),title:it.title,hours:block,job:it.job,item:it.item,billable:it.billable,done:false,urgent:false,person:MY_PERSON,_planned:true});
-      avail-=block;
-      itemIdx++;
-    }
-  });
-  closeMyItems();
-  renderTodo();
-  toast(`Planned ${itemIdx} item${itemIdx!==1?'s':''} across the week`,'success');
-}
 // ── Expense list ──
 function renderExpensesList(){
   const el=document.getElementById('exp-list-wrap');if(!el)return;
@@ -3404,7 +3290,8 @@ function renderExpensesList(){
   (stExpenses||[]).forEach(e=>{
     const jNum=e.jobNumber?String(e.jobNumber):null;
     const j=jNum?jobs.find(x=>x.id===jNum):null;
-    all.push({id:e.id,date:e.date||e.loggedDate||'',name:e.name||e.description||'Expense',cost:e.costTotal||e.cost||0,sell:e.sellTotal||e.sell||0,status:(e.loggedExpenseStatus?.name||e.status||'draft').toLowerCase(),company:j?.company||e.company||'',jobId:jNum,jobName:j?.name||e.jobName||'',_st:true});
+    const statusName=typeof e.loggedExpenseStatus==='string'?e.loggedExpenseStatus:(e.loggedExpenseStatus?.name||e.status||'draft');
+    all.push({id:e.id,date:e.date||'',name:e.itemName||e.description||'Expense',cost:+e.totalCost||0,sell:+e.totalExTax||0,status:statusName.toLowerCase(),company:e.company||j?.company||'',jobId:jNum,jobName:j?.name||e.jobName||'',_st:true});
   });
   jobs.forEach(j=>(j.expenses||[]).forEach(e=>{
     all.push({id:e.id,date:e.date||'',name:e.desc||e.name||'Expense',cost:e.cost||0,sell:e.sell||0,status:(e.status||'draft').toLowerCase(),company:j.company||'',jobId:j.id,jobName:j.name,_local:true});
@@ -4149,6 +4036,10 @@ function renderTodo(){
 }
 
 function formatHrs(h){if(!h||h===0)return'';const m=Math.round(h*60);const hh=Math.floor(m/60);const mm=m%60;return hh&&mm?`${hh}h ${mm}m`:hh?`${hh}h`:`${mm}m`;}
+// Global date formatter — was previously only defined as a local helper inside a couple of
+// render functions, so any caller outside those scopes (e.g. openJobDetail) threw a ReferenceError.
+const _FMT_MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtDate(iso){if(!iso)return'—';const d=new Date(iso.length<=10?iso+'T12:00:00':iso);return`${d.getDate()} ${_FMT_MONTHS[d.getMonth()]} ${d.getFullYear()}`;}
 
 const LUCIDE_MAP={
   // UI chrome
@@ -4252,12 +4143,13 @@ function createTaskCard(t,day,isDone){
   const showNote=getCS('showNote');
   const metaJob=showJob&&jobLabel;
   const metaItem=showItem&&t.item;
+  const displayTitle=showNote?t.title:(t.titleNoNote||t.title);
 
   card.innerHTML=`
     <div class="tc-top">
       <span class="tc-icon">${icon}</span>
-      <span class="tc-title">${t.title}${(t.repeat||t.repeatGroup)?' <i class="ti ti-repeat" title="Repeating task" style="font-size:10px;color:var(--muted);"></i>':''}</span>
-      ${hrsLabel?`<span class="tc-hrs" id="hrs-${t.id}">${hrsLabel}</span>`:''}
+      <span class="tc-title">${displayTitle}${(t.repeat||t.repeatGroup)?' <i class="ti ti-repeat" title="Repeating task" style="font-size:10px;color:var(--muted);"></i>':''}</span>
+      ${(showHours&&hrsLabel)?`<span class="tc-hrs" id="hrs-${t.id}">${hrsLabel}</span>`:''}
     </div>
     ${(metaJob||metaItem)?`<div class="tc-meta">
       ${metaJob?`<span class="tc-job${jobIdNum?' clickable':''}" data-jid="${jobIdNum||''}">${jobLabel}</span>`:''}
@@ -5119,12 +5011,17 @@ document.addEventListener('click',e=>{
 
 // ---- VIEW SETTINGS PANEL ----
 const VSP_DEFAULTS=[
-  {key:'showNote',label:'Notes',on:true},
+  {key:'showNote',label:'Notes (in task title)',on:true},
   {key:'showJob',label:'Job name',on:true},
   {key:'showItem',label:'Item name',on:true},
   {key:'showHours',label:'Hours',on:true},
 ];
-let cardSettings=JSON.parse(localStorage.getItem('cc_card_settings')||'null')||VSP_DEFAULTS.map(x=>({...x}));
+let cardSettings=(()=>{
+  const saved=JSON.parse(localStorage.getItem('cc_card_settings')||'null');
+  if(!saved)return VSP_DEFAULTS.map(x=>({...x}));
+  // Preserve saved on/off + order, but refresh labels from current defaults
+  return saved.map(s=>{const d=VSP_DEFAULTS.find(x=>x.key===s.key);return{...s,label:d?d.label:s.label};});
+})();
 function saveCardSettings(){localStorage.setItem('cc_card_settings',JSON.stringify(cardSettings));}
 function getCS(key){const s=cardSettings.find(x=>x.key===key);return s?s.on:true;}
 function toggleVSP(e){
@@ -6004,6 +5901,21 @@ function _jobStMemberKeys(j){
 //  PROGRESS TAB — who spent what, where, with reallocation
 // ═══════════════════════════════════════════════════════════════
 let _progGroupCollapsed={};
+// Monday-of-week (ISO date string) for an arbitrary date, matching the keys getWeekKey/
+// getWeekData use for todoData — lets Progress-tab rows (pulled straight from ST, not from
+// todoData) be looked back up in todoData when the reallocate menu needs to mutate them.
+function _weekKeyForDate(d){
+  const dd=new Date(d);const dow=(dd.getDay()+6)%7;
+  dd.setDate(dd.getDate()-dow);dd.setHours(0,0,0,0);
+  return dd.toISOString().split('T')[0];
+}
+function _weekOffsetForDate(d){
+  const dd=new Date(d);const dow=(dd.getDay()+6)%7;
+  dd.setDate(dd.getDate()-dow);dd.setHours(0,0,0,0);
+  const today=new Date();const tdow=(today.getDay()+6)%7;
+  today.setDate(today.getDate()-tdow);today.setHours(0,0,0,0);
+  return Math.round((dd-today)/(7*86400000));
+}
 function _jobTimeEntries(jobId){
   // Every task (done or scheduled) linked to this job, across all people/weeks
   const j=jobs.find(x=>x.id===jobId);if(!j)return[];
@@ -6025,7 +5937,8 @@ function _jobTimeEntries(jobId){
       const itemInfo=td.jobItemId?stItemMap[td.jobItemId]:null;
       const mins=td.minutes||0;const rate=itemInfo?.rate||_defCostRate();
       const date=new Date((td.date||'').slice(0,10)+'T12:00:00');
-      rows.push({person:stUser.key,wk:null,day:null,id:'st-todo-'+td.id,title:td.notes||'',date,
+      const dow=(date.getDay()+6)%7;
+      rows.push({person:stUser.key,wk:_weekKeyForDate(date),day:dow+1,offset:_weekOffsetForDate(date),id:'st-todo-'+td.id,title:td.notes||'',date,
         item:itemInfo?itemInfo.displayName:(td.itemName||'—'),phase:itemInfo?.phase||'',
         hours:mins/60,done:false,sell:Math.round(mins/60*rate),_fromST:true});
     });
@@ -6039,7 +5952,8 @@ function _jobTimeEntries(jobId){
       const itemInfo=itemId?stItemMap[itemId]:null;
       const mins=lt.minutes||0;const rate=itemInfo?.rate||_defCostRate();
       const date=new Date((lt.date||'').slice(0,10)+'T12:00:00');
-      rows.push({person:stUser.key,wk:null,day:null,id:'st-lt-'+lt.id,title:lt.notes||'',date,
+      const dow=(date.getDay()+6)%7;
+      rows.push({person:stUser.key,wk:_weekKeyForDate(date),day:dow+1,offset:_weekOffsetForDate(date),id:'st-lt-'+lt.id,title:lt.notes||'',date,
         item:itemInfo?itemInfo.displayName:(lt.itemName||'—'),phase:itemInfo?.phase||'',
         hours:mins/60,done:true,sell:Math.round(mins/60*rate),_fromST:true});
     });
@@ -6100,7 +6014,7 @@ function renderProgressTab(){
         <td style="text-align:center;"><span class="prog-status-dot ${r.done?'done':'sched'}" title="${r.done?'Logged (done)':'Scheduled (not done yet)'}"></span></td>
         <td style="text-align:right;white-space:nowrap;">${formatHrs(r.hours)||'0h'}</td>
         <td style="text-align:right;white-space:nowrap;">$${r.sell.toLocaleString()}</td>
-        <td style="width:30px;text-align:center;">${r._fromST?'':`<i class="ti ti-dots-vertical prog-row-menu" onclick="openReallocate(event,'${r.person}','${r.wk}',${r.day},'${r.id}')" title="Reallocate this time"></i>`}</td>
+        <td style="width:30px;text-align:center;"><i class="ti ti-dots-vertical prog-row-menu" onclick="openReallocate(event,'${r.person}','${r.wk}',${r.day},'${r.id}',${r.offset})" title="Reallocate this time"></i></td>
       </tr>`).join('');
     return`<tbody class="prog-group">
       <tr class="prog-group-hd" onclick="toggleProgGroup('${pKey}')">
@@ -6132,11 +6046,15 @@ function toggleProgGroup(pKey){_progGroupCollapsed[pKey]=!_progGroupCollapsed[pK
 
 // ── Reallocate a time entry to a different item or job ──
 let _reallocRef=null;
-function openReallocate(ev,person,wk,day,taskId){
+function openReallocate(ev,person,wk,day,taskId,offset){
   if(ev)ev.stopPropagation();
   _reallocRef={person,wk,day,taskId};
+  // Rows here are read straight from ST data, not from todoData — make sure the entry's
+  // week has been seeded into todoData before looking the task up, otherwise the lookup
+  // silently misses for any week the user hasn't opened in the Todo board yet.
+  if(offset!==undefined&&offset!==null)getWeekData(person,offset);
   const t=((todoData[person]||{})[wk]||{})[day]?.find(x=>x.id===taskId);
-  if(!t)return;
+  if(!t){toast('Could not find this time entry to reallocate','error');return;}
   document.getElementById('realloc-modal')?.remove();
   const modal=document.createElement('div');
   modal.className='modal-bg on';modal.id='realloc-modal';
@@ -6301,6 +6219,7 @@ function renderQuoteTab(){
   const MTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const _fmtQD=iso=>{if(!iso)return'—';const d=new Date(iso+'T12:00:00');return`${d.getDate()} ${MTHS[d.getMonth()]} ${d.getFullYear()}`;};
 
+  let stQuotesBlockHTML='';
   if(stJobQuotes.length){
     const qtRows=stJobQuotes.map(qt=>{
       const status=_qtRealStatus(qt);
@@ -6315,15 +6234,16 @@ function renderQuoteTab(){
         <i class="ti ti-chevron-right" style="font-size:12px;color:var(--muted);flex-shrink:0;"></i>
       </div>`;
     }).join('');
-    wrap.insertAdjacentHTML('beforebegin',`<div style="background:var(--white);border:1px solid var(--border);border-radius:6px;margin-bottom:18px;overflow:hidden;">
+    stQuotesBlockHTML=`<div style="background:var(--white);border:1px solid var(--border);border-radius:6px;margin-bottom:18px;overflow:hidden;">
       <div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
         <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);">Streamtime Quotes (${stJobQuotes.length})</div>
       </div>
       <div class="st-quotes-list">${qtRows}</div>
-    </div>`);
+    </div>`;
   }
 
   wrap.innerHTML=`
+  ${stQuotesBlockHTML}
   <div style="display:flex;gap:20px;align-items:flex-start;min-height:100%;">
     <!-- QUOTE DOCUMENT -->
     <div id="quote-doc" style="flex:1;min-width:0;background:#fff;border:1px solid var(--border);border-radius:6px;padding:32px 36px;box-shadow:0 2px 12px rgba(0,0,0,.06);">
@@ -10465,38 +10385,8 @@ setTimeout(_renderIcons,50);
 <!-- View settings panel -->
 <div id="vsp" class="vsp">
   <div class="vsp-title">View settings</div>
+  <div class="vsp-hint">Drag <i class="ti ti-grip-dots-vertical"></i> to reorder card details</div>
   <div class="vsp-list" id="vsp-list"></div>
-</div>
-
-<!-- LOG TIME MODAL -->
-<div id="log-time-modal" class="modal-bg" style="display:none;">
-  <div class="modal" style="max-width:460px;">
-    <div class="modal-hd"><span class="modal-hd-title">Log time</span><button class="modal-x" onclick="closeLogTime()"><i class="ti ti-x"></i></button></div>
-    <div class="modal-bd" style="padding:20px;display:flex;flex-direction:column;gap:14px;">
-      <div class="field"><label>Date</label><input type="date" id="lt-date" class="form-inp" style="width:100%;"></div>
-      <div class="field"><label>Job</label><input id="lt-job" class="form-inp" placeholder="Search jobs…" style="width:100%;" oninput="_ltFillItems()"></div>
-      <div class="field"><label>Item / activity</label><select id="lt-item" class="tm-field-sel" style="width:100%;"><option value="">— No item —</option></select></div>
-      <div class="field"><label>Hours</label><input type="number" id="lt-hours" class="form-inp" min="0" step="0.25" placeholder="e.g. 2.5" style="width:100%;"></div>
-      <div class="field"><label>Notes</label><input id="lt-notes" class="form-inp" placeholder="What did you work on?" style="width:100%;"></div>
-      <div class="field"><label>Person</label><select id="lt-person" class="tm-field-sel" style="width:100%;"></select></div>
-    </div>
-    <div class="modal-ft" style="display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid var(--border);">
-      <button class="d-action" onclick="closeLogTime()">Cancel</button>
-      <button class="d-action primary" onclick="submitLogTime()">Log time</button>
-    </div>
-  </div>
-</div>
-
-<!-- MY ITEMS PANEL -->
-<div id="my-items-panel" style="display:none;position:fixed;top:0;right:0;width:340px;height:100vh;background:var(--white);border-left:1px solid var(--border);z-index:800;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,.1);">
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border);">
-    <div style="font-size:14px;font-weight:600;">My Items</div>
-    <div style="display:flex;gap:8px;align-items:center;">
-      <button class="d-action primary" onclick="planMyWeek()" style="font-size:11px;padding:5px 10px;"><i class="ti ti-wand" style="font-size:11px;margin-right:4px;"></i>Plan my week</button>
-      <button onclick="closeMyItems()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px;line-height:1;padding:2px 4px;">&times;</button>
-    </div>
-  </div>
-  <div id="my-items-list" style="flex:1;overflow-y:auto;padding:12px;"></div>
 </div>
 
 </body>

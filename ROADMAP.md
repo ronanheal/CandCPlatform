@@ -1,6 +1,6 @@
 # C&C Platform — Roadmap
 
-*Last updated 18 Jun 2026 · v2.20.0*
+*Last updated 19 Jun 2026 · v2.20.1*
 
 ---
 
@@ -20,16 +20,21 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 
 | Feature | UI | Stub | API-ready |
 |---|---|---|---|
-| Log time entry | ✅ Full modal (date, job, item, hours, notes, person) | ✅ `dbCreateTimeEntry()` | 🔄 swap for `POST /api/time` |
 | Create job | ✅ Full modal (exists since v2.13.0) | ✅ `dbCreateJob()` | 🔄 swap for `POST /api/jobs` |
 | Add phase to job | ✅ Modal from job detail | ✅ `dbCreatePhase()` | 🔄 swap for `POST /api/phases` |
 | Add item to phase | ✅ Modal (name, hours, rate) | ✅ `dbCreateItem()` | 🔄 swap for `POST /api/items` |
 | Add expense | ✅ Modal (job, desc, cost, sell) | ✅ `dbCreateExpense()` | 🔄 swap for `POST /api/expenses` |
 | Schedule view | ✅ Team week-at-a-glance, capacity bars | — reads existing data | — |
 | Global Search ⌘K | ✅ Jobs, clients, invoices, quotes | — reads existing data | — |
-| Expenses list | ✅ Cross-job list, filters, search | — reads existing data | — |
-| My Items panel | ✅ All items assigned to you across jobs | — reads existing data | — |
-| Plan My Week | ✅ Auto-distributes items across Mon–Fri | — writes to local week store | 🔄 swap for `POST /api/schedule` |
+| Expenses list | ✅ Cross-job list, filters, search — correct cost/sell/status from ST export | — reads existing data | — |
+| Reallocate logged/scheduled time | ✅ ⋮ menu on Progress tab rows, move to a different job/item | — local edit, ST is still source of truth | — |
+
+**Removed in v2.20.1:** Log Time modal (Todo bar + job detail), Plan My Week, and My Items panel — all were redundant with the existing Add Task flow and added confusion. `dbCreateTimeEntry()` stays in the codebase as the API-ready stub for when native time logging is built properly later.
+
+**Bug fixes in v2.20.1 worth noting for Phase 2 planning:**
+- Jobs with a `dueDate` set crashed the entire job detail view (missing `fmtDate` global — was only ever defined as a local helper in two unrelated render functions). Affected an unknown number of jobs across the dataset, not just one.
+- Jobs list budget total was reading `totalPlannedTimeExTax` before `finalBudget` — Streamtime's own total is driven by `finalBudget`. Worth double-checking other places in the codebase that read job financial fields for the same wrong-priority mistake.
+- Expenses list was reading field names that don't exist in the ST export (`costTotal`, `sellTotal`, `name`, and treating `loggedExpenseStatus` as an object when it's a plain string) — silently produced $0/Draft for every row instead of erroring, which is why it went unnoticed.
 
 ### Phase 2 still to build
 | Feature | Notes |
