@@ -1,7 +1,34 @@
 {
-  "generated_at": "2026-06-18T02:19:10.265099+00:00",
-  "current_version": "2.19.0",
+  "generated_at": "2026-06-18T02:49:53.704438+00:00",
+  "current_version": "2.20.0",
   "releases": [
+    {
+      "version": "2.20.0",
+      "date": "18 Jun 2026",
+      "title": "Phase 2 foundations — Log Time, Schedule, My Items, Global Search, Expenses list, Add Phase/Item",
+      "items": [
+        "New: Log Time — create time entries natively from the Todo bar (persists locally, Phase 2 API-ready)",
+        "New: My Items panel — see all job items assigned to you across all active jobs",
+        "New: Plan My Week — auto-distribute remaining item hours across Mon-Fri based on your capacity",
+        "New: Schedule view — team week-at-a-glance showing hours/capacity per person per day",
+        "New: Global Search (⌘K) — search across jobs, clients, invoices and quotes",
+        "New: Expenses list — cross-job expense view with search, filters, status and client breakdown",
+        "New: Add expense from Expenses tab with job, description, cost and sell fields",
+        "New: Add Phase to any job — creates a new phase in the job plan",
+        "New: Add Item to any phase — with planned hours and rate",
+        "Architecture: DB stub layer added — all native-create functions ready to swap localStorage for real API calls"
+      ],
+      "sections": [
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
     {
       "version": "2.19.0",
       "date": "18 Jun 2026",
