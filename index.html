@@ -2116,25 +2116,8 @@ function emptyStateHTML(icon,title,sub,ctaLabel,ctaOnclick){
 }
 let jobs=[];
 let invCounter=1001;
-const SFF_PHASES=[
-  {id:'p1',name:'Briefing + Brand Discovery',status:'complete',items:[
-    {id:'i1',name:'Creative Direction',hours:'7h',rate:'$150',used:'$1,050',total:'$1,050',status:'complete'},
-    {id:'i2',name:'Design & Artwork',hours:'6h45m',rate:'$150',used:'$1,013',total:'$975',status:'complete',over:true},
-    {id:'i3',name:'Briefing & coordination',hours:'8h45m',rate:'$150',used:'$1,313',total:'$1,350',status:'complete'}
-  ]},
-  {id:'p2',name:'Executional Updates: Stage 1',status:'open',items:[
-    {id:'i4',name:'Creative Direction',hours:'1h15m',rate:'$200',used:'$250',total:'$3,000',status:'open'},
-    {id:'i5',name:'Design & Artwork',hours:'0h',rate:'$150',used:'$0',total:'$2,100',status:'open'},
-    {id:'i6',name:'Briefing & coordination',hours:'6h50m',rate:'$150',used:'$1,025',total:'$2,250',status:'open'}
-  ]},
-  {id:'p3',name:'Doc Layout: Stage 2',status:'open',items:[
-    {id:'i7',name:'Creative Direction',hours:'15h45m',rate:'$200',used:'$3,150',total:'$3,200',status:'open'},
-    {id:'i8',name:'Copywriting',hours:'0h25m',rate:'$150',used:'$63',total:'$1,500',status:'open'},
-    {id:'i9',name:'Design & Artwork',hours:'31h20m',rate:'$150',used:'$4,700',total:'$6,000',status:'open'},
-    {id:'i10',name:'Briefing & coordination',hours:'7h05m',rate:'$150',used:'$1,063',total:'$1,500',status:'open'}
-  ]}
-];
-let phases=JSON.parse(JSON.stringify(SFF_PHASES));
+const SFF_PHASES=[];
+let phases=[];
 const DEFAULT_PEOPLE={};
 let people=(function(){
   try{const s=JSON.parse(localStorage.getItem('cc_people')||'null');if(s&&Object.keys(s).length){
@@ -2646,7 +2629,7 @@ function _getStWeekEntries(personKey,offset){
       minutes:lt.minutes||0,
       jobNum:jNum,jobId:jNum,
       jobName:lt.job?.name||'',itemName:lt.itemName||'',
-      billable:lt.job?.isBillable!==false, // isBillable lives on the job, not the entry
+      billable:lt.isBillable!==false,
     });
   });
   return result;
@@ -2723,7 +2706,7 @@ function _mapStJob(j){
     dueDate:j.estimatedEndDate||null,
     po:j.purchaseOrderNumber||'',
     paused:sName==='Paused',
-    members:(j.users||[]).map(u=>u.name||u.id),
+    members:(j.users||[]).map(u=>{const su=stUsersById[u.id];return su?.key||null;}).filter(Boolean),
     phases:(()=>{
       const _mapItem=it=>{
         const logM=it.totalLoggedMinutes||0;const planM=it.totalPlannedMinutes||0;
@@ -3638,7 +3621,8 @@ function renderTodo(){
 
   const _dow=new Date().getDay();
   const todayDayNum=_dow===0?0:_dow;
-  const DAY_CAP=people[currentPerson]?.hoursPerDay||8;
+  const _stCapId=people[currentPerson]?._stId;
+  const DAY_CAP=people[currentPerson]?.hoursPerDay||((_stCapId&&stUsersById[_stCapId]?.capacityH)||8);
 
   // Build week date numbers for header display
   const weekMon=new Date();const _wd=(weekMon.getDay()+6)%7;
@@ -3985,7 +3969,7 @@ function showTaskContextMenu(e,t,day){
     <div class="tcm-item" onclick="closeTaskContextMenu();duplicateTask(window._ctxTask,window._ctxDay)"><i class="ti ti-copy tcm-icon"></i> Duplicate</div>
     <div class="tcm-item" id="tcm-reassign-btn" onclick="tcmShowReassign(this)"><i class="ti ti-arrows-exchange tcm-icon"></i> Reassign <span class="tcm-sub">›</span></div>
     <div class="tcm-sep"></div>
-    <div class="tcm-item" onclick="closeTaskContextMenu();toggleTaskDone(window._ctxTask,window._ctxDay)"><i class="ti ${isDone?'ti-refresh':'ti-circle-check'} tcm-icon"></i> ${isDone?'Mark undone':'Mark done'}</div>
+    <div class="tcm-item" onclick="closeTaskContextMenu();toggleTaskDone(window._ctxTask.id)"><i class="ti ${isDone?'ti-refresh':'ti-circle-check'} tcm-icon"></i> ${isDone?'Mark undone':'Mark done'}</div>
     ${jid?`<div class="tcm-item" onclick="closeTaskContextMenu();openJobDetail('${jid}')"><i class="ti ti-external-link tcm-icon"></i> Go to job</div>`:''}
     <div class="tcm-sep"></div>
     <div class="tcm-item danger" onclick="closeTaskContextMenu();deleteTodoById(window._ctxTask.id,window._ctxDay)"><i class="ti ti-trash tcm-icon"></i> Delete task</div>`;
@@ -4060,10 +4044,6 @@ function reassignTask(t,fromDay,toPersonKey){
   if(!todoData[toPersonKey][twKey][fromDay])todoData[toPersonKey][twKey][fromDay]=[];
   todoData[toPersonKey][twKey][fromDay].push(task);
   saveData();renderTodo();toast(`Reassigned to ${people[toPersonKey]?.name||toPersonKey}`,'success');
-}
-function getWeekKey(offset){
-  const d=new Date();const _wd=(d.getDay()+6)%7;d.setDate(d.getDate()-_wd+(offset*7));d.setHours(0,0,0,0);
-  return d.toISOString().split('T')[0];
 }
 
 // Re-render just a day header's capacity bar without full re-render
@@ -5592,7 +5572,7 @@ function renderStats(j){
     _statBlock('Time used / planned',`${logStr} <span class="stat-of">/ ${planStr}</span>`,plannedMins>0?`${hPct}% of plan`:null,plannedMins>0?hPct:null,hCol)+
     _statBlock('Sell used / planned',`$${sellUsed.toLocaleString()} <span class="stat-of">/ $${plannedSell.toLocaleString()}</span>`,plannedSell>0?`${bPct}% of plan`:null,plannedSell>0?bPct:null,bCol)+
     _statBlock('Budget from quote',plannedSell>0?`$${plannedSell.toLocaleString()}`:'—',billLabel,null)+
-    _statBlock('Invoiced ex GST',(j.invStatus==='sent'||j.invStatus==='paid')&&(j.invTotal||plannedSell)?`$${(j.invTotal||plannedSell).toLocaleString()}`:'—',(j.invStatus==='sent'||j.invStatus==='paid')?j.invStatus.toUpperCase():null,null)+
+    _statBlock('Invoiced ex GST',j._streamtime?(j._stInvoiced>0?`$${j._stInvoiced.toLocaleString()}`:'—'):((j.invStatus==='sent'||j.invStatus==='paid')&&(j.invTotal||plannedSell)?`$${(j.invTotal||plannedSell).toLocaleString()}`:'—'),j._streamtime?(j._stInvoiced>0?(j._stPaid>=j._stInvoiced?'PAID':j._stAwaitingPayment>0?'AWAITING':'SENT'):null):((j.invStatus==='sent'||j.invStatus==='paid')?j.invStatus.toUpperCase():null),null)+
     _statBlock('Expenses',`$${Math.round(expUsed).toLocaleString()}`,null,null);
 }
 
@@ -7630,8 +7610,8 @@ function renderSettings(){
         <div class="sett-card-hd">Streamtime</div>
         <div class="sett-card-body">
           <div class="sett-row">
-            <div><div class="sett-row-lbl">Todo board source</div><div class="sett-row-sub">Reload the todo board from Streamtime scheduled todos. Local edits will be lost.</div></div>
-            <button class="d-action" onclick="resetTodoStore();renderTodo();toast('Reloaded from Streamtime','success');">Reload from ST</button>
+            <div><div class="sett-row-lbl">Todo board source</div><div class="sett-row-sub">Re-fetch live data from Streamtime and reload the todo board. Local edits will be lost.</div></div>
+            <button class="d-action" onclick="toast('Fetching from Streamtime…','info');initStreamtime();">Reload from ST</button>
           </div>
         </div>
       </div>
@@ -8146,15 +8126,15 @@ function renderTime(){
   const billPct=doneH>0?Math.round(billH/doneH*100):0;
   const uniquePeople=[...new Set(entries.map(e=>e.personKey))].length;
   const uniqueJobs=[...new Set(entries.filter(e=>e.jobId).map(e=>e.jobId))].length;
-  // Est. revenue (billable hours * avg rate $150)
-  const estRev=billH*150;
+  // Est. revenue (billable hours * workspace default cost rate)
+  const estRev=billH*_defCostRate();
 
   const statsEl=document.getElementById('time-stats-strip');
   if(statsEl)statsEl.innerHTML=`
     <div class="time-stat"><div class="ts-val">${fmtH(totalH)}</div><div class="ts-lbl">Total hours</div><div class="ts-sub">${entries.length} task${entries.length!==1?'s':''}</div></div>
     <div class="time-stat"><div class="ts-val">${fmtH(doneH)}</div><div class="ts-lbl">Logged (done)</div><div class="ts-sub">${Math.round(doneH/(totalH||1)*100)}% complete</div></div>
     <div class="time-stat"><div class="ts-val">${fmtH(billH)}</div><div class="ts-lbl">Billable</div><div class="ts-sub">${billPct}% of logged</div></div>
-    <div class="time-stat"><div class="ts-val">$${Math.round(estRev).toLocaleString()}</div><div class="ts-lbl">Est. revenue</div><div class="ts-sub">@ $150/h avg</div></div>
+    <div class="time-stat"><div class="ts-val">$${Math.round(estRev).toLocaleString()}</div><div class="ts-lbl">Est. revenue</div><div class="ts-sub">@ $${_defCostRate()}/h avg</div></div>
     <div class="time-stat"><div class="ts-val">${uniquePeople}</div><div class="ts-lbl">People</div><div class="ts-sub">${uniqueJobs} job${uniqueJobs!==1?'s':''}</div></div>`;
 
   // Update sub label
@@ -8904,8 +8884,9 @@ function _buildTabFilters(tab){
     wrap.appendChild(mkSel('r-person','All people',opts));
   }
   if(tab==='jobs'){
-    const statuses=[...new Set(jobs.map(j=>({inplay:'In Play',paused:'Paused',complete:'Complete',new:'New',archived:'Archived'})[j.status]||j.status).filter(Boolean))].sort();
-    wrap.appendChild(mkSel('r-job-status','All statuses',statuses.map(s=>[s])));
+    const _sMap={inplay:'In Play',paused:'Paused',complete:'Complete',new:'New',archived:'Archived'};
+    const statusCodes=[...new Set(jobs.map(j=>j.status).filter(Boolean))].sort();
+    wrap.appendChild(mkSel('r-job-status','All statuses',statusCodes.map(s=>[s,_sMap[s]||s])));
     wrap.appendChild(mkSel('r-job-client','All clients',allCos.map(c=>[c])));
   }
   if(tab==='clients'){
@@ -8970,7 +8951,7 @@ function getFilteredTasks(){
         item:lt.itemName||'',
         hours:(lt.minutes||0)/60,
         done:true,urgent:false,
-        billable:lt.job?.isBillable!==false,
+        billable:lt.isBillable!==false,
         day:dayNum,
         weekKey:weekMon.toISOString().split('T')[0],
         _fromST:true,
@@ -9036,7 +9017,7 @@ function _renderBusinessReport(){
   const _invForCo=inv=>bizCo==='all'||(inv.company?.name||'')===(bizCo);
   const filtInv=stInvoices.filter(inv=>_invInPeriod(inv)&&_invForCo(inv));
   const filtTasks=bizCo==='all'?tasks:tasks.filter(t=>{
-    const j=jobs.find(jj=>t.job&&t.job.startsWith(String(jj._stId||jj.id)));
+    const j=jobs.find(jj=>t.job&&t.job.startsWith(String(jj.id)));
     return j&&j.company===bizCo;
   });
   const totalH=filtTasks.reduce((s,t)=>s+(t.hours||0),0);
@@ -9201,14 +9182,15 @@ function _renderPeopleReport(){
   // Group by person
   const byPerson={};
   tasks.forEach(t=>{
-    const key=t.person;
+    const key=t.personKey||t.person;
     const u=stUsersById[Object.values(stUsersById).find(x=>x.key===key)?.id]||null;
     const name=u?.name||people[key]?.name||key;
     const color=u?.color||people[key]?.color||'#999';
     if(!byPerson[key])byPerson[key]={name,color,hours:0,billH:0,jobs:new Set()};
     byPerson[key].hours+=t.hours||0;
-    if(t.billable!==false&&t.job)byPerson[key].billH+=t.hours||0;
-    if(t.job)byPerson[key].jobs.add(t.job.match(/^(\d+)/)?.[1]||t.job);
+    const _tjid=t.jobId||(t.job||'').match(/^(\d+)/)?.[1];
+    if(t.billable!==false&&_tjid)byPerson[key].billH+=t.hours||0;
+    if(_tjid)byPerson[key].jobs.add(_tjid);
   });
 
   const entries=Object.entries(byPerson).sort((a,b)=>b[1].hours-a[1].hours);
@@ -9267,7 +9249,7 @@ function _renderJobsReport(){
   // Hours per job from logged times
   const hoursPerJob={};
   tasks.forEach(t=>{
-    const jid=(t.job||'').match(/^(\d+)/)?.[1];
+    const jid=t.jobId||(t.job||'').match(/^(\d+)/)?.[1];
     if(jid)hoursPerJob[jid]=(hoursPerJob[jid]||0)+(t.hours||0);
   });
 
@@ -9323,7 +9305,7 @@ function _renderClientsReport(){
   // Hours per client from logged times
   const byClient={};
   tasks.forEach(t=>{
-    const jid=(t.job||'').match(/^(\d+)/)?.[1];
+    const jid=t.jobId||(t.job||'').match(/^(\d+)/)?.[1];
     if(!jid)return;
     const j=jobs.find(x=>x.id===jid);
     const co=j?.company||'Unknown';
@@ -9331,10 +9313,14 @@ function _renderClientsReport(){
     byClient[co].hours+=t.hours||0;
     byClient[co].jobs.add(jid);
   });
-  // Add revenue from invoices
+  // Add revenue from invoices — filtered to same period as hours
+  const _cutoff=_getPeriodCutoff();const _ceil=_getPeriodCeiling();
   stInvoices.forEach(inv=>{
     const co=inv.company?.name||inv.companyName||'';
-    if(co&&byClient[co])byClient[co].revenue+=(inv.totalAmountExTax||inv.amount||0);
+    if(!co||!byClient[co])return;
+    const ds=inv.invoiceDate||inv.sentDate;if(!ds)return;
+    const ms=new Date(ds).getTime();if(ms<_cutoff||ms>_ceil)return;
+    byClient[co].revenue+=(inv.totalAmountExTax||inv.amount||0);
   });
 
   let entries=Object.entries(byClient).sort((a,b)=>b[1].hours-a[1].hours);
@@ -9392,8 +9378,9 @@ function exportReportTab(){
   if(tasks.length===0){alert('No data to export.');return;}
   let csv='Person,Title,Job,Item,Hours,Billable,Date\n';
   tasks.forEach(t=>{
-    const u=Object.values(stUsersById).find(x=>x.key===t.person);
-    const name=u?.name||people[t.person]?.name||t.person;
+    const _tpk=t.personKey||t.person;
+    const u=Object.values(stUsersById).find(x=>x.key===_tpk);
+    const name=u?.name||people[_tpk]?.name||_tpk;
     const date=t.weekKey?new Date(t.weekKey+'T00:00:00'):new Date();date.setDate(date.getDate()+(( t.day||1)-1));
     csv+=`"${name}","${(t.title||'').replace(/"/g,'""')}","${(t.job||'').replace(/"/g,'""')}","${(t.item||'').replace(/"/g,'""')}",${(t.hours||0).toFixed(2)},${t.billable!==false?'Yes':'No'},${date.toISOString().slice(0,10)}\n`;
   });
@@ -9514,7 +9501,7 @@ function _richJobCard(j,expanded){
   const activeTasks=[];
   Object.keys(todoData).forEach(pKey=>{
     const wd=getWeekData(pKey,0);
-    [1,2,3,4,5].forEach(d=>{(wd[d]||[]).forEach(t=>{if((t.jobId===j.id||t.job?.includes(j.id))&&!t.done)activeTasks.push({...t,person:pKey});});});
+    [1,2,3,4,5].forEach(d=>{(wd[d]||[]).forEach(t=>{if((t.jobId===j.id||t.job===j.id)&&!t.done)activeTasks.push({...t,person:pKey});});});
   });
   const expandedHTML=expanded?`<div class="bc-expanded">
     ${activeTasks.length?`<div class="bc-section-lbl">This week (${activeTasks.length})</div>`+activeTasks.slice(0,5).map(t=>{const p=people[t.person];return`<div class="bc-task-row"><span class="bc-av-sm" style="background:${p?.color||'#999'}">${p?.initials||'?'}</span><span class="bc-task-title">${t.title||'Task'}</span><span class="bc-task-hrs">${t.hours||''}</span></div>`;}).join('')+'':'<div class="bc-no-tasks">No open tasks this week</div>'}

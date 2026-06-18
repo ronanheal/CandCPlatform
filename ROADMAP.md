@@ -1,6 +1,6 @@
 # C&C Platform — Roadmap
 
-*Last updated 18 Jun 2026 · v2.16.0*
+*Last updated 18 Jun 2026 · v2.18.0*
 
 ---
 
@@ -56,6 +56,18 @@
 | P7 | Working hours + rate per person in Settings | Settings | v2.15.0 |
 | P8 | Quiet-client flag — no active job in N weeks → dashboard nudge | Dashboard | v2.14.0 |
 | F1 | Invoice status filter in All Invoices | Jobs → Invoices | v2.16.0 |
+| F3 | Smart stackable filter chips + saved presets for Quotes | Jobs → Quotes | v2.17.0 |
+| F4 | Smart stackable filter chips + saved presets for Invoices | Jobs → Invoices | v2.17.0 |
+| F5 | Group By (Status / Company / Job) on Quotes and Invoices | Jobs → Quotes / Invoices | v2.17.0 |
+| F6 | Job number shown on quote cards + in invoice table | Jobs → Quotes / Invoices | v2.17.0 |
+| F7 | $150/h default cost rate when ST returns 0 | Reporting / Profitability | v2.17.0 |
+| F8 | Jobs: chip filter system (replaces dropdowns) + group by | Jobs list | v2.18.0 |
+| F9 | Client grouping — master client header in clients list | Jobs → Clients | v2.18.0 |
+| F10 | Quote + invoice detail slide-out drawer | Jobs → Quotes / Invoices | v2.18.0 |
+| F11 | ST quotes shown on job detail Quote tab (multiple per job) | Jobs → Quote tab | v2.18.0 |
+| F12 | Activity tab timeline redesign | Jobs → Activity | v2.18.0 |
+| F13 | Studio board fixed — live job cards instead of note cards | Boards | v2.18.0 |
+| F14 | Default cost rate + payment terms in Settings → Workspace Defaults | Settings | v2.18.0 |
 | 0a | Dashboard block toggles in Settings | Settings | v2.14.0 |
 | 0e | Jobs — more filter options (health, workflow, label, PO) | Jobs | v2.14.0 |
 | 0f | Clients — search + stats | Jobs → Clients | v2.14.0 |
