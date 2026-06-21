@@ -1328,6 +1328,7 @@ tr:hover .i-todo-btn{opacity:1;}
               <button class="wbtn" id="wbtn-next"><i class="ti ti-chevron-right" style="font-size:13px;"></i></button>
             </div>
             <div class="todo-summary" style="margin-left:16px;position:relative;cursor:default;" onmouseenter="showSumTip(this)" onmouseleave="hideSumTip(this)"><span id="todo-sum-text">To do: 0h · Done: 0h</span><div class="todo-sum-tip" id="todo-sum-tip" style="display:none;position:absolute;bottom:calc(100%+10px);left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;border-radius:8px;padding:14px 18px;white-space:nowrap;z-index:200;min-width:260px;box-shadow:0 4px 16px rgba(0,0,0,.25);font-size:12px;pointer-events:none;"></div></div>
+            <span id="todo-data-fresh" style="margin-left:12px;font-size:11px;color:var(--muted);cursor:pointer;" title="Click to reload the latest Streamtime data" onclick="toast('Fetching latest from Streamtime…','info');initStreamtime();"></span>
             <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
               <!-- View toggle: List vs Calendar+Drawer -->
               <div class="todo-view-toggle" id="todo-view-toggle">
@@ -2227,8 +2228,25 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.20.1';
+const APP_VERSION='2.20.3';
 const CHANGELOG=[
+  {version:'2.20.3',date:'19 Jun 2026',title:'Budget total fix, quote/invoice document preview, non-billable rates, data-freshness indicator',items:[
+    'Fixed: jobs $ budget total was way over (e.g. $920k vs Streamtime $704k) — it fell back to "planned time" for jobs with no agreed budget. Now uses finalBudget like Streamtime, so the footer total matches',
+    'New: clicking a quote or invoice opens a full branded document preview (C&C letterhead, line items from the job plan, GST, totals, paid/balance) instead of just a details strip',
+    'Non-billable phases/items: rate is now always editable (shows a "+ rate" you can click to add one, even on a non-billable job). Billable is a job-level setting and defaults to billable — no more guessing from a $0 rate',
+    'New: Todo board shows a "Streamtime data through <date>" indicator — turns orange when today isn\'t synced yet, so it\'s clear when completed tasks just haven\'t exported, not gone missing',
+  ]},
+  {version:'2.20.2',date:'19 Jun 2026',title:'Platform-wide data audit — billable %, quotes, invoices, paused filter, per-job totals',items:[
+    'Fixed: billable vs non-billable was wrong everywhere — logged time read a field that doesn\'t exist (isBillable lives on the job), so ALL hours counted as billable. 1,760 of 5,359 logged entries (33%) are actually non-billable. Corrects dashboard split, Business %-billable KPI, People utilisation, and the Time view billable stat/filter',
+    'Fixed: the entire Quotes screen was mis-mapped — company (a plain string), quote name & number, and "sent by" all showed blank or raw IDs; company filter/dropdown/group-by were non-functional. Now read the correct Streamtime fields',
+    'Fixed: Invoice "Job" column / detail / filter / group-by were always blank — invoices carry a jobId, not a job number/name; now resolved from the linked job',
+    'Fixed: Jobs "Paused" status filter & group-by never matched (paused jobs are stored as In Play + a separate flag) — 8 paused jobs now filter correctly',
+    'Fixed: Progress-tab per-row "Sell" and Time-view "Revenue" were re-estimated at a flat rate instead of using the real logged sell value — now reconcile with Streamtime',
+    'Fixed: invoice issued/paid totals grossed-up ex-tax by a flat 15% instead of using the real inc-GST amounts (wrong when discounts apply)',
+    'Fixed: three more "job 123 matches job 1234" substring bugs that pulled unrelated jobs\' hours/notes into a job\'s totals',
+    'Removed: "Quotes expiring soon" dashboard card and quote expiry filters — Streamtime\'s export carries no quote expiry date, so they never worked',
+    'Add-team-member and new-client modals no longer stack duplicates if reopened',
+  ]},
   {version:'2.20.1',date:'19 Jun 2026',title:'Job detail crash fix, Progress reallocate restored, budget total fix, expenses data fix, todo cleanup',items:[
     'Fixed: jobs with a due date set failed to open at all (job detail crashed on a missing fmtDate reference) — affected job 6860 and others',
     'Fixed: Progress tab reallocate menu (⋮) was hidden on every row, ST-sourced or not — restored, and fixed the underlying week lookup so it actually finds the entry to move',
@@ -2717,7 +2735,7 @@ function _getStWeekEntries(personKey,offset){
       minutes:lt.minutes||0,
       jobNum:jNum,jobId:jNum,
       jobName:lt.job?.name||'',itemName:lt.itemName||'',
-      billable:lt.isBillable!==false,
+      billable:lt.job?.isBillable!==false, // logged_times carry billability on the nested job, not at top level
     });
   });
   return result;
@@ -2774,7 +2792,11 @@ function _mapStJob(j){
   const loggedMins=j.totalLoggedMinutes||0;
   const plannedMins=j.totalPlannedMinutes||0;
   const sellUsed=+(j.totalLoggedTimeExTax||0);
-  const plannedSell=+(j.finalBudget||j.totalPlannedTimeExTax||j.budget||0); // finalBudget matches Streamtime's own budget total exactly
+  // finalBudget is the agreed budget Streamtime totals in its footer. _plannedSell keeps a
+  // fallback so per-job bars still show something when no final budget is set, but _finalBudget
+  // (no fallback) is what the jobs-list total uses so it matches Streamtime exactly.
+  const finalBudget=+(j.finalBudget||0);
+  const plannedSell=+(j.finalBudget||j.totalPlannedTimeExTax||j.budget||0);
   const expUsed=+(j.totalLoggedExpensesExTax||0);
   const hPct=plannedMins>0?Math.round(loggedMins/plannedMins*100):0;
   const bPct=plannedSell>0?Math.round(sellUsed/plannedSell*100):0;
@@ -2822,7 +2844,7 @@ function _mapStJob(j){
     })(),
     // Pre-computed stats used by computeJobStats
     _loggedMins:loggedMins,_plannedMins:plannedMins,
-    _sellUsed:sellUsed,_plannedSell:plannedSell,_expUsed:expUsed,
+    _sellUsed:sellUsed,_plannedSell:plannedSell,_finalBudget:finalBudget,_expUsed:expUsed,
     _hPct:hPct,_bPct:bPct,
     _loggedH:_stFmtH(loggedMins),_plannedH:plannedMins>0?_stFmtH(plannedMins):'—',
     _stInvoiced:Math.round(j.totalIssuedInvoicesExTax||0),
@@ -3171,7 +3193,6 @@ function renderDashboard(){
   const dueJobs=_liveJobs.filter(j=>j.dueDate&&_inDays(j.dueDate)<=7).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate)).slice(0,12);
   const overdueInv=(stInvoices||[]).filter(i=>{const s=(i.invoiceStatus?.name||'').toLowerCase();return i.dueDate&&new Date(i.dueDate)<_t0&&s!=='paid'&&s!=='voided';}).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate)).slice(0,12);
   const awaitingQuotes=(stQuotes||[]).filter(q=>{const s=(typeof q.quoteStatus==='string'?q.quoteStatus:q.quoteStatus?.name||'').toLowerCase();return s.includes('pending')&&q.sentDate&&_inDays(q.sentDate)<=-7;}).sort((a,b)=>new Date(a.sentDate)-new Date(b.sentDate)).slice(0,12);
-  const expiringQuotes=(stQuotes||[]).filter(q=>{const s=(typeof q.quoteStatus==='string'?q.quoteStatus:q.quoteStatus?.name||'').toLowerCase();if(s.includes('approved')||s.includes('declined'))return false;return q.expiryDate&&_inDays(q.expiryDate)<=14&&_inDays(q.expiryDate)>=-1;}).sort((a,b)=>new Date(a.expiryDate)-new Date(b.expiryDate)).slice(0,12);
   const uninvoiced=_liveJobs.filter(j=>(j._sellUsed||0)-(j._stInvoiced||0)>=500&&(j._bPct||0)>=80).sort((a,b)=>((b._sellUsed||0)-(b._stInvoiced||0))-((a._sellUsed||0)-(a._stInvoiced||0))).slice(0,10);
   // Quiet clients: had jobs before, but nothing in play now
   const _coAll={};jobs.forEach(j=>{if(!j.company)return;(_coAll[j.company]=_coAll[j.company]||{total:0,live:0}); _coAll[j.company].total++; if(j.status==='inplay')_coAll[j.company].live++;});
@@ -3181,8 +3202,7 @@ function renderDashboard(){
   const deadlinesHTML=_show('deadlines')?[
     _attCard('Jobs due / overdue',dueJobs.map(j=>({label:`${j.id} ${j.name}`,meta:_inDays(j.dueDate)<0?`${-_inDays(j.dueDate)}d over`:_inDays(j.dueDate)===0?'today':`${_inDays(j.dueDate)}d`,jid:j.id})),'#E65100'),
     _attCard('Overdue invoices',overdueInv.map(i=>({label:`${i.company?.name||i.jobName||'—'}`,meta:`${-_inDays(i.dueDate)}d`,jid:null})),'var(--red)'),
-    _attCard('Quotes awaiting response',awaitingQuotes.map(q=>({label:`${q.company?.name||q.jobName||(q.jobNumber?'Job '+q.jobNumber:q.name)||'—'}`,meta:`${-_inDays(q.sentDate)}d`,jid:null})),'#6B7FA3'),
-    _attCard('Quotes expiring soon',expiringQuotes.map(q=>({label:`${q.company?.name||q.jobName||(q.jobNumber?'Job '+q.jobNumber:q.name)||'—'}`,meta:_inDays(q.expiryDate)<=0?'expired':_inDays(q.expiryDate)===0?'today':`${_inDays(q.expiryDate)}d`,jid:null})),'#F57C00'),
+    _attCard('Quotes awaiting response',awaitingQuotes.map(q=>({label:`${q.company||q.jobName||(q.jobNumber?'Job '+q.jobNumber:q.quoteName)||'—'}`,meta:`${-_inDays(q.sentDate)}d`,jid:null})),'#6B7FA3'),
     _attCard('Uninvoiced work',uninvoiced.map(j=>({label:`${j.id} ${j.name}`,meta:'$'+Math.round((j._sellUsed||0)-(j._stInvoiced||0)).toLocaleString(),jid:j.id})),'#9C6FD6'),
     _attCard('Quiet clients',quietClients,'#888888'),
   ].filter(Boolean).join(''):'';
@@ -3908,6 +3928,22 @@ function renderTodo(){
   [1,2,3,4,5].forEach(d=>{(data[d]||[]).forEach(t=>{if(t.done)totalDoneH+=t.hours||0;else totalTodoH+=t.hours||0;});});
   const sumEl=document.getElementById('todo-sum-text');
   if(sumEl)sumEl.textContent=`To do: ${formatHrs(totalTodoH)||'0h'} · Done: ${formatHrs(totalDoneH)||'0h'}`;
+  // Data-freshness indicator — the done column can only show logged time that's in the latest
+  // Streamtime export. If today's completions aren't exported yet, this explains why they're
+  // missing (rather than it being a bug).
+  const freshEl=document.getElementById('todo-data-fresh');
+  if(freshEl){
+    let maxD='';
+    stLoggedTimes.forEach(lt=>{const d=(lt.date||'').slice(0,10);if(d>maxD)maxD=d;});
+    if(maxD){
+      const md=new Date(maxD+'T12:00:00');
+      const todayStr=new Date().toISOString().slice(0,10);
+      const stale=maxD<todayStr;
+      const lbl=`${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][md.getDay()]} ${md.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][md.getMonth()]}`;
+      freshEl.innerHTML=`<i class="ti ti-${stale?'alert-circle':'check'}" style="font-size:11px;vertical-align:-1px;${stale?'color:#E65100;':''}"></i> Streamtime data through ${lbl}${stale?' · today not synced yet — click to reload':''}`;
+      freshEl.style.color=stale?'#E65100':'var(--muted)';
+    } else freshEl.textContent='';
+  }
 
   const _dow=new Date().getDay();
   const todayDayNum=_dow===0?0:_dow;
@@ -5305,6 +5341,12 @@ let _jobSearch='';
 let _jobsRenderedCount=0;
 const JOBS_PAGE_SIZE=60;
 function filterJobs(q){_jobSearch=(q||'').toLowerCase();renderJobs();}
+// A job's display status. _mapStJob collapses "Paused" → status:'inplay' and stores the real
+// paused state on the separate j.paused flag, so status filters/groups must consult it here.
+function jobStatusLabel(j){
+  if(j.paused)return'Paused';
+  return({inplay:'In Play',complete:'Complete',new:'New',archived:'Archived'}[j.status])||j.status||'—';
+}
 function renderJobs(){
   const tbody=document.getElementById('jobs-tbody');tbody.innerHTML='';
   const q=_jobSearch;
@@ -5333,7 +5375,7 @@ function renderJobs(){
   _jobsFilters.forEach(f=>{
     if(!f.value)return;
     switch(f.type){
-      case 'status':    filteredJobs=filteredJobs.filter(j=>{const m={inplay:'In Play',paused:'Paused',complete:'Complete',new:'New',archived:'Archived'};return m[j.status]===f.value;});break;
+      case 'status':    filteredJobs=filteredJobs.filter(j=>jobStatusLabel(j)===f.value);break;
       case 'workflow':  filteredJobs=filteredJobs.filter(j=>{const m={live:'Live',quote:'Quote',completed:'Completed',invoiced:'Invoiced'};return m[j.workflowStatus||'live']===f.value;});break;
       case 'company':   filteredJobs=filteredJobs.filter(j=>j.company===f.value);break;
       case 'label':     filteredJobs=filteredJobs.filter(j=>(j.labels||[]).includes(f.value));break;
@@ -5367,7 +5409,7 @@ function renderJobs(){
     filteredJobs.forEach(j=>{
       let key='—';
       if(_jobsGroupBy==='company')key=j.company||'—';
-      else if(_jobsGroupBy==='status'){const m={inplay:'In Play',paused:'Paused',complete:'Complete',new:'New',archived:'Archived'};key=m[j.status]||j.status||'—';}
+      else if(_jobsGroupBy==='status')key=jobStatusLabel(j);
       else if(_jobsGroupBy==='workflow'){const m={live:'Live job',quote:'Quote',completed:'Completed',invoiced:'Invoiced'};key=m[j.workflowStatus||'live']||'—';}
       else if(_jobsGroupBy==='lead')key=j.lead&&people[j.lead]?people[j.lead].name:'No lead';
       if(!groups[key]){groups[key]=[];groupOrder.push(key);}
@@ -5470,7 +5512,9 @@ function renderJobs(){
   let totalBudget=0,totalUsed=0,totalH=0,totalPlannedH=0,overBudgetCount=0;
   filteredJobs.forEach(j=>{
     computeJobStats(j);
-    totalBudget+=(j._plannedSell||0);
+    // Budget total uses finalBudget (matches Streamtime's footer) — native jobs have no
+    // _finalBudget so fall back to their computed planned sell.
+    totalBudget+=(j._finalBudget!=null?j._finalBudget:(j._plannedSell||0));
     totalUsed+=(j._sellUsed||0)+(j._expUsed||0);
     if((j._bPct||0)>=100)overBudgetCount++;
   });
@@ -5577,8 +5621,10 @@ function openPersonTodo(personKey){currentPerson=personKey;navTo('todo');}
 function openAddMemberPicker(jobId){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
   if(!j.members)j.members=[];
+  document.getElementById('add-member-modal')?.remove();
   const modal=document.createElement('div');
-  modal.className='modal-bg on';
+  modal.className='modal-bg on';modal.id='add-member-modal';
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
   modal.innerHTML=`<div class="modal" style="max-width:340px;"><div class="modal-hd"><span class="modal-hd-title">Team on this job</span><button class="modal-x" onclick="this.closest('.modal-bg').remove()"><i class="ti ti-x"></i></button></div>
     <div style="padding:10px 14px 4px;"><input id="amp-search" placeholder="Search team…" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;font-family:inherit;outline:none;" oninput="_renderAddMemberRows('${jobId}',this.value)"></div>
     <div id="amp-rows" style="padding:6px 0;max-height:50vh;overflow-y:auto;"></div></div>`;
@@ -5840,7 +5886,7 @@ function computeJobStats(j){
       const wd=pd[wk];if(!wd)return;
       [1,2,3,4,5].forEach(d=>{
         (wd[d]||[]).forEach(tt=>{
-          if((tt.jobId===j.id||(tt.job&&tt.job.includes(j.id)))&&tt.done){
+          if((tt.jobId===j.id||tt.job?.match(/^(\d+)/)?.[1]===String(j.id))&&tt.done){
             loggedMins+=Math.round((tt.hours||0)*60);
             const match=(tt.itemId&&itemIndex.find(x=>x.id===tt.itemId))||itemIndex.find(x=>x.name&&(tt.item||'').trim().toLowerCase()===x.name);
             sellUsed+=Math.round((tt.hours||0)*(match?match.rate:150));
@@ -5951,11 +5997,14 @@ function _jobTimeEntries(jobId){
       const itemId=lt.jobItemUser?.jobItemId;
       const itemInfo=itemId?stItemMap[itemId]:null;
       const mins=lt.minutes||0;const rate=itemInfo?.rate||_defCostRate();
+      // Logged times carry the real sell value (totalExTax) — use it so per-row/per-person
+      // totals reconcile with the job's ST sell figure shown in the summary bar above.
+      const sell=lt.totalExTax!=null?Math.round(lt.totalExTax):Math.round(mins/60*rate);
       const date=new Date((lt.date||'').slice(0,10)+'T12:00:00');
       const dow=(date.getDay()+6)%7;
       rows.push({person:stUser.key,wk:_weekKeyForDate(date),day:dow+1,offset:_weekOffsetForDate(date),id:'st-lt-'+lt.id,title:lt.notes||'',date,
         item:itemInfo?itemInfo.displayName:(lt.itemName||'—'),phase:itemInfo?.phase||'',
-        hours:mins/60,done:true,sell:Math.round(mins/60*rate),_fromST:true});
+        hours:mins/60,done:true,sell,_fromST:true});
     });
   }
   rows.sort((a,b)=>a.date-b.date);
@@ -6127,6 +6176,87 @@ function _setQuoteOpt(jobId,key,val){
   renderQuoteTab();
 }
 
+// ── Standalone quote / invoice document preview (modal) ───────────────────────
+// The Streamtime export carries no line items on quotes/invoices, so the itemised
+// breakdown is rendered from the linked job's current plan (phases → items).
+function _docStatusColor(s){
+  s=(s||'').toLowerCase();
+  if(s.includes('approv')||s.includes('paid'))return'#2E7D32';
+  if(s.includes('declin')||s.includes('void')||s.includes('overdue'))return'#E65100';
+  if(s.includes('sent')||s.includes('await')||s.includes('pending'))return'#6B7FA3';
+  return'#888';
+}
+function _docLineItemsHTML(job){
+  const phs=(job&&job.phases)||[];
+  let rows='';
+  phs.forEach(ph=>{
+    const items=(ph.items||[]);if(!items.length)return;
+    const phSell=items.reduce((s,i)=>s+(parseInt((i.total||'0').replace(/[$,]/g,''))||0),0);
+    rows+=`<tr style="background:var(--off);border-top:2px solid var(--border);border-bottom:1px solid var(--border);"><td style="padding:9px 14px;font-size:13px;font-weight:600;">${ph.name}</td><td></td><td style="padding:9px 14px;text-align:right;font-size:13px;font-weight:600;">$${phSell.toLocaleString()}</td></tr>`;
+    items.forEach(i=>{
+      const hrsNum=parseHrsInput(i.hours||'0h');
+      const totalNum=parseInt((i.total||'0').replace(/[$,]/g,''))||0;
+      rows+=`<tr style="border-bottom:1px solid var(--faint);"><td style="padding:7px 14px;font-size:12px;">${i.name}${i.note?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${i.note}</div>`:''}</td><td style="padding:7px 14px;font-size:12px;text-align:right;color:var(--muted);">${hrsNum>0?hrsNum+'h':'—'}</td><td style="padding:7px 14px;font-size:12px;text-align:right;">$${totalNum.toLocaleString()}</td></tr>`;
+    });
+  });
+  return rows;
+}
+function _docModalShell(titleWord,statusPill,metaHTML,lineRows,totalsRows,extraHTML){
+  document.getElementById('doc-preview-modal')?.remove();
+  const m=document.createElement('div');m.className='modal-bg on';m.id='doc-preview-modal';
+  m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+  m.innerHTML=`<div class="modal" style="max-width:760px;width:92vw;max-height:90vh;display:flex;flex-direction:column;">
+    <div class="modal-hd"><span class="modal-hd-title">${titleWord} preview</span><button class="modal-x" onclick="document.getElementById('doc-preview-modal').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd" style="padding:0;overflow-y:auto;">
+      <div style="background:#fff;padding:30px 34px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;padding-bottom:16px;border-bottom:2px solid var(--border);">
+          <div><div style="margin-bottom:8px;">${ccLogoSVG(34)}</div><div style="font-size:11px;color:var(--muted);line-height:1.7;">NZ Ltd<br>Level 1, 53 Fort Street, Auckland<br>GST 116710013</div></div>
+          <div style="text-align:right;"><div style="font-size:22px;font-family:var(--serif);">${titleWord}</div><div style="margin-top:8px;">${statusPill}</div></div>
+        </div>
+        <div style="display:flex;gap:24px;margin-bottom:20px;font-size:12px;line-height:1.7;">${metaHTML}</div>
+        ${lineRows?`<table style="width:100%;border-collapse:collapse;margin-bottom:6px;"><thead><tr><th style="text-align:left;padding:8px 14px;font-size:11px;letter-spacing:.08em;color:var(--muted);font-weight:500;">DESCRIPTION</th><th style="text-align:right;padding:8px 14px;font-size:11px;letter-spacing:.08em;color:var(--muted);font-weight:500;">HRS</th><th style="text-align:right;padding:8px 14px;font-size:11px;letter-spacing:.08em;color:var(--muted);font-weight:500;">AMOUNT</th></tr></thead><tbody>${lineRows}</tbody></table><div style="font-size:10px;color:var(--muted);font-style:italic;margin:0 14px 14px;">Breakdown reflects the current job plan; the total below is the figure on record in Streamtime.</div>`:'<div style="font-size:12px;color:var(--muted);margin-bottom:16px;padding:14px;background:var(--off);border-radius:6px;">No linked job plan to itemise — showing document totals only.</div>'}
+        <div style="display:flex;justify-content:flex-end;margin-bottom:8px;"><table style="font-size:13px;min-width:260px;">${totalsRows}</table></div>
+        ${extraHTML||''}
+      </div>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+function _docFmtDate(iso){if(!iso)return'—';const d=new Date(iso.slice(0,10)+'T12:00:00');return d.toLocaleDateString('en-NZ',{day:'numeric',month:'long',year:'numeric'});}
+function openQuoteDocPreview(qtId){
+  const qt=stQuotes.find(q=>String(q.id)===String(qtId));if(!qt)return;
+  const jobByStId={};jobs.forEach(j=>{if(j._stId)jobByStId[j._stId]=j;});
+  const job=jobByStId[qt.jobId]||jobs.find(j=>j.id===String(qt.jobNumber));
+  const status=(typeof qt.quoteStatus==='string'?qt.quoteStatus:qt.quoteStatus?.name||'Draft');
+  const sc=_docStatusColor(status);
+  const ex=qt.totalAmountExTax!=null?qt.totalAmountExTax:(job?job._plannedSell||0:0);
+  const inc=qt.totalAmountIncTax!=null?qt.totalAmountIncTax:Math.round(ex*1.15);
+  const gst=Math.round(inc-ex);
+  const pill=`<span style="display:inline-block;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:500;background:${sc}22;color:${sc};border:1px solid ${sc}44;">${status}</span>`;
+  const meta=`<div style="flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Prepared for</div><div style="font-weight:500;font-size:13px;">${qt.company||'—'}</div>${job?`<div style="color:var(--muted);margin-top:2px;">Job #${job.id} · ${job.name}</div>`:''}</div>
+    <div style="text-align:right;color:var(--muted);"><div><strong style="color:var(--ink);">Quote #:</strong> ${qt.quoteNumber||qt.id}</div><div><strong style="color:var(--ink);">Issued:</strong> ${_docFmtDate(qt.quoteDate)}</div><div><strong style="color:var(--ink);">Sent:</strong> ${_docFmtDate(qt.sentDate)}</div>${qt.approvedDate?`<div><strong style="color:var(--ink);">Approved:</strong> ${_docFmtDate(qt.approvedDate)}</div>`:''}</div>`;
+  const totals=`<tr><td style="padding:5px 10px;color:var(--muted);">Subtotal (ex GST)</td><td style="padding:5px 10px;text-align:right;">$${Math.round(ex).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;color:var(--muted);">GST (15%)</td><td style="padding:5px 10px;text-align:right;">$${gst.toLocaleString()}</td></tr><tr style="border-top:1px solid var(--border);"><td style="padding:7px 10px;font-weight:600;">Total (inc GST)</td><td style="padding:7px 10px;text-align:right;font-weight:600;font-family:var(--serif);font-size:15px;">$${Math.round(inc).toLocaleString()}</td></tr>`;
+  const terms=`<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--faint);font-size:11px;color:var(--muted);line-height:1.6;">Valid for 30 days from issue. Full terms: <a href="https://content-co.nz/terms/" target="_blank" style="color:var(--red);">content-co.nz/terms</a></div>`;
+  _docModalShell('Quote',pill,meta,_docLineItemsHTML(job),totals,terms);
+}
+function openInvoiceDocPreview(invId){
+  const inv=stInvoices.find(i=>String(i.id)===String(invId));if(!inv)return;
+  const jobByStId={};jobs.forEach(j=>{if(j._stId)jobByStId[j._stId]=j;});
+  const job=jobByStId[inv.jobId];
+  const status=(inv.invoiceStatus?.name||'Draft');
+  const sc=_docStatusColor(status);
+  const ex=inv.totalAmountExTax||0;
+  const inc=inv.totalAmountIncTax!=null?inv.totalAmountIncTax:Math.round(ex*1.15);
+  const gst=Math.round(inc-ex);
+  const paid=inv.amountPaidIncTax||0;
+  const bal=inv.balance!=null?inv.balance:(inc-paid);
+  const pill=`<span style="display:inline-block;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:500;background:${sc}22;color:${sc};border:1px solid ${sc}44;">${status}</span>`;
+  const meta=`<div style="flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Billed to</div><div style="font-weight:500;font-size:13px;">${inv.company?.name||'—'}</div>${job?`<div style="color:var(--muted);margin-top:2px;">Job #${job.id} · ${job.name}</div>`:''}${inv.purchaseOrderNumber?`<div style="color:var(--muted);">PO ${inv.purchaseOrderNumber}</div>`:''}</div>
+    <div style="text-align:right;color:var(--muted);"><div><strong style="color:var(--ink);">Invoice #:</strong> ${inv.number||inv.id}</div><div><strong style="color:var(--ink);">Issued:</strong> ${_docFmtDate(inv.invoiceDate)}</div><div><strong style="color:var(--ink);">Due:</strong> ${_docFmtDate(inv.dueDate)}</div>${inv.paidDate?`<div><strong style="color:var(--ink);">Paid:</strong> ${_docFmtDate(inv.paidDate)}</div>`:''}</div>`;
+  let totals=`<tr><td style="padding:5px 10px;color:var(--muted);">Subtotal (ex GST)</td><td style="padding:5px 10px;text-align:right;">$${Math.round(ex).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;color:var(--muted);">GST (15%)</td><td style="padding:5px 10px;text-align:right;">$${gst.toLocaleString()}</td></tr><tr style="border-top:1px solid var(--border);"><td style="padding:7px 10px;font-weight:600;">Total (inc GST)</td><td style="padding:7px 10px;text-align:right;font-weight:600;font-family:var(--serif);font-size:15px;">$${Math.round(inc).toLocaleString()}</td></tr>`;
+  if(paid>0)totals+=`<tr><td style="padding:5px 10px;color:#2E7D32;">Paid</td><td style="padding:5px 10px;text-align:right;color:#2E7D32;">-$${Math.round(paid).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;font-weight:600;">Balance due</td><td style="padding:5px 10px;text-align:right;font-weight:600;">$${Math.round(bal).toLocaleString()}</td></tr>`;
+  _docModalShell('Tax Invoice',pill,meta,_docLineItemsHTML(job),totals,'');
+}
 function renderQuoteTab(){
   const j=jobs.find(x=>x.id===activeJobId);if(!j)return;
   const wrap=document.getElementById('dtab-quote');
@@ -6224,10 +6354,10 @@ function renderQuoteTab(){
     const qtRows=stJobQuotes.map(qt=>{
       const status=_qtRealStatus(qt);
       const val=qt.totalAmountExTax!=null?`$${Math.round(qt.totalAmountExTax).toLocaleString()}`:'—';
-      return`<div class="st-qt-row" onclick="openQuoteDetail('${qt.id}')">
+      return`<div class="st-qt-row" onclick="openQuoteDocPreview('${qt.id}')">
         <div style="min-width:0;flex:1;">
-          <div style="font-size:13px;font-weight:400;">${qt.name||qt.number||'Quote'}</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px;">${qt.number||qt.id} · Sent ${_fmtQD(qt.sentDate)}</div>
+          <div style="font-size:13px;font-weight:400;">${qt.quoteName||qt.quoteNumber||'Quote'}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">${qt.quoteNumber||qt.id} · Sent ${_fmtQD(qt.sentDate)}</div>
         </div>
         <div style="font-size:13px;font-family:var(--serif);flex-shrink:0;">${val}</div>
         <div style="flex-shrink:0;">${_qtStatusPillSm(status)}</div>
@@ -6448,9 +6578,10 @@ function renderPhases(){
     const pausedTag=ph.paused?`<span class="paused-badge" style="margin-right:4px;"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>`:'';
     const addActions=_readonly?'':`<div class="plan-row-actions"><div class="add-i-row" onclick="showAddItemForm('${ph.id}')"><i class="ti ti-plus" style="font-size:11px"></i> Add item</div><div class="add-i-row" style="border-left:1px solid var(--border);" onclick="showAddExpenseInline('${ph.id}')"><i class="ti ti-receipt" style="font-size:11px"></i> Add expense</div></div>`;
     const phMenu=_readonly?'':`<i class="ti ti-dots ph-mb" onclick="showPctx(event,'${ph.id}')"></i>`;
-    const allNonBill=ph.items.length>0&&ph.items.every(i=>i.rate==='—'||i.rate==='$0');
-    const nonBillBadge=allNonBill?`<span class="ph-nonbill-badge" title="This phase's items are all non-billable. Figures will not be included in used or planned sell totals."><i class="ti ti-lock" style="font-size:10px;"></i> Non-billable</span>`:'';
-    el.innerHTML=`<div class="phase-head" onclick="togglePhase('${ph.id}')" style="${ph.paused?'opacity:.65;':''}"><i class="ti ti-chevron-down ph-chv"></i><span class="ph-n">${ph.name}</span>${pausedTag}${nonBillBadge}<span class="ph-cnt">${cnt} item${cnt!==1?'s':''}</span><div class="ph-inf"><span class="ph-meta">${hrs} · ${allNonBill?'$0 / $0':sell}</span>${statusIcon}${phMenu}</div></div><table class="items-t" id="it_${ph.id}"><thead><tr><th style="width:22px;"></th><th>Item</th><th style="width:90px;">Team</th><th style="width:120px;text-align:right;" title="Logged / Planned hours">Hours</th><th style="width:75px;text-align:right;">Rate</th><th style="width:140px;text-align:right;">Sell</th><th style="width:90px;text-align:right;">Status</th><th style="width:26px;"></th></tr></thead><tbody id="ib_${ph.id}"></tbody></table>${addActions}`;
+    // Non-billable is a job-level setting (default billable), not inferred from $0 rates.
+    const jobNonBill=_j&&_j.billable===false;
+    const nonBillBadge=jobNonBill?`<span class="ph-nonbill-badge" title="This job is set to non-billable. You can still add rates to individual items if a line needs billing."><i class="ti ti-lock" style="font-size:10px;"></i> Non-billable</span>`:'';
+    el.innerHTML=`<div class="phase-head" onclick="togglePhase('${ph.id}')" style="${ph.paused?'opacity:.65;':''}"><i class="ti ti-chevron-down ph-chv"></i><span class="ph-n">${ph.name}</span>${pausedTag}${nonBillBadge}<span class="ph-cnt">${cnt} item${cnt!==1?'s':''}</span><div class="ph-inf"><span class="ph-meta">${hrs} · ${sell}</span>${statusIcon}${phMenu}</div></div><table class="items-t" id="it_${ph.id}"><thead><tr><th style="width:22px;"></th><th>Item</th><th style="width:90px;">Team</th><th style="width:120px;text-align:right;" title="Logged / Planned hours">Hours</th><th style="width:75px;text-align:right;">Rate</th><th style="width:140px;text-align:right;">Sell</th><th style="width:90px;text-align:right;">Status</th><th style="width:26px;"></th></tr></thead><tbody id="ib_${ph.id}"></tbody></table>${addActions}`;
     c.appendChild(el);renderItems(ph.id,_readonly);
   });
 }
@@ -6463,7 +6594,11 @@ function pSell(ph){
 }
 function renderItems(phId,_readonly){
   const ph=phases.find(p=>p.id===phId);const tbody=document.getElementById('ib_'+phId);tbody.innerHTML='';
-  if(_readonly===undefined){const _j=jobs.find(x=>x.id===activeJobId);_readonly=_j&&(_j.status==='archived'||_j.status==='complete');}
+  const _job=jobs.find(x=>x.id===activeJobId);
+  if(_readonly===undefined){_readonly=_job&&(_job.status==='archived'||_job.status==='complete');}
+  // Billability is a job-level setting (default billable). A $0/missing rate just means
+  // "no rate set yet" — it must stay editable so a rate can be added when needed.
+  const _jobNonBill=_job&&_job.billable===false;
   const COLS=8; // grip | item | team | hours(logged/plan) | rate | sell | status | menu
   ph.items.forEach(item=>{
     const tr=document.createElement('tr');tr.id='item_'+item.id;tr.draggable=!_readonly;tr.dataset.itemId=item.id;tr.dataset.phId=phId;
@@ -6479,7 +6614,7 @@ function renderItems(phId,_readonly){
         const wd=pd[wk];if(!wd)return;
         [1,2,3,4,5].forEach(d=>{
           (wd[d]||[]).forEach(tt=>{
-            const jmatch=tt.jobId===activeJobId||(tt.job&&activeJobId&&tt.job.includes(activeJobId));
+            const jmatch=tt.jobId===activeJobId||(!!activeJobId&&tt.job?.match(/^(\d+)/)?.[1]===String(activeJobId));
             if(jmatch&&_taskMatchesItem(tt,item,phases)&&tt.done)_loggedH+=tt.hours||0;
           });
         });
@@ -6523,18 +6658,20 @@ function renderItems(phId,_readonly){
   ${_showPlanned?`<span class="i-sof"> / </span>${_readonly?`<span>${item.hours}</span>`:`<span class="item-editable" title="Click to edit planned hours" onclick="inlineEditItem(event,'${item.id}','${phId}','hours')">${item.hours}</span>`}`:''}
   ${_showPlanned?`<div class="item-prog"><div class="item-prog-fill" style="width:${Math.min(100,Math.round(_loggedH/_plannedH*100))}%;background:${_overLogged?'var(--red)':_loggedH/_plannedH>0.8?'#F57F17':'#4CAF50'};"></div></div>`:''}
 </td>`;
-    const _isNonBill=item.rate==='—'||item.rate==='$0';
-    const rateCell=_isNonBill
-      ?`<td class="i-rate" style="font-size:12px;color:var(--muted);text-align:right;" title="Non-billable"><i class="ti ti-lock" style="font-size:12px;"></i></td>`
-      :_readonly
-        ?`<td class="i-rate" style="font-size:12px;color:var(--muted);text-align:right;">${item.rate}</td>`
-        :`<td class="i-rate" style="font-size:12px;color:var(--muted);text-align:right;"><span class="item-editable" title="Click to edit rate" onclick="inlineEditItem(event,'${item.id}','${phId}','rate')">${item.rate}</span></td>`;
+    const _hasRate=!(item.rate==='—'||item.rate==='$0');
+    // Rate is always editable on a live job — even on a non-billable job you can add a rate
+    // when a line needs to be billed. Show the current rate, or a subtle "+ rate" affordance
+    // when none is set (with a lock hint if the job itself is non-billable).
+    const _rateLabel=_hasRate?item.rate:`<span style="color:var(--border);">${_jobNonBill?'<i class="ti ti-lock" style="font-size:10px;"></i> ':''}+ rate</span>`;
+    const rateCell=_readonly
+      ?`<td class="i-rate" style="font-size:12px;color:var(--muted);text-align:right;">${_hasRate?item.rate:'—'}</td>`
+      :`<td class="i-rate" style="font-size:12px;color:var(--muted);text-align:right;"><span class="item-editable" title="Click to ${_hasRate?'edit':'add a'} rate" onclick="inlineEditItem(event,'${item.id}','${phId}','rate')">${_rateLabel}</span></td>`;
     const statusCell=_readonly
       ?`<td style="text-align:right"><span class="i-badge ${iCls}">${iLbl}</span></td><td></td>`
       :`<td style="text-align:right"><span class="i-badge ${iCls}" style="cursor:pointer;" title="Click to toggle" onclick="toggleItemStatus('${item.id}','${phId}',event)">${iLbl}</span></td><td><i class="ti ti-dots" style="font-size:14px;color:var(--muted);cursor:pointer;" onclick="showCtx(event,'${item.id}','${phId}')"></i></td>`;
     tr.innerHTML=`<td>${_readonly?'':' <i class="ti ti-grip-vertical" style="color:var(--border);font-size:13px;cursor:grab;"></i>'}</td>
 ${nameCell}${teamCell}${hrsCell}${rateCell}
-<td class="i-sell"><span style="font-weight:400;" title="Sell value of logged time">${_isNonBill?'—':_usedDisp}</span> <span class="i-sof">${_isNonBill?'':' / '+item.total}</span></td>
+<td class="i-sell"><span style="font-weight:400;" title="Sell value of logged time">${_hasRate?_usedDisp:'—'}</span> <span class="i-sof">${_hasRate?' / '+item.total:''}</span></td>
 ${statusCell}`;
     tr.addEventListener('dragstart',e=>{dragSrc=tr;tr.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
     tr.addEventListener('dragover',e=>e.preventDefault());
@@ -6551,7 +6688,7 @@ ${statusCell}`;
         const wd=pd[wk];
         [1,2,3,4,5].forEach(d=>{
           (wd[d]||[]).forEach(t=>{
-            const jobMatch=t.jobId===activeJobId||(t.job&&activeJobId&&t.job.includes(activeJobId));
+            const jobMatch=t.jobId===activeJobId||(!!activeJobId&&t.job?.match(/^(\d+)/)?.[1]===String(activeJobId));
             const itemMatch=_taskMatchesItem(t,item,phases);
             if(t.note&&t.note.trim()&&jobMatch&&itemMatch){
               linkedTaskNotes.push({note:t.note.trim(),person:pKey,title:t.title||'Task'});
@@ -7568,8 +7705,10 @@ function updateLocalContact(id,idx,field,val){
 }
 
 function openNewClientModal(){
+  document.getElementById('new-client-modal')?.remove();
   const modal=document.createElement('div');
-  modal.className='modal-bg on';
+  modal.className='modal-bg on';modal.id='new-client-modal';
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
   modal.innerHTML=`
     <div class="modal">
       <div class="modal-hd"><span class="modal-hd-title">Add new client</span><button class="modal-x" onclick="this.closest('.modal-bg').remove()"><i class="ti ti-x"></i></button></div>
@@ -8369,7 +8508,8 @@ function _getTimeEntries(){
         hours:(lt.minutes||0)/60,
         jobId:jobNum,
         done:(lt.loggedTimeStatus?.name||'Logged')==='Logged',
-        billable:lt.isBillable!==false,
+        billable:lt.job?.isBillable!==false, // billability is on the nested job, not the logged-time top level
+        sell:lt.totalExTax||0, // real ST sell value for this entry
         note:'',
       };
     });
@@ -8449,15 +8589,15 @@ function renderTime(){
   const billPct=doneH>0?Math.round(billH/doneH*100):0;
   const uniquePeople=[...new Set(entries.map(e=>e.personKey))].length;
   const uniqueJobs=[...new Set(entries.filter(e=>e.jobId).map(e=>e.jobId))].length;
-  // Est. revenue (billable hours * workspace default cost rate)
-  const estRev=billH*_defCostRate();
+  // Revenue from the real ST sell value (totalExTax) of logged billable entries
+  const estRev=entries.filter(e=>e.done&&e.billable).reduce((s,e)=>s+(e.sell||0),0);
 
   const statsEl=document.getElementById('time-stats-strip');
   if(statsEl)statsEl.innerHTML=`
     <div class="time-stat"><div class="ts-val">${fmtH(totalH)}</div><div class="ts-lbl">Total hours</div><div class="ts-sub">${entries.length} task${entries.length!==1?'s':''}</div></div>
     <div class="time-stat"><div class="ts-val">${fmtH(doneH)}</div><div class="ts-lbl">Logged (done)</div><div class="ts-sub">${Math.round(doneH/(totalH||1)*100)}% complete</div></div>
     <div class="time-stat"><div class="ts-val">${fmtH(billH)}</div><div class="ts-lbl">Billable</div><div class="ts-sub">${billPct}% of logged</div></div>
-    <div class="time-stat"><div class="ts-val">$${Math.round(estRev).toLocaleString()}</div><div class="ts-lbl">Est. revenue</div><div class="ts-sub">@ $${_defCostRate()}/h avg</div></div>
+    <div class="time-stat"><div class="ts-val">$${Math.round(estRev).toLocaleString()}</div><div class="ts-lbl">Revenue ex GST</div><div class="ts-sub">${billH>0?'$'+Math.round(estRev/billH)+'/h avg':'billable logged'}</div></div>
     <div class="time-stat"><div class="ts-val">${uniquePeople}</div><div class="ts-lbl">People</div><div class="ts-sub">${uniqueJobs} job${uniqueJobs!==1?'s':''}</div></div>`;
 
   // Update sub label
@@ -8573,8 +8713,6 @@ const QT_FILTER_DEFS=[
   {type:'sent_before',label:'Sent before',   input:'date'},
   {type:'approved_after',label:'Approved after',input:'date'},
   {type:'approved_before',label:'Approved before',input:'date'},
-  {type:'expiry_after',label:'Expires after', input:'date'},
-  {type:'expiry_before',label:'Expires before',input:'date'},
   {type:'billable',  label:'Billable',       input:'select',  opts:['Yes','No']},
 ];
 const INV_FILTER_DEFS=[
@@ -8699,11 +8837,10 @@ function _renderFilterBar(mode){
     if(def.input==='select'){
       valInput=`<select style="border:none;outline:none;background:transparent;font-family:var(--font);font-size:12px;cursor:pointer;" onchange="_setFilter('${mode}','${f.id}','value',this.value)"><option value="">Any</option>${(def.opts||[]).map(o=>`<option value="${o}"${o===f.value?' selected':''}>${o}</option>`).join('')}</select>`;
     }else if(def.input==='company'){
-      const cos=[...new Set((mode==='qt'?stQuotes:stInvoices).map(x=>x.company?.name||'').filter(Boolean))].sort();
+      const cos=[...new Set((mode==='qt'?stQuotes:stInvoices).map(x=>(typeof x.company==='string'?x.company:x.company?.name)||'').filter(Boolean))].sort();
       valInput=`<select style="border:none;outline:none;background:transparent;font-family:var(--font);font-size:12px;cursor:pointer;" onchange="_setFilter('${mode}','${f.id}','value',this.value)"><option value="">Any</option>${cos.map(c=>`<option value="${c}"${c===f.value?' selected':''}>${c}</option>`).join('')}</select>`;
     }else if(def.input==='jobs_status'){
-      const statusMap={inplay:'In Play',paused:'Paused',complete:'Complete',new:'New',archived:'Archived'};
-      const statuses=[...new Set(jobs.map(j=>statusMap[j.status]||j.status).filter(Boolean))].sort();
+      const statuses=[...new Set(jobs.map(j=>jobStatusLabel(j)).filter(Boolean))].sort();
       valInput=`<select style="border:none;outline:none;background:transparent;font-family:var(--font);font-size:12px;cursor:pointer;" onchange="_setFilter('${mode}','${f.id}','value',this.value)"><option value="">Any</option>${statuses.map(s=>`<option value="${s}"${s===f.value?' selected':''}>${s}</option>`).join('')}</select>`;
     }else if(def.input==='jobs_workflow'){
       const wfMap={live:'Live',quote:'Quote',completed:'Completed',invoiced:'Invoiced'};
@@ -8736,16 +8873,16 @@ function _renderPresetsBar(mode){
 }
 function _applyQtFilters(quotes,jobByStId,qtRealStatus){
   const search=(document.getElementById('quotes-search-inp')?.value||'').toLowerCase();
-  if(search)quotes=quotes.filter(qt=>(`${qt.id} ${qt.number||''} ${qt.name||''} ${qt.company?.name||''} ${qt.jobName||''} ${qt.jobNumber||''}`).toLowerCase().includes(search));
+  if(search)quotes=quotes.filter(qt=>(`${qt.id} ${qt.quoteNumber||''} ${qt.quoteName||''} ${qt.company||''} ${qt.jobName||''} ${qt.jobNumber||''}`).toLowerCase().includes(search));
   _qtFilters.forEach(f=>{
     if(!f.value)return;
     const job=qt=>jobByStId[qt.jobId]||jobs.find(j=>j.id===String(qt.jobNumber));
     switch(f.type){
       case 'status':    quotes=quotes.filter(qt=>qtRealStatus(qt)===f.value.toLowerCase());break;
-      case 'company':   quotes=quotes.filter(qt=>(qt.company?.name||'')===f.value);break;
+      case 'company':   quotes=quotes.filter(qt=>(qt.company||'')===f.value);break;
       case 'job_number':quotes=quotes.filter(qt=>String(qt.jobNumber||'').includes(f.value));break;
       case 'job_name':  quotes=quotes.filter(qt=>(qt.jobName||'').toLowerCase().includes(f.value.toLowerCase()));break;
-      case 'quote_name':quotes=quotes.filter(qt=>(qt.name||'').toLowerCase().includes(f.value.toLowerCase()));break;
+      case 'quote_name':quotes=quotes.filter(qt=>(qt.quoteName||'').toLowerCase().includes(f.value.toLowerCase()));break;
       case 'po':        quotes=quotes.filter(qt=>(job(qt)?.po||'').toLowerCase().includes(f.value.toLowerCase()));break;
       case 'lead':      quotes=quotes.filter(qt=>job(qt)?.lead===f.value);break;
       case 'value_min': quotes=quotes.filter(qt=>(qt.totalAmountExTax||0)>=+f.value);break;
@@ -8754,8 +8891,6 @@ function _applyQtFilters(quotes,jobByStId,qtRealStatus){
       case 'sent_before': quotes=quotes.filter(qt=>qt.sentDate&&new Date(qt.sentDate)<=new Date(f.value+'T23:59:59'));break;
       case 'approved_after':  quotes=quotes.filter(qt=>qt.approvedDate&&new Date(qt.approvedDate)>=new Date(f.value+'T00:00:00'));break;
       case 'approved_before': quotes=quotes.filter(qt=>qt.approvedDate&&new Date(qt.approvedDate)<=new Date(f.value+'T23:59:59'));break;
-      case 'expiry_after':  quotes=quotes.filter(qt=>qt.expiryDate&&new Date(qt.expiryDate)>=new Date(f.value+'T00:00:00'));break;
-      case 'expiry_before': quotes=quotes.filter(qt=>qt.expiryDate&&new Date(qt.expiryDate)<=new Date(f.value+'T23:59:59'));break;
       case 'billable':  quotes=quotes.filter(qt=>{const j=job(qt);return f.value==='Yes'?(j?.billable!==false):(j?.billable===false);});break;
     }
   });
@@ -8764,12 +8899,12 @@ function _applyQtFilters(quotes,jobByStId,qtRealStatus){
 function _applyInvFilters(inv,jobByStId,_getInvStatus){
   _invFilters.forEach(f=>{
     if(!f.value)return;
-    const job=i=>jobByStId[i.jobId]||jobs.find(j=>j.id===String(i.jobNumber));
+    const job=i=>jobByStId[i.jobId];
     switch(f.type){
       case 'status':    inv=inv.filter(i=>_getInvStatus(i)===f.value.toLowerCase());break;
       case 'company':   inv=inv.filter(i=>(i.company?.name||'')===f.value);break;
-      case 'job_number':inv=inv.filter(i=>String(i.jobNumber||'').includes(f.value));break;
-      case 'job_name':  inv=inv.filter(i=>(i.jobName||'').toLowerCase().includes(f.value.toLowerCase()));break;
+      case 'job_number':inv=inv.filter(i=>String(job(i)?.id||'').includes(f.value));break;
+      case 'job_name':  inv=inv.filter(i=>(job(i)?.name||'').toLowerCase().includes(f.value.toLowerCase()));break;
       case 'po':        inv=inv.filter(i=>(job(i)?.po||'').toLowerCase().includes(f.value.toLowerCase()));break;
       case 'lead':      inv=inv.filter(i=>job(i)?.lead===f.value);break;
       case 'amount_min':inv=inv.filter(i=>{const a=i.totalAmountIncTax||i.totalAmountExTax*1.15||0;return a>=+f.value;});break;
@@ -8791,7 +8926,7 @@ function _groupAndRender(items,groupBy,renderCard){
   items.forEach(item=>{
     let key='—';
     if(groupBy==='status')key=item._groupStatus||'—';
-    else if(groupBy==='company')key=item.company?.name||'—';
+    else if(groupBy==='company')key=(typeof item.company==='string'?item.company:item.company?.name)||'—'; // quotes: string, invoices: object
     else if(groupBy==='job')key=item.jobNumber?`#${item.jobNumber}${item.jobName?' · '+item.jobName:''}`:'No job';
     (groups[key]=groups[key]||[]).push(item);
   });
@@ -8823,26 +8958,24 @@ function openQuoteDetail(qtId){
   const val=qt.totalAmountExTax!=null?`$${Math.round(qt.totalAmountExTax).toLocaleString()} ex GST`:'—';
   const jobByStId={};jobs.forEach(j=>{if(j._stId)jobByStId[j._stId]=j;});
   const job=jobByStId[qt.jobId]||jobs.find(j=>j.id===String(qt.jobNumber));
-  document.getElementById('dd-title').textContent=qt.name||qt.number||`Quote ${qt.id}`;
-  document.getElementById('dd-sub').textContent=qt.company?.name||'';
+  document.getElementById('dd-title').textContent=qt.quoteName||qt.quoteNumber||`Quote ${qt.id}`;
+  document.getElementById('dd-sub').textContent=qt.company||''; // quotes.company is a plain string
   const body=document.getElementById('dd-body');
   body.innerHTML=`
     <div class="dd-section">
       <div class="dd-section-lbl">Quote details</div>
-      ${_ddField('Quote number',qt.number||qt.id)}
+      ${_ddField('Quote number',qt.quoteNumber||qt.id)}
       ${_ddField('Status',status)}
       ${_ddField('Value',val)}
       ${_ddField('Job',qt.jobNumber?`#${qt.jobNumber}${qt.jobName?' · '+qt.jobName:''}`:(qt.jobName||'—'))}
-      ${_ddField('Company',qt.company?.name)}
-      ${_ddField('Sent by',qt.sentByUser?.name)}
+      ${_ddField('Company',qt.company)}
+      ${_ddField('Sent by',qt.sentByUser)}
     </div>
     <div class="dd-section">
       <div class="dd-section-lbl">Dates</div>
-      ${_ddField('Issued',fmtD(qt.issueDate||qt.createdDate))}
+      ${_ddField('Issued',fmtD(qt.quoteDate))}
       ${_ddField('Sent',fmtD(qt.sentDate))}
       ${_ddField('Approved',fmtD(qt.approvedDate))}
-      ${_ddField('Declined',fmtD(qt.declinedDate))}
-      ${_ddField('Expires',fmtD(qt.expiryDate))}
     </div>
     ${job?`<div class="dd-section">
       <div class="dd-section-lbl">Linked job</div>
@@ -8852,7 +8985,6 @@ function openQuoteDetail(qtId){
       ${_ddField('Status',job.workflowStatus)}
       <div style="margin-top:10px;"><button class="d-action" onclick="closeDetailDrawer();openJobDetail('${job.id}')"><i class="ti ti-external-link" style="font-size:12px;"></i> Open job plan</button></div>
     </div>`:''}
-    ${qt.description?`<div class="dd-section"><div class="dd-section-lbl">Description</div><div style="font-size:12px;color:var(--muted);line-height:1.6;">${qt.description}</div></div>`:''}
   `;
   openDetailDrawer();
 }
@@ -8875,7 +9007,7 @@ function openInvoiceDetail(invId){
       ${_ddField('Status',status)}
       ${amtInc!=null?_ddField('Amount inc GST',`$${amtInc.toLocaleString()}`):''}
       ${amtEx!=null?_ddField('Amount ex GST',`$${amtEx.toLocaleString()}`):''}
-      ${_ddField('Job',inv.jobNumber?`#${inv.jobNumber}${inv.jobName?' · '+inv.jobName:''}`:(inv.jobName||'—'))}
+      ${_ddField('Job',job?`#${job.id} · ${job.name}`:'—')}
       ${_ddField('Company',inv.company?.name)}
       ${_ddField('PO number',inv.purchaseOrderNumber||job?.po)}
     </div>
@@ -8941,32 +9073,27 @@ function renderQuotes(){
     const status=qtRealStatus(qt);
     const job=jobByStId[qt.jobId]||jobs.find(j=>j.id===String(qt.jobNumber));
     const qtValue=qt.totalAmountExTax!=null?qt.totalAmountExTax:(job?job._plannedSell:null);
-    const expiry=qt.expiryDate?new Date(qt.expiryDate):null;
-    const expiringSoon=expiry&&status!=='approved'&&status!=='declined'&&(expiry-today)/86400000<=7&&expiry>=today;
-    const expired=expiry&&status!=='approved'&&status!=='declined'&&expiry<today;
     const jobNum=qt.jobNumber||job?.id||'';
     return`<div class="qinv-card" id="qcard-${qt.id}">
-      <div class="qinv-card-head" onclick="toggleQinvDetail('qcard-${qt.id}')">
+      <div class="qinv-card-head" onclick="openQuoteDocPreview('${qt.id}')">
         <div style="display:flex;flex-direction:column;min-width:72px;flex-shrink:0;">
-          <span class="qinv-card-num">${qt.number||qt.id}</span>
+          <span class="qinv-card-num">${qt.quoteNumber||qt.id}</span>
           ${jobNum?`<span class="qjob-chip">#${jobNum}</span>`:''}
         </div>
-        <span class="qinv-card-name">${qt.name||qt.jobName||'—'}</span>
-        <span class="qinv-card-co">${qt.company?.name||'—'}</span>
+        <span class="qinv-card-name">${qt.quoteName||qt.jobName||'—'}</span>
+        <span class="qinv-card-co">${qt.company||'—'}</span>
         <span class="qinv-card-val">${qtValue!=null?'$'+Math.round(qtValue).toLocaleString():'—'}</span>
-        <span class="qinv-card-status">${_qtStatusPill(status)}${expiringSoon?'<span class="inv-pill overdue" style="margin-left:4px;">Expiring</span>':''}${expired?'<span class="inv-pill overdue" style="margin-left:4px;">Expired</span>':''}</span>
+        <span class="qinv-card-status">${_qtStatusPill(status)}</span>
         <span class="qinv-card-date">${fmtDate(qt.sentDate)}</span>
         <i class="ti ti-chevron-down" style="font-size:12px;color:var(--muted);transition:transform .15s;" id="qchv-${qt.id}"></i>
       </div>
       <div class="qinv-detail" id="qdet-${qt.id}">
         <div style="padding:14px 20px;font-size:12px;color:var(--muted);display:flex;gap:24px;flex-wrap:wrap;">
-          <span><strong>Quote #:</strong> ${qt.number||qt.id}</span>
+          <span><strong>Quote #:</strong> ${qt.quoteNumber||qt.id}</span>
           <span><strong>Job:</strong> ${jobNum?`#${jobNum} `:''} ${qt.jobName||'—'}</span>
-          <span><strong>Sent by:</strong> ${qt.sentByUser?.name||'—'}</span>
+          <span><strong>Sent by:</strong> ${qt.sentByUser||'—'}</span>
           <span><strong>Sent:</strong> ${fmtDate(qt.sentDate)}</span>
           ${qt.approvedDate?`<span><strong>Approved:</strong> ${fmtDate(qt.approvedDate)}</span>`:''}
-          ${qt.declinedDate?`<span><strong>Declined:</strong> ${fmtDate(qt.declinedDate)}</span>`:''}
-          ${expiry?`<span><strong>Expires:</strong> ${fmtDate(qt.expiryDate)}</span>`:''}
           ${qtValue!=null?`<span><strong>Value:</strong> $${Math.round(qtValue).toLocaleString()} ex GST</span>`:''}
           ${job?.po?`<span><strong>PO:</strong> ${job.po}</span>`:''}
           ${job?.lead&&people[job.lead]?`<span><strong>Lead:</strong> ${people[job.lead].name}</span>`:''}
@@ -9038,7 +9165,7 @@ function renderInvoices(){
   const _getInvStatus=i=>{const s=(i.invoiceStatus?.name||i.status||'').toLowerCase();if(s==='paid')return'paid';if(s==='voided')return'voided';const due=i.dueDate?new Date(i.dueDate):null;if(due&&due<_invNow)return'overdue';if(s.includes('awaiting'))return'awaiting';if(i.sentDate)return'sent';return'draft';};
 
   let inv=stInvoices.length?[...stInvoices]:[];
-  if(search)inv=inv.filter(i=>(`${i.id} ${i.number||''} ${i.jobNumber||''} ${i.jobName||''} ${i.company?.name||''}`).toLowerCase().includes(search));
+  if(search)inv=inv.filter(i=>{const j=jobByStId[i.jobId];return(`${i.id} ${i.number||''} ${j?.id||''} ${j?.name||''} ${i.company?.name||''}`).toLowerCase().includes(search);});
   inv=_applyInvFilters(inv,jobByStId,_getInvStatus);
   inv.sort((a,b)=>b.id-a.id);
   inv.forEach(i=>{i._groupStatus=_getInvStatus(i);});
@@ -9049,12 +9176,17 @@ function renderInvoices(){
   _renderFilterBar('inv');
   _renderPresetsBar('inv');
 
-  // Totals from jobs data
-  const totalIssuedEx=jobs.reduce((s,j)=>s+(j._stInvoiced||0),0);
-  const totalPaidEx=jobs.reduce((s,j)=>s+(j._stPaid||0),0);
+  // Totals inc GST — read the real inc-tax fields from the invoices rather than grossing up
+  // ex-tax by a flat 1.15 (which ignores discounts / mixed tax).
+  let totalIssuedInc=0,totalPaidInc=0;
+  (stInvoices||[]).forEach(i=>{
+    const s=_getInvStatus(i);
+    if(s!=='draft'&&s!=='voided')totalIssuedInc+=(i.totalAmountIncTax||0);
+    totalPaidInc+=(i.amountPaidIncTax||0);
+  });
   document.getElementById('invoices-count').textContent=`${inv.length} invoice${inv.length!==1?'s':''}`;
   const totEl=document.getElementById('invoices-total');
-  if(totEl)totEl.innerHTML=`$${Math.round(totalIssuedEx*1.15).toLocaleString()} issued &nbsp;·&nbsp; <span style="color:#2E7D32;">$${Math.round(totalPaidEx*1.15).toLocaleString()} paid</span>`;
+  if(totEl)totEl.innerHTML=`$${Math.round(totalIssuedInc).toLocaleString()} issued &nbsp;·&nbsp; <span style="color:#2E7D32;">$${Math.round(totalPaidInc).toLocaleString()} paid</span>`;
 
   // DSO metric
   const paidInvs=inv.filter(i=>i.paidDate&&i.sentDate);
@@ -9089,10 +9221,10 @@ function renderInvoices(){
     const po=i.purchaseOrderNumber||job?.po||'';
     const amt=i.totalAmountIncTax!=null?Math.round(i.totalAmountIncTax):(i.totalAmountExTax!=null?Math.round(i.totalAmountExTax*1.15):(job?Math.round((job._stInvoiced||0)*1.15):null));
     const isOverdue=_getInvStatus(i)==='overdue';
-    return`<tr class="inv-tr" style="cursor:pointer;${isOverdue?'background:#fff8f8;':''}" onclick="openInvoiceDetail('${i.id}')">
+    return`<tr class="inv-tr" style="cursor:pointer;${isOverdue?'background:#fff8f8;':''}" onclick="openInvoiceDocPreview('${i.id}')">
       <td class="inv-td" style="color:var(--muted);font-size:12px;">${i.company?.name||'—'}</td>
       <td class="inv-td" style="font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;">${i.number||i.id}</td>
-      <td class="inv-td"><span style="font-size:11px;color:var(--muted);margin-right:4px;">${i.jobNumber?'#'+i.jobNumber:''}</span>${i.jobName||'—'}</td>
+      <td class="inv-td"><span style="font-size:11px;color:var(--muted);margin-right:4px;">${job?'#'+job.id:''}</span>${job?.name||'—'}</td>
       <td class="inv-td" style="font-size:12px;color:var(--muted);">${po||'—'}</td>
       <td class="inv-td" style="font-size:12px;color:var(--muted);">${fmtDate(i.sentDate)}</td>
       <td class="inv-td" style="font-size:12px;color:${isOverdue?'var(--red)':'var(--muted)'};">${i.dueDate?fmtDate(i.dueDate):'—'}</td>
@@ -9135,7 +9267,7 @@ function renderInvoices(){
       let key='—';
       if(_invGroupBy==='status')key=(_getInvStatus(i)||'draft');
       else if(_invGroupBy==='company')key=i.company?.name||'—';
-      else if(_invGroupBy==='job')key=i.jobNumber?`#${i.jobNumber}${i.jobName?' · '+i.jobName:''}`:'No job';
+      else if(_invGroupBy==='job'){const j=jobByStId[i.jobId];key=j?`#${j.id} · ${j.name}`:'No job';}
       (groups[key]=groups[key]||[]).push(i);
     });
     list.innerHTML=tbiHTML+Object.entries(groups).sort((a,b)=>a[0].localeCompare(b[0])).map(([key,grpItems])=>
@@ -9274,7 +9406,7 @@ function getFilteredTasks(){
         item:lt.itemName||'',
         hours:(lt.minutes||0)/60,
         done:true,urgent:false,
-        billable:lt.isBillable!==false,
+        billable:lt.job?.isBillable!==false, // billability is on the nested job, not the logged-time top level
         day:dayNum,
         weekKey:weekMon.toISOString().split('T')[0],
         _fromST:true,
@@ -9296,7 +9428,7 @@ function getFilteredTasks(){
       for(let d=1;d<=5;d++){
         const dayTasks=weekDays[d]||[];
         dayTasks.forEach(t=>{
-          if(jobFilter!=='all'){const jobMatch=t.job?t.job.includes(jobFilter):false;if(!jobMatch)return;}
+          if(jobFilter!=='all'){const jn=t.jobId||t.job?.match(/^(\d+)/)?.[1];if(jn!==jobFilter)return;}
           const weekMon=new Date(weekKey+'T00:00:00');const taskDate=new Date(weekMon);taskDate.setDate(weekMon.getDate()+(d-1));
           if(cutoffMs&&taskDate.getTime()<cutoffMs)return;
           tasks.push({...t,person:pKey,personName:people[pKey]?.name||pKey,day:d,weekKey});

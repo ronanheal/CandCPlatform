@@ -1,6 +1,25 @@
 # C&C Platform — Roadmap
 
-*Last updated 19 Jun 2026 · v2.20.1*
+*Last updated 19 Jun 2026 · v2.20.2*
+
+---
+
+## Data-correctness audit (v2.20.2)
+
+A full multi-agent audit cross-checked every consumer of Streamtime data against the **real field schemas** pulled from the live export (jobs, logged_times, invoices, quotes, expenses, users, contacts, job_assignments, scheduled_todos, milestones). The recurring bug class was code reading ST fields that don't exist or have the wrong type/nesting — which silently produces $0 / blank / wrong values instead of erroring. Ten findings fixed:
+
+1. **Billable %** — logged_times have no top-level `isBillable` (it's on the nested `job`); all hours were counted billable. ~33% of entries are actually non-billable.
+2. **Quotes screen** — `company` is a string (not object), real fields are `quoteName`/`quoteNumber`/`sentByUser`(string); `expiryDate`/`declinedDate` don't exist.
+3. **Invoices** — carry `jobId`, not `jobNumber`/`jobName`; job column/filter/group resolved from the linked job.
+4. **Paused filter** — `_mapStJob` collapses Paused→`inplay`; status now consults the `j.paused` flag via `jobStatusLabel()`.
+5. **Per-row sell / revenue** — Progress tab and Time view re-estimated at a flat rate instead of using logged `totalExTax`.
+6. **Invoice inc-GST totals** — were `exTax × 1.15`; now use real `totalAmountIncTax`/`amountPaidIncTax`.
+7. **Substring job-id matches** — three more `job.includes(id)` false-match bugs ("123" in "1234").
+8. **Expiring-quotes card** — removed (no expiry data in the ST export).
+9. **Dead `r-job` reporting filter** — hardened (exact match).
+10. **Stacking modals** — add-member and new-client modals now de-dupe.
+
+**Confirmed clean by the audit:** budget total (`finalBudget`), expenses mapping, reallocate week-lookup, all date/hours helpers, minutes↔hours conversions, contacts/users mapping.
 
 ---
 
