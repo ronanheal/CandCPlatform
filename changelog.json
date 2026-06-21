@@ -1,7 +1,58 @@
 {
-  "generated_at": "2026-06-18T22:06:51.049590+00:00",
-  "current_version": "2.20.1",
+  "generated_at": "2026-06-21T20:18:27.130858+00:00",
+  "current_version": "2.20.3",
   "releases": [
+    {
+      "version": "2.20.3",
+      "date": "19 Jun 2026",
+      "title": "Budget total fix, quote/invoice document preview, non-billable rates, data-freshness indicator",
+      "items": [
+        "Fixed: jobs $ budget total was way over (e.g. $920k vs Streamtime $704k) — it fell back to \"planned time\" for jobs with no agreed budget. Now uses finalBudget like Streamtime, so the footer total matches",
+        "New: clicking a quote or invoice opens a full branded document preview (C&C letterhead, line items from the job plan, GST, totals, paid/balance) instead of just a details strip",
+        "Non-billable phases/items: rate is now always editable (shows a \"+ rate\" you can click to add one, even on a non-billable job). Billable is a job-level setting and defaults to billable — no more guessing from a $0 rate",
+        "New: Todo board shows a \"Streamtime data through <date>\" indicator — turns orange when today isn\\'t synced yet, so it\\'s clear when completed tasks just haven\\'t exported, not gone missing"
+      ],
+      "sections": [
+        "Boards",
+        "Data",
+        "Jobs",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.20.2",
+      "date": "19 Jun 2026",
+      "title": "Platform-wide data audit — billable %, quotes, invoices, paused filter, per-job totals",
+      "items": [
+        "Fixed: billable vs non-billable was wrong everywhere — logged time read a field that doesn\\'t exist (isBillable lives on the job), so ALL hours counted as billable. 1,760 of 5,359 logged entries (33%) are actually non-billable. Corrects dashboard split, Business %-billable KPI, People utilisation, and the Time view billable stat/filter",
+        "Fixed: the entire Quotes screen was mis-mapped — company (a plain string), quote name & number, and \"sent by\" all showed blank or raw IDs; company filter/dropdown/group-by were non-functional. Now read the correct Streamtime fields",
+        "Fixed: Invoice \"Job\" column / detail / filter / group-by were always blank — invoices carry a jobId, not a job number/name; now resolved from the linked job",
+        "Fixed: Jobs \"Paused\" status filter & group-by never matched (paused jobs are stored as In Play + a separate flag) — 8 paused jobs now filter correctly",
+        "Fixed: Progress-tab per-row \"Sell\" and Time-view \"Revenue\" were re-estimated at a flat rate instead of using the real logged sell value — now reconcile with Streamtime",
+        "Fixed: invoice issued/paid totals grossed-up ex-tax by a flat 15% instead of using the real inc-GST amounts (wrong when discounts apply)",
+        "Fixed: three more \"job 123 matches job 1234\" substring bugs that pulled unrelated jobs\\' hours/notes into a job\\'s totals",
+        "Removed: \"Quotes expiring soon\" dashboard card and quote expiry filters — Streamtime\\'s export carries no quote expiry date, so they never worked",
+        "Add-team-member and new-client modals no longer stack duplicates if reopened"
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
     {
       "version": "2.20.1",
       "date": "19 Jun 2026",
