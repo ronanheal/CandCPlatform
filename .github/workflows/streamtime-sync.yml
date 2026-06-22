@@ -2,15 +2,16 @@ name: Streamtime Sync
 
 on:
   schedule:
-    - cron: '*/10 * * * *'  # every 10 minutes — was hourly; "Done" status (driven by
-                             # logged time, not a ST completion flag) was lagging by up
-                             # to an hour for anyone who logs time through the day
+    - cron: '0 * * * *'  # every hour on the hour — see streamtime-fast-sync.yml for the
+                          # cheap, frequent logged_times/scheduled_todos-only sync. This
+                          # full sync stays hourly because it costs ~610 of our 720
+                          # req/hour API budget (job phase/item detail backfill).
   workflow_dispatch:       # allow manual trigger from GitHub UI
 
 # Prevent overlapping syncs from racing to push the streamtime-data branch —
-# with a 10-minute cron a slow run could still be going when the next one fires.
+# shared with streamtime-fast-sync.yml so the two never push at the same time.
 concurrency:
-  group: streamtime-sync
+  group: streamtime-data-branch
   cancel-in-progress: false
 
 jobs:

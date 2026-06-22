@@ -1,0 +1,49 @@
+name: Streamtime Fast Sync (logged times + scheduled todos)
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # every 15 min — cheap (~10-15 API calls), keeps the
+                             # Todo board's Done/To Do columns close to live without
+                             # touching the hourly full sync's 720 req/hour budget
+  workflow_dispatch:
+
+# Shared with streamtime-sync.yml so the two never push to streamtime-data at once.
+concurrency:
+  group: streamtime-data-branch
+  cancel-in-progress: false
+
+jobs:
+  fast-sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout main (for the sync script)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Restore current logged_times + scheduled_todos from data branch
+        run: |
+          git fetch origin streamtime-data
+          mkdir -p streamtime-data
+          for f in logged_times.json scheduled_todos.json; do
+            git show origin/streamtime-data:$f > streamtime-data/$f 2>/dev/null || true
+          done
+
+      - name: Run fast sync script
+        run: python3 scripts/streamtime_fast_sync.py
+        env:
+          STREAMTIME_API_KEY: ${{ secrets.STREAMTIME_API_KEY }}
+
+      - name: Push updated files to streamtime-data branch
+        run: |
+          git worktree add ../data-branch origin/streamtime-data
+          cp streamtime-data/logged_times.json streamtime-data/scheduled_todos.json ../data-branch/
+          cd ../data-branch
+          git config user.name "streamtime-sync[bot]"
+          git config user.email "noreply@github.com"
+          git add logged_times.json scheduled_todos.json
+          git diff --staged --quiet || git commit -m "fast sync: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push origin HEAD:streamtime-data
