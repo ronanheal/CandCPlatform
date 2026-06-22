@@ -2868,9 +2868,9 @@ function _mapStCompany(c,contacts){
     address:addrStr,notes:c.notes||'',
     contacts:coContacts.map(x=>({id:x.id,firstName:x.firstName||'',lastName:x.lastName||'',email:x.email||'',phone:x.phoneNumber||x.phone||'',position:x.position||x.jobTitle||''}))};
 }
-async function initStreamtime(){
+async function initStreamtime(silent){
   const tb=document.getElementById('jobs-tbody');
-  if(tb)tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted);font-size:13px;"><i class="ti ti-loader" style="font-size:18px;display:block;margin:0 auto 8px;"></i>Loading from Streamtime…</td></tr>`;
+  if(tb&&!silent)tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted);font-size:13px;"><i class="ti ti-loader" style="font-size:18px;display:block;margin:0 auto 8px;"></i>Loading from Streamtime…</td></tr>`;
   try{
     const _v='?v='+Date.now();
     const [jobsRes,coRes,ltRes,invRes,qtRes,usersRes,ctRes,expRes,assignRes,msRes,schedRes]=await Promise.all([
@@ -9445,6 +9445,21 @@ function toggleQinvDetail(cardId){
 
 navTo('dashboard');
 initStreamtime();
+// Auto-refresh from Streamtime every 5 min — previously this only ever fetched once on
+// page load, so anything completed in Streamtime after that (e.g. dragging a To Do into
+// Done, which logs its time) never appeared until someone manually reloaded the tab. Most
+// people only reload once, late in the day, which is why completions looked like they
+// landed "all at once" rather than throughout the day — the data was fine, the browser
+// just never asked for it again. Skipped while a modal/drawer is open so a background
+// refresh can't yank the UI out from under an in-progress edit.
+let _stPollInFlight=false;
+setInterval(async()=>{
+  if(_stPollInFlight)return;
+  const modalOpen=document.querySelector('.modal-bg.on,.inv-bg.on,#detail-drawer.open,#doc-preview-modal');
+  if(modalOpen)return;
+  _stPollInFlight=true;
+  try{await initStreamtime(true);}finally{_stPollInFlight=false;}
+},5*60*1000);
 
 // ============ REPORTING ENGINE ============
 let chartByPerson=null,chartByDay=null,chartByJob=null,chartByBudget=null;
