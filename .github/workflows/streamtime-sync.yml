@@ -2,8 +2,16 @@ name: Streamtime Sync
 
 on:
   schedule:
-    - cron: '0 * * * *'  # every hour on the hour
+    - cron: '*/10 * * * *'  # every 10 minutes — was hourly; "Done" status (driven by
+                             # logged time, not a ST completion flag) was lagging by up
+                             # to an hour for anyone who logs time through the day
   workflow_dispatch:       # allow manual trigger from GitHub UI
+
+# Prevent overlapping syncs from racing to push the streamtime-data branch —
+# with a 10-minute cron a slow run could still be going when the next one fires.
+concurrency:
+  group: streamtime-sync
+  cancel-in-progress: false
 
 jobs:
   sync:
