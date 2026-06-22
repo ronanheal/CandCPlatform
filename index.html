@@ -1277,6 +1277,7 @@ tr:hover .i-todo-btn{opacity:1;}
     <svg class="s-logo" viewBox="0 0 621.5 266.3" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M546.7,26.9c14.2,0,24.7,10,28.4,37.9c0.5,9.5,5.3,16.9,14.2,16.9c13.2,0,32.1-12.6,32.1-29.5c0-25.3-25.3-44.8-63.7-44.8c-59,0-104.6,43.4-127.1,95c-12.6,28.9-20,62.7-16.6,94.2c2.1,19.5,9.9,39.1,24.9,51.7c-19.3,2.3-53.8-15.3-81.8-42.5c23.2-21.6,41.8-48,54.4-77c3.7-8.6,8.7-21.6,3.4-30.6c-4.2-7.2-14.6-6.8-21.4-4.2c-16,6.2-14.5,22.1-17.5,36.2c-4.8,23.3-13.2,46.3-29.7,63.9c-25.3-26.5-45.7-55.3-58.5-78.6c43.3-17.2,72.8-28.1,72.8-67c0-31.3-27.9-48.5-58-48.5c-35.7,0-67.3,26-67.3,70.2c0,15.5,4.3,30.7,11.9,44.1c-15.8,4.9-31.1,11.9-43.7,22.8c-13.9,12.1-24,28.8-35.2,43.3c-18,23.3-45.6,57.7-79.3,53.3c-31-4-35.8-37-35.8-62.8c0-64.2,35.8-145.3,80-145.3c14.2,0,24.7,10,28.4,37.9c0.5,9.5,5.3,16.8,14.2,16.8c13.2,0,32.1-12.6,32.1-29.5c0-25.3-25.2-44.8-63.7-44.8C54.2,6.2,0,102,0,181.5c0,59,34.7,80.6,71.6,80.6c37.2,0,76.4-13.5,108.2-56.8c4.6,29.1,28.5,55.4,72.6,55.4c29.7,0,51.3-8.4,77.4-30.5c0,0,11.3,8.7,12.4,9.5c19.4,12.8,42.6,19.4,65.3,22.9c25.4,3.9,51.4,5,77,2.5c0.3,0,0.5-0.1,0.8-0.1c23.3-2.4,46.9-7.5,67.2-20c19.5-12,35.3-29.2,47.6-48.4c3.3-5.1,2.4-11.9-2.1-16.1c-2.9-2.7-7.5-2.2-9.9,1c-11.6,15.7-27.3,32.4-44.7,43c-10.9,6.7-22.5,10.9-34.2,10.9c-35.3,0-42.7-29.5-42.7-63.2C466.7,108,502.5,26.9,546.7,26.9z M299.7,15.6c18.9,0,26.9,13.2,26.9,28.1c0,29.3-21.6,49.3-45.7,60.1c-8-12.4-13.2-30.9-13.2-45.3C267.7,32.9,283.3,15.6,299.7,15.6z M269.7,238.6c-31.7,0-52.1-23.7-52.1-50.5c0-38.5,30.9-57.3,37.7-58.1c18,30.9,38.1,62.1,63.7,89.8C305.3,231,290.5,238.6,269.7,238.6z"/></svg>
     <div class="s-nav">
       <div class="s-btn" onclick="openGlobalSearch()"><i class="ti ti-search"></i><span class="s-tip">Search (⌘K)</span></div>
+      <div class="s-btn" id="snav-starred" onclick="openStarredPanel()"><i class="ti ti-star"></i><span class="s-tip">Starred</span></div>
       <div class="s-btn on" id="snav-dashboard" onclick="navTo('dashboard')"><i class="ti ti-grid-dots"></i><span class="s-tip">Dashboard</span></div>
       <div class="s-btn" id="snav-todo" onclick="navTo('todo')"><i class="ti ti-checklist"></i><span class="s-tip">To Do</span></div>
       <div class="s-btn" id="snav-jobs" onclick="navTo('jobs')"><i class="ti ti-briefcase"></i><span class="s-tip">Jobs</span></div>
@@ -1461,7 +1462,8 @@ tr:hover .i-todo-btn{opacity:1;}
               </select>
               <button class="d-action" onclick="saveFilterPreset('qt')" title="Save current filters as a preset"><i class="ti ti-bookmark" style="font-size:11px;"></i> Save</button>
               <button class="d-action" id="qt-clear-btn" onclick="_clearFilters('qt')" title="Clear all filters" style="display:none;"><i class="ti ti-x" style="font-size:11px;"></i> Clear</button>
-              <span class="jobs-count" id="quotes-count" style="margin-left:auto;"></span>
+              <button class="d-action primary" onclick="openNewQuoteModal()" style="margin-left:auto;"><i class="ti ti-plus" style="font-size:11px;"></i> New quote</button>
+              <span class="jobs-count" id="quotes-count"></span>
             </div>
             <div id="qt-presets-bar" class="fpresets-bar" style="display:none;"></div>
             <div id="qt-fbar" class="fbar" style="display:none;"></div>
@@ -1579,6 +1581,7 @@ tr:hover .i-todo-btn{opacity:1;}
               <div class="d-tab on" onclick="switchDTab(this,'plan')">Job plan</div>
               <div class="d-tab" onclick="switchDTab(this,'progress')">Progress</div>
               <div class="d-tab" onclick="switchDTab(this,'quote')">Quote</div>
+              <div class="d-tab" onclick="switchDTab(this,'timeline')">Timeline</div>
               <div class="d-tab" onclick="switchDTab(this,'activity')">Activity</div>
             </div>
           </div>
@@ -1595,6 +1598,7 @@ tr:hover .i-todo-btn{opacity:1;}
           </div>
           <div id="dtab-progress" class="hidden" style="flex:1;overflow-y:auto;padding:24px 24px 50px;"></div>
           <div id="dtab-quote" class="hidden" style="flex:1;overflow-y:auto;padding:24px 24px 50px;"></div>
+          <div id="dtab-timeline" class="hidden" style="flex:1;overflow-y:auto;padding:24px 24px 50px;"></div>
           <div id="dtab-activity" class="act-feed hidden"></div>
         </div>
       </div>
@@ -1838,6 +1842,26 @@ tr:hover .i-todo-btn{opacity:1;}
   </div>
 </div>
 
+<!-- NEW QUOTE MODAL -->
+<div class="modal-bg" id="new-quote-modal">
+  <div class="modal">
+    <div class="modal-hd"><span class="modal-hd-title">New quote</span><button class="modal-x" onclick="closeNewQuoteModal()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd">
+      <div class="field"><label>Quote name</label><input type="text" id="nq-name" class="form-inp" placeholder="e.g. Q2 campaign refresh" style="width:100%;"></div>
+      <div class="field-row">
+        <div class="field"><label>Company</label><input id="nq-co" class="form-inp" placeholder="Search clients…" style="width:100%;"></div>
+        <div class="field"><label>Link to job (optional)</label><input id="nq-job" class="form-inp" placeholder="Search jobs…" style="width:100%;"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Value (ex GST)</label><input type="number" id="nq-value" class="form-inp" min="0" step="0.01" placeholder="0.00" style="width:100%;"></div>
+        <div class="field"><label>Quote date</label><input type="date" id="nq-date" class="form-inp" style="width:100%;"></div>
+      </div>
+      <div class="field"><label>Notes (optional)</label><input type="text" id="nq-notes" class="form-inp" placeholder="Scope summary, assumptions…" style="width:100%;"></div>
+    </div>
+    <div class="modal-ft"><button class="modal-cancel" onclick="closeNewQuoteModal()">Cancel</button><button class="modal-ok" onclick="saveNewQuote()">Create quote</button></div>
+  </div>
+</div>
+
 <!-- ADD TODO MODAL -->
 <div class="modal-bg" id="todo-modal">
   <div class="tm-modal">
@@ -2044,6 +2068,18 @@ tr:hover .i-todo-btn{opacity:1;}
       <span class="gs-kbd">esc</span>
     </div>
     <div id="gs-results"><div class="gs-empty">Type to search across everything.</div></div>
+  </div>
+</div>
+
+<!-- STARRED ITEMS PANEL -->
+<div class="gs-bg" id="starred-panel" onclick="if(event.target===this)closeStarredPanel()">
+  <div class="gs-panel">
+    <div class="gs-inp-row">
+      <i class="ti ti-star" style="color:#E6A700;"></i>
+      <span style="font-size:13px;font-weight:500;flex:1;">Starred</span>
+      <span class="gs-kbd">esc</span>
+    </div>
+    <div id="starred-results"></div>
   </div>
 </div>
 
@@ -2683,6 +2719,11 @@ const ST_BASE='https://raw.githubusercontent.com/ronanheal/CandCPlatform/streamt
 let stLoggedTimes=[];
 let stInvoices=[];
 let stQuotes=[];
+// Quotes created natively in the platform (not yet in Streamtime) — same field shape as
+// stQuotes so they can be merged into the same list/detail/print code paths.
+let localQuotes=JSON.parse(localStorage.getItem('cc_local_quotes')||'[]');
+function saveLocalQuotes(){localStorage.setItem('cc_local_quotes',JSON.stringify(localQuotes));}
+function _findQuote(qtId){return stQuotes.find(q=>String(q.id)===String(qtId))||localQuotes.find(q=>String(q.id)===String(qtId));}
 let workspaceSettings=JSON.parse(localStorage.getItem('cc_ws_settings')||'{}');
 let _settActiveTab='profile';
 function _defCostRate(){return workspaceSettings.defaultCostRate||150;}
@@ -5930,10 +5971,12 @@ function switchDTab(el,tab){
   document.getElementById('dtab-plan').style.display=tab==='plan'?'flex':'none';
   document.getElementById('dtab-progress').classList.toggle('hidden',tab!=='progress');
   document.getElementById('dtab-quote').classList.toggle('hidden',tab!=='quote');
+  document.getElementById('dtab-timeline').classList.toggle('hidden',tab!=='timeline');
   document.getElementById('dtab-activity').classList.toggle('hidden',tab!=='activity');
   if(tab==='plan')renderPhases();
   if(tab==='progress')renderProgressTab();
   if(tab==='quote')renderQuoteTab();
+  if(tab==='timeline')renderTimelineTab();
   if(tab==='activity')renderActivityTab();
 }
 
@@ -6227,7 +6270,7 @@ function _docModalShell(titleWord,statusPill,metaHTML,lineRows,totalsRows,extraH
 }
 function _docFmtDate(iso){if(!iso)return'—';const d=new Date(iso.slice(0,10)+'T12:00:00');return d.toLocaleDateString('en-NZ',{day:'numeric',month:'long',year:'numeric'});}
 function openQuoteDocPreview(qtId){
-  const qt=stQuotes.find(q=>String(q.id)===String(qtId));if(!qt)return;
+  const qt=_findQuote(qtId);if(!qt)return;
   const jobByStId={};jobs.forEach(j=>{if(j._stId)jobByStId[j._stId]=j;});
   const job=jobByStId[qt.jobId]||jobs.find(j=>j.id===String(qt.jobNumber));
   const status=(typeof qt.quoteStatus==='string'?qt.quoteStatus:qt.quoteStatus?.name||'Draft');
@@ -6263,6 +6306,64 @@ function openInvoiceDocPreview(invId){
   let totals=`<tr><td style="padding:5px 10px;color:var(--muted);">Subtotal (ex GST)</td><td style="padding:5px 10px;text-align:right;">$${Math.round(ex).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;color:var(--muted);">GST (15%)</td><td style="padding:5px 10px;text-align:right;">$${gst.toLocaleString()}</td></tr><tr style="border-top:1px solid var(--border);"><td style="padding:7px 10px;font-weight:600;">Total (inc GST)</td><td style="padding:7px 10px;text-align:right;font-weight:600;font-family:var(--serif);font-size:15px;">$${Math.round(inc).toLocaleString()}</td></tr>`;
   if(paid>0)totals+=`<tr><td style="padding:5px 10px;color:#2E7D32;">Paid</td><td style="padding:5px 10px;text-align:right;color:#2E7D32;">-$${Math.round(paid).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;font-weight:600;">Balance due</td><td style="padding:5px 10px;text-align:right;font-weight:600;">$${Math.round(bal).toLocaleString()}</td></tr>`;
   _docModalShell('Tax Invoice',pill,meta,_docLineItemsHTML(job),totals,'');
+}
+// ── Job Timeline — lightweight Gantt-style view built from phase/item date ranges ──
+// No external Gantt library: a date axis + absolutely-positioned bars is enough for
+// the phase-level granularity ST gives us (no per-day task scheduling to render).
+function renderTimelineTab(){
+  const j=jobs.find(x=>x.id===activeJobId);
+  const wrap=document.getElementById('dtab-timeline');if(!wrap||!j)return;
+  const rows=phases.map(ph=>({name:ph.name,start:ph.startDate,end:ph.dueDate||ph.startDate,status:ph.status,paused:ph.paused})).filter(r=>r.start&&r.end);
+  if(!rows.length){
+    wrap.innerHTML=emptyStateHTML('ti-timeline','No phase dates available','Timeline needs phase start/due dates from Streamtime — this job\'s phases don\'t have any set, or it isn\'t synced from ST yet.','','');
+    return;
+  }
+  const toDate=s=>new Date(s+'T12:00:00');
+  let minD=toDate(rows[0].start),maxD=toDate(rows[0].end);
+  rows.forEach(r=>{const s=toDate(r.start),e=toDate(r.end);if(s<minD)minD=s;if(e>maxD)maxD=e;});
+  // Pad either side by a few days so bars don't touch the edges
+  minD=new Date(minD);minD.setDate(minD.getDate()-2);
+  maxD=new Date(maxD);maxD.setDate(maxD.getDate()+2);
+  const totalDays=Math.max(1,Math.round((maxD-minD)/86400000));
+  const pctFor=d=>Math.min(100,Math.max(0,(d-minD)/86400000/totalDays*100));
+  // Month tick marks along the header
+  const ticks=[];
+  let cur=new Date(minD.getFullYear(),minD.getMonth(),1);
+  if(cur<minD)cur.setMonth(cur.getMonth()+1);
+  while(cur<=maxD){ticks.push(new Date(cur));cur.setMonth(cur.getMonth()+1);}
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const today=new Date();today.setHours(12,0,0,0);
+  const todayPct=(today>=minD&&today<=maxD)?pctFor(today):null;
+  const headerTicks=ticks.map(t=>`<div style="position:absolute;left:${pctFor(t)}%;top:0;bottom:0;border-left:1px solid var(--faint);font-size:10px;color:var(--muted);padding-left:4px;">${MONTHS[t.getMonth()]} ${t.getFullYear()}</div>`).join('');
+  const barRows=rows.map(r=>{
+    const left=pctFor(toDate(r.start)),right=pctFor(toDate(r.end));
+    const width=Math.max(0.6,right-left);
+    const color=r.status==='complete'?'#7B9E87':r.paused?'#C4956A':'#ED1E24';
+    const label=r.start===r.end?_docFmtDate(r.start):`${_docFmtDate(r.start)} – ${_docFmtDate(r.end)}`;
+    return `<div style="position:relative;height:34px;border-bottom:1px solid var(--faint);">
+      <div style="position:absolute;left:${left}%;width:${width}%;top:7px;height:20px;background:${color};border-radius:3px;opacity:${r.paused?0.55:0.9};" title="${r.name} · ${label}"></div>
+    </div>`;
+  }).join('');
+  const labelCol=rows.map(r=>`<div style="height:34px;display:flex;align-items:center;font-size:12px;border-bottom:1px solid var(--faint);padding-right:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.paused?'<i class="ti ti-pause" style="font-size:10px;color:var(--muted);margin-right:4px;"></i>':''}${r.name}</div>`).join('');
+  wrap.innerHTML=`
+    <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:var(--white);">
+      <div style="width:180px;flex-shrink:0;border-right:1px solid var(--border);">
+        <div style="height:28px;border-bottom:1px solid var(--border);background:var(--off);"></div>
+        ${labelCol}
+      </div>
+      <div style="flex:1;overflow-x:auto;position:relative;">
+        <div style="height:28px;position:relative;border-bottom:1px solid var(--border);background:var(--off);">${headerTicks}</div>
+        <div style="position:relative;">
+          ${todayPct!=null?`<div style="position:absolute;left:${todayPct}%;top:0;bottom:0;width:1px;background:var(--red);z-index:2;" title="Today"></div>`:''}
+          ${barRows}
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:16px;margin-top:12px;font-size:11px;color:var(--muted);">
+      <span><span style="display:inline-block;width:10px;height:10px;background:#ED1E24;border-radius:2px;vertical-align:-1px;"></span> Open</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#C4956A;border-radius:2px;vertical-align:-1px;"></span> Paused</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#7B9E87;border-radius:2px;vertical-align:-1px;"></span> Complete</span>
+    </div>`;
 }
 function renderQuoteTab(){
   const j=jobs.find(x=>x.id===activeJobId);if(!j)return;
@@ -6345,7 +6446,10 @@ function renderQuoteTab(){
   <div style="font-size:11px;color:var(--muted);margin-top:8px;">Please refer to our terms and conditions, which will apply on acceptance of this quote.<br><a href="https://content-co.nz/terms/" target="_blank" style="color:var(--red);">https://content-co.nz/terms/</a></div>`;
 
   // ── Streamtime quotes linked to this job ──
-  const stJobQuotes=j._stId?stQuotes.filter(qt=>String(qt.jobId)===String(j._stId)):[];
+  const stJobQuotes=[
+    ...(j._stId?stQuotes.filter(qt=>String(qt.jobId)===String(j._stId)):[]),
+    ...localQuotes.filter(qt=>String(qt.jobNumber)===String(j.id)),
+  ];
   const _qtStatusPillSm=s=>{
     if(s==='approved')return'<span class="inv-pill approved">Approved</span>';
     if(s==='declined')return'<span class="inv-pill" style="background:#FFF3E0;color:#E65100;border:1px solid #FFCC80;">Declined</span>';
@@ -6363,8 +6467,8 @@ function renderQuoteTab(){
       const val=qt.totalAmountExTax!=null?`$${Math.round(qt.totalAmountExTax).toLocaleString()}`:'—';
       return`<div class="st-qt-row" onclick="openQuoteDocPreview('${qt.id}')">
         <div style="min-width:0;flex:1;">
-          <div style="font-size:13px;font-weight:400;">${qt.quoteName||qt.quoteNumber||'Quote'}</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px;">${qt.quoteNumber||qt.id} · Sent ${_fmtQD(qt.sentDate)}</div>
+          <div style="font-size:13px;font-weight:400;">${qt.quoteName||qt.quoteNumber||'Quote'}${qt._local?'<span style="font-size:9px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">Local</span>':''}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">${qt.quoteNumber||qt.id} · ${qt.sentDate?'Sent '+_fmtQD(qt.sentDate):'Not sent'}</div>
         </div>
         <div style="font-size:13px;font-family:var(--serif);flex-shrink:0;">${val}</div>
         <div style="flex-shrink:0;">${_qtStatusPillSm(status)}</div>
@@ -6373,10 +6477,13 @@ function renderQuoteTab(){
     }).join('');
     stQuotesBlockHTML=`<div style="background:var(--white);border:1px solid var(--border);border-radius:6px;margin-bottom:18px;overflow:hidden;">
       <div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-        <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);">Streamtime Quotes (${stJobQuotes.length})</div>
+        <div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);">Quotes (${stJobQuotes.length})</div>
+        <button class="d-action" onclick="openNewQuoteModal('${j.id}')"><i class="ti ti-plus" style="font-size:11px;"></i> New quote</button>
       </div>
       <div class="st-quotes-list">${qtRows}</div>
     </div>`;
+  } else {
+    stQuotesBlockHTML=`<div style="margin-bottom:18px;"><button class="d-action" onclick="openNewQuoteModal('${j.id}')"><i class="ti ti-plus" style="font-size:11px;"></i> New quote</button></div>`;
   }
 
   wrap.innerHTML=`
@@ -7150,6 +7257,52 @@ function cycleExpenseStatus(id){
 }
 function openCreateJob(){document.getElementById('nj-num').value=nextJobNumber();const co=document.getElementById('nj-co');if(co){co.value='';attachCombo(co,clientNameOptions);}document.getElementById('nj-name').value='';document.getElementById('create-modal').classList.add('on');setTimeout(()=>document.getElementById('nj-name').focus(),50);}
 function closeCreateJob(){document.getElementById('create-modal').classList.remove('on');}
+// ── Native quote creation — local draft quotes that merge into the same Quotes list/
+// detail/print as Streamtime quotes (see localQuotes, _findQuote) ──
+function jobOptionsForCombo(){
+  return jobs.map(j=>({label:`${j.id} — ${j.name}`,value:j.id})).sort((a,b)=>a.value.localeCompare(b.value,undefined,{numeric:true}));
+}
+function openNewQuoteModal(presetJobId){
+  document.getElementById('nq-name').value='';
+  document.getElementById('nq-value').value='';
+  document.getElementById('nq-notes').value='';
+  document.getElementById('nq-date').value=new Date().toISOString().slice(0,10);
+  const co=document.getElementById('nq-co');co.value='';attachCombo(co,clientNameOptions);
+  const jb=document.getElementById('nq-job');jb.value='';attachCombo(jb,jobOptionsForCombo);
+  if(presetJobId){
+    const j=jobs.find(x=>x.id===presetJobId);
+    if(j){jb.value=j.id;co.value=j.company;}
+  }
+  document.getElementById('new-quote-modal').classList.add('on');
+  setTimeout(()=>document.getElementById('nq-name').focus(),50);
+}
+function closeNewQuoteModal(){document.getElementById('new-quote-modal').classList.remove('on');}
+function saveNewQuote(){
+  const name=(document.getElementById('nq-name').value||'').trim();
+  const company=(document.getElementById('nq-co').value||'').trim();
+  const jobInput=(document.getElementById('nq-job').value||'').trim();
+  const value=parseFloat(document.getElementById('nq-value').value)||0;
+  const date=document.getElementById('nq-date').value||new Date().toISOString().slice(0,10);
+  const notes=(document.getElementById('nq-notes').value||'').trim();
+  if(!name){toast('Please enter a quote name','error');return;}
+  if(!company){toast('Please enter a company','error');return;}
+  if(value<=0){toast('Please enter a value','error');return;}
+  const linkedJob=jobs.find(j=>j.id===jobInput||`${j.id} — ${j.name}`===jobInput);
+  const id=Date.now();
+  const q={
+    id,_local:true,
+    quoteName:name,quoteNumber:'Q-'+id.toString().slice(-6),
+    company,jobId:null,jobNumber:linkedJob?linkedJob.id:null,jobName:linkedJob?linkedJob.name:'',
+    quoteStatus:'Draft',quoteDate:date,sentDate:null,approvedDate:null,
+    totalAmountExTax:value,totalAmountIncTax:Math.round(value*1.15*100)/100,
+    sentByUser:people[MY_PERSON]?.name||'',notes,
+  };
+  localQuotes.push(q);saveLocalQuotes();
+  closeNewQuoteModal();
+  if(typeof renderQuotes==='function')renderQuotes();
+  if(linkedJob&&activeJobId===linkedJob.id&&typeof renderQuoteTab==='function')renderQuoteTab();
+  toast('Quote created','success');
+}
 // ── Job creation helpers ──────────────────────────────────────────────────────
 function selectBillChoice(val){
   document.getElementById('nj-billable').value=val;
@@ -7587,7 +7740,7 @@ function renderClients(){
     const totalPaid=cjobs.reduce((a,j)=>a+(j._stPaid||0),0);
     const fmtDol=n=>n>=1000?`$${(n/1000).toFixed(0)}k`:(n?`$${n}`:'');
     return`<div class="client-card-full" onclick="openClientDetail('${c.id}')">
-      <div class="ccf-name">${c.nickname?`<span style="font-weight:500;">${c.nickname}</span> <span style="font-size:12px;color:var(--muted);font-weight:300;">— ${c.name}</span>`:c.name}</div>
+      <div class="ccf-name" style="display:flex;align-items:center;gap:6px;justify-content:space-between;"><span>${c.nickname?`<span style="font-weight:500;">${c.nickname}</span> <span style="font-size:12px;color:var(--muted);font-weight:300;">— ${c.name}</span>`:c.name}</span>${starBtnHTML('client',c.id,c.nickname||c.name)}</div>
       <div class="ccf-contact">${c.contact||'<span style="color:#bbb;">No contact added</span>'}</div>
       <div class="ccf-meta">
         <span><strong>${jobCount(c.name)}</strong> jobs</span>
@@ -8484,6 +8637,51 @@ function gsGo(i){
   r.fn();
 }
 
+// ── Starred items panel ─────────────────────────────────────────────────────
+function openStarredPanel(){
+  document.getElementById('starred-panel').classList.add('on');
+  renderStarredPanel();
+}
+function closeStarredPanel(){document.getElementById('starred-panel').classList.remove('on');}
+function renderStarredPanel(){
+  const el=document.getElementById('starred-results');if(!el)return;
+  const starredJobs=jobs.filter(j=>j.starred).map(j=>({type:'job',id:j.id,name:`${j.id} — ${j.name}`,sub:j.company}));
+  const other=_getStarred().map(s=>({type:s.type,id:s.id,name:s.name||s.id,sub:s.type.charAt(0).toUpperCase()+s.type.slice(1)}));
+  const all=[...starredJobs,...other];
+  if(!all.length){
+    el.innerHTML=`<div class="gs-empty">Nothing starred yet. Click the <i class="ti ti-star" style="vertical-align:-2px;"></i> on a job or client to pin it here.</div>`;
+    return;
+  }
+  const ICONS={job:'ti-briefcase',client:'ti-building',quote:'ti-file-text',invoice:'ti-receipt-2'};
+  el.innerHTML=all.map(s=>`
+    <div class="gs-item" onclick="openStarredItem('${s.type}','${s.id}')">
+      <div class="gs-ico"><i class="ti ${ICONS[s.type]||'ti-star'}"></i></div>
+      <div style="flex:1;min-width:0;"><div class="gs-t">${s.name}</div><div class="gs-s">${s.sub||''}</div></div>
+      <i class="ti ti-x" style="font-size:13px;color:var(--muted);cursor:pointer;" title="Remove from starred" onclick="event.stopPropagation();${s.type==='job'?`unstarJobFromPanel('${s.id}')`:`toggleStarItem('${s.type}','${s.id}','')`};renderStarredPanel();"></i>
+    </div>`).join('');
+}
+function unstarJobFromPanel(id){const j=jobs.find(x=>x.id===id);if(j){j.starred=false;saveData();}}
+function openStarredItem(type,id){
+  closeStarredPanel();
+  if(type==='job')openJobDetail(id);
+  else if(type==='client'){navTo('jobs');switchJobsTab('clients');openClientDetail(id);}
+  else if(type==='quote'){navTo('jobs');switchJobsTab('quotes');openQuoteDetail(id);}
+  else if(type==='invoice'){navTo('jobs');switchJobsTab('invoices');openInvoiceDetail(id);}
+}
+// Star toggle button — used on job rows/detail headers. Re-renders whatever container called it.
+function starBtnHTML(type,id,name,size){
+  const on=isStarred(type,id);
+  return `<i class="ti ti-star" style="font-size:${size||14}px;color:${on?'#E6A700':'var(--muted)'};cursor:pointer;" title="${on?'Remove from starred':'Add to starred'}" onclick="event.stopPropagation();toggleStarAndRefresh('${type}','${id}',this.dataset.name||'')" data-name="${(name||'').replace(/"/g,'&quot;')}"></i>`;
+}
+function toggleStarAndRefresh(type,id,name){
+  toggleStarItem(type,id,name);
+  document.querySelectorAll(`[onclick*="toggleStarAndRefresh('${type}','${id}'"]`).forEach(elm=>{
+    const on=isStarred(type,id);
+    elm.style.color=on?'#E6A700':'var(--muted)';
+    elm.title=on?'Remove from starred':'Add to starred';
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════
 //  KEYBOARD SHORTCUTS
 // ═══════════════════════════════════════════════════════════════
@@ -8491,6 +8689,8 @@ function closeAnyOpenModal(){
   // Returns true if something was closed
   const gs=document.getElementById('gsearch');
   if(gs?.classList.contains('on')){closeGlobalSearch();return true;}
+  const sp=document.getElementById('starred-panel');
+  if(sp?.classList.contains('on')){closeStarredPanel();return true;}
   if(document.getElementById('label-picker')){closeLabelPicker();return true;}
   let closed=false;
   ['create-modal','todo-modal','inv-modal','fup'].forEach(id=>{
@@ -9051,7 +9251,7 @@ function _ddField(label,val){
 function openQuoteDetail(qtId){
   const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const fmtD=iso=>{if(!iso)return'—';const d=new Date(iso+'T12:00:00');return`${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;};
-  const qt=stQuotes.find(q=>String(q.id)===String(qtId));if(!qt)return;
+  const qt=_findQuote(qtId);if(!qt)return;
   const status=(typeof qt.quoteStatus==='string'?qt.quoteStatus:qt.quoteStatus?.name||'—');
   const val=qt.totalAmountExTax!=null?`$${Math.round(qt.totalAmountExTax).toLocaleString()} ex GST`:'—';
   const jobByStId={};jobs.forEach(j=>{if(j._stId)jobByStId[j._stId]=j;});
@@ -9183,7 +9383,7 @@ function renderQuotes(){
     return'draft';
   };
 
-  let quotes=stQuotes.length?[...stQuotes]:[];
+  let quotes=[...stQuotes,...localQuotes];
   quotes=_applyQtFilters(quotes,jobByStId,qtRealStatus);
   quotes.sort((a,b)=>b.id-a.id);
   quotes.forEach(qt=>{qt._groupStatus=qtRealStatus(qt);});
@@ -9221,7 +9421,7 @@ function renderQuotes(){
           <span class="qinv-card-num">${qt.quoteNumber||qt.id}</span>
           ${jobNum?`<span class="qjob-chip">#${jobNum}</span>`:''}
         </div>
-        <span class="qinv-card-name">${qt.quoteName||qt.jobName||'—'}</span>
+        <span class="qinv-card-name">${qt.quoteName||qt.jobName||'—'}${qt._local?'<span style="font-size:9px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">Local</span>':''}</span>
         <span class="qinv-card-co">${qt.company||'—'}</span>
         <span class="qinv-card-val">${qtValue!=null?'$'+Math.round(qtValue).toLocaleString():'—'}</span>
         <span class="qinv-card-status">${_qtStatusPill(status)}</span>

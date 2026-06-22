@@ -1,6 +1,6 @@
 # C&C Platform — Roadmap
 
-*Last updated 23 Jun 2026 · v2.20.4*
+*Last updated 23 Jun 2026 · v2.20.5*
 
 ---
 
@@ -47,6 +47,7 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 | Global Search ⌘K | ✅ Jobs, clients, invoices, quotes | — reads existing data | — |
 | Expenses list | ✅ Cross-job list, filters, search — correct cost/sell/status from ST export | — reads existing data | — |
 | Reallocate logged/scheduled time | ✅ ⋮ menu on Progress tab rows, move to a different job/item | — local edit, ST is still source of truth | — |
+| Create quote | ✅ Modal (Quotes list + job detail), PDF preview, merges into the same list as ST quotes | `localQuotes` + `cc_local_quotes` | 🔄 swap for `POST /api/quotes` |
 
 **Removed in v2.20.1:** Log Time modal (Todo bar + job detail), Plan My Week, and My Items panel — all were redundant with the existing Add Task flow and added confusion. `dbCreateTimeEntry()` stays in the codebase as the API-ready stub for when native time logging is built properly later.
 
@@ -58,11 +59,10 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 ### Phase 2 still to build
 | Feature | Notes |
 |---|---|
-| Create quote natively | Modal + PDF preview |
-| Create invoice natively | Modal + Xero push |
-| Job timeline / Gantt | Needs phase date ranges from ST first |
-| @mentions + notifications | Needs real-time backend |
-| Starred items persistent panel | Exists in localStorage, needs panel UI |
+| Create invoice natively + Xero push | The local creation half (deposit/split invoices) shipped v2.20.4; the Xero push half needs real Xero API write credentials |
+| @mentions + notifications | Needs a real-time backend (websockets/polling server) — not buildable on the static localStorage architecture |
+
+**Shipped (v2.20.5):** Job timeline (custom HTML/CSS Gantt-style view using the phase date ranges shipped in v2.20.4 — no external Gantt library needed), Starred items panel (sidebar icon + dedicated panel; merges the existing per-job `j.starred` flag with a new generic star store usable on clients/quotes/invoices), Create quote natively (modal + PDF preview, merges into the same Quotes list/detail/print code paths as Streamtime quotes via `localQuotes`).
 
 ---
 
@@ -160,8 +160,9 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 ### Deferred — infra or library required
 | Item | Blocker | Notes |
 |---|---|---|
-| **Gantt view** (#16 / L2) | Phase date ranges not in sync; needs SVG timeline lib | frappe-gantt or custom SVG; phase dates need mapping first |
 | **ST write-back** (#18 / L4) | Needs serverless proxy + ST API write credentials | Vercel Edge Function + ST API key required |
+
+**Gantt view** (#16 / L2) shipped in v2.20.5 — turned out not to need an external library; phase-level granularity rendered fine as a custom HTML/CSS timeline once phase date ranges existed (v2.20.4).
 
 ### Shipped (v2.20.4)
 | # | Feature | Location | Notes |
