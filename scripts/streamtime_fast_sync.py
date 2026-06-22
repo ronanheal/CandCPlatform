@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
 """
-Streamtime fast sync — logged_times + scheduled_todos only.
+Streamtime fast sync — logged_times + scheduled_todos + job_assignments.
 
-Why this exists: the Todo board's "Done" column is driven entirely by
-logged_times (view 8, logged_time_status=2); "To Do" by scheduled_todos
-(same view, logged_time_status=1). Neither has a separate "marked complete"
-flag from Streamtime — done-ness IS "a logged time entry exists". The full
-sync (streamtime_sync.py) only runs hourly because its job phase/item detail
-backfill costs ~610 of our 720 req/hour budget. This script re-fetches just
-the two cheap, fast-changing views so Done/To Do reflect Streamtime within
-~15 minutes instead of up to an hour, without touching the job detail
-backfill or its progress tracker.
+Why this exists: the Todo board's "Done" column was originally driven
+entirely by logged_times (view 8, logged_time_status=2); "To Do" by
+scheduled_todos (same view, logged_time_status=1). That misses real
+completions: job_assignments (view 17) carries jobItemUserStatus and
+completedDate per (job item, user), and Streamtime lets someone mark an
+item Complete without ever logging time against it — checked the live
+data and found 15 of 55 Complete assignments with zero logged minutes.
+The platform now cross-references scheduled blocks against this view to
+catch those. The full sync (streamtime_sync.py) only runs hourly because
+its job phase/item detail backfill costs ~610 of our 720 req/hour budget.
+This script re-fetches just the cheap, fast-changing views so Done/To Do
+reflect Streamtime within ~15 minutes instead of up to an hour, without
+touching the job detail backfill or its progress tracker.
 
-Cost per run: ~10-15 API calls (well under the 720/hour limit even running
+Cost per run: ~15-20 API calls (well under the 720/hour limit even running
 4x/hour alongside the hourly full sync).
 
 Requires STREAMTIME_API_KEY env var. Run via GitHub Actions, every 15 min.
@@ -116,6 +120,7 @@ def save(filename, data, previous):
 
 prev_logged_times = load_existing("logged_times.json")
 prev_scheduled = load_existing("scheduled_todos.json")
+prev_assignments = load_existing("job_assignments.json")
 
 logged_times = search(8, timeout=180)
 
@@ -135,9 +140,15 @@ scheduled_todos = [{
     "isBillable": (t.get("job") or {}).get("isBillable", True),
 } for t in raw_scheduled]
 
+# View 17 = job_item_users: per-person assignments against job items, including
+# completion status. Filter to active jobs only, same as the full sync.
+ACTIVE_ASSIGNMENTS_QUERY = 'job_status in ["In Play","Paused"]'
+job_assignments = search(17, query=ACTIVE_ASSIGNMENTS_QUERY)
+
 lt_count = save("logged_times.json", logged_times, prev_logged_times)
 st_count = save("scheduled_todos.json", scheduled_todos, prev_scheduled)
+ja_count = save("job_assignments.json", job_assignments, prev_assignments)
 
-print(f"\nFast sync done. logged_times={lt_count} scheduled_todos={st_count}")
+print(f"\nFast sync done. logged_times={lt_count} scheduled_todos={st_count} job_assignments={ja_count}")
 if errors:
     print(f"Errors: {errors}")

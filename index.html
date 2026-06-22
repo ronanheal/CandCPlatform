@@ -2784,10 +2784,25 @@ function _getStWeekEntries(personKey,offset){
 // Returns scheduled ToDo blocks for the person keyed by day (1-5), same shape as task cards.
 // Each scheduled block (Streamtime status "Scheduled") is a discrete planned task with its own
 // date, minutes and per-block note. Multiple blocks for the same job+item are kept separate.
+// Streamtime lets someone mark a job item Complete without ever logging time against it —
+// checked the live data and found 15 of 55 Complete assignments with zero logged minutes.
+// Those completions are invisible to the Done column (which only reads logged_times), so we
+// cross-reference scheduled blocks against job_assignments (view 17) by jobItemId+userId.
+// Keyed "userId|jobItemId" → completedDate (or true if no date given).
+function _completedAssignmentLookup(){
+  const map={};
+  (stJobAssignments||[]).forEach(a=>{
+    if((a.jobItemUserStatus?.name)!=='Complete')return;
+    if(!a.jobItemId||!a.userId)return;
+    map[`${a.userId}|${a.jobItemId}`]=a.completedDate||true;
+  });
+  return map;
+}
 function _getStWeekAssignments(personKey,offset){
   if(!stScheduledTodos.length)return{};
   const stUser=Object.values(stUsersById).find(u=>u.key===personKey);
   if(!stUser)return{};
+  const completedLookup=_completedAssignmentLookup();
   // Map this week's Mon–Fri date strings → day number (1-5)
   const mon=new Date();const dow=(mon.getDay()+6)%7;
   mon.setDate(mon.getDate()-dow+(offset*7));mon.setHours(0,0,0,0);
@@ -2802,13 +2817,18 @@ function _getStWeekAssignments(personKey,offset){
     if(!day)return;
     const note=t.notes||t.scheduleNotes||'';
     const jNum=t.jobNumber?String(t.jobNumber):'';
+    // Was this block's item marked Complete in Streamtime without logging time? Only honour
+    // it for blocks on or before the completion date — a later re-scheduled occurrence of the
+    // same item should still show as a fresh to-do, not get swept into Done retroactively.
+    const completedAt=t.jobItemId?completedLookup[`${t.userId}|${t.jobItemId}`]:undefined;
+    const completedNoLog=completedAt!==undefined&&(completedAt===true||(t.date||'')<=completedAt);
     if(!result[day])result[day]=[];
     result[day].push({
         id:'st-todo-'+t.id,
         title:note||t.itemName||'Scheduled task',
         titleNoNote:t.itemName||t.jobName||'Scheduled task', // shown when the Notes view setting is off
         hours:(t.minutes||0)/60,
-        done:false,urgent:false,personal:false,
+        done:completedNoLog,urgent:false,personal:false,
         job:jNum,
         item:t.itemName||'',
         note:'', // note is used as the title; don't duplicate it on a second line
@@ -2816,6 +2836,7 @@ function _getStWeekAssignments(personKey,offset){
         _fromST:true,
         _stAssignment:true,
         _stScheduled:true,
+        _completedViaAssignment:completedNoLog,
         _stItemId:t.jobItemId,
         jobName:t.jobName||'',
         minutes:t.minutes||0,
@@ -4228,7 +4249,7 @@ function createTaskCard(t,day,isDone){
   card.innerHTML=`
     <div class="tc-top">
       <span class="tc-icon">${icon}</span>
-      <span class="tc-title">${displayTitle}${(t.repeat||t.repeatGroup)?' <i class="ti ti-repeat" title="Repeating task" style="font-size:10px;color:var(--muted);"></i>':''}</span>
+      <span class="tc-title">${displayTitle}${(t.repeat||t.repeatGroup)?' <i class="ti ti-repeat" title="Repeating task" style="font-size:10px;color:var(--muted);"></i>':''}${t._completedViaAssignment?' <i class="ti ti-check" title="Marked complete in Streamtime — no time was logged against it" style="font-size:10px;color:#4CAF50;"></i>':''}</span>
       ${(showHours&&hrsLabel)?`<span class="tc-hrs" id="hrs-${t.id}">${hrsLabel}</span>`:''}
     </div>
     ${(metaJob||metaItem)?`<div class="tc-meta">
