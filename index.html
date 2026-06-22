@@ -2824,16 +2824,19 @@ function _mapStJob(j){
         const rate=it.sellRate||0;
         const usedSell=Math.round(logM/60*rate);const planSell=Math.round(planM/60*rate);
         const stStatus=it.jobItemStatus?.name||'';
-        return{id:'st-it-'+it.id,name:it.name||'Item',hours:planM>0?_stFmtH(planM):'—',rate:rate?'$'+rate:'—',used:usedSell?'$'+usedSell.toLocaleString():'$0',total:planSell?'$'+planSell.toLocaleString():'—',status:stStatus==='Complete'?'complete':stStatus==='In Progress'?'inprogress':'open',description:it.description||'',_stId:it.id,_planMins:planM,_logMins:logM};
+        return{id:'st-it-'+it.id,name:it.name||'Item',hours:planM>0?_stFmtH(planM):'—',rate:rate?'$'+rate:'—',used:usedSell?'$'+usedSell.toLocaleString():'$0',total:planSell?'$'+planSell.toLocaleString():'—',status:stStatus==='Complete'?'complete':stStatus==='In Progress'?'inprogress':'open',description:it.description||'',_stId:it.id,_planMins:planM,_logMins:logM,startDate:it.estimatedStartDate||it.earliestStartDate||null,dueDate:it.estimatedEndDate||it.latestEndDate||null};
       };
       const mapped=(j.phases||[]).map(ph=>{
         const mappedItems=(ph.items||[]).map(_mapItem);
         const phStatusName=ph.jobPhaseStatus?.name||ph.status||'';
         const allItemsPaused=mappedItems.length>0&&(ph.items||[]).every(it=>(it.jobItemStatus?.name||it.status||'')==='Paused');
+        const itemStarts=mappedItems.map(it=>it.startDate).filter(Boolean).sort();
+        const itemDues=mappedItems.map(it=>it.dueDate).filter(Boolean).sort();
         return{
           id:'st-ph-'+ph.id,name:ph.name||'Phase',
           status:phStatusName==='Complete'?'complete':'open',
           paused:phStatusName==='Paused'||allItemsPaused,
+          startDate:itemStarts[0]||null,dueDate:itemDues[itemDues.length-1]||null,
           items:mappedItems,
         };
       });
@@ -2859,7 +2862,7 @@ function _mapStCompany(c,contacts){
   const name=co?[co.firstName,co.lastName].filter(Boolean).join(' '):'';
   const addr=c.physicalAddress||c.postalAddress;
   const addrStr=addr?[addr.line1,addr.line2,addr.city,addr.country].filter(Boolean).join(', '):'';
-  return{id:'st-'+c.id,_stId:c.id,name:c.name,nickname:'',contact:name,
+  return{id:'st-'+c.id,_stId:c.id,name:c.name,nickname:'',contact:name,contactTitle:co?.position||co?.jobTitle||'',
     email:co?.email||'',phone:co?.phone||co?.phoneNumber||co?.mobile||'',
     website:c.websiteAddress||c.website||'',companyPhone:c.phone1||c.phone2||'',
     address:addrStr,notes:c.notes||'',
@@ -6233,7 +6236,9 @@ function openQuoteDocPreview(qtId){
   const inc=qt.totalAmountIncTax!=null?qt.totalAmountIncTax:Math.round(ex*1.15);
   const gst=Math.round(inc-ex);
   const pill=`<span style="display:inline-block;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:500;background:${sc}22;color:${sc};border:1px solid ${sc}44;">${status}</span>`;
-  const meta=`<div style="flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Prepared for</div><div style="font-weight:500;font-size:13px;">${qt.company||'—'}</div>${job?`<div style="color:var(--muted);margin-top:2px;">Job #${job.id} · ${job.name}</div>`:''}</div>
+  const prepCl=clientsData.find(c=>c.name===qt.company);
+  const prepContact=prepCl&&prepCl.contact?`${prepCl.contact}${prepCl.contactTitle?` — ${prepCl.contactTitle}`:''}`:'';
+  const meta=`<div style="flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Prepared for</div><div style="font-weight:500;font-size:13px;">${qt.company||'—'}</div>${prepContact?`<div style="color:var(--muted);margin-top:2px;">${prepContact}</div>`:''}${job?`<div style="color:var(--muted);margin-top:2px;">Job #${job.id} · ${job.name}</div>`:''}</div>
     <div style="text-align:right;color:var(--muted);"><div><strong style="color:var(--ink);">Quote #:</strong> ${qt.quoteNumber||qt.id}</div><div><strong style="color:var(--ink);">Issued:</strong> ${_docFmtDate(qt.quoteDate)}</div><div><strong style="color:var(--ink);">Sent:</strong> ${_docFmtDate(qt.sentDate)}</div>${qt.approvedDate?`<div><strong style="color:var(--ink);">Approved:</strong> ${_docFmtDate(qt.approvedDate)}</div>`:''}</div>`;
   const totals=`<tr><td style="padding:5px 10px;color:var(--muted);">Subtotal (ex GST)</td><td style="padding:5px 10px;text-align:right;">$${Math.round(ex).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;color:var(--muted);">GST (15%)</td><td style="padding:5px 10px;text-align:right;">$${gst.toLocaleString()}</td></tr><tr style="border-top:1px solid var(--border);"><td style="padding:7px 10px;font-weight:600;">Total (inc GST)</td><td style="padding:7px 10px;text-align:right;font-weight:600;font-family:var(--serif);font-size:15px;">$${Math.round(inc).toLocaleString()}</td></tr>`;
   const terms=`<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--faint);font-size:11px;color:var(--muted);line-height:1.6;">Valid for 30 days from issue. Full terms: <a href="https://content-co.nz/terms/" target="_blank" style="color:var(--red);">content-co.nz/terms</a></div>`;
@@ -6251,7 +6256,9 @@ function openInvoiceDocPreview(invId){
   const paid=inv.amountPaidIncTax||0;
   const bal=inv.balance!=null?inv.balance:(inc-paid);
   const pill=`<span style="display:inline-block;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:500;background:${sc}22;color:${sc};border:1px solid ${sc}44;">${status}</span>`;
-  const meta=`<div style="flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Billed to</div><div style="font-weight:500;font-size:13px;">${inv.company?.name||'—'}</div>${job?`<div style="color:var(--muted);margin-top:2px;">Job #${job.id} · ${job.name}</div>`:''}${inv.purchaseOrderNumber?`<div style="color:var(--muted);">PO ${inv.purchaseOrderNumber}</div>`:''}</div>
+  const billCl=clientsData.find(c=>c.name===inv.company?.name);
+  const billContact=billCl&&billCl.contact?`${billCl.contact}${billCl.contactTitle?` — ${billCl.contactTitle}`:''}`:'';
+  const meta=`<div style="flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Billed to</div><div style="font-weight:500;font-size:13px;">${inv.company?.name||'—'}</div>${billContact?`<div style="color:var(--muted);margin-top:2px;">${billContact}</div>`:''}${job?`<div style="color:var(--muted);margin-top:2px;">Job #${job.id} · ${job.name}</div>`:''}${inv.purchaseOrderNumber?`<div style="color:var(--muted);">PO ${inv.purchaseOrderNumber}</div>`:''}</div>
     <div style="text-align:right;color:var(--muted);"><div><strong style="color:var(--ink);">Invoice #:</strong> ${inv.number||inv.id}</div><div><strong style="color:var(--ink);">Issued:</strong> ${_docFmtDate(inv.invoiceDate)}</div><div><strong style="color:var(--ink);">Due:</strong> ${_docFmtDate(inv.dueDate)}</div>${inv.paidDate?`<div><strong style="color:var(--ink);">Paid:</strong> ${_docFmtDate(inv.paidDate)}</div>`:''}</div>`;
   let totals=`<tr><td style="padding:5px 10px;color:var(--muted);">Subtotal (ex GST)</td><td style="padding:5px 10px;text-align:right;">$${Math.round(ex).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;color:var(--muted);">GST (15%)</td><td style="padding:5px 10px;text-align:right;">$${gst.toLocaleString()}</td></tr><tr style="border-top:1px solid var(--border);"><td style="padding:7px 10px;font-weight:600;">Total (inc GST)</td><td style="padding:7px 10px;text-align:right;font-weight:600;font-family:var(--serif);font-size:15px;">$${Math.round(inc).toLocaleString()}</td></tr>`;
   if(paid>0)totals+=`<tr><td style="padding:5px 10px;color:#2E7D32;">Paid</td><td style="padding:5px 10px;text-align:right;color:#2E7D32;">-$${Math.round(paid).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;font-weight:600;">Balance due</td><td style="padding:5px 10px;text-align:right;font-weight:600;">$${Math.round(bal).toLocaleString()}</td></tr>`;
@@ -6581,9 +6588,18 @@ function renderPhases(){
     // Non-billable is a job-level setting (default billable), not inferred from $0 rates.
     const jobNonBill=_j&&_j.billable===false;
     const nonBillBadge=jobNonBill?`<span class="ph-nonbill-badge" title="This job is set to non-billable. You can still add rates to individual items if a line needs billing."><i class="ti ti-lock" style="font-size:10px;"></i> Non-billable</span>`:'';
-    el.innerHTML=`<div class="phase-head" onclick="togglePhase('${ph.id}')" style="${ph.paused?'opacity:.65;':''}"><i class="ti ti-chevron-down ph-chv"></i><span class="ph-n">${ph.name}</span>${pausedTag}${nonBillBadge}<span class="ph-cnt">${cnt} item${cnt!==1?'s':''}</span><div class="ph-inf"><span class="ph-meta">${hrs} · ${sell}</span>${statusIcon}${phMenu}</div></div><table class="items-t" id="it_${ph.id}"><thead><tr><th style="width:22px;"></th><th>Item</th><th style="width:90px;">Team</th><th style="width:120px;text-align:right;" title="Logged / Planned hours">Hours</th><th style="width:75px;text-align:right;">Rate</th><th style="width:140px;text-align:right;">Sell</th><th style="width:90px;text-align:right;">Status</th><th style="width:26px;"></th></tr></thead><tbody id="ib_${ph.id}"></tbody></table>${addActions}`;
+    const dateRange=_phDateRangeStr(ph);
+    const dateTag=dateRange?`<span class="ph-cnt" style="margin-left:6px;" title="Phase date range"><i class="ti ti-calendar" style="font-size:10px;margin-right:2px;"></i>${dateRange}</span>`:'';
+    el.innerHTML=`<div class="phase-head" onclick="togglePhase('${ph.id}')" style="${ph.paused?'opacity:.65;':''}"><i class="ti ti-chevron-down ph-chv"></i><span class="ph-n">${ph.name}</span>${pausedTag}${nonBillBadge}<span class="ph-cnt">${cnt} item${cnt!==1?'s':''}</span>${dateTag}<div class="ph-inf"><span class="ph-meta">${hrs} · ${sell}</span>${statusIcon}${phMenu}</div></div><table class="items-t" id="it_${ph.id}"><thead><tr><th style="width:22px;"></th><th>Item</th><th style="width:90px;">Team</th><th style="width:120px;text-align:right;" title="Logged / Planned hours">Hours</th><th style="width:75px;text-align:right;">Rate</th><th style="width:140px;text-align:right;">Sell</th><th style="width:90px;text-align:right;">Status</th><th style="width:26px;"></th></tr></thead><tbody id="ib_${ph.id}"></tbody></table>${addActions}`;
     c.appendChild(el);renderItems(ph.id,_readonly);
   });
+}
+function _phDateRangeStr(ph){
+  if(!ph.startDate&&!ph.dueDate)return'';
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const fmt=iso=>{const d=new Date(iso+'T12:00:00');return`${d.getDate()} ${MONTHS[d.getMonth()]}`;};
+  if(ph.startDate&&ph.dueDate)return ph.startDate===ph.dueDate?fmt(ph.startDate):`${fmt(ph.startDate)} – ${fmt(ph.dueDate)}`;
+  return fmt(ph.startDate||ph.dueDate);
 }
 function pHrs(ph){let m=0;ph.items.forEach(i=>{const x=i.hours.match(/(\d+)h(?:(\d+)m)?/);if(x)m+=parseInt(x[1])*60+(parseInt(x[2])||0);});return m>=60?`${Math.floor(m/60)}h${m%60?m%60+'m':''}`:(m||0)+'m';}
 function pSell(ph){
@@ -7354,6 +7370,87 @@ function saveInvStatus(){
   logActivity(activeJobId,MY_PERSON,`Invoice status → ${j.invStatus}`,`Invoice marked as <strong>${j.invStatus}</strong>`);
   renderStats(j);
 }
+// ── Deposit / split invoicing — partial invoices raised against a job's total value ──
+function _splitInvTotal(j){computeJobStats(j);return j._streamtime?(j._stInvoiced||j._plannedSell||0):(j.invTotal||j._plannedSell||0);}
+function _splitInvoicesHTML(j){
+  const list=j.splitInvoices||[];
+  const jobTotal=_splitInvTotal(j);
+  const invoicedSoFar=list.reduce((s,si)=>s+(si.amount||0),0);
+  const remaining=Math.max(0,jobTotal-invoicedSoFar);
+  const rows=list.map(si=>`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--faint);font-size:12px;">
+      <span style="flex:1;font-weight:500;">${si.label}</span>
+      <span style="color:var(--muted);">${si.pct?si.pct+'%':''}</span>
+      <span style="width:90px;text-align:right;">$${Math.round(si.amount).toLocaleString()}</span>
+      <span class="inv-pill ${si.status}" style="cursor:pointer;" onclick="cycleSplitInvoiceStatus('${j.id}','${si.id}')" title="Click to change status">${si.status.charAt(0).toUpperCase()+si.status.slice(1)}</span>
+      <i class="ti ti-printer" style="cursor:pointer;color:var(--muted);font-size:13px;" title="Print this invoice" onclick="printSplitInvoice('${j.id}','${si.id}')"></i>
+      <i class="ti ti-x" style="cursor:pointer;color:var(--muted);font-size:12px;" title="Remove" onclick="deleteSplitInvoice('${j.id}','${si.id}')"></i>
+    </div>`).join('');
+  return `<div style="background:var(--off);border:1px solid var(--border);border-radius:6px;padding:14px 16px;margin-bottom:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${list.length?'8px':'2px'};">
+      <span style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);">Deposit / split invoices</span>
+      <span style="font-size:11px;color:var(--muted);">Invoiced $${Math.round(invoicedSoFar).toLocaleString()} · Remaining $${Math.round(remaining).toLocaleString()}</span>
+    </div>
+    ${rows}
+    <div id="split-inv-form-${j.id}" style="margin-top:${list.length?'10px':'0'};"></div>
+    <button class="d-action" style="margin-top:8px;" onclick="showSplitInvoiceForm('${j.id}')"><i class="ti ti-plus" style="font-size:11px;"></i> Add deposit / split invoice</button>
+  </div>`;
+}
+function showSplitInvoiceForm(jobId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  const el=document.getElementById('split-inv-form-'+jobId);if(!el)return;
+  el.innerHTML=`<div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;background:var(--white);border:1px solid var(--border);border-radius:4px;padding:10px;">
+    <div style="flex:2;min-width:140px;"><div style="font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;">Label</div><input class="form-inp" id="si-label" placeholder="e.g. 50% Deposit" style="width:100%;"></div>
+    <div style="flex:1;min-width:70px;"><div style="font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;">% of total</div><input class="form-inp" id="si-pct" type="number" min="1" max="100" placeholder="50" style="width:100%;" oninput="_calcSplitInv('${jobId}')"></div>
+    <div style="flex:1;min-width:90px;"><div style="font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;">Amount</div><input class="form-inp" id="si-amount" type="number" min="0" step="0.01" placeholder="0.00" style="width:100%;" oninput="_calcSplitInv('${jobId}',true)"></div>
+    <div style="display:flex;gap:6px;"><button class="save-b" onclick="saveSplitInvoice('${jobId}')">Add</button><button class="cancel-b" onclick="document.getElementById('split-inv-form-${jobId}').innerHTML=''">Cancel</button></div>
+  </div>`;
+}
+function _calcSplitInv(jobId,fromAmount){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  const total=_splitInvTotal(j);
+  const pctEl=document.getElementById('si-pct'),amtEl=document.getElementById('si-amount');
+  if(!pctEl||!amtEl)return;
+  if(fromAmount){const amt=parseFloat(amtEl.value)||0;if(total>0)pctEl.value=Math.round(amt/total*1000)/10;}
+  else{const pct=parseFloat(pctEl.value)||0;amtEl.value=total>0?Math.round(total*pct)/100:0;}
+}
+function saveSplitInvoice(jobId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  const label=(document.getElementById('si-label')?.value||'').trim();
+  const pct=parseFloat(document.getElementById('si-pct')?.value)||null;
+  const amount=parseFloat(document.getElementById('si-amount')?.value)||0;
+  if(!label){toast('Please enter a label','error');return;}
+  if(amount<=0){toast('Please enter an amount or %','error');return;}
+  if(!j.splitInvoices)j.splitInvoices=[];
+  j.splitInvoices.push({id:uid('si'),label,pct,amount,status:'draft',date:new Date().toISOString().slice(0,10)});
+  saveData();
+  logActivity(jobId,MY_PERSON,'split_invoice_add',`Added split invoice <strong>${label}</strong> ($${Math.round(amount).toLocaleString()})`);
+  renderInvoice(j);
+  toast('Split invoice added','success');
+}
+function cycleSplitInvoiceStatus(jobId,siId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  const si=(j.splitInvoices||[]).find(x=>x.id===siId);if(!si)return;
+  const states=['draft','sent','paid'];
+  si.status=states[(states.indexOf(si.status)+1)%states.length];
+  saveData();renderInvoice(j);
+}
+function deleteSplitInvoice(jobId,siId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  j.splitInvoices=(j.splitInvoices||[]).filter(x=>x.id!==siId);
+  saveData();renderInvoice(j);
+}
+function printSplitInvoice(jobId,siId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  const si=(j.splitInvoices||[]).find(x=>x.id===siId);if(!si)return;
+  const sc=_docStatusColor(si.status);
+  const pill=`<span style="display:inline-block;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:500;background:${sc}22;color:${sc};border:1px solid ${sc}44;">${si.status}</span>`;
+  const cl=clientsData.find(c=>c.name===j.company);
+  const meta=`<div style="flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Billed to</div><div style="font-weight:500;font-size:13px;">${j.company||'—'}</div>${cl?.contact?`<div style="color:var(--muted);margin-top:2px;">${cl.contact}${cl.contactTitle?` — ${cl.contactTitle}`:''}</div>`:''}<div style="color:var(--muted);margin-top:2px;">Job #${j.id} · ${j.name}</div></div>
+    <div style="text-align:right;color:var(--muted);"><div><strong style="color:var(--ink);">Reference:</strong> ${si.label}</div><div><strong style="color:var(--ink);">Issued:</strong> ${_docFmtDate(si.date)}</div></div>`;
+  const gst=Math.round(si.amount*0.15);
+  const totals=`<tr><td style="padding:5px 10px;color:var(--muted);">${si.label} (ex GST)</td><td style="padding:5px 10px;text-align:right;">$${Math.round(si.amount).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;color:var(--muted);">GST (15%)</td><td style="padding:5px 10px;text-align:right;">$${gst.toLocaleString()}</td></tr><tr style="border-top:1px solid var(--border);"><td style="padding:7px 10px;font-weight:600;">Total (inc GST)</td><td style="padding:7px 10px;text-align:right;font-weight:600;font-family:var(--serif);font-size:15px;">$${(Math.round(si.amount)+gst).toLocaleString()}</td></tr>`;
+  _docModalShell('Tax Invoice',pill,meta,'',totals,'');
+}
 function renderInvoice(j){
   const wrap=document.getElementById('inv-body');if(!wrap)return;
   const now=new Date();
@@ -7390,6 +7487,7 @@ function renderInvoice(j){
       <div><div class="inv-ml">Reference</div><div class="inv-mv inv-editable" contenteditable="true" id="inv-ref">${j.id} ${j.company.split(' ')[0]} ${now.getFullYear()}</div></div>
     </div>
     <div class="inv-job-title">${j.id} ${j.name}</div>
+    ${_splitInvoicesHTML(j)}
     ${phSections}
     <div class="inv-tot"><span class="inv-tot-l">Subtotal ex GST</span><span>$${subtotal.toLocaleString()}.00</span></div>
     <div class="inv-tot" style="border-top:none;padding-top:0;"><span class="inv-tot-l">GST 15%</span><span>$${gst.toLocaleString()}.00</span></div>
@@ -8985,8 +9083,51 @@ function openQuoteDetail(qtId){
       ${_ddField('Status',job.workflowStatus)}
       <div style="margin-top:10px;"><button class="d-action" onclick="closeDetailDrawer();openJobDetail('${job.id}')"><i class="ti ti-external-link" style="font-size:12px;"></i> Open job plan</button></div>
     </div>`:''}
+    <div class="dd-section" id="dd-qt-versions">${_qtVersionsHTML(qt)}</div>
   `;
   openDetailDrawer();
+}
+// ── Quote versioning (local-only — revise a quote without losing the prior version) ──
+function _getQtVersions(qtId){return JSON.parse(localStorage.getItem('cc_quote_versions')||'{}')[qtId]||[];}
+function _saveQtVersions(qtId,list){
+  const all=JSON.parse(localStorage.getItem('cc_quote_versions')||'{}');
+  all[qtId]=list;
+  localStorage.setItem('cc_quote_versions',JSON.stringify(all));
+}
+function _qtVersionsHTML(qt){
+  const fmtD=iso=>{if(!iso)return'—';const d=new Date(iso);return`${d.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]} ${d.getFullYear()}`;};
+  const revs=_getQtVersions(qt.id);
+  const v1Value=qt.totalAmountExTax!=null?`$${Math.round(qt.totalAmountExTax).toLocaleString()} ex GST`:'—';
+  const rows=[`<div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid var(--faint);"><span><strong>v1</strong> · ${fmtD(qt.quoteDate)} <span style="color:var(--muted);">(Streamtime)</span></span><span>${v1Value}</span></div>`]
+    .concat(revs.map((r,i)=>`<div style="display:flex;justify-content:space-between;align-items:flex-start;font-size:12px;padding:6px 0;border-bottom:1px solid var(--faint);"><span><strong>v${i+2}</strong> · ${fmtD(r.date)}${r.note?`<div style="color:var(--muted);font-size:11px;margin-top:1px;">${r.note}</div>`:''}</span><span style="display:flex;align-items:center;gap:6px;">$${Math.round(r.valueExTax).toLocaleString()} ex GST<i class="ti ti-x" style="cursor:pointer;color:var(--muted);font-size:11px;" title="Remove this version" onclick="event.stopPropagation();deleteQtVersion('${qt.id}',${i})"></i></span></div>`));
+  return`<div class="dd-section-lbl">Version history</div>${rows.join('')}
+    <div id="dd-qt-revise-form" style="margin-top:10px;"></div>
+    <button class="d-action" style="margin-top:8px;" onclick="showReviseQtForm('${qt.id}')"><i class="ti ti-copy" style="font-size:12px;"></i> Revise quote</button>`;
+}
+function showReviseQtForm(qtId){
+  const el=document.getElementById('dd-qt-revise-form');if(!el)return;
+  el.innerHTML=`<div style="background:var(--off);border:1px solid var(--border);border-radius:4px;padding:10px;margin-top:6px;">
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px;">New version value (ex GST)</div>
+    <input class="form-inp" id="qtrev-value" type="number" step="0.01" placeholder="0.00" style="width:100%;margin-bottom:6px;">
+    <input class="form-inp" id="qtrev-note" placeholder="What changed? (optional)" style="width:100%;margin-bottom:8px;">
+    <div style="display:flex;gap:6px;"><button class="save-b" onclick="saveQtVersion('${qtId}')">Save version</button><button class="cancel-b" onclick="document.getElementById('dd-qt-revise-form').innerHTML=''">Cancel</button></div>
+  </div>`;
+}
+function saveQtVersion(qtId){
+  const val=parseFloat(document.getElementById('qtrev-value')?.value);
+  if(!val||val<=0){toast('Enter a value for the new version','error');return;}
+  const note=(document.getElementById('qtrev-note')?.value||'').trim();
+  const revs=_getQtVersions(qtId);
+  revs.push({date:new Date().toISOString().slice(0,10),valueExTax:val,note});
+  _saveQtVersions(qtId,revs);
+  toast(`Quote revised — v${revs.length+1} saved`,'success');
+  openQuoteDetail(qtId);
+}
+function deleteQtVersion(qtId,idx){
+  const revs=_getQtVersions(qtId);
+  revs.splice(idx,1);
+  _saveQtVersions(qtId,revs);
+  openQuoteDetail(qtId);
 }
 function openInvoiceDetail(invId){
   const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];

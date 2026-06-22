@@ -1,6 +1,6 @@
 # C&C Platform — Roadmap
 
-*Last updated 19 Jun 2026 · v2.20.2*
+*Last updated 23 Jun 2026 · v2.20.4*
 
 ---
 
@@ -163,17 +163,21 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 | **Gantt view** (#16 / L2) | Phase date ranges not in sync; needs SVG timeline lib | frappe-gantt or custom SVG; phase dates need mapping first |
 | **ST write-back** (#18 / L4) | Needs serverless proxy + ST API write credentials | Vercel Edge Function + ST API key required |
 
-### Outstanding — feasible, not yet built
+### Shipped (v2.20.4)
 | # | Feature | Location | Notes |
 |---|---|---|---|
-| F2 | Detailed expense input — track individual purchases, show over/under | Jobs → Expenses | Line items within expense budget |
-| — | Quote versioning (v1/v2 revisions) | Jobs → Quotes | Revise without losing prior version |
-| — | Deposit / split invoicing (50% on approval) | Jobs → Invoices | Partial invoice workflow |
-| — | Contact job title shown on invoice print | Print | `position` mapped, not on print template |
-| — | `leaveBalance` from users.json | Dashboard / Team | Show leave balance on team cards |
-| — | Phase date ranges mapped + shown on job detail | Jobs | Enables Gantt; phase dates in jobs.json |
-| — | Invoice `lineItems[]` from ST | Jobs → Invoices | Show ST invoice lines in invoice detail |
-| — | `startTime` / `endTime` from logged_times.json | Time tab | Timesheet / clock-in view |
+| F2 | Detailed expense input — track individual purchases, show over/under | Jobs → Expenses | Already built (`_expSubs` etc.) — roadmap just hadn't been updated |
+| — | Quote versioning (v1/v2 revisions) | Jobs → Quotes (drawer) | Local-only version history; "Revise quote" saves a new value+note without touching the ST record |
+| — | Deposit / split invoicing | Jobs → Invoice modal | Add named partial invoices (% or $) against a job's total, each with its own status + print |
+| — | Contact job title shown on invoice print | Quote/Invoice print preview | `_mapStCompany` now carries `contactTitle`; shown under the contact name on both templates |
+| — | Phase date ranges mapped + shown on job detail | Jobs → Job Plan | `_mapStJob` now derives phase start/due from item `estimatedStartDate`/`estimatedEndDate`; shown as a calendar chip on the phase header |
+
+### Blocked — Streamtime export genuinely lacks these fields
+| Item | Blocker | Notes |
+|---|---|---|
+| `leaveBalance` from users.json | Field not present in the live `users.json` export | Confirmed by direct check of the export, not just code — would need ST to add it |
+| Invoice / quote `lineItems[]` from ST | Field not present in `invoices.json` or `quotes.json` | Line-item breakdowns are currently reconstructed from the linked job's plan instead |
+| `startTime` / `endTime` from logged_times.json | Field not present in the live export (only `date`, `completedDatetime`) | Blocks a true timesheet/clock-in view |
 
 ---
 
@@ -186,7 +190,6 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 | `lineItems[]` | quotes.json | Low | ST quote line detail |
 | `startTime` / `endTime` | logged_times.json | Low | Timesheet view |
 | `leaveBalance` | users.json | Low | Capacity planning |
-| Phase date ranges | jobs.json | Medium | Gantt prerequisite |
 
 ---
 
