@@ -8145,8 +8145,8 @@ function renderDeadlinesCal(){
   // Build event map keyed by YYYY-MM-DD
   const events={};
   const addEv=(dateStr,ev)=>{if(!dateStr)return;const k=dateStr.slice(0,10);if(!events[k])events[k]=[];events[k].push(ev);};
-  // Job due dates
-  (_liveJobs||jobs).filter(j=>j.dueDate).forEach(j=>{
+  // Job due dates — live (in-play) jobs only, matching the Dashboard's "Needs attention" deadlines
+  jobs.filter(j=>j.status==='inplay'&&j.dueDate).forEach(j=>{
     addEv(j.dueDate,{label:`${j.id} ${j.name}`,color:'#E65100',jid:j.id,type:'job'});
   });
   // Invoice due dates
@@ -10268,6 +10268,11 @@ function _renderJobsReport(){
   if(statusFilter!=='all')filteredJobs=filteredJobs.filter(j=>j.status===statusFilter);
   if(clientFilter!=='all')filteredJobs=filteredJobs.filter(j=>j.company===clientFilter);
   filteredJobs.sort((a,b)=>(hoursPerJob[b.id]||0)-(hoursPerJob[a.id]||0));
+  // Jobs with logged activity in the selected period — this is what actually moves with the
+  // period dropdown. (Budget %/status are lifetime job properties with no period dimension —
+  // they're shown as-is, same reason "all jobs" total doesn't change with the date range.)
+  const period=document.getElementById('r-period')?.value||'month';
+  const activeInPeriod=filteredJobs.filter(j=>hoursPerJob[j.id]>0);
 
   // Budget chart: top 10 by budget usage
   const budgetJobs=filteredJobs.filter(j=>j._bPct>0).sort((a,b)=>(b.bPct||0)-(a.bPct||0)).slice(0,10);
@@ -10276,16 +10281,16 @@ function _renderJobsReport(){
 
   el.innerHTML=`
     <div class="r-kpi-grid cols3">
-      <div class="r-kpi"><div class="r-kpi-lbl">Jobs shown</div><div class="r-kpi-val">${filteredJobs.length}</div><div class="r-kpi-sub">filtered from ${jobs.length} total</div></div>
-      <div class="r-kpi"><div class="r-kpi-lbl">Total hours logged</div><div class="r-kpi-val">${fmtHrs(Object.values(hoursPerJob).reduce((s,h)=>s+h,0))}</div><div class="r-kpi-sub">across filtered jobs</div></div>
-      <div class="r-kpi"><div class="r-kpi-lbl">Over budget</div><div class="r-kpi-val" style="color:var(--red);">${filteredJobs.filter(j=>(j._bPct||0)>=100).length}</div><div class="r-kpi-sub">jobs at 100%+ budget</div></div>
+      <div class="r-kpi"><div class="r-kpi-lbl">Active in period</div><div class="r-kpi-val">${activeInPeriod.length}</div><div class="r-kpi-sub">of ${filteredJobs.length} matching the filters</div></div>
+      <div class="r-kpi"><div class="r-kpi-lbl">Total hours logged</div><div class="r-kpi-val">${fmtHrs(Object.values(hoursPerJob).reduce((s,h)=>s+h,0))}</div><div class="r-kpi-sub">in selected period</div></div>
+      <div class="r-kpi"><div class="r-kpi-lbl">Over budget</div><div class="r-kpi-val" style="color:var(--red);">${filteredJobs.filter(j=>(j._bPct||0)>=100).length}</div><div class="r-kpi-sub">jobs at 100%+ budget (lifetime)</div></div>
     </div>
     <div class="r-charts-2">
       <div class="r-chart-card"><div class="r-chart-h">Hours by job (top 10)</div><div class="r-chart-wrap"><canvas id="rc-jobs-hrs"></canvas></div></div>
       <div class="r-chart-card"><div class="r-chart-h">Budget used % (top 10)</div><div class="r-chart-wrap"><canvas id="rc-jobs-budget"></canvas></div></div>
     </div>
     <div class="r-section">
-      <div class="r-section-hd">All jobs</div>
+      <div class="r-section-hd">All jobs <span style="text-transform:none;letter-spacing:0;color:var(--muted);">— hours logged reflect the selected period; budget % and status are lifetime job figures</span></div>
       <div class="r-job-hd"><span>Job</span><span>Client</span><span>Hours logged</span><span>Budget</span><span>Status</span></div>
       ${filteredJobs.slice(0,50).map(j=>{
         const h=hoursPerJob[j.id]||0;
@@ -10313,8 +10318,12 @@ function _renderClientsReport(){
   const tasks=getFilteredTasks();
   const palette=['#6B7FA3','#7B9E87','#C4956A','#9B59B6','#E67E22','#1ABC9C','#3498DB','#E74C3C','#F39C12','#888888'];
 
-  // Hours per client from logged times
+  // Seed every client up front (not just ones with logged time in the period) so a client
+  // with invoices but no time logged this period still shows up with $0/0h, rather than
+  // disappearing from the report entirely.
   const byClient={};
+  [...new Set(jobs.map(j=>j.company).filter(Boolean))].forEach(co=>{byClient[co]={hours:0,jobs:new Set(),revenue:0};});
+  // Hours per client from logged times
   tasks.forEach(t=>{
     const jid=t.jobId||(t.job||'').match(/^(\d+)/)?.[1];
     if(!jid)return;
@@ -10336,6 +10345,10 @@ function _renderClientsReport(){
 
   let entries=Object.entries(byClient).sort((a,b)=>b[1].hours-a[1].hours);
   if(clientFilter!=='all')entries=entries.filter(([co])=>co===clientFilter);
+  // Drop zero-activity clients from the "all" view (they're only seeded so a specific
+  // client pick doesn't wrongly show "no data") — keeps the cards/charts from filling up
+  // with clients that simply have nothing in this period.
+  else entries=entries.filter(([,v])=>v.hours>0||v.revenue>0);
   const clrIdx=(co)=>palette[Object.keys(byClient).indexOf(co)%palette.length];
 
   el.innerHTML=`
