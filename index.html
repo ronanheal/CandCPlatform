@@ -2275,8 +2275,49 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.20.3';
+const APP_VERSION='2.20.10';
 const CHANGELOG=[
+  {version:'2.20.10',date:'23 Jun 2026',title:'Fix Custom board job cards breaking after first click',items:[
+    'Fixed: expanding a job card on a Custom board silently lost its drag handle and delete button — it was rebuilding from the wrong template after the first click',
+    'Custom board job cards now show the same expanded task list + "Open job plan" button the Client board\'s cards already had',
+  ]},
+  {version:'2.20.9',date:'23 Jun 2026',title:'Sidebar cleanup, invoices view fix, sort cycle, deadlines polish',items:[
+    'Removed the separate Starred sidebar icon/panel — the star icon inside global search already covers it',
+    'Reordered sidebar: Search, Dashboard, To Do, Jobs, Schedule, Reporting, Boards, Settings',
+    'Invoices: ticking "Uninvoiced jobs" now replaces the list instead of showing both and needing a scroll',
+    'Invoiced/Uninvoiced table headers: third click on the same column clears the sort instead of toggling forever',
+    'Deadlines calendar: taller cells, more events visible per day, bigger text',
+  ]},
+  {version:'2.20.8',date:'23 Jun 2026',title:'Schedule tab redesign — multi-person mini todo board',items:[
+    'Schedule is now a real working board: pick which people to show (chips, remembered), drag tasks onto a different day or a different person to reschedule/reassign',
+    'No more separate to-do/done split — completed tasks just grey out and strike through in place, still draggable and clickable',
+    'Day columns no longer stretch to fit long task titles — they truncate properly now',
+  ]},
+  {version:'2.20.7',date:'23 Jun 2026',title:'Fix Deadlines tab crash, Jobs/Clients reporting bugs',items:[
+    'Fixed: Deadlines tab rendered nothing at all — it referenced a variable that only existed inside a different function',
+    'Fixed: Jobs report never applied the date-range filter to anything except the hours column — relabelled "Jobs shown" to "Active in period" so the count actually moves with the dropdown',
+    'Fixed: Clients report dropped any client with invoices but no logged time that period entirely, instead of showing $0/0h',
+  ]},
+  {version:'2.20.6',date:'23 Jun 2026',title:'Expense detail modal, starred-in-search, invoiced/uninvoiced table parity',items:[
+    'Expenses list: clicking a row now opens an expense detail modal (same fields as the job-plan Expenses tab) instead of jumping straight to the job',
+    'Global search: star icon in the search bar surfaces starred jobs/clients/quotes/invoices directly in results',
+    'Uninvoiced jobs table columns now align to the Invoiced table; both get sortable column headers',
+    'Uninvoiced rows can be hidden — persisted so stale ones don\'t reappear on the next Streamtime sync',
+    'Dropped the "#" prefix on job numbers in the Invoiced table and quote chips',
+  ]},
+  {version:'2.20.5',date:'23 Jun 2026',title:'Job timeline, starred items panel, native quote creation',items:[
+    'New Job Timeline tab on job detail — phase-level Gantt-style view built from phase start/due dates',
+    'New Starred panel — star any job or client, browse them in one place',
+    'New quote creation — "New quote" modal on the Quotes list and job detail, with print preview, alongside real Streamtime quotes',
+  ]},
+  {version:'2.20.4',date:'23 Jun 2026',title:'Phase dates, quote versioning, split invoicing, contact title on print',items:[
+    'Job detail: phase date ranges now shown on the Job Plan tab (calendar chip per phase)',
+    'Quotes: local version history — "Revise quote" saves a new value/note without touching the Streamtime record',
+    'Invoices: deposit/split invoicing — raise named partial invoices (% or $) against a job, each with its own status',
+    'Invoice and quote print previews now show the client contact\'s job title underneath their name',
+    'Fixed: tasks marked complete in Streamtime without logging time were invisible in the Done column — now cross-checked against job assignment completion status',
+    'Streamtime sync: added a 15-minute fast sync for logged time/scheduled todos/assignments (previously only hourly), plus a checkpointed deep-history backfill so Reporting can reach back past the last ~12 months over time',
+  ]},
   {version:'2.20.3',date:'19 Jun 2026',title:'Budget total fix, quote/invoice document preview, non-billable rates, data-freshness indicator',items:[
     'Fixed: jobs $ budget total was way over (e.g. $920k vs Streamtime $704k) — it fell back to "planned time" for jobs with no agreed budget. Now uses finalBudget like Streamtime, so the footer total matches',
     'New: clicking a quote or invoice opens a full branded document preview (C&C letterhead, line items from the job plan, GST, totals, paid/balance) instead of just a details strip',

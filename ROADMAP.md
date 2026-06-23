@@ -162,9 +162,9 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 |---|---|---|
 | **ST write-back** (#18 / L4) | Needs serverless proxy + ST API write credentials | Vercel Edge Function + ST API key required |
 
+### Shipped (v2.20.4)
 **Gantt view** (#16 / L2) shipped in v2.20.5 — turned out not to need an external library; phase-level granularity rendered fine as a custom HTML/CSS timeline once phase date ranges existed (v2.20.4).
 
-### Shipped (v2.20.4)
 | # | Feature | Location | Notes |
 |---|---|---|---|
 | F2 | Detailed expense input — track individual purchases, show over/under | Jobs → Expenses | Already built (`_expSubs` etc.) — roadmap just hadn't been updated |

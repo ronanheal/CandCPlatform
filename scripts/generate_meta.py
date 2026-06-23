@@ -114,7 +114,53 @@ if roadmap_src:
                 "status": "planned",
             })
 
-# Mark items done if their title keywords appear in changelog
+# Status comes from where an id is actually mentioned in the doc, not word-overlap guessing
+# (a prior version marked "Time approval workflow" and "ST write-back" done purely on keyword
+# overlap with changelog text, when both are explicitly blocked/deferred with zero real
+# implementation). An id can appear three ways: "| ID | ..." as a table's first cell, or
+# "(#9 / ID)" inline — collect every section's ids separately, blocked taking precedence over
+# done, and fall back to the keyword heuristic only for ids never explicitly mentioned again
+# anywhere (last resort, since most of the doc's ids appear explicitly once shipped/blocked).
+def _section_ids(src, heading_pattern):
+    """Ids appearing under headings matching heading_pattern, until the next ##/### heading."""
+    ids = set()
+    active = False
+    for line in src.splitlines():
+        if re.match(heading_pattern, line):
+            active = True
+            continue
+        if re.match(r"^#{2,3}\s", line):
+            active = False
+            continue
+        if active:
+            ids.update(re.findall(r"\(#\d+\s*/\s*(\w+)\)", line))
+            ids.update(re.findall(r"^\|\s*(\w+)\s*\|", line))
+    return ids
+
+blocked_ids = _section_ids(roadmap_src, r"^###\s+(Blocked|Deferred)\b")
+# Every id mentioned anywhere outside the machine-readable index and the blocked/deferred
+# sections counts as done — the doc only references an id again once it's shipped (in a
+# "Features shipped"/"Shipped (vX)" table row) or blocked (handled above).
+done_ids = set()
+in_index_section = False
+in_blocked_section = False
+for line in roadmap_src.splitlines():
+    if re.match(r"^##\s+Machine-readable index", line):
+        in_index_section = True
+        continue
+    if re.match(r"^###\s+(Blocked|Deferred)\b", line):
+        in_blocked_section = True
+        continue
+    if re.match(r"^#{2,3}\s", line):
+        in_blocked_section = False
+        continue
+    if in_index_section or in_blocked_section:
+        continue
+    done_ids.update(re.findall(r"\(#\d+\s*/\s*(\w+)\)", line))
+    done_ids.update(re.findall(r"^\|\s*(\w+)\s*\|", line))
+done_ids -= blocked_ids
+
+# Fuzzy keyword fallback — only for ids with no explicit mention anywhere in the doc.
 done_keywords = set()
 for rel in releases:
     for item in rel["items"]:
@@ -123,9 +169,14 @@ for rel in releases:
                 done_keywords.add(w)
 
 for r in roadmap_items:
-    words = [w for w in r["title"].lower().split() if len(w) > 4]
-    if words and sum(1 for w in words if w in done_keywords) >= 2:
+    if r["id"] in blocked_ids:
+        r["status"] = "blocked"
+    elif r["id"] in done_ids:
         r["status"] = "done"
+    else:
+        words = [w for w in r["title"].lower().split() if len(w) > 4]
+        if words and sum(1 for w in words if w in done_keywords) >= 2:
+            r["status"] = "done"
 
 roadmap_path = OUT_DIR / "roadmap.json"
 roadmap_path.write_text(json.dumps(roadmap_items, indent=2, ensure_ascii=False))
