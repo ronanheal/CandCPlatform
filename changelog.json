@@ -1,7 +1,20 @@
 {
-  "generated_at": "2026-06-23T02:41:29.094477+00:00",
-  "current_version": "2.20.12",
+  "generated_at": "2026-06-23T11:33:50.845337+00:00",
+  "current_version": "2.20.13",
   "releases": [
+    {
+      "version": "2.20.13",
+      "date": "23 Jun 2026",
+      "title": "Wire up the Reporting Jobs tab job filter",
+      "items": [
+        "Reporting → Jobs now has a job picker dropdown — getFilteredTasks() already had the matching logic wired in, it was just missing the actual #r-job select element, so the filter had been a permanent no-op"
+      ],
+      "sections": [
+        "Jobs",
+        "Reporting",
+        "Todo"
+      ]
+    },
     {
       "version": "2.20.12",
       "date": "23 Jun 2026",
