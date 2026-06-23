@@ -2279,8 +2279,11 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.20.12';
+const APP_VERSION='2.20.13';
 const CHANGELOG=[
+  {version:'2.20.13',date:'23 Jun 2026',title:'Wire up the Reporting Jobs tab job filter',items:[
+    'Reporting → Jobs now has a job picker dropdown — getFilteredTasks() already had the matching logic wired in, it was just missing the actual #r-job select element, so the filter had been a permanent no-op',
+  ]},
   {version:'2.20.12',date:'23 Jun 2026',title:'Settings width, full-codebase bug review',items:[
     'Settings page was capped at 860px wide regardless of screen size — widened to 1180px',
     'Fixed: reassigning a task to another person while viewing a non-current week silently moved it to an arbitrary other week instead of the one being viewed',
@@ -10150,6 +10153,10 @@ function _buildTabFilters(tab){
     const statusCodes=[...new Set(jobs.map(j=>j.status).filter(Boolean))].sort();
     wrap.appendChild(mkSel('r-job-status','All statuses',statusCodes.map(s=>[s,_sMap[s]||s])));
     wrap.appendChild(mkSel('r-job-client','All clients',allCos.map(c=>[c])));
+    // getFilteredTasks() already reads #r-job to scope hours down to one job — the dropdown
+    // itself just hadn't been built, so the filter was always a no-op
+    const jobOpts=[...jobs].sort((a,b)=>(+b.id||0)-(+a.id||0)).map(j=>[j.id,`${j.id} — ${j.name}`]);
+    wrap.appendChild(mkSel('r-job','All jobs',jobOpts));
   }
   if(tab==='clients'){
     wrap.appendChild(mkSel('r-client-sel','All clients',allCos.map(c=>[c])));
