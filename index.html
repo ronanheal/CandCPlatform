@@ -309,6 +309,10 @@ button.detail-back{outline:none;}
 .act-dot{width:8px;height:8px;border-radius:50%;background:var(--border);border:2px solid var(--white);position:absolute;left:-4px;top:6px;flex-shrink:0;}
 .act-dot.st{background:#6B7FA3;}
 .act-dot.local{background:var(--red);}
+.act-dot.comment{background:#7B9E87;}
+.act-add-row{display:flex;gap:8px;margin-bottom:20px;align-items:flex-start;}
+.act-add-row textarea{flex:1;border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-family:inherit;font-size:12px;resize:vertical;min-height:36px;}
+.act-add-row button{flex-shrink:0;}
 .act-card{background:var(--white);border:1px solid var(--border);border-radius:4px;padding:9px 12px;flex:1;min-width:0;}
 .act-text{font-size:12px;line-height:1.5;color:var(--ink);}
 .act-meta{font-size:11px;color:var(--muted);margin-top:3px;display:flex;gap:8px;align-items:center;}
@@ -2275,8 +2279,13 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.20.10';
+const APP_VERSION='2.20.11';
 const CHANGELOG=[
+  {version:'2.20.11',date:'23 Jun 2026',title:'Activity comments, weekly Happiness check-in',items:[
+    'Job detail Activity tab: add a free-text note directly to the timeline — for decisions/context that don\'t have their own automatic event, not just a record of what changed in the UI',
+    'Activity tab: Streamtime logged-time entries now show billable/non-billable and $ value, not just hours',
+    'New weekly Happiness check-in — a one-tap mood prompt on Dashboard (skippable), with an 8-week trend on your Profile in Settings. Personal to this device — there\'s no shared backend yet, so this isn\'t a cross-team aggregated report, just a personal tracker',
+  ]},
   {version:'2.20.10',date:'23 Jun 2026',title:'Fix Custom board job cards breaking after first click',items:[
     'Fixed: expanding a job card on a Custom board silently lost its drag handle and delete button — it was rebuilding from the wrong template after the first click',
     'Custom board job cards now show the same expanded task list + "Open job plan" button the Client board\'s cards already had',
@@ -3343,6 +3352,77 @@ function renderDashboard(){
     ${alerts?`<div style="margin-top:28px;"><div class="section-label" style="margin-bottom:14px;">Over budget</div><div class="alert-list">${alerts}</div></div>`:''}
   `;
   _renderIcons();
+  maybeShowHappinessPrompt();
+}
+
+// ── Weekly Happiness check-in ──────────────────────────────────────────────
+// Local-only: each person's check-in lives in their own browser's localStorage, not a
+// shared backend, so this is a personal prompt + trend, not a cross-team aggregated report.
+// Genuine team-wide reporting would need every person's response landing somewhere shared —
+// the only existing mechanism for that (Settings → GitHub token, used for platform_config.json)
+// is a single-admin publish flow, not something every team member should need a GitHub PAT
+// for just to log a mood score. Flagging this rather than building a "team report" that would
+// only ever show the one device it was filled in on.
+function _getHappinessLog(){return JSON.parse(localStorage.getItem('cc_happiness')||'{}');}
+function _setHappinessLog(log){localStorage.setItem('cc_happiness',JSON.stringify(log));}
+function _buildHappinessModal(){
+  document.getElementById('happiness-modal')?.remove();
+  const m=document.createElement('div');m.className='modal-bg on';m.id='happiness-modal';
+  const FACES=[{v:1,e:'😞',l:'Rough'},{v:2,e:'😕',l:'Meh'},{v:3,e:'😐',l:'OK'},{v:4,e:'🙂',l:'Good'},{v:5,e:'😄',l:'Great'}];
+  m.innerHTML=`<div class="modal" style="max-width:380px;">
+    <div class="modal-hd"><span class="modal-hd-title">How's your week going?</span><button class="modal-x" onclick="dismissHappinessPrompt()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd" style="text-align:center;">
+      <div style="display:flex;justify-content:space-between;gap:6px;margin-bottom:16px;">
+        ${FACES.map(f=>`<button class="hp-face-btn" id="hp-face-${f.v}" onclick="_selectHappinessFace(${f.v})" style="flex:1;border:1px solid var(--border);background:var(--off);border-radius:8px;padding:10px 4px;cursor:pointer;font-size:24px;transition:all .12s;" title="${f.l}">${f.e}</button>`).join('')}
+      </div>
+      <textarea id="hp-note" placeholder="Anything you want to flag? (optional)" rows="2" style="width:100%;border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-family:inherit;font-size:12px;resize:vertical;"></textarea>
+    </div>
+    <div class="modal-ft"><button class="modal-cancel" onclick="dismissHappinessPrompt()">Skip this week</button><button class="modal-save" id="hp-submit-btn" onclick="submitHappiness('${MY_PERSON}')" disabled>Submit</button></div>
+  </div>`;
+  document.body.appendChild(m);
+}
+function maybeShowHappinessPrompt(){
+  const wk=getWeekKey(0);
+  const log=_getHappinessLog();
+  if(log[MY_PERSON]?.[wk])return; // already checked in this week
+  if(document.getElementById('happiness-modal'))return;
+  setTimeout(_buildHappinessModal,800); // small delay so it doesn't fight the dashboard's own render
+}
+// Manual re-open from Settings, regardless of whether this week's already logged
+function maybeShowHappinessPromptNow(){_buildHappinessModal();}
+let _hpSelectedFace=null;
+function _selectHappinessFace(v){
+  _hpSelectedFace=v;
+  [1,2,3,4,5].forEach(n=>{const el=document.getElementById('hp-face-'+n);if(el)el.style.background=n===v?'#FFF3C4':'var(--off)';});
+  const btn=document.getElementById('hp-submit-btn');if(btn)btn.disabled=false;
+}
+function dismissHappinessPrompt(){document.getElementById('happiness-modal')?.remove();_hpSelectedFace=null;}
+function submitHappiness(personKey){
+  if(!_hpSelectedFace)return;
+  const wk=getWeekKey(0);
+  const log=_getHappinessLog();
+  if(!log[personKey])log[personKey]={};
+  log[personKey][wk]={score:_hpSelectedFace,note:(document.getElementById('hp-note')?.value||'').trim(),ts:Date.now()};
+  _setHappinessLog(log);
+  dismissHappinessPrompt();
+  toast('Thanks — logged for this week','success');
+}
+// Personal trend — last 8 weeks, shown in Settings → My Profile
+function renderHappinessTrend(personKey){
+  const log=_getHappinessLog()[personKey]||{};
+  const weeks=[];
+  for(let i=7;i>=0;i--)weeks.push(getWeekKey(-i));
+  const FACE_EMOJI={1:'😞',2:'😕',3:'😐',4:'🙂',5:'😄'};
+  const rows=weeks.map(wk=>{
+    const e=log[wk];
+    const d=new Date(wk+'T12:00:00');
+    const lbl=`${d.getDate()}/${d.getMonth()+1}`;
+    return`<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;">
+      <div style="font-size:18px;opacity:${e?1:.25};">${e?FACE_EMOJI[e.score]:'·'}</div>
+      <div style="font-size:9px;color:var(--muted);">${lbl}</div>
+    </div>`;
+  }).join('');
+  return`<div style="display:flex;gap:2px;padding:10px 0;">${rows}</div>`;
 }
 // ── Schedule view ──
 // ── Schedule — multi-person mini todo board. Shows everyone's tasks side by side for the
@@ -7673,6 +7753,16 @@ function logActivity(jobId,personKey,action,detail){
   j.activity.unshift({ts:Date.now(),personKey:personKey||MY_PERSON,action,detail});
   saveData();
 }
+// Manual notes on the Activity tab — for context that doesn't have its own automatic event
+// (a decision, a client call, why something was done a certain way), not just a record of
+// what changed in the UI.
+function addActivityComment(jobId){
+  const inp=document.getElementById('act-comment-inp');
+  const text=(inp?.value||'').trim();
+  if(!text)return;
+  logActivity(jobId,MY_PERSON,'comment',text.replace(/</g,'&lt;').replace(/\n/g,'<br>'));
+  if(activeJobId===jobId)renderActivityTab();
+}
 function renderActivityTab(){
   const el=document.getElementById('dtab-activity');if(!el)return;
   const j=jobs.find(x=>x.id===activeJobId);
@@ -7680,7 +7770,7 @@ function renderActivityTab(){
   const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   // Merge local activity events with synthesised Streamtime time entries on this job
   const events=[];
-  (j.activity||[]).forEach(a=>events.push({ts:a.ts,personKey:a.personKey,detail:a.detail}));
+  (j.activity||[]).forEach(a=>events.push({ts:a.ts,personKey:a.personKey,detail:a.detail,_comment:a.action==='comment'}));
   if(j._stId){
     stLoggedTimes.forEach(lt=>{
       if((lt.job?.id||lt.jobId)!==j._stId)return;
@@ -7688,11 +7778,18 @@ function renderActivityTab(){
       const ts=lt.date?new Date(lt.date.slice(0,10)+'T12:00:00').getTime():0;
       const note=lt.notes||lt.scheduleNotes||'';
       const item=lt.itemName?` on <strong>${lt.itemName}</strong>`:'';
-      events.push({ts,personKey:stUser.key,detail:`Logged <strong>${formatHrs((lt.minutes||0)/60)||'0h'}</strong>${item}${note?` — ${note}`:''}`,_st:true});
+      const billable=lt.job?.isBillable!==false;
+      const value=lt.totalExTax!=null?Math.round(lt.totalExTax):null;
+      const billTag=`<span style="font-size:10px;background:${billable?'#E8F5E9':'var(--off)'};color:${billable?'#2E7D32':'var(--muted)'};border-radius:3px;padding:1px 5px;margin-left:4px;">${billable?'Billable':'Non-billable'}</span>`;
+      events.push({ts,personKey:stUser.key,detail:`Logged <strong>${formatHrs((lt.minutes||0)/60)||'0h'}</strong>${item}${value?` — $${value.toLocaleString()}`:''}${note?` — ${note}`:''}${billTag}`,_st:true});
     });
   }
+  const composerHTML=`<div class="act-add-row">
+    <textarea id="act-comment-inp" rows="1" placeholder="Add a note for the team to reference later…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addActivityComment('${j.id}');}"></textarea>
+    <button class="d-action primary" onclick="addActivityComment('${j.id}')"><i class="ti ti-send" style="font-size:12px;"></i> Add</button>
+  </div>`;
   if(!events.length){
-    el.innerHTML=`<div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:18px;">Activity</div><div style="font-size:13px;color:var(--muted);">No activity yet on this job.</div>`;
+    el.innerHTML=`<div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:18px;">Activity</div>${composerHTML}<div style="font-size:13px;color:var(--muted);">No activity yet on this job.</div>`;
     return;
   }
   events.sort((a,b)=>b.ts-a.ts);
@@ -7729,9 +7826,9 @@ function renderActivityTab(){
       const p=people[a.personKey]||{initials:'??',color:'#999',name:a.personKey||'Unknown'};
       const tStr=_timeStr(a.ts);
       return`<div class="act-row">
-        <div class="act-dot ${a._st?'st':'local'}"></div>
+        <div class="act-dot ${a._comment?'comment':a._st?'st':'local'}"></div>
         <div class="act-card">
-          <div class="act-text">${a.detail}</div>
+          <div class="act-text">${a._comment?`<i class="ti ti-message-circle-2" style="font-size:11px;color:#7B9E87;margin-right:4px;"></i>`:''}${a.detail}</div>
           <div class="act-meta">
             <span class="act-av-xs" style="background:${p.color};">${p.initials}</span>
             <span>${p.name}</span>
@@ -7743,8 +7840,7 @@ function renderActivityTab(){
     }).join('');
     return`<div class="act-date-hd">${key}</div><div class="act-timeline">${rowsHTML}</div>`;
   }).join('');
-
-  el.innerHTML=html;
+  el.innerHTML=`<div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;">Activity (${events.length})</div>${composerHTML}${html}`;
 }
 
 // ---- INVOICE GENERATION ----
@@ -8356,6 +8452,13 @@ function renderSettings(){
           </div>
           <div class="tm-panel-section-lbl" style="margin-bottom:10px;">Avatar colour</div>
           <div class="color-dot-row">${COLORS.map(c=>`<div class="color-dot${(me.color||'#6B7FA3')===c?' sel':''}" style="background:${c}" onclick="updatePerson('${MY_PERSON}','color','${c}');document.getElementById('my-av-preview').style.background='${c}';document.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('sel'));this.classList.add('sel');"></div>`).join('')}</div>
+        </div>
+      </div>
+      <div class="sett-card">
+        <div class="sett-card-hd">Your wellbeing check-ins <span style="font-weight:400;color:var(--muted);font-size:11px;">— last 8 weeks, personal to this device</span></div>
+        <div class="sett-card-body">
+          ${renderHappinessTrend(MY_PERSON)}
+          <button class="d-action" onclick="_hpSelectedFace=null;maybeShowHappinessPromptNow()">Log this week</button>
         </div>
       </div>
       <div class="sett-card">
