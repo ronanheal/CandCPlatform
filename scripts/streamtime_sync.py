@@ -245,6 +245,7 @@ if progress_path.exists():
 
 detail_done = set(progress.get("detail_done", []))
 backfill_complete = progress.get("backfill_complete", False)
+logged_times_oldest_fetched = progress.get("logged_times_oldest_fetched")  # YYYY-MM-DD checkpoint, see step 5
 
 # Jobs that still need phases/items fetched — active jobs first, then rest
 active_statuses = {"In Play", "Paused"}
@@ -294,6 +295,7 @@ if not skip_detail:
         "total_jobs": len(fresh_jobs),
         "detail_count": len(detail_done),
         "last_run": datetime.now(timezone.utc).isoformat(),
+        "logged_times_oldest_fetched": logged_times_oldest_fetched,
     }
     progress_path.write_text(json.dumps(progress, indent=2))
 else:
@@ -317,6 +319,39 @@ if len(logged_times) > 100:
     backup_path = OUT_DIR / "logged_times.json.bak"
     backup_path.write_text(json.dumps(logged_times, ensure_ascii=False))
     print(f"  backed up {len(logged_times)} logged_times records")
+
+# The plain fetch above paginates newest-first and reliably gets recent months, but deep
+# pages reaching further back (2022-2024 history) have been hitting HTTP 504s from
+# Streamtime's side — confirmed via sync_meta.json errors — so the same ~12-month window
+# gets re-fetched every run and never gets further. Checkpointed deep-history backfill:
+# each run asks for one bounded slice strictly older than the oldest date reached so far,
+# merges it into the FULL accumulated set (this run's fetch + every prior run's progress —
+# not just this run's two fetches, or each run would forget what earlier runs backfilled),
+# and advances the checkpoint. If Streamtime's search doesn't support this date-comparison
+# query, this just yields zero records each run — no harm to the main fetch above.
+combined_by_id = {lt.get("id"): lt for lt in prev_logged_times if lt.get("id") is not None}
+for lt in logged_times:
+    if lt.get("id") is not None:
+        combined_by_id[lt["id"]] = lt  # fresh fetch wins for any id seen before (latest status)
+
+_lt_dates = [str((lt.get("date") or "")[:10]) for lt in logged_times if lt.get("date")]
+if _lt_dates and (logged_times_oldest_fetched is None or min(_lt_dates) < logged_times_oldest_fetched):
+    logged_times_oldest_fetched = min(_lt_dates)
+if logged_times_oldest_fetched:
+    print(f"  logged_times deep-history: fetching before {logged_times_oldest_fetched}...")
+    older = search(8, query=f'date < "{logged_times_oldest_fetched}"', timeout=120)
+    if older:
+        new_count = sum(1 for lt in older if lt.get("id") not in combined_by_id)
+        for lt in older:
+            if lt.get("id") is not None:
+                combined_by_id[lt["id"]] = lt
+        older_dates = [str((lt.get("date") or "")[:10]) for lt in older if lt.get("date")]
+        if older_dates:
+            logged_times_oldest_fetched = min(older_dates)
+        print(f"  logged_times deep-history: +{new_count} new older records, now back to {logged_times_oldest_fetched}")
+    else:
+        print(f"  logged_times deep-history: 0 records returned (query unsupported, or genuinely no older data)")
+logged_times = list(combined_by_id.values())
 # Note: search view 10 = quotes, view 11 = invoices (do not swap these)
 quotes       = search(10)
 invoices     = search(11)
@@ -375,11 +410,17 @@ counts = {
     "scheduled_todos": save("scheduled_todos.json", scheduled_todos,    load_existing("scheduled_todos.json")),
 }
 
+# Re-save progress with the logged_times deep-history checkpoint (the earlier write, right
+# after the phases/items backfill, happened before this checkpoint was computed).
+progress["logged_times_oldest_fetched"] = logged_times_oldest_fetched
+progress_path.write_text(json.dumps(progress, indent=2))
+
 meta = {
     "last_synced": datetime.now(timezone.utc).isoformat(),
     "record_counts": counts,
     "backfill_complete": backfill_complete,
     "detail_progress":  f"{len(detail_done)}/{len(fresh_jobs)} jobs have phases+items",
+    "logged_times_oldest_fetched": logged_times_oldest_fetched,
     "errors": errors,
 }
 (OUT_DIR / "sync_meta.json").write_text(json.dumps(meta, indent=2))

@@ -123,6 +123,16 @@ prev_scheduled = load_existing("scheduled_todos.json")
 prev_assignments = load_existing("job_assignments.json")
 
 logged_times = search(8, timeout=180)
+# Merge onto the existing file rather than overwrite it — the full sync runs a checkpointed
+# deep-history backfill (logged_times can genuinely go back to 2022+, but Streamtime 504s on
+# deep pagination so it accumulates gradually across runs). This fetch is recent-only by
+# nature (newest-first, stops well before any deep timeout), so overwriting wholesale would
+# erase that accumulated history every 15 minutes.
+_combined = {lt.get("id"): lt for lt in prev_logged_times if lt.get("id") is not None}
+for lt in logged_times:
+    if lt.get("id") is not None:
+        _combined[lt["id"]] = lt
+logged_times = list(_combined.values())
 
 raw_scheduled = search(8, query="logged_time_status = 1", timeout=120)
 scheduled_todos = [{
