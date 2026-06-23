@@ -1,7 +1,27 @@
 {
-  "generated_at": "2026-06-23T02:16:20.054561+00:00",
-  "current_version": "2.20.11",
+  "generated_at": "2026-06-23T02:41:29.094477+00:00",
+  "current_version": "2.20.12",
   "releases": [
+    {
+      "version": "2.20.12",
+      "date": "23 Jun 2026",
+      "title": "Settings width, full-codebase bug review",
+      "items": [
+        "Settings page was capped at 860px wide regardless of screen size — widened to 1180px",
+        "Fixed: reassigning a task to another person while viewing a non-current week silently moved it to an arbitrary other week instead of the one being viewed",
+        "Fixed: Boards person-card \"this week\" stats actually followed whatever week the Todo/Schedule board was last left on, not necessarily this week",
+        "Fixed: Reporting → Business company filter used startsWith on job numbers, so filtering to job \"12\" also pulled in hours from job 120, 123, 1234, etc. — same substring bug class fixed elsewhere in the v2.20.2 data audit, this call site had been missed",
+        "Removed a dead duplicate toggleTaskDone() definition that function hoisting had made unreachable — no behaviour change, just a maintenance trap removed"
+      ],
+      "sections": [
+        "Boards",
+        "Jobs",
+        "Jobs → Clients",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
     {
       "version": "2.20.11",
       "date": "23 Jun 2026",
