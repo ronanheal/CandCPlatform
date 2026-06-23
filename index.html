@@ -1774,7 +1774,7 @@ tr:hover .i-todo-btn{opacity:1;}
           </div>
         </div>
         <!-- Settings content area -->
-        <div id="settings-scroll" style="flex:1;overflow-y:auto;padding:32px 40px 60px;max-width:860px;">
+        <div id="settings-scroll" style="flex:1;overflow-y:auto;padding:32px 40px 60px;max-width:1180px;">
           <!-- populated by renderSettings() -->
         </div>
       </div>
@@ -2279,8 +2279,15 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.20.11';
+const APP_VERSION='2.20.12';
 const CHANGELOG=[
+  {version:'2.20.12',date:'23 Jun 2026',title:'Settings width, full-codebase bug review',items:[
+    'Settings page was capped at 860px wide regardless of screen size — widened to 1180px',
+    'Fixed: reassigning a task to another person while viewing a non-current week silently moved it to an arbitrary other week instead of the one being viewed',
+    'Fixed: Boards person-card "this week" stats actually followed whatever week the Todo/Schedule board was last left on, not necessarily this week',
+    'Fixed: Reporting → Business company filter used startsWith on job numbers, so filtering to job "12" also pulled in hours from job 120, 123, 1234, etc. — same substring bug class fixed elsewhere in the v2.20.2 data audit, this call site had been missed',
+    'Removed a dead duplicate toggleTaskDone() definition that function hoisting had made unreachable — no behaviour change, just a maintenance trap removed',
+  ]},
   {version:'2.20.11',date:'23 Jun 2026',title:'Activity comments, weekly Happiness check-in',items:[
     'Job detail Activity tab: add a free-text note directly to the timeline — for decisions/context that don\'t have their own automatic event, not just a record of what changed in the UI',
     'Activity tab: Streamtime logged-time entries now show billable/non-billable and $ value, not just hours',
@@ -4736,16 +4743,6 @@ function duplicateTask(t,day){
   arr.splice(idx+1,0,clone);
   saveData();renderTodo();toast('Task duplicated');
 }
-function toggleTaskDone(t,day){
-  const wd=getWeekData(currentPerson);
-  const arr=wd[day]||[];
-  const task=arr.find(x=>x.id===t.id);
-  if(task){
-    task.done=!task.done;
-    if(task.jobId)logActivity(task.jobId,currentPerson,'task_status',`Task <strong>${task.title}</strong> ${task.done?'marked done':'reopened'}`);
-    saveData();renderTodo();_refreshJobStats();toast(task.done?'Marked done':'Marked undone',task.done?'success':'info');
-  }
-}
 function deleteTodoById(id,day){
   const wd=getWeekData(currentPerson);
   const arr=wd[day]||[];
@@ -4761,8 +4758,10 @@ function reassignTask(t,fromDay,toPersonKey){
   const idx=arr.findIndex(x=>x.id===t.id);
   if(idx===-1)return;
   const[task]=arr.splice(idx,1);
-  // Add to same week/day for the target person
-  const twKey=Object.keys(todoData[currentPerson]||{})[0]||getWeekKey(0);
+  // Add to same week/day for the target person — must be the week currently being viewed,
+  // not an arbitrary first key from todoData (which could be any week seeded earlier this
+  // session if the user has navigated between weeks).
+  const twKey=getWeekKey(weekOffset);
   if(!todoData[toPersonKey])todoData[toPersonKey]={};
   if(!todoData[toPersonKey][twKey])todoData[toPersonKey][twKey]={};
   if(!todoData[toPersonKey][twKey][fromDay])todoData[toPersonKey][twKey][fromDay]=[];
@@ -10280,7 +10279,11 @@ function _renderBusinessReport(){
   const _invForCo=inv=>bizCo==='all'||(inv.company?.name||'')===(bizCo);
   const filtInv=stInvoices.filter(inv=>_invInPeriod(inv)&&_invForCo(inv));
   const filtTasks=bizCo==='all'?tasks:tasks.filter(t=>{
-    const j=jobs.find(jj=>t.job&&t.job.startsWith(String(jj.id)));
+    // Exact job-number match, not startsWith — t.job is "<number> <name>", and startsWith
+    // let job "12" match "120"/"123"/"1234" (the same substring bug class fixed elsewhere
+    // in the v2.20.2 data audit; this call site had been missed).
+    const num=t.job?t.job.match(/^(\d+)/)?.[1]:null;
+    const j=num?jobs.find(jj=>jj.id===num):null;
     return j&&j.company===bizCo;
   });
   const totalH=filtTasks.reduce((s,t)=>s+(t.hours||0),0);
@@ -10959,8 +10962,9 @@ function buildCustomCard(b,col,card){
   }
   if(card.type==='person'){
     const p=people[card.personRef];if(!p)return'';
-    // Compute this-week stats
-    const wd=getWeekData(card.personRef);
+    // Compute this-week stats — force offset 0 regardless of whatever week the Todo/
+    // Schedule board was last left on, since this card is always labelled "this week"
+    const wd=getWeekData(card.personRef,0);
     let wHours=0,wTasks=0,wDone=0,wUrgent=0;
     [1,2,3,4,5].forEach(d=>{(wd[d]||[]).forEach(tt=>{wTasks++;if(tt.done)wDone++;if(tt.urgent&&!tt.done)wUrgent++;wHours+=tt.hours||0;});});
     const utilPct=Math.min(100,Math.round((wHours/40)*100));
