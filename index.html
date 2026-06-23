@@ -1288,13 +1288,12 @@ tr:hover .i-todo-btn{opacity:1;}
     <svg class="s-logo" viewBox="0 0 621.5 266.3" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M546.7,26.9c14.2,0,24.7,10,28.4,37.9c0.5,9.5,5.3,16.9,14.2,16.9c13.2,0,32.1-12.6,32.1-29.5c0-25.3-25.3-44.8-63.7-44.8c-59,0-104.6,43.4-127.1,95c-12.6,28.9-20,62.7-16.6,94.2c2.1,19.5,9.9,39.1,24.9,51.7c-19.3,2.3-53.8-15.3-81.8-42.5c23.2-21.6,41.8-48,54.4-77c3.7-8.6,8.7-21.6,3.4-30.6c-4.2-7.2-14.6-6.8-21.4-4.2c-16,6.2-14.5,22.1-17.5,36.2c-4.8,23.3-13.2,46.3-29.7,63.9c-25.3-26.5-45.7-55.3-58.5-78.6c43.3-17.2,72.8-28.1,72.8-67c0-31.3-27.9-48.5-58-48.5c-35.7,0-67.3,26-67.3,70.2c0,15.5,4.3,30.7,11.9,44.1c-15.8,4.9-31.1,11.9-43.7,22.8c-13.9,12.1-24,28.8-35.2,43.3c-18,23.3-45.6,57.7-79.3,53.3c-31-4-35.8-37-35.8-62.8c0-64.2,35.8-145.3,80-145.3c14.2,0,24.7,10,28.4,37.9c0.5,9.5,5.3,16.8,14.2,16.8c13.2,0,32.1-12.6,32.1-29.5c0-25.3-25.2-44.8-63.7-44.8C54.2,6.2,0,102,0,181.5c0,59,34.7,80.6,71.6,80.6c37.2,0,76.4-13.5,108.2-56.8c4.6,29.1,28.5,55.4,72.6,55.4c29.7,0,51.3-8.4,77.4-30.5c0,0,11.3,8.7,12.4,9.5c19.4,12.8,42.6,19.4,65.3,22.9c25.4,3.9,51.4,5,77,2.5c0.3,0,0.5-0.1,0.8-0.1c23.3-2.4,46.9-7.5,67.2-20c19.5-12,35.3-29.2,47.6-48.4c3.3-5.1,2.4-11.9-2.1-16.1c-2.9-2.7-7.5-2.2-9.9,1c-11.6,15.7-27.3,32.4-44.7,43c-10.9,6.7-22.5,10.9-34.2,10.9c-35.3,0-42.7-29.5-42.7-63.2C466.7,108,502.5,26.9,546.7,26.9z M299.7,15.6c18.9,0,26.9,13.2,26.9,28.1c0,29.3-21.6,49.3-45.7,60.1c-8-12.4-13.2-30.9-13.2-45.3C267.7,32.9,283.3,15.6,299.7,15.6z M269.7,238.6c-31.7,0-52.1-23.7-52.1-50.5c0-38.5,30.9-57.3,37.7-58.1c18,30.9,38.1,62.1,63.7,89.8C305.3,231,290.5,238.6,269.7,238.6z"/></svg>
     <div class="s-nav">
       <div class="s-btn" onclick="openGlobalSearch()"><i class="ti ti-search"></i><span class="s-tip">Search (⌘K)</span></div>
-      <div class="s-btn" id="snav-starred" onclick="openStarredPanel()"><i class="ti ti-star"></i><span class="s-tip">Starred</span></div>
       <div class="s-btn on" id="snav-dashboard" onclick="navTo('dashboard')"><i class="ti ti-grid-dots"></i><span class="s-tip">Dashboard</span></div>
       <div class="s-btn" id="snav-todo" onclick="navTo('todo')"><i class="ti ti-checklist"></i><span class="s-tip">To Do</span></div>
       <div class="s-btn" id="snav-jobs" onclick="navTo('jobs')"><i class="ti ti-briefcase"></i><span class="s-tip">Jobs</span></div>
+      <div class="s-btn" id="snav-schedule" onclick="navTo('schedule')"><i class="ti ti-calendar-week"></i><span class="s-tip">Schedule</span></div>
       <div class="s-btn" id="snav-reporting" onclick="navTo('reporting')"><i class="ti ti-chart-bar"></i><span class="s-tip">Reporting</span></div>
       <div class="s-btn" id="snav-boards" onclick="navTo('boards')"><i class="ti ti-layout-kanban"></i><span class="s-tip">Boards</span></div>
-      <div class="s-btn" id="snav-schedule" onclick="navTo('schedule')"><i class="ti ti-calendar-week"></i><span class="s-tip">Schedule</span></div>
       <div class="s-btn" id="snav-settings" style="margin-top:auto;" onclick="navTo('settings')"><i class="ti ti-settings"></i><span class="s-tip">Settings</span></div>
     </div>
     <div class="s-avatar">RO<span class="s-tip">Ronan</span></div>
@@ -8253,17 +8252,17 @@ function renderDeadlinesCal(){
   const daysInMonth=new Date(yr,mo+1,0).getDate();
   const todayStr=new Date().toISOString().slice(0,10);
   let html=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);">`;
-  DAYS.forEach(d=>{html+=`<div style="background:var(--off);padding:6px 8px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:center;">${d}</div>`;});
+  DAYS.forEach(d=>{html+=`<div style="background:var(--off);padding:10px 8px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:center;">${d}</div>`;});
   // empty cells before 1st
-  for(let i=0;i<startDow;i++)html+=`<div style="background:var(--white);min-height:80px;"></div>`;
+  for(let i=0;i<startDow;i++)html+=`<div style="background:var(--white);min-height:150px;"></div>`;
   for(let d=1;d<=daysInMonth;d++){
     const dStr=`${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isToday=dStr===todayStr;
     const evs=events[dStr]||[];
-    html+=`<div style="background:var(--white);min-height:80px;padding:6px 6px 4px;${isToday?'outline:2px solid var(--red);outline-offset:-2px;':''}">
-      <div style="font-size:12px;font-weight:${isToday?600:400};color:${isToday?'var(--red)':'var(--ink)'};margin-bottom:4px;">${d}</div>
-      ${evs.slice(0,3).map(ev=>`<div onclick="${ev.jid?`openJobDetail('${ev.jid}')`:''}" style="font-size:10px;background:${ev.color};color:#fff;border-radius:2px;padding:1px 4px;margin-bottom:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;${ev.jid?'cursor:pointer;':''}" title="${ev.label}">${ev.label}</div>`).join('')}
-      ${evs.length>3?`<div style="font-size:10px;color:var(--muted);">+${evs.length-3} more</div>`:''}
+    html+=`<div style="background:var(--white);min-height:150px;padding:8px 8px 4px;${isToday?'outline:2px solid var(--red);outline-offset:-2px;':''}">
+      <div style="font-size:13px;font-weight:${isToday?600:400};color:${isToday?'var(--red)':'var(--ink)'};margin-bottom:6px;">${d}</div>
+      ${evs.slice(0,5).map(ev=>`<div onclick="${ev.jid?`openJobDetail('${ev.jid}')`:''}" style="font-size:11px;background:${ev.color};color:#fff;border-radius:2px;padding:2px 5px;margin-bottom:3px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;${ev.jid?'cursor:pointer;':''}" title="${ev.label}">${ev.label}</div>`).join('')}
+      ${evs.length>5?`<div style="font-size:10px;color:var(--muted);">+${evs.length-5} more</div>`:''}
     </div>`;
   }
   html+=`</div>`;
@@ -9276,8 +9275,19 @@ const INV_FILTER_DEFS=[
 let _qtFilters=[];let _invFilters=[];let _jobsFilters=[];
 let _qtGroupBy='none';let _invGroupBy='none';let _jobsGroupBy='none';
 let _invSortCol=null,_invSortDir=1,_tbiSortCol=null,_tbiSortDir=1;
-function _setInvSort(col){if(_invSortCol===col)_invSortDir=-_invSortDir;else{_invSortCol=col;_invSortDir=1;}renderInvoices();}
-function _setTbiSort(col){if(_tbiSortCol===col)_tbiSortDir=-_tbiSortDir;else{_tbiSortCol=col;_tbiSortDir=1;}renderInvoices();}
+// Click cycle: asc → desc → no sort (clicking a different column always starts at asc)
+function _setInvSort(col){
+  if(_invSortCol!==col){_invSortCol=col;_invSortDir=1;}
+  else if(_invSortDir===1)_invSortDir=-1;
+  else _invSortCol=null;
+  renderInvoices();
+}
+function _setTbiSort(col){
+  if(_tbiSortCol!==col){_tbiSortCol=col;_tbiSortDir=1;}
+  else if(_tbiSortDir===1)_tbiSortDir=-1;
+  else _tbiSortCol=null;
+  renderInvoices();
+}
 // Uninvoiced jobs that have been dismissed from the "needs attention" list (e.g. stale/
 // won't-invoice jobs) — persisted so they don't reappear on the next Streamtime sync, since
 // the job objects themselves get rebuilt from ST data and don't carry local state.
@@ -9883,6 +9893,13 @@ function renderInvoices(){
         <td class="inv-td" style="text-align:center;"><i class="ti ti-eye-off" title="Hide from this list" style="font-size:13px;color:var(--muted);cursor:pointer;" onclick="event.stopPropagation();hideUninvoicedJob('${j.id}')"></i></td>
       </tr>`).join('')}</tbody></table>`:''}`;
     }
+  }
+
+  // Showing Uninvoiced jobs is a distinct "needs attention" view — don't also show the
+  // (usually much longer) invoiced list below it, which just meant scrolling past it.
+  if(showTBI){
+    list.innerHTML=tbiHTML||emptyStateHTML('ti-circle-check','Nothing uninvoiced','Every completed job has been invoiced.','','');
+    return;
   }
 
   if(!inv.length&&!tbiHTML){
