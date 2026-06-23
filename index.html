@@ -979,11 +979,11 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:transparent
 .clients-wrap{padding:28px 32px;overflow-y:auto;}
 .clients-toolbar{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
 .clients-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
-.sched-cell{vertical-align:top;padding:6px;border-left:1px solid var(--border);border-bottom:1px solid var(--border);min-height:60px;transition:background .1s;}
+.sched-cell{vertical-align:top;padding:6px;border-left:1px solid var(--border);border-bottom:1px solid var(--border);min-height:60px;overflow:hidden;transition:background .1s;}
 .sched-today{background:rgba(237,30,36,.03);}
 .sched-over{background:rgba(237,30,36,.05);}
 .sched-cell.sched-drop-hi{background:rgba(107,127,163,.12)!important;outline:2px dashed #6B7FA3;outline-offset:-2px;}
-.sched-card{background:var(--white);border:1px solid var(--border);border-radius:4px;padding:4px 7px;margin-bottom:4px;cursor:grab;display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px;transition:box-shadow .1s;}
+.sched-card{background:var(--white);border:1px solid var(--border);border-radius:4px;padding:4px 7px;margin-bottom:4px;cursor:grab;display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px;transition:box-shadow .1s;min-width:0;max-width:100%;}
 .sched-card:hover{box-shadow:0 1px 4px rgba(0,0,0,.08);}
 .sched-card.dragging-c{opacity:.25;}
 .sched-card.sched-done{opacity:.5;background:var(--off);}
@@ -3419,10 +3419,10 @@ function renderSchedule(){
       </td>`;
     }).join('');
     return`<tr>
-      <td style="padding:10px 14px;white-space:nowrap;min-width:120px;vertical-align:top;border-bottom:1px solid var(--border);">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div style="width:28px;height:28px;border-radius:50%;background:${p.color||'#999'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff;flex-shrink:0;">${p.initials||'?'}</div>
-          <div><div style="font-size:13px;font-weight:500;">${p.name}</div><div style="font-size:10px;color:var(--muted);">${p.role||''}</div></div>
+      <td style="padding:10px 10px;vertical-align:top;border-bottom:1px solid var(--border);overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:6px;min-width:0;">
+          <div style="width:24px;height:24px;border-radius:50%;background:${p.color||'#999'};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#fff;flex-shrink:0;">${p.initials||'?'}</div>
+          <div style="min-width:0;overflow:hidden;"><div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</div><div style="font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.role||''}</div></div>
         </div>
       </td>
       ${cells}
@@ -3440,11 +3440,11 @@ function renderSchedule(){
     </div>
     <div style="margin-bottom:16px;">${peoplePicker}</div>
     <div style="overflow-x:auto;">
-      <table class="sched-table" style="width:100%;border-collapse:collapse;background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+      <table class="sched-table" style="width:100%;table-layout:fixed;border-collapse:collapse;background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
         <thead>
           <tr style="border-bottom:2px solid var(--border);">
-            <th style="padding:10px 14px;text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:500;min-width:120px;">Person</th>
-            ${weekDates.map((d,i)=>{const dStr=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;const isToday=dStr===todayStr;return`<th style="padding:10px 8px;text-align:left;font-size:11px;color:${isToday?'var(--red)':'var(--muted)'};text-transform:uppercase;letter-spacing:.06em;font-weight:${isToday?'700':'500'};width:${100/5}%;">${DAY_NAMES[i]} ${d.getDate()}</th>`;}).join('')}
+            <th style="padding:10px 10px;text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:500;width:13%;">Person</th>
+            ${weekDates.map((d,i)=>{const dStr=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;const isToday=dStr===todayStr;return`<th style="padding:10px 6px;text-align:left;font-size:11px;color:${isToday?'var(--red)':'var(--muted)'};text-transform:uppercase;letter-spacing:.06em;font-weight:${isToday?'700':'500'};width:17.4%;">${DAY_NAMES[i]} ${d.getDate()}</th>`;}).join('')}
           </tr>
         </thead>
         <tbody>${rows||`<tr><td colspan="6" style="padding:40px;text-align:center;color:var(--muted);">${allPeople.length?'No people selected — pick someone above.':'No team members found.'}</td></tr>`}</tbody>
@@ -10665,6 +10665,8 @@ function _richJobCard(j,expanded){
   </div>`;
 }
 if(!window._expandedBoardCards)window._expandedBoardCards={};
+// Used by the Client board (_richJobCard cards, keyed by job id — one card per job, no
+// drag/delete chrome to preserve).
 function toggleBoardCard(cardId,jobId){
   if(!window._expandedBoardCards)window._expandedBoardCards={};
   // Support old calls with just jobId
@@ -10672,6 +10674,19 @@ function toggleBoardCard(cardId,jobId){
   window._expandedBoardCards[cid]=!window._expandedBoardCards[cid];
   const el=document.getElementById('bc-'+cid);
   if(el){const j=jobs.find(x=>x.id===jid);if(j){const newCard=document.createElement('div');newCard.innerHTML=_richJobCard(j,window._expandedBoardCards[cid]);el.replaceWith(newCard.firstChild);}}
+}
+// Used by Custom board job cards — rebuilds via buildCustomCard (not _richJobCard) so the
+// card keeps its drag attributes and delete button after expanding. Previously these cards
+// called toggleBoardCard, which always rebuilt with the Client board's bare template and
+// silently dropped draggable/data-card-id/the delete button after the first click.
+function toggleCustomBoardCard(boardId,colId,cardId){
+  if(!window._expandedBoardCards)window._expandedBoardCards={};
+  window._expandedBoardCards[cardId]=!window._expandedBoardCards[cardId];
+  const b=boardsList.find(x=>x.id===boardId);if(!b)return;
+  const col=b.columns?.find(x=>x.id===colId);if(!col)return;
+  const card=(col.cards||[]).find(x=>x.id===cardId);if(!card)return;
+  const el=document.getElementById('bc-'+cardId);
+  if(el){const tmp=document.createElement('div');tmp.innerHTML=buildCustomCard(b,col,card);el.replaceWith(tmp.firstElementChild);}
 }
 function renderClientBoard(b,body){
   const boardJobs=jobs.filter(j=>j.company===b.clientFilter);
@@ -10773,7 +10788,21 @@ function buildCustomCard(b,col,card){
     const wfLabel=j.workflowStatus==='quote'?'Quote':j.workflowStatus==='completed'?'Completed':j.workflowStatus==='invoiced'?'Invoiced':'Live';
     const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='completed'?'wf-completed':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
     const memberAvatars=(j.members||['ro']).map(k=>{const p=people[k];return p?`<span class="bc-av" style="background:${p.color};">${p.initials}</span>`:''}).join('');
-    return`<div class="bdet-card bc-rich" id="bc-${card.id}" data-card-id="${card.id}" ${dragAttrs} style="${over?'border-left:3px solid var(--red);':''}" onclick="toggleBoardCard('${card.id}','${j.id}')">${del}
+    if(!window._expandedBoardCards)window._expandedBoardCards={};
+    const expanded=!!window._expandedBoardCards[card.id];
+    let expandedHTML='';
+    if(expanded){
+      const activeTasks=[];
+      Object.keys(todoData).forEach(pKey=>{
+        const wd=getWeekData(pKey,0);
+        [1,2,3,4,5].forEach(d=>{(wd[d]||[]).forEach(t=>{if((t.jobId===j.id||t.job===j.id)&&!t.done)activeTasks.push({...t,person:pKey});});});
+      });
+      expandedHTML=`<div class="bc-expanded">
+        ${activeTasks.length?`<div class="bc-section-lbl">This week (${activeTasks.length})</div>`+activeTasks.slice(0,5).map(t=>{const p=people[t.person];return`<div class="bc-task-row"><span class="bc-av-sm" style="background:${p?.color||'#999'}">${p?.initials||'?'}</span><span class="bc-task-title">${t.title||'Task'}</span><span class="bc-task-hrs">${t.hours||''}</span></div>`;}).join(''):'<div class="bc-no-tasks">No open tasks this week</div>'}
+        <button class="bc-open-btn" onclick="event.stopPropagation();openJobDetail('${j.id}')"><i class="ti ti-arrow-up-right" style="font-size:11px;"></i> Open job plan</button>
+      </div>`;
+    }
+    return`<div class="bdet-card bc-rich${expanded?' bc-expanded-card':''}" id="bc-${card.id}" data-card-id="${card.id}" ${dragAttrs} style="${over?'border-left:3px solid var(--red);':''}" onclick="toggleCustomBoardCard('${b.id}','${col.id}','${card.id}')">${del}
       <div class="bc-name">${j.name}</div>
       <div class="bc-header-row"><span class="bc-id">${j.id}</span><span class="wf-badge ${wfCls}" style="font-size:9px;">${wfLabel}</span></div>
       <div class="bc-members-row">${memberAvatars}</div>
@@ -10781,6 +10810,7 @@ function buildCustomCard(b,col,card){
         <div class="bc-bar-row"><span class="bc-bar-lbl">Hours</span><div class="bc-bar-track"><div class="bc-bar-fill" style="width:${Math.min(hPct,100)}%;background:${hOver?'var(--red)':'var(--ink)'}"></div></div><span class="bc-bar-val">${j._loggedH||'0h'}</span></div>
         <div class="bc-bar-row"><span class="bc-bar-lbl">Budget</span><div class="bc-bar-track"><div class="bc-bar-fill" style="width:${Math.min(pct,100)}%;background:${over?'var(--red)':'#4CAF50'}"></div></div><span class="bc-bar-val">${pct}%</span></div>
       </div>
+      ${expandedHTML}
     </div>`;
   }
   if(card.type==='person'){
