@@ -979,6 +979,17 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:transparent
 .clients-wrap{padding:28px 32px;overflow-y:auto;}
 .clients-toolbar{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
 .clients-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+.sched-cell{vertical-align:top;padding:6px;border-left:1px solid var(--border);border-bottom:1px solid var(--border);min-height:60px;transition:background .1s;}
+.sched-today{background:rgba(237,30,36,.03);}
+.sched-over{background:rgba(237,30,36,.05);}
+.sched-cell.sched-drop-hi{background:rgba(107,127,163,.12)!important;outline:2px dashed #6B7FA3;outline-offset:-2px;}
+.sched-card{background:var(--white);border:1px solid var(--border);border-radius:4px;padding:4px 7px;margin-bottom:4px;cursor:grab;display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px;transition:box-shadow .1s;}
+.sched-card:hover{box-shadow:0 1px 4px rgba(0,0,0,.08);}
+.sched-card.dragging-c{opacity:.25;}
+.sched-card.sched-done{opacity:.5;background:var(--off);}
+.sched-card.sched-done .sched-card-t{text-decoration:line-through;color:var(--muted);}
+.sched-card-t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+.sched-card-h{color:var(--muted);font-size:10px;flex-shrink:0;}
 .client-card-full{background:var(--white);border:1px solid var(--border);border-radius:4px;padding:20px;cursor:pointer;transition:box-shadow .15s,border-color .15s;}
 .client-card-full:hover{box-shadow:0 2px 8px rgba(0,0,0,.07);border-color:#ccc;}
 .cd-job-row{background:var(--white);border:1px solid var(--border);padding:14px 16px;margin-bottom:8px;cursor:pointer;border-radius:2px;transition:box-shadow .12s,border-color .12s;}
@@ -3294,6 +3305,64 @@ function renderDashboard(){
   _renderIcons();
 }
 // ── Schedule view ──
+// ── Schedule — multi-person mini todo board. Shows everyone's tasks side by side for the
+// week, all in one list per day (no separate to-do/done columns — completed tasks just grey
+// out in place, still draggable/clickable). Drag a card onto another person's day to
+// reassign it, or onto a different day for the same person to reschedule it. ──
+function _getScheduleSelectedPeople(){
+  const all=Object.keys(people).filter(k=>!people[k]._archived);
+  const saved=JSON.parse(localStorage.getItem('cc_sched_people')||'null');
+  if(!saved)return all;
+  // Keep selection valid if people were added/removed/archived since it was saved
+  return saved.filter(k=>all.includes(k));
+}
+function _setScheduleSelectedPeople(keys){localStorage.setItem('cc_sched_people',JSON.stringify(keys));}
+function toggleSchedulePerson(key){
+  const sel=_getScheduleSelectedPeople();
+  const idx=sel.indexOf(key);
+  if(idx>=0)sel.splice(idx,1);else sel.push(key);
+  _setScheduleSelectedPeople(sel);
+  renderSchedule();
+}
+function toggleScheduleAllPeople(){
+  const all=Object.keys(people).filter(k=>!people[k]._archived);
+  const sel=_getScheduleSelectedPeople();
+  _setScheduleSelectedPeople(sel.length===all.length?[]:all);
+  renderSchedule();
+}
+function _scheduleWeekKey(){return getWeekKey(weekOffset);}
+function moveScheduleTask(fromPerson,fromDay,toPerson,toDay,taskId){
+  if(fromPerson===toPerson&&fromDay===toDay)return;
+  const wk=_scheduleWeekKey();
+  const fromArr=todoData[fromPerson]?.[wk]?.[fromDay];
+  if(!fromArr)return;
+  const idx=fromArr.findIndex(x=>x.id===taskId);
+  if(idx===-1)return;
+  const[task]=fromArr.splice(idx,1);
+  task.person=toPerson;
+  if(!todoData[toPerson])todoData[toPerson]={};
+  if(!todoData[toPerson][wk])todoData[toPerson][wk]={};
+  if(!todoData[toPerson][wk][toDay])todoData[toPerson][wk][toDay]=[];
+  todoData[toPerson][wk][toDay].push(task);
+  if(fromPerson!==toPerson&&task.jobId)logActivity(task.jobId,MY_PERSON,'task_reassign',`<strong>${task.title}</strong> moved from ${people[fromPerson]?.name||fromPerson} to ${people[toPerson]?.name||toPerson}`);
+  renderSchedule();
+  toast(fromPerson!==toPerson?`Moved to ${people[toPerson]?.name||toPerson}`:'Rescheduled','success');
+}
+function toggleScheduleTaskDone(personKey,day,taskId){
+  const wk=_scheduleWeekKey();
+  const task=todoData[personKey]?.[wk]?.[day]?.find(x=>x.id===taskId);
+  if(!task)return;
+  task.done=!task.done;
+  renderSchedule();
+}
+function _scheduleDragOver(e){e.preventDefault();e.currentTarget.classList.add('sched-drop-hi');}
+function _scheduleDragLeave(e){e.currentTarget.classList.remove('sched-drop-hi');}
+function _scheduleDrop(e,toPerson,toDay){
+  e.preventDefault();e.currentTarget.classList.remove('sched-drop-hi');
+  let data;try{data=JSON.parse(e.dataTransfer.getData('text/plain'));}catch(err){return;}
+  if(!data?.taskId)return;
+  moveScheduleTask(data.fromPerson,data.fromDay,toPerson,toDay,data.taskId);
+}
 function renderSchedule(){
   const el=document.getElementById('schedule-scroll');if(!el)return;
   const DAY_NAMES=['Mon','Tue','Wed','Thu','Fri'];
@@ -3305,32 +3374,53 @@ function renderSchedule(){
   for(let i=0;i<5;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);weekDates.push(d);}
   const weekRange=`${weekDates[0].getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][weekDates[0].getMonth()]} – ${weekDates[4].getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][weekDates[4].getMonth()]}`;
   const todayStr=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
-  const visiblePeople=Object.keys(people).filter(k=>!people[k]._archived);
-  const rows=visiblePeople.map(k=>{
-    const p=people[k];
+  const allPeople=Object.keys(people).filter(k=>!people[k]._archived);
+  const selected=_getScheduleSelectedPeople();
+
+  const peoplePicker=`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+    ${allPeople.map(k=>{
+      const p=people[k];const on=selected.includes(k);
+      return`<div onclick="toggleSchedulePerson('${k}')" title="${p.name}" style="cursor:pointer;display:flex;align-items:center;gap:5px;padding:3px 8px 3px 4px;border-radius:14px;border:1px solid ${on?p.color:'var(--border)'};background:${on?p.color+'14':'var(--off)'};opacity:${on?1:.55};">
+        <div style="width:18px;height:18px;border-radius:50%;background:${p.color||'#999'};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;color:#fff;flex-shrink:0;">${p.initials||'?'}</div>
+        <span style="font-size:11px;">${p.name.split(' ')[0]}</span>
+      </div>`;
+    }).join('')}
+    <button class="d-action" style="font-size:11px;" onclick="toggleScheduleAllPeople()">${selected.length===allPeople.length?'Deselect all':'Select all'}</button>
+  </div>`;
+
+  const rows=selected.map(k=>{
+    const p=people[k];if(!p)return'';
     const wd=getWeekData(k,weekOffset);
     const stU=stUsersById[p._stId];
     const capH=(stU?.capacityH)||p.hoursPerDay||8;
     const cells=weekDates.map((d,i)=>{
       const dayN=i+1;
       const tasks=wd[dayN]||[];
-      const doneH=tasks.filter(t=>t.done).reduce((s,t)=>s+(t.hours||0),0);
-      const todoH=tasks.filter(t=>!t.done).reduce((s,t)=>s+(t.hours||0),0);
-      const totalH=doneH+todoH;
+      const totalH=tasks.reduce((s,t)=>s+(t.hours||0),0);
       const over=totalH>capH;
       const dStr=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
       const isToday=dStr===todayStr;
-      const pct=Math.min(100,Math.round(totalH/capH*100));
-      const topTasks=tasks.slice(0,3).map(t=>`<div style="font-size:10px;padding:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${t.done?'var(--muted)':'var(--ink)'};${t.done?'text-decoration:line-through;':''}">${t.title||'Task'}</div>`).join('');
-      return`<td style="vertical-align:top;padding:6px 8px;border-left:1px solid var(--border);${isToday?'background:rgba(237,30,36,.03);':''}${over?'background:rgba(237,30,36,.05);':''}width:${100/5}%">
-        <div style="font-size:11px;font-weight:600;color:${over?'var(--red)':totalH>0?'var(--ink)':'var(--muted)'};margin-bottom:4px;">${totalH>0?formatHrs(totalH):'—'}${over?` <span style="color:var(--red)">↑</span>`:''}${doneH>0?` <span style="color:var(--muted);font-weight:400;">(${formatHrs(doneH)} done)</span>`:''}</div>
-        ${topTasks}
-        ${tasks.length>3?`<div style="font-size:10px;color:var(--muted);">+${tasks.length-3} more</div>`:''}
-        <div style="margin-top:6px;height:3px;background:var(--faint);border-radius:2px;overflow:hidden;"><div style="width:${pct}%;height:100%;background:${over?'var(--red)':pct>75?'#FF9800':'#4CAF50'};"></div></div>
+      const cardsHTML=tasks.map(t=>{
+        const jobIdMatch=t.job?t.job.match(/^(\d+)/):null;
+        const jobIdNum=jobIdMatch?jobIdMatch[1]:null;
+        return`<div class="sched-card${t.done?' sched-done':''}" draggable="true"
+            ondragstart="event.dataTransfer.setData('text/plain',JSON.stringify({taskId:'${t.id}',fromPerson:'${k}',fromDay:${dayN}}));event.currentTarget.classList.add('dragging-c');"
+            ondragend="event.currentTarget.classList.remove('dragging-c');"
+            onclick="toggleScheduleTaskDone('${k}',${dayN},'${t.id}')"
+            ${jobIdNum?`oncontextmenu="event.preventDefault();openJobDetail('${jobIdNum}')"`:''}
+            title="${(t.title||'').replace(/"/g,'&quot;')}${jobIdNum?' — right-click to open job':''}">
+          <span class="sched-card-t">${t.title||'Task'}</span>
+          ${t.hours?`<span class="sched-card-h">${formatHrs(t.hours)}</span>`:''}
+        </div>`;
+      }).join('');
+      return`<td class="sched-cell${isToday?' sched-today':''}${over?' sched-over':''}"
+          ondragover="_scheduleDragOver(event)" ondragleave="_scheduleDragLeave(event)" ondrop="_scheduleDrop(event,'${k}',${dayN})">
+        <div style="font-size:10px;font-weight:600;color:${over?'var(--red)':totalH>0?'var(--muted)':'#ccc'};margin-bottom:4px;">${totalH>0?formatHrs(totalH):'—'}${over?' ↑':''}</div>
+        ${cardsHTML}
       </td>`;
     }).join('');
-    return`<tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:10px 14px;white-space:nowrap;min-width:120px;vertical-align:top;">
+    return`<tr>
+      <td style="padding:10px 14px;white-space:nowrap;min-width:120px;vertical-align:top;border-bottom:1px solid var(--border);">
         <div style="display:flex;align-items:center;gap:8px;">
           <div style="width:28px;height:28px;border-radius:50%;background:${p.color||'#999'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff;flex-shrink:0;">${p.initials||'?'}</div>
           <div><div style="font-size:13px;font-weight:500;">${p.name}</div><div style="font-size:10px;color:var(--muted);">${p.role||''}</div></div>
@@ -3340,7 +3430,7 @@ function renderSchedule(){
     </tr>`;
   }).join('');
   el.innerHTML=`
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
       <div style="font-size:20px;font-weight:600;">Schedule</div>
       <div style="display:flex;align-items:center;gap:8px;">
         <button class="wbtn" onclick="weekOffset--;renderSchedule()"><i class="ti ti-chevron-left" style="font-size:13px;"></i></button>
@@ -3349,15 +3439,16 @@ function renderSchedule(){
         <button class="wbtn" onclick="weekOffset++;renderSchedule()"><i class="ti ti-chevron-right" style="font-size:13px;"></i></button>
       </div>
     </div>
+    <div style="margin-bottom:16px;">${peoplePicker}</div>
     <div style="overflow-x:auto;">
-      <table style="width:100%;border-collapse:collapse;background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+      <table class="sched-table" style="width:100%;border-collapse:collapse;background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
         <thead>
           <tr style="border-bottom:2px solid var(--border);">
             <th style="padding:10px 14px;text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:500;min-width:120px;">Person</th>
-            ${weekDates.map((d,i)=>{const dStr=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;const isToday=dStr===todayStr;return`<th style="padding:10px 8px;text-align:left;font-size:11px;color:${isToday?'var(--red)':'var(--muted)'};text-transform:uppercase;letter-spacing:.06em;font-weight:${isToday?'700':'500'};">${DAY_NAMES[i]} ${d.getDate()}</th>`;}).join('')}
+            ${weekDates.map((d,i)=>{const dStr=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;const isToday=dStr===todayStr;return`<th style="padding:10px 8px;text-align:left;font-size:11px;color:${isToday?'var(--red)':'var(--muted)'};text-transform:uppercase;letter-spacing:.06em;font-weight:${isToday?'700':'500'};width:${100/5}%;">${DAY_NAMES[i]} ${d.getDate()}</th>`;}).join('')}
           </tr>
         </thead>
-        <tbody>${rows||'<tr><td colspan="6" style="padding:40px;text-align:center;color:var(--muted);">No team members found.</td></tr>'}</tbody>
+        <tbody>${rows||`<tr><td colspan="6" style="padding:40px;text-align:center;color:var(--muted);">${allPeople.length?'No people selected — pick someone above.':'No team members found.'}</td></tr>`}</tbody>
       </table>
     </div>`;
 }
