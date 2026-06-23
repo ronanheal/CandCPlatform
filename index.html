@@ -2065,9 +2065,10 @@ tr:hover .i-todo-btn{opacity:1;}
     <div class="gs-inp-row">
       <i class="ti ti-search"></i>
       <input id="gs-inp" placeholder="Search jobs, clients, tasks…" oninput="runGlobalSearch(this.value)" autocomplete="off">
+      <i class="ti ti-star" id="gs-star-btn" title="Show starred" style="cursor:pointer;color:#E6A700;" onclick="showStarredInSearch()"></i>
       <span class="gs-kbd">esc</span>
     </div>
-    <div id="gs-results"><div class="gs-empty">Type to search across everything.</div></div>
+    <div id="gs-results"><div class="gs-empty">Type to search across everything, or click <i class="ti ti-star" style="color:#E6A700;vertical-align:-1px;"></i> for starred items.</div></div>
   </div>
 </div>
 
@@ -3394,7 +3395,7 @@ function renderExpensesList(){
     <tbody>${filtered.map(e=>{
       const stBadge=e._st?`<span style="font-size:9px;background:#e8f4fd;color:#2980b9;border-radius:3px;padding:1px 4px;margin-left:4px;">ST</span>`:'';
       const statusCls=e.status.includes('approved')?'color:#2E7D32':'color:var(--muted)';
-      return`<tr style="cursor:${e.jobId?'pointer':'default'};border-bottom:1px solid var(--faint);" onclick="${e.jobId?`openJobDetail('${e.jobId}')`:''}" >
+      return`<tr style="cursor:${e.jobId?'pointer':'default'};border-bottom:1px solid var(--faint);" ${e.jobId?`onclick="openExpenseDetail('${e.id}','${e._st?'st':'local'}','${e.jobId}')"`:''}>
         <td style="padding:10px 14px;color:var(--muted);">${e.date?.slice(0,10)||'—'}</td>
         <td style="padding:10px 14px;font-weight:500;">${e.name}${stBadge}</td>
         <td style="padding:10px 14px;"><div style="font-size:12px;">${e.jobId?e.jobId+' ':''}<span style="color:var(--muted);">${e.company}</span></div></td>
@@ -3405,6 +3406,122 @@ function renderExpensesList(){
     }).join('')}</tbody>
     <tfoot><tr style="border-top:2px solid var(--border);background:var(--off);"><td colspan="3" style="padding:10px 14px;font-size:12px;color:var(--muted);">${filtered.length} expense${filtered.length!==1?'s':''}</td><td style="padding:10px 14px;text-align:right;font-weight:600;">$${totalCost.toLocaleString()}</td><td style="padding:10px 14px;text-align:right;font-weight:600;">$${totalSell.toLocaleString()}</td><td></td></tr></tfoot>
   </table>`;
+}
+// ── Expense detail modal — opened from the cross-job Expenses list, same editing
+// capability as the job-plan Expenses tab (local expenses are fully editable; ST-sourced
+// ones are read-only on the core fields since we have no write-back, but the itemised
+// sub-lines — _expSubs et al — work for either source). ──
+function openExpenseDetail(expId,source,jobId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  let e;
+  if(source==='local'){
+    e=(j.expenses||[]).find(x=>x.id===expId);
+  } else {
+    const stRec=(stExpenses||[]).find(x=>String(x.id)===String(expId).replace('st-exp-',''));
+    if(stRec){
+      e={id:'st-exp-'+stRec.id,desc:stRec.description||stRec.itemName||'Expense',date:stRec.date,
+        qty:stRec.quantity||1,cost:+(stRec.costRate||0),markup:+(stRec.markup||0),sell:+(stRec.totalExTax||0),
+        status:(stRec.loggedExpenseStatus||'draft').toLowerCase()};
+    }
+  }
+  if(!e){toast('Expense not found','error');return;}
+  const canEdit=source==='local';
+  const cost=e.cost||0,markup=e.markup||0,qty=e.qty||1;
+  const unitSell=markup?Math.round(cost*(1+markup/100)*100)/100:(e.sell||cost);
+  const total=Math.round(unitSell*qty*100)/100;
+  const margin=unitSell>0?Math.round((1-cost/unitSell)*1000)/10:0;
+  document.getElementById('exp-detail-modal')?.remove();
+  const m=document.createElement('div');m.className='modal-bg on';m.id='exp-detail-modal';
+  const dis=canEdit?'':'disabled style="background:var(--off);color:var(--muted);"';
+  m.innerHTML=`<div class="modal" style="max-width:560px;">
+    <div class="modal-hd"><span class="modal-hd-title">Expense — <span style="font-weight:400;color:var(--muted);">${j.name}</span></span><button class="modal-x" onclick="document.getElementById('exp-detail-modal').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd">
+      <div class="field-row">
+        <div class="field" style="flex:2;"><label>Description</label><input id="ed-desc" class="form-inp" value="${(e.desc||e.description||'').replace(/"/g,'&quot;')}" style="width:100%;" ${dis}></div>
+        <div class="field" style="flex:1;"><label>Status</label>${canEdit?`<select id="ed-status" class="form-inp" style="width:100%;"><option value="draft" ${e.status==='draft'?'selected':''}>Draft</option><option value="approved" ${e.status==='approved'?'selected':''}>Approved</option><option value="invoiced" ${e.status==='invoiced'?'selected':''}>Invoiced</option></select>`:`<input class="form-inp" value="${(e.status||'draft')}" style="width:100%;text-transform:capitalize;" disabled>`}</div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Quantity</label><input id="ed-qty" class="form-inp" type="number" min="1" value="${qty}" style="width:100%;" oninput="_calcExpDetail()" ${dis}></div>
+        <div class="field"><label>Cost rate</label><input id="ed-cost" class="form-inp" type="number" min="0" step="0.01" value="${cost}" style="width:100%;" oninput="_calcExpDetail()" ${dis}></div>
+        <div class="field"><label>Markup %</label><input id="ed-markup" class="form-inp" type="number" min="0" value="${markup}" style="width:100%;" oninput="_calcExpDetail()" ${dis}></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Margin</label><input class="form-inp" value="${margin}%" disabled style="width:100%;background:var(--off);color:var(--muted);"></div>
+        <div class="field"><label>Sell rate</label><input id="ed-sell-rate" class="form-inp" value="$${unitSell.toLocaleString()}" disabled style="width:100%;background:var(--off);color:var(--muted);"></div>
+        <div class="field"><label>Total sell</label><input id="ed-total" class="form-inp" value="$${total.toLocaleString()}" disabled style="width:100%;background:var(--off);color:var(--muted);font-weight:500;"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Date</label><input id="ed-date" class="form-inp" type="date" value="${(e.date||'').slice(0,10)}" style="width:100%;" ${dis}></div>
+      </div>
+      ${!canEdit?`<div style="font-size:11px;color:var(--muted);background:var(--off);border-radius:4px;padding:8px 10px;margin-top:4px;">Synced from Streamtime — core fields are read-only here. Edit in Streamtime, or itemise the actual purchases below.</div>`:''}
+      <div id="ed-subs-wrap" style="margin-top:14px;"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="modal-cancel" onclick="document.getElementById('exp-detail-modal').remove()">Cancel</button>
+      ${canEdit?`<button class="modal-cancel" style="color:var(--red);" onclick="deleteExpenseDetail('${expId}','${jobId}')">Delete</button>`:''}
+      ${canEdit?`<button class="modal-save" onclick="saveExpenseDetail('${expId}','${jobId}')">Save expense</button>`:''}
+    </div>
+  </div>`;
+  m.addEventListener('click',ev=>{if(ev.target===m)m.remove();});
+  document.body.appendChild(m);
+  _renderExpDetailSubs(expId,e);
+}
+function _calcExpDetail(){
+  const cost=parseFloat(document.getElementById('ed-cost')?.value)||0;
+  const markup=parseFloat(document.getElementById('ed-markup')?.value)||0;
+  const qty=parseFloat(document.getElementById('ed-qty')?.value)||1;
+  const unitSell=Math.round(cost*(1+markup/100)*100)/100;
+  const total=Math.round(unitSell*qty*100)/100;
+  const margin=unitSell>0?Math.round((1-cost/unitSell)*1000)/10:0;
+  const sr=document.getElementById('ed-sell-rate');if(sr)sr.value='$'+unitSell.toLocaleString();
+  const tt=document.getElementById('ed-total');if(tt)tt.value='$'+total.toLocaleString();
+}
+function _renderExpDetailSubs(expId,seedExpense){
+  const wrap=document.getElementById('ed-subs-wrap');if(!wrap)return;
+  const subs=_ensureExpSubEdits(expId,seedExpense);
+  const subSum=subs.reduce((a,s)=>a+(+s.amount||0),0);
+  wrap.innerHTML=`<div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Itemised purchases</div>
+    ${subs.map((s,i)=>`<div style="display:flex;gap:8px;align-items:center;padding:3px 0;">
+      <input value="${(s.label||'').replace(/"/g,'&quot;')}" placeholder="Description" oninput="_setExpDetailSub('${expId}',${i},'label',this.value)" style="flex:1;border:1px solid var(--border);border-radius:4px;padding:4px 7px;font-size:12px;font-family:inherit;">
+      <span style="color:var(--muted);font-size:12px;">$</span>
+      <input value="${s.amount||0}" type="number" step="0.01" oninput="_setExpDetailSub('${expId}',${i},'amount',this.value)" style="width:90px;border:1px solid var(--border);border-radius:4px;padding:4px 7px;font-size:12px;font-family:inherit;text-align:right;">
+      <i class="ti ti-x" onclick="_removeExpDetailSub('${expId}',${i})" style="cursor:pointer;color:var(--muted);font-size:12px;" title="Remove line"></i>
+    </div>`).join('')}
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+      <span class="add-e-row" style="margin:0;" onclick="_addExpDetailSub('${expId}')"><i class="ti ti-plus" style="font-size:11px"></i> Add line</span>
+      <span style="font-size:12px;">Itemised total: <strong>$${subSum.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></span>
+    </div>`;
+}
+function _setExpDetailSub(expId,idx,field,val){_setExpSub(expId,idx,field,val);}
+function _addExpDetailSub(expId){_ensureExpSubEdits(expId).push({label:'',amount:0});_renderExpDetailSubs(expId);}
+function _removeExpDetailSub(expId,idx){_ensureExpSubEdits(expId).splice(idx,1);_renderExpDetailSubs(expId);}
+function saveExpenseDetail(expId,jobId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  const e=(j.expenses||[]).find(x=>x.id===expId);if(!e)return;
+  e.desc=(document.getElementById('ed-desc')?.value||'').trim();
+  e.status=document.getElementById('ed-status')?.value||'draft';
+  e.qty=parseFloat(document.getElementById('ed-qty')?.value)||1;
+  e.cost=parseFloat(document.getElementById('ed-cost')?.value)||0;
+  e.markup=parseFloat(document.getElementById('ed-markup')?.value)||0;
+  e.date=document.getElementById('ed-date')?.value||e.date;
+  e.sell=Math.round(e.cost*(1+e.markup/100)*100)/100;
+  e.total=Math.round(e.sell*e.qty*100)/100;
+  saveData();
+  document.getElementById('exp-detail-modal')?.remove();
+  renderExpensesList();
+  if(activeJobId===jobId&&typeof renderExpenses==='function')renderExpenses();
+  toast('Expense updated','success');
+}
+function deleteExpenseDetail(expId,jobId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  ccConfirm('Delete this expense? This cannot be undone.',()=>{
+    j.expenses=(j.expenses||[]).filter(x=>x.id!==expId);
+    saveData();
+    document.getElementById('exp-detail-modal')?.remove();
+    renderExpensesList();
+    if(activeJobId===jobId&&typeof renderExpenses==='function')renderExpenses();
+    toast('Expense deleted','info');
+  },'Delete',true);
 }
 function openLogExpense(prefillJobId){
   document.getElementById('log-exp-modal')?.remove();
@@ -7161,11 +7278,14 @@ function _expSubs(e){
   if(_expSubEdits[e.id])return _expSubEdits[e.id];
   return _parseExpenseSubs(e.desc||e.description||'');
 }
-function _ensureExpSubEdits(id){
+function _ensureExpSubEdits(id,seedExpense){
   if(!_expSubEdits[id]){
-    const j=jobs.find(x=>x.id===activeJobId);
-    const all=[...(j?.expenses||[]).map(e=>({...e,_source:'local'})),...(window.__lastStExps||[])];
-    const e=all.find(x=>x.id===id)||{id};
+    let e=seedExpense;
+    if(!e){
+      const j=jobs.find(x=>x.id===activeJobId);
+      const all=[...(j?.expenses||[]).map(x=>({...x,_source:'local'})),...(window.__lastStExps||[])];
+      e=all.find(x=>x.id===id)||{id};
+    }
     _expSubEdits[id]=_parseExpenseSubs(e.desc||e.description||'').map(s=>({label:s.label,amount:s.amount}));
   }
   return _expSubEdits[id];
@@ -8587,6 +8707,16 @@ function deletePerson(key){
 //  GLOBAL SEARCH (Cmd+K)
 // ═══════════════════════════════════════════════════════════════
 let _gsResults=[],_gsSel=0;
+function showStarredInSearch(){
+  if(!document.getElementById('gsearch').classList.contains('on'))openGlobalSearch();
+  document.getElementById('gs-inp').value='';
+  const ICONS={job:'ti-briefcase',client:'ti-building',quote:'ti-file-text',invoice:'ti-receipt-2'};
+  const starredJobs=jobs.filter(j=>j.starred).map(j=>({cat:'Starred',icon:'ti-briefcase',title:`${j.id} — ${j.name}`,sub:j.company,fn:()=>openJobDetail(j.id)}));
+  const other=_getStarred().map(s=>({cat:'Starred',icon:ICONS[s.type]||'ti-star',title:s.name||s.id,sub:s.type.charAt(0).toUpperCase()+s.type.slice(1),fn:()=>openStarredItem(s.type,s.id)}));
+  _gsResults=[...starredJobs,...other];_gsSel=0;
+  renderGsResults('');
+  if(!_gsResults.length)document.getElementById('gs-results').innerHTML=`<div class="gs-empty">Nothing starred yet. Click the <i class="ti ti-star" style="color:#E6A700;vertical-align:-1px;"></i> on a job or client to pin it here.</div>`;
+}
 function openGlobalSearch(){
   document.getElementById('gsearch').classList.add('on');
   const inp=document.getElementById('gs-inp');
@@ -9054,6 +9184,27 @@ const INV_FILTER_DEFS=[
 
 let _qtFilters=[];let _invFilters=[];let _jobsFilters=[];
 let _qtGroupBy='none';let _invGroupBy='none';let _jobsGroupBy='none';
+let _invSortCol=null,_invSortDir=1,_tbiSortCol=null,_tbiSortDir=1;
+function _setInvSort(col){if(_invSortCol===col)_invSortDir=-_invSortDir;else{_invSortCol=col;_invSortDir=1;}renderInvoices();}
+function _setTbiSort(col){if(_tbiSortCol===col)_tbiSortDir=-_tbiSortDir;else{_tbiSortCol=col;_tbiSortDir=1;}renderInvoices();}
+// Uninvoiced jobs that have been dismissed from the "needs attention" list (e.g. stale/
+// won't-invoice jobs) — persisted so they don't reappear on the next Streamtime sync, since
+// the job objects themselves get rebuilt from ST data and don't carry local state.
+function _getHiddenUninvoiced(){return JSON.parse(localStorage.getItem('cc_hidden_uninvoiced')||'[]');}
+function _setHiddenUninvoiced(ids){localStorage.setItem('cc_hidden_uninvoiced',JSON.stringify(ids));}
+function hideUninvoicedJob(jobId){
+  const ids=_getHiddenUninvoiced();
+  if(!ids.includes(jobId)){ids.push(jobId);_setHiddenUninvoiced(ids);}
+  renderInvoices();
+  toast('Hidden from Uninvoiced jobs','info');
+}
+function showHiddenUninvoiced(){
+  const ids=_getHiddenUninvoiced();
+  const names=ids.map(id=>jobs.find(j=>j.id===id)).filter(Boolean).map(j=>`${j.id} ${j.name}`);
+  ccConfirm(`${ids.length} job${ids.length!==1?'s':''} hidden from Uninvoiced jobs:<br><br>${names.join('<br>')||'(jobs no longer exist)'}<br><br>Unhide all?`,()=>{
+    _setHiddenUninvoiced([]);renderInvoices();toast('Unhidden','success');
+  },'Unhide all',false);
+}
 let _qtPresets=[];let _invPresets=[];let _jobsPresets=[];
 (function(){
   try{
@@ -9440,7 +9591,7 @@ function renderQuotes(){
       <div class="qinv-card-head" onclick="openQuoteDocPreview('${qt.id}')">
         <div style="display:flex;flex-direction:column;min-width:72px;flex-shrink:0;">
           <span class="qinv-card-num">${qt.quoteNumber||qt.id}</span>
-          ${jobNum?`<span class="qjob-chip">#${jobNum}</span>`:''}
+          ${jobNum?`<span class="qjob-chip">${jobNum}</span>`:''}
         </div>
         <span class="qinv-card-name">${qt.quoteName||qt.jobName||'—'}${qt._local?'<span style="font-size:9px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">Local</span>':''}</span>
         <span class="qinv-card-co">${qt.company||'—'}</span>
@@ -9566,16 +9717,19 @@ function renderInvoices(){
     return'<span class="inv-pill draft">Draft</span>';
   };
 
+  // Sortable column headers — shared sort state per table, click to toggle asc/desc
+  const _invSortArrow=col=>_invSortCol===col?(_invSortDir===1?' <i class="ti ti-chevron-up" style="font-size:9px;"></i>':' <i class="ti ti-chevron-down" style="font-size:9px;"></i>'):'';
+  const _invTh=(col,label,alignRight)=>`<th class="inv-th" style="cursor:pointer;user-select:none;${alignRight?'text-align:right;':''}" onclick="_setInvSort('${col}')">${label}${_invSortArrow(col)}</th>`;
   const tableHeader=`<table class="inv-table"><thead><tr>
-    <th class="inv-th">Company</th>
-    <th class="inv-th">Inv #</th>
-    <th class="inv-th">Job</th>
-    <th class="inv-th">PO</th>
-    <th class="inv-th">Sent date</th>
-    <th class="inv-th">Due date</th>
-    <th class="inv-th">Paid date</th>
-    <th class="inv-th">Status</th>
-    <th class="inv-th" style="text-align:right;">Amount inc GST</th>
+    ${_invTh('company','Company')}
+    ${_invTh('num','Inv #')}
+    ${_invTh('job','Job')}
+    ${_invTh('po','PO')}
+    ${_invTh('sent','Sent date')}
+    ${_invTh('due','Due date')}
+    ${_invTh('paid','Paid date')}
+    ${_invTh('status','Status')}
+    ${_invTh('amount','Amount inc GST',true)}
   </tr></thead><tbody>`;
 
   const renderInvRow=i=>{
@@ -9586,7 +9740,7 @@ function renderInvoices(){
     return`<tr class="inv-tr" style="cursor:pointer;${isOverdue?'background:#fff8f8;':''}" onclick="openInvoiceDocPreview('${i.id}')">
       <td class="inv-td" style="color:var(--muted);font-size:12px;">${i.company?.name||'—'}</td>
       <td class="inv-td" style="font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;">${i.number||i.id}</td>
-      <td class="inv-td"><span style="font-size:11px;color:var(--muted);margin-right:4px;">${job?'#'+job.id:''}</span>${job?.name||'—'}</td>
+      <td class="inv-td"><span style="font-size:11px;color:var(--muted);margin-right:4px;">${job?job.id:''}</span>${job?.name||'—'}</td>
       <td class="inv-td" style="font-size:12px;color:var(--muted);">${po||'—'}</td>
       <td class="inv-td" style="font-size:12px;color:var(--muted);">${fmtDate(i.sentDate)}</td>
       <td class="inv-td" style="font-size:12px;color:${isOverdue?'var(--red)':'var(--muted)'};">${i.dueDate?fmtDate(i.dueDate):'—'}</td>
@@ -9595,23 +9749,48 @@ function renderInvoices(){
       <td class="inv-td" style="text-align:right;font-family:var(--serif);font-size:14px;font-variant-numeric:tabular-nums;">${amt!=null?'$'+amt.toLocaleString():'—'}</td>
     </tr>`;
   };
+  const _invSortKey={
+    company:i=>(i.company?.name||'').toLowerCase(),num:i=>String(i.number||i.id),
+    job:i=>{const j=jobByStId[i.jobId]||jobs.find(x=>x.id===String(i.jobNumber));return j?.id||'';},
+    po:i=>{const j=jobByStId[i.jobId]||jobs.find(x=>x.id===String(i.jobNumber));return(i.purchaseOrderNumber||j?.po||'').toLowerCase();},
+    sent:i=>i.sentDate||'',due:i=>i.dueDate||'',paid:i=>i.paidDate||'',status:i=>_getInvStatus(i),
+    amount:i=>i.totalAmountIncTax!=null?i.totalAmountIncTax:(i.totalAmountExTax!=null?i.totalAmountExTax*1.15:0),
+  };
+  if(_invSortCol&&_invSortKey[_invSortCol]){
+    const keyFn=_invSortKey[_invSortCol];
+    inv.sort((a,b)=>{const av=keyFn(a),bv=keyFn(b);if(av<bv)return-1*_invSortDir;if(av>bv)return 1*_invSortDir;return 0;});
+  }
 
-  // Uninvoiced jobs section
+  // Uninvoiced jobs section — columns aligned to the Invoiced table above (Company/Job/PO/Status/Amount)
   let tbiHTML='';
   if(showTBI){
-    const tbiJobs=jobs.filter(j=>(j.workflowStatus==='completed'||j.status==='complete')&&!(j._stInvoiced>0));
-    if(tbiJobs.length){
-      tbiHTML=`<div class="grp-hd" style="background:#fffbea;border-left:3px solid #F39C12;"><span><i class="ti ti-alert-triangle" style="color:#F39C12;margin-right:6px;"></i>Uninvoiced jobs</span><span style="font-weight:400;font-size:11px;">${tbiJobs.length} job${tbiJobs.length!==1?'s':''} complete &amp; not invoiced</span></div>
-      <table class="inv-table"><thead><tr>
-        <th class="inv-th">Company</th><th class="inv-th">Job</th><th class="inv-th">PO</th><th class="inv-th">Time logged ex GST</th><th class="inv-th">Invoiced ex GST</th><th class="inv-th">Workflow</th>
+    const hidden=_getHiddenUninvoiced();
+    let tbiJobs=jobs.filter(j=>(j.workflowStatus==='completed'||j.status==='complete')&&!(j._stInvoiced>0)&&!hidden.includes(j.id));
+    const _tbiSortKey={
+      company:j=>(j.company||'').toLowerCase(),job:j=>j.id,po:j=>(j.po||'').toLowerCase(),
+      status:j=>'complete',amount:j=>j._sellUsed||0,
+    };
+    if(_tbiSortCol&&_tbiSortKey[_tbiSortCol]){
+      const keyFn=_tbiSortKey[_tbiSortCol];
+      tbiJobs=[...tbiJobs].sort((a,b)=>{const av=keyFn(a),bv=keyFn(b);if(av<bv)return-1*_tbiSortDir;if(av>bv)return 1*_tbiSortDir;return 0;});
+    }
+    const _tbiArrow=col=>_tbiSortCol===col?(_tbiSortDir===1?' <i class="ti ti-chevron-up" style="font-size:9px;"></i>':' <i class="ti ti-chevron-down" style="font-size:9px;"></i>'):'';
+    const _tbiTh=(col,label,alignRight)=>`<th class="inv-th" style="cursor:pointer;user-select:none;${alignRight?'text-align:right;':''}" onclick="_setTbiSort('${col}')">${label}${_tbiArrow(col)}</th>`;
+    if(tbiJobs.length||hidden.length){
+      tbiHTML=`<div class="grp-hd" style="background:#fffbea;border-left:3px solid #F39C12;">
+        <span><i class="ti ti-alert-triangle" style="color:#F39C12;margin-right:6px;"></i>Uninvoiced jobs</span>
+        <span style="font-weight:400;font-size:11px;display:flex;align-items:center;gap:10px;">${tbiJobs.length} job${tbiJobs.length!==1?'s':''} complete &amp; not invoiced${hidden.length?`<a href="#" onclick="event.preventDefault();showHiddenUninvoiced()" style="color:var(--muted);">${hidden.length} hidden</a>`:''}</span>
+      </div>
+      ${tbiJobs.length?`<table class="inv-table"><thead><tr>
+        ${_tbiTh('company','Company')}${_tbiTh('job','Job')}${_tbiTh('po','PO')}${_tbiTh('status','Status')}${_tbiTh('amount','Amount ex GST',true)}<th class="inv-th" style="width:30px;"></th>
       </tr></thead><tbody>${tbiJobs.map(j=>`<tr class="inv-tr" style="cursor:pointer;" onclick="openJobDetail('${j.id}')">
         <td class="inv-td" style="color:var(--muted);font-size:12px;">${j.company}</td>
         <td class="inv-td"><span style="font-size:11px;color:var(--muted);margin-right:6px;">${j.id}</span>${j.name}</td>
         <td class="inv-td" style="font-size:12px;color:var(--muted);">${j.po||'—'}</td>
-        <td class="inv-td" style="font-variant-numeric:tabular-nums;">$${(j._sellUsed||0).toLocaleString()}</td>
-        <td class="inv-td" style="font-variant-numeric:tabular-nums;">${j._stInvoiced?'$'+j._stInvoiced.toLocaleString():'<span style="color:var(--muted);">None</span>'}</td>
         <td class="inv-td"><span class="wf-badge wf-completed">Complete</span></td>
-      </tr>`).join('')}</tbody></table>`;
+        <td class="inv-td" style="text-align:right;font-family:var(--serif);font-size:14px;font-variant-numeric:tabular-nums;">$${(j._sellUsed||0).toLocaleString()}</td>
+        <td class="inv-td" style="text-align:center;"><i class="ti ti-eye-off" title="Hide from this list" style="font-size:13px;color:var(--muted);cursor:pointer;" onclick="event.stopPropagation();hideUninvoicedJob('${j.id}')"></i></td>
+      </tr>`).join('')}</tbody></table>`:''}`;
     }
   }
 
