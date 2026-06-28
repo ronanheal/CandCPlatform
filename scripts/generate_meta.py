@@ -133,8 +133,19 @@ def _section_ids(src, heading_pattern):
             active = False
             continue
         if active:
-            ids.update(re.findall(r"\(#\d+\s*/\s*(\w+)\)", line))
-            ids.update(re.findall(r"^\|\s*(\w+)\s*\|", line))
+            ids.update(_row_ids(line))
+    return ids
+
+# A table row's first cell holds the id in one of several formats this doc actually uses:
+# "QW8", "M6 / #13", "L3 / #17", or a bare "#17" with no letter-prefixed id at all. Capture
+# the letter-prefixed id when present (that's what the machine-readable index keys on);
+# a bare "#N" with no letter id contributes nothing and relies on the fuzzy fallback instead.
+def _row_ids(line):
+    ids = set()
+    ids.update(re.findall(r"\(#\d+\s*/\s*(\w+)\)", line))
+    m = re.match(r"^\|\s*([^|]+?)\s*\|", line)
+    if m:
+        ids.update(re.findall(r"\b(?:[A-Za-z]+\d+|0[a-g])\b", m.group(1)))
     return ids
 
 blocked_ids = _section_ids(roadmap_src, r"^###\s+(Blocked|Deferred)\b")
@@ -156,17 +167,20 @@ for line in roadmap_src.splitlines():
         continue
     if in_index_section or in_blocked_section:
         continue
-    done_ids.update(re.findall(r"\(#\d+\s*/\s*(\w+)\)", line))
-    done_ids.update(re.findall(r"^\|\s*(\w+)\s*\|", line))
+    done_ids.update(_row_ids(line))
 done_ids -= blocked_ids
 
 # Fuzzy keyword fallback — only for ids with no explicit mention anywhere in the doc.
+# Strip surrounding punctuation before comparing, otherwise a trailing period/comma in
+# changelog prose (e.g. "...pipeline funnel.") never matches the bare title word
+# ("funnel") and a genuinely-shipped item can get stuck on "planned" forever.
+def _clean_words(text):
+    return [w for w in re.sub(r"[^\w\s-]", "", text.lower()).split() if len(w) > 4]
+
 done_keywords = set()
 for rel in releases:
     for item in rel["items"]:
-        for w in item.lower().split():
-            if len(w) > 4:
-                done_keywords.add(w)
+        done_keywords.update(_clean_words(item))
 
 for r in roadmap_items:
     if r["id"] in blocked_ids:
@@ -174,7 +188,7 @@ for r in roadmap_items:
     elif r["id"] in done_ids:
         r["status"] = "done"
     else:
-        words = [w for w in r["title"].lower().split() if len(w) > 4]
+        words = _clean_words(r["title"])
         if words and sum(1 for w in words if w in done_keywords) >= 2:
             r["status"] = "done"
 

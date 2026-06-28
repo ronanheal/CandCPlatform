@@ -123,9 +123,9 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 | M5 / #12 | Per-client revenue trend | Reporting → Clients | v2.13.0 |
 | M6 / #13 | Utilisation report | Reporting → People | v2.13.0 |
 | M7 / #14 | Contact management — add/edit/delete per client | Jobs → Clients | v2.15.0 |
-| #15 | Staff profitability & utilisation (revenue vs cost) | Reporting | v2.13.0 |
-| #17 | Quote-to-invoice pipeline funnel | Reporting → Business | v2.14.0 |
-| #20 | Workspace export / import | Settings | v2.14.0 |
+| L1 / #15 | Staff profitability & utilisation (revenue vs cost) | Reporting | v2.13.0 |
+| L3 / #17 | Quote-to-invoice pipeline funnel | Reporting → Business | v2.14.0 |
+| P5 / #20 | Workspace export / import | Settings | v2.14.0 |
 | P1 | Monday rollover prompt — unfinished tasks from last week | Todo | v2.15.0 |
 | P2 | Uninvoiced work report | Reporting → Business | v2.16.0 |
 | P3 | Studio board preset — auto-board by workflow stage | Boards | v2.16.0 |
@@ -238,6 +238,7 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 **P1. Monday rollover prompt — move unfinished tasks from last week**
 **P3. Studio board preset — auto-board of all live jobs by workflow stage**
 **P4. Date-range picker in Reporting**
+**P5. Workspace export/import — one JSON file data backup**
 **P6. Capacity warnings while booking — tint day header when full**
 **P7. Working hours per person in Settings**
 **P8. Quiet-client flag — no active job in N weeks nudge**
