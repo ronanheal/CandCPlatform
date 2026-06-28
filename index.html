@@ -2104,6 +2104,10 @@ tr:hover .i-todo-btn{opacity:1;}
   <div class="fup-card">
     <div class="fup-hd"><i class="ti ti-bell" style="color:var(--red);font-size:15px;"></i> Follow-up?</div>
     <div class="fup-bd" id="fup-bd">Do you need to add more time to this job?</div>
+    <div class="fup-hrs-wrap" id="fup-hrs-wrap" style="display:none;padding:0 16px 13px;">
+      <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Actual hours worked</label>
+      <input type="text" id="fup-hrs" class="tm-hours-inp" style="width:90px;" placeholder="e.g. 2h">
+    </div>
     <div class="fup-ft"><button class="fup-y" onclick="closeFup(true)">Yes, add one</button><button class="fup-n" onclick="closeFup(false)">No thanks</button></div>
   </div>
 </div>
@@ -2169,7 +2173,13 @@ async function dbCreateJob(data){
 }
 async function dbUpdateJob(id,patch){
   const i=jobs.findIndex(j=>j.id===id);if(i<0)return null;
-  jobs[i]={...jobs[i],...patch,_updatedAt:Date.now()};saveData();return jobs[i];
+  // Native edits (name/startDate/dueDate/status, etc.) are kept in _native so they survive
+  // a Streamtime re-fetch — _mapStJob rebuilds the whole `jobs` array from ST data on every
+  // refresh, which would otherwise clobber any field we wrote directly onto the job object.
+  // initStreamtime() snapshots & re-applies j._native after remapping (see _prevNative).
+  jobs[i]._native={...(jobs[i]._native||{}),...patch};
+  jobs[i]={...jobs[i],...patch,_updatedAt:Date.now()};
+  saveData();return jobs[i];
 }
 async function dbCreateTimeEntry(data){
   const e={...data,id:data.id||uid('lt'),_local:true,date:data.date||new Date().toISOString().slice(0,10),minutes:Math.round((data.hours||0)*60)};
@@ -2192,6 +2202,27 @@ async function dbCreateExpense(jobId,data){
   if(!j.expenses)j.expenses=[];
   const e={...data,id:uid('exp'),_local:true,status:'draft',date:data.date||new Date().toISOString().slice(0,10)};
   j.expenses.push(e);saveData();return e;
+}
+// Milestones — native create/edit/delete. Field shape (name/date) matches ST's milestones.json
+// so native and ST-sourced milestones can render through the same code path. Native milestones
+// are tagged _isNative so initStreamtime() can snapshot & splice them back into j.milestones
+// after a Streamtime re-fetch rebuilds `jobs` from scratch (see _prevMilestones in initStreamtime).
+async function dbCreateMilestone(jobId,data){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return null;
+  if(!j.milestones)j.milestones=[];
+  const m={name:data.name||'Milestone',date:data.date||null,id:uid('ms'),_isNative:true};
+  j.milestones.push(m);saveData();return m;
+}
+async function dbUpdateMilestone(jobId,milestoneId,patch){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return null;
+  const m=(j.milestones||[]).find(x=>x.id===milestoneId);if(!m)return null;
+  Object.assign(m,patch);saveData();return m;
+}
+async function dbDeleteMilestone(jobId,milestoneId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return false;
+  if(!j.milestones)return false;
+  const i=j.milestones.findIndex(x=>x.id===milestoneId);if(i<0)return false;
+  j.milestones.splice(i,1);saveData();return true;
 }
 function _trackRecent(type,id,name){
   const rv=JSON.parse(localStorage.getItem('cc_recent')||'[]');
@@ -3056,9 +3087,32 @@ async function initStreamtime(silent){
       jobs.forEach(j=>{if(j.paused&&!j._streamtime)_prevPaused[j.id]=true;});
       // Also preserve manual-paused flag on ST jobs (set via job settings UI)
       jobs.forEach(j=>{if(j.paused&&j._streamtime&&j._manualPaused)_prevPaused[j.id]=true;});
+      // Also preserve native field overrides (name/startDate/dueDate/status, etc.) made via
+      // dbUpdateJob — these live in j._native and must be re-applied after the ST remap below.
+      const _prevNative={};
+      jobs.forEach(j=>{if(j._native)_prevNative[j.id]=j._native;});
+      // Also preserve native milestones (created via dbCreateMilestone). _mapStJob below builds
+      // a brand-new job object per job and never sets `milestones`, so without this snapshot any
+      // native milestone would be silently dropped on every Streamtime re-fetch — same clobber
+      // bug class as phases/items. Only _isNative entries are snapshotted; ST-sourced milestones
+      // are re-derived fresh from stMilestones at render time (see _jobMilestones).
+      const _prevMilestones={};
+      jobs.forEach(j=>{
+        const nativeMs=(j.milestones||[]).filter(m=>m._isNative);
+        if(nativeMs.length)_prevMilestones[j.id]=nativeMs;
+      });
+      // Also preserve native expenses (created via dbCreateExpense/saveExpenseInline). _mapStJob
+      // below never sets `expenses` on the new job object, so without this snapshot any native
+      // expense would be silently dropped on every Streamtime re-fetch — same clobber bug class
+      // as milestones above. ST-sourced expenses live separately in stExpenses, not j.expenses.
+      const _prevExpenses={};
+      jobs.forEach(j=>{if((j.expenses||[]).length)_prevExpenses[j.id]=j.expenses;});
       jobs=raw.map(_mapStJob);
       jobs.forEach(j=>{
         if(_prevPaused[j.id]){j.paused=true;j._manualPaused=true;}
+        if(_prevNative[j.id]){j._native=_prevNative[j.id];Object.assign(j,j._native);}
+        if(_prevMilestones[j.id])j.milestones=_prevMilestones[j.id];
+        if(_prevExpenses[j.id])j.expenses=_prevExpenses[j.id];
         (j.labels||[]).forEach(l=>addGlobalLabel(l));
         if(j._stId)_stIdToJobNum[j._stId]=j.id;
       });
@@ -4847,12 +4901,7 @@ function onDropToSection(e,toDay,markDone){
       if(insertIdx>=0)wd[toDay].splice(insertIdx,0,task);else wd[toDay].push(task);
     }
     // Trigger follow-up prompt when marking a task as done
-    if(markDone&&!wasAlreadyDone){
-      _fupTask=task;
-      const bd=document.getElementById('fup-bd');
-      if(bd)bd.textContent=task.job?`Done! Need to add more time to ${task.job}?`:'Done! Need to add a follow-up task?';
-      setTimeout(()=>document.getElementById('fup').classList.add('on'),800);
-    }
+    if(markDone&&!wasAlreadyDone)_showFupForTask(task);
     renderTodo();saveData();
   }catch(err){}
 }
@@ -5293,10 +5342,36 @@ function toggleTaskDone(taskId){
     if(t){
       t.done=!t.done;
       if(t.jobId)logActivity(t.jobId,currentPerson,'task_status',`Task <strong>${t.title}</strong> ${t.done?'marked done':'reopened'}`);
-      if(t.done){_fupTask=t;setTimeout(()=>document.getElementById('fup').classList.add('on'),800);}
+      if(t.done)_showFupForTask(t);
       renderTodo();saveData();_refreshJobStats();return;
     }
   }
+}
+
+// Shown when a task is marked done — offers to log actual hours against the job/item
+// (folds the old standalone "Log Time" modal into the existing complete-task moment)
+// and to add a follow-up task. See closeFup() for what happens on confirm.
+// Resolves a task's job id the same way the rest of the codebase does (e.g. the search-
+// indexer at ~9497): t.jobId is only set for natively-added tasks, ST-seeded tasks only
+// carry t.job as "<jobNumber>" or "<jobNumber> <jobName>" — extract the leading number.
+function _taskJobId(t){
+  if(t.jobId)return t.jobId;
+  const m=t.job?t.job.match(/^(\d+)/):null;
+  return m?m[1]:null;
+}
+function _showFupForTask(t){
+  _fupTask=t;
+  const bd=document.getElementById('fup-bd');
+  if(bd)bd.textContent=t.job?`Done! Need to add more time to ${t.job}?`:'Done! Need to add a follow-up task?';
+  const hrsWrap=document.getElementById('fup-hrs-wrap');
+  const hrsInp=document.getElementById('fup-hrs');
+  if(hrsWrap&&hrsInp){
+    const jId=_taskJobId(t);
+    const canLogTime=!!(jId&&jobs.find(j=>j.id===jId)?._stId);
+    hrsWrap.style.display=canLogTime?'':'none';
+    hrsInp.value=t.hours?formatHrs(t.hours):'';
+  }
+  setTimeout(()=>document.getElementById('fup').classList.add('on'),800);
 }
 
 function toggleWeek(dir){
@@ -5328,8 +5403,40 @@ function addTeamMember(name){
   renderTodo();savePeople();saveData();
 }
 
+// Logs actual hours against the job/item the just-completed task belonged to.
+// Folds the old standalone "Log Time" modal into the mark-done moment: this is
+// the point where we actually know how long the work took. Only fires for
+// tasks tied to a Streamtime-backed job (dbCreateTimeEntry's consumers — Progress
+// tab, job detail "Time used" — all key off the ST job/user ids in stLoggedTimes).
+async function _logTimeFromFup(){
+  const t=_fupTask;
+  const hrsWrap=document.getElementById('fup-hrs-wrap');
+  const hrsInp=document.getElementById('fup-hrs');
+  if(!t||!hrsWrap||hrsWrap.style.display==='none')return;
+  const raw=(hrsInp?.value||'').trim();
+  if(!raw)return; // no hours entered — nothing to log
+  const hours=parseHrsInput(raw);
+  if(!hours||hours<=0)return;
+  const job=jobs.find(j=>j.id===_taskJobId(t));
+  if(!job||!job._stId)return;
+  const userId=people[currentPerson]?._stId;
+  if(!userId)return; // local-only person — no ST user id to attribute the entry to
+  await dbCreateTimeEntry({
+    job:{id:job._stId,name:job.name,number:job.id,isBillable:job.isBillable!==false},
+    jobId:job._stId,
+    userId,
+    itemId:t.itemId||null,
+    itemName:t.item||'',
+    notes:t.title||'',
+    hours,
+    date:new Date().toISOString().slice(0,10)
+  });
+  renderTodo();_refreshJobStats();
+}
+
 function closeFup(yes){
   document.getElementById('fup').classList.remove('on');
+  _logTimeFromFup();
   if(yes){
     const t=_fupTask;
     const jobId=t&&t.job?(t.job.match(/^(\d+)/)||[])[1]:null;
@@ -5976,9 +6083,25 @@ function openJobDetail(id){
   const _dueStr=_due?fmtDate(j.dueDate):'';
   const _dueSoon=_due&&(_due-_now)/(86400000)<=7&&_due>=_now&&j.status==='inplay';
   const _overdue=_due&&_due<_now&&j.status==='inplay';
-  const _dueBadge=_overdue?` &nbsp;<span class="paused-badge" style="background:#FFEBEE;color:#C62828;border-color:#EF9A9A;" title="Job overdue"><i class="ti ti-alert-triangle" style="font-size:9px;"></i> Overdue${_dueStr?' · '+_dueStr:''}</span>`:_dueSoon?` &nbsp;<span class="paused-badge" style="background:#FFF9C4;color:#E65100;border-color:#FFE082;" title="Due within 7 days"><i class="ti ti-clock" style="font-size:9px;"></i> Due ${_dueStr}</span>`:_dueStr?` &nbsp;<span style="font-size:11px;color:var(--muted);">Due ${_dueStr}</span>`:'';
-  document.getElementById('d-meta-line').innerHTML=`${j.id} · ${j.company} · ${leadHtml}${j.billable?'Billable':'Non-billable'}${j.po?` · PO ${j.po}`:''} &nbsp;<span class="wf-badge ${wfCls}" style="cursor:pointer;user-select:none;" title="Click to advance workflow stage" onclick="advanceWorkflow('${id}')">${wfLabel} <i class="ti ti-arrow-right" style="font-size:9px;vertical-align:middle;"></i></span>`+(j.paused?' &nbsp;<span class="paused-badge"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>':'')+archivedBadge+_dueBadge;
-  document.getElementById('d-title-text').textContent=j.name;
+  const _dueBadgeCls=_overdue?'background:#FFEBEE;color:#C62828;border-color:#EF9A9A;':_dueSoon?'background:#FFF9C4;color:#E65100;border-color:#FFE082;':'';
+  const _dueIcon=_overdue?'<i class="ti ti-alert-triangle" style="font-size:9px;"></i> ':_dueSoon?'<i class="ti ti-clock" style="font-size:9px;"></i> ':'';
+  const _dueLabel=_overdue?'Overdue · ':_dueSoon?'Due ':'Due ';
+  const _dueBadge=` &nbsp;<span class="paused-badge" style="cursor:pointer;user-select:none;${_dueBadgeCls}" title="Click to edit due date" onclick="editJobDateField('${id}','dueDate')">${_dueIcon}${_dueStr?_dueLabel+_dueStr:'Set due date'}</span>`;
+  const _startStr=j.startDate?fmtDate(j.startDate):'';
+  const _startBadge=` &nbsp;<span style="font-size:11px;color:var(--muted);cursor:pointer;user-select:none;" title="Click to edit start date" onclick="editJobDateField('${id}','startDate')">${_startStr?'Start '+_startStr:'Set start date'}</span>`;
+  const _statusLabels={inplay:'In Play',complete:'Complete',archived:'Archived'};
+  const _statusBadge=` &nbsp;<span class="paused-badge" style="cursor:pointer;user-select:none;" title="Click to set status directly" onclick="editJobStatusField('${id}')">${_statusLabels[j.status]||j.status}</span>`;
+  document.getElementById('d-meta-line').innerHTML=`${j.id} · ${j.company} · ${leadHtml}${j.billable?'Billable':'Non-billable'}${j.po?` · PO ${j.po}`:''} &nbsp;<span class="wf-badge ${wfCls}" style="cursor:pointer;user-select:none;" title="Click to advance workflow stage" onclick="advanceWorkflow('${id}')">${wfLabel} <i class="ti ti-arrow-right" style="font-size:9px;vertical-align:middle;"></i></span>`+_statusBadge+(j.paused?' &nbsp;<span class="paused-badge"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>':'')+archivedBadge+_startBadge+_dueBadge;
+  let _titleEl=document.getElementById('d-title-text');
+  if(_titleEl.tagName!=='DIV'){
+    const _div=document.createElement('div');
+    _div.id='d-title-text';_div.className='detail-title';
+    _titleEl.replaceWith(_div);_titleEl=_div;
+  }
+  _titleEl.textContent=j.name;
+  _titleEl.title='Click to rename';
+  _titleEl.style.cursor='pointer';
+  _titleEl.onclick=()=>editJobNameField(id);
   document.getElementById('d-hours-sell').textContent='';
   activeLabels=j.labels?[...j.labels]:[];
   renderLabels();
@@ -6661,9 +6784,117 @@ function openInvoiceDocPreview(invId){
 // ── Job Timeline — lightweight Gantt-style view built from phase/item date ranges ──
 // No external Gantt library: a date axis + absolutely-positioned bars is enough for
 // the phase-level granularity ST gives us (no per-day task scheduling to render).
+// Merge native (j.milestones) + ST-sourced (stMilestones, by j._stId) milestones for a job.
+// j.milestones is never touched by _mapStJob, so native entries survive Streamtime re-fetches
+// untouched — same structural guarantee as j.expenses. ST ones are derived fresh every render.
+function _jobMilestones(j){
+  const native=(j.milestones||[]).map(m=>({...m,_source:'local'}));
+  const st=(stMilestones||[]).filter(m=>String(m.jobId)===String(j._stId)).map(m=>({id:'st-ms-'+m.id,name:m.name||'Milestone',date:m.date||null,_source:'st',_stId:m.id}));
+  return[...native,...st].sort((a,b)=>(a.date||'9999')<(b.date||'9999')?-1:1);
+}
+function renderMilestonesSection(){
+  const j=jobs.find(x=>x.id===activeJobId);
+  const wrap=document.getElementById('milestones-wrap');if(!wrap||!j)return;
+  const ms=_jobMilestones(j);
+  const rows=ms.map(m=>{
+    const canEdit=m._source==='local';
+    const dateLabel=m.date?_docFmtDate(m.date):'No date';
+    const nameCell=canEdit
+      ?`<span class="item-editable" title="Click to rename" onclick="inlineEditMilestone(event,'${m.id}','name')">${m.name}</span>`
+      :`<span>${m.name}</span>`;
+    const dateCell=canEdit
+      ?`<span class="item-editable" title="Click to edit date" onclick="inlineEditMilestone(event,'${m.id}','date')">${dateLabel}</span>`
+      :`<span style="color:var(--muted);">${dateLabel}</span>`;
+    const stTag=m._source==='st'?'<span style="font-size:9px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">ST</span>':'';
+    const delBtn=canEdit?`<i class="ti ti-x" title="Delete milestone" style="cursor:pointer;color:var(--muted);font-size:12px;" onclick="deleteMilestoneRow('${m.id}')"></i>`:'';
+    return`<div class="ms-row" style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--faint);">
+      <i class="ti ti-flag-3" style="font-size:13px;color:var(--muted);flex-shrink:0;"></i>
+      <span style="flex:1;font-size:13px;">${nameCell}${stTag}</span>
+      <span style="font-size:12px;width:120px;text-align:right;">${dateCell}</span>
+      <span style="width:16px;text-align:center;">${delBtn}</span>
+    </div>`;
+  }).join('');
+  wrap.innerHTML=`<div style="margin-bottom:16px;border:1px solid var(--border);border-radius:6px;background:var(--white);padding:10px 14px;">
+    <div style="display:flex;align-items:center;margin-bottom:2px;">
+      <span style="font-size:13px;font-weight:500;flex:1;">Milestones</span>
+      <span style="font-size:11px;color:var(--muted);">${ms.length} milestone${ms.length!==1?'s':''}</span>
+    </div>
+    ${rows||'<div style="padding:8px 0;font-size:12px;color:var(--muted);">No milestones yet.</div>'}
+    <div class="add-e-row" style="margin-top:6px;" onclick="showAddMilestoneInline()"><i class="ti ti-plus" style="font-size:11px"></i> Add milestone</div>
+  </div>`;
+}
+function showAddMilestoneInline(){
+  if(!activeJobId)return;
+  document.querySelectorAll('.add-ms-form-row').forEach(r=>r.remove());
+  const wrap=document.getElementById('milestones-wrap');if(!wrap)return;
+  const row=document.createElement('div');row.className='add-ms-form-row';
+  row.style.cssText='background:var(--off);border:1px solid var(--border);border-radius:3px;padding:10px 14px;margin-top:4px;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;';
+  row.innerHTML=`<div style="flex:2;min-width:160px;">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em;">Name *</div>
+      <input class="form-inp" id="mi-name" placeholder="e.g. Final delivery" style="width:100%;">
+    </div>
+    <div style="flex:1;min-width:130px;">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em;">Date</div>
+      <input class="form-inp" id="mi-date" type="date" style="width:100%;">
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;padding-bottom:2px;">
+      <button class="save-b" onclick="saveMilestoneInline()">Add</button>
+      <button class="cancel-b" onclick="this.closest('.add-ms-form-row').remove()">Cancel</button>
+    </div>`;
+  wrap.appendChild(row);
+  document.getElementById('mi-name')?.focus();
+}
+async function saveMilestoneInline(){
+  const name=(document.getElementById('mi-name')?.value||'').trim();
+  if(!name){toast('Enter a milestone name','error');return;}
+  const date=document.getElementById('mi-date')?.value||null;
+  if(!activeJobId)return;
+  await dbCreateMilestone(activeJobId,{name,date});
+  logActivity(activeJobId,MY_PERSON,'milestone_add',`Added milestone <strong>${name}</strong>`);
+  document.querySelector('.add-ms-form-row')?.remove();
+  renderMilestonesSection();
+  toast('Milestone added');
+}
+function inlineEditMilestone(e,msId,field){
+  e.stopPropagation();
+  const span=e.target;const current=span.textContent.trim();
+  const input=document.createElement('input');
+  input.value=field==='date'?(span.closest('.ms-row')?.dataset.date||''):current;
+  if(field==='date'){input.type='date';
+    const j=jobs.find(x=>x.id===activeJobId);
+    const m=j&&(j.milestones||[]).find(x=>x.id===msId);
+    input.value=m?.date||'';
+  }
+  input.style.cssText='font-size:13px;font-family:inherit;border:1px solid var(--border);border-radius:4px;padding:2px 6px;width:100%;';
+  span.replaceWith(input);input.focus();input.select();
+  const commit=async()=>{
+    const val=field==='date'?(input.value||null):input.value.trim();
+    if(field==='name'&&!val){renderMilestonesSection();return;}
+    await dbUpdateMilestone(activeJobId,msId,{[field]:val});
+    renderMilestonesSection();
+  };
+  input.addEventListener('keydown',ev=>{if(ev.key==='Enter')input.blur();if(ev.key==='Escape'){renderMilestonesSection();}});
+  input.addEventListener('blur',commit);
+}
+async function deleteMilestoneRow(msId){
+  if(!activeJobId)return;
+  const j=jobs.find(x=>x.id===activeJobId);
+  const m=j&&(j.milestones||[]).find(x=>x.id===msId);
+  await dbDeleteMilestone(activeJobId,msId);
+  if(m)logActivity(activeJobId,MY_PERSON,'milestone_delete',`Deleted milestone <strong>${m.name}</strong>`);
+  renderMilestonesSection();
+  toast('Milestone deleted');
+}
 function renderTimelineTab(){
   const j=jobs.find(x=>x.id===activeJobId);
-  const wrap=document.getElementById('dtab-timeline');if(!wrap||!j)return;
+  const outer=document.getElementById('dtab-timeline');if(!outer||!j)return;
+  // dtab-timeline holds two persistent child sections so the Gantt re-render never wipes the
+  // milestones list (and vice versa): #milestones-wrap and #gantt-wrap.
+  if(!document.getElementById('milestones-wrap')){
+    outer.innerHTML=`<div id="milestones-wrap"></div><div id="gantt-wrap"></div>`;
+  }
+  renderMilestonesSection();
+  const wrap=document.getElementById('gantt-wrap');if(!wrap)return;
   const rows=phases.map(ph=>({name:ph.name,start:ph.startDate,end:ph.dueDate||ph.startDate,status:ph.status,paused:ph.paused})).filter(r=>r.start&&r.end);
   if(!rows.length){
     wrap.innerHTML=emptyStateHTML('ti-timeline','No phase dates available','Timeline needs phase start/due dates from Streamtime — this job\'s phases don\'t have any set, or it isn\'t synced from ST yet.','','');
@@ -7708,6 +7939,67 @@ function confirmAdvanceWorkflow(jobId,next){
   document.getElementById('wf-confirm-modal')?.remove();
   openJobDetail(jobId);
   toast(`Moved to ${labels[next]}`,'success');
+}
+// ── Inline edit: job name / dates / status (job detail header) ─────────────────
+// Matches the click-to-edit pattern used for client fields (updateClientField): click the
+// text, it swaps for an input/select, blur/Enter commits via dbUpdateJob, then re-renders.
+function editJobNameField(jobId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  const el=document.getElementById('d-title-text');if(!el)return;
+  const inp=document.createElement('input');
+  inp.id='d-title-text';inp.className='form-inp';inp.value=j.name||'';
+  inp.style.cssText='font-family:var(--serif);font-size:inherit;font-weight:inherit;width:100%;padding:2px 6px;';
+  el.replaceWith(inp);inp.focus();inp.select();
+  const commit=async()=>{
+    const val=inp.value.trim();
+    if(val&&val!==j.name){await dbUpdateJob(jobId,{name:val});logActivity(jobId,MY_PERSON,'edit',`Renamed job to <strong>${val}</strong>`);}
+    openJobDetail(jobId);
+  };
+  inp.addEventListener('blur',commit);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();else if(e.key==='Escape'){inp.value=j.name||'';inp.blur();}});
+}
+function editJobDateField(jobId,field){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  // The clicked badge is re-rendered by openJobDetail each time, so find it via the inline
+  // onclick attribute rather than a fixed id.
+  const sel=field==='dueDate'?`[onclick="editJobDateField('${jobId}','dueDate')"]`:`[onclick="editJobDateField('${jobId}','startDate')"]`;
+  const el=document.querySelector(`#d-meta-line ${sel}`);if(!el)return;
+  const inp=document.createElement('input');
+  inp.type='date';inp.className='form-inp';inp.value=j[field]||'';
+  inp.style.cssText='font-size:11px;padding:1px 4px;';
+  el.replaceWith(inp);inp.focus();
+  const commit=async()=>{
+    const val=inp.value||null;
+    if(val!==(j[field]||null)){
+      await dbUpdateJob(jobId,{[field]:val});
+      logActivity(jobId,MY_PERSON,'edit',`Set ${field==='dueDate'?'due date':'start date'} to <strong>${val?fmtDate(val):'—'}</strong>`);
+    }
+    openJobDetail(jobId);
+  };
+  inp.addEventListener('blur',commit);
+  inp.addEventListener('change',commit);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();else if(e.key==='Escape'){openJobDetail(jobId);}});
+}
+function editJobStatusField(jobId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  const el=document.querySelector(`#d-meta-line [onclick="editJobStatusField('${jobId}')"]`);if(!el)return;
+  const opts=[['inplay','In Play'],['complete','Complete'],['archived','Archived']];
+  const sel=document.createElement('select');
+  sel.className='filter-btn';sel.style.cssText='font-size:11px;padding:1px 4px;';
+  sel.innerHTML=opts.map(([v,l])=>`<option value="${v}" ${v===j.status?'selected':''}>${l}</option>`).join('');
+  el.replaceWith(sel);sel.focus();
+  const commit=async()=>{
+    const val=sel.value;
+    if(val!==j.status){
+      const labels={inplay:'In Play',complete:'Complete',archived:'Archived'};
+      await dbUpdateJob(jobId,{status:val});
+      logActivity(jobId,MY_PERSON,'status_change',`Status set to <strong>${labels[val]}</strong>`);
+      toast(`Status set to ${labels[val]}`,'success');
+    }
+    openJobDetail(jobId);
+  };
+  sel.addEventListener('blur',commit);
+  sel.addEventListener('change',commit);
 }
 function setTog(el){el.closest('.tog-row').querySelectorAll('.tog').forEach(t=>t.classList.remove('on'));el.classList.add('on');}
 function createJob(){
