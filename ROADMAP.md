@@ -1,6 +1,6 @@
 # C&C Platform — Roadmap
 
-*Last updated 23 Jun 2026 · v2.20.5*
+*Last updated 29 Jun 2026 · v2.21.0*
 
 ---
 
@@ -28,8 +28,18 @@ A full multi-agent audit cross-checked every consumer of Streamtime data against
 | Phase | Status | Description |
 |---|---|---|
 | **Phase 1** | ✅ Live | Streamtime is source of truth. Platform reads ST data and displays everything correctly. |
-| **Phase 2** | 🔄 In progress | Native data creation (jobs, time, expenses, quotes, invoices). DB stub layer built — localStorage now, real API when ready. |
-| **Phase 3** | ⏳ Future | ST retired. Platform is the source of all data. `initStreamtime()` deleted, internal shape unchanged. |
+| **Phase 2** | 🔄 In progress, most CRUD gaps closed (v2.21.0) | Native data creation + editing (jobs, phases, items, expenses, quotes, milestones, time). DB stub layer built — localStorage now, real API when ready. |
+| **Phase 3** | ⏳ Blocked, not started | ST retired. Platform is the source of all data. `initStreamtime()` deleted, internal shape unchanged. See "What's blocking Phase 3" below. |
+
+### What's blocking the jump to Phase 3
+
+Phase 3 means deleting `initStreamtime()` and the ST fetch layer entirely — the platform's own writes become the only source of truth. Three things stand between here and there, in order of size:
+
+1. **No real backend yet.** Every native write (`db*` stub functions) currently lands in an in-memory array, not durable storage — `saveData()` explicitly does NOT persist jobs/tasks to localStorage (only a couple of narrow exceptions like `cc_jobs` dedupe-migration and quotes/expenses do). A page reload loses anything created natively in that session. This is the actual size of the jump: swap every `db*` stub for a real API call, and stand up that API + database. Everything else on this list is comparatively small once that exists.
+2. **Native invoice creation isn't finished.** Local creation (deposit/split invoices) shipped in v2.20.4, but there's no Xero push — that half needs real Xero API write credentials, which is a business/access task, not a coding one.
+3. **@mentions + notifications need a live backend.** Not buildable on static localStorage regardless — same root blocker as #1, just a different feature surface.
+
+Everything else — job CRUD, phase/item/expense/quote/milestone CRUD, time logging — already has a working UI and a `db*` stub ready to point at a real API. Once a backend exists, Phase 3 is mostly a search-and-replace of `db*` internals plus deleting the ST fetch/`_mapStJob` code, not a redesign.
 
 ---
 
@@ -48,8 +58,11 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 | Expenses list | ✅ Cross-job list, filters, search — correct cost/sell/status from ST export | — reads existing data | — |
 | Reallocate logged/scheduled time | ✅ ⋮ menu on Progress tab rows, move to a different job/item | — local edit, ST is still source of truth | — |
 | Create quote | ✅ Modal (Quotes list + job detail), PDF preview, merges into the same list as ST quotes | `localQuotes` + `cc_local_quotes` | 🔄 swap for `POST /api/quotes` |
+| Edit job name / dates / status | ✅ Click-to-edit on job detail header (v2.21.0) | ✅ `dbUpdateJob()` — edits kept in `j._native`, re-applied after every ST re-fetch | 🔄 swap for `PATCH /api/jobs/:id` |
+| Create / edit / delete milestone | ✅ Inline add + per-row edit/delete on job detail Timeline tab (v2.21.0), merges with ST milestones (tagged "ST") | ✅ `dbCreateMilestone()` / `dbUpdateMilestone()` / `dbDeleteMilestone()` | 🔄 swap for `POST/PATCH/DELETE /api/milestones` |
+| Log time | ✅ Folded into mark-task-done (v2.21.0) — no separate modal, hours field appears on completion, pre-filled with planned time | ✅ `dbCreateTimeEntry()` (previously unused, now wired up) | 🔄 swap for `POST /api/time-entries` |
 
-**Removed in v2.20.1:** Log Time modal (Todo bar + job detail), Plan My Week, and My Items panel — all were redundant with the existing Add Task flow and added confusion. `dbCreateTimeEntry()` stays in the codebase as the API-ready stub for when native time logging is built properly later.
+**Removed in v2.20.1:** the old standalone Log Time modal (Todo bar + job detail), Plan My Week, and My Items panel — all were redundant with the existing Add Task flow and added confusion. Time logging itself came back in v2.21.0, folded into the mark-task-done moment instead of a separate modal.
 
 **Bug fixes in v2.20.1 worth noting for Phase 2 planning:**
 - Jobs with a `dueDate` set crashed the entire job detail view (missing `fmtDate` global — was only ever defined as a local helper in two unrelated render functions). Affected an unknown number of jobs across the dataset, not just one.
@@ -59,8 +72,11 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 ### Phase 2 still to build
 | Feature | Notes |
 |---|---|
-| Create invoice natively + Xero push | The local creation half (deposit/split invoices) shipped v2.20.4; the Xero push half needs real Xero API write credentials |
+| Xero push for natively-created invoices | The local creation half (deposit/split invoices) shipped v2.20.4; the Xero push half needs real Xero API write credentials — a business/access task, not a coding one |
 | @mentions + notifications | Needs a real-time backend (websockets/polling server) — not buildable on the static localStorage architecture |
+| Real durable backend for all `db*` writes | The actual size of the Phase 2→3 jump — see "What's blocking Phase 3" above. Every other Phase 2 feature is UI-complete and just needs its stub swapped once this exists |
+
+**Shipped (v2.21.0):** Inline job name/date/status editing, native milestone CRUD, time logging folded into mark-task-done.
 
 **Shipped (v2.20.5):** Job timeline (custom HTML/CSS Gantt-style view using the phase date ranges shipped in v2.20.4 — no external Gantt library needed), Starred items panel (sidebar icon + dedicated panel; merges the existing per-job `j.starred` flag with a new generic star store usable on clients/quotes/invoices), Create quote natively (modal + PDF preview, merges into the same Quotes list/detail/print code paths as Streamtime quotes via `localQuotes`).
 

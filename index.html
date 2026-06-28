@@ -2310,8 +2310,14 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.20.13';
+const APP_VERSION='2.21.0';
 const CHANGELOG=[
+  {version:'2.21.0',date:'29 Jun 2026',title:'Phase 2: native job editing, milestones, folded-in time logging',items:[
+    'Job detail: click to edit job name, start date, due date, and status directly — backed by a new dbUpdateJob() stub, API-ready like the other db* functions. Edits survive the next Streamtime sync (kept in j._native and re-applied after every refresh)',
+    'Milestones are now natively creatable/editable/deletable from the job detail Timeline tab, merged alongside Streamtime-sourced milestones (tagged "ST") and preserved across syncs the same way',
+    'Time logging is back, folded into the existing mark-task-done flow instead of a separate Log Time modal (which felt redundant and was removed in v2.20.1) — completing a task now offers an hours field, pre-filled with the planned time, that logs straight into Progress tab / job detail Time used',
+    'Reporting → Jobs job filter dropdown verified working end-to-end (was wired up in v2.20.13)',
+  ]},
   {version:'2.20.13',date:'23 Jun 2026',title:'Wire up the Reporting Jobs tab job filter',items:[
     'Reporting → Jobs now has a job picker dropdown — getFilteredTasks() already had the matching logic wired in, it was just missing the actual #r-job select element, so the filter had been a permanent no-op',
   ]},
