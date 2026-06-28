@@ -1,7 +1,26 @@
 {
-  "generated_at": "2026-06-28T21:27:54.559979+00:00",
-  "current_version": "2.20.13",
+  "generated_at": "2026-06-28T21:52:01.427535+00:00",
+  "current_version": "2.21.0",
   "releases": [
+    {
+      "version": "2.21.0",
+      "date": "29 Jun 2026",
+      "title": "Phase 2: native job editing, milestones, folded-in time logging",
+      "items": [
+        "Job detail: click to edit job name, start date, due date, and status directly — backed by a new dbUpdateJob() stub, API-ready like the other db* functions. Edits survive the next Streamtime sync (kept in j._native and re-applied after every refresh)",
+        "Milestones are now natively creatable/editable/deletable from the job detail Timeline tab, merged alongside Streamtime-sourced milestones (tagged \"ST\") and preserved across syncs the same way",
+        "Time logging is back, folded into the existing mark-task-done flow instead of a separate Log Time modal (which felt redundant and was removed in v2.20.1) — completing a task now offers an hours field, pre-filled with the planned time, that logs straight into Progress tab / job detail Time used",
+        "Reporting → Jobs job filter dropdown verified working end-to-end (was wired up in v2.20.13)"
+      ],
+      "sections": [
+        "Data",
+        "Jobs",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
     {
       "version": "2.20.13",
       "date": "23 Jun 2026",
