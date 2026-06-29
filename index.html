@@ -10587,6 +10587,24 @@ setInterval(async()=>{
   try{await initStreamtime(true);}finally{_stPollInFlight=false;}
 },5*60*1000);
 
+// Cross-tab live sync — when another open tab writes native data (archive a job, log time,
+// edit a client, create a quote…), refresh this tab so the change appears without a manual
+// reload. A full reload re-applies the native overlay cleanly from localStorage, avoiding the
+// double-apply risk of merging onto already-merged jobs. Debounced, and deferred while the
+// user is mid-edit (open modal/drawer/search or a focused field) so it never interrupts them.
+let _xtabTimer=null;
+const _xtabKeys=['cc_native_jobs','cc_job_overlay','cc_native_time','cc_local_quotes','cc_clients','cc_people','cc_boards'];
+window.addEventListener('storage',e=>{
+  if(!e.key||!_xtabKeys.includes(e.key))return;
+  clearTimeout(_xtabTimer);
+  const tryRefresh=()=>{
+    const busy=document.querySelector('.modal-bg.on,.inv-bg.on,#detail-drawer.open,.gs-bg.on,#doc-preview-modal')||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName);
+    if(busy){_xtabTimer=setTimeout(tryRefresh,4000);return;}
+    location.reload();
+  };
+  _xtabTimer=setTimeout(tryRefresh,1500);
+});
+
 // ============ REPORTING ENGINE ============
 let chartByPerson=null,chartByDay=null,chartByJob=null,chartByBudget=null;
 
