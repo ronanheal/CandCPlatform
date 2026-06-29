@@ -1,6 +1,6 @@
 # C&C Platform — Roadmap
 
-*Last updated 29 Jun 2026 · v2.21.0*
+*Last updated 29 Jun 2026 · v2.23.0*
 
 ---
 
@@ -76,7 +76,16 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 | @mentions + notifications | Needs a real-time backend (websockets/polling server) — not buildable on the static localStorage architecture |
 | Real durable backend for all `db*` writes | The actual size of the Phase 2→3 jump — see "What's blocking Phase 3" above. Every other Phase 2 feature is UI-complete and just needs its stub swapped once this exists |
 
+**Shipped (v2.23.0):** Per-task done sync on the Todo board (was per-day), Profitability tab on job detail (revenue vs cost vs margin), Deadline-risk dashboard card, single consolidated job-status control + aligned date pills, cross-tab live sync, Global Search now covers invoices + quotes, wrong-job task-picker fix, `.modal-save` styling.
+
+**Shipped (v2.22.0):** Durable native data — all native creates/edits survive reload and the Streamtime sync (was in-memory only).
+
 **Shipped (v2.21.0):** Inline job name/date/status editing, native milestone CRUD, time logging folded into mark-task-done.
+
+**Deferred (deliberately, with rationale):**
+- **Column picker** on Jobs/Invoices/Quotes tables — those tables render hardcoded `th`/`td` HTML; a show/hide/reorder picker needs all three restructured into column-definition arrays first. Own focused pass (don't rush a refactor of the core tables).
+- **Role/admin permission gate** — a client-side-only gate is bypassable without real auth; belongs with the Phase 3 backend.
+- **ST-field accessor refactor** — best done *during* the Phase 3 migration (when those ~20 read sites change anyway) rather than as speculative churn now.
 
 **Shipped (v2.20.5):** Job timeline (custom HTML/CSS Gantt-style view using the phase date ranges shipped in v2.20.4 — no external Gantt library needed), Starred items panel (sidebar icon + dedicated panel; merges the existing per-job `j.starred` flag with a new generic star store usable on clients/quotes/invoices), Create quote natively (modal + PDF preview, merges into the same Quotes list/detail/print code paths as Streamtime quotes via `localQuotes`).
 
