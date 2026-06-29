@@ -1601,6 +1601,7 @@ tr:hover .i-todo-btn{opacity:1;}
               <div class="d-tab" onclick="switchDTab(this,'progress')">Progress</div>
               <div class="d-tab" onclick="switchDTab(this,'quote')">Quote</div>
               <div class="d-tab" onclick="switchDTab(this,'timeline')">Timeline</div>
+              <div class="d-tab" onclick="switchDTab(this,'profit')">Profitability</div>
               <div class="d-tab" onclick="switchDTab(this,'activity')">Activity</div>
             </div>
           </div>
@@ -1618,6 +1619,7 @@ tr:hover .i-todo-btn{opacity:1;}
           <div id="dtab-progress" class="hidden" style="flex:1;overflow-y:auto;padding:24px 24px 50px;"></div>
           <div id="dtab-quote" class="hidden" style="flex:1;overflow-y:auto;padding:24px 24px 50px;"></div>
           <div id="dtab-timeline" class="hidden" style="flex:1;overflow-y:auto;padding:24px 24px 50px;"></div>
+          <div id="dtab-profit" class="hidden" style="flex:1;overflow-y:auto;padding:24px 24px 50px;"></div>
           <div id="dtab-activity" class="act-feed hidden"></div>
         </div>
       </div>
@@ -6504,6 +6506,47 @@ function computeJobStats(j){
   return{plannedMins,plannedSell,loggedMins,sellUsed,expUsed,hPct,bPct,fmtH};
 }
 
+// Per-job profitability — revenue vs cost vs margin. Builds on computeJobStats (sell/hours)
+// and derives staff COST, which Streamtime can't give us reliably: its own cost fields are
+// $0 for ~36/37 users (no cost rate set in ST), so we value logged time at each person's
+// costRate with a $150/h fallback and flag the figure as estimated when the fallback is used.
+function computeJobProfit(j){
+  const s=computeJobStats(j);
+  // Staff cost. Revenue (s.sellUsed) is the job's all-time logged sell, but per-entry
+  // stLoggedTimes only covers the recent synced window — so summing per-entry cost directly
+  // would understate cost on older jobs (→ bogus ~100% margin). Instead derive a blended
+  // $/h from whatever entries we do have, then value the job's ALL-TIME logged minutes at
+  // that rate so revenue and cost stay on the same basis.
+  let entryMins=0,entryCost=0,costEstimated=false;
+  if(j._stId){
+    (stLoggedTimes||[]).forEach(lt=>{
+      if(String(lt.job?.number||'')!==String(j.id))return;
+      const rate=stUsersById[lt.userId]?.costRate;
+      if(!rate)costEstimated=true;
+      entryMins+=(lt.minutes||0);
+      entryCost+=(lt.minutes||0)/60*(rate||_defCostRate());
+    });
+  }
+  let staffCost;
+  if(entryMins>0){
+    const blended=entryCost/(entryMins/60); // $/h
+    staffCost=(s.loggedMins/60)*blended;
+    if(s.loggedMins>entryMins*1.2)costEstimated=true; // extrapolated beyond synced entries
+  }else{
+    staffCost=(s.loggedMins/60)*_defCostRate();costEstimated=true;
+  }
+  // Expense cost: ST expenses carry totalCost keyed by jobNumber; native expenses carry cost.
+  let expCost=0;
+  (stExpenses||[]).forEach(e=>{if(String(e.jobNumber||'')===String(j.id))expCost+=(+e.totalCost||0);});
+  (j.expenses||[]).forEach(e=>{expCost+=(parseFloat(e.cost||e.totalCost||0)||0);});
+  const expSell=s.expUsed||0;
+  const revenue=(s.sellUsed||0)+expSell;
+  const cost=staffCost+expCost;
+  const margin=revenue-cost;
+  const marginPct=revenue>0?Math.round(margin/revenue*100):0;
+  return{...s,staffCost,expCost,expSell,revenue,cost,margin,marginPct,costEstimated};
+}
+
 function renderStats(j){
   const s=document.getElementById('d-stats');
   const{plannedMins,plannedSell,loggedMins,sellUsed,expUsed,hPct,bPct,fmtH}=computeJobStats(j);
@@ -6520,17 +6563,61 @@ function renderStats(j){
     _statBlock('Expenses',`$${Math.round(expUsed).toLocaleString()}`,null,null);
 }
 
+function renderProfitTab(){
+  const j=jobs.find(x=>x.id===activeJobId);
+  const el=document.getElementById('dtab-profit');if(!el||!j)return;
+  const p=computeJobProfit(j);
+  const money=n=>`$${Math.round(n||0).toLocaleString()}`;
+  const marginCol=p.margin>=0?'#2E7D32':'var(--red)';
+  const _bar=(label,val,max,col)=>{
+    const pct=max>0?Math.min(100,Math.round(val/max*100)):0;
+    return `<div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span style="color:var(--muted);">${label}</span><span style="font-weight:500;">${money(val)}</span></div><div style="height:7px;background:var(--faint);border-radius:4px;overflow:hidden;"><div style="width:${pct}%;height:100%;background:${col};"></div></div></div>`;
+  };
+  const costMax=Math.max(p.revenue,p.cost,1);
+  // Honest framing: margin is used-to-date (logged), not final; cost may be an estimate.
+  const pulse=p.revenue<=0
+    ? 'No time logged yet — nothing to report on profitability.'
+    : p.marginPct>=40?`Healthy margin of ${p.marginPct}% on work done so far.`
+    : p.marginPct>=15?`Margin of ${p.marginPct}% to date — within a typical range.`
+    : p.marginPct>=0?`Thin margin of ${p.marginPct}% — watch over-servicing on this job.`
+    : `Currently running at a loss (${p.marginPct}%) — cost has exceeded revenue logged.`;
+  el.innerHTML=`
+    <div class="r-kpi-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;">
+      <div class="r-kpi"><div class="r-kpi-lbl">Revenue (ex GST)</div><div class="r-kpi-val">${money(p.revenue)}</div><div class="r-kpi-sub">logged sell + expenses</div></div>
+      <div class="r-kpi"><div class="r-kpi-lbl">Cost</div><div class="r-kpi-val">${money(p.cost)}</div><div class="r-kpi-sub">${p.costEstimated?'incl. est. @ $'+_defCostRate()+'/h':'staff time + expenses'}</div></div>
+      <div class="r-kpi"><div class="r-kpi-lbl">Margin</div><div class="r-kpi-val" style="color:${marginCol};">${money(p.margin)}</div><div class="r-kpi-sub">revenue − cost</div></div>
+      <div class="r-kpi"><div class="r-kpi-lbl">Margin %</div><div class="r-kpi-val" style="color:${marginCol};">${p.revenue>0?p.marginPct+'%':'—'}</div><div class="r-kpi-sub">of revenue</div></div>
+    </div>
+    <div class="r-section">
+      <div class="r-section-hd">Revenue vs cost <span style="text-transform:none;letter-spacing:0;color:var(--muted);">— work logged to date</span></div>
+      ${_bar('Revenue (logged sell + expense sell)',p.revenue,costMax,'#4CAF50')}
+      ${_bar('Staff time cost',p.staffCost,costMax,'#6B7FA3')}
+      ${_bar('Expense cost',p.expCost,costMax,'#C4A35D')}
+    </div>
+    <div class="r-section">
+      <div class="r-section-hd">Budget vs actual</div>
+      ${_bar('Planned sell (budget)',p.plannedSell,Math.max(p.plannedSell,p.sellUsed,1),'#BDBDBD')}
+      ${_bar('Sell used',p.sellUsed,Math.max(p.plannedSell,p.sellUsed,1),p.sellUsed>p.plannedSell?'var(--red)':'#4CAF50')}
+    </div>
+    <div class="r-section" style="background:var(--off);border-radius:6px;padding:12px 14px;font-size:13px;">
+      <i class="ti ti-activity" style="color:var(--ink);margin-right:6px;"></i>${pulse}
+      ${p.costEstimated?`<div style="font-size:11px;color:var(--muted);margin-top:6px;">Cost is an estimate — Streamtime has no cost rate set for some people on this job, so their time is valued at the $${_defCostRate()}/h workspace default.</div>`:''}
+    </div>`;
+}
+
 function switchDTab(el,tab){
   document.querySelectorAll('.d-tab').forEach(t=>t.classList.remove('on'));if(el)el.classList.add('on');
   document.getElementById('dtab-plan').style.display=tab==='plan'?'flex':'none';
   document.getElementById('dtab-progress').classList.toggle('hidden',tab!=='progress');
   document.getElementById('dtab-quote').classList.toggle('hidden',tab!=='quote');
   document.getElementById('dtab-timeline').classList.toggle('hidden',tab!=='timeline');
+  document.getElementById('dtab-profit').classList.toggle('hidden',tab!=='profit');
   document.getElementById('dtab-activity').classList.toggle('hidden',tab!=='activity');
   if(tab==='plan')renderPhases();
   if(tab==='progress')renderProgressTab();
   if(tab==='quote')renderQuoteTab();
   if(tab==='timeline')renderTimelineTab();
+  if(tab==='profit')renderProfitTab();
   if(tab==='activity')renderActivityTab();
 }
 
