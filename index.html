@@ -3456,6 +3456,19 @@ function renderDashboard(){
   const overdueInv=(stInvoices||[]).filter(i=>{const s=(i.invoiceStatus?.name||'').toLowerCase();return i.dueDate&&new Date(i.dueDate)<_t0&&s!=='paid'&&s!=='voided';}).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate)).slice(0,12);
   const awaitingQuotes=(stQuotes||[]).filter(q=>{const s=(typeof q.quoteStatus==='string'?q.quoteStatus:q.quoteStatus?.name||'').toLowerCase();return s.includes('pending')&&q.sentDate&&_inDays(q.sentDate)<=-7;}).sort((a,b)=>new Date(a.sentDate)-new Date(b.sentDate)).slice(0,12);
   const uninvoiced=_liveJobs.filter(j=>(j._sellUsed||0)-(j._stInvoiced||0)>=500&&(j._bPct||0)>=80).sort((a,b)=>((b._sellUsed||0)-(b._stInvoiced||0))-((a._sellUsed||0)-(a._stInvoiced||0))).slice(0,10);
+  // Deadline risk: live jobs not yet overdue, but whose remaining planned hours can't
+  // realistically fit in the working days left (needs >6h/day of focused time on that one
+  // job). Distinct from "Jobs due / overdue" — this is a forward look at over-commitment.
+  const riskJobs=_liveJobs.map(j=>{
+    const dleft=j.dueDate?_inDays(j.dueDate):null;
+    if(dleft===null||dleft<=0||dleft>28)return null;
+    const remMins=Math.max(0,(j._plannedMins||0)-(j._loggedMins||0));
+    if(remMins<60)return null;
+    const wdLeft=Math.max(1,Math.round(dleft*5/7));
+    const needPerDay=(remMins/60)/wdLeft;
+    if(needPerDay<=6)return null;
+    return{label:`${j.id} ${j.name}`,meta:`${Math.round(remMins/60)}h in ${dleft}d`,jid:j.id,_need:needPerDay};
+  }).filter(Boolean).sort((a,b)=>b._need-a._need).slice(0,10);
   // Quiet clients: had jobs before, but nothing in play now
   const _coAll={};jobs.forEach(j=>{if(!j.company)return;(_coAll[j.company]=_coAll[j.company]||{total:0,live:0}); _coAll[j.company].total++; if(j.status==='inplay')_coAll[j.company].live++;});
   const quietClients=Object.entries(_coAll).filter(([,v])=>v.total>=2&&v.live===0).map(([co,v])=>({label:co,meta:`${v.total} past`,jid:null})).slice(0,10);
@@ -3463,6 +3476,7 @@ function renderDashboard(){
   const dh=people[MY_PERSON].dashHide||[];const _show=k=>!dh.includes(k);
   const deadlinesHTML=_show('deadlines')?[
     _attCard('Jobs due / overdue',dueJobs.map(j=>({label:`${j.id} ${j.name}`,meta:_inDays(j.dueDate)<0?`${-_inDays(j.dueDate)}d over`:_inDays(j.dueDate)===0?'today':`${_inDays(j.dueDate)}d`,jid:j.id})),'#E65100'),
+    _attCard('Deadline risk',riskJobs,'#D81B60'),
     _attCard('Overdue invoices',overdueInv.map(i=>({label:`${i.company?.name||i.jobName||'—'}`,meta:`${-_inDays(i.dueDate)}d`,jid:null})),'var(--red)'),
     _attCard('Quotes awaiting response',awaitingQuotes.map(q=>({label:`${q.company||q.jobName||(q.jobNumber?'Job '+q.jobNumber:q.quoteName)||'—'}`,meta:`${-_inDays(q.sentDate)}d`,jid:null})),'#6B7FA3'),
     _attCard('Uninvoiced work',uninvoiced.map(j=>({label:`${j.id} ${j.name}`,meta:'$'+Math.round((j._sellUsed||0)-(j._stInvoiced||0)).toLocaleString(),jid:j.id})),'#9C6FD6'),
