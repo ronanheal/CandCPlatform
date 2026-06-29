@@ -2183,7 +2183,7 @@ async function dbUpdateJob(id,patch){
 }
 async function dbCreateTimeEntry(data){
   const e={...data,id:data.id||uid('lt'),_local:true,date:data.date||new Date().toISOString().slice(0,10),minutes:Math.round((data.hours||0)*60)};
-  stLoggedTimes.push(e);resetTodoStore();return e;
+  stLoggedTimes.push(e);persistNativeData();resetTodoStore();return e;
 }
 async function dbCreatePhase(jobId,data){
   const j=jobs.find(x=>x.id===jobId);if(!j)return null;
@@ -2280,7 +2280,7 @@ function savePeople(){
   }catch(e){}
 }
 // ── Workspace backup (export / import all local data) ─────────────────────────
-const WORKSPACE_KEYS=['cc_people','cc_person_status','cc_clients','cc_boards','cc_labels','cc_line_items','cc_expense_items','cc_config_published_at'];
+const WORKSPACE_KEYS=['cc_people','cc_person_status','cc_clients','cc_boards','cc_labels','cc_line_items','cc_expense_items','cc_config_published_at','cc_local_quotes','cc_native_jobs','cc_job_overlay','cc_native_time'];
 function exportWorkspace(){
   const blob={_app:'cc-platform',_version:APP_VERSION,_exportedAt:new Date().toISOString(),data:{}};
   WORKSPACE_KEYS.forEach(k=>{const v=localStorage.getItem(k);if(v!=null)blob.data[k]=v;});
@@ -2310,8 +2310,14 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.21.0';
+const APP_VERSION='2.22.0';
 const CHANGELOG=[
+  {version:'2.22.0',date:'29 Jun 2026',title:'Native data now persists — survives reload & sync',items:[
+    'Big one: anything you create or edit natively in the platform — job name/date/status edits, milestones, expenses, added phases/items, split invoices, activity notes, and logged time — now survives a page reload AND the background Streamtime sync. Previously all of it lived in memory only and silently vanished on refresh, which made native data untrustworthy. It\'s now written to a durable local store and re-applied after every sync.',
+    'Fixed: editing a task could pre-select / save the wrong job — the job picker matched job numbers as substrings (so "677" matched "6774", etc.). Now matches the exact job number.',
+    'Global Search (⌘K) now also searches invoices and quotes, not just jobs/clients/tasks/items.',
+    'Workspace export/import now includes native quotes and the new native-data store, so a backup captures everything.',
+  ]},
   {version:'2.21.0',date:'29 Jun 2026',title:'Phase 2: native job editing, milestones, folded-in time logging',items:[
     'Job detail: click to edit job name, start date, due date, and status directly — backed by a new dbUpdateJob() stub, API-ready like the other db* functions. Edits survive the next Streamtime sync (kept in j._native and re-applied after every refresh)',
     'Milestones are now natively creatable/editable/deletable from the job detail Timeline tab, merged alongside Streamtime-sourced milestones (tagged "ST") and preserved across syncs the same way',
@@ -2817,6 +2823,63 @@ function saveData(){
       if(j)j.phases=JSON.parse(JSON.stringify(phases));
     }
   }catch(e){}
+  persistNativeData();
+}
+
+// ── Native-data persistence (Phase 2 durability) ──────────────────────────────
+// Everything created/edited natively in the platform is tagged (_local / _native /
+// _isNative). We serialise just those bits to localStorage so they survive (a) a page
+// reload and (b) a Streamtime re-fetch — which rebuilds the whole `jobs` array via
+// _mapStJob and would otherwise wipe them. applyNativeData() re-applies the overlay after
+// every remap. This replaces the old in-session-only _prevPaused/_prevNative/_prevMilestones/
+// _prevExpenses snapshots (which were lost on reload) with a single durable mechanism that
+// also covers phases, items, split-invoices, activity and time entries that weren't
+// snapshotted at all (so a background poll could silently drop them mid-session).
+let _stHydrated=false; // true once initStreamtime has populated `jobs` at least once
+function persistNativeData(){
+  if(!_stHydrated)return; // never overwrite the durable store with the empty pre-fetch state
+  try{
+    const nativeJobs=[];
+    const overlay={};
+    jobs.forEach(j=>{
+      if(j._local){nativeJobs.push(j);return;} // fully-native job (dbCreateJob) — persist whole
+      const e={};
+      if(j._native)e.native=j._native;
+      if(j.paused&&(!j._streamtime||j._manualPaused))e.paused=true;
+      const ms=(j.milestones||[]).filter(m=>m._isNative);if(ms.length)e.milestones=ms;
+      if((j.expenses||[]).length)e.expenses=j.expenses;
+      const nph=(j.phases||[]).filter(p=>p._local);if(nph.length)e.phases=nph;
+      const itemDeltas={};
+      (j.phases||[]).forEach(p=>{if(p._local)return;const its=(p.items||[]).filter(it=>it._local);if(its.length)itemDeltas[p.id]=its;});
+      if(Object.keys(itemDeltas).length)e.itemDeltas=itemDeltas;
+      if((j.splitInvoices||[]).length)e.splitInvoices=j.splitInvoices;
+      if((j.activity||[]).length)e.activity=j.activity;
+      if(Object.keys(e).length)overlay[j.id]=e;
+    });
+    localStorage.setItem('cc_native_jobs',JSON.stringify(nativeJobs));
+    localStorage.setItem('cc_job_overlay',JSON.stringify(overlay));
+    localStorage.setItem('cc_native_time',JSON.stringify((stLoggedTimes||[]).filter(t=>t._local)));
+  }catch(err){}
+}
+// Re-apply the persisted native overlay onto the freshly-remapped ST jobs, then re-insert
+// fully-native jobs. Called inside initStreamtime() right after jobs=raw.map(_mapStJob).
+function applyNativeData(){
+  let overlay={},nativeJobs=[];
+  try{overlay=JSON.parse(localStorage.getItem('cc_job_overlay')||'{}');}catch(e){}
+  try{nativeJobs=JSON.parse(localStorage.getItem('cc_native_jobs')||'[]');}catch(e){}
+  jobs.forEach(j=>{
+    const e=overlay[j.id];if(!e)return;
+    if(e.native){j._native=e.native;Object.assign(j,e.native);}
+    if(e.paused){j.paused=true;j._manualPaused=true;}
+    if(e.milestones)j.milestones=[...(j.milestones||[]).filter(m=>!m._isNative),...e.milestones];
+    if(e.expenses)j.expenses=e.expenses;
+    if(e.phases)j.phases=[...(j.phases||[]),...e.phases];
+    if(e.itemDeltas)Object.keys(e.itemDeltas).forEach(pid=>{const p=(j.phases||[]).find(x=>x.id===pid);if(p)p.items=[...(p.items||[]).filter(it=>!it._local),...e.itemDeltas[pid]];});
+    if(e.splitInvoices)j.splitInvoices=e.splitInvoices;
+    if(e.activity)j.activity=e.activity;
+  });
+  const existing=new Set(jobs.map(j=>j.id));
+  nativeJobs.forEach(nj=>{if(!existing.has(nj.id))jobs.unshift(nj);});
 }
 // One-time cleanup: purge the legacy persisted manual-task store. The Todo board is now
 // seeded from Streamtime each session, so any old cc_todo data is stale and unused.
@@ -3088,40 +3151,16 @@ async function initStreamtime(silent){
     // Jobs
     if(jobsRes.ok){
       const raw=await jobsRes.json();
-      // Snapshot manual platform overrides before rebuild (paused, etc.)
-      const _prevPaused={};
-      jobs.forEach(j=>{if(j.paused&&!j._streamtime)_prevPaused[j.id]=true;});
-      // Also preserve manual-paused flag on ST jobs (set via job settings UI)
-      jobs.forEach(j=>{if(j.paused&&j._streamtime&&j._manualPaused)_prevPaused[j.id]=true;});
-      // Also preserve native field overrides (name/startDate/dueDate/status, etc.) made via
-      // dbUpdateJob — these live in j._native and must be re-applied after the ST remap below.
-      const _prevNative={};
-      jobs.forEach(j=>{if(j._native)_prevNative[j.id]=j._native;});
-      // Also preserve native milestones (created via dbCreateMilestone). _mapStJob below builds
-      // a brand-new job object per job and never sets `milestones`, so without this snapshot any
-      // native milestone would be silently dropped on every Streamtime re-fetch — same clobber
-      // bug class as phases/items. Only _isNative entries are snapshotted; ST-sourced milestones
-      // are re-derived fresh from stMilestones at render time (see _jobMilestones).
-      const _prevMilestones={};
-      jobs.forEach(j=>{
-        const nativeMs=(j.milestones||[]).filter(m=>m._isNative);
-        if(nativeMs.length)_prevMilestones[j.id]=nativeMs;
-      });
-      // Also preserve native expenses (created via dbCreateExpense/saveExpenseInline). _mapStJob
-      // below never sets `expenses` on the new job object, so without this snapshot any native
-      // expense would be silently dropped on every Streamtime re-fetch — same clobber bug class
-      // as milestones above. ST-sourced expenses live separately in stExpenses, not j.expenses.
-      const _prevExpenses={};
-      jobs.forEach(j=>{if((j.expenses||[]).length)_prevExpenses[j.id]=j.expenses;});
       jobs=raw.map(_mapStJob);
+      // Re-apply native overrides/creations from the durable store (paused, field edits,
+      // milestones, expenses, native phases/items, split-invoices, activity, and fully-native
+      // jobs). See persistNativeData()/applyNativeData() — survives both reload and refetch.
+      applyNativeData();
       jobs.forEach(j=>{
-        if(_prevPaused[j.id]){j.paused=true;j._manualPaused=true;}
-        if(_prevNative[j.id]){j._native=_prevNative[j.id];Object.assign(j,j._native);}
-        if(_prevMilestones[j.id])j.milestones=_prevMilestones[j.id];
-        if(_prevExpenses[j.id])j.expenses=_prevExpenses[j.id];
         (j.labels||[]).forEach(l=>addGlobalLabel(l));
         if(j._stId)_stIdToJobNum[j._stId]=j.id;
       });
+      _stHydrated=true; // jobs are now populated — safe to persist native data on future saves
     }
     // Companies / clients — merge with contacts for email/phone/contact name
     if(coRes.ok){
@@ -3144,6 +3183,9 @@ async function initStreamtime(silent){
     }
     // Logged times
     if(ltRes.ok)stLoggedTimes=await ltRes.json();
+    // Re-append natively-logged time entries (Log Time on mark-done). The fetch above just
+    // replaced stLoggedTimes wholesale, so without this they'd vanish on every sync/reload.
+    try{const nt=JSON.parse(localStorage.getItem('cc_native_time')||'[]');if(nt.length)stLoggedTimes.push(...nt);}catch(e){}
     if(!stLoggedTimes.length){
       const b=document.getElementById('st-data-warn');
       if(b)b.style.display='flex';
@@ -4927,7 +4969,12 @@ function populateTodoJobSelect(pre){
   const sel=document.getElementById('td-job');
   sel.innerHTML='<option value="">— Personal / no job —</option>';
   const liveJobs=[...jobs].filter(j=>j.status==='inplay').sort((a,b)=>Number(b.id)-Number(a.id));
-  liveJobs.forEach(j=>{const o=document.createElement('option');o.value=j.id;o.textContent=`${j.id} ${j.name}`;if(pre&&pre.includes(j.id))o.selected=true;sel.appendChild(o);});
+  // pre is either a bare job id ("6774") or a "<id> <name>" string ("6774 Some Job") — match on
+  // the leading token only. An unanchored pre.includes(j.id) substring-matched the wrong job
+  // (e.g. id "677" inside "6774 …", or a short id inside any longer number), silently
+  // pre-selecting / saving the wrong job when editing a task.
+  const preId=pre?String(pre).trim().split(/\s+/)[0]:'';
+  liveJobs.forEach(j=>{const o=document.createElement('option');o.value=j.id;o.textContent=`${j.id} ${j.name}`;if(preId&&preId===j.id)o.selected=true;sel.appendChild(o);});
 }
 function updateJobLabel(){
   const sel=document.getElementById('td-job');
@@ -9294,6 +9341,19 @@ function runGlobalSearch(q){
         if(it.name.toLowerCase().includes(q))
           out.push({cat:'Job plan items',icon:'ti-list-details',title:it.name,sub:`${j.id} ${j.name} · ${ph.name}`,fn:()=>openJobDetail(j.id)});
       }));
+    });
+    // Invoices (ST) — number, company, job, status
+    stInvoices.forEach(inv=>{
+      const co=inv.company?.name||'';
+      const st=inv.invoiceStatus?.name||inv.status||'';
+      if((`${inv.number||inv.id} ${co} ${inv.jobNumber||''} ${inv.jobName||''} ${st}`).toLowerCase().includes(q))
+        out.push({cat:'Invoices',icon:'ti-file-invoice',title:`Invoice ${inv.number||inv.id}`,sub:`${co}${inv.jobNumber?' · #'+inv.jobNumber:''}${st?' · '+st:''}`,fn:()=>openInvoiceDetail(inv.id)});
+    });
+    // Quotes (ST + native localQuotes) — name/number, company, job, status
+    [...stQuotes,...localQuotes].forEach(qt=>{
+      const st=(typeof qt.quoteStatus==='string'?qt.quoteStatus:qt.quoteStatus?.name||'');
+      if((`${qt.quoteName||''} ${qt.quoteNumber||qt.id} ${qt.company||''} ${qt.jobNumber||''} ${qt.jobName||''} ${st}`).toLowerCase().includes(q))
+        out.push({cat:'Quotes',icon:'ti-file-text',title:qt.quoteName||qt.quoteNumber||`Quote ${qt.id}`,sub:`${qt.company||''}${qt.jobNumber?' · #'+qt.jobNumber:''}${st?' · '+st:''}`,fn:()=>openQuoteDetail(qt.id)});
     });
   }
   _gsResults=out.slice(0,30);_gsSel=0;
