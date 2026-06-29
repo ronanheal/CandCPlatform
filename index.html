@@ -2943,6 +2943,7 @@ function _getStWeekEntries(personKey,offset){
       note:'', // note is used as the title; don't duplicate it on a second line
       person:personKey,
       _fromST:true,
+      _stItemId:lt.jobItemUser?.jobItemId||null, // for per-day done matching against scheduled blocks
       // legacy fields used by dashboard/capacity code
       minutes:lt.minutes||0,
       jobNum:jNum,jobId:jNum,
@@ -3271,9 +3272,25 @@ function seedWeekFromST(person,offset){
   const week={1:[],2:[],3:[],4:[],5:[]};
   const todos=_getStWeekAssignments(person,offset); // scheduled → to-do
   const done=_getStWeekEntries(person,offset);      // logged → done
+  // Per-task done: a scheduled block whose job item has logged time on the SAME day is
+  // actually done — Streamtime logs time against a to-do when you complete it. Without this
+  // the scheduled card lingered in the To Do column beside a separate logged Done card (the
+  // old "coexist" behaviour), so a task only *looked* done once the whole day's work landed.
+  // Now we mark the scheduled block done per-task and drop the duplicate logged card, so the
+  // task shows once, in Done, the moment its time syncs. Matching is per-DAY (not per-week):
+  // a re-scheduled later block with more planned work still shows as a fresh to-do. Only
+  // jobItemId-tagged blocks are matched; untagged ones fall back to the assignment lookup.
   [1,2,3,4,5].forEach(d=>{
-    (todos[d]||[]).forEach(t=>week[d].push({...t}));
-    (done[d]||[]).forEach(e=>week[d].push({...e}));
+    const schedCards=todos[d]||[];
+    const logCards=done[d]||[];
+    const consumed=new Set();
+    schedCards.forEach(t=>{
+      if(!t._stItemId)return;
+      const m=logCards.find(e=>e._stItemId&&String(e._stItemId)===String(t._stItemId)&&!consumed.has(e.id));
+      if(m){t.done=true;t._completedViaLog=true;consumed.add(m.id);}
+    });
+    schedCards.forEach(t=>week[d].push({...t}));
+    logCards.forEach(e=>{if(!consumed.has(e.id))week[d].push({...e});});
   });
   return week;
 }
