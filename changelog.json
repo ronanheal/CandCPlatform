@@ -1,7 +1,50 @@
 {
-  "generated_at": "2026-06-28T23:43:31.671604+00:00",
-  "current_version": "2.21.0",
+  "generated_at": "2026-06-29T04:16:42.664801+00:00",
+  "current_version": "2.23.0",
   "releases": [
+    {
+      "version": "2.23.0",
+      "date": "29 Jun 2026",
+      "title": "Per-task done sync, profitability tab, deadline risk, header tidy-up",
+      "items": [
+        "To Do board: a task now moves to Done the moment its time is logged in Streamtime and synced — per task, not per day. Previously a finished task lingered in the To Do column until the whole day\\'s work had landed.",
+        "New Profitability tab on every job — revenue vs cost vs margin %, with a budget-vs-actual view. Staff cost is derived (Streamtime has no cost rate for most people, so their time is valued at the $150/h default) and flagged as an estimate where that applies.",
+        "Dashboard: new \"Deadline risk\" card — live jobs not yet overdue but whose remaining hours can\\'t realistically fit the days left.",
+        "Job header tidy-up: the duplicated status (the \"Live job\" workflow badge and a separate \"In Play\" pill) is now a single control — click the label to set status, click the arrow to advance the stage. Start and due dates now match each other\\'s styling.",
+        "Cross-tab live sync: a change made in one open tab (archive a job, log time, etc.) now refreshes other open tabs automatically.",
+        "Fixed: editing a task could attach it to the wrong job (the job picker matched job numbers loosely); plus a primary button in several dialogs that had been rendering unstyled."
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.22.0",
+      "date": "29 Jun 2026",
+      "title": "Native data now persists — survives reload & sync",
+      "items": [
+        "Big one: anything you create or edit natively in the platform — job name/date/status edits, milestones, expenses, added phases/items, split invoices, activity notes, and logged time — now survives a page reload AND the background Streamtime sync. Previously all of it lived in memory only and silently vanished on refresh, which made native data untrustworthy. It\\'s now written to a durable local store and re-applied after every sync.",
+        "Fixed: editing a task could pre-select / save the wrong job — the job picker matched job numbers as substrings (so \"677\" matched \"6774\", etc.). Now matches the exact job number.",
+        "Global Search (⌘K) now also searches invoices and quotes, not just jobs/clients/tasks/items.",
+        "Workspace export/import now includes native quotes and the new native-data store, so a backup captures everything."
+      ],
+      "sections": [
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
     {
       "version": "2.21.0",
       "date": "29 Jun 2026",
