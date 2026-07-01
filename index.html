@@ -2330,8 +2330,15 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.23.0';
+const APP_VERSION='2.24.0';
 const CHANGELOG=[
+  {version:'2.24.0',date:'29 Jun 2026',title:'Full refinement pass — durability fixes + design system tidy-up',items:[
+    'Fixed 5 data-loss bugs found in a full code review: jobs created natively were silently deleted by the next sync; archiving or starring a job reverted within 5 minutes; deleting a Streamtime job brought it back on the next sync; a failed sync could discard a job\'s native activity/expenses; natively-logged time double-counted once Streamtime ingested the same entry.',
+    'Editing a job\'s date or status from the header no longer records the change twice in the Activity log.',
+    'Profitability tab: the "cost is an estimate" flag now reports honestly — it was effectively always off because Streamtime cost rates are pre-defaulted.',
+    'Special characters (quotes, angle brackets) in job names, task titles and time-entry notes no longer break rendering in the activity log, tooltips, job list, alerts or label chips.',
+    'Design tidy-up across the app: one primary-button style everywhere, one badge/pill shape language, consistent tab styling (red active underline everywhere), semantic status colours unified, keyboard focus outlines added, hover transitions and a real loading spinner, and 5 duplicate conflicting CSS blocks removed.',
+  ]},
   {version:'2.23.0',date:'29 Jun 2026',title:'Per-task done sync, profitability tab, deadline risk, header tidy-up',items:[
     'To Do board: a task now moves to Done the moment its time is logged in Streamtime and synced — per task, not per day. Previously a finished task lingered in the To Do column until the whole day\'s work had landed.',
     'New Profitability tab on every job — revenue vs cost vs margin %, with a budget-vs-actual view. Staff cost is derived (Streamtime has no cost rate for most people, so their time is valued at the $150/h default) and flagged as an estimate where that applies.',

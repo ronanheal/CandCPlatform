@@ -1,6 +1,6 @@
 # C&C Platform — Roadmap
 
-*Last updated 29 Jun 2026 · v2.23.0*
+*Last updated 29 Jun 2026 · v2.24.0*
 
 ---
 
@@ -76,7 +76,11 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 | @mentions + notifications | Needs a real-time backend (websockets/polling server) — not buildable on the static localStorage architecture |
 | Real durable backend for all `db*` writes | The actual size of the Phase 2→3 jump — see "What's blocking Phase 3" above. Every other Phase 2 feature is UI-complete and just needs its stub swapped once this exists |
 
+**Shipped (v2.24.0):** Full refinement pass — 5 data-loss fixes (native jobs deleted by sync, archive/star reverting, deleted ST jobs resurrecting, overlay loss on partial sync, native-time double-count), double-commit fix on header edits, honest cost-estimate flag, `esc()` escaping at the top innerHTML sites, and a design-system tidy-up (one button spec, one pill shape, unified tab styling, semantic colour tokens, focus-visible, spinner, 5 duplicate CSS blocks removed).
+
 **Shipped (v2.23.0):** Per-task done sync on the Todo board (was per-day), Profitability tab on job detail (revenue vs cost vs margin), Deadline-risk dashboard card, single consolidated job-status control + aligned date pills, cross-tab live sync, Global Search now covers invoices + quotes, wrong-job task-picker fix, `.modal-save` styling.
+
+**Phase 3 pre-flight (from the v2.24.0 code review):** a compact inventory of every ST read (9 globals: jobs via `_mapStJob`, stLoggedTimes, stScheduledTodos, stJobAssignments, stExpenses, stInvoices, stQuotes, stMilestones, stContacts/companies, stUsersById) and every mutation path a backend must cover (db* stubs; direct paths: quote status cycle, split invoices, client edits `saveClientsData`, people `savePeople`, labels, boards, settings, starred, filters) is recorded in the review notes. ~20 dead functions identified for deletion during the migration (e.g. `_trackRecent`, `addTeamMember`, `goToWeek`, `openInvoiceForJob`, `exportReportingCSV`).
 
 **Shipped (v2.22.0):** Durable native data — all native creates/edits survive reload and the Streamtime sync (was in-memory only).
 
