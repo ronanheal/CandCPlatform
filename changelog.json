@@ -1,7 +1,30 @@
 {
-  "generated_at": "2026-06-29T04:16:42.664801+00:00",
-  "current_version": "2.23.0",
+  "generated_at": "2026-07-01T20:32:06.365843+00:00",
+  "current_version": "2.24.0",
   "releases": [
+    {
+      "version": "2.24.0",
+      "date": "29 Jun 2026",
+      "title": "Full refinement pass — durability fixes + design system tidy-up",
+      "items": [
+        "Fixed 5 data-loss bugs found in a full code review: jobs created natively were silently deleted by the next sync; archiving or starring a job reverted within 5 minutes; deleting a Streamtime job brought it back on the next sync; a failed sync could discard a job\\'s native activity/expenses; natively-logged time double-counted once Streamtime ingested the same entry.",
+        "Editing a job\\'s date or status from the header no longer records the change twice in the Activity log.",
+        "Profitability tab: the \"cost is an estimate\" flag now reports honestly — it was effectively always off because Streamtime cost rates are pre-defaulted.",
+        "Special characters (quotes, angle brackets) in job names, task titles and time-entry notes no longer break rendering in the activity log, tooltips, job list, alerts or label chips.",
+        "Design tidy-up across the app: one primary-button style everywhere, one badge/pill shape language, consistent tab styling (red active underline everywhere), semantic status colours unified, keyboard focus outlines added, hover transitions and a real loading spinner, and 5 duplicate conflicting CSS blocks removed."
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
     {
       "version": "2.23.0",
       "date": "29 Jun 2026",
