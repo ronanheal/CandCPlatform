@@ -1,6 +1,6 @@
 # C&C Platform — Roadmap
 
-*Last updated 29 Jun 2026 · v2.24.0*
+*Last updated 2 Jul 2026 · v2.25.0*
 
 ---
 
@@ -75,6 +75,8 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 | Xero push for natively-created invoices | The local creation half (deposit/split invoices) shipped v2.20.4; the Xero push half needs real Xero API write credentials — a business/access task, not a coding one |
 | @mentions + notifications | Needs a real-time backend (websockets/polling server) — not buildable on the static localStorage architecture |
 | Real durable backend for all `db*` writes | The actual size of the Phase 2→3 jump — see "What's blocking Phase 3" above. Every other Phase 2 feature is UI-complete and just needs its stub swapped once this exists |
+
+**Shipped (v2.25.0):** Design overhaul — labelled sidebar navigation (was a 68px icon strip), surface system (rounded cards + layered shadows + warmer paper palette), confident serif type scale, rounded controls, warm scrollbars, view-switch transitions, blurred modal backdrops. CSS-layer only; no layout logic touched.
 
 **Shipped (v2.24.0):** Full refinement pass — 5 data-loss fixes (native jobs deleted by sync, archive/star reverting, deleted ST jobs resurrecting, overlay loss on partial sync, native-time double-count), double-commit fix on header edits, honest cost-estimate flag, `esc()` escaping at the top innerHTML sites, and a design-system tidy-up (one button spec, one pill shape, unified tab styling, semantic colour tokens, focus-visible, spinner, 5 duplicate CSS blocks removed).
 
