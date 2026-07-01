@@ -15,6 +15,11 @@
   --red:#ED1E24;--black:#0D0D0D;--white:#FFFFFF;--off:#F8F7F5;
   --ink:#1A1A1A;--muted:#888;--faint:#E8E6E1;--border:#E0DDD8;
   --done:#C8E6C9;--done-ink:#2E7D32;
+  /* Semantic status tokens — use these instead of raw Material hexes */
+  --ok:#4CAF50;--ok-ink:#2E7D32;--ok-bg:#E8F5E9;
+  --warn:#FF9800;--warn-ink:#E65100;--warn-bg:#FFF3E0;
+  --info-ink:#1565C0;--info-bg:#E3F2FD;
+  --danger-ink:#C62828;--danger-bg:#FFEBEE;
   --font:'DM Sans',sans-serif;--serif:'Playfair Display',Georgia,serif;
 }
 body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14px;font-weight:300;overflow:hidden;}
@@ -64,6 +69,11 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .kpi-bar{height:2px;background:var(--faint);margin-top:14px;}
 .kpi-bar-fill{height:100%;}
 .section-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+/* Micro-label for uppercase field/section captions (replaces a 21x-repeated inline style) */
+.micro-lbl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+/* Loading spinner */
+@keyframes ccspin{to{transform:rotate(360deg)}}
+.ti-loader{display:inline-block;animation:ccspin 1s linear infinite;}
 .section-label::after{content:'';flex:1;height:1px;background:var(--border);}
 .team-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
 .team-card{background:var(--white);border:1px solid var(--border);padding:0;overflow:hidden;cursor:pointer;transition:border-color .15s;}
@@ -85,7 +95,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .alert-job{font-weight:400;}
 .alert-detail{font-size:12px;color:var(--muted);margin-top:2px;}
 .my-todos{background:var(--white);border:1px solid var(--border);}
-.my-todo-item{padding:12px 16px;border-bottom:1px solid var(--faint);display:flex;align-items:center;gap:12px;font-size:13px;cursor:pointer;}
+.my-todo-item{padding:12px 16px;border-bottom:1px solid var(--faint);display:flex;align-items:center;gap:12px;font-size:13px;cursor:pointer;transition:background .1s;}
 .my-todo-item:last-child{border-bottom:none;}
 .my-todo-item:hover{background:var(--off);}
 .todo-check{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;}
@@ -183,7 +193,8 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 
 /* JOBS */
 .jobs-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-.jobs-toolbar{padding:12px 24px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+/* .jobs-toolbar consolidated into the single declaration further down (which lacked only
+   the background this one contributed via the cascade). */
 .jobs-search{position:relative;flex:0 0 240px;}
 .jobs-search i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:15px;}
 .jobs-search input{width:100%;background:var(--off);border:1px solid var(--border);padding:7px 10px 7px 32px;font-size:13px;font-family:var(--font);font-weight:300;color:var(--ink);outline:none;border-radius:2px;}
@@ -206,14 +217,14 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .bbar-of{color:var(--muted);}
 .bbar-track{height:2px;background:var(--faint);}
 .bbar-fill{height:100%;}.bfok{background:#4CAF50;}.bfwarn{background:#FF9800;}.bfbad{background:var(--red);}
-.status-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;border-radius:2px;}
-.sp-ip{background:#E8F5E9;color:#2E7D32;}.sp-new{background:#FDECEA;color:#B71C1C;}.sp-co{background:var(--faint);color:var(--muted);}
+.status-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;border-radius:20px;}
+.sp-ip{background:var(--ok-bg);color:var(--ok-ink);}.sp-new{background:var(--danger-bg);color:var(--danger-ink);}.sp-co{background:var(--faint);color:var(--muted);}
 
 /* JOB DETAIL */
 .detail-view{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .detail-head{padding:0 24px;background:var(--white);border-bottom:1px solid var(--border);flex-shrink:0;}
 .detail-back{padding:5px 10px;margin:12px 0 0;font-size:11px;color:var(--muted);display:inline-flex;align-items:center;gap:4px;cursor:pointer;letter-spacing:.05em;background:var(--off);border:1px solid var(--border);border-radius:20px;width:fit-content;text-decoration:none;font-family:var(--font);line-height:1;}
-button.detail-back{outline:none;}
+:is(button,[tabindex],input,select,textarea):focus-visible{outline:2px solid var(--red);outline-offset:2px;}
 .detail-back:hover{color:var(--ink);border-color:#aaa;background:#eeecea;}
 .detail-title-row{display:flex;align-items:flex-end;gap:16px;padding:10px 0 0;}
 .detail-title{font-family:var(--serif);font-size:24px;font-weight:400;flex:1;line-height:1.2;}
@@ -269,7 +280,7 @@ button.detail-back{outline:none;}
 .i-hrs{font-size:12px;text-align:right;}.i-hrs-over{color:var(--red);}
 .i-rate{font-size:12px;color:var(--muted);text-align:right;}
 .i-sell{text-align:right;font-size:12px;}.i-sof{color:var(--muted);font-size:11px;}
-.i-badge{padding:2px 7px;border-radius:2px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;}
+.i-badge{padding:2px 8px;border-radius:20px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;}
 .ib-c{background:#E8F5E9;color:#2E7D32;}.ib-p{background:#EEF2FF;color:#3730A3;}
 .add-i-row{padding:8px 10px;font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-top:none;background:var(--white);}
 .add-i-row:hover{color:var(--red);}
@@ -278,8 +289,10 @@ button.detail-back{outline:none;}
 .i-sel,.i-hi{font-size:12px;font-family:var(--font);border:1px solid var(--border);padding:5px 8px;background:var(--white);color:var(--ink);outline:none;border-radius:2px;}
 .i-sel{width:100%;}.i-sel:focus,.i-hi:focus{border-color:var(--ink);}
 .i-hi{width:72px;text-align:right;}
-.save-b{background:var(--ink);color:#fff;border:none;padding:5px 11px;font-size:11px;font-family:var(--font);border-radius:2px;cursor:pointer;}
-.cancel-b{background:transparent;border:1px solid var(--border);padding:5px 11px;font-size:11px;font-family:var(--font);border-radius:2px;cursor:pointer;color:var(--muted);}
+.save-b{background:var(--ink);color:#fff;border:none;padding:7px 15px;font-size:12px;font-family:var(--font);border-radius:2px;cursor:pointer;transition:opacity .12s;}
+.save-b:hover{opacity:.85;}
+.cancel-b{background:transparent;border:1px solid var(--border);padding:7px 15px;font-size:12px;font-family:var(--font);border-radius:2px;cursor:pointer;color:var(--muted);transition:border-color .12s,color .12s;}
+.cancel-b:hover{border-color:var(--ink);color:var(--ink);}
 .exp-sec{margin-top:16px;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:var(--white);}
 .exp-head{display:flex;align-items:center;gap:9px;padding:10px 14px;background:var(--off);border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;}
 .exp-head:hover{background:#eeecea;}
@@ -292,9 +305,9 @@ button.detail-back{outline:none;}
 .exp-badg.draft{background:#FFF3E0;color:#E65100;}
 .exp-badg.approved{background:#E8F5E9;color:#2E7D32;}
 .exp-badg.invoiced{background:#E3F2FD;color:#1565C0;}
-.add-e-row{display:flex;align-items:center;gap:6px;padding:9px 14px;font-size:12px;color:var(--muted);cursor:pointer;border-top:1px solid var(--border);transition:background .12s;}
+/* .add-e-row was declared twice with conflicting borders; consolidated below (transition kept). */
 .add-e-row:hover{background:var(--off);color:var(--ink);}
-.add-e-row{padding:8px 10px;font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-top:none;background:var(--white);}
+.add-e-row{padding:8px 10px;font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-top:none;background:var(--white);transition:background .12s;}
 .add-e-row:hover{color:var(--red);}
 .exp-sec.collapsed .exp-t,.exp-sec.collapsed .add-e-row{display:none;}
 .exp-sec.collapsed .exp-chv{transform:rotate(-90deg);}
@@ -355,7 +368,7 @@ button.detail-back{outline:none;}
 .r-filter-row{display:flex;gap:12px;margin-bottom:20px;align-items:center;flex-wrap:wrap;}
 .r-filter-row label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
 .r-filter-row select,.r-filter-row input{padding:6px 10px;border:1px solid var(--border);border-radius:3px;font-family:var(--font);font-size:12px;background:var(--white);}
-.r-subtab{background:none;border:none;border-bottom:2px solid transparent;padding:8px 16px;font-family:var(--font);font-size:13px;color:var(--muted);cursor:pointer;margin-bottom:-1px;transition:color .15s,border-color .15s;}
+.r-subtab{background:none;border:none;border-bottom:2px solid transparent;padding:10px 16px;font-family:var(--font);font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);cursor:pointer;margin-bottom:-1px;transition:color .15s,border-color .15s;}
 .r-subtab:hover{color:var(--ink);}
 .r-subtab.on{color:var(--ink);border-bottom-color:var(--red);font-weight:500;}
 .r-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
@@ -392,14 +405,16 @@ button.detail-back{outline:none;}
 /* BOARDS */
 .boards-scroll{flex:1;overflow-y:auto;padding:28px 28px 60px;}
 /* BOARDS - enhanced */
-.board-col{background:var(--off);border:1px solid var(--border);border-radius:4px;padding:12px;min-width:220px;flex:1;max-width:300px;display:flex;flex-direction:column;}
-.board-col-h{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+/* Consolidated from two conflicting declarations (was defined here AND ~20 lines below;
+   the cascade merged them per-property). These are the effective computed values. */
+.board-col{background:var(--off);border:1px solid var(--border);border-radius:4px;padding:12px;min-width:220px;flex:0 0 300px;display:flex;flex-direction:column;}
+.board-col-h{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
 .board-col-h .col-count{background:var(--white);border:1px solid var(--border);padding:2px 8px;border-radius:10px;font-size:10px;}
-.board-card{background:var(--white);border:1px solid var(--border);border-radius:4px;padding:12px;margin-bottom:8px;cursor:pointer;transition:all .15s;position:relative;}
-.board-card:hover{border-color:#ccc;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.board-card{background:var(--white);border:1px solid var(--border);border-radius:4px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .15s,box-shadow .15s;position:relative;font-size:13px;}
+.board-card:hover{border-color:#aaa;box-shadow:0 2px 8px rgba(0,0,0,.06);}
 .board-card.dragging-b{opacity:.4;transform:rotate(2deg);}
 .board-card.over-b{border-left:3px solid var(--red);}
-.bc-name{font-size:13px;font-weight:500;margin-bottom:4px;}
+.bc-name{font-size:13px;font-weight:500;margin-bottom:3px;line-height:1.3;word-break:break-word;}
 .bc-client{font-size:11px;color:var(--muted);}
 .bc-meta{display:flex;gap:6px;margin-top:8px;}
 .bc-tag{font-size:9px;padding:2px 6px;border-radius:2px;background:var(--off);color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
@@ -413,13 +428,6 @@ button.detail-back{outline:none;}
 .boards-head{font-family:var(--serif);font-size:28px;font-style:italic;margin-bottom:4px;}
 .boards-sub{font-size:12px;color:var(--muted);margin-bottom:8px;}
 .boards-cols{display:flex;gap:16px;overflow-x:auto;padding-bottom:14px;}
-.board-col{flex:0 0 320px;}
-.board-col-h{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--border);}
-.board-card{background:var(--white);border:1px solid var(--border);padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .15s,box-shadow .15s;font-size:13px;}
-.board-card:hover{border-color:#aaa;box-shadow:0 2px 8px rgba(0,0,0,.06);}
-.board-card.over-b{border-left:3px solid var(--red);}
-.bc-name{font-weight:500;margin-bottom:3px;line-height:1.3;word-break:break-word;}
-.bc-client{font-size:11px;color:var(--muted);}
 /* ── Boards landing ── */
 .boards-list-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
 .board-list-card{background:var(--white);border:1px solid var(--border);padding:0;cursor:pointer;transition:border-color .15s,box-shadow .15s;position:relative;overflow:hidden;}
@@ -479,7 +487,7 @@ button.detail-back{outline:none;}
 /* ── Add card menu ── */
 .add-card-menu{position:fixed;background:var(--white);border:1px solid var(--border);box-shadow:0 8px 28px rgba(0,0,0,.14);z-index:1050;min-width:160px;display:none;padding:4px 0;}
 .add-card-menu.on{display:block;}
-.add-card-opt{padding:9px 16px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:10px;color:var(--ink);}
+.add-card-opt{padding:9px 16px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:10px;color:var(--ink);transition:background .1s;}
 .add-card-opt:hover{background:var(--off);}
 .add-card-opt i{font-size:14px;color:var(--muted);}
 /* ── Client card (expanded) ── */
@@ -489,7 +497,7 @@ button.detail-back{outline:none;}
 .client-card-count{font-size:10px;color:var(--muted);}
 .client-card-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px;opacity:0;transition:opacity .1s;}
 .client-card:hover .client-card-del{opacity:1;}
-.client-job-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--faint,#f0eeea);cursor:pointer;transition:background .1s;}
+.client-job-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--faint);cursor:pointer;transition:background .1s;}
 .client-job-row:last-child{border-bottom:none;}
 .client-job-row:hover{background:var(--off);}
 .client-job-name{font-size:12px;flex:1;}
@@ -550,11 +558,10 @@ button.detail-back{outline:none;}
 .modal-save:disabled{opacity:.4;cursor:not-allowed;}
 /* ── Streamtime-style todo modal ── */
 .tm-modal{background:#fff;border-radius:4px;width:580px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 48px rgba(0,0,0,.22);}
-.tm-hd{display:flex;align-items:center;padding:13px 18px;border-bottom:1px solid var(--border);background:var(--off);gap:10px;}
+/* .tm-hd / .tm-hd-title / .tm-x were declared twice; the later block (further down) fully
+   re-specifies them and is the one that renders — earlier copies removed. */
 .tm-hd-personal{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;}
 .tm-hd-personal input{accent-color:var(--red);cursor:pointer;}
-.tm-hd-title{flex:1;text-align:center;font-size:13px;font-weight:500;color:var(--ink);}
-.tm-x{background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;padding:2px;display:flex;align-items:center;justify-content:center;}
 .tm-x:hover{color:var(--ink);}
 .tm-bd{padding:20px 24px 8px;}
 .tm-title-inp{width:100%;border:none;border-bottom:1.5px solid var(--border);padding:2px 0 10px;font-size:17px;font-family:var(--font);font-weight:400;color:var(--ink);outline:none;background:transparent;margin-bottom:20px;}
@@ -566,7 +573,6 @@ button.detail-back{outline:none;}
 .tm-lbl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
 .tm-field-sel{width:100%;border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-size:13.5px;font-family:var(--font);color:var(--ink);background:var(--off);outline:none;margin-bottom:4px;cursor:pointer;transition:border-color .15s;}
 .tm-field-sel:focus{border-color:var(--ink);background:var(--white);}
-.tm-field-sel:focus{border-bottom-color:var(--ink);}
 .tm-note-area{background:var(--off);border:1px solid var(--border);border-radius:3px;padding:10px 12px;font-size:13px;font-family:var(--font);color:var(--ink);width:100%;box-sizing:border-box;resize:vertical;min-height:60px;outline:none;margin-top:12px;line-height:1.55;}
 .tm-note-area:focus{border-color:var(--ink);}
 .tm-urgent-row{display:flex;align-items:center;gap:7px;margin-top:10px;padding:6px 0;}
@@ -586,7 +592,6 @@ button.detail-back{outline:none;}
 .tm-btn-cancel:hover{color:var(--ink);}
 .tm-btn-delete{background:none;border:none;padding:7px 4px;font-size:12.5px;font-family:var(--font);cursor:pointer;color:var(--muted);text-decoration:underline;text-underline-offset:3px;margin-right:14px;display:none;transition:color .12s;}
 .tm-btn-delete:hover{color:var(--red);}
-.tm-btn-delete:hover{color:var(--red);border-color:var(--red);background:#FFF5F5;}
 .tm-btn-save{background:var(--ink);color:#fff;border:none;border-radius:20px;padding:8px 18px;font-size:13px;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:400;}
 .tm-btn-save:hover{opacity:.85;}
 /* Person-viewing banner */
@@ -635,7 +640,7 @@ button.detail-back{outline:none;}
 .sett-card{background:var(--white);border:1px solid var(--border);border-radius:6px;margin-bottom:20px;overflow:hidden;}
 .sett-card-hd{padding:14px 18px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;letter-spacing:.04em;display:flex;align-items:center;justify-content:space-between;background:var(--off);}
 .sett-card-body{padding:18px;}
-.sett-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--faint,#f0eeea);}
+.sett-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--faint);}
 .sett-row:last-child{border-bottom:none;padding-bottom:0;}
 .sett-row-lbl{font-size:13px;font-weight:400;}
 .sett-row-sub{font-size:11px;color:var(--muted);margin-top:1px;}
@@ -701,7 +706,7 @@ button.detail-back{outline:none;}
 .time-table-wrap{overflow-x:auto;padding:0 0 40px;}
 .time-table{width:100%;border-collapse:collapse;}
 .time-table th{padding:10px 20px;text-align:left;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:400;border-bottom:2px solid var(--border);background:var(--white);position:sticky;top:0;z-index:2;}
-.time-table td{padding:10px 20px;border-bottom:1px solid var(--faint,#f0eeea);vertical-align:middle;font-size:13px;}
+.time-table td{padding:10px 20px;border-bottom:1px solid var(--faint);vertical-align:middle;font-size:13px;}
 .time-table tbody tr:hover td{background:var(--off);}
 .time-group-row td{padding:12px 20px 6px!important;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--off)!important;border-top:2px solid var(--border)!important;}
 .time-av{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:9px;color:#fff;font-weight:500;margin-right:7px;vertical-align:middle;flex-shrink:0;}
@@ -723,7 +728,7 @@ button.detail-back{outline:none;}
 .qinv-detail.open{display:block;}
 .qinv-detail-table{width:100%;border-collapse:collapse;font-size:12px;}
 .qinv-detail-table th{padding:7px 20px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:400;text-align:left;background:var(--off);border-bottom:1px solid var(--border);}
-.qinv-detail-table td{padding:8px 20px;border-bottom:1px solid var(--faint,#f0eeea);}
+.qinv-detail-table td{padding:8px 20px;border-bottom:1px solid var(--faint);}
 .qinv-ph-row{background:var(--off);}
 .qinv-ph-row td{font-size:11px;color:var(--muted);letter-spacing:.05em;padding:6px 20px!important;}
 .qinv-actions{display:flex;gap:8px;padding:10px 20px;border-top:1px solid var(--border);background:var(--off);}
@@ -743,7 +748,7 @@ button.detail-back{outline:none;}
 .dd-field-val{text-align:right;font-weight:400;}
 /* ── ST quotes section in job detail ── */
 .st-quotes-list{border-top:1px solid var(--border);}
-.st-qt-row{display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--faint,#f0eeea);cursor:pointer;transition:background .1s;}
+.st-qt-row{display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--faint);cursor:pointer;transition:background .1s;}
 .st-qt-row:hover{background:var(--off);}
 .fbar{display:flex;flex-wrap:wrap;gap:6px;padding:8px 20px 10px;border-bottom:1px solid var(--border);background:var(--off);}
 .fchip{display:inline-flex;align-items:center;gap:3px;background:var(--white);border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:12px;flex-shrink:0;}
@@ -759,9 +764,9 @@ button.detail-back{outline:none;}
 .grp-hd{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:10px 20px 6px;background:var(--off);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;}
 .grp-hd:not(:first-child){border-top:2px solid var(--border);}
 .qjob-chip{font-size:10px;color:var(--muted);background:var(--off);border:1px solid var(--border);border-radius:3px;padding:1px 5px;margin-left:4px;flex-shrink:0;font-variant-numeric:tabular-nums;}
-.inv-pill{padding:2px 8px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;border-radius:2px;font-weight:400;}
+.inv-pill{padding:2px 9px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;border-radius:20px;font-weight:400;}
 .inv-pill.draft{background:var(--off);color:var(--muted);border:1px solid var(--border);}
-.inv-pill.sent{background:#FFF9C4;color:#E65100;border:1px solid #FFE082;}
+.inv-pill.sent{background:var(--warn-bg);color:var(--warn-ink);border:1px solid #FFE082;}
 .inv-pill.paid{background:#E8F5E9;color:#2E7D32;border:1px solid #A5D6A7;}
 .inv-pill.approved{background:#E3F2FD;color:#1565C0;border:1px solid #90CAF9;}
 .qinv-total-row td{font-weight:500;background:var(--off)!important;border-top:2px solid var(--border)!important;}
@@ -773,8 +778,10 @@ button.detail-back{outline:none;}
 .fup-hd{background:var(--ink);color:#fff;padding:12px 16px;font-size:13px;display:flex;align-items:center;gap:7px;}
 .fup-bd{padding:13px 16px;font-size:13px;line-height:1.5;color:var(--ink);}
 .fup-ft{padding:10px 16px;display:flex;gap:7px;border-top:1px solid var(--border);}
-.fup-y{background:var(--ink);color:#fff;border:none;padding:6px 12px;font-size:11px;font-family:var(--font);border-radius:2px;cursor:pointer;}
-.fup-n{background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 12px;font-size:11px;font-family:var(--font);border-radius:2px;cursor:pointer;}
+.fup-y{background:var(--ink);color:#fff;border:none;padding:7px 15px;font-size:12px;font-family:var(--font);border-radius:2px;cursor:pointer;transition:opacity .12s;}
+.fup-y:hover{opacity:.85;}
+.fup-n{background:transparent;border:1px solid var(--border);color:var(--muted);padding:7px 15px;font-size:12px;font-family:var(--font);border-radius:2px;cursor:pointer;transition:border-color .12s,color .12s;}
+.fup-n:hover{border-color:var(--ink);color:var(--ink);}
 
 .hidden{display:none!important;}
 
@@ -855,7 +862,7 @@ button.detail-back{outline:none;}
 .cal-nav-btn{background:transparent;border:1px solid var(--border);border-radius:3px;padding:6px 10px;cursor:pointer;font-size:14px;color:var(--ink);transition:all .15s;}
 .cal-nav-btn:hover{background:var(--off);border-color:var(--muted);}
 .cal-label{font-family:var(--serif);font-size:18px;font-weight:400;min-width:180px;text-align:center;}
-.cal-today-btn{background:var(--ink);color:#fff;border:none;padding:6px 14px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;border-radius:3px;cursor:pointer;font-family:var(--font);transition:all .15s;}
+.cal-today-btn{background:var(--ink);color:#fff;border:none;padding:7px 15px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;border-radius:2px;cursor:pointer;font-family:var(--font);transition:opacity .15s;}
 .cal-today-btn:hover{opacity:.9;}
 .cal-filters{display:flex;gap:8px;}
 .cal-filters select{background:var(--white);border:1px solid var(--border);border-radius:3px;padding:6px 12px;font-size:13px;font-family:var(--font);cursor:pointer;}
@@ -941,7 +948,7 @@ button.detail-back{outline:none;}
 .jobs-subnav{display:flex;align-items:center;gap:2px;padding:0 28px;border-bottom:2px solid var(--border);flex-shrink:0;background:var(--white);}
 .jsn-tab{padding:14px 16px 12px;font-size:12px;font-weight:400;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .12s,border-color .12s;}
 .jsn-tab:hover{color:var(--ink);}
-.jsn-tab.on{color:var(--ink);border-bottom-color:var(--ink);font-weight:500;}
+.jsn-tab.on{color:var(--ink);border-bottom-color:var(--red);font-weight:500;}
 .jt-panel{display:flex;flex-direction:column;flex:1;overflow:hidden;}
 .jt-panel.scroll{overflow-y:auto;}
 /* ── Global restyled select (.cc-select) ──────────────────── */
@@ -954,9 +961,11 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:transparent
 .wf-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500;letter-spacing:.05em;text-transform:uppercase;}
 .wf-quote{background:#F0F4FF;color:#4A6FA5;}
 .wf-live{background:#E8F5E9;color:#2E7D32;}
-.wf-completed{background:#FFF8E1;color:#F57F17;}
+.wf-completed{background:var(--warn-bg);color:var(--warn-ink);}
 .wf-invoiced{background:#F3E5F5;color:#6A1B9A;}
-.paused-badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;background:#F5F5F5;color:#757575;font-weight:500;letter-spacing:.04em;border:1px solid #E0E0E0;}
+.paused-badge{display:inline-block;padding:1px 8px;border-radius:20px;font-size:10px;background:#F5F5F5;color:#757575;font-weight:500;letter-spacing:.04em;border:1px solid #E0E0E0;transition:border-color .12s,color .12s;}
+/* Click-to-edit pills (status/dates in the job header) should look clickable */
+.paused-badge[onclick]:hover{border-color:var(--ink);color:var(--ink);}
 .tm-job-brief-wrap{margin-top:14px;}
 .tm-job-brief-lbl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
 .tm-job-brief{background:var(--off);border:1px solid var(--border);border-radius:3px;padding:10px 12px;font-size:12px;color:var(--muted);line-height:1.5;}
@@ -971,7 +980,7 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:transparent
 .inv-tr{border-bottom:1px solid var(--border);transition:background .1s;}
 .inv-tr:hover{background:var(--off);}
 .inv-td{padding:11px 16px;font-size:13px;vertical-align:middle;}
-.inv-pill.overdue{background:#FFEBEE;color:#C62828;border:1px solid #EF9A9A;}
+.inv-pill.overdue{background:var(--danger-bg);color:var(--danger-ink);border:1px solid #EF9A9A;}
 .inv-pill.voided{background:#F5F5F5;color:#9E9E9E;border:1px solid #E0E0E0;text-decoration:line-through;}
 .inv-tbi-row{display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid var(--border);}
 .inv-tbi-row:hover{background:var(--off);}
@@ -1016,7 +1025,7 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:transparent
 .te-note-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--muted);margin-left:5px;vertical-align:middle;}
 /* Item team avatar stack */
 .item-av-stack{display:flex;align-items:center;gap:0;position:relative;}
-.item-av{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:8px;color:#fff;font-weight:600;border:1.5px solid var(--bg);margin-left:-5px;cursor:default;position:relative;flex-shrink:0;}
+.item-av{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:8px;color:#fff;font-weight:600;border:1.5px solid var(--white);margin-left:-5px;cursor:default;position:relative;flex-shrink:0;}
 .item-av:first-child{margin-left:0;}
 .item-av-tip{position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;font-size:11px;border-radius:5px;padding:5px 9px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:1000;min-width:120px;}
 .item-av-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1a1a1a;}
@@ -1068,7 +1077,7 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:transparent
 .label-inp-styled{background:transparent;border:none;border-bottom:1px solid var(--border);padding:3px 6px;font-size:12px;font-family:var(--font);outline:none;min-width:120px;color:var(--ink);}
 .label-inp-styled:focus{border-bottom-color:var(--ink);}
 /* ── Jobs toolbar update ──────────────────────────────────── */
-.jobs-toolbar{display:flex;align-items:center;gap:10px;padding:14px 28px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;}
+.jobs-toolbar{display:flex;align-items:center;gap:10px;padding:14px 28px;background:var(--white);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;}
 
 /* ── Todo modal redesign ─────────────────────────────────────────────────── */
 .tm-hd{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);background:#fff;gap:0;}
@@ -1121,7 +1130,7 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:transparent
 .cal-day-head-num{font-size:18px;font-weight:400;line-height:1.1;}
 .cal-day-head-num.today-red{color:var(--red);font-weight:600;}
 .cal-slots{flex:1;position:relative;overflow-y:auto;overflow-x:hidden;}
-.cal-slot-line{position:absolute;left:0;right:0;border-top:1px solid var(--faint,#f0eeea);pointer-events:none;}
+.cal-slot-line{position:absolute;left:0;right:0;border-top:1px solid var(--faint);pointer-events:none;}
 .cal-slot-line.half{border-top-style:dashed;opacity:.4;}
 .cal-task-block{position:absolute;left:4px;right:4px;border-radius:4px;padding:4px 7px 8px;font-size:11px;overflow:hidden;cursor:grab;border:1px solid rgba(0,0,0,.1);transition:box-shadow .12s,opacity .12s;user-select:none;}
 .cal-task-block:hover{box-shadow:0 2px 8px rgba(0,0,0,.14);}
@@ -1139,7 +1148,7 @@ tr:hover .i-todo-btn{opacity:1;}
 .item-pick-dd.on{display:block;}
 .item-pick-group{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:7px 12px 3px;font-weight:500;background:var(--off);border-top:1px solid var(--border);}
 .item-pick-group:first-child{border-top:none;}
-.item-pick-opt{padding:7px 12px;cursor:pointer;font-size:13px;font-weight:300;line-height:1.4;}
+.item-pick-opt{padding:7px 12px;cursor:pointer;font-size:13px;font-weight:300;line-height:1.4;transition:background .1s;}
 .item-pick-opt:hover{background:var(--off);}
 .item-pick-opt.selected{background:#FFF0EE;color:var(--red);}
 /* Board column drag */
@@ -1261,7 +1270,7 @@ tr:hover .i-todo-btn{opacity:1;}
 .gs-kbd{font-size:10px;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:2px 6px;background:var(--off);}
 #gs-results{overflow-y:auto;padding:6px 0 10px;}
 .gs-cat{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:10px 16px 4px;}
-.gs-item{display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;font-size:13px;}
+.gs-item{display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;font-size:13px;transition:background .1s;}
 .gs-item.sel,.gs-item:hover{background:var(--off);}
 .gs-item .gs-ico{width:26px;height:26px;border-radius:6px;background:var(--off);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .gs-item .gs-ico i{font-size:13px;color:var(--muted);}
@@ -2170,6 +2179,10 @@ function clientNameOptions(){
     return c?.nickname?{label:`${c.nickname} — ${name}`,value:name}:name;
   });
 }
+// Escape user/ST-sourced text before interpolating into innerHTML. Job names, task titles
+// and time-entry notes come from outside the platform; a stray < or " otherwise breaks
+// rendering (and is a stored-XSS vector via the activity log).
+function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 // Collision-proof id minting (Date.now() alone collides within one ms)
 let _uidN=0;
 function uid(prefix){return (prefix||'')+Date.now().toString(36)+(_uidN++).toString(36)+Math.random().toString(36).slice(2,6);}
@@ -2871,6 +2884,15 @@ function persistNativeData(){
       if((j.activity||[]).length)e.activity=j.activity;
       if(Object.keys(e).length)overlay[j.id]=e;
     });
+    // Keep overlay entries for job ids not in the current jobs array — a partial/failed
+    // jobs.json export must not cause an unrelated saveData() to permanently discard a
+    // missing job's native activity/expenses. Entries for PRESENT jobs are rebuilt fresh
+    // (so legitimate deletions of milestones/expenses still stick).
+    try{
+      const prev=JSON.parse(localStorage.getItem('cc_job_overlay')||'{}');
+      const present=new Set(jobs.map(j=>j.id));
+      Object.keys(prev).forEach(id=>{if(!present.has(id)&&!overlay[id])overlay[id]=prev[id];});
+    }catch(e){}
     localStorage.setItem('cc_native_jobs',JSON.stringify(nativeJobs));
     localStorage.setItem('cc_job_overlay',JSON.stringify(overlay));
     localStorage.setItem('cc_native_time',JSON.stringify((stLoggedTimes||[]).filter(t=>t._local)));
@@ -2895,6 +2917,12 @@ function applyNativeData(){
   });
   const existing=new Set(jobs.map(j=>j.id));
   nativeJobs.forEach(nj=>{if(!existing.has(nj.id))jobs.unshift(nj);});
+  // Deletion tombstones — an ST-backed job the user deleted would otherwise re-appear
+  // from every jobs.json remap (see deleteJobConfirm).
+  try{
+    const dead=JSON.parse(localStorage.getItem('cc_deleted_jobs')||'[]');
+    if(dead.length)jobs=jobs.filter(j=>!dead.includes(j.id));
+  }catch(e){}
 }
 // One-time cleanup: purge the legacy persisted manual-task store. The Todo board is now
 // seeded from Streamtime each session, so any old cc_todo data is stale and unused.
@@ -3148,7 +3176,11 @@ async function initStreamtime(silent){
         const weekH=(u.hoursWorkedMonday||0)+(u.hoursWorkedTuesday||0)+(u.hoursWorkedWednesday||0)+(u.hoursWorkedThursday||0)+(u.hoursWorkedFriday||0);
         const capacityH=weekH>0?weekH/5:8;
         const billableRate=u.billableRate||0;
-        stUsersById[u.id]={id:u.id,name,initials,color,key,email:u.email||'',active:userStatus==='Active',capacityH,billableRate,costRate:u.costRate||_defCostRate()};
+        // costRateIsDefault: ST has no cost rate for ~36/37 users, so costRate here is
+        // usually the workspace default. Consumers that present cost as fact (Profitability
+        // tab, per-person P&L) must check this flag — otherwise "estimated" detection
+        // downstream is dead code because the fallback already happened here.
+        stUsersById[u.id]={id:u.id,name,initials,color,key,email:u.email||'',active:userStatus==='Active',capacityH,billableRate,costRate:u.costRate||_defCostRate(),costRateIsDefault:!u.costRate};
         // Merge into platform people map if not already present
         if(!people[key]){
           people[key]={
@@ -3201,7 +3233,17 @@ async function initStreamtime(silent){
     if(ltRes.ok)stLoggedTimes=await ltRes.json();
     // Re-append natively-logged time entries (Log Time on mark-done). The fetch above just
     // replaced stLoggedTimes wholesale, so without this they'd vanish on every sync/reload.
-    try{const nt=JSON.parse(localStorage.getItem('cc_native_time')||'[]');if(nt.length)stLoggedTimes.push(...nt);}catch(e){}
+    // Dedup: once ST ingests the same work (same user + job + date + minutes) the native
+    // copy is dropped, otherwise it would double-count in Progress/Profit forever.
+    try{
+      const nt=JSON.parse(localStorage.getItem('cc_native_time')||'[]');
+      if(nt.length){
+        const sig=new Set(stLoggedTimes.map(l=>`${l.userId}|${l.job?.number||''}|${(l.date||'').slice(0,10)}|${l.minutes||0}`));
+        const keep=nt.filter(e=>!sig.has(`${e.userId}|${e.job?.number||''}|${(e.date||'').slice(0,10)}|${e.minutes||0}`));
+        stLoggedTimes.push(...keep);
+        if(keep.length!==nt.length)localStorage.setItem('cc_native_time',JSON.stringify(keep));
+      }
+    }catch(e){}
     if(!stLoggedTimes.length){
       const b=document.getElementById('st-data-warn');
       if(b)b.style.display='flex';
@@ -3433,7 +3475,7 @@ function renderDashboard(){
       <div class="kpi"><div class="kpi-label">Revenue logged</div><div class="kpi-val">${fmtDollar(totalSell)}</div><div class="kpi-sub">billable time ex tax</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${totalSell>0?Math.min(100,Math.round(totalInvoiced/totalSell*100)):0}%;background:#3498DB;"></div></div></div>
     </div>`:'';
   // Over budget alerts
-  const alerts=jobs.filter(j=>j.status==='inplay'&&((j._bPct||0)>=100||((j._hPct||0)>=100))).sort((a,b)=>(b._bPct||0)-(a._bPct||0)).slice(0,12).map(j=>`<div class="alert"><i class="ti ti-alert-triangle" style="color:var(--red);font-size:16px;flex-shrink:0;"></i><div><div class="alert-job">${j.id} ${j.name}</div><div class="alert-detail">${(j._bPct||0)>=100?`Budget ${j._bPct}% used · over sell`:`Hours ${j._hPct}% of plan`}</div></div></div>`).join('');
+  const alerts=jobs.filter(j=>j.status==='inplay'&&((j._bPct||0)>=100||((j._hPct||0)>=100))).sort((a,b)=>(b._bPct||0)-(a._bPct||0)).slice(0,12).map(j=>`<div class="alert"><i class="ti ti-alert-triangle" style="color:var(--red);font-size:16px;flex-shrink:0;"></i><div><div class="alert-job">${j.id} ${esc(j.name)}</div><div class="alert-detail">${(j._bPct||0)>=100?`Budget ${j._bPct}% used · over sell`:`Hours ${j._hPct}% of plan`}</div></div></div>`).join('');
   // Client cards — one per client with active jobs
   const _activeClients=[...new Set(jobs.filter(j=>j.status!=='archived'&&j.status!=='complete').map(j=>j.company).filter(Boolean))];
   const _clientsHTML=_activeClients.map(co=>{
@@ -3447,7 +3489,7 @@ function renderDashboard(){
     const clColor=clColors[clrIdx];
     const jobPills=cjobs.slice(0,4).map(j=>{
       const wl=j.workflowStatus==='quote'?'Q':j.workflowStatus==='completed'?'✓':j.workflowStatus==='invoiced'?'$':'';
-      return`<span onclick="event.stopPropagation();openJobDetail('${j.id}')" style="display:inline-block;background:var(--off);border:1px solid var(--border);border-radius:3px;padding:2px 7px;font-size:10px;cursor:pointer;white-space:nowrap;margin:2px 2px 0 0;" title="${j.id} ${j.name}">${wl?wl+' ':''}<span style="color:var(--muted);">${j.id}</span> ${j.name.slice(0,18)}${j.name.length>18?'…':''}</span>`;
+      return`<span onclick="event.stopPropagation();openJobDetail('${j.id}')" style="display:inline-block;background:var(--off);border:1px solid var(--border);border-radius:3px;padding:2px 7px;font-size:10px;cursor:pointer;white-space:nowrap;margin:2px 2px 0 0;" title="${esc(j.id+' '+j.name)}">${wl?wl+' ':''}<span style="color:var(--muted);">${j.id}</span> ${esc(j.name.slice(0,18))}${j.name.length>18?'…':''}</span>`;
     }).join('');
     const moreCount=cjobs.length>4?`<span style="font-size:11px;color:var(--muted);margin-top:4px;display:block;">+${cjobs.length-4} more</span>`:'';
     return`<div class="team-card" onclick="navTo('clients')">
@@ -4900,7 +4942,7 @@ function deleteTodoById(id,day){
   const idx=arr.findIndex(t=>t.id===id);
   if(idx===-1)return;
   const[removed]=arr.splice(idx,1);
-  if(removed?.jobId)logActivity(removed.jobId,currentPerson,'task_delete',`Deleted task <strong>${removed.title}</strong>`);
+  if(removed?.jobId)logActivity(removed.jobId,currentPerson,'task_delete',`Deleted task <strong>${esc(removed.title)}</strong>`);
   saveData();renderTodo();_refreshJobStats();toast('Task deleted');
 }
 function reassignTask(t,fromDay,toPersonKey){
@@ -5440,7 +5482,7 @@ function toggleTaskDone(taskId){
     const t=arr.find(x=>x.id===taskId);
     if(t){
       t.done=!t.done;
-      if(t.jobId)logActivity(t.jobId,currentPerson,'task_status',`Task <strong>${t.title}</strong> ${t.done?'marked done':'reopened'}`);
+      if(t.jobId)logActivity(t.jobId,currentPerson,'task_status',`Task <strong>${esc(t.title)}</strong> ${t.done?'marked done':'reopened'}`);
       if(t.done)_showFupForTask(t);
       renderTodo();saveData();_refreshJobStats();return;
     }
@@ -5564,12 +5606,12 @@ function showTodoTooltip(t,x,y){
   const billable=taskIsBillable(t);
   const billTxt=t.job?(billable?'Billable':'Non-billable'):'Internal';
   tt.innerHTML=`
-    <div class="tt-title">${t.title}${urgentBadge}</div>
-    ${t.job?`<div class="tt-row"><span class="tt-label">Job</span><span>${t.job}</span></div>`:''}
-    ${t.item?`<div class="tt-row"><span class="tt-label">Item</span><span>${t.item}</span></div>`:''}
+    <div class="tt-title">${esc(t.title)}${urgentBadge}</div>
+    ${t.job?`<div class="tt-row"><span class="tt-label">Job</span><span>${esc(t.job)}</span></div>`:''}
+    ${t.item?`<div class="tt-row"><span class="tt-label">Item</span><span>${esc(t.item)}</span></div>`:''}
     <div class="tt-row"><span class="tt-label">Hours</span><span>${t.hours?formatHrs(t.hours):'—'}</span></div>
     <div class="tt-row"><span class="tt-label">Status</span><span>${statusTxt} · ${billTxt}</span></div>
-    ${t.note&&t.note!==t.title?`<div class="tt-row" style="margin-top:4px;padding-top:4px;border-top:1px solid #333;"><span style="color:#999;">${t.note}</span></div>`:''}`;
+    ${t.note&&t.note!==t.title?`<div class="tt-row" style="margin-top:4px;padding-top:4px;border-top:1px solid #333;"><span style="color:#999;">${esc(t.note)}</span></div>`:''}`;
   tt.classList.add('on');
   moveTodoTooltip(x,y);
 }
@@ -5902,7 +5944,7 @@ function saveTodo(){
       } else {
         Object.assign(arr[idx],{title:name,hours,item,itemId:itemId||arr[idx].itemId,urgent,personal,job:job?`${job.id} ${job.name}`:''});
       }
-      if(jobId)logActivity(jobId,MY_PERSON,'task_edit',`Updated task <strong>${name}</strong>`);
+      if(jobId)logActivity(jobId,MY_PERSON,'task_edit',`Updated task <strong>${esc(name)}</strong>`);
       // Repeat turned on while editing: spawn future occurrences (once)
       const editedTask=(getWeekData(targetPerson)[dayNum]||[]).find(t=>t.id===editingTaskId)||arr[idx];
       const cfgOn=document.getElementById('td-repeat-config')?.classList.contains('on');
@@ -5918,7 +5960,7 @@ function saveTodo(){
     const task={id:uid('t'),title:name,job:job?`${job.id} ${job.name}`:'',jobId:jobId||null,item,itemId:itemId||null,hours,urgent,personal,repeat:document.getElementById('td-repeat-config')?.classList.contains('on')||false};
     if(!wd[dayNum])wd[dayNum]=[];
     wd[dayNum].push(task);
-    if(jobId)logActivity(jobId,targetPerson,'task_add',`Added task <strong>${name}</strong>${item?` (${item})`:''} — ${DAY_NAMES[dayNum-1]}`);
+    if(jobId)logActivity(jobId,targetPerson,'task_add',`Added task <strong>${esc(name)}</strong>${item?` (${esc(item)})`:''} — ${DAY_NAMES[dayNum-1]}`);
     _fupTask=null;
     setTimeout(()=>document.getElementById('fup').classList.add('on'),800);
     // Handle repeat: create copies for future occurrences
@@ -6059,7 +6101,7 @@ function renderJobs(){
       tr.innerHTML=`
         <td style="width:32px;"><input type="checkbox" class="job-cb" data-id="${j.id}" onclick="event.stopPropagation();updateBulkBar()" style="accent-color:var(--red);cursor:pointer;"/></td>
         <td style="min-width:220px;">
-          <div class="job-num-name"><span class="job-num">${j.id}</span><span class="job-name">${j.name}</span>${pausedBadge}</div>
+          <div class="job-num-name"><span class="job-num">${j.id}</span><span class="job-name">${esc(j.name)}</span>${pausedBadge}</div>
           ${notePrev}
         </td>
         <td><span class="job-co">${billDot}${j.company}</span></td>
@@ -6218,7 +6260,7 @@ function openJobDetail(id){
     membersRow.innerHTML=j.members.map(k=>{
       const p=people[k];if(!p)return'';
       return`<div class="d-av" style="background:${p.color};cursor:pointer;" title="${p.name}" onclick="openPersonTodo('${k}')">${p.initials}</div>`;
-    }).join('')+`<div class="d-av" style="background:#ddd;color:#888;font-size:13px;cursor:pointer;" title="Add team member" onclick="openAddMemberPicker('${j.id}')">+</div>`;
+    }).join('')+`<div class="d-av" style="background:var(--faint);color:var(--muted);border:1px dashed var(--border);font-size:13px;cursor:pointer;" title="Add team member" onclick="openAddMemberPicker('${j.id}')">+</div>`;
   }
   // Job notes field
   const notesRow=document.getElementById('job-notes-row');
@@ -6284,7 +6326,7 @@ function toggleJobMember(jobId,personKey,rowEl){
     membersRow.innerHTML=j.members.map(k=>{
       const p=people[k];if(!p)return'';
       return`<div class="d-av" style="background:${p.color};cursor:pointer;" title="${p.name}" onclick="openPersonTodo('${k}')">${p.initials}</div>`;
-    }).join('')+`<div class="d-av" style="background:#ddd;color:#888;font-size:13px;cursor:pointer;" title="Add team member" onclick="openAddMemberPicker('${j.id}')">+</div>`;
+    }).join('')+`<div class="d-av" style="background:var(--faint);color:var(--muted);border:1px dashed var(--border);font-size:13px;cursor:pointer;" title="Add team member" onclick="openAddMemberPicker('${j.id}')">+</div>`;
   }
 }
 let _notesLogTimer=null,_notesLoggedFor=null;
@@ -6442,21 +6484,28 @@ function duplicateJob(id){
 }
 function toggleStarJob(id){
   const j=jobs.find(x=>x.id===id);if(!j)return;
-  j.starred=!j.starred;saveData();
-  openJobDetail(id);
-  toast(j.starred?'Job starred':'Unstarred');
+  // dbUpdateJob records the flag in j._native so it survives reload + ST refetch —
+  // a direct j.starred write reverted within 5 min via the background poll.
+  dbUpdateJob(id,{starred:!j.starred}).then(u=>{
+    openJobDetail(id);
+    toast(u&&u.starred?'Job starred':'Unstarred');
+  });
 }
 function archiveJob(id){
   const j=jobs.find(x=>x.id===id);if(!j)return;
-  j.status='archived';saveData();
-  navTo('jobs');
-  toast('Job archived');
+  dbUpdateJob(id,{status:'archived'}).then(()=>{ // durable — was a direct write that reverted on refetch
+    navTo('jobs');
+    toast('Job archived');
+  });
 }
 function deleteJobConfirm(id){
   const j=jobs.find(x=>x.id===id);if(!j)return;
-  ccConfirm(`Delete "${j.name}"? This cannot be undone.`,()=>{
+  ccConfirm(`Delete “${esc(j.name)}”? This cannot be undone.`,()=>{
     const idx=jobs.findIndex(x=>x.id===id);
     if(idx>-1)jobs.splice(idx,1);
+    // Tombstone: ST-backed jobs re-appear from the next jobs.json remap unless we
+    // remember the deletion — applyNativeData() filters against cc_deleted_jobs.
+    if(j._stId){try{const d=JSON.parse(localStorage.getItem('cc_deleted_jobs')||'[]');if(!d.includes(id))d.push(id);localStorage.setItem('cc_deleted_jobs',JSON.stringify(d));}catch(e){}}
     saveData();navTo('jobs');
     toast('Job deleted','success');
   },'Delete',true);
@@ -6543,10 +6592,12 @@ function computeJobProfit(j){
   if(j._stId){
     (stLoggedTimes||[]).forEach(lt=>{
       if(String(lt.job?.number||'')!==String(j.id))return;
-      const rate=stUsersById[lt.userId]?.costRate;
-      if(!rate)costEstimated=true;
+      const u=stUsersById[lt.userId];
+      // costRate is pre-defaulted in stUsersById, so check the flag — `!rate` was dead code
+      // and the tab presented defaulted costs as confident figures.
+      if(!u||u.costRateIsDefault)costEstimated=true;
       entryMins+=(lt.minutes||0);
-      entryCost+=(lt.minutes||0)/60*(rate||_defCostRate());
+      entryCost+=(lt.minutes||0)/60*((u&&u.costRate)||_defCostRate());
     });
   }
   let staffCost;
@@ -7382,7 +7433,7 @@ function renderLabels(){
     const c=labelColor(l);
     const el=document.createElement('div');el.className='label-chip';
     el.style.cssText=`background:${c}18;color:${c};border:1px solid ${c}44;`;
-    el.innerHTML=`${l} <button onclick="removeLabel('${l}')" style="color:${c};"><i class="ti ti-x" style="font-size:10px"></i></button>`;
+    el.innerHTML=`${esc(l)} <button data-l="${esc(l)}" onclick="removeLabel(this.dataset.l)" style="color:${c};"><i class="ti ti-x" style="font-size:10px"></i></button>`;
     row.insertBefore(el,addBtn);
   });
 }
@@ -8141,7 +8192,7 @@ function editJobNameField(jobId){
   el.replaceWith(inp);inp.focus();inp.select();
   const commit=async()=>{
     const val=inp.value.trim();
-    if(val&&val!==j.name){await dbUpdateJob(jobId,{name:val});logActivity(jobId,MY_PERSON,'edit',`Renamed job to <strong>${val}</strong>`);}
+    if(val&&val!==j.name){await dbUpdateJob(jobId,{name:val});logActivity(jobId,MY_PERSON,'edit',`Renamed job to <strong>${esc(val)}</strong>`);}
     openJobDetail(jobId);
   };
   inp.addEventListener('blur',commit);
@@ -8157,17 +8208,22 @@ function editJobDateField(jobId,field){
   inp.type='date';inp.className='form-inp';inp.value=j[field]||'';
   inp.style.cssText='font-size:11px;padding:1px 4px;';
   el.replaceWith(inp);inp.focus();
+  // Commit ONCE, on blur/Enter only. A 'change' listener double-committed (dbUpdateJob
+  // replaces jobs[i], so the stale captured `j` let the guard pass twice → duplicate
+  // activity rows) and date inputs fire 'change' per-segment, killing the input mid-edit.
+  let committed=false;
   const commit=async()=>{
+    if(committed)return;committed=true;
+    const cur=jobs.find(x=>x.id===jobId);
     const val=inp.value||null;
-    if(val!==(j[field]||null)){
+    if(cur&&val!==(cur[field]||null)){
       await dbUpdateJob(jobId,{[field]:val});
       logActivity(jobId,MY_PERSON,'edit',`Set ${field==='dueDate'?'due date':'start date'} to <strong>${val?fmtDate(val):'—'}</strong>`);
     }
     openJobDetail(jobId);
   };
   inp.addEventListener('blur',commit);
-  inp.addEventListener('change',commit);
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();else if(e.key==='Escape'){openJobDetail(jobId);}});
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();else if(e.key==='Escape'){committed=true;openJobDetail(jobId);}});
 }
 function editJobStatusField(jobId){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
@@ -8177,9 +8233,12 @@ function editJobStatusField(jobId){
   sel.className='filter-btn';sel.style.cssText='font-size:11px;padding:1px 4px;';
   sel.innerHTML=opts.map(([v,l])=>`<option value="${v}" ${v===j.status?'selected':''}>${l}</option>`).join('');
   el.replaceWith(sel);sel.focus();
+  let committed=false; // latch — blur fires after change; without it this committed twice
   const commit=async()=>{
+    if(committed)return;committed=true;
+    const cur=jobs.find(x=>x.id===jobId);
     const val=sel.value;
-    if(val!==j.status){
+    if(cur&&val!==cur.status){
       const labels={inplay:'In Play',complete:'Complete',archived:'Archived'};
       await dbUpdateJob(jobId,{status:val});
       logActivity(jobId,MY_PERSON,'status_change',`Status set to <strong>${labels[val]}</strong>`);
@@ -8198,7 +8257,9 @@ function createJob(){
   const wf=document.getElementById('nj-workflow')?.value||'quote';
   let id=String(parseInt(document.getElementById('nj-num').value,10)||nextJobNumber());
   while(jobs.some(j=>j.id===id))id=String(parseInt(id,10)+1);
-  jobs.unshift({id,name,company,budget:'$0',budgetTotal:'—',bPct:0,hours:'0h',hoursTotal:'—',hPct:0,status:'new',billable,labels:[],workflowStatus:wf,phases:[],activity:[],members:[MY_PERSON]});
+  // _local marks this as a natively-created job so persistNativeData() saves it to
+  // cc_native_jobs — without it the next ST refetch/reload silently deleted the job.
+  jobs.unshift({id,name,company,budget:'$0',budgetTotal:'—',bPct:0,hours:'0h',hoursTotal:'—',hPct:0,status:'new',billable,labels:[],workflowStatus:wf,phases:[],activity:[],members:[MY_PERSON],_local:true,_createdAt:Date.now()});
   saveData();
   closeCreateJob();renderJobs();openJobDetail(id);
 }
@@ -8260,11 +8321,11 @@ function renderActivityTab(){
       const stUser=stUsersById[lt.userId];if(!stUser)return;
       const ts=lt.date?new Date(lt.date.slice(0,10)+'T12:00:00').getTime():0;
       const note=lt.notes||lt.scheduleNotes||'';
-      const item=lt.itemName?` on <strong>${lt.itemName}</strong>`:'';
+      const item=lt.itemName?` on <strong>${esc(lt.itemName)}</strong>`:'';
       const billable=lt.job?.isBillable!==false;
       const value=lt.totalExTax!=null?Math.round(lt.totalExTax):null;
-      const billTag=`<span style="font-size:10px;background:${billable?'#E8F5E9':'var(--off)'};color:${billable?'#2E7D32':'var(--muted)'};border-radius:3px;padding:1px 5px;margin-left:4px;">${billable?'Billable':'Non-billable'}</span>`;
-      events.push({ts,personKey:stUser.key,detail:`Logged <strong>${formatHrs((lt.minutes||0)/60)||'0h'}</strong>${item}${value?` — $${value.toLocaleString()}`:''}${note?` — ${note}`:''}${billTag}`,_st:true});
+      const billTag=`<span style="font-size:10px;background:${billable?'var(--ok-bg)':'var(--off)'};color:${billable?'var(--ok-ink)':'var(--muted)'};border-radius:3px;padding:1px 5px;margin-left:4px;">${billable?'Billable':'Non-billable'}</span>`;
+      events.push({ts,personKey:stUser.key,detail:`Logged <strong>${formatHrs((lt.minutes||0)/60)||'0h'}</strong>${item}${value?` — $${value.toLocaleString()}`:''}${note?` — ${esc(note)}`:''}${billTag}`,_st:true});
     });
   }
   const composerHTML=`<div class="act-add-row">
@@ -8674,45 +8735,45 @@ function openClientDetail(id){
   // Info strip
   document.getElementById('cd-info-strip').innerHTML=`
     <div style="flex:1;min-width:120px;">
-      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Short name</div>
+      <div class="micro-lbl">Short name</div>
       <input class="form-inp" style="width:100%;font-size:12px;padding:4px 8px;" value="${c.nickname||''}" placeholder="e.g. SFF" oninput="updateClientField('${c.id}','nickname',this.value)">
     </div>
     <div style="flex:1;min-width:160px;">
-      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Contact</div>
+      <div class="micro-lbl">Contact</div>
       <input class="form-inp" style="width:100%;font-size:12px;padding:4px 8px;" value="${c.contact||''}" placeholder="Contact name" oninput="updateClientField('${c.id}','contact',this.value)">
     </div>
     <div style="flex:1;min-width:160px;">
-      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Email</div>
+      <div class="micro-lbl">Email</div>
       <input class="form-inp" style="width:100%;font-size:12px;padding:4px 8px;" value="${c.email||''}" placeholder="email@company.com" oninput="updateClientField('${c.id}','email',this.value)">
     </div>
     <div style="flex:1;min-width:120px;">
-      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Phone</div>
+      <div class="micro-lbl">Phone</div>
       <input class="form-inp" style="width:100%;font-size:12px;padding:4px 8px;" value="${c.phone||''}" placeholder="+64 …" oninput="updateClientField('${c.id}','phone',this.value)">
     </div>
     <div style="flex:1;min-width:160px;">
-      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Website</div>
+      <div class="micro-lbl">Website</div>
       ${c.website?`<a href="${c.website}" target="_blank" rel="noopener" style="font-size:12px;color:var(--ink);text-decoration:underline;text-underline-offset:2px;word-break:break-all;">${c.website.replace(/^https?:\/\//,'')}</a>`:`<span style="font-size:12px;color:var(--muted);">—</span>`}
     </div>
     ${c.address?`<div style="flex:1;min-width:160px;">
-      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Address</div>
+      <div class="micro-lbl">Address</div>
       <div style="font-size:12px;color:var(--ink);line-height:1.4;">${c.address.replace(/\n/g,'<br>')}</div>
     </div>`:''}
     <div style="flex:1;min-width:140px;">
-      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Lead</div>
+      <div class="micro-lbl">Lead</div>
       <select class="filter-btn" style="width:100%;font-size:12px;" onchange="updateClientField('${c.id}','lead',this.value)">
         <option value="">— No lead —</option>
         ${Object.keys(people).map(k=>`<option value="${k}" ${c.lead===k?'selected':''}>${people[k].name} · ${people[k].role}</option>`).join('')}
       </select>
     </div>
     <div style="flex:1;min-width:160px;">
-      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Client group</div>
+      <div class="micro-lbl">Client group</div>
       <input list="client-groups-list" class="form-inp" style="width:100%;font-size:12px;padding:4px 8px;" value="${c.group||''}" placeholder="e.g. Natural Pet" oninput="updateClientField('${c.id}','group',this.value)">
       <datalist id="client-groups-list">${[...new Set(clientsData.map(x=>x.group).filter(Boolean))].map(g=>`<option value="${g}">`).join('')}</datalist>
     </div>
     <div style="min-width:200px;display:flex;gap:20px;">
-      <div style="text-align:center;"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Revenue logged</div><div style="font-size:15px;font-weight:500;">${fmtD(totalSell)}</div></div>
-      <div style="text-align:center;"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Invoiced</div><div style="font-size:15px;font-weight:500;">${fmtD(totalInvoiced)}</div></div>
-      <div style="text-align:center;"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Paid</div><div style="font-size:15px;font-weight:500;color:#4CAF50;">${fmtD(totalPaid)}</div></div>
+      <div style="text-align:center;"><div class="micro-lbl">Revenue logged</div><div style="font-size:15px;font-weight:500;">${fmtD(totalSell)}</div></div>
+      <div style="text-align:center;"><div class="micro-lbl">Invoiced</div><div style="font-size:15px;font-weight:500;">${fmtD(totalInvoiced)}</div></div>
+      <div style="text-align:center;"><div class="micro-lbl">Paid</div><div style="font-size:15px;font-weight:500;color:#4CAF50;">${fmtD(totalPaid)}</div></div>
     </div>
   `;
   // Contacts section — ST contacts (read-only) + local contacts (editable)
@@ -9541,7 +9602,7 @@ function renderStarredPanel(){
       <i class="ti ti-x" style="font-size:13px;color:var(--muted);cursor:pointer;" title="Remove from starred" onclick="event.stopPropagation();${s.type==='job'?`unstarJobFromPanel('${s.id}')`:`toggleStarItem('${s.type}','${s.id}','')`};renderStarredPanel();"></i>
     </div>`).join('');
 }
-function unstarJobFromPanel(id){const j=jobs.find(x=>x.id===id);if(j){j.starred=false;saveData();}}
+function unstarJobFromPanel(id){const j=jobs.find(x=>x.id===id);if(j)dbUpdateJob(id,{starred:false});}
 function openStarredItem(type,id){
   closeStarredPanel();
   if(type==='job')openJobDetail(id);
