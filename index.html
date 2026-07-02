@@ -28,11 +28,12 @@
   --font:'DM Sans',sans-serif;--serif:'Playfair Display',Georgia,serif;
 }
 body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14px;font-weight:300;overflow:hidden;}
-.app{display:flex;height:100vh;}
+.app{display:flex;height:100vh;padding-left:72px;} /* fixed sidebar rail takes 72px of layout; it expands OVER content on hover */
 
 /* SIDEBAR */
-.sidebar{width:212px;background:linear-gradient(180deg,#141210 0%,#0D0C0A 100%);display:flex;flex-direction:column;align-items:stretch;padding:26px 14px 18px;flex-shrink:0;}
-.s-logo{width:52px;margin:0 0 34px 12px;}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:72px;z-index:600;background:linear-gradient(180deg,#141210 0%,#0D0C0A 100%);display:flex;flex-direction:column;align-items:stretch;padding:26px 14px 18px;overflow:hidden;transition:width .28s cubic-bezier(.16,1,.3,1),box-shadow .28s;will-change:width;}
+.sidebar:hover{width:216px;box-shadow:12px 0 48px rgba(18,14,8,.28);transition-delay:.05s;}
+.s-logo{width:40px;margin:0 0 32px 2px;flex-shrink:0;}
 .s-nav{display:flex;flex-direction:column;gap:3px;flex:1;align-items:stretch;width:100%;}
 .s-btn{height:42px;display:flex;align-items:center;justify-content:flex-start;gap:13px;padding:0 13px;border-radius:9px;cursor:pointer;color:#6E6A63;font-size:18px;position:relative;transition:color .15s,background .15s;}
 .s-btn:hover{color:#F2EFE9;background:rgba(255,255,255,.06);}
@@ -40,10 +41,11 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .s-btn.on::before{content:'';position:absolute;left:-14px;top:9px;bottom:9px;width:3px;background:var(--red);border-radius:0 3px 3px 0;}
 .s-btn.on i{color:var(--red);}
 .s-btn.on:hover{background:rgba(255,255,255,.1);}
-/* Nav labels (were hover tooltips on the old icon-strip sidebar) */
-.s-tip{position:static;transform:none;background:none;border:none;padding:0;opacity:1;pointer-events:none;white-space:nowrap;font-size:13.5px;font-weight:400;letter-spacing:.01em;color:inherit;font-family:var(--font);}
+/* Nav labels — hidden on the collapsed rail, fade in as the sidebar expands on hover */
+.s-tip{position:static;transform:translateX(-4px);background:none;border:none;padding:0;opacity:0;pointer-events:none;white-space:nowrap;font-size:13.5px;font-weight:400;letter-spacing:.01em;color:inherit;font-family:var(--font);transition:opacity .18s ease,transform .22s ease;}
+.sidebar:hover .s-tip{opacity:1;transform:none;transition-delay:.1s;}
 
-.s-avatar{height:46px;border-radius:9px;background:rgba(255,255,255,.05);color:#F2EFE9;display:flex;align-items:center;justify-content:flex-start;gap:11px;font-size:0;font-weight:600;cursor:pointer;margin-top:14px;position:relative;padding:0 9px;}/* font-size:0 hides the raw initials text node — the ::before renders them as the avatar disc */
+.s-avatar{height:46px;border-radius:9px;background:rgba(255,255,255,.05);color:#F2EFE9;display:flex;align-items:center;justify-content:flex-start;gap:11px;font-size:0;font-weight:600;cursor:pointer;margin-top:14px;position:relative;padding:0 7px;flex-shrink:0;}/* font-size:0 hides the raw initials text node — the ::before renders them as the avatar disc */
 .s-avatar::before{content:'RO';display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:var(--red);flex-shrink:0;font-size:11px;font-weight:600;}
 .s-avatar .s-tip{font-size:13px;font-weight:400;}
 .s-avatar:hover{background:rgba(255,255,255,.09);}
@@ -69,6 +71,9 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 /* DASHBOARD */
 .dash-scroll{flex:1;overflow-y:auto;padding:28px 28px 60px;}
 .dash-greeting{font-family:var(--serif);font-size:36px;font-weight:400;font-style:italic;color:var(--ink);line-height:1.15;margin-bottom:6px;letter-spacing:-.01em;}
+/* One heading spec for every view title (Dashboard's greeting stays the 36px hero) */
+.view-title{font-family:var(--serif);font-size:26px;font-style:italic;font-weight:400;letter-spacing:-.01em;color:var(--ink);line-height:1.2;}
+.view-sub{font-size:12px;color:var(--muted);letter-spacing:.06em;margin-top:3px;}
 .dash-date{font-size:12px;color:var(--muted);letter-spacing:.06em;}
 .dash-rule{width:56px;height:3px;background:var(--red);margin:18px 0 30px;}
 .kpi-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:32px;}
@@ -436,7 +441,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .board-col[data-status="complete"] .board-card{opacity:.6;}
 .board-col[data-status="complete"] .board-card:hover{opacity:.8;}
 
-.boards-head{font-family:var(--serif);font-size:28px;font-style:italic;margin-bottom:4px;}
+.boards-head{font-family:var(--serif);font-size:26px;font-style:italic;font-weight:400;letter-spacing:-.01em;line-height:1.2;margin-bottom:4px;}
 .boards-sub{font-size:12px;color:var(--muted);margin-bottom:8px;}
 .boards-cols{display:flex;gap:16px;overflow-x:auto;padding-bottom:14px;}
 /* ── Boards landing ── */
@@ -640,16 +645,17 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .inv-editable:focus{border-bottom-color:var(--ink);}
 /* Settings */
 /* ── Settings sidebar nav ── */
-.sett-nav-item{display:flex;align-items:center;gap:9px;padding:9px 16px;font-size:13px;cursor:pointer;color:var(--muted);border-left:3px solid transparent;transition:color .1s,background .1s;}
-.sett-nav-item:hover{background:var(--off);color:var(--ink);}
-.sett-nav-item.active{color:var(--ink);font-weight:500;border-left-color:var(--red);background:var(--off);}
+.sett-nav-item{display:flex;align-items:center;gap:9px;margin:1px 10px;padding:8px 12px;font-size:13px;cursor:pointer;color:var(--muted);border-radius:8px;transition:color .1s,background .1s,box-shadow .15s;}
+.sett-nav-item:hover{background:rgba(0,0,0,.035);color:var(--ink);}
+.sett-nav-item.active{color:var(--ink);font-weight:500;background:var(--white);box-shadow:var(--shadow-s);}
+.sett-nav-item.active i{color:var(--red);}
 /* ── Settings tab panels ── */
-.sett-tab{display:none;}
+.sett-tab{display:none;max-width:1080px;}
 .sett-tab.active{display:block;}
-.sett-tab-hd{font-size:20px;font-weight:500;margin-bottom:4px;color:var(--ink);}
+.sett-tab-hd{font-family:var(--serif);font-size:26px;font-style:italic;font-weight:400;letter-spacing:-.01em;line-height:1.2;margin-bottom:4px;color:var(--ink);}
 .sett-tab-sub{font-size:13px;color:var(--muted);margin-bottom:28px;}
-.sett-card{background:var(--white);border:1px solid var(--border);border-radius:6px;margin-bottom:20px;overflow:hidden;}
-.sett-card-hd{padding:14px 18px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;letter-spacing:.04em;display:flex;align-items:center;justify-content:space-between;background:var(--off);}
+.sett-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-card);margin-bottom:20px;overflow:hidden;box-shadow:var(--shadow-s);}
+.sett-card-hd{padding:14px 18px;border-bottom:1px solid var(--faint);font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;justify-content:space-between;background:var(--white);}
 .sett-card-body{padding:18px;}
 .sett-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--faint);}
 .sett-row:last-child{border-bottom:none;padding-bottom:0;}
@@ -1442,7 +1448,7 @@ tr:hover .i-todo-btn{opacity:1;}
         <div id="jt-time" class="jt-panel" style="display:none;">
           <div class="time-wrap">
             <div class="time-head-bar">
-              <div><div class="dash-greeting" style="font-size:22px;">Time</div><div class="dash-date" id="time-sub-lbl">All time · All people</div></div>
+              <div><div class="view-title">Time</div><div class="view-sub" id="time-sub-lbl">All time · All people</div></div>
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
 
                 <select class="cc-select" id="tf-person" onchange="renderTime()"><option value="all">All people</option></select>
@@ -1570,7 +1576,7 @@ tr:hover .i-todo-btn{opacity:1;}
         <div id="jt-deadlines" class="jt-panel scroll" style="display:none;padding:24px 28px 40px;">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
             <div>
-              <div class="dash-greeting" style="font-size:22px;">Deadlines</div>
+              <div class="view-title">Deadlines</div>
               <div class="dash-date" id="dcal-sub">Job due dates &amp; invoice due dates</div>
             </div>
             <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
@@ -1661,7 +1667,7 @@ tr:hover .i-todo-btn{opacity:1;}
         <div style="padding:20px 28px 0;border-bottom:1px solid var(--border);flex-shrink:0;">
           <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px;">
             <div>
-              <div class="dash-greeting" style="font-size:22px;">Reporting</div>
+              <div class="view-title">Reporting</div>
               <div class="dash-date" id="r-sub" style="margin-top:2px;">Business overview</div>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
@@ -1788,8 +1794,8 @@ tr:hover .i-todo-btn{opacity:1;}
       <!-- SETTINGS -->
       <div id="view-settings" class="view hidden" style="flex-direction:row;overflow:hidden;">
         <!-- Settings sidebar nav -->
-        <div id="sett-sidenav" style="width:200px;flex-shrink:0;border-right:1px solid var(--border);background:var(--white);overflow-y:auto;padding:20px 0;">
-          <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:0 16px 8px;">Settings</div>
+        <div id="sett-sidenav" style="width:216px;flex-shrink:0;border-right:1px solid var(--border);background:transparent;overflow-y:auto;padding:36px 0 20px;">
+          <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:0 22px 10px;">Settings</div>
           <div class="sett-nav-item active" id="sni-profile" onclick="switchSettTab('profile')"><i class="ti ti-user" style="font-size:14px;"></i> My Profile</div>
           <div class="sett-nav-item" id="sni-team" onclick="switchSettTab('team')"><i class="ti ti-users" style="font-size:14px;"></i> Team</div>
           <div class="sett-nav-item" id="sni-defaults" onclick="switchSettTab('defaults')"><i class="ti ti-adjustments" style="font-size:14px;"></i> Workspace Defaults</div>
@@ -1809,7 +1815,7 @@ tr:hover .i-todo-btn{opacity:1;}
           </div>
         </div>
         <!-- Settings content area -->
-        <div id="settings-scroll" style="flex:1;overflow-y:auto;padding:32px 40px 60px;max-width:1180px;">
+        <div id="settings-scroll" style="flex:1;overflow-y:auto;padding:34px 40px 60px;">
           <!-- populated by renderSettings() -->
         </div>
       </div>
@@ -2349,8 +2355,14 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.25.0';
+const APP_VERSION='2.26.0';
 const CHANGELOG=[
+  {version:'2.26.0',date:'2 Jul 2026',title:'Hover sidebar, one heading system, Settings redesign',items:[
+    'The sidebar now rests as a slim icon rail and expands over the page when you hover it — full labels slide in, nothing shifts underneath.',
+    'Every view title now uses the same serif style, size and position — Reporting, Time, Deadlines, Boards and Settings all match (the Dashboard greeting stays the big hero moment).',
+    'Settings redesigned: section titles in the house serif, cards on the new surface system with uppercase card headers, pill-style section nav with the active page lifted on white.',
+    'Settings now scrolls like a normal web page — the scrollbar sits at the edge of the window instead of floating mid-screen at the end of the content column.',
+  ]},
   {version:'2.25.0',date:'2 Jul 2026',title:'Design overhaul — new navigation, surfaces and type',items:[
     'The sidebar is now a full labelled navigation — Search, Dashboard, To Do, Jobs, Schedule, Reporting, Boards and Settings by name, with a red rail marking where you are, on a deep warm-black panel.',
     'New surface system across the app: rounded cards with soft layered shadows on the dashboard KPIs, reporting cards, tables, modals and drawers — everything sits on a warmer paper background.',
