@@ -8,7 +8,7 @@
 <script src="https://unpkg.com/lucide@0.525.0/dist/umd/lucide.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -25,9 +25,9 @@
   --warn:#FF9800;--warn-ink:#E65100;--warn-bg:#FFF3E0;
   --info-ink:#1565C0;--info-bg:#E3F2FD;
   --danger-ink:#C62828;--danger-bg:#FFEBEE;
-  --font:'DM Sans',sans-serif;--serif:'Playfair Display',Georgia,serif;
+  --font:'Inter',-apple-system,sans-serif;--display:'Inter',-apple-system,sans-serif;
 }
-body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14px;font-weight:300;overflow:hidden;}
+body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:13.5px;font-weight:400;overflow:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
 .app{display:flex;height:100vh;padding-left:72px;} /* fixed sidebar rail takes 72px of layout; it expands OVER content on hover */
 
 /* SIDEBAR */
@@ -70,9 +70,9 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 
 /* DASHBOARD */
 .dash-scroll{flex:1;overflow-y:auto;padding:28px 28px 60px;}
-.dash-greeting{font-family:var(--serif);font-size:36px;font-weight:400;font-style:italic;color:var(--ink);line-height:1.15;margin-bottom:6px;letter-spacing:-.01em;}
+.dash-greeting{font-family:var(--display);font-size:30px;font-weight:650;color:var(--ink);line-height:1.15;margin-bottom:6px;letter-spacing:-.025em;}
 /* One heading spec for every view title (Dashboard's greeting stays the 36px hero) */
-.view-title{font-family:var(--serif);font-size:26px;font-style:italic;font-weight:400;letter-spacing:-.01em;color:var(--ink);line-height:1.2;}
+.view-title{font-family:var(--display);font-size:22px;font-weight:650;letter-spacing:-.02em;color:var(--ink);line-height:1.2;}
 .view-sub{font-size:12px;color:var(--muted);letter-spacing:.06em;margin-top:3px;}
 .dash-date{font-size:12px;color:var(--muted);letter-spacing:.06em;}
 .dash-rule{width:56px;height:3px;background:var(--red);margin:18px 0 30px;}
@@ -80,7 +80,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .kpi{background:var(--white);border:1px solid var(--border);border-radius:var(--r-card);padding:20px 22px;box-shadow:var(--shadow-s);transition:box-shadow .18s,transform .18s;}
 .kpi:hover{box-shadow:var(--shadow-m);}
 .kpi-label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
-.kpi-val{font-family:var(--serif);font-size:31px;font-weight:400;color:var(--ink);letter-spacing:-.01em;}
+.kpi-val{font-family:var(--display);font-size:28px;font-weight:650;color:var(--ink);letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
 .kpi-sub{font-size:12px;color:var(--muted);margin-top:4px;}
 .kpi-bar{height:3px;background:var(--faint);margin-top:14px;border-radius:2px;overflow:hidden;}
 .kpi-bar-fill{height:100%;}
@@ -213,7 +213,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
    the background this one contributed via the cascade). */
 .jobs-search{position:relative;flex:0 0 240px;}
 .jobs-search i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:15px;}
-.jobs-search input{width:100%;background:var(--off);border:1px solid var(--border);padding:7px 10px 7px 32px;font-size:13px;font-family:var(--font);font-weight:300;color:var(--ink);outline:none;border-radius:2px;}
+.jobs-search input{width:100%;background:var(--off);border:1px solid var(--border);padding:7px 10px 7px 32px;font-size:13px;font-family:var(--font);font-weight:400;color:var(--ink);outline:none;border-radius:2px;}
 .jobs-search input:focus{border-color:var(--ink);background:var(--white);}
 .filter-btn{background:var(--white);border:1px solid var(--border);padding:6px 12px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:5px;border-radius:var(--r-ctl);transition:border-color .12s,color .12s;}
 .filter-btn:hover{border-color:var(--ink);color:var(--ink);}
@@ -223,9 +223,9 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .jobs-table thead th{background:var(--white);border-bottom:1px solid var(--border);padding:12px 18px;font-size:10px;font-weight:500;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);text-align:left;position:sticky;top:0;z-index:2;}
 .jobs-table tbody tr{border-bottom:1px solid var(--faint);cursor:pointer;transition:background .1s;}
 .jobs-table tbody tr:hover{background:#FBF9F5;}
-.jobs-table td{padding:14px 18px;vertical-align:middle;}
+.jobs-table td{padding:14px 18px;vertical-align:middle;font-variant-numeric:tabular-nums;}
 .job-num-name{display:flex;align-items:baseline;gap:8px;}
-.job-num{font-size:11px;color:var(--muted);font-weight:300;letter-spacing:.03em;}
+.job-num{font-size:11px;color:var(--muted);font-weight:400;letter-spacing:.03em;}
 .job-name{font-size:14px;font-weight:400;}
 .job-co{font-size:12px;color:var(--muted);}
 .bbar-wrap{display:flex;flex-direction:column;gap:3px;min-width:130px;}
@@ -243,7 +243,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 :is(button,[tabindex],input,select,textarea):focus-visible{outline:2px solid var(--red);outline-offset:2px;}
 .detail-back:hover{color:var(--ink);border-color:#aaa;background:#eeecea;}
 .detail-title-row{display:flex;align-items:flex-end;gap:16px;padding:10px 0 0;}
-.detail-title{font-family:var(--serif);font-size:24px;font-weight:400;flex:1;line-height:1.2;}
+.detail-title{font-family:var(--display);font-size:22px;font-weight:650;letter-spacing:-.02em;flex:1;line-height:1.25;}
 .detail-actions{display:flex;gap:8px;}
 .d-action{background:transparent;border:1px solid var(--border);padding:7px 13px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:5px;color:var(--ink);border-radius:2px;transition:all .15s;}
 .d-action:hover{border-color:var(--ink);}
@@ -264,7 +264,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .stat-b{flex:1;padding:0 20px;border-right:1px solid var(--border);}
 .stat-b:first-child{padding-left:0;}.stat-b:last-child{border-right:none;}
 .stat-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
-.stat-val{font-family:var(--serif);font-size:20px;font-weight:400;}.stat-of{font-size:13px;color:var(--muted);}
+.stat-val{font-family:var(--display);font-size:19px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums;}.stat-of{font-size:13px;color:var(--muted);font-weight:400;}
 .stat-bar{height:2px;background:var(--faint);margin-top:8px;}.stat-bar-fill{height:100%;}
 .plan-area{flex:1;overflow-y:auto;padding:0 24px 50px;}
 .plan-actions{display:flex;gap:7px;padding:14px 0 10px;}
@@ -349,7 +349,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 
 /* REPORTING */
 .report-scroll{flex:1;overflow-y:auto;padding:32px;}
-.report-head{font-family:var(--serif);font-size:28px;font-style:italic;margin-bottom:4px;}
+.report-head{font-family:var(--display);font-size:22px;font-weight:650;letter-spacing:-.02em;margin-bottom:4px;}
 .report-sub{font-size:12px;color:var(--muted);margin-bottom:8px;}
 .coming-note{background:var(--off);border:1px dashed var(--border);padding:16px 20px;font-size:13px;color:var(--muted);margin-bottom:24px;display:flex;align-items:center;gap:8px;}
 .r-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
@@ -370,7 +370,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .r-table-h{padding:14px 20px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
 .r-table{width:100%;border-collapse:collapse;}
 .r-table th{text-align:left;padding:8px 16px;font-size:11px;color:var(--muted);font-weight:400;border-bottom:1px solid var(--border);letter-spacing:.05em;text-transform:uppercase;}
-.r-table td{padding:8px 16px;font-size:13px;border-bottom:1px solid var(--faint);}
+.r-table td{padding:8px 16px;font-size:13px;border-bottom:1px solid var(--faint);font-variant-numeric:tabular-nums;}
 .r-table tr:last-child td{border-bottom:none;}
 .r-table tr:hover td{background:var(--off);}
 .r-total-row td{font-weight:500;border-top:2px solid var(--border);}
@@ -416,7 +416,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .r-bar{flex:0 0 90px;height:3px;background:var(--faint);}
 .r-bfill{height:100%;background:var(--red);}
 .r-val{min-width:44px;text-align:right;font-size:12px;color:var(--muted);}
-.r-big{font-family:var(--serif);font-size:28px;font-weight:400;margin-bottom:4px;}
+.r-big{font-family:var(--display);font-size:26px;font-weight:650;letter-spacing:-.02em;margin-bottom:4px;font-variant-numeric:tabular-nums;}
 
 /* BOARDS */
 .boards-scroll{flex:1;overflow-y:auto;padding:28px 28px 60px;}
@@ -441,7 +441,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .board-col[data-status="complete"] .board-card{opacity:.6;}
 .board-col[data-status="complete"] .board-card:hover{opacity:.8;}
 
-.boards-head{font-family:var(--serif);font-size:26px;font-style:italic;font-weight:400;letter-spacing:-.01em;line-height:1.2;margin-bottom:4px;}
+.boards-head{font-family:var(--display);font-size:22px;font-weight:650;letter-spacing:-.02em;line-height:1.2;margin-bottom:4px;}
 .boards-sub{font-size:12px;color:var(--muted);margin-bottom:8px;}
 .boards-cols{display:flex;gap:16px;overflow-x:auto;padding-bottom:14px;}
 /* ── Boards landing ── */
@@ -451,7 +451,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .blc-stripe{height:4px;width:100%;}
 .blc-body{padding:18px 18px 14px;}
 .board-list-card .blc-type{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:5px;}
-.board-list-card .blc-name{font-family:var(--serif);font-size:20px;font-weight:400;margin-bottom:8px;line-height:1.2;}
+.board-list-card .blc-name{font-family:var(--display);font-size:17px;font-weight:600;letter-spacing:-.01em;margin-bottom:8px;line-height:1.25;}
 .board-list-card .blc-count{font-size:12px;color:var(--muted);}
 .board-list-card .blc-del{position:absolute;top:14px;right:12px;background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;font-size:14px;opacity:0;transition:opacity .1s;z-index:2;}
 .board-list-card:hover .blc-del{opacity:1;}
@@ -461,7 +461,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .cb-modal{display:flex;background:var(--white);width:760px;max-width:96vw;max-height:90vh;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.22);}
 .cb-modal-left{width:280px;flex-shrink:0;background:var(--ink);color:#fff;padding:36px 28px;display:flex;flex-direction:column;}
 .cb-modal-eyebrow{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:10px;}
-.cb-modal-heading{font-family:var(--serif);font-size:26px;font-weight:400;line-height:1.2;margin-bottom:28px;color:#fff;}
+.cb-modal-heading{font-family:var(--display);font-size:23px;font-weight:650;letter-spacing:-.02em;line-height:1.2;margin-bottom:28px;color:#fff;}
 .cb-type-list{display:flex;flex-direction:column;gap:4px;margin-top:auto;}
 .cb-type-item{display:flex;align-items:flex-start;gap:12px;padding:12px;border:1px solid rgba(255,255,255,.12);cursor:pointer;transition:all .15s;border-radius:2px;}
 .cb-type-item:hover{background:rgba(255,255,255,.07);}
@@ -475,7 +475,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .cb-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px;line-height:1;}
 .cb-close:hover{color:var(--ink);}
 .cb-form{margin-top:32px;flex:1;display:flex;flex-direction:column;}
-.cb-name-inp{font-family:var(--serif);font-size:22px;font-weight:400;border:none;border-bottom:2px solid var(--border);background:transparent;outline:none;padding:6px 0;border-radius:0;color:var(--ink);}
+.cb-name-inp{font-family:var(--display);font-size:20px;font-weight:600;letter-spacing:-.01em;border:none;border-bottom:2px solid var(--border);background:transparent;outline:none;padding:6px 0;border-radius:0;color:var(--ink);}
 .cb-name-inp:focus{border-bottom-color:var(--ink);}
 .cb-create-btn{margin-top:auto;background:var(--ink);color:#fff;border:none;padding:13px 24px;font-size:13px;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:8px;transition:opacity .15s;}
 .cb-create-btn:hover{opacity:.85;}
@@ -526,7 +526,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .pboard-stats{display:flex;gap:0;border-bottom:1px solid var(--border);}
 .pboard-stat{flex:1;padding:14px 16px;border-right:1px solid var(--border);}
 .pboard-stat:last-child{border-right:none;}
-.pboard-stat .ps-val{font-size:22px;font-family:var(--serif);font-weight:400;}
+.pboard-stat .ps-val{font-size:20px;font-family:var(--display);font-weight:600;font-variant-numeric:tabular-nums;}
 .pboard-stat .ps-lbl{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-top:3px;}
 .pboard-note{border:none;background:transparent;width:100%;font-family:var(--font);font-size:12px;color:var(--ink);resize:none;outline:none;padding:14px 18px;line-height:1.6;min-height:56px;}
 /* ── Card picker modal ── */
@@ -551,13 +551,13 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 /* Legacy modal (create job etc) */
 .modal{background:var(--white);border-radius:14px;width:600px;max-width:96vw;overflow:hidden;box-shadow:var(--shadow-l);}
 .modal-hd{background:var(--ink);color:var(--white);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;}
-.modal-hd-title{font-family:var(--serif);font-size:18px;font-weight:400;font-style:italic;}
+.modal-hd-title{font-family:var(--display);font-size:15px;font-weight:600;letter-spacing:-.01em;}
 .modal-x{background:none;border:none;color:#666;font-size:18px;cursor:pointer;}
 .modal-x:hover{color:#fff;}
 .modal-bd{padding:22px 24px;}
 .field{margin-bottom:15px;}
 .field label{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
-.field input,.field select,.field textarea{width:100%;background:var(--off);border:1px solid var(--border);border-radius:2px;padding:8px 10px;font-size:13px;font-family:var(--font);font-weight:300;color:var(--ink);outline:none;}
+.field input,.field select,.field textarea{width:100%;background:var(--off);border:1px solid var(--border);border-radius:2px;padding:8px 10px;font-size:13px;font-family:var(--font);font-weight:400;color:var(--ink);outline:none;}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--ink);background:var(--white);}
 .field textarea{resize:vertical;min-height:65px;}
 .field-row{display:flex;gap:12px;}
@@ -598,7 +598,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .tm-dash{border:none;border-top:1px dashed var(--border);margin:16px 0;}
 .tm-2col{display:flex;gap:28px;}
 .tm-col-lbl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:4px;}
-.tm-hours-inp{font-size:22px;font-weight:300;color:var(--ink);border:none;border-bottom:1px solid var(--border);width:110px;padding:2px 0;background:transparent;font-family:var(--font);outline:none;}
+.tm-hours-inp{font-size:22px;font-weight:400;color:var(--ink);border:none;border-bottom:1px solid var(--border);width:110px;padding:2px 0;background:transparent;font-family:var(--font);outline:none;}
 .tm-hours-inp:focus{border-bottom-color:var(--ink);}
 .tm-day-sel{font-size:14px;font-family:var(--font);border:none;border-bottom:1px solid var(--border);padding:4px 0;background:transparent;outline:none;color:var(--ink);cursor:pointer;}
 .tm-meta{font-size:11px;color:var(--muted);line-height:1.8;}
@@ -621,7 +621,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .inv-bg.on{display:flex;}
 .inv-modal{background:var(--white);width:640px;max-width:95vw;max-height:88vh;border-radius:3px;overflow:hidden;display:flex;flex-direction:column;}
 .inv-top{background:var(--ink);color:var(--white);padding:16px 22px;display:flex;align-items:center;gap:10px;}
-.inv-top-t{font-family:var(--serif);font-size:16px;font-style:italic;flex:1;}
+.inv-top-t{font-family:var(--display);font-size:14px;font-weight:600;flex:1;}
 .inv-act{background:var(--red);color:#fff;border:none;padding:6px 13px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-family:var(--font);cursor:pointer;border-radius:2px;}
 .inv-act.sec{background:#333;}
 .inv-x{background:none;border:none;color:#777;font-size:18px;cursor:pointer;}
@@ -630,7 +630,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .inv-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
 .inv-ml{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;}
 .inv-mv{font-size:13px;}
-.inv-job-title{font-family:var(--serif);font-size:20px;font-weight:400;margin-bottom:22px;}
+.inv-job-title{font-family:var(--display);font-size:18px;font-weight:650;letter-spacing:-.01em;margin-bottom:22px;}
 .inv-sec{margin-bottom:18px;}
 .inv-sec-h{background:var(--ink);color:#fff;padding:8px 13px;font-size:12px;font-weight:400;letter-spacing:.02em;}
 .inv-line{display:flex;padding:8px 13px;border-bottom:1px solid var(--faint);font-size:13px;}
@@ -652,7 +652,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 /* ── Settings tab panels ── */
 .sett-tab{display:none;max-width:1080px;}
 .sett-tab.active{display:block;}
-.sett-tab-hd{font-family:var(--serif);font-size:26px;font-style:italic;font-weight:400;letter-spacing:-.01em;line-height:1.2;margin-bottom:4px;color:var(--ink);}
+.sett-tab-hd{font-family:var(--display);font-size:22px;font-weight:650;letter-spacing:-.02em;line-height:1.2;margin-bottom:4px;color:var(--ink);}
 .sett-tab-sub{font-size:13px;color:var(--muted);margin-bottom:28px;}
 .sett-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-card);margin-bottom:20px;overflow:hidden;box-shadow:var(--shadow-s);}
 .sett-card-hd{padding:14px 18px;border-bottom:1px solid var(--faint);font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;justify-content:space-between;background:var(--white);}
@@ -717,7 +717,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .time-stats-strip{display:flex;border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
 .time-stat{flex:1;padding:18px 24px;border-right:1px solid var(--border);}
 .time-stat:last-child{border-right:none;}
-.time-stat .ts-val{font-size:26px;font-family:var(--serif);font-weight:400;line-height:1;}
+.time-stat .ts-val{font-size:24px;font-family:var(--display);font-weight:650;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;}
 .time-stat .ts-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:5px;}
 .time-stat .ts-sub{font-size:11px;color:var(--muted);margin-top:3px;}
 .time-table-wrap{overflow-x:auto;padding:0 0 40px;}
@@ -738,7 +738,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .qinv-card-num{font-size:11px;color:var(--muted);flex-shrink:0;min-width:72px;font-variant-numeric:tabular-nums;}
 .qinv-card-name{font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .qinv-card-co{font-size:12px;color:var(--muted);min-width:180px;}
-.qinv-card-val{font-size:14px;font-family:var(--serif);font-weight:400;min-width:110px;text-align:right;}
+.qinv-card-val{font-size:14px;font-family:var(--display);font-weight:600;min-width:110px;text-align:right;font-variant-numeric:tabular-nums;}
 .qinv-card-status{min-width:80px;text-align:right;}
 .qinv-card-date{font-size:11px;color:var(--muted);min-width:90px;text-align:right;}
 .qinv-detail{display:none;border-top:1px solid var(--border);background:var(--white);}
@@ -881,7 +881,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:14
 .cal-nav{display:flex;align-items:center;gap:8px;}
 .cal-nav-btn{background:transparent;border:1px solid var(--border);border-radius:3px;padding:6px 10px;cursor:pointer;font-size:14px;color:var(--ink);transition:all .15s;}
 .cal-nav-btn:hover{background:var(--off);border-color:var(--muted);}
-.cal-label{font-family:var(--serif);font-size:18px;font-weight:400;min-width:180px;text-align:center;}
+.cal-label{font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:-.01em;min-width:180px;text-align:center;}
 .cal-today-btn{background:var(--ink);color:#fff;border:none;padding:7px 15px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;border-radius:2px;cursor:pointer;font-family:var(--font);transition:opacity .15s;}
 .cal-today-btn:hover{opacity:.9;}
 .cal-filters{display:flex;gap:8px;}
@@ -1078,7 +1078,7 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:transparent
 .bc-no-tasks{font-size:11px;color:var(--muted);padding:4px 0;}
 .bc-open-btn{margin-top:8px;width:100%;background:var(--off);border:1px solid var(--border);padding:5px 10px;font-size:11px;font-family:var(--font);cursor:pointer;border-radius:2px;color:var(--ink);transition:background .12s;}
 .bc-open-btn:hover{background:var(--border);}
-.ccf-name{font-family:var(--serif);font-size:16px;font-weight:400;margin-bottom:4px;}
+.ccf-name{font-family:var(--display);font-size:15px;font-weight:600;margin-bottom:4px;}
 .ccf-contact{font-size:12px;color:var(--muted);margin-bottom:12px;}
 .ccf-meta{display:flex;gap:16px;font-size:11px;color:var(--muted);}
 .ccf-meta strong{color:var(--ink);font-weight:500;}
@@ -1109,7 +1109,7 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:transparent
 .tm-personal-hero{display:none;align-items:center;gap:14px;padding:20px 24px 0;}
 .tm-personal-hero.on{display:flex;}
 .tm-pav-lg{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:600;flex-shrink:0;}
-.tm-pname-lg{font-size:16px;color:var(--ink);font-weight:300;text-transform:lowercase;}
+.tm-pname-lg{font-size:16px;color:var(--ink);font-weight:400;text-transform:lowercase;}
 /* Date + Repeat row */
 .tm-date-repeat-row{display:flex;align-items:center;gap:8px;padding:8px 0 4px;}
 .tm-date-btn{display:flex;align-items:center;gap:6px;background:none;border:none;font-size:13px;color:var(--ink);cursor:pointer;font-family:var(--font);padding:4px 6px;border-radius:3px;}
@@ -1162,13 +1162,17 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:transparent
 .i-todo-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 4px;opacity:0;transition:opacity .1s;vertical-align:middle;margin-left:4px;border-radius:3px;}
 tr:hover .i-todo-btn{opacity:1;}
 .i-todo-btn:hover{color:var(--red);background:var(--off);}
-.td-item-btn{display:flex;align-items:center;width:100%;cursor:pointer;border:1px solid var(--border);background:var(--white);padding:9px 10px;font-family:var(--font);font-size:13px;font-weight:300;color:var(--ink);outline:none;}
+.td-item-btn{display:flex;align-items:center;width:100%;cursor:pointer;border:1px solid var(--border);background:var(--white);padding:9px 10px;font-family:var(--font);font-size:13px;font-weight:400;color:var(--ink);outline:none;}
 .td-item-btn:hover{border-color:#aaa;}
-.item-pick-dd{display:none;position:absolute;left:0;right:0;top:100%;z-index:400;background:var(--white);border:1px solid var(--border);box-shadow:0 6px 24px rgba(0,0,0,.13);max-height:240px;overflow-y:auto;margin-top:2px;}
+.item-pick-dd{display:none;position:absolute;left:0;right:0;top:100%;z-index:400;background:var(--white);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-m);max-height:280px;overflow-y:auto;margin-top:4px;}
+/* Sticky search row at the top of picker dropdowns */
+.pick-search-wrap{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--white);border-bottom:1px solid var(--faint);}
+.pick-search{flex:1;border:none;outline:none;background:transparent;font-family:var(--font);font-size:13px;color:var(--ink);padding:0;}
+.pick-search::placeholder{color:var(--muted);}
 .item-pick-dd.on{display:block;}
 .item-pick-group{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:7px 12px 3px;font-weight:500;background:var(--off);border-top:1px solid var(--border);}
 .item-pick-group:first-child{border-top:none;}
-.item-pick-opt{padding:7px 12px;cursor:pointer;font-size:13px;font-weight:300;line-height:1.4;transition:background .1s;}
+.item-pick-opt{padding:7px 12px;cursor:pointer;font-size:13px;font-weight:400;line-height:1.4;transition:background .1s;}
 .item-pick-opt:hover{background:var(--off);}
 .item-pick-opt.selected{background:#FFF0EE;color:var(--red);}
 /* Board column drag */
@@ -1301,7 +1305,7 @@ tr:hover .i-todo-btn{opacity:1;}
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:64px 24px;gap:4px;}
 .empty-state .es-icon{width:56px;height:56px;border-radius:50%;background:var(--off);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
 .empty-state .es-icon i{font-size:24px;color:var(--muted);}
-.empty-state .es-title{font-family:var(--serif);font-size:18px;color:var(--ink);}
+.empty-state .es-title{font-family:var(--display);font-size:16px;font-weight:600;color:var(--ink);}
 .empty-state .es-sub{font-size:12.5px;color:var(--muted);max-width:320px;line-height:1.5;margin-bottom:14px;}
 /* ── BULK ACTIONS BAR ── */
 .bulk-btn{background:rgba(255,255,255,.1);border:none;color:#fff;font-family:var(--font);font-size:12px;padding:5px 10px;border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:background .15s;}
@@ -1317,6 +1321,13 @@ tr:hover .i-todo-btn{opacity:1;}
   #print-area .inv-print-head{display:flex!important;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #E0DDD8;}
   @page{margin:18mm 16mm;}
 }
+/* ── Control system — every select/input/textarea shares one modern spec ── */
+select{appearance:none;-webkit-appearance:none;background-color:var(--white);background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238A857C' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;border:1px solid var(--border);border-radius:var(--r-ctl);padding:8px 30px 8px 11px;font-family:var(--font);font-size:13px;color:var(--ink);outline:none;cursor:pointer;transition:border-color .15s,box-shadow .15s;}
+select:hover{border-color:#C9C3B8;}
+select:focus{border-color:var(--ink);box-shadow:0 0 0 3px rgba(25,23,20,.07);}
+.form-inp:focus,textarea:focus,input[type=text]:focus,input[type=number]:focus,input[type=date]:focus{border-color:var(--ink);box-shadow:0 0 0 3px rgba(25,23,20,.07);}
+input[type=text],input[type=number],input[type=date],textarea{font-family:var(--font);}
+
 /* ── Global scrollbars — thin + warm to match the paper surface ── */
 *::-webkit-scrollbar{width:10px;height:10px;}
 *::-webkit-scrollbar-track{background:transparent;}
@@ -1558,7 +1569,7 @@ tr:hover .i-todo-btn{opacity:1;}
             <div style="flex-shrink:0;padding:14px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;">
               <button class="detail-back" onclick="closeClientDetail()"><i class="ti ti-arrow-left" style="font-size:12px;"></i> Clients</button>
               <div style="flex:1;">
-                <div id="cd-view-name" style="font-family:var(--serif);font-size:20px;font-weight:400;"></div>
+                <div id="cd-view-name" style="font-family:var(--display);font-size:20px;font-weight:400;"></div>
                 <div id="cd-view-meta" style="font-size:11px;color:var(--muted);margin-top:1px;"></div>
               </div>
               <button class="d-action" onclick="openNewJobForClient()"><i class="ti ti-plus" style="font-size:12px;"></i> New job</button>
@@ -1728,7 +1739,7 @@ tr:hover .i-todo-btn{opacity:1;}
         <div id="board-detail" style="display:none;flex-direction:column;height:100%;overflow:hidden;">
           <div class="r-filter-row" style="padding:14px 28px;border-bottom:1px solid var(--border);flex-shrink:0;gap:10px;">
             <button class="detail-back" onclick="closeBoardDetail()" style="margin-right:8px;"><i class="ti ti-arrow-left" style="font-size:12px;"></i> Boards</button>
-            <span id="bd-title" style="font-family:var(--serif);font-size:18px;font-weight:400;flex:1;"></span>
+            <span id="bd-title" style="font-family:var(--display);font-size:18px;font-weight:400;flex:1;"></span>
             <span id="bd-type-badge" style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:var(--ink);color:#fff;padding:3px 8px;border-radius:2px;"></span>
           </div>
           <div id="board-detail-body" style="flex:1;overflow:auto;padding:24px 28px;"></div>
@@ -1947,9 +1958,16 @@ tr:hover .i-todo-btn{opacity:1;}
       <!-- Job + Item (hidden in personal mode) -->
       <div id="td-job-section">
         <div class="tm-lbl" id="td-job-lbl" style="margin-top:16px;">Job</div>
-        <select class="tm-field-sel" id="td-job" onchange="updateJobLabel()">
-          <option value="">— Personal / no job —</option>
-        </select>
+        <!-- Searchable job combo (recents + full list) — same pattern as the item picker below.
+             The hidden #td-job input keeps the old select's .value contract for all readers. -->
+        <div style="position:relative;" id="td-job-wrap">
+          <button type="button" class="tm-field-sel td-item-btn" id="td-job-btn" onclick="toggleJobPicker(event)">
+            <span id="td-job-label" style="color:var(--muted);flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">— Personal / no job —</span>
+            <i class="ti ti-chevron-down" style="font-size:11px;color:var(--muted);flex-shrink:0;margin-left:6px;"></i>
+          </button>
+          <div id="td-job-dropdown" class="item-pick-dd"></div>
+        </div>
+        <input type="hidden" id="td-job" value="">
         <div class="tm-lbl" style="margin-top:16px;">Item</div>
         <div style="position:relative;" id="td-item-wrap">
           <button type="button" class="tm-field-sel td-item-btn" id="td-item-btn" onclick="toggleItemPicker(event)">
@@ -2069,7 +2087,7 @@ tr:hover .i-todo-btn{opacity:1;}
     <div class="cl-hd">
       <div>
         <div style="font-size:11px;color:var(--muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:.06em;">New week</div>
-        <div style="font-size:18px;font-family:var(--serif);font-weight:600;">Tasks from last week</div>
+        <div style="font-size:18px;font-family:var(--display);font-weight:600;">Tasks from last week</div>
       </div>
       <button class="tm-x" onclick="closeRollover()" style="min-width:auto;padding:6px;"><i class="ti ti-x"></i></button>
     </div>
@@ -2085,7 +2103,7 @@ tr:hover .i-todo-btn{opacity:1;}
     <div class="cl-hd">
       <div>
         <div style="font-size:11px;color:var(--muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:.06em;">What's new</div>
-        <div style="font-size:18px;font-family:var(--serif);font-weight:600;" id="cl-version-title">v1.3.0</div>
+        <div style="font-size:18px;font-family:var(--display);font-weight:600;" id="cl-version-title">v1.3.0</div>
       </div>
       <button class="tm-x" onclick="closeChangelog()" style="min-width:auto;padding:6px;"><i class="ti ti-x"></i></button>
     </div>
@@ -2355,8 +2373,14 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.26.0';
+const APP_VERSION='2.27.0';
 const CHANGELOG=[
+  {version:'2.27.0',date:'2 Jul 2026',title:'Modern type system, control system, searchable job picker',items:[
+    'New typography: the platform moves to a modern SaaS type system — one contemporary typeface (Inter) everywhere, with bold tight-tracked headings, weight-based hierarchy instead of italics, and tabular numerals so numbers line up in every table and KPI.',
+    'Add-task modal: the Job field is now a searchable picker — your recent jobs at the top, the full list scrollable below, type to filter. Styled to match the item picker beside it.',
+    'One control system: every dropdown gets a custom chevron and consistent styling, and all inputs share the same focus ring, radius and padding.',
+    'Groundwork for pushing the visual system further — the serif era is retired.',
+  ]},
   {version:'2.26.0',date:'2 Jul 2026',title:'Hover sidebar, one heading system, Settings redesign',items:[
     'The sidebar now rests as a slim icon rail and expands over the page when you hover it — full labels slide in, nothing shifts underneath.',
     'Every view title now uses the same serif style, size and position — Reporting, Time, Deadlines, Boards and Settings all match (the Dashboard greeting stays the big hero moment).',
@@ -3538,7 +3562,7 @@ function renderDashboard(){
     }).join('');
     const moreCount=cjobs.length>4?`<span style="font-size:11px;color:var(--muted);margin-top:4px;display:block;">+${cjobs.length-4} more</span>`:'';
     return`<div class="team-card" onclick="navTo('clients')">
-      <div class="tc-head"><div class="tc-av" style="background:${clColor};">${initials}</div><div><div class="tc-name">${cl?.nickname?`${cl.nickname} <span style='font-size:11px;color:var(--muted);font-weight:300;'>${co}</span>`:co}</div></div><div class="tc-meta">${cjobs.length} job${cjobs.length!==1?'s':''}</div></div>
+      <div class="tc-head"><div class="tc-av" style="background:${clColor};">${initials}</div><div><div class="tc-name">${cl?.nickname?`${cl.nickname} <span style='font-size:11px;color:var(--muted);font-weight:400;'>${co}</span>`:co}</div></div><div class="tc-meta">${cjobs.length} job${cjobs.length!==1?'s':''}</div></div>
       <div class="tc-timeline">${jobPills}${moreCount}</div>
     </div>`;
   }).filter(Boolean).join('');
@@ -5098,16 +5122,65 @@ function openEditTodoById(id,day){
   if(t)editTask(t,foundDay);
 }
 
+// ── Job combo (searchable dropdown with recents) ─────────────────────────────
+// Replaces the old native <select>. #td-job is now a hidden input carrying the same
+// .value contract for every reader (updateJobLabel, item picker, save path).
+// pre is either a bare job id ("6774") or a "<id> <name>" string — leading token only
+// (an unanchored includes() used to substring-match the wrong job).
 function populateTodoJobSelect(pre){
-  const sel=document.getElementById('td-job');
-  sel.innerHTML='<option value="">— Personal / no job —</option>';
-  const liveJobs=[...jobs].filter(j=>j.status==='inplay').sort((a,b)=>Number(b.id)-Number(a.id));
-  // pre is either a bare job id ("6774") or a "<id> <name>" string ("6774 Some Job") — match on
-  // the leading token only. An unanchored pre.includes(j.id) substring-matched the wrong job
-  // (e.g. id "677" inside "6774 …", or a short id inside any longer number), silently
-  // pre-selecting / saving the wrong job when editing a task.
   const preId=pre?String(pre).trim().split(/\s+/)[0]:'';
-  liveJobs.forEach(j=>{const o=document.createElement('option');o.value=j.id;o.textContent=`${j.id} ${j.name}`;if(preId&&preId===j.id)o.selected=true;sel.appendChild(o);});
+  const j=preId?jobs.find(x=>x.id===preId):null;
+  _setJobPickerValue(j?j.id:'',j?`${j.id} ${j.name}`:'');
+}
+function _setJobPickerValue(id,label){
+  const hid=document.getElementById('td-job');if(hid)hid.value=id;
+  const lbl=document.getElementById('td-job-label');
+  if(lbl){lbl.textContent=id?label:'— Personal / no job —';lbl.style.color=id?'var(--ink)':'var(--muted)';}
+}
+function _recentJobIds(){try{return JSON.parse(localStorage.getItem('cc_recent_jobs')||'[]');}catch(e){return[];}}
+function _pushRecentJob(id){
+  try{const r=_recentJobIds().filter(x=>x!==id);r.unshift(id);localStorage.setItem('cc_recent_jobs',JSON.stringify(r.slice(0,5)));}catch(e){}
+}
+function toggleJobPicker(e){
+  e.stopPropagation();
+  const dd=document.getElementById('td-job-dropdown');if(!dd)return;
+  if(dd.classList.contains('on')){dd.classList.remove('on');return;}
+  dd.innerHTML=`<div class="pick-search-wrap"><i class="ti ti-search" style="font-size:12px;color:var(--muted);"></i><input type="text" class="pick-search" id="td-job-search" placeholder="Search jobs…" oninput="_renderJobPickerList(this.value)" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'){event.preventDefault();document.querySelector('#td-job-list .item-pick-opt[data-jid]')?.click();}"></div><div id="td-job-list"></div>`;
+  _renderJobPickerList('');
+  dd.classList.add('on');
+  setTimeout(()=>{document.getElementById('td-job-search')?.focus();document.addEventListener('click',_closeJobPickerOnce,{once:true});},10);
+}
+function _closeJobPickerOnce(){document.getElementById('td-job-dropdown')?.classList.remove('on');}
+function _renderJobPickerList(q){
+  const list=document.getElementById('td-job-list');if(!list)return;
+  q=(q||'').trim().toLowerCase();
+  const cur=document.getElementById('td-job')?.value||'';
+  const live=[...jobs].filter(j=>j.status==='inplay').sort((a,b)=>Number(b.id)-Number(a.id));
+  const match=j=>!q||(`${j.id} ${j.name} ${j.company||''}`).toLowerCase().includes(q);
+  const row=j=>`<div class="item-pick-opt${cur===j.id?' selected':''}" data-jid="${j.id}" onclick="selectJobFromPicker('${j.id}')">
+      <div style="display:flex;align-items:center;gap:8px;"><span style="font-variant-numeric:tabular-nums;color:var(--muted);flex-shrink:0;">${j.id}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(j.name)}</span></div>
+      ${j.company?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${esc(j.company)}</div>`:''}
+    </div>`;
+  let html=`<div class="item-pick-opt${cur===''?' selected':''}" onclick="selectJobFromPicker('')"><span style="color:var(--muted);">— Personal / no job —</span></div>`;
+  if(!q){
+    const rec=_recentJobIds().map(id=>live.find(j=>j.id===id)).filter(Boolean);
+    if(rec.length){html+=`<div class="item-pick-group">Recent</div>`+rec.map(row).join('');}
+    html+=`<div class="item-pick-group">All jobs</div>`;
+  }
+  const rest=live.filter(match);
+  html+=rest.length?rest.map(row).join(''):`<div style="padding:10px 12px;font-size:12px;color:var(--muted);">No jobs match “${esc(q)}”.</div>`;
+  list.innerHTML=html;
+}
+function selectJobFromPicker(id){
+  const j=id?jobs.find(x=>x.id===id):null;
+  _setJobPickerValue(j?j.id:'',j?`${j.id} ${j.name}`:'');
+  if(id)_pushRecentJob(id);
+  // job changed → clear any previously-chosen item (it belonged to the old job's plan)
+  const it=document.getElementById('td-item'),itId=document.getElementById('td-item-id');
+  if(it)it.value='';if(itId)itId.value='';
+  if(typeof _setItemPickerLabel==='function')_setItemPickerLabel('','');
+  document.getElementById('td-job-dropdown')?.classList.remove('on');
+  updateJobLabel();
 }
 function updateJobLabel(){
   const sel=document.getElementById('td-job');
@@ -5416,8 +5489,7 @@ function openTodoModal(jobId,day,personOverride){
     const pgl=document.getElementById('td-pav-lg');if(pgl){pgl.textContent=p.initials;pgl.style.background=p.color;}
     const pnl=document.getElementById('td-pname-lg');if(pnl)pnl.textContent=p.name;
   }
-  populateTodoJobSelect(jobId);
-  if(jobId){const sel=document.getElementById('td-job');for(let o of sel.options){if(o.value===jobId){o.selected=true;break;}}}
+  populateTodoJobSelect(jobId); // sets the hidden #td-job value + combo label directly
   updateJobLabel();
   document.getElementById('todo-modal').classList.add('on');
   setTimeout(()=>document.getElementById('td-task').focus(),50);
@@ -7016,7 +7088,7 @@ function _docModalShell(titleWord,statusPill,metaHTML,lineRows,totalsRows,extraH
       <div style="background:#fff;padding:30px 34px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;padding-bottom:16px;border-bottom:2px solid var(--border);">
           <div><div style="margin-bottom:8px;">${ccLogoSVG(34)}</div><div style="font-size:11px;color:var(--muted);line-height:1.7;">NZ Ltd<br>Level 1, 53 Fort Street, Auckland<br>GST 116710013</div></div>
-          <div style="text-align:right;"><div style="font-size:22px;font-family:var(--serif);">${titleWord}</div><div style="margin-top:8px;">${statusPill}</div></div>
+          <div style="text-align:right;"><div style="font-size:22px;font-family:var(--display);">${titleWord}</div><div style="margin-top:8px;">${statusPill}</div></div>
         </div>
         <div style="display:flex;gap:24px;margin-bottom:20px;font-size:12px;line-height:1.7;">${metaHTML}</div>
         ${lineRows?`<table style="width:100%;border-collapse:collapse;margin-bottom:6px;"><thead><tr><th style="text-align:left;padding:8px 14px;font-size:11px;letter-spacing:.08em;color:var(--muted);font-weight:500;">DESCRIPTION</th><th style="text-align:right;padding:8px 14px;font-size:11px;letter-spacing:.08em;color:var(--muted);font-weight:500;">HRS</th><th style="text-align:right;padding:8px 14px;font-size:11px;letter-spacing:.08em;color:var(--muted);font-weight:500;">AMOUNT</th></tr></thead><tbody>${lineRows}</tbody></table><div style="font-size:10px;color:var(--muted);font-style:italic;margin:0 14px 14px;">Breakdown reflects the current job plan; the total below is the figure on record in Streamtime.</div>`:'<div style="font-size:12px;color:var(--muted);margin-bottom:16px;padding:14px;background:var(--off);border-radius:6px;">No linked job plan to itemise — showing document totals only.</div>'}
@@ -7042,7 +7114,7 @@ function openQuoteDocPreview(qtId){
   const prepContact=prepCl&&prepCl.contact?`${prepCl.contact}${prepCl.contactTitle?` — ${prepCl.contactTitle}`:''}`:'';
   const meta=`<div style="flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Prepared for</div><div style="font-weight:500;font-size:13px;">${qt.company||'—'}</div>${prepContact?`<div style="color:var(--muted);margin-top:2px;">${prepContact}</div>`:''}${job?`<div style="color:var(--muted);margin-top:2px;">Job #${job.id} · ${job.name}</div>`:''}</div>
     <div style="text-align:right;color:var(--muted);"><div><strong style="color:var(--ink);">Quote #:</strong> ${qt.quoteNumber||qt.id}</div><div><strong style="color:var(--ink);">Issued:</strong> ${_docFmtDate(qt.quoteDate)}</div><div><strong style="color:var(--ink);">Sent:</strong> ${_docFmtDate(qt.sentDate)}</div>${qt.approvedDate?`<div><strong style="color:var(--ink);">Approved:</strong> ${_docFmtDate(qt.approvedDate)}</div>`:''}</div>`;
-  const totals=`<tr><td style="padding:5px 10px;color:var(--muted);">Subtotal (ex GST)</td><td style="padding:5px 10px;text-align:right;">$${Math.round(ex).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;color:var(--muted);">GST (15%)</td><td style="padding:5px 10px;text-align:right;">$${gst.toLocaleString()}</td></tr><tr style="border-top:1px solid var(--border);"><td style="padding:7px 10px;font-weight:600;">Total (inc GST)</td><td style="padding:7px 10px;text-align:right;font-weight:600;font-family:var(--serif);font-size:15px;">$${Math.round(inc).toLocaleString()}</td></tr>`;
+  const totals=`<tr><td style="padding:5px 10px;color:var(--muted);">Subtotal (ex GST)</td><td style="padding:5px 10px;text-align:right;">$${Math.round(ex).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;color:var(--muted);">GST (15%)</td><td style="padding:5px 10px;text-align:right;">$${gst.toLocaleString()}</td></tr><tr style="border-top:1px solid var(--border);"><td style="padding:7px 10px;font-weight:600;">Total (inc GST)</td><td style="padding:7px 10px;text-align:right;font-weight:600;font-family:var(--display);font-size:15px;">$${Math.round(inc).toLocaleString()}</td></tr>`;
   const terms=`<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--faint);font-size:11px;color:var(--muted);line-height:1.6;">Valid for 30 days from issue. Full terms: <a href="https://content-co.nz/terms/" target="_blank" style="color:var(--red);">content-co.nz/terms</a></div>`;
   _docModalShell('Quote',pill,meta,_docLineItemsHTML(job),totals,terms);
 }
@@ -7062,7 +7134,7 @@ function openInvoiceDocPreview(invId){
   const billContact=billCl&&billCl.contact?`${billCl.contact}${billCl.contactTitle?` — ${billCl.contactTitle}`:''}`:'';
   const meta=`<div style="flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Billed to</div><div style="font-weight:500;font-size:13px;">${inv.company?.name||'—'}</div>${billContact?`<div style="color:var(--muted);margin-top:2px;">${billContact}</div>`:''}${job?`<div style="color:var(--muted);margin-top:2px;">Job #${job.id} · ${job.name}</div>`:''}${inv.purchaseOrderNumber?`<div style="color:var(--muted);">PO ${inv.purchaseOrderNumber}</div>`:''}</div>
     <div style="text-align:right;color:var(--muted);"><div><strong style="color:var(--ink);">Invoice #:</strong> ${inv.number||inv.id}</div><div><strong style="color:var(--ink);">Issued:</strong> ${_docFmtDate(inv.invoiceDate)}</div><div><strong style="color:var(--ink);">Due:</strong> ${_docFmtDate(inv.dueDate)}</div>${inv.paidDate?`<div><strong style="color:var(--ink);">Paid:</strong> ${_docFmtDate(inv.paidDate)}</div>`:''}</div>`;
-  let totals=`<tr><td style="padding:5px 10px;color:var(--muted);">Subtotal (ex GST)</td><td style="padding:5px 10px;text-align:right;">$${Math.round(ex).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;color:var(--muted);">GST (15%)</td><td style="padding:5px 10px;text-align:right;">$${gst.toLocaleString()}</td></tr><tr style="border-top:1px solid var(--border);"><td style="padding:7px 10px;font-weight:600;">Total (inc GST)</td><td style="padding:7px 10px;text-align:right;font-weight:600;font-family:var(--serif);font-size:15px;">$${Math.round(inc).toLocaleString()}</td></tr>`;
+  let totals=`<tr><td style="padding:5px 10px;color:var(--muted);">Subtotal (ex GST)</td><td style="padding:5px 10px;text-align:right;">$${Math.round(ex).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;color:var(--muted);">GST (15%)</td><td style="padding:5px 10px;text-align:right;">$${gst.toLocaleString()}</td></tr><tr style="border-top:1px solid var(--border);"><td style="padding:7px 10px;font-weight:600;">Total (inc GST)</td><td style="padding:7px 10px;text-align:right;font-weight:600;font-family:var(--display);font-size:15px;">$${Math.round(inc).toLocaleString()}</td></tr>`;
   if(paid>0)totals+=`<tr><td style="padding:5px 10px;color:#2E7D32;">Paid</td><td style="padding:5px 10px;text-align:right;color:#2E7D32;">-$${Math.round(paid).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;font-weight:600;">Balance due</td><td style="padding:5px 10px;text-align:right;font-weight:600;">$${Math.round(bal).toLocaleString()}</td></tr>`;
   _docModalShell('Tax Invoice',pill,meta,_docLineItemsHTML(job),totals,'');
 }
@@ -7278,7 +7350,7 @@ function renderQuoteTab(){
   let colFt=`<td style="padding:10px 14px;font-size:13px;font-weight:600;">Total (excl. GST)</td>`;
   if(opts.showQty)colFt+=`<td style="padding:10px 14px;text-align:right;font-size:13px;">${totalHrsStr}</td>`;
   if(opts.showUnitRate)colFt+='<td></td>';
-  if(opts.showSubtotals)colFt+=`<td style="padding:10px 14px;text-align:right;font-family:var(--serif);font-size:16px;font-weight:600;">$${totalSell.toLocaleString()}</td>`;
+  if(opts.showSubtotals)colFt+=`<td style="padding:10px 14px;text-align:right;font-family:var(--display);font-size:16px;font-weight:600;">$${totalSell.toLocaleString()}</td>`;
 
   let gstRow='';
   if(opts.showTax){
@@ -7290,7 +7362,7 @@ function renderQuoteTab(){
     let totalInclCols=`<td style="padding:8px 14px;font-size:13px;font-weight:600;">Total (incl. GST)</td>`;
     if(opts.showQty)totalInclCols+='<td></td>';
     if(opts.showUnitRate)totalInclCols+='<td></td>';
-    if(opts.showSubtotals)totalInclCols+=`<td style="padding:8px 14px;text-align:right;font-family:var(--serif);font-size:15px;font-weight:600;color:var(--red);">$${(totalSell+gstAmt).toLocaleString()}</td>`;
+    if(opts.showSubtotals)totalInclCols+=`<td style="padding:8px 14px;text-align:right;font-family:var(--display);font-size:15px;font-weight:600;color:var(--red);">$${(totalSell+gstAmt).toLocaleString()}</td>`;
     gstRow+=`<tr style="background:var(--off);">${totalInclCols}</tr>`;
   }
 
@@ -7337,7 +7409,7 @@ function renderQuoteTab(){
           <div style="font-size:13px;font-weight:400;">${qt.quoteName||qt.quoteNumber||'Quote'}${qt._local?'<span style="font-size:9px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">Local</span>':''}</div>
           <div style="font-size:11px;color:var(--muted);margin-top:2px;">${qt.quoteNumber||qt.id} · ${qt.sentDate?'Sent '+_fmtQD(qt.sentDate):'Not sent'}</div>
         </div>
-        <div style="font-size:13px;font-family:var(--serif);flex-shrink:0;">${val}</div>
+        <div style="font-size:13px;font-family:var(--display);flex-shrink:0;">${val}</div>
         <div style="flex-shrink:0;">${_qtStatusPillSm(status)}</div>
         <i class="ti ti-chevron-right" style="font-size:12px;color:var(--muted);flex-shrink:0;"></i>
       </div>`;
@@ -7365,7 +7437,7 @@ function renderQuoteTab(){
           <div style="font-size:11px;color:var(--muted);line-height:1.7;">NZ Ltd<br>Level 1, 53 Fort Street, Auckland<br>GST 116710013</div>
         </div>
         <div style="text-align:right;">
-          <div style="font-size:22px;font-family:var(--serif);font-weight:400;margin-bottom:8px;">Quote</div>
+          <div style="font-size:22px;font-family:var(--display);font-weight:400;margin-bottom:8px;">Quote</div>
           <div style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:500;background:${statusColor}22;color:${statusColor};border:1px solid ${statusColor}44;cursor:pointer;" onclick="cycleQuoteStatus('${j.id}')" title="Click to change status">
             ${qStatusVal.charAt(0).toUpperCase()+qStatusVal.slice(1)}
           </div>
@@ -8203,7 +8275,7 @@ function advanceWorkflow(jobId){
   m.innerHTML=`<div class="modal" style="max-width:400px;text-align:center;">
     <div class="modal-bd" style="padding:32px 28px 8px;">
       <div style="font-size:36px;margin-bottom:14px;">${emojis[next]||'✅'}</div>
-      <div style="font-size:17px;font-weight:600;margin-bottom:8px;font-family:var(--serif);">Move to ${labels[next]}</div>
+      <div style="font-size:17px;font-weight:600;margin-bottom:8px;font-family:var(--display);">Move to ${labels[next]}</div>
       <div style="font-size:13px;color:var(--muted);line-height:1.5;">${descs[next]||''}</div>
       <div style="font-size:11px;color:var(--muted);margin-top:12px;padding:8px 14px;background:var(--off);border-radius:3px;">${j.id} · ${j.name}</div>
     </div>
@@ -8233,7 +8305,7 @@ function editJobNameField(jobId){
   const el=document.getElementById('d-title-text');if(!el)return;
   const inp=document.createElement('input');
   inp.id='d-title-text';inp.className='form-inp';inp.value=j.name||'';
-  inp.style.cssText='font-family:var(--serif);font-size:inherit;font-weight:inherit;width:100%;padding:2px 6px;';
+  inp.style.cssText='font-family:var(--display);font-size:inherit;font-weight:inherit;width:100%;padding:2px 6px;';
   el.replaceWith(inp);inp.focus();inp.select();
   const commit=async()=>{
     const val=inp.value.trim();
@@ -8558,7 +8630,7 @@ function printSplitInvoice(jobId,siId){
   const meta=`<div style="flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Billed to</div><div style="font-weight:500;font-size:13px;">${j.company||'—'}</div>${cl?.contact?`<div style="color:var(--muted);margin-top:2px;">${cl.contact}${cl.contactTitle?` — ${cl.contactTitle}`:''}</div>`:''}<div style="color:var(--muted);margin-top:2px;">Job #${j.id} · ${j.name}</div></div>
     <div style="text-align:right;color:var(--muted);"><div><strong style="color:var(--ink);">Reference:</strong> ${si.label}</div><div><strong style="color:var(--ink);">Issued:</strong> ${_docFmtDate(si.date)}</div></div>`;
   const gst=Math.round(si.amount*0.15);
-  const totals=`<tr><td style="padding:5px 10px;color:var(--muted);">${si.label} (ex GST)</td><td style="padding:5px 10px;text-align:right;">$${Math.round(si.amount).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;color:var(--muted);">GST (15%)</td><td style="padding:5px 10px;text-align:right;">$${gst.toLocaleString()}</td></tr><tr style="border-top:1px solid var(--border);"><td style="padding:7px 10px;font-weight:600;">Total (inc GST)</td><td style="padding:7px 10px;text-align:right;font-weight:600;font-family:var(--serif);font-size:15px;">$${(Math.round(si.amount)+gst).toLocaleString()}</td></tr>`;
+  const totals=`<tr><td style="padding:5px 10px;color:var(--muted);">${si.label} (ex GST)</td><td style="padding:5px 10px;text-align:right;">$${Math.round(si.amount).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;color:var(--muted);">GST (15%)</td><td style="padding:5px 10px;text-align:right;">$${gst.toLocaleString()}</td></tr><tr style="border-top:1px solid var(--border);"><td style="padding:7px 10px;font-weight:600;">Total (inc GST)</td><td style="padding:7px 10px;text-align:right;font-weight:600;font-family:var(--display);font-size:15px;">$${(Math.round(si.amount)+gst).toLocaleString()}</td></tr>`;
   _docModalShell('Tax Invoice',pill,meta,'',totals,'');
 }
 function renderInvoice(j){
@@ -8584,7 +8656,7 @@ function renderInvoice(j){
         <div style="font-size:11px;color:var(--muted);line-height:1.7;">NZ Ltd<br>Level 1, 53 Fort Street, Auckland<br>GST 116710013</div>
       </div>
       <div style="text-align:right;">
-        <div style="font-size:22px;font-family:var(--serif);font-weight:400;">Tax Invoice</div>
+        <div style="font-size:22px;font-family:var(--display);font-weight:400;">Tax Invoice</div>
         ${(()=>{const ci=clientsData.find(c=>c.name===j.company);return ci&&ci.address?`<div style="font-size:11px;color:var(--muted);line-height:1.6;margin-top:6px;">${ci.address.replace(/\n/g,'<br>')}</div>`:'';})()}
       </div>
     </div>
@@ -8654,7 +8726,7 @@ function renderClients(){
       const totalPaid=cjobs.reduce((a,j)=>a+(j._stPaid||0),0);
       const fmtDol=n=>n>=1000?`$${(n/1000).toFixed(0)}k`:(n?`$${n}`:'');
       return`<div class="client-card-full" onclick="openClientDetail('${c.id}')">
-        <div class="ccf-name">${c.nickname?`<span style="font-weight:500;">${c.nickname}</span> <span style="font-size:12px;color:var(--muted);font-weight:300;">— ${c.name}</span>`:c.name}</div>
+        <div class="ccf-name">${c.nickname?`<span style="font-weight:500;">${c.nickname}</span> <span style="font-size:12px;color:var(--muted);font-weight:400;">— ${c.name}</span>`:c.name}</div>
         <div class="ccf-contact">${c.contact||'<span style="color:#bbb;">No contact added</span>'}</div>
         <div class="ccf-meta">
           <span><strong>${jobCount(c.name)}</strong> jobs</span>
@@ -8697,7 +8769,7 @@ function renderClients(){
     const totalPaid=cjobs.reduce((a,j)=>a+(j._stPaid||0),0);
     const fmtDol=n=>n>=1000?`$${(n/1000).toFixed(0)}k`:(n?`$${n}`:'');
     return`<div class="client-card-full" onclick="openClientDetail('${c.id}')">
-      <div class="ccf-name" style="display:flex;align-items:center;gap:6px;justify-content:space-between;"><span>${c.nickname?`<span style="font-weight:500;">${c.nickname}</span> <span style="font-size:12px;color:var(--muted);font-weight:300;">— ${c.name}</span>`:c.name}</span>${starBtnHTML('client',c.id,c.nickname||c.name)}</div>
+      <div class="ccf-name" style="display:flex;align-items:center;gap:6px;justify-content:space-between;"><span>${c.nickname?`<span style="font-weight:500;">${c.nickname}</span> <span style="font-size:12px;color:var(--muted);font-weight:400;">— ${c.name}</span>`:c.name}</span>${starBtnHTML('client',c.id,c.nickname||c.name)}</div>
       <div class="ccf-contact">${c.contact||'<span style="color:#bbb;">No contact added</span>'}</div>
       <div class="ccf-meta">
         <span><strong>${jobCount(c.name)}</strong> jobs</span>
@@ -9054,7 +9126,7 @@ function renderSettings(){
         <div class="sett-card-hd">Rates &amp; capacity</div>
         <div class="sett-card-body" style="display:flex;flex-direction:column;gap:0;">
           <div class="sett-row">
-            <div><div class="sett-row-lbl">Cost rate $/h${stU&&stU.costRate?` <span style="color:var(--muted);font-weight:300;font-size:11px;">(ST: $${stU.costRate}/h)</span>`:''}</div><div class="sett-row-sub">Your hourly cost for profitability calculations. Overrides the workspace default.</div></div>
+            <div><div class="sett-row-lbl">Cost rate $/h${stU&&stU.costRate?` <span style="color:var(--muted);font-weight:400;font-size:11px;">(ST: $${stU.costRate}/h)</span>`:''}</div><div class="sett-row-sub">Your hourly cost for profitability calculations. Overrides the workspace default.</div></div>
             <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;"><span style="color:var(--muted);">$</span><input type="number" min="0" step="5" value="${me.rate||''}" placeholder="${workspaceSettings.defaultCostRate||150}" onchange="updatePerson('${MY_PERSON}','rate',parseFloat(this.value)||0)" style="width:72px;font-size:13px;font-family:var(--font);border:1px solid var(--border);border-radius:4px;padding:6px 8px;background:var(--off);outline:none;text-align:right;"><span style="color:var(--muted);font-size:12px;">/h</span></div>
           </div>
           <div class="sett-row">
@@ -9118,7 +9190,7 @@ function renderSettings(){
       <div class="sett-tab-hd">Team</div>
       <div class="sett-tab-sub">Manage your team members, roles, and rates. Click any member to edit their profile.</div>
       <div class="sett-card">
-        <div class="sett-card-hd">Active members <span style="font-weight:300;color:var(--muted);">${activeKeys.length}</span>
+        <div class="sett-card-hd">Active members <span style="font-weight:400;color:var(--muted);">${activeKeys.length}</span>
           <button class="d-action" onclick="showAddPersonForm()" style="margin-left:auto;"><i class="ti ti-plus" style="font-size:11px"></i> Add member</button>
         </div>
         <div class="sett-card-body" style="padding:12px;">
@@ -9134,7 +9206,7 @@ function renderSettings(){
         </div>
       </div>
       ${archivedKeys.length?`<div class="sett-card">
-        <div class="sett-card-hd">Archived <span style="font-weight:300;color:var(--muted);">${archivedKeys.length}</span></div>
+        <div class="sett-card-hd">Archived <span style="font-weight:400;color:var(--muted);">${archivedKeys.length}</span></div>
         <div class="sett-card-body" style="padding:12px;"><div class="team-member-grid">${archivedKeys.map(_tmCard).join('')}</div></div>
       </div>`:''}`;
     return;
@@ -9317,7 +9389,7 @@ function renderSettings(){
       <div class="sett-card">
         <div class="sett-card-body" style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
           <div>
-            <div style="font-size:20px;font-weight:500;">C&amp;C Platform <span style="font-weight:300;color:var(--muted);">v${APP_VERSION}</span></div>
+            <div style="font-size:20px;font-weight:500;">C&amp;C Platform <span style="font-weight:400;color:var(--muted);">v${APP_VERSION}</span></div>
             <div style="font-size:12px;color:var(--muted);margin-top:4px;">Content &amp; Co internal management tool</div>
           </div>
           <button class="d-action" onclick="showChangelog()"><i class="ti ti-history" style="font-size:12px"></i> View changelog</button>
@@ -9354,10 +9426,10 @@ function openTeamMember(key){
     </div>
     <div class="tm-panel-section">
       <div class="tm-panel-section-lbl">Rates &amp; capacity</div>
-      <div class="tm-panel-field"><label>Cost rate $/h${stU&&stU.costRate?` <span style="color:var(--muted);font-weight:300;">(ST: $${stU.costRate}/h)</span>`:''}</label>
+      <div class="tm-panel-field"><label>Cost rate $/h${stU&&stU.costRate?` <span style="color:var(--muted);font-weight:400;">(ST: $${stU.costRate}/h)</span>`:''}</label>
         <input type="number" min="0" step="5" value="${p.rate||''}" placeholder="${workspaceSettings.defaultCostRate||150} (workspace default)" onchange="updatePerson('${key}','rate',parseFloat(this.value)||0)">
       </div>
-      ${stU&&stU.billableRate?`<div class="tm-panel-field"><label>Billable rate $/h <span style="color:var(--muted);font-weight:300;">(from Streamtime)</span></label><input type="number" value="${stU.billableRate}" disabled style="opacity:.6;cursor:not-allowed;"></div>`:''}
+      ${stU&&stU.billableRate?`<div class="tm-panel-field"><label>Billable rate $/h <span style="color:var(--muted);font-weight:400;">(from Streamtime)</span></label><input type="number" value="${stU.billableRate}" disabled style="opacity:.6;cursor:not-allowed;"></div>`:''}
       <div class="tm-panel-field"><label>Working hours / day</label>
         <input type="number" min="1" max="24" step="0.5" value="${p.hoursPerDay||8}" onchange="updatePerson('${key}','hoursPerDay',parseFloat(this.value)||8)">
       </div>
@@ -10593,7 +10665,7 @@ function renderInvoices(){
       <td class="inv-td" style="font-size:12px;color:${isOverdue?'var(--red)':'var(--muted)'};">${i.dueDate?fmtDate(i.dueDate):'—'}</td>
       <td class="inv-td" style="font-size:12px;color:${i.paidDate?'#2E7D32':'var(--muted)'};">${i.paidDate?fmtDate(i.paidDate):'—'}</td>
       <td class="inv-td">${_invStatusPill(i)}</td>
-      <td class="inv-td" style="text-align:right;font-family:var(--serif);font-size:14px;font-variant-numeric:tabular-nums;">${amt!=null?'$'+amt.toLocaleString():'—'}</td>
+      <td class="inv-td" style="text-align:right;font-family:var(--display);font-size:14px;font-variant-numeric:tabular-nums;">${amt!=null?'$'+amt.toLocaleString():'—'}</td>
     </tr>`;
   };
   const _invSortKey={
@@ -10635,7 +10707,7 @@ function renderInvoices(){
         <td class="inv-td"><span style="font-size:11px;color:var(--muted);margin-right:6px;">${j.id}</span>${j.name}</td>
         <td class="inv-td" style="font-size:12px;color:var(--muted);">${j.po||'—'}</td>
         <td class="inv-td"><span class="wf-badge wf-completed">Complete</span></td>
-        <td class="inv-td" style="text-align:right;font-family:var(--serif);font-size:14px;font-variant-numeric:tabular-nums;">$${(j._sellUsed||0).toLocaleString()}</td>
+        <td class="inv-td" style="text-align:right;font-family:var(--display);font-size:14px;font-variant-numeric:tabular-nums;">$${(j._sellUsed||0).toLocaleString()}</td>
         <td class="inv-td" style="text-align:center;"><i class="ti ti-eye-off" title="Hide from this list" style="font-size:13px;color:var(--muted);cursor:pointer;" onclick="event.stopPropagation();hideUninvoicedJob('${j.id}')"></i></td>
       </tr>`).join('')}</tbody></table>`:''}`;
     }
