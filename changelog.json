@@ -1,7 +1,26 @@
 {
-  "generated_at": "2026-07-02T02:37:51.778759+00:00",
-  "current_version": "2.27.0",
+  "generated_at": "2026-07-02T03:14:39.938636+00:00",
+  "current_version": "2.28.0",
   "releases": [
+    {
+      "version": "2.28.0",
+      "date": "2 Jul 2026",
+      "title": "Merged Progress view, one dates control, finer scheduling",
+      "items": [
+        "Job detail: Progress and Profitability are now one view — progress bars, the time table, and the full profitability breakdown (revenue vs cost vs margin) in a single scroll.",
+        "Job header: the two Set start date / Set due date pills are now one dates control — it shows the range (\"1 Sep → 30 Sep\"), and clicking opens a small panel to set both dates at once. Overdue still shows red.",
+        "To Do board: tasks can now be resized down to 5 minutes (was 15) with 5-minute snapping on both the board and calendar views.",
+        "The add-task title field no longer gets the odd red focus box; text fields use a soft focus ring, the red outline is reserved for keyboard-tabbing buttons.",
+        "Brief/notes box on jobs finally has proper padding, and gently lifts to white while you type in it.",
+        "Sharper details throughout: tighter letter-spacing on tabs/buttons/labels, task cards get rounded corners and a soft shadow, and the topbar tabs read heavier."
+      ],
+      "sections": [
+        "Boards",
+        "Jobs",
+        "Jobs → Time",
+        "Todo"
+      ]
+    },
     {
       "version": "2.27.0",
       "date": "2 Jul 2026",
