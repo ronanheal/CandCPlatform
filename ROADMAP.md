@@ -1,6 +1,6 @@
 # C&C Platform — Roadmap
 
-*Last updated 2 Jul 2026 · v2.27.0*
+*Last updated 2 Jul 2026 · v2.28.0*
 
 ---
 
@@ -75,6 +75,8 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 | Xero push for natively-created invoices | The local creation half (deposit/split invoices) shipped v2.20.4; the Xero push half needs real Xero API write credentials — a business/access task, not a coding one |
 | @mentions + notifications | Needs a real-time backend (websockets/polling server) — not buildable on the static localStorage architecture |
 | Real durable backend for all `db*` writes | The actual size of the Phase 2→3 jump — see "What's blocking Phase 3" above. Every other Phase 2 feature is UI-complete and just needs its stub swapped once this exists |
+
+**Shipped (v2.28.0):** Progress+Profitability merged into one job-detail view, combined start→due dates pill with two-field popover, 5-minute todo resize floor (was 15m), focus-ring fix on text fields, brief textarea padding, letter-spacing modernisation, task-card surface polish.
 
 **Shipped (v2.27.0):** Modern type system (Playfair/DM Sans → Inter; weight-based hierarchy, tabular numerals), global control system (custom-chevron selects, unified focus rings), searchable job picker with recents in the add-task modal.
 

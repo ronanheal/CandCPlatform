@@ -55,12 +55,12 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:13
 
 /* TOPBAR */
 .topbar{height:56px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:0;flex-shrink:0;}
-.tb-section{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:400;cursor:pointer;padding:0 16px;height:100%;display:flex;align-items:center;border-bottom:2px solid transparent;transition:all .15s;}
+.tb-section{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500;cursor:pointer;padding:0 16px;height:100%;display:flex;align-items:center;border-bottom:2px solid transparent;transition:all .15s;}
 .tb-section:first-child{padding-left:0;}
 .tb-section.on{color:var(--ink);border-bottom-color:var(--red);}
 .tb-section:hover:not(.on){color:var(--ink);}
 .tb-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
-.tb-btn{background:var(--black);color:var(--white);border:none;padding:8px 17px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-family:var(--font);font-weight:400;cursor:pointer;border-radius:var(--r-ctl);transition:opacity .12s;}
+.tb-btn{background:var(--black);color:var(--white);border:none;padding:8px 17px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;font-family:var(--font);font-weight:500;cursor:pointer;border-radius:var(--r-ctl);transition:opacity .12s;}
 .tb-btn:hover{opacity:.85;}
 .tb-btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--border);}
 .tb-btn.ghost:hover{border-color:var(--ink);}
@@ -79,12 +79,12 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:13
 .kpi-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:32px;}
 .kpi{background:var(--white);border:1px solid var(--border);border-radius:var(--r-card);padding:20px 22px;box-shadow:var(--shadow-s);transition:box-shadow .18s,transform .18s;}
 .kpi:hover{box-shadow:var(--shadow-m);}
-.kpi-label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.kpi-label{font-size:11px;letter-spacing:.08em;font-weight:500;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
 .kpi-val{font-family:var(--display);font-size:28px;font-weight:650;color:var(--ink);letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
 .kpi-sub{font-size:12px;color:var(--muted);margin-top:4px;}
 .kpi-bar{height:3px;background:var(--faint);margin-top:14px;border-radius:2px;overflow:hidden;}
 .kpi-bar-fill{height:100%;}
-.section-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-label{font-size:11px;letter-spacing:.09em;font-weight:500;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
 /* Micro-label for uppercase field/section captions (replaces a 21x-repeated inline style) */
 .micro-lbl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
 /* Loading spinner */
@@ -185,7 +185,8 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:13
 /* Resize handle */
 .task-card.resizing{cursor:ns-resize !important;user-select:none;}
 /* Task cards */
-.task-card{background:var(--white);border:1px solid var(--border);padding:8px 10px;cursor:pointer;transition:border-color .15s;user-select:none;overflow:hidden;min-height:52px;box-sizing:border-box;}
+.task-card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:8px 10px;cursor:pointer;transition:border-color .15s,box-shadow .15s;user-select:none;overflow:hidden;min-height:52px;box-sizing:border-box;box-shadow:var(--shadow-s);}
+.task-card:hover{box-shadow:var(--shadow-m);}
 .task-card:hover{border-color:#aaa;}
 .task-card.done-c{background:var(--done);border-color:#b2dfb2;}
 /* Status conveyed only by the left border colour (matches the dashboard bars) */
@@ -215,7 +216,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:13
 .jobs-search i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:15px;}
 .jobs-search input{width:100%;background:var(--off);border:1px solid var(--border);padding:7px 10px 7px 32px;font-size:13px;font-family:var(--font);font-weight:400;color:var(--ink);outline:none;border-radius:2px;}
 .jobs-search input:focus{border-color:var(--ink);background:var(--white);}
-.filter-btn{background:var(--white);border:1px solid var(--border);padding:6px 12px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:5px;border-radius:var(--r-ctl);transition:border-color .12s,color .12s;}
+.filter-btn{background:var(--white);border:1px solid var(--border);padding:6px 12px;font-size:11px;letter-spacing:.04em;font-weight:500;text-transform:uppercase;color:var(--muted);cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:5px;border-radius:var(--r-ctl);transition:border-color .12s,color .12s;}
 .filter-btn:hover{border-color:var(--ink);color:var(--ink);}
 .jobs-count{margin-left:auto;font-size:12px;color:var(--muted);}
 .jobs-table-wrap{flex:1;overflow-y:auto;}
@@ -240,12 +241,13 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:13
 .detail-view{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 .detail-head{padding:0 24px;background:var(--white);border-bottom:1px solid var(--border);flex-shrink:0;}
 .detail-back{padding:5px 10px;margin:12px 0 0;font-size:11px;color:var(--muted);display:inline-flex;align-items:center;gap:4px;cursor:pointer;letter-spacing:.05em;background:var(--off);border:1px solid var(--border);border-radius:20px;width:fit-content;text-decoration:none;font-family:var(--font);line-height:1;}
-:is(button,[tabindex],input,select,textarea):focus-visible{outline:2px solid var(--red);outline-offset:2px;}
+:is(button,[tabindex]):focus-visible{outline:2px solid var(--red);outline-offset:2px;}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 .detail-back:hover{color:var(--ink);border-color:#aaa;background:#eeecea;}
 .detail-title-row{display:flex;align-items:flex-end;gap:16px;padding:10px 0 0;}
 .detail-title{font-family:var(--display);font-size:22px;font-weight:650;letter-spacing:-.02em;flex:1;line-height:1.25;}
 .detail-actions{display:flex;gap:8px;}
-.d-action{background:transparent;border:1px solid var(--border);padding:7px 13px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:5px;color:var(--ink);border-radius:2px;transition:all .15s;}
+.d-action{background:transparent;border:1px solid var(--border);padding:7px 13px;font-size:11px;letter-spacing:.04em;font-weight:500;text-transform:uppercase;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:5px;color:var(--ink);border-radius:2px;transition:all .15s;}
 .d-action:hover{border-color:var(--ink);}
 .d-action.primary{background:var(--black);color:var(--white);border-color:var(--black);}
 .detail-meta-line{font-size:12px;color:var(--muted);padding:6px 0;display:flex;align-items:center;gap:12px;}
@@ -1639,14 +1641,13 @@ input[type=text],input[type=number],input[type=date],textarea{font-family:var(--
               <div class="label-add-btn" onclick="addLabel(event)"><i class="ti ti-plus" style="font-size:11px"></i> Add label</div>
             </div>
             <div id="job-notes-row" style="padding:0 0 10px;display:none;">
-              <textarea id="job-notes-inp" placeholder="Add a brief or notes for this job…" style="width:100%;border:none;border-top:1px solid var(--border);background:var(--off);font-family:var(--font);font-size:12px;color:var(--ink);resize:none;outline:none;padding:8px 0 4px;line-height:1.5;" rows="2" oninput="updateJobNotes(this.value)"></textarea>
+              <textarea id="job-notes-inp" placeholder="Add a brief or notes for this job…" style="width:100%;border:1px solid transparent;border-radius:8px;background:var(--off);font-family:var(--font);font-size:12.5px;color:var(--ink);resize:none;outline:none;padding:10px 14px;line-height:1.55;box-sizing:border-box;transition:border-color .15s,background .15s;" onfocus="this.style.borderColor='var(--border)';this.style.background='var(--white)'" onblur="this.style.borderColor='transparent';this.style.background='var(--off)'" rows="2" oninput="updateJobNotes(this.value)"></textarea>
             </div>
             <div class="detail-tabs">
               <div class="d-tab on" onclick="switchDTab(this,'plan')">Job plan</div>
               <div class="d-tab" onclick="switchDTab(this,'progress')">Progress</div>
               <div class="d-tab" onclick="switchDTab(this,'quote')">Quote</div>
               <div class="d-tab" onclick="switchDTab(this,'timeline')">Timeline</div>
-              <div class="d-tab" onclick="switchDTab(this,'profit')">Profitability</div>
               <div class="d-tab" onclick="switchDTab(this,'activity')">Activity</div>
             </div>
           </div>
@@ -1664,7 +1665,6 @@ input[type=text],input[type=number],input[type=date],textarea{font-family:var(--
           <div id="dtab-progress" class="hidden" style="flex:1;overflow-y:auto;padding:24px 24px 50px;"></div>
           <div id="dtab-quote" class="hidden" style="flex:1;overflow-y:auto;padding:24px 24px 50px;"></div>
           <div id="dtab-timeline" class="hidden" style="flex:1;overflow-y:auto;padding:24px 24px 50px;"></div>
-          <div id="dtab-profit" class="hidden" style="flex:1;overflow-y:auto;padding:24px 24px 50px;"></div>
           <div id="dtab-activity" class="act-feed hidden"></div>
         </div>
       </div>
@@ -2373,8 +2373,16 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.27.0';
+const APP_VERSION='2.28.0';
 const CHANGELOG=[
+  {version:'2.28.0',date:'2 Jul 2026',title:'Merged Progress view, one dates control, finer scheduling',items:[
+    'Job detail: Progress and Profitability are now one view — progress bars, the time table, and the full profitability breakdown (revenue vs cost vs margin) in a single scroll.',
+    'Job header: the two Set start date / Set due date pills are now one dates control — it shows the range ("1 Sep → 30 Sep"), and clicking opens a small panel to set both dates at once. Overdue still shows red.',
+    'To Do board: tasks can now be resized down to 5 minutes (was 15) with 5-minute snapping on both the board and calendar views.',
+    'The add-task title field no longer gets the odd red focus box; text fields use a soft focus ring, the red outline is reserved for keyboard-tabbing buttons.',
+    'Brief/notes box on jobs finally has proper padding, and gently lifts to white while you type in it.',
+    'Sharper details throughout: tighter letter-spacing on tabs/buttons/labels, task cards get rounded corners and a soft shadow, and the topbar tabs read heavier.',
+  ]},
   {version:'2.27.0',date:'2 Jul 2026',title:'Modern type system, control system, searchable job picker',items:[
     'New typography: the platform moves to a modern SaaS type system — one contemporary typeface (Inter) everywhere, with bold tight-tracked headings, weight-based hierarchy instead of italics, and tabular numerals so numbers line up in every table and KPI.',
     'Add-task modal: the Job field is now a searchable picker — your recent jobs at the top, the full list scrollable below, type to filter. Styled to match the item picker beside it.',
@@ -4342,7 +4350,7 @@ function _calResizeMove(e){
     const hPx=Math.max(16,rawH*CAL_PX_PER_HOUR);
     block.style.height=hPx+'px';
     // Show snapped preview in hours label
-    const snapped=Math.max(0.25,Math.round(rawH*4)/4);
+    const snapped=Math.max(5/60,Math.round(rawH*12)/12); // 5-min snapping, 5m floor (was 15m)
     const hrsEl=block.querySelector('.ctb-hrs');
     if(hrsEl)hrsEl.textContent=formatHrs(snapped);
     block.dataset.pendingH=rawH;
@@ -4904,7 +4912,7 @@ function createTaskCard(t,day,isDone){
         const dy=atBottom?(ev.clientY-startY):(startY-ev.clientY);
         const newH=Math.max(40,startH+dy);
         const _px=Math.max(24,(todoSplitPx||360)/8);
-        curHours=Math.max(0.25,Math.min(8,Math.round((newH/_px)*4)/4));
+        curHours=Math.max(5/60,Math.min(8,Math.round((newH/_px)*12)/12)); // 5-min snapping, 5m floor (was 15m)
         const newCardH=taskCardHeight(curHours);
         card.style.height=newCardH+'px';
         const hrsEl=document.getElementById('hrs-'+t.id);
@@ -6343,18 +6351,19 @@ function openJobDetail(id){
   const _overdue=_due&&_due<_now&&j.status==='inplay';
   const _dueBadgeCls=_overdue?'background:#FFEBEE;color:#C62828;border-color:#EF9A9A;':_dueSoon?'background:#FFF9C4;color:#E65100;border-color:#FFE082;':'';
   const _dueIcon=_overdue?'<i class="ti ti-alert-triangle" style="font-size:9px;"></i> ':_dueSoon?'<i class="ti ti-clock" style="font-size:9px;"></i> ':'';
-  const _dueLabel=_overdue?'Overdue · ':_dueSoon?'Due ':'Due ';
-  const _dueBadge=` &nbsp;<span class="paused-badge" style="cursor:pointer;user-select:none;${_dueBadgeCls}" title="Click to edit due date" onclick="editJobDateField('${id}','dueDate')">${_dueIcon}${_dueStr?_dueLabel+_dueStr:'Set due date'}</span>`;
   const _startStr=j.startDate?fmtDate(j.startDate):'';
-  // Start + due dates share one pill style (.paused-badge) for consistency; due keeps its
-  // overdue/due-soon colour overlay as the only intentional difference.
-  const _startBadge=` &nbsp;<span class="paused-badge" style="cursor:pointer;user-select:none;" title="Click to edit start date" onclick="editJobDateField('${id}','startDate')">${_startStr?'Start '+_startStr:'Set start date'}</span>`;
+  // ONE dates control (was two separate Set start / Set due pills): shows the range when
+  // set ("10 Mar → 8 Apr"), "Set dates" when empty. Click opens a two-field popover
+  // (editJobDates). Overdue/due-soon colouring carries over from the old due pill.
+  const _dateTxt=(!_startStr&&!_dueStr)?'<i class="ti ti-calendar" style="font-size:9px;"></i> Set dates'
+    :`${_dueIcon}${_startStr||'…'} <span style="opacity:.55;">→</span> ${_dueStr?(_overdue?'Overdue · ':'')+_dueStr:'…'}`;
+  const _datesBadge=` &nbsp;<span class="paused-badge" style="cursor:pointer;user-select:none;position:relative;${_dueBadgeCls}" title="Click to edit start & due dates" onclick="editJobDates(event,'${id}')">${_dateTxt}</span>`;
   // Single canonical status control — was previously TWO overlapping badges (the workflow
   // "LIVE JOB →" pill and a separate "In Play" status pill). Now one .wf-badge: click the
   // label to set status directly (editJobStatusField), click the → to advance the workflow
   // stage (advanceWorkflow). Both behaviours preserved, no duplication.
   const _statusCtl=` &nbsp;<span class="wf-badge ${wfCls}" style="user-select:none;padding-right:3px;"><span style="cursor:pointer;" title="Click to set status" onclick="editJobStatusField('${id}')">${wfLabel}</span><i class="ti ti-arrow-right" title="Advance workflow stage" onclick="advanceWorkflow('${id}')" style="font-size:9px;vertical-align:middle;margin-left:5px;padding:1px 3px;cursor:pointer;"></i></span>`;
-  document.getElementById('d-meta-line').innerHTML=`${j.id} · ${j.company} · ${leadHtml}${j.billable?'Billable':'Non-billable'}${j.po?` · PO ${j.po}`:''}`+_statusCtl+(j.paused?' &nbsp;<span class="paused-badge"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>':'')+archivedBadge+_startBadge+_dueBadge;
+  document.getElementById('d-meta-line').innerHTML=`${j.id} · ${j.company} · ${leadHtml}${j.billable?'Billable':'Non-billable'}${j.po?` · PO ${j.po}`:''}`+_statusCtl+(j.paused?' &nbsp;<span class="paused-badge"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>':'')+archivedBadge+_datesBadge;
   let _titleEl=document.getElementById('d-title-text');
   if(_titleEl.tagName!=='DIV'){
     const _div=document.createElement('div');
@@ -6753,9 +6762,10 @@ function renderStats(j){
     _statBlock('Expenses',`$${Math.round(expUsed).toLocaleString()}`,null,null);
 }
 
-function renderProfitTab(){
-  const j=jobs.find(x=>x.id===activeJobId);
-  const el=document.getElementById('dtab-profit');if(!el||!j)return;
+// Profitability content — rendered as a section INSIDE the Progress tab (the two were
+// separate tabs until v2.28.0; one combined view reads better for PMs).
+function _profitHTML(j){
+  if(!j)return'';
   const p=computeJobProfit(j);
   const money=n=>`$${Math.round(n||0).toLocaleString()}`;
   const marginCol=p.margin>=0?'#2E7D32':'var(--red)';
@@ -6771,27 +6781,25 @@ function renderProfitTab(){
     : p.marginPct>=15?`Margin of ${p.marginPct}% to date — within a typical range.`
     : p.marginPct>=0?`Thin margin of ${p.marginPct}% — watch over-servicing on this job.`
     : `Currently running at a loss (${p.marginPct}%) — cost has exceeded revenue logged.`;
-  el.innerHTML=`
-    <div class="r-kpi-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;">
-      <div class="r-kpi"><div class="r-kpi-lbl">Revenue (ex GST)</div><div class="r-kpi-val">${money(p.revenue)}</div><div class="r-kpi-sub">logged sell + expenses</div></div>
-      <div class="r-kpi"><div class="r-kpi-lbl">Cost</div><div class="r-kpi-val">${money(p.cost)}</div><div class="r-kpi-sub">${p.costEstimated?'incl. est. @ $'+_defCostRate()+'/h':'staff time + expenses'}</div></div>
-      <div class="r-kpi"><div class="r-kpi-lbl">Margin</div><div class="r-kpi-val" style="color:${marginCol};">${money(p.margin)}</div><div class="r-kpi-sub">revenue − cost</div></div>
-      <div class="r-kpi"><div class="r-kpi-lbl">Margin %</div><div class="r-kpi-val" style="color:${marginCol};">${p.revenue>0?p.marginPct+'%':'—'}</div><div class="r-kpi-sub">of revenue</div></div>
-    </div>
-    <div class="r-section">
-      <div class="r-section-hd">Revenue vs cost <span style="text-transform:none;letter-spacing:0;color:var(--muted);">— work logged to date</span></div>
+  return `
+    <div class="prog-card" style="margin-top:20px;">
+      <div class="prog-card-hd">Profitability <span style="text-transform:none;letter-spacing:0;color:var(--muted);font-weight:400;">— work logged to date</span></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:14px 0 20px;">
+        <div><div class="micro-lbl">Revenue (ex GST)</div><div style="font-family:var(--display);font-size:19px;font-weight:600;font-variant-numeric:tabular-nums;">${money(p.revenue)}</div><div style="font-size:11px;color:var(--muted);">logged sell + expenses</div></div>
+        <div><div class="micro-lbl">Cost</div><div style="font-family:var(--display);font-size:19px;font-weight:600;font-variant-numeric:tabular-nums;">${money(p.cost)}</div><div style="font-size:11px;color:var(--muted);">${p.costEstimated?'incl. est. @ $'+_defCostRate()+'/h':'staff time + expenses'}</div></div>
+        <div><div class="micro-lbl">Margin</div><div style="font-family:var(--display);font-size:19px;font-weight:600;font-variant-numeric:tabular-nums;color:${marginCol};">${money(p.margin)}</div><div style="font-size:11px;color:var(--muted);">revenue − cost</div></div>
+        <div><div class="micro-lbl">Margin %</div><div style="font-family:var(--display);font-size:19px;font-weight:600;font-variant-numeric:tabular-nums;color:${marginCol};">${p.revenue>0?p.marginPct+'%':'—'}</div><div style="font-size:11px;color:var(--muted);">of revenue</div></div>
+      </div>
       ${_bar('Revenue (logged sell + expense sell)',p.revenue,costMax,'#4CAF50')}
       ${_bar('Staff time cost',p.staffCost,costMax,'#6B7FA3')}
       ${_bar('Expense cost',p.expCost,costMax,'#C4A35D')}
-    </div>
-    <div class="r-section">
-      <div class="r-section-hd">Budget vs actual</div>
+      <div style="height:1px;background:var(--faint);margin:16px 0;"></div>
       ${_bar('Planned sell (budget)',p.plannedSell,Math.max(p.plannedSell,p.sellUsed,1),'#BDBDBD')}
       ${_bar('Sell used',p.sellUsed,Math.max(p.plannedSell,p.sellUsed,1),p.sellUsed>p.plannedSell?'var(--red)':'#4CAF50')}
-    </div>
-    <div class="r-section" style="background:var(--off);border-radius:6px;padding:12px 14px;font-size:13px;">
-      <i class="ti ti-activity" style="color:var(--ink);margin-right:6px;"></i>${pulse}
-      ${p.costEstimated?`<div style="font-size:11px;color:var(--muted);margin-top:6px;">Cost is an estimate — Streamtime has no cost rate set for some people on this job, so their time is valued at the $${_defCostRate()}/h workspace default.</div>`:''}
+      <div style="background:var(--off);border-radius:8px;padding:12px 14px;font-size:13px;margin-top:16px;">
+        <i class="ti ti-activity" style="color:var(--ink);margin-right:6px;"></i>${pulse}
+        ${p.costEstimated?`<div style="font-size:11px;color:var(--muted);margin-top:6px;">Cost is an estimate — Streamtime has no cost rate set for some people on this job, so their time is valued at the $${_defCostRate()}/h workspace default.</div>`:''}
+      </div>
     </div>`;
 }
 
@@ -6801,13 +6809,11 @@ function switchDTab(el,tab){
   document.getElementById('dtab-progress').classList.toggle('hidden',tab!=='progress');
   document.getElementById('dtab-quote').classList.toggle('hidden',tab!=='quote');
   document.getElementById('dtab-timeline').classList.toggle('hidden',tab!=='timeline');
-  document.getElementById('dtab-profit').classList.toggle('hidden',tab!=='profit');
   document.getElementById('dtab-activity').classList.toggle('hidden',tab!=='activity');
   if(tab==='plan')renderPhases();
   if(tab==='progress')renderProgressTab();
   if(tab==='quote')renderQuoteTab();
   if(tab==='timeline')renderTimelineTab();
-  if(tab==='profit')renderProfitTab();
   if(tab==='activity')renderActivityTab();
 }
 
@@ -6966,6 +6972,7 @@ function renderProgressTab(){
           <tfoot><tr><td colspan="5">Total (${entries.length})</td><td style="text-align:right;"><strong>${fmtH(totalMins)}</strong></td><td style="text-align:right;"><strong>$${totalSell.toLocaleString()}</strong></td><td></td></tr></tfoot>
         </table>`:emptyStateHTML('ti-clock','No time on this job yet','Time appears here as soon as todos are linked to this job — scheduled and logged.','Add todo',"openTodoModal('"+j.id+"',1)")}
       </div>
+      ${_profitHTML(j)}
     </div>`;
 }
 function toggleProgGroup(pKey){_progGroupCollapsed[pKey]=!_progGroupCollapsed[pKey];renderProgressTab();}
@@ -8315,32 +8322,37 @@ function editJobNameField(jobId){
   inp.addEventListener('blur',commit);
   inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();else if(e.key==='Escape'){inp.value=j.name||'';inp.blur();}});
 }
-function editJobDateField(jobId,field){
+// One popover for BOTH job dates (replaced the two inline single-date pills in v2.28.0).
+// Anchored to the dates pill; saves both fields in one dbUpdateJob + one activity entry.
+function editJobDates(e,jobId){
+  e.stopPropagation();
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
-  // The clicked badge is re-rendered by openJobDetail each time, so find it via the inline
-  // onclick attribute rather than a fixed id.
-  const sel=field==='dueDate'?`[onclick="editJobDateField('${jobId}','dueDate')"]`:`[onclick="editJobDateField('${jobId}','startDate')"]`;
-  const el=document.querySelector(`#d-meta-line ${sel}`);if(!el)return;
-  const inp=document.createElement('input');
-  inp.type='date';inp.className='form-inp';inp.value=j[field]||'';
-  inp.style.cssText='font-size:11px;padding:1px 4px;';
-  el.replaceWith(inp);inp.focus();
-  // Commit ONCE, on blur/Enter only. A 'change' listener double-committed (dbUpdateJob
-  // replaces jobs[i], so the stale captured `j` let the guard pass twice → duplicate
-  // activity rows) and date inputs fire 'change' per-segment, killing the input mid-edit.
-  let committed=false;
-  const commit=async()=>{
-    if(committed)return;committed=true;
-    const cur=jobs.find(x=>x.id===jobId);
-    const val=inp.value||null;
-    if(cur&&val!==(cur[field]||null)){
-      await dbUpdateJob(jobId,{[field]:val});
-      logActivity(jobId,MY_PERSON,'edit',`Set ${field==='dueDate'?'due date':'start date'} to <strong>${val?fmtDate(val):'—'}</strong>`);
-    }
-    openJobDetail(jobId);
-  };
-  inp.addEventListener('blur',commit);
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();else if(e.key==='Escape'){committed=true;openJobDetail(jobId);}});
+  document.getElementById('job-dates-pop')?.remove();
+  const anchor=e.currentTarget||e.target;
+  const pop=document.createElement('div');
+  pop.id='job-dates-pop';
+  pop.style.cssText='position:absolute;top:calc(100% + 6px);left:0;z-index:500;background:var(--white);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-m);padding:14px;display:flex;gap:12px;align-items:flex-end;cursor:default;';
+  pop.onclick=ev=>ev.stopPropagation();
+  pop.innerHTML=`
+    <div><div class="micro-lbl">Start</div><input type="date" class="form-inp" id="jdp-start" value="${j.startDate||''}" style="font-size:12px;"></div>
+    <div><div class="micro-lbl">Due</div><input type="date" class="form-inp" id="jdp-due" value="${j.dueDate||''}" style="font-size:12px;"></div>
+    <button class="save-b" onclick="saveJobDates('${jobId}')">Save</button>`;
+  anchor.appendChild(pop);
+  setTimeout(()=>{
+    document.getElementById('jdp-start')?.focus();
+    document.addEventListener('click',()=>document.getElementById('job-dates-pop')?.remove(),{once:true});
+  },10);
+}
+async function saveJobDates(jobId){
+  const cur=jobs.find(x=>x.id===jobId);if(!cur)return;
+  const start=document.getElementById('jdp-start')?.value||null;
+  const due=document.getElementById('jdp-due')?.value||null;
+  document.getElementById('job-dates-pop')?.remove();
+  if(start!==(cur.startDate||null)||due!==(cur.dueDate||null)){
+    await dbUpdateJob(jobId,{startDate:start,dueDate:due});
+    logActivity(jobId,MY_PERSON,'edit',`Set dates to <strong>${start?fmtDate(start):'—'} → ${due?fmtDate(due):'—'}</strong>`);
+  }
+  openJobDetail(jobId);
 }
 function editJobStatusField(jobId){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
