@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>c&c Platform — v6</title>
+<title>C&amp;C Platform</title>
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="%23ED1E24"/><text x="32" y="43" font-family="Georgia,serif" font-size="26" font-weight="700" fill="white" text-anchor="middle">C%26C</text></svg>'/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css"/>
 <script src="https://unpkg.com/lucide@0.525.0/dist/umd/lucide.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -1379,6 +1380,44 @@ input[type=text],input[type=number],input[type=date],textarea{font-family:var(--
 .task-card{position:relative;--card-bg:var(--white);}
 .task-card.done-c{--card-bg:var(--done);}
 .task-card::after{content:'';position:absolute;left:1px;right:1px;bottom:0;height:14px;background:linear-gradient(180deg,transparent,var(--card-bg) 82%);pointer-events:none;border-radius:0 0 8px 8px;}
+
+/* ══ v2.30 — Global search: colour-coded categories, accent selection, hint footer ══ */
+.gs-panel{width:640px;}
+#gs-inp{font-size:16px;}
+.gs-item{position:relative;padding:9px 16px;}
+.gs-item.sel{background:var(--off);}
+.gs-item.sel::before{content:'';position:absolute;left:0;top:6px;bottom:6px;width:3px;background:var(--red);border-radius:0 3px 3px 0;}
+.gs-ico{transition:transform .12s;}
+.gs-item.sel .gs-ico{transform:scale(1.06);}
+.gs-ico.gsc-jobs{background:#FDECEA;border-color:#F6C9C7;}.gs-ico.gsc-jobs i{color:#C62828;}
+.gs-ico.gsc-clients{background:#EDF1F7;border-color:#D4DCE9;}.gs-ico.gsc-clients i{color:#4A6FA5;}
+.gs-ico.gsc-tasks{background:#EDF5EF;border-color:#CFE3D5;}.gs-ico.gsc-tasks i{color:#2E7D32;}
+.gs-ico.gsc-invoices{background:#F4EDF9;border-color:#E0CFF0;}.gs-ico.gsc-invoices i{color:#6A1B9A;}
+.gs-ico.gsc-quotes{background:#FFF6E8;border-color:#F3DFBE;}.gs-ico.gsc-quotes i{color:#B07A2A;}
+.gs-ico.gsc-items{background:var(--off);}.gs-ico.gsc-items i{color:var(--muted);}
+.gs-foot{display:flex;align-items:center;gap:16px;padding:9px 16px;border-top:1px solid var(--border);background:var(--off);font-size:11px;color:var(--muted);border-radius:0 0 14px 14px;}
+.gs-foot kbd{font-family:var(--font);font-size:10px;color:var(--muted);border:1px solid var(--border);border-bottom-width:2px;border-radius:4px;padding:1px 5px;background:var(--white);margin-right:4px;}
+.gs-foot .gs-count{margin-left:auto;}
+
+/* ══ v2.30 — Skeleton loading (jobs table while Streamtime syncs) ══ */
+@keyframes ccShimmer{from{background-position:-460px 0;}to{background-position:460px 0;}}
+.skel{display:inline-block;height:12px;border-radius:6px;background:linear-gradient(90deg,var(--faint) 25%,#F3F0E9 37%,var(--faint) 63%);background-size:920px 100%;animation:ccShimmer 1.3s ease-in-out infinite;}
+
+/* ══ v2.30 — Depth on primary actions + refined progress bars + brand caret ══ */
+.d-action.primary,.tb-btn:not(.ghost),.modal-ok,.modal-save,.tm-btn-save,.cb-create-btn,.save-b,.cal-today-btn,.r-export-btn{box-shadow:0 1px 2px rgba(25,23,20,.22),inset 0 1px 0 rgba(255,255,255,.07);}
+.bbar-track{height:4px;border-radius:2px;overflow:hidden;}
+.bbar-fill,.stat-bar-fill{border-radius:2px;}
+.stat-bar{height:3px;border-radius:2px;overflow:hidden;}
+.r-bar{height:4px;border-radius:2px;overflow:hidden;}.r-bfill{border-radius:2px;}
+.kpi-bar{height:4px;}
+.cal-month-event,.cal-day-event{border-radius:4px;}
+input,textarea{caret-color:var(--red);}
+/* Needs-attention rows: quiet until hovered */
+.att-row{border-radius:6px;margin:0 -6px;padding:3px 6px!important;transition:background .1s;}
+.att-row[onclick]:hover{background:var(--off);}
+/* Toasts: icon + message read as one unit */
+.cc-toast{display:flex;align-items:center;gap:9px;border-radius:9px;padding:11px 16px;}
+.cc-toast .tst-ico{font-size:15px;flex-shrink:0;line-height:1;}
 </style>
 </head>
 <body>
@@ -2186,6 +2225,7 @@ input[type=text],input[type=number],input[type=date],textarea{font-family:var(--
       <span class="gs-kbd">esc</span>
     </div>
     <div id="gs-results"><div class="gs-empty">Type to search across everything, or click <i class="ti ti-star" style="color:#E6A700;vertical-align:-1px;"></i> for starred items.</div></div>
+    <div class="gs-foot"><span><kbd>↑↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span><kbd>esc</kbd> close</span><span class="gs-count" id="gs-foot-count"></span></div>
   </div>
 </div>
 
@@ -2426,8 +2466,16 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.29.0';
+const APP_VERSION='2.30.0';
 const CHANGELOG=[
+  {version:'2.30.0',date:'13 Jul 2026',title:'Search glow-up, skeleton loading, dashboard attention cards',items:[
+    'Global Search (⌘K) redesigned: colour-coded category icons (jobs red, clients slate, invoices plum, quotes amber), a red accent marks the selected row, and a footer shows keyboard hints plus a live result count. Special characters in results no longer break the list.',
+    'Jobs list now loads with shimmering skeleton rows shaped like the real table instead of a spinner — the page reads as itself while Streamtime syncs.',
+    'Dashboard "Needs attention" cards each get an identity: a tinted icon, uppercase title and count pill, with rows that highlight on hover where they\'re clickable.',
+    'Toasts now carry a status icon (tick, warning, info) so the colour isn\'t doing all the work.',
+    'The app finally has a proper identity in your browser: the tab says "C&C Platform" with a red C&C favicon — no more generic blank tab.',
+    'Depth pass: primary buttons get a subtle pressed-metal shadow, all thin progress bars step up to rounded 4px tracks, calendar event chips soften, and the text caret is brand red everywhere.',
+  ]},
   {version:'2.29.0',date:'13 Jul 2026',title:'Bug audit + design pass — sharper, calmer, more alive',items:[
     'Fixed: every "due in N days" badge was one day high (a job due today said "1d", tomorrow said "2d") — date-only values were being parsed as UTC, which in NZ shifts them half a day. Dashboard Needs-attention cards, overdue counts and the job header badge now agree with the calendar.',
     'Fixed: special characters in Streamtime task titles, job names and expense names could break rendering on the To Do board, Dashboard, Schedule, Expenses and Invoices — the remaining unescaped render sites from the v2.24 pass are now covered.',
@@ -3287,7 +3335,12 @@ function _mapStCompany(c,contacts){
 }
 async function initStreamtime(silent){
   const tb=document.getElementById('jobs-tbody');
-  if(tb&&!silent)tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted);font-size:13px;"><i class="ti ti-loader" style="font-size:18px;display:block;margin:0 auto 8px;"></i>Loading from Streamtime…</td></tr>`;
+  // Skeleton rows while the ST fetch is in flight — reads as the table it will become,
+  // not a spinner. Widths vary per row so the shimmer doesn't look like a grid of pills.
+  if(tb&&!silent)tb.innerHTML=Array.from({length:8},(_,i)=>{
+    const w=[72,54,63,80,58,68,50,75][i];
+    return`<tr style="pointer-events:none;"><td style="padding:14px 18px;"></td><td style="padding:14px 18px;"><span class="skel" style="width:${w}%;"></span><br><span class="skel" style="width:${Math.round(w*.45)}%;height:9px;margin-top:5px;"></span></td><td style="padding:14px 18px;"><span class="skel" style="width:60%;"></span></td><td style="padding:14px 18px;"><span class="skel" style="width:85%;"></span></td><td style="padding:14px 18px;"><span class="skel" style="width:70%;"></span></td><td style="padding:14px 18px;"><span class="skel" style="width:45%;"></span></td><td style="padding:14px 18px;"><span class="skel" style="width:56%;height:18px;border-radius:10px;"></span></td></tr>`;
+  }).join('');
   try{
     const _v='?v='+Date.now();
     const [jobsRes,coRes,ltRes,invRes,qtRes,usersRes,ctRes,expRes,assignRes,msRes,schedRes]=await Promise.all([
@@ -3662,15 +3715,22 @@ function renderDashboard(){
   // Quiet clients: had jobs before, but nothing in play now
   const _coAll={};jobs.forEach(j=>{if(!j.company)return;(_coAll[j.company]=_coAll[j.company]||{total:0,live:0}); _coAll[j.company].total++; if(j.status==='inplay')_coAll[j.company].live++;});
   const quietClients=Object.entries(_coAll).filter(([,v])=>v.total>=2&&v.live===0).map(([co,v])=>({label:co,meta:`${v.total} past`,jid:null})).slice(0,10);
-  const _attCard=(title,items,color)=>items.length?`<div style="flex:1;min-width:220px;background:var(--white);border:1px solid var(--border);border-left:3px solid ${color};border-radius:12px;padding:14px 16px;box-shadow:var(--shadow-s);"><div style="font-size:11px;font-weight:600;margin-bottom:8px;">${title} <span style="color:var(--muted);font-weight:400;">${items.length}</span></div>${items.map(x=>`<div style="font-size:12px;padding:3px 0;display:flex;justify-content:space-between;gap:10px;cursor:${x.jid?'pointer':'default'};" ${x.jid?`onclick="openJobDetail('${x.jid}')"`:''}><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.label}</span><span style="color:${color};flex-shrink:0;">${x.meta}</span></div>`).join('')}</div>`:'';
+  const _attCard=(title,items,color,icon)=>items.length?`<div style="flex:1;min-width:220px;background:var(--white);border:1px solid var(--border);border-left:3px solid ${color};border-radius:12px;padding:13px 15px;box-shadow:var(--shadow-s);">
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:9px;">
+      ${icon?`<span style="width:22px;height:22px;border-radius:7px;background:color-mix(in srgb,${color} 11%,white);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="ti ${icon}" style="font-size:12px;color:${color};"></i></span>`:''}
+      <span style="font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink);">${title}</span>
+      <span style="margin-left:auto;font-size:10px;font-weight:600;color:var(--muted);background:var(--off);border:1px solid var(--faint);border-radius:10px;padding:1px 8px;">${items.length}</span>
+    </div>
+    ${items.map(x=>`<div class="att-row" style="font-size:12px;display:flex;justify-content:space-between;gap:10px;cursor:${x.jid?'pointer':'default'};" ${x.jid?`onclick="openJobDetail('${x.jid}')"`:''}><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.label}</span><span style="color:${color};flex-shrink:0;font-variant-numeric:tabular-nums;">${x.meta}</span></div>`).join('')}
+  </div>`:'';
   const dh=people[MY_PERSON].dashHide||[];const _show=k=>!dh.includes(k);
   const deadlinesHTML=_show('deadlines')?[
-    _attCard('Jobs due / overdue',dueJobs.map(j=>({label:`${j.id} ${esc(j.name)}`,meta:_inDays(j.dueDate)<0?`${-_inDays(j.dueDate)}d over`:_inDays(j.dueDate)===0?'today':`${_inDays(j.dueDate)}d`,jid:j.id})),'#E65100'),
-    _attCard('Deadline risk',riskJobs,'#D81B60'),
-    _attCard('Overdue invoices',overdueInv.map(i=>({label:esc(i.company?.name||i.jobName||'—'),meta:`${-_inDays(i.dueDate)}d`,jid:null})),'var(--red)'),
-    _attCard('Quotes awaiting response',awaitingQuotes.map(q=>({label:esc(q.company||q.jobName||(q.jobNumber?'Job '+q.jobNumber:q.quoteName)||'—'),meta:`${-_inDays(q.sentDate)}d`,jid:null})),'#6B7FA3'),
-    _attCard('Uninvoiced work',uninvoiced.map(j=>({label:`${j.id} ${esc(j.name)}`,meta:'$'+Math.round((j._sellUsed||0)-(j._stInvoiced||0)).toLocaleString(),jid:j.id})),'#9C6FD6'),
-    _attCard('Quiet clients',quietClients.map(c=>({...c,label:esc(c.label)})),'#888888'),
+    _attCard('Jobs due / overdue',dueJobs.map(j=>({label:`${j.id} ${esc(j.name)}`,meta:_inDays(j.dueDate)<0?`${-_inDays(j.dueDate)}d over`:_inDays(j.dueDate)===0?'today':`${_inDays(j.dueDate)}d`,jid:j.id})),'#E65100','ti-flag'),
+    _attCard('Deadline risk',riskJobs,'#D81B60','ti-alert-triangle'),
+    _attCard('Overdue invoices',overdueInv.map(i=>({label:esc(i.company?.name||i.jobName||'—'),meta:`${-_inDays(i.dueDate)}d`,jid:null})),'#C62828','ti-file-invoice'),
+    _attCard('Quotes awaiting response',awaitingQuotes.map(q=>({label:esc(q.company||q.jobName||(q.jobNumber?'Job '+q.jobNumber:q.quoteName)||'—'),meta:`${-_inDays(q.sentDate)}d`,jid:null})),'#6B7FA3','ti-file-text'),
+    _attCard('Uninvoiced work',uninvoiced.map(j=>({label:`${j.id} ${esc(j.name)}`,meta:'$'+Math.round((j._sellUsed||0)-(j._stInvoiced||0)).toLocaleString(),jid:j.id})),'#9C6FD6','ti-coin'),
+    _attCard('Quiet clients',quietClients.map(c=>({...c,label:esc(c.label)})),'#888888','ti-moon'),
   ].filter(Boolean).join(''):'';
   wrap.innerHTML=`
     <div style="margin-bottom:28px;">
@@ -8470,7 +8530,8 @@ function createJob(){
 function toast(msg,type='info',duration=3200){
   const t=document.createElement('div');
   t.className='cc-toast'+(type!=='info'?' toast-'+type:'');
-  t.innerHTML=msg; // supports HTML for undo links
+  const ico={success:'ti-circle-check',error:'ti-alert-triangle',warn:'ti-alert-circle',info:'ti-info-circle'}[type]||'ti-info-circle';
+  t.innerHTML=`<i class="ti ${ico} tst-ico"></i><span>${msg}</span>`; // msg supports HTML for undo links
   document.body.appendChild(t);
   setTimeout(()=>t.classList.add('on'),10);
   setTimeout(()=>{t.classList.remove('on');setTimeout(()=>t.remove(),320);},duration);
@@ -9758,21 +9819,25 @@ function runGlobalSearch(q){
   _gsResults=out.slice(0,30);_gsSel=0;
   renderGsResults(q);
 }
+const _GS_CAT_CLS={'Jobs':'gsc-jobs','Clients':'gsc-clients','Tasks':'gsc-tasks','Invoices':'gsc-invoices','Quotes':'gsc-quotes','Job plan items':'gsc-items','Starred':'gsc-quotes'};
 function renderGsResults(q){
   const el=document.getElementById('gs-results');
+  const foot=document.getElementById('gs-foot-count');
   if(!_gsResults.length){
-    el.innerHTML=`<div class="gs-empty">${q?'No matches for “'+q+'”.':'Type to search across everything.'}</div>`;
+    el.innerHTML=`<div class="gs-empty">${q?'No matches for “'+esc(q)+'”.':'Type to search across everything.'}</div>`;
+    if(foot)foot.textContent='';
     return;
   }
   let html='',lastCat='';
   _gsResults.forEach((r,i)=>{
     if(r.cat!==lastCat){html+=`<div class="gs-cat">${r.cat}</div>`;lastCat=r.cat;}
     html+=`<div class="gs-item${i===_gsSel?' sel':''}" onclick="gsGo(${i})" onmousemove="_gsSel=${i};renderGsResults(document.getElementById('gs-inp').value)">
-      <div class="gs-ico"><i class="ti ${r.icon}"></i></div>
-      <div style="flex:1;min-width:0;"><div class="gs-t">${r.title}</div><div class="gs-s">${r.sub}</div></div>
+      <div class="gs-ico ${_GS_CAT_CLS[r.cat]||''}"><i class="ti ${r.icon}"></i></div>
+      <div style="flex:1;min-width:0;"><div class="gs-t">${esc(r.title)}</div><div class="gs-s">${esc(r.sub)}</div></div>
     </div>`;
   });
   el.innerHTML=html;
+  if(foot)foot.textContent=`${_gsResults.length} result${_gsResults.length!==1?'s':''}`;
   el.querySelector('.gs-item.sel')?.scrollIntoView({block:'nearest'});
 }
 function gsGo(i){
