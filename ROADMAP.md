@@ -1,6 +1,6 @@
 # C&C Platform — Roadmap
 
-*Last updated 2 Jul 2026 · v2.28.0*
+*Last updated 13 Jul 2026 · v2.29.0*
 
 ---
 
@@ -75,6 +75,8 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 | Xero push for natively-created invoices | The local creation half (deposit/split invoices) shipped v2.20.4; the Xero push half needs real Xero API write credentials — a business/access task, not a coding one |
 | @mentions + notifications | Needs a real-time backend (websockets/polling server) — not buildable on the static localStorage architecture |
 | Real durable backend for all `db*` writes | The actual size of the Phase 2→3 jump — see "What's blocking Phase 3" above. Every other Phase 2 feature is UI-complete and just needs its stub swapped once this exists |
+
+**Shipped (v2.29.0):** Bug audit + design pass. Fixes: UTC-parse off-by-one on every "due in N days" badge (NZ timezone), remaining unescaped ST-text render sites (To Do cards, Dashboard, Schedule, Expenses, Invoices), mood check-in "Skip this week" now persists. Design: one radius language across all remaining square-cornered surfaces, motion system (modal spring-in, KPI bar fill, staggered dashboard cards, button press, card hover lift, reduced-motion respected), task-card text fade-out instead of mid-line clipping, full Chart.js theme (rounded bars, faint grid, dark tooltips, ring doughnuts, Inter labels), Schedule standard header + calm person pills.
 
 **Shipped (v2.28.0):** Progress+Profitability merged into one job-detail view, combined start→due dates pill with two-field popover, 5-minute todo resize floor (was 15m), focus-ring fix on text fields, brief textarea padding, letter-spacing modernisation, task-card surface polish.
 

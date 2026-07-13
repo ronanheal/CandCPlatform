@@ -1335,6 +1335,50 @@ input[type=text],input[type=number],input[type=date],textarea{font-family:var(--
 *::-webkit-scrollbar-track{background:transparent;}
 *::-webkit-scrollbar-thumb{background:#D6D1C6;border-radius:6px;border:2.5px solid var(--off);}
 *::-webkit-scrollbar-thumb:hover{background:#BFB9AC;}
+
+/* ══ v2.29 — ONE radius language everywhere (consolidated overrides; the individual
+   rules above predate the surface system and carried 0/2/3/4px radii ad hoc) ══ */
+.d-action,.p-btn,.wbtn,.save-b,.cancel-b,.modal-cancel,.modal-ok,.modal-save,
+.field input,.field select,.field textarea,.jobs-search input,.i-sel,.i-hi,
+.r-export-btn,.cal-nav-btn,.cal-today-btn,.inv-act,.r-date-filter select,.r-date-filter input,
+.r-filter-row select,.r-filter-row input,.cal-filters select,.quick-add input,.quick-add button,
+.tm-field-sel,.td-item-btn,.ps-search-inp{border-radius:var(--r-ctl);}
+.day-add-btn,.sf-btn{border-radius:6px;}
+.ctx,.pctx,.ps-menu,.cal-popup,.vsp,.add-card-menu,.task-ctx-menu,.tm-assign-menu,.create-item-wrap>div[id]{border-radius:10px;}
+.board-card,.bdet-card,.client-card,.sched-card{border-radius:10px;}
+.board-col,.bdet-col{border-radius:12px;}
+.board-list-card,.r-card,.r-p-card,.r-person-card,.r-client-card,.client-card-full,.pboard-lane,.exp-sec{border-radius:var(--r-card);}
+.cd-job-row{border-radius:8px;}
+.tm-modal,.cl-modal,.inv-modal,.cb-modal{border-radius:14px;}
+.fup-card{border-radius:12px;}
+.phase{border-radius:9px;overflow:hidden;}
+.todo-banner{border-radius:0;}
+
+/* ══ v2.29 — Motion system: entrances, presses, lifts (calm, fast, consistent) ══ */
+@keyframes ccModalIn{from{opacity:0;transform:translateY(10px) scale(.98);}to{opacity:1;transform:none;}}
+.modal-bg.on .modal,.modal-bg.on .tm-modal,.modal-bg.on .cl-modal,
+.cb-overlay.on .cb-modal,.gs-bg.on .gs-panel,.inv-bg.on .inv-modal{animation:ccModalIn .22s cubic-bezier(.16,1,.3,1);}
+@keyframes ccFillIn{from{transform:scaleX(0);}to{transform:scaleX(1);}}
+.kpi-bar-fill,.r-kpi-fill{transform-origin:left;animation:ccFillIn .8s cubic-bezier(.22,1,.36,1);}
+.kpi-row .kpi{animation:viewIn .3s ease backwards;}
+.kpi-row .kpi:nth-child(2){animation-delay:.05s;}
+.kpi-row .kpi:nth-child(3){animation-delay:.1s;}
+/* Press feedback on every primary control */
+.tb-btn:active,.d-action:active,.p-btn:active,.modal-ok:active,.modal-save:active,
+.tm-btn-save:active,.save-b:active,.cb-create-btn:active,.inv-act:active,.wbtn:active,
+.cal-today-btn:active,.r-export-btn:active{transform:translateY(1px) scale(.985);}
+/* Hover lift on clickable cards — shadow already deepens; the 2px rise sells it */
+.team-card,.board-list-card,.tm-card,.client-card-full,.r-client-card,.board-card,.cd-job-row{transition:box-shadow .18s,border-color .15s,transform .18s;}
+.team-card:hover,.board-list-card:hover,.tm-card:hover,.client-card-full:hover,.r-client-card:hover,.board-card:hover,.cd-job-row:hover{transform:translateY(-2px);}
+::selection{background:rgba(237,30,36,.14);}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;}}
+
+/* ══ v2.29 — Task cards: clipped text fades out instead of chopping mid-line.
+   Cards are proportional-height (sacred), so overflow is by design — the fade makes it
+   read as intentional. --card-bg keeps the gradient correct on done (green) cards. ══ */
+.task-card{position:relative;--card-bg:var(--white);}
+.task-card.done-c{--card-bg:var(--done);}
+.task-card::after{content:'';position:absolute;left:1px;right:1px;bottom:0;height:14px;background:linear-gradient(180deg,transparent,var(--card-bg) 82%);pointer-events:none;border-radius:0 0 8px 8px;}
 </style>
 </head>
 <body>
@@ -2226,6 +2270,15 @@ function clientNameOptions(){
 // and time-entry notes come from outside the platform; a stray < or " otherwise breaks
 // rendering (and is a stored-XSS vector via the activity log).
 function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+// Parse a date-only string ("YYYY-MM-DD") as LOCAL midnight. new Date('2026-07-13') parses
+// as UTC midnight, which in NZ (UTC+12/13) lands at midday local — so day-difference math
+// (due-in-N-days badges) came out one day high for every future date. Full ISO datetimes
+// and Date objects pass through unchanged.
+function _pDate(s){
+  if(!s)return null;
+  if(typeof s==='string'&&/^\d{4}-\d{2}-\d{2}/.test(s)&&s.length<=10){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
+  return new Date(s);
+}
 // Collision-proof id minting (Date.now() alone collides within one ms)
 let _uidN=0;
 function uid(prefix){return (prefix||'')+Date.now().toString(36)+(_uidN++).toString(36)+Math.random().toString(36).slice(2,6);}
@@ -2373,8 +2426,18 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.28.0';
+const APP_VERSION='2.29.0';
 const CHANGELOG=[
+  {version:'2.29.0',date:'13 Jul 2026',title:'Bug audit + design pass — sharper, calmer, more alive',items:[
+    'Fixed: every "due in N days" badge was one day high (a job due today said "1d", tomorrow said "2d") — date-only values were being parsed as UTC, which in NZ shifts them half a day. Dashboard Needs-attention cards, overdue counts and the job header badge now agree with the calendar.',
+    'Fixed: special characters in Streamtime task titles, job names and expense names could break rendering on the To Do board, Dashboard, Schedule, Expenses and Invoices — the remaining unescaped render sites from the v2.24 pass are now covered.',
+    'Fixed: "Skip this week" on the mood check-in now actually skips the week instead of re-asking on every page load.',
+    'To Do board: when a task card is too small for its text, the text now fades out gently at the card edge instead of being chopped mid-line.',
+    'Reporting: all charts get a proper design system — rounded slimmer bars, whisper-faint gridlines, no axis chrome, dark rounded tooltips, ring-style doughnuts and dot legends, all in the house type.',
+    'Schedule: standard view header like every other section, and the person filter pills are calmer — colour lives only in the avatar, selection reads as a clean ink outline.',
+    'One radius language everywhere: menus, boards, cards, modals and controls that still carried square or 2px corners now sit on the same rounded surface system as the rest of the app.',
+    'Motion system: modals and search rise in with a soft spring, KPI bars fill on load, dashboard cards stagger in, buttons press down, clickable cards lift on hover — all subtle, all instant, and fully disabled if your OS asks for reduced motion.',
+  ]},
   {version:'2.28.0',date:'2 Jul 2026',title:'Merged Progress view, one dates control, finer scheduling',items:[
     'Job detail: Progress and Profitability are now one view — progress bars, the time table, and the full profitability breakdown (revenue vs cost vs margin) in a single scroll.',
     'Job header: the two Set start date / Set due date pills are now one dates control — it shows the range ("1 Sep → 30 Sep"), and clicking opens a small panel to set both dates at once. Overdue still shows red.',
@@ -3497,7 +3560,7 @@ function renderDashboard(){
     return`<div class="my-todo-item" onclick="navTo('todo')">
       <div class="todo-check${isDone?' done-c':isUrgent?' urg-c':''}">${isDone?'<i class="ti ti-check" style="font-size:9px;color:var(--done-ink);"></i>':''}</div>
       <div style="flex:1;min-width:0;">
-        <div style="${isDone?'text-decoration:line-through;opacity:.5;':''}font-size:13px;">${t.title}</div>
+        <div style="${isDone?'text-decoration:line-through;opacity:.5;':''}font-size:13px;">${esc(t.title)}</div>
         ${metaArr.length?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${metaArr.join(' · ')}</div>`:''}
       </div>
       ${isUrgent?`<div class="todo-meta" style="color:var(--red);flex-shrink:0;">Urgent</div>`:''}
@@ -3511,7 +3574,7 @@ function renderDashboard(){
     const doneH=tdone.reduce((s,t)=>s+(t.hours||0),0);const todoH=ttodo.reduce((s,t)=>s+(t.hours||0),0);
     // Show to-dos first, then done, so planned work is visible at a glance
     const ordered=[...ttodo,...tdone];
-    const taskBlocks=ordered.slice(0,5).map(t=>`<div class="tc-block ${t.done?'done':t.urgent?'urgent':'todo'}">${t.title}${t.hours?' — '+formatHrs(t.hours):''}</div>`).join('');
+    const taskBlocks=ordered.slice(0,5).map(t=>`<div class="tc-block ${t.done?'done':t.urgent?'urgent':'todo'}">${esc(t.title)}${t.hours?' — '+formatHrs(t.hours):''}</div>`).join('');
     const urgCnt=ttodo.filter(t=>t.urgent).length;
     const totalBooked=todoH+doneH;
     return`<div class="team-card" onclick="viewTeamTodo('${k}')">
@@ -3576,11 +3639,11 @@ function renderDashboard(){
   }).filter(Boolean).join('');
   // ── Needs attention: deadlines, overdue invoices, quotes awaiting response, uninvoiced ──
   const _t0=new Date();_t0.setHours(0,0,0,0);
-  const _inDays=d=>Math.round((new Date(d)-_t0)/86400000);
+  const _inDays=d=>Math.round((_pDate(d)-_t0)/86400000);
   const _fmtDay=d=>{const x=new Date(d);return`${x.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][x.getMonth()]}`;};
   const _liveJobs=jobs.filter(j=>j.status==='inplay');
   const dueJobs=_liveJobs.filter(j=>j.dueDate&&_inDays(j.dueDate)<=7).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate)).slice(0,12);
-  const overdueInv=(stInvoices||[]).filter(i=>{const s=(i.invoiceStatus?.name||'').toLowerCase();return i.dueDate&&new Date(i.dueDate)<_t0&&s!=='paid'&&s!=='voided';}).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate)).slice(0,12);
+  const overdueInv=(stInvoices||[]).filter(i=>{const s=(i.invoiceStatus?.name||'').toLowerCase();return i.dueDate&&_pDate(i.dueDate)<_t0&&s!=='paid'&&s!=='voided';}).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate)).slice(0,12);
   const awaitingQuotes=(stQuotes||[]).filter(q=>{const s=(typeof q.quoteStatus==='string'?q.quoteStatus:q.quoteStatus?.name||'').toLowerCase();return s.includes('pending')&&q.sentDate&&_inDays(q.sentDate)<=-7;}).sort((a,b)=>new Date(a.sentDate)-new Date(b.sentDate)).slice(0,12);
   const uninvoiced=_liveJobs.filter(j=>(j._sellUsed||0)-(j._stInvoiced||0)>=500&&(j._bPct||0)>=80).sort((a,b)=>((b._sellUsed||0)-(b._stInvoiced||0))-((a._sellUsed||0)-(a._stInvoiced||0))).slice(0,10);
   // Deadline risk: live jobs not yet overdue, but whose remaining planned hours can't
@@ -3594,7 +3657,7 @@ function renderDashboard(){
     const wdLeft=Math.max(1,Math.round(dleft*5/7));
     const needPerDay=(remMins/60)/wdLeft;
     if(needPerDay<=6)return null;
-    return{label:`${j.id} ${j.name}`,meta:`${Math.round(remMins/60)}h in ${dleft}d`,jid:j.id,_need:needPerDay};
+    return{label:`${j.id} ${esc(j.name)}`,meta:`${Math.round(remMins/60)}h in ${dleft}d`,jid:j.id,_need:needPerDay};
   }).filter(Boolean).sort((a,b)=>b._need-a._need).slice(0,10);
   // Quiet clients: had jobs before, but nothing in play now
   const _coAll={};jobs.forEach(j=>{if(!j.company)return;(_coAll[j.company]=_coAll[j.company]||{total:0,live:0}); _coAll[j.company].total++; if(j.status==='inplay')_coAll[j.company].live++;});
@@ -3602,12 +3665,12 @@ function renderDashboard(){
   const _attCard=(title,items,color)=>items.length?`<div style="flex:1;min-width:220px;background:var(--white);border:1px solid var(--border);border-left:3px solid ${color};border-radius:12px;padding:14px 16px;box-shadow:var(--shadow-s);"><div style="font-size:11px;font-weight:600;margin-bottom:8px;">${title} <span style="color:var(--muted);font-weight:400;">${items.length}</span></div>${items.map(x=>`<div style="font-size:12px;padding:3px 0;display:flex;justify-content:space-between;gap:10px;cursor:${x.jid?'pointer':'default'};" ${x.jid?`onclick="openJobDetail('${x.jid}')"`:''}><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.label}</span><span style="color:${color};flex-shrink:0;">${x.meta}</span></div>`).join('')}</div>`:'';
   const dh=people[MY_PERSON].dashHide||[];const _show=k=>!dh.includes(k);
   const deadlinesHTML=_show('deadlines')?[
-    _attCard('Jobs due / overdue',dueJobs.map(j=>({label:`${j.id} ${j.name}`,meta:_inDays(j.dueDate)<0?`${-_inDays(j.dueDate)}d over`:_inDays(j.dueDate)===0?'today':`${_inDays(j.dueDate)}d`,jid:j.id})),'#E65100'),
+    _attCard('Jobs due / overdue',dueJobs.map(j=>({label:`${j.id} ${esc(j.name)}`,meta:_inDays(j.dueDate)<0?`${-_inDays(j.dueDate)}d over`:_inDays(j.dueDate)===0?'today':`${_inDays(j.dueDate)}d`,jid:j.id})),'#E65100'),
     _attCard('Deadline risk',riskJobs,'#D81B60'),
-    _attCard('Overdue invoices',overdueInv.map(i=>({label:`${i.company?.name||i.jobName||'—'}`,meta:`${-_inDays(i.dueDate)}d`,jid:null})),'var(--red)'),
-    _attCard('Quotes awaiting response',awaitingQuotes.map(q=>({label:`${q.company||q.jobName||(q.jobNumber?'Job '+q.jobNumber:q.quoteName)||'—'}`,meta:`${-_inDays(q.sentDate)}d`,jid:null})),'#6B7FA3'),
-    _attCard('Uninvoiced work',uninvoiced.map(j=>({label:`${j.id} ${j.name}`,meta:'$'+Math.round((j._sellUsed||0)-(j._stInvoiced||0)).toLocaleString(),jid:j.id})),'#9C6FD6'),
-    _attCard('Quiet clients',quietClients,'#888888'),
+    _attCard('Overdue invoices',overdueInv.map(i=>({label:esc(i.company?.name||i.jobName||'—'),meta:`${-_inDays(i.dueDate)}d`,jid:null})),'var(--red)'),
+    _attCard('Quotes awaiting response',awaitingQuotes.map(q=>({label:esc(q.company||q.jobName||(q.jobNumber?'Job '+q.jobNumber:q.quoteName)||'—'),meta:`${-_inDays(q.sentDate)}d`,jid:null})),'#6B7FA3'),
+    _attCard('Uninvoiced work',uninvoiced.map(j=>({label:`${j.id} ${esc(j.name)}`,meta:'$'+Math.round((j._sellUsed||0)-(j._stInvoiced||0)).toLocaleString(),jid:j.id})),'#9C6FD6'),
+    _attCard('Quiet clients',quietClients.map(c=>({...c,label:esc(c.label)})),'#888888'),
   ].filter(Boolean).join(''):'';
   wrap.innerHTML=`
     <div style="margin-bottom:28px;">
@@ -3654,7 +3717,7 @@ function _buildHappinessModal(){
       </div>
       <textarea id="hp-note" placeholder="Anything you want to flag? (optional)" rows="2" style="width:100%;border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-family:inherit;font-size:12px;resize:vertical;"></textarea>
     </div>
-    <div class="modal-ft"><button class="modal-cancel" onclick="dismissHappinessPrompt()">Skip this week</button><button class="modal-save" id="hp-submit-btn" onclick="submitHappiness('${MY_PERSON}')" disabled>Submit</button></div>
+    <div class="modal-ft"><button class="modal-cancel" onclick="skipHappinessWeek('${MY_PERSON}')">Skip this week</button><button class="modal-save" id="hp-submit-btn" onclick="submitHappiness('${MY_PERSON}')" disabled>Submit</button></div>
   </div>`;
   document.body.appendChild(m);
 }
@@ -3674,6 +3737,16 @@ function _selectHappinessFace(v){
   const btn=document.getElementById('hp-submit-btn');if(btn)btn.disabled=false;
 }
 function dismissHappinessPrompt(){document.getElementById('happiness-modal')?.remove();_hpSelectedFace=null;}
+// "Skip this week" previously only closed the modal, so it re-asked on every page load all
+// week. Record the skip (score:null) so maybeShowHappinessPrompt treats the week as answered.
+function skipHappinessWeek(personKey){
+  const wk=getWeekKey(0);
+  const log=_getHappinessLog();
+  if(!log[personKey])log[personKey]={};
+  log[personKey][wk]={score:null,skipped:true,ts:Date.now()};
+  _setHappinessLog(log);
+  dismissHappinessPrompt();
+}
 function submitHappiness(personKey){
   if(!_hpSelectedFace)return;
   const wk=getWeekKey(0);
@@ -3695,7 +3768,7 @@ function renderHappinessTrend(personKey){
     const d=new Date(wk+'T12:00:00');
     const lbl=`${d.getDate()}/${d.getMonth()+1}`;
     return`<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;">
-      <div style="font-size:18px;opacity:${e?1:.25};">${e?FACE_EMOJI[e.score]:'·'}</div>
+      <div style="font-size:18px;opacity:${e?.score?1:.25};">${e?.score?FACE_EMOJI[e.score]:'·'}</div>
       <div style="font-size:9px;color:var(--muted);">${lbl}</div>
     </div>`;
   }).join('');
@@ -3777,9 +3850,9 @@ function renderSchedule(){
   const peoplePicker=`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
     ${allPeople.map(k=>{
       const p=people[k];const on=selected.includes(k);
-      return`<div onclick="toggleSchedulePerson('${k}')" title="${p.name}" style="cursor:pointer;display:flex;align-items:center;gap:5px;padding:3px 8px 3px 4px;border-radius:14px;border:1px solid ${on?p.color:'var(--border)'};background:${on?p.color+'14':'var(--off)'};opacity:${on?1:.55};">
+      return`<div onclick="toggleSchedulePerson('${k}')" title="${p.name}" style="cursor:pointer;display:flex;align-items:center;gap:5px;padding:3px 9px 3px 4px;border-radius:14px;border:1px solid ${on?'var(--ink)':'var(--border)'};background:${on?'var(--white)':'transparent'};opacity:${on?1:.5};box-shadow:${on?'var(--shadow-s)':'none'};transition:opacity .12s,border-color .12s;">
         <div style="width:18px;height:18px;border-radius:50%;background:${p.color||'#999'};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;color:#fff;flex-shrink:0;">${p.initials||'?'}</div>
-        <span style="font-size:11px;">${p.name.split(' ')[0]}</span>
+        <span style="font-size:11px;font-weight:${on?'500':'400'};">${p.name.split(' ')[0]}</span>
       </div>`;
     }).join('')}
     <button class="d-action" style="font-size:11px;" onclick="toggleScheduleAllPeople()">${selected.length===allPeople.length?'Deselect all':'Select all'}</button>
@@ -3806,7 +3879,7 @@ function renderSchedule(){
             onclick="toggleScheduleTaskDone('${k}',${dayN},'${t.id}')"
             ${jobIdNum?`oncontextmenu="event.preventDefault();openJobDetail('${jobIdNum}')"`:''}
             title="${(t.title||'').replace(/"/g,'&quot;')}${jobIdNum?' — right-click to open job':''}">
-          <span class="sched-card-t">${t.title||'Task'}</span>
+          <span class="sched-card-t">${esc(t.title)||'Task'}</span>
           ${t.hours?`<span class="sched-card-h">${formatHrs(t.hours)}</span>`:''}
         </div>`;
       }).join('');
@@ -3827,8 +3900,8 @@ function renderSchedule(){
     </tr>`;
   }).join('');
   el.innerHTML=`
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
-      <div style="font-size:20px;font-weight:600;">Schedule</div>
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+      <div><div class="view-title">Schedule</div><div class="view-sub">Team week at a glance</div></div>
       <div style="display:flex;align-items:center;gap:8px;">
         <button class="wbtn" onclick="weekOffset--;renderSchedule()"><i class="ti ti-chevron-left" style="font-size:13px;"></i></button>
         <span style="font-size:13px;color:var(--muted);">${weekRange}</span>
@@ -3885,7 +3958,7 @@ function renderExpensesList(){
       const statusCls=e.status.includes('approved')?'color:#2E7D32':'color:var(--muted)';
       return`<tr style="cursor:${e.jobId?'pointer':'default'};border-bottom:1px solid var(--faint);" ${e.jobId?`onclick="openExpenseDetail('${e.id}','${e._st?'st':'local'}','${e.jobId}')"`:''}>
         <td style="padding:10px 14px;color:var(--muted);">${e.date?.slice(0,10)||'—'}</td>
-        <td style="padding:10px 14px;font-weight:500;">${e.name}${stBadge}</td>
+        <td style="padding:10px 14px;font-weight:500;">${esc(e.name)}${stBadge}</td>
         <td style="padding:10px 14px;"><div style="font-size:12px;">${e.jobId?e.jobId+' ':''}<span style="color:var(--muted);">${e.company}</span></div></td>
         <td style="padding:10px 14px;text-align:right;">${e.cost>0?'$'+e.cost.toLocaleString():'—'}</td>
         <td style="padding:10px 14px;text-align:right;">${e.sell>0?'$'+e.sell.toLocaleString():'—'}</td>
@@ -3922,7 +3995,7 @@ function openExpenseDetail(expId,source,jobId){
   const m=document.createElement('div');m.className='modal-bg on';m.id='exp-detail-modal';
   const dis=canEdit?'':'disabled style="background:var(--off);color:var(--muted);"';
   m.innerHTML=`<div class="modal" style="max-width:560px;">
-    <div class="modal-hd"><span class="modal-hd-title">Expense — <span style="font-weight:400;color:var(--muted);">${j.name}</span></span><button class="modal-x" onclick="document.getElementById('exp-detail-modal').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-hd"><span class="modal-hd-title">Expense — <span style="font-weight:400;color:var(--muted);">${esc(j.name)}</span></span><button class="modal-x" onclick="document.getElementById('exp-detail-modal').remove()"><i class="ti ti-x"></i></button></div>
     <div class="modal-bd">
       <div class="field-row">
         <div class="field" style="flex:2;"><label>Description</label><input id="ed-desc" class="form-inp" value="${(e.desc||e.description||'').replace(/"/g,'&quot;')}" style="width:100%;" ${dis}></div>
@@ -4014,7 +4087,7 @@ function deleteExpenseDetail(expId,jobId){
 function openLogExpense(prefillJobId){
   document.getElementById('log-exp-modal')?.remove();
   const m=document.createElement('div');m.className='modal-bg on';m.id='log-exp-modal';
-  const jobOpts=jobs.filter(j=>j.status==='inplay').map(j=>`<option value="${j.id}" ${j.id===prefillJobId?'selected':''}>${j.id} ${j.name}</option>`).join('');
+  const jobOpts=jobs.filter(j=>j.status==='inplay').map(j=>`<option value="${j.id}" ${j.id===prefillJobId?'selected':''}>${j.id} ${esc(j.name)}</option>`).join('');
   m.innerHTML=`<div class="modal" style="max-width:440px;">
     <div class="modal-hd"><span class="modal-hd-title">Add expense</span><button class="modal-x" onclick="document.getElementById('log-exp-modal').remove()"><i class="ti ti-x"></i></button></div>
     <div class="modal-bd" style="padding:20px;display:flex;flex-direction:column;gap:14px;">
@@ -4194,7 +4267,7 @@ function _buildCalDayBlocks(tasksForDay,d,showDone){
       ondragend="calDragEnd(event)"
       onclick="openEditTodoById('${t.id}',${d})"
       oncontextmenu="event.preventDefault();showTaskContextMenu(event,window._calTaskMap['${t.id}'],${d})">
-      <div class="ctb-title" style="${titleStyle}">${t.title}${(t.repeat||t.repeatGroup)?' <i class="ti ti-repeat" style="font-size:9px;opacity:.6;"></i>':''}</div>
+      <div class="ctb-title" style="${titleStyle}">${esc(t.title)}${(t.repeat||t.repeatGroup)?' <i class="ti ti-repeat" style="font-size:9px;opacity:.6;"></i>':''}</div>
       ${_calShowHours&&heightPx>36?`<div class="ctb-hrs">${t.hours?formatHrs(t.hours):''}</div>`:''}
       ${showJob?`<div class="ctb-job">${jobName}</div>`:''}
       ${isDone?'':'<div class="ctb-resize" onmousedown="calResizeStart(event,\''+t.id+'\','+d+')" onclick="event.stopPropagation()"></div>'}
@@ -4300,7 +4373,7 @@ function renderTodoCalendar(){
         ?'<div style="font-size:12px;color:var(--muted);padding:8px 4px;">No completed tasks yet — drag a task here to mark it done.</div>'
         :doneTasks.map(t=>`<div class="drawer-task-chip" onclick="openEditTodoById('${t.id}',${t.day})">
             <i class="ti ti-circle-check dtc-done"></i>
-            <span style="font-weight:500;">${t.title}</span>
+            <span style="font-weight:500;">${esc(t.title)}</span>
             ${_calShowHours&&t.hours?`<span style="font-size:10px;color:var(--muted);">${formatHrs(t.hours)}</span>`:''}
             <span style="font-size:10px;color:var(--muted);background:var(--border);padding:2px 7px;border-radius:8px;">${DAY_NAMES[t.day-1]||''}</span>
           </div>`).join('')}
@@ -4854,15 +4927,15 @@ function createTaskCard(t,day,isDone){
   card.innerHTML=`
     <div class="tc-top">
       <span class="tc-icon">${icon}</span>
-      <span class="tc-title">${displayTitle}${(t.repeat||t.repeatGroup)?' <i class="ti ti-repeat" title="Repeating task" style="font-size:10px;color:var(--muted);"></i>':''}${t._completedViaAssignment?' <i class="ti ti-check" title="Marked complete in Streamtime — no time was logged against it" style="font-size:10px;color:#4CAF50;"></i>':''}</span>
+      <span class="tc-title">${esc(displayTitle)}${(t.repeat||t.repeatGroup)?' <i class="ti ti-repeat" title="Repeating task" style="font-size:10px;color:var(--muted);"></i>':''}${t._completedViaAssignment?' <i class="ti ti-check" title="Marked complete in Streamtime — no time was logged against it" style="font-size:10px;color:#4CAF50;"></i>':''}</span>
       ${(showHours&&hrsLabel)?`<span class="tc-hrs" id="hrs-${t.id}">${hrsLabel}</span>`:''}
     </div>
     ${(metaJob||metaItem)?`<div class="tc-meta">
-      ${metaJob?`<span class="tc-job${jobIdNum?' clickable':''}" data-jid="${jobIdNum||''}">${jobLabel}</span>`:''}
+      ${metaJob?`<span class="tc-job${jobIdNum?' clickable':''}" data-jid="${jobIdNum||''}">${esc(jobLabel)}</span>`:''}
       ${metaJob&&metaItem?'<span class="tc-sep"></span>':''}
-      ${metaItem?`<span class="tc-item-tag">${t.item}</span>`:''}
+      ${metaItem?`<span class="tc-item-tag">${esc(t.item)}</span>`:''}
     </div>`:''}
-    ${(showNote&&t.note)?`<div class="tc-note">${t.note}</div>`:''}`;
+    ${(showNote&&t.note)?`<div class="tc-note">${esc(t.note)}</div>`:''}`;
 
   const jEl=card.querySelector('.tc-job.clickable');
   if(jEl)jEl.addEventListener('click',e=>{e.stopPropagation();openJobDetail(jEl.dataset.jid);});
@@ -6345,7 +6418,7 @@ function openJobDetail(id){
   const leadHtml=leadPerson?`<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;"><div style="width:16px;height:16px;border-radius:50%;background:${leadPerson.color};display:inline-flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:600;">${leadPerson.initials}</div> ${leadPerson.name}</span> · `:'';
   const archivedBadge=j.status==='archived'?' &nbsp;<span class="paused-badge" style="background:#F5F5F5;color:#757575;border-color:#E0E0E0;"><i class="ti ti-archive" style="font-size:9px;"></i> Archived</span>':'';
   const _now=new Date();_now.setHours(0,0,0,0);
-  const _due=j.dueDate?new Date(j.dueDate):null;
+  const _due=j.dueDate?_pDate(j.dueDate):null;
   const _dueStr=_due?fmtDate(j.dueDate):'';
   const _dueSoon=_due&&(_due-_now)/(86400000)<=7&&_due>=_now&&j.status==='inplay';
   const _overdue=_due&&_due<_now&&j.status==='inplay';
@@ -6995,7 +7068,7 @@ function openReallocate(ev,person,wk,day,taskId,offset){
   modal.innerHTML=`<div class="modal" style="max-width:420px;">
     <div class="modal-hd"><span class="modal-hd-title">Reallocate time</span><button class="modal-x" onclick="document.getElementById('realloc-modal').remove()"><i class="ti ti-x"></i></button></div>
     <div class="modal-bd" style="padding:16px 20px;">
-      <div style="font-size:13px;margin-bottom:14px;"><strong>${t.title}</strong> · ${formatHrs(t.hours)||'0h'} · ${people[person]?.name||person}</div>
+      <div style="font-size:13px;margin-bottom:14px;"><strong>${esc(t.title)}</strong> · ${formatHrs(t.hours)||'0h'} · ${people[person]?.name||person}</div>
       <div class="tm-lbl">Move to job</div>
       <select class="tm-field-sel" id="realloc-job" onchange="_reallocFillItems()">${jobOpts}</select>
       <div class="tm-lbl" style="margin-top:14px;">Move to item</div>
@@ -8639,7 +8712,7 @@ function printSplitInvoice(jobId,siId){
   const sc=_docStatusColor(si.status);
   const pill=`<span style="display:inline-block;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:500;background:${sc}22;color:${sc};border:1px solid ${sc}44;">${si.status}</span>`;
   const cl=clientsData.find(c=>c.name===j.company);
-  const meta=`<div style="flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Billed to</div><div style="font-weight:500;font-size:13px;">${j.company||'—'}</div>${cl?.contact?`<div style="color:var(--muted);margin-top:2px;">${cl.contact}${cl.contactTitle?` — ${cl.contactTitle}`:''}</div>`:''}<div style="color:var(--muted);margin-top:2px;">Job #${j.id} · ${j.name}</div></div>
+  const meta=`<div style="flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Billed to</div><div style="font-weight:500;font-size:13px;">${j.company||'—'}</div>${cl?.contact?`<div style="color:var(--muted);margin-top:2px;">${cl.contact}${cl.contactTitle?` — ${cl.contactTitle}`:''}</div>`:''}<div style="color:var(--muted);margin-top:2px;">Job #${j.id} · ${esc(j.name)}</div></div>
     <div style="text-align:right;color:var(--muted);"><div><strong style="color:var(--ink);">Reference:</strong> ${si.label}</div><div><strong style="color:var(--ink);">Issued:</strong> ${_docFmtDate(si.date)}</div></div>`;
   const gst=Math.round(si.amount*0.15);
   const totals=`<tr><td style="padding:5px 10px;color:var(--muted);">${si.label} (ex GST)</td><td style="padding:5px 10px;text-align:right;">$${Math.round(si.amount).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;color:var(--muted);">GST (15%)</td><td style="padding:5px 10px;text-align:right;">$${gst.toLocaleString()}</td></tr><tr style="border-top:1px solid var(--border);"><td style="padding:7px 10px;font-weight:600;">Total (inc GST)</td><td style="padding:7px 10px;text-align:right;font-weight:600;font-family:var(--display);font-size:15px;">$${(Math.round(si.amount)+gst).toLocaleString()}</td></tr>`;
@@ -8680,7 +8753,7 @@ function renderInvoice(j){
       <div><div class="inv-ml">Client</div><div class="inv-mv">${j.company}</div></div>
       <div><div class="inv-ml">Reference</div><div class="inv-mv inv-editable" contenteditable="true" id="inv-ref">${j.id} ${j.company.split(' ')[0]} ${now.getFullYear()}</div></div>
     </div>
-    <div class="inv-job-title">${j.id} ${j.name}</div>
+    <div class="inv-job-title">${j.id} ${esc(j.name)}</div>
     ${_splitInvoicesHTML(j)}
     ${phSections}
     <div class="inv-tot"><span class="inv-tot-l">Subtotal ex GST</span><span>$${subtotal.toLocaleString()}.00</span></div>
@@ -9047,7 +9120,7 @@ function renderDeadlinesCal(){
   const addEv=(dateStr,ev)=>{if(!dateStr)return;const k=dateStr.slice(0,10);if(!events[k])events[k]=[];events[k].push(ev);};
   // Job due dates — live (in-play) jobs only, matching the Dashboard's "Needs attention" deadlines
   jobs.filter(j=>j.status==='inplay'&&j.dueDate).forEach(j=>{
-    addEv(j.dueDate,{label:`${j.id} ${j.name}`,color:'#E65100',jid:j.id,type:'job'});
+    addEv(j.dueDate,{label:`${j.id} ${esc(j.name)}`,color:'#E65100',jid:j.id,type:'job'});
   });
   // Invoice due dates
   (stInvoices||[]).filter(i=>i.dueDate).forEach(i=>{
@@ -10014,7 +10087,7 @@ function renderTime(){
     if(!isCollapsed){
       pEntries.forEach(e=>{
         const j=e.jobId?jobs.find(x=>x.id===e.jobId):null;
-        const jobStr=j?`<span style="color:var(--muted);font-size:11px;margin-right:4px;">${j.id}</span>${j.name}`:'<span style="color:var(--muted);">—</span>';
+        const jobStr=j?`<span style="color:var(--muted);font-size:11px;margin-right:4px;">${j.id}</span>${esc(j.name)}`:'<span style="color:var(--muted);">—</span>';
         const statusStr=e.done?'<span style="color:#4CAF50;font-size:11px;">Done</span>':'<span style="color:var(--muted);font-size:11px;">Planned</span>';
         rows+=`<tr class="time-entry-row tg-${pKey}">
           <td style="color:var(--muted);font-size:11px;"></td>
@@ -10587,7 +10660,7 @@ function _invStatusPill(j){
   if(s==='voided')return `<span class="inv-pill voided">Voided</span>`;
   // Check overdue: sent but past due date
   if(s==='sent'&&j.invDueDate){
-    const due=new Date(j.invDueDate);const now=new Date();now.setHours(0,0,0,0);
+    const due=_pDate(j.invDueDate);const now=new Date();now.setHours(0,0,0,0);
     if(due<now){const days=Math.round((now-due)/(86400000));return `<span class="inv-pill overdue">Overdue ${days}d</span>`;}
   }
   if(s==='sent')return `<span class="inv-pill sent">Sent</span>`;
@@ -10596,7 +10669,7 @@ function _invStatusPill(j){
 function renderInvoices(){
   const list=document.getElementById('invoices-list');if(!list)return;
   const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  function fmtDate(iso){if(!iso)return'—';const d=new Date(iso);return`${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;}
+  function fmtDate(iso){if(!iso)return'—';const d=new Date(iso.length<=10?iso+'T12:00:00':iso);return`${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;}
 
   const showTBI=document.getElementById('inv-show-tbi')?.checked;
 
@@ -10606,7 +10679,7 @@ function renderInvoices(){
   const jobByStId={};jobs.forEach(j=>{if(j._stId)jobByStId[j._stId]=j;});
 
   const _invNow=new Date();_invNow.setHours(0,0,0,0);
-  const _getInvStatus=i=>{const s=(i.invoiceStatus?.name||i.status||'').toLowerCase();if(s==='paid')return'paid';if(s==='voided')return'voided';const due=i.dueDate?new Date(i.dueDate):null;if(due&&due<_invNow)return'overdue';if(s.includes('awaiting'))return'awaiting';if(i.sentDate)return'sent';return'draft';};
+  const _getInvStatus=i=>{const s=(i.invoiceStatus?.name||i.status||'').toLowerCase();if(s==='paid')return'paid';if(s==='voided')return'voided';const due=i.dueDate?_pDate(i.dueDate):null;if(due&&due<_invNow)return'overdue';if(s.includes('awaiting'))return'awaiting';if(i.sentDate)return'sent';return'draft';};
 
   let inv=stInvoices.length?[...stInvoices]:[];
   if(search)inv=inv.filter(i=>{const j=jobByStId[i.jobId];return(`${i.id} ${i.number||''} ${j?.id||''} ${j?.name||''} ${i.company?.name||''}`).toLowerCase().includes(search);});
@@ -10642,7 +10715,7 @@ function renderInvoices(){
     const s=_getInvStatus(i);
     if(s==='paid')return'<span class="inv-pill paid">Paid</span>';
     if(s==='voided')return'<span class="inv-pill voided">Voided</span>';
-    if(s==='overdue'){const days=Math.round((_invNow-new Date(i.dueDate))/86400000);return`<span class="inv-pill overdue">Overdue ${days}d</span>`;}
+    if(s==='overdue'){const days=Math.round((_invNow-_pDate(i.dueDate))/86400000);return`<span class="inv-pill overdue">Overdue ${days}d</span>`;}
     if(s==='awaiting')return'<span class="inv-pill sent">Awaiting</span>';
     if(s==='sent')return'<span class="inv-pill sent">Sent</span>';
     return'<span class="inv-pill draft">Draft</span>';
@@ -10716,7 +10789,7 @@ function renderInvoices(){
         ${_tbiTh('company','Company')}${_tbiTh('job','Job')}${_tbiTh('po','PO')}${_tbiTh('status','Status')}${_tbiTh('amount','Amount ex GST',true)}<th class="inv-th" style="width:30px;"></th>
       </tr></thead><tbody>${tbiJobs.map(j=>`<tr class="inv-tr" style="cursor:pointer;" onclick="openJobDetail('${j.id}')">
         <td class="inv-td" style="color:var(--muted);font-size:12px;">${j.company}</td>
-        <td class="inv-td"><span style="font-size:11px;color:var(--muted);margin-right:6px;">${j.id}</span>${j.name}</td>
+        <td class="inv-td"><span style="font-size:11px;color:var(--muted);margin-right:6px;">${j.id}</span>${esc(j.name)}</td>
         <td class="inv-td" style="font-size:12px;color:var(--muted);">${j.po||'—'}</td>
         <td class="inv-td"><span class="wf-badge wf-completed">Complete</span></td>
         <td class="inv-td" style="text-align:right;font-family:var(--display);font-size:14px;font-variant-numeric:tabular-nums;">$${(j._sellUsed||0).toLocaleString()}</td>
@@ -10959,12 +11032,39 @@ function fmtHrs(h){if(!h||h===0)return'0h';const m=Math.round(h*60);const hh=Mat
 function fmtDollar(n){if(!n)return'$0';return n>=1000000?`$${(n/1000000).toFixed(1)}m`:n>=1000?`$${(n/1000).toFixed(0)}k`:`$${Math.round(n).toLocaleString()}`;}
 function destroyChart(c){if(c&&typeof c.destroy==='function'){try{c.destroy();}catch(e){}}return null;}
 let _rCharts={};
+// One chart theme for every Reporting chart — Inter labels, warm-grey faint grid, no axis
+// borders, dark rounded tooltips, rounded bars, ring doughnuts. Applied once, lazily, so a
+// blocked CDN (typeof Chart undefined) degrades silently like before.
+let _chartThemed=false;
+function _applyChartTheme(){
+  if(_chartThemed||typeof Chart==='undefined')return;_chartThemed=true;
+  Chart.defaults.font.family="'Inter',-apple-system,sans-serif";
+  Chart.defaults.font.size=11;
+  Chart.defaults.color='#8A857C';
+  const tt=Chart.defaults.plugins.tooltip;
+  tt.backgroundColor='rgba(25,23,20,.94)';tt.titleColor='#fff';tt.bodyColor='#E8E5E0';
+  tt.padding=10;tt.cornerRadius=9;tt.displayColors=false;
+  tt.titleFont={size:12,weight:'600'};tt.bodyFont={size:11.5};
+  Chart.defaults.datasets.bar.borderRadius=6;
+  Chart.defaults.datasets.bar.borderSkipped=false;
+  Chart.defaults.datasets.bar.maxBarThickness=34;
+  Chart.defaults.datasets.doughnut.cutout='68%';
+  Chart.defaults.datasets.doughnut.borderWidth=2;
+  Chart.defaults.datasets.doughnut.borderColor='#FFFFFF';
+  Chart.defaults.plugins.legend.labels.usePointStyle=true;
+  Chart.defaults.plugins.legend.labels.boxWidth=6;
+  Chart.defaults.plugins.legend.labels.boxHeight=6;
+  Chart.defaults.scale.grid.color='rgba(35,28,18,.055)';
+  Chart.defaults.scale.ticks.padding=6;
+  if(Chart.defaults.scale.border)Chart.defaults.scale.border.display=false;
+}
 function _makeChart(id,cfg){
+  _applyChartTheme();
   _rCharts[id]=destroyChart(_rCharts[id]);
   const el=document.getElementById(id);if(!el)return;
   _rCharts[id]=new Chart(el,cfg);
 }
-const _chartOpts=(axis='y')=>({responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:axis==='y'}},y:{beginAtZero:true,grid:{color:'#f0f0f0'},ticks:{callback:v=>typeof v==='number'?fmtHrs(v):v}}}});
+const _chartOpts=(axis='y')=>({responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{callback:v=>typeof v==='number'?fmtHrs(v):v}}}});
 
 function renderReporting(){
   const period=document.getElementById('r-period')?.value||'month';
