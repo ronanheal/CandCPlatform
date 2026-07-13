@@ -1418,6 +1418,70 @@ input,textarea{caret-color:var(--red);}
 /* Toasts: icon + message read as one unit */
 .cc-toast{display:flex;align-items:center;gap:9px;border-radius:9px;padding:11px 16px;}
 .cc-toast .tst-ico{font-size:15px;flex-shrink:0;line-height:1;}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   v2.31 — NEW SKIN. The whole surface system moves from warm paper to a cool,
+   Apple-like light system: frosted sidebar, floating content window, hairline
+   borders, bigger radii, pill primaries, light headers, deep backdrop blur.
+   Token redefinition first — everything built on the tokens follows for free.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --off:#F5F5F7;--ink:#1D1D1F;--muted:#86868B;--faint:#EDEDF0;--border:#E4E4E9;
+  --r-card:16px;--r-ctl:9px;
+  --shadow-s:0 1px 2px rgba(0,0,0,.04),0 2px 8px rgba(0,0,0,.04);
+  --shadow-m:0 2px 8px rgba(0,0,0,.05),0 12px 32px rgba(0,0,0,.09);
+  --shadow-l:0 8px 24px rgba(0,0,0,.09),0 32px 80px rgba(0,0,0,.18);
+}
+/* The desktop: page sits slightly darker so the content window floats above it */
+body{background:#E9E9ED;}
+.app{padding:10px 10px 10px 82px;}
+.main{background:var(--off);border-radius:18px;border:1px solid rgba(0,0,0,.06);box-shadow:0 4px 18px rgba(0,0,0,.05),0 18px 60px rgba(0,0,0,.08);}
+/* Sidebar: near-black rail → frosted light glass. Expands over the window on hover. */
+.sidebar{background:rgba(246,246,248,.72);backdrop-filter:blur(26px) saturate(1.7);-webkit-backdrop-filter:blur(26px) saturate(1.7);border-right:none;}
+.sidebar:hover{box-shadow:20px 0 60px rgba(0,0,0,.13);background:rgba(248,248,250,.88);}
+.s-logo{fill:var(--ink);}
+.s-btn{color:#8E8E93;}
+.s-btn:hover{color:var(--ink);background:rgba(0,0,0,.05);}
+.s-btn.on{color:var(--ink);background:rgba(0,0,0,.06);}
+.s-btn.on:hover{background:rgba(0,0,0,.08);}
+.s-avatar{background:rgba(0,0,0,.04);color:var(--ink);}
+.s-avatar:hover{background:rgba(0,0,0,.08);}
+/* Dark chrome → light: modal headers, phase bars, invoice section bars, follow-up card */
+.modal-hd{background:var(--white);color:var(--ink);padding:18px 24px 14px;border-bottom:1px solid var(--faint);}
+.modal-hd-title{font-size:16px;letter-spacing:-.02em;}
+.modal-x{color:var(--muted);}
+.modal-x:hover{color:var(--ink);}
+.phase-head{background:var(--off);color:var(--ink);border:1px solid var(--border);border-bottom:none;}
+.ph-n{font-weight:600;}
+.ph-chv,.ph-cnt,.ph-meta,.ph-mb{color:var(--muted);}
+.ph-mb:hover{color:var(--ink);background:rgba(0,0,0,.06);}
+.inv-sec-h{background:var(--off);color:var(--ink);font-weight:600;border:1px solid var(--border);border-bottom:none;}
+.inv-top{background:var(--white);color:var(--ink);border-bottom:1px solid var(--faint);}
+.inv-top-t{color:var(--ink);}
+.inv-x{color:var(--muted);}
+.inv-x:hover{color:var(--ink);}
+.fup-hd{background:var(--white);color:var(--ink);border-bottom:1px solid var(--faint);font-weight:600;}
+/* Backdrops: dim less, blur more */
+.modal-bg,.gs-bg,.cb-overlay,.inv-bg{background:rgba(28,28,30,.30);backdrop-filter:blur(16px) saturate(1.5);-webkit-backdrop-filter:blur(16px) saturate(1.5);}
+.gs-panel{border-radius:18px;}
+.gs-foot{border-radius:0 0 18px 18px;}
+.modal,.cl-modal,.tm-modal,.inv-modal,.cb-modal{border-radius:18px;}
+/* Primary actions become pills — clear hierarchy: pill = primary, rect = secondary */
+.d-action.primary,.tb-btn:not(.ghost),.modal-ok,.modal-save,.save-b,.cb-create-btn,.cal-today-btn,.r-export-btn,.inv-act,.fup-y{border-radius:980px;padding-left:18px;padding-right:18px;}
+/* Status pills: drop the outlines, tint + weight carry it */
+.inv-pill,.status-pill,.wf-badge,.exp-badg,.i-badge,.t-bill{border:none;font-weight:500;}
+/* Cool the last hardcoded warm surfaces */
+.jobs-table tbody tr:hover{background:#FAFAFC;}
+.prog-tr:hover,.prog-group-hd{background:#FAFAFC;}
+.prog-group-hd:hover,.exp-head:hover,.detail-back:hover{background:#EBEBEE;}
+.global-divider{background:#E9E9EC;border-color:#D8D8DD;}
+.day-todo.drop-hi{background:#F4F8FF;}
+*::-webkit-scrollbar-thumb{background:#D1D1D6;border-color:var(--off);}
+*::-webkit-scrollbar-thumb:hover{background:#B9B9BF;}
+/* Type: a touch more optical tightness on the big moments */
+.dash-greeting{letter-spacing:-.032em;font-size:31px;}
+.view-title,.detail-title,.sett-tab-hd,.boards-head,.report-head{letter-spacing:-.025em;}
+.kpi-val{letter-spacing:-.025em;}
 </style>
 </head>
 <body>
@@ -2466,8 +2530,17 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.30.0';
+const APP_VERSION='2.31.0';
 const CHANGELOG=[
+  {version:'2.31.0',date:'13 Jul 2026',title:'The new skin — a full visual reset',items:[
+    'The whole platform moves to a new design language: the warm paper palette is retired for a cool, modern light system — crisp near-black ink, soft cool greys, hairline borders.',
+    'The sidebar transforms: the black rail becomes frosted light glass that blurs whatever is behind it as it expands over the page.',
+    'The app now lives in a floating window — content sits on a rounded, softly-shadowed panel above a slightly darker desktop, like a native Mac app.',
+    'Dark chrome goes light: modal headers, job-plan phase bars, invoice section headers and the follow-up card all move from black bars to clean light surfaces with confident type.',
+    'Primary actions are now pills — Create, Save, New job and friends get the rounded treatment, while secondary buttons stay rectangular, so hierarchy is instant.',
+    'Modals and search float over a deeply blurred, gently dimmed page instead of a dark scrim.',
+    'Bigger, softer radii everywhere (cards 16px, modals 18px), softer larger shadows, borderless status pills, and slightly tighter tracking on the big headings.',
+  ]},
   {version:'2.30.0',date:'13 Jul 2026',title:'Search glow-up, skeleton loading, dashboard attention cards',items:[
     'Global Search (⌘K) redesigned: colour-coded category icons (jobs red, clients slate, invoices plum, quotes amber), a red accent marks the selected row, and a footer shows keyboard hints plus a live result count. Special characters in results no longer break the list.',
     'Jobs list now loads with shimmering skeleton rows shaped like the real table instead of a spinner — the page reads as itself while Streamtime syncs.',
@@ -11105,9 +11178,9 @@ function _applyChartTheme(){
   if(_chartThemed||typeof Chart==='undefined')return;_chartThemed=true;
   Chart.defaults.font.family="'Inter',-apple-system,sans-serif";
   Chart.defaults.font.size=11;
-  Chart.defaults.color='#8A857C';
+  Chart.defaults.color='#86868B';
   const tt=Chart.defaults.plugins.tooltip;
-  tt.backgroundColor='rgba(25,23,20,.94)';tt.titleColor='#fff';tt.bodyColor='#E8E5E0';
+  tt.backgroundColor='rgba(29,29,31,.94)';tt.titleColor='#fff';tt.bodyColor='#E5E5EA';
   tt.padding=10;tt.cornerRadius=9;tt.displayColors=false;
   tt.titleFont={size:12,weight:'600'};tt.bodyFont={size:11.5};
   Chart.defaults.datasets.bar.borderRadius=6;
@@ -11119,7 +11192,7 @@ function _applyChartTheme(){
   Chart.defaults.plugins.legend.labels.usePointStyle=true;
   Chart.defaults.plugins.legend.labels.boxWidth=6;
   Chart.defaults.plugins.legend.labels.boxHeight=6;
-  Chart.defaults.scale.grid.color='rgba(35,28,18,.055)';
+  Chart.defaults.scale.grid.color='rgba(0,0,0,.05)';
   Chart.defaults.scale.ticks.padding=6;
   if(Chart.defaults.scale.border)Chart.defaults.scale.border.display=false;
 }

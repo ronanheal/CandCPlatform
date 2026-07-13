@@ -1,6 +1,6 @@
 # C&C Platform — Roadmap
 
-*Last updated 13 Jul 2026 · v2.30.0*
+*Last updated 13 Jul 2026 · v2.31.0*
 
 ---
 
@@ -75,6 +75,8 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 | Xero push for natively-created invoices | The local creation half (deposit/split invoices) shipped v2.20.4; the Xero push half needs real Xero API write credentials — a business/access task, not a coding one |
 | @mentions + notifications | Needs a real-time backend (websockets/polling server) — not buildable on the static localStorage architecture |
 | Real durable backend for all `db*` writes | The actual size of the Phase 2→3 jump — see "What's blocking Phase 3" above. Every other Phase 2 feature is UI-complete and just needs its stub swapped once this exists |
+
+**Shipped (v2.31.0):** THE NEW SKIN — full visual reset to a cool Apple-like light system, done entirely at the CSS-token layer (no layout logic touched). Warm paper palette → cool light greys + near-black ink; black sidebar → frosted light glass (backdrop-blur, expands over content); content floats in a rounded shadowed window above a darker desktop; dark chrome (modal headers, phase bars, invoice section bars, follow-up card) → light surfaces; primary buttons → pills (secondary stay rects); deep-blur modal backdrops; radii up (cards 16 / modals 18); borderless status pills; chart theme cooled to match.
 
 **Shipped (v2.30.0):** Design push round 2. Global Search redesign (colour-coded categories, accent selection, kbd-hint footer + result count, escaped output), skeleton loading rows on the Jobs table, Needs-attention cards with tinted icons/count pills/hover rows, toast status icons, browser identity (title + red C&C favicon), depth pass (primary-button shadow, 4px rounded progress tracks, softer calendar chips, brand-red caret).
 
