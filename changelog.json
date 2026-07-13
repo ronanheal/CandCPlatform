@@ -1,7 +1,96 @@
 {
-  "generated_at": "2026-07-02T03:14:39.938636+00:00",
-  "current_version": "2.28.0",
+  "generated_at": "2026-07-13T09:13:28.050499+00:00",
+  "current_version": "2.32.0",
   "releases": [
+    {
+      "version": "2.32.0",
+      "date": "13 Jul 2026",
+      "title": "Column picker, beautiful documents, drag-to-schedule",
+      "items": [
+        "Choose your columns: a new Columns button on the Jobs, Invoices and Quotes lists lets you show/hide any column — hide what you don\\'t use and the table breathes. Remembered per list, per browser.",
+        "Quote and invoice previews got the full letterhead treatment: the red C&C mark, a big confident document title, the brand rule, refined line-item table with phase subtotals, a boxed totals block and a proper company footer — they finally look like documents you\\'d be proud to send.",
+        "Drag-to-schedule: drag any item row on a job plan and a frosted strip of this week\\'s days appears at the bottom of the screen — drop the item on a day and it lands on your To Do board with the item\\'s planned hours, linked to the job.",
+        "The Uninvoiced-jobs section respects the same column choices as the invoice table."
+      ],
+      "sections": [
+        "Boards",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.31.0",
+      "date": "13 Jul 2026",
+      "title": "The new skin — a full visual reset",
+      "items": [
+        "The whole platform moves to a new design language: the warm paper palette is retired for a cool, modern light system — crisp near-black ink, soft cool greys, hairline borders.",
+        "The sidebar transforms: the black rail becomes frosted light glass that blurs whatever is behind it as it expands over the page.",
+        "The app now lives in a floating window — content sits on a rounded, softly-shadowed panel above a slightly darker desktop, like a native Mac app.",
+        "Dark chrome goes light: modal headers, job-plan phase bars, invoice section headers and the follow-up card all move from black bars to clean light surfaces with confident type.",
+        "Primary actions are now pills — Create, Save, New job and friends get the rounded treatment, while secondary buttons stay rectangular, so hierarchy is instant.",
+        "Modals and search float over a deeply blurred, gently dimmed page instead of a dark scrim.",
+        "Bigger, softer radii everywhere (cards 16px, modals 18px), softer larger shadows, borderless status pills, and slightly tighter tracking on the big headings."
+      ],
+      "sections": [
+        "Jobs",
+        "Jobs → Invoices",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.30.0",
+      "date": "13 Jul 2026",
+      "title": "Search glow-up, skeleton loading, dashboard attention cards",
+      "items": [
+        "Global Search (⌘K) redesigned: colour-coded category icons (jobs red, clients slate, invoices plum, quotes amber), a red accent marks the selected row, and a footer shows keyboard hints plus a live result count. Special characters in results no longer break the list.",
+        "Jobs list now loads with shimmering skeleton rows shaped like the real table instead of a spinner — the page reads as itself while Streamtime syncs.",
+        "Dashboard \"Needs attention\" cards each get an identity: a tinted icon, uppercase title and count pill, with rows that highlight on hover where they\\'re clickable.",
+        "Toasts now carry a status icon (tick, warning, info) so the colour isn\\'t doing all the work.",
+        "The app finally has a proper identity in your browser: the tab says \"C&C Platform\" with a red C&C favicon — no more generic blank tab.",
+        "Depth pass: primary buttons get a subtle pressed-metal shadow, all thin progress bars step up to rounded 4px tracks, calendar event chips soften, and the text caret is brand red everywhere."
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.29.0",
+      "date": "13 Jul 2026",
+      "title": "Bug audit + design pass — sharper, calmer, more alive",
+      "items": [
+        "Fixed: every \"due in N days\" badge was one day high (a job due today said \"1d\", tomorrow said \"2d\") — date-only values were being parsed as UTC, which in NZ shifts them half a day. Dashboard Needs-attention cards, overdue counts and the job header badge now agree with the calendar.",
+        "Fixed: special characters in Streamtime task titles, job names and expense names could break rendering on the To Do board, Dashboard, Schedule, Expenses and Invoices — the remaining unescaped render sites from the v2.24 pass are now covered.",
+        "Fixed: \"Skip this week\" on the mood check-in now actually skips the week instead of re-asking on every page load.",
+        "To Do board: when a task card is too small for its text, the text now fades out gently at the card edge instead of being chopped mid-line.",
+        "Reporting: all charts get a proper design system — rounded slimmer bars, whisper-faint gridlines, no axis chrome, dark rounded tooltips, ring-style doughnuts and dot legends, all in the house type.",
+        "Schedule: standard view header like every other section, and the person filter pills are calmer — colour lives only in the avatar, selection reads as a clean ink outline.",
+        "One radius language everywhere: menus, boards, cards, modals and controls that still carried square or 2px corners now sit on the same rounded surface system as the rest of the app.",
+        "Motion system: modals and search rise in with a soft spring, KPI bars fill on load, dashboard cards stagger in, buttons press down, clickable cards lift on hover — all subtle, all instant, and fully disabled if your OS asks for reduced motion."
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Invoices",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
     {
       "version": "2.28.0",
       "date": "2 Jul 2026",
