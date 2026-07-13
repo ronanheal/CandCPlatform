@@ -1502,6 +1502,40 @@ body{background:#E9E9ED;}
 .ss-day .ssd-num{font-size:17px;font-weight:600;color:var(--ink);line-height:1.2;}
 .ss-day.ssd-today .ssd-num{color:var(--red);}
 .ss-day.drop-ok{border-color:var(--red);border-style:solid;background:#FFF5F5;transform:scale(1.06);}
+
+/* ══ v2.33 — Floating pill sidebar: the rail becomes its own glass panel, matching the
+   floating content window ══ */
+.sidebar{left:10px;top:10px;bottom:10px;border-radius:22px;border:1px solid rgba(0,0,0,.06);box-shadow:0 4px 18px rgba(0,0,0,.05),0 18px 60px rgba(0,0,0,.08);}
+.app{padding:10px 10px 10px 94px;}
+.sidebar:hover{box-shadow:0 8px 28px rgba(0,0,0,.10),24px 0 70px rgba(0,0,0,.14);}
+
+/* ══ v2.33 — Boards on the new design language: columns as soft wells, cards float ══ */
+.board-col,.bdet-col{background:rgba(0,0,0,.035);border:none;border-radius:16px;}
+.bdet-col{padding:0 0 4px;}
+.bdet-col-h{background:transparent;border-bottom:none;padding:12px 14px 6px;}
+.bdet-col-count{background:var(--white);box-shadow:var(--shadow-s);border-radius:10px;}
+.board-col-h{border-bottom:none;padding-bottom:2px;}
+.board-card,.bdet-card{border:1px solid rgba(0,0,0,.05);border-radius:12px;box-shadow:var(--shadow-s);padding:12px 14px;}
+.board-card:hover,.bdet-card:hover{border-color:rgba(0,0,0,.09);box-shadow:var(--shadow-m);}
+.client-card{border:1px solid rgba(0,0,0,.05);border-radius:12px;box-shadow:var(--shadow-s);overflow:hidden;}
+.client-card-head{border-bottom:1px solid var(--faint);}
+.bdet-add-btn{border:1.5px dashed rgba(0,0,0,.12);border-radius:10px;background:transparent;}
+.bdet-add-btn:hover{background:var(--white);border-color:rgba(0,0,0,.22);}
+.bdet-add-col-btn{border:1.5px dashed rgba(0,0,0,.12);border-radius:16px;background:transparent;padding:14px 18px;}
+.bdet-add-col-btn:hover{background:var(--white);}
+.bdet-col-name:focus{background:var(--white);border-radius:7px;}
+.pboard-lane{border:1px solid rgba(0,0,0,.05);border-radius:var(--r-card);box-shadow:var(--shadow-s);}
+.board-list-card{border:1px solid rgba(0,0,0,.05);}
+.blc-stripe{height:5px;}
+
+/* ══ v2.33 — Task drop-dock: drag any To Do card to move weeks or hand it to a teammate ══ */
+.ss-person{width:48px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 0 5px;border:1.5px dashed transparent;border-radius:11px;transition:all .12s;}
+.ss-person .ssp-av{width:28px;height:28px;border-radius:50%;color:#fff;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;}
+.ss-person .ssp-name{font-size:8.5px;color:var(--muted);max-width:46px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ss-person.drop-ok{border-color:var(--red);background:#FFF5F5;transform:scale(1.08);}
+.ss-week{width:auto;padding:13px 14px 12px;}
+.ss-week .ssd-name{font-size:10px;letter-spacing:.06em;}
+.ss-sep{width:1px;height:34px;background:var(--border);margin:0 6px;}
 </style>
 </head>
 <body>
@@ -2553,8 +2587,15 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.32.0';
+const APP_VERSION='2.33.0';
 const CHANGELOG=[
+  {version:'2.33.0',date:'13 Jul 2026',title:'Task drop-dock, floating pill sidebar, boards reskin, fixes',items:[
+    'New drop-dock on the To Do board: start dragging any task card and a frosted dock appears — drop it on "← Last week" / "Next week →" to reschedule it a week either way, or drop it on a teammate\'s avatar to hand it to them. Same one-motion family as drag-to-schedule.',
+    'The sidebar is now its own floating glass pill — detached from the screen edge with rounded corners and a soft shadow, matching the floating content window.',
+    'Boards redesigned onto the new language: columns are soft grey wells, cards float on them with rounded corners and shadows, add-buttons are quiet dashed pills.',
+    'Fixed: dragging a task\'s edge can now actually reach the 5-minute minimum — a leftover height clamp had silently stopped resizes below ~50 minutes.',
+    'Job detail: the Progress tab now uses the full page width instead of stopping at 1100px.',
+  ]},
   {version:'2.32.0',date:'13 Jul 2026',title:'Column picker, beautiful documents, drag-to-schedule',items:[
     'Choose your columns: a new Columns button on the Jobs, Invoices and Quotes lists lets you show/hide any column — hide what you don\'t use and the table breathes. Remembered per list, per browser.',
     'Quote and invoice previews got the full letterhead treatment: the red C&C mark, a big confident document title, the brand rule, refined line-item table with phase subtotals, a boxed totals block and a proper company footer — they finally look like documents you\'d be proud to send.',
@@ -5112,8 +5153,9 @@ function createTaskCard(t,day,isDone){
     dragSrc=card;card.classList.add('dragging-c');
     e.dataTransfer.effectAllowed='move';
     e.dataTransfer.setData('text/plain',JSON.stringify({taskId:t.id,fromDay:day}));
+    _showTaskDock(t,day);
   });
-  card.addEventListener('dragend',()=>{card.classList.remove('dragging-c');_clearDropIndicators();document.querySelectorAll('.drop-hi,.div-drop-hi').forEach(el=>el.classList.remove('drop-hi','div-drop-hi'));});
+  card.addEventListener('dragend',()=>{card.classList.remove('dragging-c');_hideTaskDock();_clearDropIndicators();document.querySelectorAll('.drop-hi,.div-drop-hi').forEach(el=>el.classList.remove('drop-hi','div-drop-hi'));});
   card.addEventListener('dragover',e=>{
     e.preventDefault();e.stopPropagation();
     const parent=card.closest('.day-todo,.day-done');
@@ -5145,10 +5187,14 @@ function createTaskCard(t,day,isDone){
       const onMove=ev=>{
         if(Math.abs(ev.clientY-startY)>2)_wasResized=true;
         const dy=atBottom?(ev.clientY-startY):(startY-ev.clientY);
-        const newH=Math.max(40,startH+dy);
+        // Floor at 10px, not 40 — the old 40px clamp meant the hours maths could never get
+        // below ~50m, so the advertised 5-minute floor was unreachable by dragging.
+        const newH=Math.max(10,startH+dy);
         const _px=Math.max(24,(todoSplitPx||360)/8);
-        curHours=Math.max(5/60,Math.min(8,Math.round((newH/_px)*12)/12)); // 5-min snapping, 5m floor (was 15m)
-        const newCardH=taskCardHeight(curHours);
+        curHours=Math.max(5/60,Math.min(8,Math.round((newH/_px)*12)/12)); // 5-min snapping, 5m floor
+        // Live height bypasses taskCardHeight's 52px readability floor so tiny durations
+        // are visibly reachable while dragging; the render floor reapplies on release.
+        const newCardH=Math.max(26,Math.round(curHours*_px));
         card.style.height=newCardH+'px';
         const hrsEl=document.getElementById('hrs-'+t.id);
         const _tiny2=newCardH<44;const _small2=newCardH<68;const _med2=newCardH<95;
@@ -7233,7 +7279,7 @@ function renderProgressTab(){
   }).join('');
 
   el.innerHTML=`
-    <div style="max-width:1100px;">
+    <div>
       ${barsHTML}
       <div class="prog-card" style="margin-top:18px;padding:0;overflow:hidden;">
         <div class="prog-card-hd" style="padding:16px 18px 12px;display:flex;align-items:center;">Time on this job
@@ -7382,6 +7428,52 @@ function _schedStripDrop(e,dayNum){
   wd[dayNum].push({id:uid('t'),title:item.name,job:`${j.id} ${j.name}`,jobId:j.id,item:item.name,itemId:item.id,hours,urgent:false,personal:false});
   logActivity(j.id,MY_PERSON,'task_add',`Scheduled <strong>${esc(item.name)}</strong> for ${DAY_NAMES[dayNum-1]} (${formatHrs(hours)})`);
   toast(`Scheduled “${esc(item.name)}” — ${DAY_NAMES[dayNum-1]}, ${formatHrs(hours)}`,'success');
+}
+// ── Task drop-dock: while dragging a To Do card, a frosted dock offers "last/next week"
+// pads and teammate avatars — drop to move the task a week or reassign it in one motion.
+// Same interaction family as the job-plan drag-to-schedule strip.
+function _showTaskDock(t,day){
+  document.getElementById('task-dock')?.remove();
+  const cur=people[currentPerson];
+  let keys=Object.keys(people).filter(k=>!people[k]._archived&&k!==currentPerson);
+  keys.sort((a,b)=>((people[b].team===cur?.team&&cur?.team)?1:0)-((people[a].team===cur?.team&&cur?.team)?1:0));
+  keys=keys.slice(0,8);
+  const el=document.createElement('div');el.className='sched-strip';el.id='task-dock';
+  el.dataset.taskId=t.id;el.dataset.day=day;
+  const pad=(delta,label)=>`<div class="ss-day ss-week" ondragover="event.preventDefault();this.classList.add('drop-ok')" ondragleave="this.classList.remove('drop-ok')" ondrop="_taskDockWeek(event,${delta})"><div class="ssd-name">${label}</div></div>`;
+  el.innerHTML=pad(-1,'← Last week')+pad(1,'Next week →')
+    +(keys.length?`<div class="ss-sep"></div><span class="ss-lbl">Hand to</span>`+keys.map(k=>{const p=people[k];return`<div class="ss-person" title="Reassign to ${esc(p.name)}" ondragover="event.preventDefault();this.classList.add('drop-ok')" ondragleave="this.classList.remove('drop-ok')" ondrop="_taskDockPerson(event,'${k}')"><div class="ssp-av" style="background:${p.color||'#999'};">${p.initials||'?'}</div><div class="ssp-name">${esc(p.name.split(' ')[0])}</div></div>`;}).join(''):'');
+  document.body.appendChild(el);
+  requestAnimationFrame(()=>el.classList.add('on'));
+}
+function _hideTaskDock(){document.getElementById('task-dock')?.remove();}
+function _takeDockTask(){
+  const dock=document.getElementById('task-dock');if(!dock)return null;
+  const id=dock.dataset.taskId,day=+dock.dataset.day;
+  _hideTaskDock();
+  const wd=getWeekData(currentPerson);
+  const arr=wd[day]||[];
+  const idx=arr.findIndex(x=>x.id===id);
+  if(idx<0)return null;
+  return{task:arr.splice(idx,1)[0],day};
+}
+function _taskDockWeek(e,delta){
+  e.preventDefault();e.stopPropagation();
+  const got=_takeDockTask();if(!got)return;
+  const wd=getWeekData(currentPerson,weekOffset+delta);
+  (wd[got.day]=wd[got.day]||[]).push(got.task);
+  renderTodo();saveData();
+  toast(`Moved to ${delta>0?'next':'last'} week · ${DAY_NAMES[got.day-1]}`,'success');
+}
+function _taskDockPerson(e,pk){
+  e.preventDefault();e.stopPropagation();
+  const got=_takeDockTask();if(!got)return;
+  got.task.person=pk;
+  const wd=getWeekData(pk,weekOffset);
+  (wd[got.day]=wd[got.day]||[]).push(got.task);
+  if(got.task.jobId)logActivity(got.task.jobId,MY_PERSON,'task_reassign',`<strong>${esc(got.task.title)}</strong> reassigned to ${people[pk]?.name||pk}`);
+  renderTodo();saveData();
+  toast(`Handed to ${people[pk]?.name||pk}`,'success');
 }
 function _docLineItemsHTML(job){
   const phs=(job&&job.phases)||[];
