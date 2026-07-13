@@ -1482,6 +1482,26 @@ body{background:#E9E9ED;}
 .dash-greeting{letter-spacing:-.032em;font-size:31px;}
 .view-title,.detail-title,.sett-tab-hd,.boards-head,.report-head{letter-spacing:-.025em;}
 .kpi-val{letter-spacing:-.025em;}
+
+/* ══ v2.32 — Column picker: show/hide via container classes (no re-render needed) ══ */
+.jobs-table.hc-company .cj-company,.jobs-table.hc-budget .cj-budget,.jobs-table.hc-hours .cj-hours,.jobs-table.hc-labels .cj-labels,.jobs-table.hc-status .cj-status{display:none;}
+#invoices-list.hc-company .ci-company,#invoices-list.hc-num .ci-num,#invoices-list.hc-job .ci-job,#invoices-list.hc-po .ci-po,#invoices-list.hc-sent .ci-sent,#invoices-list.hc-due .ci-due,#invoices-list.hc-paid .ci-paid,#invoices-list.hc-status .ci-status{display:none;}
+#quotes-list.hc-co .qinv-card-co,#quotes-list.hc-val .qinv-card-val,#quotes-list.hc-status .qinv-card-status,#quotes-list.hc-date .qinv-card-date{display:none;}
+.colpick{position:fixed;background:var(--white);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-m);z-index:1200;min-width:190px;padding:6px 0;}
+.colpick-title{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding:6px 14px 4px;}
+.colpick label{display:flex;align-items:center;gap:9px;padding:7px 14px;font-size:12.5px;cursor:pointer;}
+.colpick label:hover{background:var(--off);}
+.colpick input{accent-color:var(--ink);cursor:pointer;}
+
+/* ══ v2.32 — Drag-to-schedule strip: drag a job-plan item onto a day of this week ══ */
+.sched-strip{position:fixed;left:50%;transform:translateX(-50%) translateY(16px);bottom:24px;z-index:1500;background:rgba(255,255,255,.85);backdrop-filter:blur(22px) saturate(1.6);-webkit-backdrop-filter:blur(22px) saturate(1.6);border:1px solid rgba(0,0,0,.08);border-radius:16px;box-shadow:var(--shadow-l);padding:12px 14px;display:flex;gap:8px;align-items:center;opacity:0;pointer-events:none;transition:opacity .18s,transform .22s cubic-bezier(.16,1,.3,1);}
+.sched-strip.on{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0);}
+.sched-strip .ss-lbl{font-size:11px;font-weight:600;color:var(--muted);margin-right:4px;letter-spacing:.05em;text-transform:uppercase;}
+.ss-day{width:74px;border:1.5px dashed var(--border);border-radius:11px;padding:9px 0 8px;text-align:center;transition:all .12s;background:var(--white);}
+.ss-day .ssd-name{font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);}
+.ss-day .ssd-num{font-size:17px;font-weight:600;color:var(--ink);line-height:1.2;}
+.ss-day.ssd-today .ssd-num{color:var(--red);}
+.ss-day.drop-ok{border-color:var(--red);border-style:solid;background:#FFF5F5;transform:scale(1.06);}
 </style>
 </head>
 <body>
@@ -1585,13 +1605,14 @@ body{background:#E9E9ED;}
             </select>
             <button class="d-action" onclick="saveFilterPreset('jobs')"><i class="ti ti-bookmark" style="font-size:11px;"></i> Save</button>
             <button class="d-action" id="jobs-clear-btn" onclick="_clearFilters('jobs')" style="display:none;"><i class="ti ti-x" style="font-size:11px;"></i> Clear</button>
+            <button class="d-action" onclick="openColPicker(event,'jobs')" title="Choose columns"><i class="ti ti-columns" style="font-size:11px;"></i> Columns</button>
             <span class="jobs-count" id="jobs-count" style="margin-left:auto;">0 jobs · NZD</span>
           </div>
           <div id="jobs-presets-bar" class="fpresets-bar" style="display:none;"></div>
           <div id="jobs-fbar" class="fbar" style="display:none;"></div>
           <div class="jobs-table-wrap">
             <table class="jobs-table">
-              <thead><tr><th style="width:32px;"><input type="checkbox" id="jobs-cb-all" onclick="toggleAllJobCbs(this.checked)" style="accent-color:var(--red);cursor:pointer;"></th><th>Job</th><th>Company</th><th>Budget</th><th>Hours</th><th>Labels / Progress</th><th>Status</th></tr></thead>
+              <thead><tr><th style="width:32px;"><input type="checkbox" id="jobs-cb-all" onclick="toggleAllJobCbs(this.checked)" style="accent-color:var(--red);cursor:pointer;"></th><th>Job</th><th class="cj-company">Company</th><th class="cj-budget">Budget</th><th class="cj-hours">Hours</th><th class="cj-labels">Labels / Progress</th><th class="cj-status">Status</th></tr></thead>
               <tbody id="jobs-tbody"></tbody>
             </table>
           </div>
@@ -1675,6 +1696,7 @@ body{background:#E9E9ED;}
               </select>
               <button class="d-action" onclick="saveFilterPreset('qt')" title="Save current filters as a preset"><i class="ti ti-bookmark" style="font-size:11px;"></i> Save</button>
               <button class="d-action" id="qt-clear-btn" onclick="_clearFilters('qt')" title="Clear all filters" style="display:none;"><i class="ti ti-x" style="font-size:11px;"></i> Clear</button>
+              <button class="d-action" onclick="openColPicker(event,'qt')" title="Choose columns"><i class="ti ti-columns" style="font-size:11px;"></i> Columns</button>
               <button class="d-action primary" onclick="openNewQuoteModal()" style="margin-left:auto;"><i class="ti ti-plus" style="font-size:11px;"></i> New quote</button>
               <span class="jobs-count" id="quotes-count"></span>
             </div>
@@ -1697,6 +1719,7 @@ body{background:#E9E9ED;}
               </select>
               <button class="d-action" onclick="saveFilterPreset('inv')"><i class="ti ti-bookmark" style="font-size:11px;"></i> Save</button>
               <button class="d-action" id="inv-clear-btn" onclick="_clearFilters('inv')" style="display:none;"><i class="ti ti-x" style="font-size:11px;"></i> Clear</button>
+              <button class="d-action" onclick="openColPicker(event,'inv')" title="Choose columns"><i class="ti ti-columns" style="font-size:11px;"></i> Columns</button>
               <label class="filter-btn" style="cursor:pointer;display:flex;align-items:center;gap:5px;"><input type="checkbox" id="inv-show-tbi" style="accent-color:var(--red)" onchange="renderInvoices()"/> Uninvoiced jobs</label>
               <span class="jobs-count" id="invoices-count" style="margin-left:auto;"></span>
               <span class="jobs-count" id="invoices-total" style="font-size:13px;font-weight:400;"></span>
@@ -2530,8 +2553,14 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.31.0';
+const APP_VERSION='2.32.0';
 const CHANGELOG=[
+  {version:'2.32.0',date:'13 Jul 2026',title:'Column picker, beautiful documents, drag-to-schedule',items:[
+    'Choose your columns: a new Columns button on the Jobs, Invoices and Quotes lists lets you show/hide any column — hide what you don\'t use and the table breathes. Remembered per list, per browser.',
+    'Quote and invoice previews got the full letterhead treatment: the red C&C mark, a big confident document title, the brand rule, refined line-item table with phase subtotals, a boxed totals block and a proper company footer — they finally look like documents you\'d be proud to send.',
+    'Drag-to-schedule: drag any item row on a job plan and a frosted strip of this week\'s days appears at the bottom of the screen — drop the item on a day and it lands on your To Do board with the item\'s planned hours, linked to the job.',
+    'The Uninvoiced-jobs section respects the same column choices as the invoice table.',
+  ]},
   {version:'2.31.0',date:'13 Jul 2026',title:'The new skin — a full visual reset',items:[
     'The whole platform moves to a new design language: the warm paper palette is retired for a cool, modern light system — crisp near-black ink, soft cool greys, hairline borders.',
     'The sidebar transforms: the black rail becomes frosted light glass that blurs whatever is behind it as it expands over the page.',
@@ -6321,6 +6350,44 @@ function jobStatusLabel(j){
   if(j.paused)return'Paused';
   return({inplay:'In Play',complete:'Complete',new:'New',archived:'Archived'}[j.status])||j.status||'—';
 }
+// ── Column picker (Jobs / Invoices / Quotes) ─────────────────────────────────
+// Show/hide is done with hc-* classes on the persistent container element and static CSS
+// rules — no table re-render needed, and re-renders (which rebuild innerHTML but not the
+// container) keep the preference automatically.
+const COL_DEFS={
+  jobs:{target:()=>document.querySelector('.jobs-table'),cols:[['company','Company'],['budget','Budget'],['hours','Hours'],['labels','Labels / Progress'],['status','Status']]},
+  inv:{target:()=>document.getElementById('invoices-list'),cols:[['company','Company'],['num','Invoice #'],['job','Job'],['po','PO'],['sent','Sent date'],['due','Due date'],['paid','Paid date'],['status','Status']]},
+  qt:{target:()=>document.getElementById('quotes-list'),cols:[['co','Company'],['val','Value'],['status','Status'],['date','Sent date']]},
+};
+function _hiddenCols(key){try{return JSON.parse(localStorage.getItem('cc_hidecols_'+key)||'[]');}catch(e){return[];}}
+function applyColPrefs(key){
+  const def=COL_DEFS[key];const el=def.target();if(!el)return;
+  const hidden=_hiddenCols(key);
+  def.cols.forEach(([id])=>el.classList.toggle('hc-'+id,hidden.includes(id)));
+}
+function toggleCol(key,colId,show){
+  let hidden=_hiddenCols(key);
+  if(show)hidden=hidden.filter(c=>c!==colId);
+  else if(!hidden.includes(colId))hidden.push(colId);
+  localStorage.setItem('cc_hidecols_'+key,JSON.stringify(hidden));
+  applyColPrefs(key);
+}
+function openColPicker(e,key){
+  e.stopPropagation();
+  const existing=document.getElementById('colpick-pop');
+  if(existing){existing.remove();return;}
+  const def=COL_DEFS[key];const hidden=_hiddenCols(key);
+  const pop=document.createElement('div');pop.className='colpick';pop.id='colpick-pop';
+  pop.innerHTML=`<div class="colpick-title">Show columns</div>`+def.cols.map(([id,label])=>`<label><input type="checkbox" ${hidden.includes(id)?'':'checked'} onchange="toggleCol('${key}','${id}',this.checked)">${label}</label>`).join('');
+  document.body.appendChild(pop);
+  const r=e.currentTarget.getBoundingClientRect();
+  pop.style.top=(r.bottom+6)+'px';
+  let left=r.left;if(left+200>window.innerWidth)left=window.innerWidth-210;
+  pop.style.left=left+'px';
+  setTimeout(()=>{const close=ev=>{if(!pop.contains(ev.target)){pop.remove();document.removeEventListener('click',close);}};document.addEventListener('click',close);},0);
+}
+['jobs','inv','qt'].forEach(applyColPrefs);
+
 function renderJobs(){
   const tbody=document.getElementById('jobs-tbody');tbody.innerHTML='';
   const q=_jobSearch;
@@ -6435,23 +6502,23 @@ function renderJobs(){
           <div class="job-num-name"><span class="job-num">${j.id}</span><span class="job-name">${esc(j.name)}</span>${pausedBadge}</div>
           ${notePrev}
         </td>
-        <td><span class="job-co">${billDot}${j.company}</span></td>
-        <td>
+        <td class="cj-company"><span class="job-co">${billDot}${j.company}</span></td>
+        <td class="cj-budget">
           <div class="bbar-wrap">
             <div class="bbar-nums"><span style="font-weight:400;color:${bPct>=100?'var(--red)':'inherit'}">$${(j._sellUsed||0).toLocaleString()}</span><span class="bbar-of">/ $${(j._plannedSell||0).toLocaleString()}</span></div>
             <div class="bbar-track"><div class="bbar-fill" style="width:${Math.min(bPct,100)}%;background:${bCol};"></div></div>
             <div style="font-size:10px;color:${bPct>=100?'var(--red)':'var(--muted)'};">${bPct}%</div>
           </div>
         </td>
-        <td>
+        <td class="cj-hours">
           <div class="bbar-wrap">
             <div class="bbar-nums"><span style="font-weight:400;color:${hPct>=100?'var(--red)':'inherit'}">${j._loggedH||'0h'}</span><span class="bbar-of">/ ${j._plannedH||'—'}</span></div>
             <div class="bbar-track"><div class="bbar-fill" style="width:${Math.min(hPct,100)}%;background:${hCol};"></div></div>
             <div style="font-size:10px;color:${hPct>=100?'var(--red)':'var(--muted)'};">${hPct}%</div>
           </div>
         </td>
-        <td><div class="job-labels-cell">${labels||'<span style="font-size:12px;color:var(--muted);">—</span>'}</div>${progHTML}</td>
-        <td><span class="wf-badge ${wfCls}">${wfLabel}</span>${j.po?`<div style="font-size:10px;color:var(--muted);margin-top:3px;">PO ${j.po}</div>`:''}</td>`;
+        <td class="cj-labels"><div class="job-labels-cell">${labels||'<span style="font-size:12px;color:var(--muted);">—</span>'}</div>${progHTML}</td>
+        <td class="cj-status"><span class="wf-badge ${wfCls}">${wfLabel}</span>${j.po?`<div style="font-size:10px;color:var(--muted);margin-top:3px;">PO ${j.po}</div>`:''}</td>`;
       frag.appendChild(tr);
       _jobsRenderedCount=i+1;
     }
@@ -7276,6 +7343,46 @@ function _docStatusColor(s){
   if(s.includes('sent')||s.includes('await')||s.includes('pending'))return'#6B7FA3';
   return'#888';
 }
+// ── Drag-to-schedule: drag a job-plan item row onto a day to create a To Do ─────────────
+// While an item row is being dragged (same drag that reorders it), a frosted strip of this
+// week's Mon–Fri docks at the bottom of the screen. Dropping on a day creates a scheduled
+// task for the current user with the item's planned hours (clamped to a workday).
+function _showSchedStrip(item){
+  _hideSchedStrip();
+  const mon=new Date();const dow=(mon.getDay()+6)%7;mon.setDate(mon.getDate()-dow);mon.setHours(0,0,0,0);
+  const today=new Date();today.setHours(0,0,0,0);
+  const names=['Mon','Tue','Wed','Thu','Fri'];
+  const el=document.createElement('div');el.className='sched-strip';el.id='sched-strip';
+  el.dataset.itemId=item.id;
+  el.innerHTML=`<span class="ss-lbl">Schedule for ${(people[MY_PERSON]?.name||'me').split(' ')[0]}</span>`+names.map((n,i)=>{
+    const d=new Date(mon);d.setDate(mon.getDate()+i);
+    const isToday=d.getTime()===today.getTime();
+    return`<div class="ss-day${isToday?' ssd-today':''}"
+      ondragover="event.preventDefault();this.classList.add('drop-ok')"
+      ondragleave="this.classList.remove('drop-ok')"
+      ondrop="_schedStripDrop(event,${i+1})"><div class="ssd-name">${n}</div><div class="ssd-num">${d.getDate()}</div></div>`;
+  }).join('');
+  document.body.appendChild(el);
+  requestAnimationFrame(()=>el.classList.add('on'));
+}
+function _hideSchedStrip(){document.getElementById('sched-strip')?.remove();}
+function _schedStripDrop(e,dayNum){
+  e.preventDefault();e.stopPropagation();
+  const strip=document.getElementById('sched-strip');if(!strip)return;
+  const itemId=strip.dataset.itemId;
+  _hideSchedStrip();
+  const j=jobs.find(x=>x.id===activeJobId);
+  let item=null;(phases||[]).forEach(p=>{const f=(p.items||[]).find(i=>i.id===itemId);if(f)item=f;});
+  if(!item||!j)return;
+  if(j.paused){toast('This job is paused — time cannot be scheduled against it','warn');return;}
+  const planned=parseHrsInput(item.hours||'')||0;
+  const hours=planned>0?Math.max(.5,Math.min(8,planned)):1;
+  const wd=getWeekData(MY_PERSON,0);
+  if(!wd[dayNum])wd[dayNum]=[];
+  wd[dayNum].push({id:uid('t'),title:item.name,job:`${j.id} ${j.name}`,jobId:j.id,item:item.name,itemId:item.id,hours,urgent:false,personal:false});
+  logActivity(j.id,MY_PERSON,'task_add',`Scheduled <strong>${esc(item.name)}</strong> for ${DAY_NAMES[dayNum-1]} (${formatHrs(hours)})`);
+  toast(`Scheduled “${esc(item.name)}” — ${DAY_NAMES[dayNum-1]}, ${formatHrs(hours)}`,'success');
+}
 function _docLineItemsHTML(job){
   const phs=(job&&job.phases)||[];
   let rows='';
@@ -7295,18 +7402,37 @@ function _docModalShell(titleWord,statusPill,metaHTML,lineRows,totalsRows,extraH
   document.getElementById('doc-preview-modal')?.remove();
   const m=document.createElement('div');m.className='modal-bg on';m.id='doc-preview-modal';
   m.addEventListener('click',e=>{if(e.target===m)m.remove();});
-  m.innerHTML=`<div class="modal" style="max-width:760px;width:92vw;max-height:90vh;display:flex;flex-direction:column;">
-    <div class="modal-hd"><span class="modal-hd-title">${titleWord} preview</span><button class="modal-x" onclick="document.getElementById('doc-preview-modal').remove()"><i class="ti ti-x"></i></button></div>
-    <div class="modal-bd" style="padding:0;overflow-y:auto;">
-      <div style="background:#fff;padding:30px 34px;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;padding-bottom:16px;border-bottom:2px solid var(--border);">
-          <div><div style="margin-bottom:8px;">${ccLogoSVG(34)}</div><div style="font-size:11px;color:var(--muted);line-height:1.7;">NZ Ltd<br>Level 1, 53 Fort Street, Auckland<br>GST 116710013</div></div>
-          <div style="text-align:right;"><div style="font-size:22px;font-family:var(--display);">${titleWord}</div><div style="margin-top:8px;">${statusPill}</div></div>
+  // Letterhead redesign: the document renders as a paper page floating on the grey modal
+  // body — red C&C mark, big tight document word, brand rule, generous margins, refined
+  // line-item table and a boxed totals block, with a proper company footer line.
+  m.innerHTML=`<div class="modal" style="max-width:820px;width:94vw;max-height:92vh;display:flex;flex-direction:column;background:var(--off);">
+    <div class="modal-hd" style="background:transparent;border-bottom:none;padding:16px 24px 4px;"><span class="modal-hd-title" style="font-size:11px;color:var(--muted);letter-spacing:.09em;text-transform:uppercase;font-weight:600;">${titleWord} preview</span><button class="modal-x" onclick="document.getElementById('doc-preview-modal').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd" style="padding:8px 24px 28px;overflow-y:auto;">
+      <div style="background:#fff;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.07),0 18px 52px rgba(0,0,0,.13);padding:52px 56px 40px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>${ccLogoSVG(42,'#ED1E24')}</div>
+          <div style="text-align:right;">
+            <div style="font-size:30px;font-weight:700;letter-spacing:-.03em;line-height:1;color:var(--ink);">${titleWord}</div>
+            <div style="margin-top:10px;">${statusPill}</div>
+          </div>
         </div>
-        <div style="display:flex;gap:24px;margin-bottom:20px;font-size:12px;line-height:1.7;">${metaHTML}</div>
-        ${lineRows?`<table style="width:100%;border-collapse:collapse;margin-bottom:6px;"><thead><tr><th style="text-align:left;padding:8px 14px;font-size:11px;letter-spacing:.08em;color:var(--muted);font-weight:500;">DESCRIPTION</th><th style="text-align:right;padding:8px 14px;font-size:11px;letter-spacing:.08em;color:var(--muted);font-weight:500;">HRS</th><th style="text-align:right;padding:8px 14px;font-size:11px;letter-spacing:.08em;color:var(--muted);font-weight:500;">AMOUNT</th></tr></thead><tbody>${lineRows}</tbody></table><div style="font-size:10px;color:var(--muted);font-style:italic;margin:0 14px 14px;">Breakdown reflects the current job plan; the total below is the figure on record in Streamtime.</div>`:'<div style="font-size:12px;color:var(--muted);margin-bottom:16px;padding:14px;background:var(--off);border-radius:6px;">No linked job plan to itemise — showing document totals only.</div>'}
-        <div style="display:flex;justify-content:flex-end;margin-bottom:8px;"><table style="font-size:13px;min-width:260px;">${totalsRows}</table></div>
+        <div style="width:52px;height:3px;background:#ED1E24;margin:28px 0 26px;"></div>
+        <div style="display:flex;gap:24px;margin-bottom:32px;font-size:12.5px;line-height:1.75;">${metaHTML}</div>
+        ${lineRows?`<table style="width:100%;border-collapse:collapse;">
+          <thead><tr>
+            <th style="text-align:left;padding:0 14px 10px;font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:600;border-bottom:1.5px solid var(--ink);">DESCRIPTION</th>
+            <th style="text-align:right;padding:0 14px 10px;font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:600;border-bottom:1.5px solid var(--ink);">HRS</th>
+            <th style="text-align:right;padding:0 14px 10px;font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:600;border-bottom:1.5px solid var(--ink);">AMOUNT</th>
+          </tr></thead><tbody>${lineRows}</tbody></table>
+          <div style="font-size:10px;color:var(--muted);font-style:italic;margin:10px 14px 22px;">Breakdown reflects the current job plan; the total below is the figure on record in Streamtime.</div>`
+        :'<div style="font-size:12px;color:var(--muted);margin-bottom:22px;padding:14px 16px;background:var(--off);border-radius:10px;">No linked job plan to itemise — showing document totals only.</div>'}
+        <div style="display:flex;justify-content:flex-end;"><div style="min-width:300px;background:var(--off);border-radius:12px;padding:14px 18px;"><table style="font-size:13px;width:100%;">${totalsRows}</table></div></div>
         ${extraHTML||''}
+        <div style="margin-top:46px;padding-top:16px;border-top:1px solid var(--faint);display:flex;justify-content:space-between;align-items:baseline;gap:14px;font-size:10.5px;color:var(--muted);flex-wrap:wrap;">
+          <span style="font-weight:600;color:var(--ink);letter-spacing:.01em;">Content &amp; Co</span>
+          <span>NZ Ltd · Level 1, 53 Fort Street, Auckland · GST 116710013</span>
+          <span><a href="https://content-co.nz" target="_blank" style="color:var(--red);text-decoration:none;">content-co.nz</a></span>
+        </div>
       </div>
     </div>
   </div>`;
@@ -7948,7 +8074,8 @@ function renderItems(phId,_readonly){
 ${nameCell}${teamCell}${hrsCell}${rateCell}
 <td class="i-sell"><span style="font-weight:400;" title="Sell value of logged time">${_hasRate?_usedDisp:'—'}</span> <span class="i-sof">${_hasRate?' / '+item.total:''}</span></td>
 ${statusCell}`;
-    tr.addEventListener('dragstart',e=>{dragSrc=tr;tr.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+    tr.addEventListener('dragstart',e=>{dragSrc=tr;tr.classList.add('dragging');e.dataTransfer.effectAllowed='move';_showSchedStrip(item);});
+    tr.addEventListener('dragend',()=>{tr.classList.remove('dragging');_hideSchedStrip();});
     tr.addEventListener('dragover',e=>e.preventDefault());
     tr.addEventListener('drop',e=>{e.stopPropagation();if(dragSrc===tr)return;const sp=phases.find(p=>p.id===dragSrc.dataset.phId);const tp=phases.find(p=>p.id===tr.dataset.phId);const si=sp.items.findIndex(i=>i.id===dragSrc.dataset.itemId);const ti=tp.items.findIndex(i=>i.id===tr.dataset.itemId);const[mv]=sp.items.splice(si,1);tp.items.splice(ti,0,mv);renderPhases();});
     tr.addEventListener('dragend',()=>document.querySelectorAll('.dragging').forEach(el=>el.classList.remove('dragging')));
@@ -10861,7 +10988,7 @@ function renderInvoices(){
 
   // Sortable column headers — shared sort state per table, click to toggle asc/desc
   const _invSortArrow=col=>_invSortCol===col?(_invSortDir===1?' <i class="ti ti-chevron-up" style="font-size:9px;"></i>':' <i class="ti ti-chevron-down" style="font-size:9px;"></i>'):'';
-  const _invTh=(col,label,alignRight)=>`<th class="inv-th" style="cursor:pointer;user-select:none;${alignRight?'text-align:right;':''}" onclick="_setInvSort('${col}')">${label}${_invSortArrow(col)}</th>`;
+  const _invTh=(col,label,alignRight)=>`<th class="inv-th ci-${col}" style="cursor:pointer;user-select:none;${alignRight?'text-align:right;':''}" onclick="_setInvSort('${col}')">${label}${_invSortArrow(col)}</th>`;
   const tableHeader=`<table class="inv-table"><thead><tr>
     ${_invTh('company','Company')}
     ${_invTh('num','Inv #')}
@@ -10880,14 +11007,14 @@ function renderInvoices(){
     const amt=i.totalAmountIncTax!=null?Math.round(i.totalAmountIncTax):(i.totalAmountExTax!=null?Math.round(i.totalAmountExTax*1.15):(job?Math.round((job._stInvoiced||0)*1.15):null));
     const isOverdue=_getInvStatus(i)==='overdue';
     return`<tr class="inv-tr" style="cursor:pointer;${isOverdue?'background:#fff8f8;':''}" onclick="openInvoiceDocPreview('${i.id}')">
-      <td class="inv-td" style="color:var(--muted);font-size:12px;">${i.company?.name||'—'}</td>
-      <td class="inv-td" style="font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;">${i.number||i.id}</td>
-      <td class="inv-td"><span style="font-size:11px;color:var(--muted);margin-right:4px;">${job?job.id:''}</span>${job?.name||'—'}</td>
-      <td class="inv-td" style="font-size:12px;color:var(--muted);">${po||'—'}</td>
-      <td class="inv-td" style="font-size:12px;color:var(--muted);">${fmtDate(i.sentDate)}</td>
-      <td class="inv-td" style="font-size:12px;color:${isOverdue?'var(--red)':'var(--muted)'};">${i.dueDate?fmtDate(i.dueDate):'—'}</td>
-      <td class="inv-td" style="font-size:12px;color:${i.paidDate?'#2E7D32':'var(--muted)'};">${i.paidDate?fmtDate(i.paidDate):'—'}</td>
-      <td class="inv-td">${_invStatusPill(i)}</td>
+      <td class="inv-td ci-company" style="color:var(--muted);font-size:12px;">${i.company?.name||'—'}</td>
+      <td class="inv-td ci-num" style="font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;">${i.number||i.id}</td>
+      <td class="inv-td ci-job"><span style="font-size:11px;color:var(--muted);margin-right:4px;">${job?job.id:''}</span>${job?esc(job.name):'—'}</td>
+      <td class="inv-td ci-po" style="font-size:12px;color:var(--muted);">${po||'—'}</td>
+      <td class="inv-td ci-sent" style="font-size:12px;color:var(--muted);">${fmtDate(i.sentDate)}</td>
+      <td class="inv-td ci-due" style="font-size:12px;color:${isOverdue?'var(--red)':'var(--muted)'};">${i.dueDate?fmtDate(i.dueDate):'—'}</td>
+      <td class="inv-td ci-paid" style="font-size:12px;color:${i.paidDate?'#2E7D32':'var(--muted)'};">${i.paidDate?fmtDate(i.paidDate):'—'}</td>
+      <td class="inv-td ci-status">${_invStatusPill(i)}</td>
       <td class="inv-td" style="text-align:right;font-family:var(--display);font-size:14px;font-variant-numeric:tabular-nums;">${amt!=null?'$'+amt.toLocaleString():'—'}</td>
     </tr>`;
   };
@@ -10917,7 +11044,7 @@ function renderInvoices(){
       tbiJobs=[...tbiJobs].sort((a,b)=>{const av=keyFn(a),bv=keyFn(b);if(av<bv)return-1*_tbiSortDir;if(av>bv)return 1*_tbiSortDir;return 0;});
     }
     const _tbiArrow=col=>_tbiSortCol===col?(_tbiSortDir===1?' <i class="ti ti-chevron-up" style="font-size:9px;"></i>':' <i class="ti ti-chevron-down" style="font-size:9px;"></i>'):'';
-    const _tbiTh=(col,label,alignRight)=>`<th class="inv-th" style="cursor:pointer;user-select:none;${alignRight?'text-align:right;':''}" onclick="_setTbiSort('${col}')">${label}${_tbiArrow(col)}</th>`;
+    const _tbiTh=(col,label,alignRight)=>`<th class="inv-th ci-${col}" style="cursor:pointer;user-select:none;${alignRight?'text-align:right;':''}" onclick="_setTbiSort('${col}')">${label}${_tbiArrow(col)}</th>`;
     if(tbiJobs.length||hidden.length){
       tbiHTML=`<div class="grp-hd" style="background:#fffbea;border-left:3px solid #F39C12;">
         <span><i class="ti ti-alert-triangle" style="color:#F39C12;margin-right:6px;"></i>Uninvoiced jobs</span>
@@ -10926,10 +11053,10 @@ function renderInvoices(){
       ${tbiJobs.length?`<table class="inv-table"><thead><tr>
         ${_tbiTh('company','Company')}${_tbiTh('job','Job')}${_tbiTh('po','PO')}${_tbiTh('status','Status')}${_tbiTh('amount','Amount ex GST',true)}<th class="inv-th" style="width:30px;"></th>
       </tr></thead><tbody>${tbiJobs.map(j=>`<tr class="inv-tr" style="cursor:pointer;" onclick="openJobDetail('${j.id}')">
-        <td class="inv-td" style="color:var(--muted);font-size:12px;">${j.company}</td>
-        <td class="inv-td"><span style="font-size:11px;color:var(--muted);margin-right:6px;">${j.id}</span>${esc(j.name)}</td>
-        <td class="inv-td" style="font-size:12px;color:var(--muted);">${j.po||'—'}</td>
-        <td class="inv-td"><span class="wf-badge wf-completed">Complete</span></td>
+        <td class="inv-td ci-company" style="color:var(--muted);font-size:12px;">${j.company}</td>
+        <td class="inv-td ci-job"><span style="font-size:11px;color:var(--muted);margin-right:6px;">${j.id}</span>${esc(j.name)}</td>
+        <td class="inv-td ci-po" style="font-size:12px;color:var(--muted);">${j.po||'—'}</td>
+        <td class="inv-td ci-status"><span class="wf-badge wf-completed">Complete</span></td>
         <td class="inv-td" style="text-align:right;font-family:var(--display);font-size:14px;font-variant-numeric:tabular-nums;">$${(j._sellUsed||0).toLocaleString()}</td>
         <td class="inv-td" style="text-align:center;"><i class="ti ti-eye-off" title="Hide from this list" style="font-size:13px;color:var(--muted);cursor:pointer;" onclick="event.stopPropagation();hideUninvoicedJob('${j.id}')"></i></td>
       </tr>`).join('')}</tbody></table>`:''}`;

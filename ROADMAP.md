@@ -1,6 +1,6 @@
 # C&C Platform — Roadmap
 
-*Last updated 13 Jul 2026 · v2.31.0*
+*Last updated 13 Jul 2026 · v2.32.0*
 
 ---
 
@@ -76,6 +76,8 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 | @mentions + notifications | Needs a real-time backend (websockets/polling server) — not buildable on the static localStorage architecture |
 | Real durable backend for all `db*` writes | The actual size of the Phase 2→3 jump — see "What's blocking Phase 3" above. Every other Phase 2 feature is UI-complete and just needs its stub swapped once this exists |
 
+**Shipped (v2.32.0):** Round 3 features. Column picker on Jobs/Invoices/Quotes (show/hide via `hc-*` container classes + static CSS — no table refactor needed, prefs in `cc_hidecols_*`; reorder still deferred), redesigned quote/invoice document previews (letterhead: red C&C mark, display-size title, brand rule, phase-subtotal line table, boxed totals, company footer — all via the shared `_docModalShell`), and drag-to-schedule (drag a job-plan item row → frosted Mon–Fri strip docks at screen bottom → drop creates a To Do for the current user with the item's planned hours, clamped to 8h).
+
 **Shipped (v2.31.0):** THE NEW SKIN — full visual reset to a cool Apple-like light system, done entirely at the CSS-token layer (no layout logic touched). Warm paper palette → cool light greys + near-black ink; black sidebar → frosted light glass (backdrop-blur, expands over content); content floats in a rounded shadowed window above a darker desktop; dark chrome (modal headers, phase bars, invoice section bars, follow-up card) → light surfaces; primary buttons → pills (secondary stay rects); deep-blur modal backdrops; radii up (cards 16 / modals 18); borderless status pills; chart theme cooled to match.
 
 **Shipped (v2.30.0):** Design push round 2. Global Search redesign (colour-coded categories, accent selection, kbd-hint footer + result count, escaped output), skeleton loading rows on the Jobs table, Needs-attention cards with tinted icons/count pills/hover rows, toast status icons, browser identity (title + red C&C favicon), depth pass (primary-button shadow, 4px rounded progress tracks, softer calendar chips, brand-red caret).
@@ -101,7 +103,7 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 **Shipped (v2.21.0):** Inline job name/date/status editing, native milestone CRUD, time logging folded into mark-task-done.
 
 **Deferred (deliberately, with rationale):**
-- **Column picker** on Jobs/Invoices/Quotes tables — those tables render hardcoded `th`/`td` HTML; a show/hide/reorder picker needs all three restructured into column-definition arrays first. Own focused pass (don't rush a refactor of the core tables).
+- ~~**Column picker** on Jobs/Invoices/Quotes tables~~ — **shipped v2.32.0** (show/hide via CSS container classes, which avoided the feared table refactor entirely). Column *reorder* remains deferred — that genuinely does need column-definition arrays.
 - **Role/admin permission gate** — a client-side-only gate is bypassable without real auth; belongs with the Phase 3 backend.
 - **ST-field accessor refactor** — best done *during* the Phase 3 migration (when those ~20 read sites change anyway) rather than as speculative churn now.
 
