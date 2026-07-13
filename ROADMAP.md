@@ -1,6 +1,6 @@
 # C&C Platform — Roadmap
 
-*Last updated 13 Jul 2026 · v2.33.0*
+*Last updated 13 Jul 2026 · v2.34.0*
 
 ---
 
@@ -76,7 +76,9 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 | @mentions + notifications | Needs a real-time backend (websockets/polling server) — not buildable on the static localStorage architecture |
 | Real durable backend for all `db*` writes | The actual size of the Phase 2→3 jump — see "What's blocking Phase 3" above. Every other Phase 2 feature is UI-complete and just needs its stub swapped once this exists |
 
-**Shipped (v2.33.0):** Round 4 (committed locally, not yet pushed). Task drop-dock on the To Do board (drag a card → dock offers last/next week pads + teammate avatars for one-motion reassign — `_showTaskDock`/`_taskDockWeek`/`_taskDockPerson`), floating pill sidebar (rail detaches into its own glass panel), boards + board-detail reskinned onto the new language (grey wells, floating cards), 5-minute resize floor actually reachable by drag (the 40px height clamp blocked it below ~50m), Progress tab full-width (1100px cap removed).
+**Shipped (v2.34.0):** The drag family grows: split zones between day columns (`_showSplitZones`/`_splitTaskAcross` — halves a task across two days), client card → "Create client board" dock, uninvoiced job row → "Create draft invoice" dock, ⌘-drag duplicates (alongside Alt-drag), file-drop onto job Activity (images downscaled ≤720px JPEG into `j.activity[].img`, persisted via the native-data overlay; other files noted by name). Plus THE RED THREAD design pass: red full-stop on view titles, blush wash on the desktop, red hover glow on primary CTAs, calendar-grade day numbers.
+
+**Shipped (v2.33.0):** Round 4. Task drop-dock on the To Do board (drag a card → dock offers last/next week pads + teammate avatars for one-motion reassign — `_showTaskDock`/`_taskDockWeek`/`_taskDockPerson`), floating pill sidebar (rail detaches into its own glass panel), boards + board-detail reskinned onto the new language (grey wells, floating cards), 5-minute resize floor actually reachable by drag (the 40px height clamp blocked it below ~50m), Progress tab full-width (1100px cap removed).
 
 **Shipped (v2.32.0):** Round 3 features. Column picker on Jobs/Invoices/Quotes (show/hide via `hc-*` container classes + static CSS — no table refactor needed, prefs in `cc_hidecols_*`; reorder still deferred), redesigned quote/invoice document previews (letterhead: red C&C mark, display-size title, brand rule, phase-subtotal line table, boxed totals, company footer — all via the shared `_docModalShell`), and drag-to-schedule (drag a job-plan item row → frosted Mon–Fri strip docks at screen bottom → drop creates a To Do for the current user with the item's planned hours, clamped to 8h).
 

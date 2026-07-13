@@ -1536,6 +1536,25 @@ body{background:#E9E9ED;}
 .ss-week{width:auto;padding:13px 14px 12px;}
 .ss-week .ssd-name{font-size:10px;letter-spacing:.06em;}
 .ss-sep{width:1px;height:34px;background:var(--border);margin:0 6px;}
+
+/* ══ v2.34 — Split zones: drop a task on the seam between two days to halve it ══ */
+.split-zone{position:fixed;width:22px;z-index:1400;border-radius:11px;background:rgba(237,30,36,.05);border:1.5px dashed rgba(237,30,36,.3);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .18s,background .12s;}
+.split-zone.on{opacity:1;}
+.split-zone.drop-ok{background:rgba(237,30,36,.13);border-style:solid;border-color:var(--red);}
+.split-zone .sz-lbl{writing-mode:vertical-rl;font-size:8.5px;letter-spacing:.16em;color:var(--red);font-weight:600;text-transform:uppercase;pointer-events:none;}
+
+/* ══ v2.34 — THE RED THREAD: the brand signature woven through the whole system ══ */
+/* 1 · Every view title ends in a brand-red full stop */
+.view-title::after,.boards-head::after,.sett-tab-hd::after{content:'.';color:var(--red);}
+/* 2 · The desktop behind the floating panels carries a whisper of warmth, top-right */
+body{background:radial-gradient(1100px 720px at 88% -8%,#F1E7E6 0%,#E9E9ED 55%);}
+/* 3 · Primary actions glow faintly red on hover — alive, not loud */
+.d-action.primary:hover,.tb-btn:not(.ghost):hover,.modal-ok:hover,.modal-save:hover,.tm-btn-save:hover,.cb-create-btn:hover{opacity:1;box-shadow:0 1px 3px rgba(0,0,0,.2),0 4px 20px rgba(237,30,36,.28);}
+/* 4 · To Do day numbers read like a beautiful calendar */
+.day-num{font-size:22px;font-weight:650;letter-spacing:-.02em;}
+/* 5 · Activity attachments */
+.act-img{display:block;max-width:260px;max-height:180px;border-radius:10px;border:1px solid var(--border);margin-top:8px;cursor:zoom-in;}
+.act-feed.file-drop-hi{outline:2px dashed var(--red);outline-offset:-8px;border-radius:14px;background:rgba(237,30,36,.03);}
 </style>
 </head>
 <body>
@@ -2587,8 +2606,16 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.33.0';
+const APP_VERSION='2.34.0';
 const CHANGELOG=[
+  {version:'2.34.0',date:'13 Jul 2026',title:'The drag family grows + the red thread',items:[
+    'Split a task across two days: while dragging a card on the To Do board, thin red seams appear between the day columns — drop the card on a seam and it splits in half across both days (5-minute-snapped halves).',
+    'Drag a client card and a drop pad offers "Create client board" — drop it and that client\'s live board exists and opens. If they already have one, it opens instead.',
+    'Drag an uninvoiced job row (Invoices → Uninvoiced) onto the "Create draft invoice" pad to jump straight into a draft invoice for that job.',
+    'Drop a file onto a job\'s Activity feed to attach it — images appear inline (auto-compressed), click to view full size; other files are noted by name.',
+    '⌘-drag now duplicates a task card, same as Alt-drag.',
+    'THE RED THREAD — a brand signature woven through the whole platform: every view title ends in a brand-red full stop, the desktop behind the floating panels carries a whisper of warmth in one corner, primary buttons glow faintly red on hover, and the To Do day numbers read like a beautiful calendar.',
+  ]},
   {version:'2.33.0',date:'13 Jul 2026',title:'Task drop-dock, floating pill sidebar, boards reskin, fixes',items:[
     'New drop-dock on the To Do board: start dragging any task card and a frosted dock appears — drop it on "← Last week" / "Next week →" to reschedule it a week either way, or drop it on a teammate\'s avatar to hand it to them. Same one-motion family as drag-to-schedule.',
     'The sidebar is now its own floating glass pill — detached from the screen edge with rounded corners and a soft shadow, matching the floating content window.',
@@ -5154,8 +5181,9 @@ function createTaskCard(t,day,isDone){
     e.dataTransfer.effectAllowed='move';
     e.dataTransfer.setData('text/plain',JSON.stringify({taskId:t.id,fromDay:day}));
     _showTaskDock(t,day);
+    _showSplitZones(t,day);
   });
-  card.addEventListener('dragend',()=>{card.classList.remove('dragging-c');_hideTaskDock();_clearDropIndicators();document.querySelectorAll('.drop-hi,.div-drop-hi').forEach(el=>el.classList.remove('drop-hi','div-drop-hi'));});
+  card.addEventListener('dragend',()=>{card.classList.remove('dragging-c');_hideTaskDock();_hideSplitZones();_clearDropIndicators();document.querySelectorAll('.drop-hi,.div-drop-hi').forEach(el=>el.classList.remove('drop-hi','div-drop-hi'));});
   card.addEventListener('dragover',e=>{
     e.preventDefault();e.stopPropagation();
     const parent=card.closest('.day-todo,.day-done');
@@ -5383,7 +5411,7 @@ function onDropToSection(e,toDay,markDone){
     if(aboveId){
       insertIdx=(wd[toDay]||[]).findIndex(t=>t.id===aboveId);
     }
-    if(e.altKey){
+    if(e.altKey||e.metaKey){ // Alt-drag or ⌘-drag duplicates instead of moving
       const clone={...task,id:uid('t'),done:markDone};
       if(!wd[toDay])wd[toDay]=[];
       if(insertIdx>=0)wd[toDay].splice(insertIdx,0,clone);else wd[toDay].push(clone);
@@ -7475,6 +7503,85 @@ function _taskDockPerson(e,pk){
   renderTodo();saveData();
   toast(`Handed to ${people[pk]?.name||pk}`,'success');
 }
+// ── Client dock: drag a client card → drop pad spawns that client's live board ──
+function _showClientDock(clientName){
+  document.getElementById('task-dock')?.remove();
+  const el=document.createElement('div');el.className='sched-strip';el.id='task-dock';
+  el.innerHTML=`<span class="ss-lbl">Drop to</span><div class="ss-day ss-week" ondragover="event.preventDefault();this.classList.add('drop-ok')" ondragleave="this.classList.remove('drop-ok')" ondrop="_clientDockDrop(event)"><div class="ssd-name"><i class="ti ti-layout-kanban" style="font-size:11px;vertical-align:-1px;"></i> Create client board</div></div>`;
+  el.dataset.client=clientName;
+  document.body.appendChild(el);
+  requestAnimationFrame(()=>el.classList.add('on'));
+}
+function _clientDockDrop(e){
+  e.preventDefault();e.stopPropagation();
+  const dock=document.getElementById('task-dock');if(!dock)return;
+  const co=dock.dataset.client;_hideTaskDock();if(!co)return;
+  const existing=boardsList.find(b=>b.type==='client'&&b.clientFilter===co);
+  if(existing){navTo('boards');setTimeout(()=>openBoard(existing.id),150);toast(`${co} already has a board — opening it`,'info');return;}
+  const b={id:uid('b'),name:co,type:'client',clientFilter:co};
+  boardsList.push(b);saveBoardsData();
+  navTo('boards');renderBoardsList();
+  setTimeout(()=>openBoard(b.id),150);
+  toast(`Board created for ${co}`,'success');
+}
+// ── Invoice dock: drag an uninvoiced job row → drop pad opens a draft invoice for it ──
+function _showInvDock(jobId){
+  document.getElementById('task-dock')?.remove();
+  const el=document.createElement('div');el.className='sched-strip';el.id='task-dock';
+  el.innerHTML=`<span class="ss-lbl">Drop to</span><div class="ss-day ss-week" ondragover="event.preventDefault();this.classList.add('drop-ok')" ondragleave="this.classList.remove('drop-ok')" ondrop="_invDockDrop(event)"><div class="ssd-name"><i class="ti ti-file-invoice" style="font-size:11px;vertical-align:-1px;"></i> Create draft invoice</div></div>`;
+  el.dataset.jobId=jobId;
+  document.body.appendChild(el);
+  requestAnimationFrame(()=>el.classList.add('on'));
+}
+function _invDockDrop(e){
+  e.preventDefault();e.stopPropagation();
+  const dock=document.getElementById('task-dock');if(!dock)return;
+  const jid=dock.dataset.jobId;_hideTaskDock();if(!jid)return;
+  openJobDetail(jid);
+  setTimeout(()=>{openInvoice();toast('Draft invoice started','success');},250);
+}
+// ── Split zones: while dragging a task card, thin red seams appear between day columns —
+// drop on a seam to split the task across the two adjacent days, half the hours each.
+function _showSplitZones(t,day){
+  _hideSplitZones();
+  if(!t.hours||t.hours<10/60)return; // nothing sensible to split below 10 minutes
+  const cols=[...document.querySelectorAll('#day-cols .day-col.workday')];
+  if(cols.length<2)return;
+  for(let i=0;i<cols.length-1;i++){
+    const r=cols[i].getBoundingClientRect();
+    const z=document.createElement('div');
+    z.className='split-zone';
+    z.style.left=(r.right-11)+'px';
+    z.style.top=(r.top+64)+'px';
+    z.style.height=Math.max(120,r.height-72)+'px';
+    z.dataset.left=i+1;z.dataset.right=i+2;
+    z.dataset.taskId=t.id;z.dataset.fromDay=day;
+    z.innerHTML='<span class="sz-lbl">Split</span>';
+    z.addEventListener('dragover',e=>{e.preventDefault();z.classList.add('drop-ok');});
+    z.addEventListener('dragleave',()=>z.classList.remove('drop-ok'));
+    z.addEventListener('drop',e=>{e.preventDefault();e.stopPropagation();_splitTaskAcross(z);});
+    document.body.appendChild(z);
+    requestAnimationFrame(()=>z.classList.add('on'));
+  }
+}
+function _hideSplitZones(){document.querySelectorAll('.split-zone').forEach(z=>z.remove());}
+function _splitTaskAcross(zone){
+  const{taskId,fromDay,left,right}=zone.dataset;
+  _hideSplitZones();_hideTaskDock();
+  const wd=getWeekData(currentPerson);
+  const arr=wd[+fromDay]||[];
+  const idx=arr.findIndex(x=>x.id===taskId);
+  if(idx<0)return;
+  const[task]=arr.splice(idx,1);
+  const total=task.hours||1;
+  const half=Math.max(5/60,Math.round((total/2)*12)/12); // 5-min snapped halves
+  const rest=Math.max(5/60,Math.round((total-half)*12)/12);
+  task.hours=half;
+  (wd[+left]=wd[+left]||[]).push(task);
+  (wd[+right]=wd[+right]||[]).push({...task,id:uid('t'),hours:rest});
+  renderTodo();saveData();
+  toast(`Split — ${formatHrs(half)} ${DAY_NAMES[+left-1]} · ${formatHrs(rest)} ${DAY_NAMES[+right-1]}`,'success');
+}
 function _docLineItemsHTML(job){
   const phs=(job&&job.phases)||[];
   let rows='';
@@ -8862,6 +8969,42 @@ function addActivityComment(jobId){
   logActivity(jobId,MY_PERSON,'comment',text.replace(/</g,'&lt;').replace(/\n/g,'<br>'));
   if(activeJobId===jobId)renderActivityTab();
 }
+// ── Activity attachments: drop a file on the feed → note with an inline (compressed)
+// image. Images are downscaled to ≤720px JPEG so localStorage stays healthy; other file
+// types are recorded by name (no binary storage until the Phase 3 backend exists).
+function _activityFileDrop(ev,jobId){
+  const f=ev.dataTransfer.files[0];if(!f)return;
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  const add=(img)=>{
+    if(!j.activity)j.activity=[];
+    j.activity.unshift({ts:Date.now(),personKey:MY_PERSON,action:'attach',detail:`Attached <strong>${esc(f.name)}</strong>`,img:img||null});
+    saveData();renderActivityTab();
+    toast(img?'Image attached to activity':'File noted on activity','success');
+  };
+  if(!f.type.startsWith('image/')){add(null);return;}
+  const rd=new FileReader();
+  rd.onload=e2=>{
+    const im=new Image();
+    im.onload=()=>{
+      const scale=Math.min(1,720/Math.max(im.width,im.height));
+      const cv=document.createElement('canvas');
+      cv.width=Math.round(im.width*scale);cv.height=Math.round(im.height*scale);
+      cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);
+      let url=cv.toDataURL('image/jpeg',.8);
+      if(url.length>500000){toast('Image too large to store locally — noted without preview','warn');url=null;}
+      add(url);
+    };
+    im.onerror=()=>add(null);
+    im.src=e2.target.result;
+  };
+  rd.readAsDataURL(f);
+}
+function _openActImg(src){
+  const m=document.createElement('div');m.className='modal-bg on';
+  m.onclick=()=>m.remove();
+  m.innerHTML=`<img src="${src}" style="max-width:88vw;max-height:88vh;border-radius:14px;box-shadow:var(--shadow-l);">`;
+  document.body.appendChild(m);
+}
 function renderActivityTab(){
   const el=document.getElementById('dtab-activity');if(!el)return;
   const j=jobs.find(x=>x.id===activeJobId);
@@ -8869,7 +9012,11 @@ function renderActivityTab(){
   const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   // Merge local activity events with synthesised Streamtime time entries on this job
   const events=[];
-  (j.activity||[]).forEach(a=>events.push({ts:a.ts,personKey:a.personKey,detail:a.detail,_comment:a.action==='comment'}));
+  (j.activity||[]).forEach(a=>events.push({ts:a.ts,personKey:a.personKey,detail:a.detail,_comment:a.action==='comment',img:a.img||null}));
+  // Drop a file anywhere on the feed → attach it as an activity note (images inline)
+  el.ondragover=ev=>{if(ev.dataTransfer?.types?.includes('Files')){ev.preventDefault();el.classList.add('file-drop-hi');}};
+  el.ondragleave=()=>el.classList.remove('file-drop-hi');
+  el.ondrop=ev=>{if(ev.dataTransfer?.files?.length){ev.preventDefault();el.classList.remove('file-drop-hi');_activityFileDrop(ev,j.id);}};
   if(j._stId){
     stLoggedTimes.forEach(lt=>{
       if((lt.job?.id||lt.jobId)!==j._stId)return;
@@ -8928,6 +9075,7 @@ function renderActivityTab(){
         <div class="act-dot ${a._comment?'comment':a._st?'st':'local'}"></div>
         <div class="act-card">
           <div class="act-text">${a._comment?`<i class="ti ti-message-circle-2" style="font-size:11px;color:#7B9E87;margin-right:4px;"></i>`:''}${a.detail}</div>
+          ${a.img?`<img class="act-img" src="${a.img}" onclick="_openActImg(this.src)" alt="attachment">`:''}
           <div class="act-meta">
             <span class="act-av-xs" style="background:${p.color};">${p.initials}</span>
             <span>${p.name}</span>
@@ -9163,7 +9311,7 @@ function renderClients(){
       const totalInvoiced=cjobs.reduce((a,j)=>a+(j._stInvoiced||0),0);
       const totalPaid=cjobs.reduce((a,j)=>a+(j._stPaid||0),0);
       const fmtDol=n=>n>=1000?`$${(n/1000).toFixed(0)}k`:(n?`$${n}`:'');
-      return`<div class="client-card-full" onclick="openClientDetail('${c.id}')">
+      return`<div class="client-card-full" onclick="openClientDetail('${c.id}')" draggable="true" ondragstart="_showClientDock('${esc(c.name).replace(/'/g,'&#39;')}')" ondragend="_hideTaskDock()">
         <div class="ccf-name">${c.nickname?`<span style="font-weight:500;">${c.nickname}</span> <span style="font-size:12px;color:var(--muted);font-weight:400;">— ${c.name}</span>`:c.name}</div>
         <div class="ccf-contact">${c.contact||'<span style="color:#bbb;">No contact added</span>'}</div>
         <div class="ccf-meta">
@@ -9206,7 +9354,7 @@ function renderClients(){
     const totalInvoiced=cjobs.reduce((a,j)=>a+(j._stInvoiced||0),0);
     const totalPaid=cjobs.reduce((a,j)=>a+(j._stPaid||0),0);
     const fmtDol=n=>n>=1000?`$${(n/1000).toFixed(0)}k`:(n?`$${n}`:'');
-    return`<div class="client-card-full" onclick="openClientDetail('${c.id}')">
+    return`<div class="client-card-full" onclick="openClientDetail('${c.id}')" draggable="true" ondragstart="_showClientDock('${esc(c.name).replace(/'/g,'&#39;')}')" ondragend="_hideTaskDock()">
       <div class="ccf-name" style="display:flex;align-items:center;gap:6px;justify-content:space-between;"><span>${c.nickname?`<span style="font-weight:500;">${c.nickname}</span> <span style="font-size:12px;color:var(--muted);font-weight:400;">— ${c.name}</span>`:c.name}</span>${starBtnHTML('client',c.id,c.nickname||c.name)}</div>
       <div class="ccf-contact">${c.contact||'<span style="color:#bbb;">No contact added</span>'}</div>
       <div class="ccf-meta">
@@ -11144,7 +11292,7 @@ function renderInvoices(){
       </div>
       ${tbiJobs.length?`<table class="inv-table"><thead><tr>
         ${_tbiTh('company','Company')}${_tbiTh('job','Job')}${_tbiTh('po','PO')}${_tbiTh('status','Status')}${_tbiTh('amount','Amount ex GST',true)}<th class="inv-th" style="width:30px;"></th>
-      </tr></thead><tbody>${tbiJobs.map(j=>`<tr class="inv-tr" style="cursor:pointer;" onclick="openJobDetail('${j.id}')">
+      </tr></thead><tbody>${tbiJobs.map(j=>`<tr class="inv-tr" style="cursor:pointer;" onclick="openJobDetail('${j.id}')" draggable="true" ondragstart="_showInvDock('${j.id}')" ondragend="_hideTaskDock()">
         <td class="inv-td ci-company" style="color:var(--muted);font-size:12px;">${j.company}</td>
         <td class="inv-td ci-job"><span style="font-size:11px;color:var(--muted);margin-right:6px;">${j.id}</span>${esc(j.name)}</td>
         <td class="inv-td ci-po" style="font-size:12px;color:var(--muted);">${j.po||'—'}</td>
