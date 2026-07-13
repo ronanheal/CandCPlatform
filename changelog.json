@@ -1,7 +1,46 @@
 {
-  "generated_at": "2026-07-13T09:13:28.050499+00:00",
-  "current_version": "2.32.0",
+  "generated_at": "2026-07-13T20:28:05.264108+00:00",
+  "current_version": "2.34.0",
   "releases": [
+    {
+      "version": "2.34.0",
+      "date": "13 Jul 2026",
+      "title": "The drag family grows + the red thread",
+      "items": [
+        "Split a task across two days: while dragging a card on the To Do board, thin red seams appear between the day columns — drop the card on a seam and it splits in half across both days (5-minute-snapped halves).",
+        "Drag a client card and a drop pad offers \"Create client board\" — drop it and that client\\'s live board exists and opens. If they already have one, it opens instead.",
+        "Drag an uninvoiced job row (Invoices → Uninvoiced) onto the \"Create draft invoice\" pad to jump straight into a draft invoice for that job.",
+        "Drop a file onto a job\\'s Activity feed to attach it — images appear inline (auto-compressed), click to view full size; other files are noted by name.",
+        "⌘-drag now duplicates a task card, same as Alt-drag.",
+        "THE RED THREAD — a brand signature woven through the whole platform: every view title ends in a brand-red full stop, the desktop behind the floating panels carries a whisper of warmth in one corner, primary buttons glow faintly red on hover, and the To Do day numbers read like a beautiful calendar."
+      ],
+      "sections": [
+        "Boards",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.33.0",
+      "date": "13 Jul 2026",
+      "title": "Task drop-dock, floating pill sidebar, boards reskin, fixes",
+      "items": [
+        "New drop-dock on the To Do board: start dragging any task card and a frosted dock appears — drop it on \"← Last week\" / \"Next week →\" to reschedule it a week either way, or drop it on a teammate\\'s avatar to hand it to them. Same one-motion family as drag-to-schedule.",
+        "The sidebar is now its own floating glass pill — detached from the screen edge with rounded corners and a soft shadow, matching the floating content window.",
+        "Boards redesigned onto the new language: columns are soft grey wells, cards float on them with rounded corners and shadows, add-buttons are quiet dashed pills.",
+        "Fixed: dragging a task\\'s edge can now actually reach the 5-minute minimum — a leftover height clamp had silently stopped resizes below ~50 minutes.",
+        "Job detail: the Progress tab now uses the full page width instead of stopping at 1100px."
+      ],
+      "sections": [
+        "Boards",
+        "Jobs",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
     {
       "version": "2.32.0",
       "date": "13 Jul 2026",
