@@ -1,7 +1,23 @@
 {
-  "generated_at": "2026-07-14T01:35:18.552400+00:00",
-  "current_version": "2.35.0",
+  "generated_at": "2026-07-14T03:25:11.137306+00:00",
+  "current_version": "2.36.0",
   "releases": [
+    {
+      "version": "2.36.0",
+      "date": "14 Jul 2026",
+      "title": "Display type, launch moment, sync hardening",
+      "items": [
+        "The platform gets a true display typeface: every heading, view title and big number now sets in Inter Tight — tighter, more editorial, more confident — while body text stays in Inter. One family for reading, one for headlines.",
+        "A branded launch moment: the red C&C mark greets you on the desktop wash while the app wakes, then fades out. Capped at under two seconds no matter what.",
+        "Sync hardening at the source: the hourly export script could overwrite users.json with an empty file when the Streamtime API hiccuped (its safety guard was only wired up on the second of two saves). Both saves are now guarded — yesterday\\'s blank-board failure can\\'t recur, and the in-app cache fallback from v2.35 remains as the second line of defence."
+      ],
+      "sections": [
+        "Boards",
+        "Data",
+        "Jobs → Time",
+        "Settings"
+      ]
+    },
     {
       "version": "2.35.0",
       "date": "14 Jul 2026",
