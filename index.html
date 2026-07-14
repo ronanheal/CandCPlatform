@@ -1555,6 +1555,61 @@ body{background:radial-gradient(1100px 720px at 88% -8%,#F1E7E6 0%,#E9E9ED 55%);
 /* 5 · Activity attachments */
 .act-img{display:block;max-width:260px;max-height:180px;border-radius:10px;border:1px solid var(--border);margin-top:8px;cursor:zoom-in;}
 .act-feed.file-drop-hi{outline:2px dashed var(--red);outline-offset:-8px;border-radius:14px;background:rgba(237,30,36,.03);}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   v2.35 — DARK MODE. A true second skin, driven by the same tokens as light.
+   Documents (invoice/quote previews) intentionally stay paper-white.
+   ═══════════════════════════════════════════════════════════════════════════ */
+body.dark{
+  --off:#19191B;--white:#242427;--ink:#F2F2F4;--muted:#9C9CA3;--faint:#2A2A2E;--border:#37373C;
+  --done:#23402A;--done-ink:#8FD79A;
+  --ok:#66BB6A;--ok-ink:#8FD79A;--ok-bg:rgba(102,187,106,.15);
+  --warn-ink:#FFB74D;--warn-bg:rgba(255,152,0,.14);
+  --info-ink:#64B5F6;--info-bg:rgba(33,150,243,.15);
+  --danger-ink:#FF8A80;--danger-bg:rgba(244,67,54,.16);
+  --shadow-s:0 1px 2px rgba(0,0,0,.4),0 2px 8px rgba(0,0,0,.35);
+  --shadow-m:0 2px 8px rgba(0,0,0,.45),0 12px 32px rgba(0,0,0,.5);
+  --shadow-l:0 8px 24px rgba(0,0,0,.5),0 32px 80px rgba(0,0,0,.6);
+  background:radial-gradient(1100px 720px at 88% -8%,#2A1A1B 0%,#101012 55%);
+}
+body.dark .main{border-color:rgba(255,255,255,.08);}
+body.dark .sidebar{background:rgba(22,22,24,.7);border-color:rgba(255,255,255,.08);}
+body.dark .sidebar:hover{background:rgba(26,26,28,.92);}
+body.dark .s-logo{fill:#F2F2F4;}
+body.dark .s-btn{color:#84848B;}
+body.dark .s-btn:hover,body.dark .s-btn.on{color:#F2F2F4;background:rgba(255,255,255,.07);}
+body.dark .s-avatar{background:rgba(255,255,255,.06);color:#F2F2F4;}
+/* Primary actions invert — bright pills on the dark field */
+body.dark .d-action.primary,body.dark .tb-btn:not(.ghost),body.dark .modal-ok,body.dark .modal-save,
+body.dark .tm-btn-save,body.dark .save-b,body.dark .cb-create-btn,body.dark .cal-today-btn,body.dark .r-export-btn{background:#F5F5F7;color:#141416;}
+body.dark .tm-modal,body.dark .tm-hd{background:var(--white);}
+body.dark .cc-toast{background:#2E2E33;}
+body.dark .task-tooltip{background:#2E2E33;}
+body.dark .sched-strip{background:rgba(36,36,40,.85);border-color:rgba(255,255,255,.1);}
+body.dark .jobs-table tbody tr:hover,body.dark .prog-tr:hover,body.dark .prog-group-hd{background:rgba(255,255,255,.03);}
+body.dark .prog-group-hd:hover,body.dark .exp-head:hover,body.dark .detail-back:hover{background:rgba(255,255,255,.06);}
+body.dark .global-divider{background:#242428;border-color:#3A3A3F;}
+body.dark .todo-overflow-pill,body.dark .done-overflow-pill{background:rgba(36,36,40,.97);}
+body.dark .zone-bucket,body.dark .zone-bucket.todo-bucket{background:#202023;border-color:#37373C;}
+body.dark .zone-bucket.done-bucket{background:#1D2B1F;border-color:#2E4A33;}
+body.dark .zone-bucket-today{background:#26211C;border-color:#4A3E2E;}
+body.dark .gs-ico{background:rgba(255,255,255,.06)!important;border-color:rgba(255,255,255,.1)!important;}
+body.dark .inv-pill.paid,body.dark .wf-live,body.dark .t-bill,body.dark .ib-c,body.dark .exp-badg.approved{background:rgba(102,187,106,.16);color:#8FD79A;}
+body.dark .inv-pill.approved,body.dark .exp-badg.invoiced{background:rgba(33,150,243,.16);color:#64B5F6;}
+body.dark .wf-quote,body.dark .ib-p{background:rgba(100,140,220,.16);color:#8FB4F0;}
+body.dark .wf-invoiced{background:rgba(171,71,188,.18);color:#CE93D8;}
+body.dark .inv-pill.voided,body.dark .paused-badge{background:rgba(255,255,255,.07);color:#9C9CA3;border-color:rgba(255,255,255,.12);}
+body.dark .day-todo.drop-hi{background:#1E2531;}
+body.dark .day-done.drop-hi{background:#1D2B1F;}
+body.dark .grp-hd[style*="fffbea"]{background:#2A2418!important;}
+body.dark *::-webkit-scrollbar-thumb{background:#3D3D42;border-color:var(--off);}
+body.dark *::-webkit-scrollbar-thumb:hover{background:#4C4C52;}
+body.dark ::selection{background:rgba(237,30,36,.3);}
+/* Print always renders in light, even from dark mode */
+@media print{body.dark{--ink:#191714;--muted:#8A857C;--white:#fff;--off:#F6F4EF;--border:#E3DFD6;--faint:#ECE9E2;}}
+/* KPI sparkline row */
+.kpi-spark{margin-top:12px;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;}
+.kpi-spark .ks-lbl{font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);}
 </style>
 </head>
 <body>
@@ -1570,7 +1625,8 @@ body{background:radial-gradient(1100px 720px at 88% -8%,#F1E7E6 0%,#E9E9ED 55%);
       <div class="s-btn" id="snav-schedule" onclick="navTo('schedule')"><i class="ti ti-calendar-week"></i><span class="s-tip">Schedule</span></div>
       <div class="s-btn" id="snav-reporting" onclick="navTo('reporting')"><i class="ti ti-chart-bar"></i><span class="s-tip">Reporting</span></div>
       <div class="s-btn" id="snav-boards" onclick="navTo('boards')"><i class="ti ti-layout-kanban"></i><span class="s-tip">Boards</span></div>
-      <div class="s-btn" id="snav-settings" style="margin-top:auto;" onclick="navTo('settings')"><i class="ti ti-settings"></i><span class="s-tip">Settings</span></div>
+      <div class="s-btn" id="snav-theme" style="margin-top:auto;" onclick="toggleTheme()" title="Light / dark appearance"><i class="ti ti-moon" id="theme-icon"></i><span class="s-tip">Appearance</span></div>
+      <div class="s-btn" id="snav-settings" onclick="navTo('settings')"><i class="ti ti-settings"></i><span class="s-tip">Settings</span></div>
     </div>
     <div class="s-avatar">RO<span class="s-tip">Ronan</span></div>
   </div>
@@ -2364,7 +2420,7 @@ body{background:radial-gradient(1100px 720px at 88% -8%,#F1E7E6 0%,#E9E9ED 55%);
       <i class="ti ti-star" id="gs-star-btn" title="Show starred" style="cursor:pointer;color:#E6A700;" onclick="showStarredInSearch()"></i>
       <span class="gs-kbd">esc</span>
     </div>
-    <div id="gs-results"><div class="gs-empty">Type to search across everything, or click <i class="ti ti-star" style="color:#E6A700;vertical-align:-1px;"></i> for starred items.</div></div>
+    <div id="gs-results"><div class="gs-empty">Type to search across everything, or click <i class="ti ti-star" style="color:#E6A700;vertical-align:-1px;"></i> for starred items.<div style="margin-top:10px;font-size:11.5px;color:var(--muted);">Or type a command — <strong style="color:var(--ink);">log 2h on 6928</strong> · <strong style="color:var(--ink);">pause 7023</strong> · <strong style="color:var(--ink);">todo Call printer 30m</strong></div></div></div>
     <div class="gs-foot"><span><kbd>↑↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span><kbd>esc</kbd> close</span><span class="gs-count" id="gs-foot-count"></span></div>
   </div>
 </div>
@@ -2459,6 +2515,20 @@ function _pDate(s){
   if(typeof s==='string'&&/^\d{4}-\d{2}-\d{2}/.test(s)&&s.length<=10){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
   return new Date(s);
 }
+// ── Appearance: light/dark theme, persisted per device ──────────────────────
+(function(){if(localStorage.getItem('cc_theme')==='dark')document.body.classList.add('dark');})();
+function _syncThemeIcon(){const ic=document.getElementById('theme-icon');if(ic)ic.className='ti '+(document.body.classList.contains('dark')?'ti-sun':'ti-moon');}
+function toggleTheme(){
+  const dark=!document.body.classList.contains('dark');
+  document.body.classList.toggle('dark',dark);
+  localStorage.setItem('cc_theme',dark?'dark':'light');
+  _syncThemeIcon();
+  _chartThemeMode=null; // charts re-theme on next render
+  const rp=document.getElementById('view-reporting');
+  if(rp&&!rp.classList.contains('hidden'))renderReporting();
+  toast(dark?'Dark mode on':'Light mode on','info');
+}
+document.addEventListener('DOMContentLoaded',_syncThemeIcon);
 // Collision-proof id minting (Date.now() alone collides within one ms)
 let _uidN=0;
 function uid(prefix){return (prefix||'')+Date.now().toString(36)+(_uidN++).toString(36)+Math.random().toString(36).slice(2,6);}
@@ -2606,8 +2676,14 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.34.0';
+const APP_VERSION='2.35.0';
 const CHANGELOG=[
+  {version:'2.35.0',date:'14 Jul 2026',title:'Dark mode, ⌘K commands, KPI sparklines, sync resilience',items:[
+    'Dark mode is here — the moon in the sidebar flips the whole platform to a true dark skin: dark floating window, dark frosted sidebar, inverted bright-pill buttons, re-themed charts and status pills. Remembered per device. (Documents stay paper-white on purpose.)',
+    '⌘K now takes commands, not just searches: type "log 2h on 6928 writing copy" to log time, "pause 7023" / "resume 7023" to flip a job, or "todo Call printer 30m" to drop a task on today — hit Enter and it\'s done.',
+    'The two hour KPIs on the dashboard now carry an 8-week sparkline, so you can see the shape of your workload at a glance, not just this week\'s number.',
+    'Sync resilience: if the hourly Streamtime export is mid-write and users.json comes back empty, the platform now rebuilds the team from its local cache instead of blanking the To Do board, Schedule and Reporting until the next sync. This exact failure happened today — it\'s now invisible.',
+  ]},
   {version:'2.34.0',date:'13 Jul 2026',title:'The drag family grows + the red thread',items:[
     'Split a task across two days: while dragging a card on the To Do board, thin red seams appear between the day columns — drop the card on a seam and it splits in half across both days (5-minute-snapped halves).',
     'Drag a client card and a drop pad offers "Create client board" — drop it and that client\'s live board exists and opens. If they already have one, it opens instead.',
@@ -3557,6 +3633,17 @@ async function initStreamtime(silent){
       });
       savePeople();
     }
+    // Resilience: if users.json failed or came back empty this load (hourly sync mid-write),
+    // rebuild a minimal user map from the cached people store — otherwise the Todo board,
+    // Schedule and Reporting all blank out until the next successful sync, despite every
+    // person already being known locally with their ST id.
+    if(!Object.keys(stUsersById).length){
+      Object.entries(people).forEach(([key,p])=>{
+        if(!p._stId)return;
+        stUsersById[p._stId]={id:p._stId,name:p.name,initials:p.initials||'?',color:p.color||'#999',key,email:'',active:!p._archived,capacityH:p.hoursPerDay||8,billableRate:0,costRate:_defCostRate(),costRateIsDefault:true,_fromCache:true};
+      });
+      if(Object.keys(stUsersById).length)console.warn('users.json unavailable — using cached people map for this session');
+    }
     // Contacts
     if(ctRes.ok)stContacts=await ctRes.json();
     // Jobs
@@ -3744,6 +3831,34 @@ const DAY_NAMES=['Monday','Tuesday','Wednesday','Thursday','Friday'];
 
 function getWeekNum(d){const jan1=new Date(d.getFullYear(),0,1);const days=Math.floor((d-jan1)/(86400000));return Math.ceil((days+jan1.getDay()+1)/7);}
 // ---- DASHBOARD ----
+// 8-week billable/non-billable hour buckets for the current user (Mon-start weeks).
+function _myWeeklySplit(nWeeks){
+  const uidST=String(people[MY_PERSON]?._stId||'');
+  const mon=new Date();const dow=(mon.getDay()+6)%7;
+  mon.setDate(mon.getDate()-dow);mon.setHours(0,0,0,0);
+  const start=new Date(mon);start.setDate(mon.getDate()-7*(nWeeks-1));
+  const bill=new Array(nWeeks).fill(0),nbill=new Array(nWeeks).fill(0);
+  (stLoggedTimes||[]).forEach(lt=>{
+    if(String(lt.userId)!==uidST)return;
+    const d=_pDate((lt.date||'').slice(0,10));
+    if(!d||d<start)return;
+    const idx=Math.floor((d-start)/(7*86400000));
+    if(idx<0||idx>=nWeeks)return;
+    if(lt.job?.isBillable!==false)bill[idx]+=(lt.minutes||0)/60;
+    else nbill[idx]+=(lt.minutes||0)/60;
+  });
+  return{bill,nbill};
+}
+// Tiny inline SVG sparkline — line + soft area + end dot. No chart library needed.
+function _sparkSVG(vals,color){
+  const w=104,h=26,n=vals.length;
+  if(!n||vals.every(v=>!v))return'';
+  const max=Math.max(...vals,1);
+  const pts=vals.map((v,i)=>[(i/(n-1))*w,h-2-(v/max)*(h-7)]);
+  const line=pts.map(p=>`${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+  const last=pts[n-1];
+  return`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block;overflow:visible;" aria-hidden="true"><path d="M0,${h} L${line.split(' ').join(' L')} L${w},${h} Z" fill="${color}" opacity=".09"/><polyline points="${line}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/><circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.6" fill="${color}"/></svg>`;
+}
 function renderDashboard(){
   const wrap=document.getElementById('dash-scroll');if(!wrap)return;
   const now=new Date();
@@ -3776,6 +3891,7 @@ function renderDashboard(){
   const totalTarget=_personWeeklyCap(MY_PERSON);
   const billPct=Math.min(100,Math.round(billH/totalTarget*100));
   const nbillPct=Math.min(100,Math.round(nbillH/8*100));
+  const _wkTrend=_myWeeklySplit(8); // 8-week sparkline data for the two hour KPIs
   // Today's task rows
   const todoRows=[...todayDone,...todayTodo].map(t=>{
     const isDone=t.done;const isUrgent=t.urgent&&!isDone;
@@ -3909,8 +4025,8 @@ function renderDashboard(){
       <div class="dash-rule"></div>
     </div>
     <div class="kpi-row">
-      <div class="kpi"><div class="kpi-label">Billable this week</div><div class="kpi-val">${formatHrs(billH)||'0h'}</div><div class="kpi-sub">${formatHrs(billDoneH)||'0h'} done · ${formatHrs(billTodoH)||'0h'} planned · of ${totalTarget}h</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${billPct}%;background:${billPct>=120?'var(--red)':'#4CAF50'};"></div></div></div>
-      <div class="kpi"><div class="kpi-label">Non-billable</div><div class="kpi-val">${formatHrs(nbillH)||'0h'}</div><div class="kpi-sub">internal & admin</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${nbillPct}%;background:#FF9800;"></div></div></div>
+      <div class="kpi"><div class="kpi-label">Billable this week</div><div class="kpi-val">${formatHrs(billH)||'0h'}</div><div class="kpi-sub">${formatHrs(billDoneH)||'0h'} done · ${formatHrs(billTodoH)||'0h'} planned · of ${totalTarget}h</div>${_wkTrend.bill.some(v=>v)?`<div class="kpi-spark">${_sparkSVG(_wkTrend.bill,'#4CAF50')}<span class="ks-lbl">8-wk trend</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${billPct}%;background:${billPct>=120?'var(--red)':'#4CAF50'};"></div></div></div>
+      <div class="kpi"><div class="kpi-label">Non-billable</div><div class="kpi-val">${formatHrs(nbillH)||'0h'}</div><div class="kpi-sub">internal & admin</div>${_wkTrend.nbill.some(v=>v)?`<div class="kpi-spark">${_sparkSVG(_wkTrend.nbill,'#FF9800')}<span class="ks-lbl">8-wk trend</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${nbillPct}%;background:#FF9800;"></div></div></div>
       <div class="kpi"><div class="kpi-label">My tasks today</div><div class="kpi-val">${todayTodo.length}</div><div class="kpi-sub">${urgentCount?urgentCount+' urgent · ':''}${todayDone.length} done</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${todayTasks.length?Math.round(todayDone.length/todayTasks.length*100):0}%;background:${urgentCount?'var(--red)':'#4CAF50'};"></div></div></div>
     </div>
     <div class="section-label" style="margin-bottom:12px;">Your day <button onclick="openTodoModal(null,null,'${MY_PERSON}')" title="Add task" style="background:transparent;border:1px solid var(--border);border-radius:4px;padding:1px 8px;cursor:pointer;font-size:11px;color:var(--muted);font-family:var(--font);margin-left:8px;vertical-align:middle;">+ Add task</button></div>
@@ -10205,9 +10321,63 @@ function openGlobalSearch(){
   setTimeout(()=>inp.focus(),30);
 }
 function closeGlobalSearch(){document.getElementById('gsearch').classList.remove('on');}
+// ── ⌘K command verbs — type an action, hit Enter, it happens ────────────────
+// "log 2h on 6928 [note]" · "pause 7023" · "resume 7023" · "todo Call printer 30m"
+function _parseGsCommand(raw){
+  let m=raw.match(/^log\s+(\S+)\s+(?:on\s+)?#?(\d{3,7})(?:\s+(.+))?$/i);
+  if(m){
+    const hours=parseHrsInput(m[1]);const jobNum=m[2];const note=(m[3]||'').trim();
+    const j=jobs.find(x=>x.id===jobNum);
+    return{cat:'Actions',icon:'ti-bolt',title:`Log ${formatHrs(hours)} on ${jobNum}${j?' — '+j.name:''}`,sub:j?`Creates a time entry for today${note?' · “'+note+'”':''}`:'Job not found — check the number',fn:()=>_cmdLogTime(jobNum,hours,note)};
+  }
+  m=raw.match(/^(pause|resume)\s+#?(\d{3,7})$/i);
+  if(m){
+    const on=m[1].toLowerCase()==='pause';const jobNum=m[2];
+    const j=jobs.find(x=>x.id===jobNum);
+    return{cat:'Actions',icon:on?'ti-pause':'ti-player-play',title:`${on?'Pause':'Resume'} ${jobNum}${j?' — '+j.name:''}`,sub:j?(on?'Blocks new time against this job':'Job goes back to active'):'Job not found — check the number',fn:()=>_cmdPauseJob(jobNum,on)};
+  }
+  m=raw.match(/^(?:todo|task)\s+(.+?)(?:\s+(\d+(?:\.\d+)?h(?:\d+m?)?|\d+m|\d+(?:\.\d+)?))?$/i);
+  if(m&&m[1]){
+    const title=m[1].trim();const hours=m[2]?parseHrsInput(m[2]):1;
+    return{cat:'Actions',icon:'ti-checklist',title:`Add task “${title}” — ${formatHrs(hours)}`,sub:'Goes on your To Do board today',fn:()=>_cmdQuickTodo(title,hours)};
+  }
+  return null;
+}
+function _cmdLogTime(jobNum,hours,note){
+  const j=jobs.find(x=>x.id===jobNum);
+  if(!j){toast(`Job ${jobNum} not found`,'warn');return;}
+  if(j.paused){toast('That job is paused — resume it first','warn');return;}
+  const d=new Date();const pad=n=>String(n).padStart(2,'0');
+  dbCreateTimeEntry({userId:people[MY_PERSON]?._stId,date:`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`,hours,notes:note||'Logged via ⌘K',itemName:note||'',job:{id:j._stId,number:j.id,name:j.name,isBillable:j.billable!==false}});
+  logActivity(j.id,MY_PERSON,'time_log',`Logged <strong>${formatHrs(hours)}</strong> via ⌘K${note?` — ${esc(note)}`:''}`);
+  if(!document.getElementById('view-todo')?.classList.contains('hidden'))renderTodo();
+  if(!document.getElementById('view-dashboard')?.classList.contains('hidden'))renderDashboard();
+  toast(`Logged ${formatHrs(hours)} on ${j.id} ${esc(j.name)}`,'success');
+}
+function _cmdPauseJob(jobNum,on){
+  const j=jobs.find(x=>x.id===jobNum);
+  if(!j){toast(`Job ${jobNum} not found`,'warn');return;}
+  j.paused=on;j._manualPaused=on;
+  saveData();
+  logActivity(j.id,MY_PERSON,'status',on?'Job <strong>paused</strong> via ⌘K':'Job <strong>resumed</strong> via ⌘K');
+  if(typeof renderJobs==='function')renderJobs();
+  if(activeJobId===j.id)openJobDetail(j.id);
+  toast(`${j.id} ${esc(j.name)} ${on?'paused':'resumed'}`,on?'warn':'success');
+}
+function _cmdQuickTodo(title,hours){
+  const now=new Date();const dow=(now.getDay()+6)%7;
+  const day=dow<5?dow+1:1;
+  const wd=getWeekData(MY_PERSON,0);
+  (wd[day]=wd[day]||[]).push({id:uid('t'),title,job:'',jobId:null,item:'',hours:hours||1,urgent:false,personal:true});
+  if(!document.getElementById('view-todo')?.classList.contains('hidden'))renderTodo();
+  toast(`Task added — ${DAY_NAMES[day-1]}, ${formatHrs(hours||1)}`,'success');
+}
 function runGlobalSearch(q){
-  q=(q||'').trim().toLowerCase();
+  const raw=(q||'').trim();
+  q=raw.toLowerCase();
   const out=[];
+  const cmd=raw?_parseGsCommand(raw):null;
+  if(cmd)out.push(cmd);
   if(q){
     jobs.forEach(j=>{
       if((`${j.id} ${j.name} ${j.company}`).toLowerCase().includes(q))
@@ -10259,7 +10429,7 @@ function runGlobalSearch(q){
   _gsResults=out.slice(0,30);_gsSel=0;
   renderGsResults(q);
 }
-const _GS_CAT_CLS={'Jobs':'gsc-jobs','Clients':'gsc-clients','Tasks':'gsc-tasks','Invoices':'gsc-invoices','Quotes':'gsc-quotes','Job plan items':'gsc-items','Starred':'gsc-quotes'};
+const _GS_CAT_CLS={'Actions':'gsc-jobs','Jobs':'gsc-jobs','Clients':'gsc-clients','Tasks':'gsc-tasks','Invoices':'gsc-invoices','Quotes':'gsc-quotes','Job plan items':'gsc-items','Starred':'gsc-quotes'};
 function renderGsResults(q){
   const el=document.getElementById('gs-results');
   const foot=document.getElementById('gs-foot-count');
@@ -11540,14 +11710,17 @@ let _rCharts={};
 // One chart theme for every Reporting chart — Inter labels, warm-grey faint grid, no axis
 // borders, dark rounded tooltips, rounded bars, ring doughnuts. Applied once, lazily, so a
 // blocked CDN (typeof Chart undefined) degrades silently like before.
-let _chartThemed=false;
+let _chartThemeMode=null; // 'light' | 'dark' — re-applied when the app theme flips
 function _applyChartTheme(){
-  if(_chartThemed||typeof Chart==='undefined')return;_chartThemed=true;
+  if(typeof Chart==='undefined')return;
+  const mode=document.body.classList.contains('dark')?'dark':'light';
+  if(_chartThemeMode===mode)return;_chartThemeMode=mode;
+  const dark=mode==='dark';
   Chart.defaults.font.family="'Inter',-apple-system,sans-serif";
   Chart.defaults.font.size=11;
-  Chart.defaults.color='#86868B';
+  Chart.defaults.color=dark?'#9C9CA3':'#86868B';
   const tt=Chart.defaults.plugins.tooltip;
-  tt.backgroundColor='rgba(29,29,31,.94)';tt.titleColor='#fff';tt.bodyColor='#E5E5EA';
+  tt.backgroundColor=dark?'rgba(50,50,54,.96)':'rgba(29,29,31,.94)';tt.titleColor='#fff';tt.bodyColor='#E5E5EA';
   tt.padding=10;tt.cornerRadius=9;tt.displayColors=false;
   tt.titleFont={size:12,weight:'600'};tt.bodyFont={size:11.5};
   Chart.defaults.datasets.bar.borderRadius=6;
@@ -11555,11 +11728,11 @@ function _applyChartTheme(){
   Chart.defaults.datasets.bar.maxBarThickness=34;
   Chart.defaults.datasets.doughnut.cutout='68%';
   Chart.defaults.datasets.doughnut.borderWidth=2;
-  Chart.defaults.datasets.doughnut.borderColor='#FFFFFF';
+  Chart.defaults.datasets.doughnut.borderColor=dark?'#242427':'#FFFFFF';
   Chart.defaults.plugins.legend.labels.usePointStyle=true;
   Chart.defaults.plugins.legend.labels.boxWidth=6;
   Chart.defaults.plugins.legend.labels.boxHeight=6;
-  Chart.defaults.scale.grid.color='rgba(0,0,0,.05)';
+  Chart.defaults.scale.grid.color=dark?'rgba(255,255,255,.06)':'rgba(0,0,0,.05)';
   Chart.defaults.scale.ticks.padding=6;
   if(Chart.defaults.scale.border)Chart.defaults.scale.border.display=false;
 }

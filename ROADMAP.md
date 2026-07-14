@@ -1,6 +1,6 @@
 # C&C Platform — Roadmap
 
-*Last updated 13 Jul 2026 · v2.34.0*
+*Last updated 14 Jul 2026 · v2.35.0*
 
 ---
 
@@ -75,6 +75,8 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 | Xero push for natively-created invoices | The local creation half (deposit/split invoices) shipped v2.20.4; the Xero push half needs real Xero API write credentials — a business/access task, not a coding one |
 | @mentions + notifications | Needs a real-time backend (websockets/polling server) — not buildable on the static localStorage architecture |
 | Real durable backend for all `db*` writes | The actual size of the Phase 2→3 jump — see "What's blocking Phase 3" above. Every other Phase 2 feature is UI-complete and just needs its stub swapped once this exists |
+
+**Shipped (v2.35.0):** Dark mode (token-driven second skin, `body.dark` + `cc_theme`, moon toggle in sidebar, charts re-theme via `_chartThemeMode`, print forced light), ⌘K command verbs (`_parseGsCommand`: log time via `dbCreateTimeEntry`, pause/resume via `_manualPaused`, quick todo), 8-week KPI sparklines (`_myWeeklySplit` + `_sparkSVG`, no chart lib), and a sync-resilience fix: empty/failed users.json no longer blanks the Todo board/Schedule/Reporting — `stUsersById` rebuilds from the cached people store (`_fromCache` flag). That failure occurred live on 14 Jul during the hourly export.
 
 **Shipped (v2.34.0):** The drag family grows: split zones between day columns (`_showSplitZones`/`_splitTaskAcross` — halves a task across two days), client card → "Create client board" dock, uninvoiced job row → "Create draft invoice" dock, ⌘-drag duplicates (alongside Alt-drag), file-drop onto job Activity (images downscaled ≤720px JPEG into `j.activity[].img`, persisted via the native-data overlay; other files noted by name). Plus THE RED THREAD design pass: red full-stop on view titles, blush wash on the desktop, red hover glow on primary CTAs, calendar-grade day numbers.
 
