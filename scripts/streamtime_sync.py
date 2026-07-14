@@ -200,11 +200,16 @@ roles = get("/roles")
 branches = get("/branches")
 rate_cards = get("/rate_cards")
 
+# Load previous copies BEFORE saving so the empty-overwrite guard can engage.
+# (Bug fixed 14 Jul 2026: users.json was saved here without `previous`, so a
+# transient empty API response overwrote the file with [] — and the guarded
+# re-save further down then loaded the already-clobbered file as its baseline.
+# An empty users.json blanked the platform's Todo/Schedule/Reporting live.)
 save("organisation.json", organisation or {})
-save("users.json", users or [])
-save("roles.json", roles or [])
-save("branches.json", branches or [])
-save("rate_cards.json", rate_cards or [])
+save("users.json", users or [], load_existing("users.json"))
+save("roles.json", roles or [], load_existing("roles.json"))
+save("branches.json", branches or [], load_existing("branches.json"))
+save("rate_cards.json", rate_cards or [], load_existing("rate_cards.json"))
 
 # ── 2. All top-level job data ─────────────────────────────────────────────────
 print("\nFetching all jobs (live + archived)...")
