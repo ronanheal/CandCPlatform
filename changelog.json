@@ -1,7 +1,28 @@
 {
-  "generated_at": "2026-07-13T20:28:05.264108+00:00",
-  "current_version": "2.34.0",
+  "generated_at": "2026-07-14T01:35:18.552400+00:00",
+  "current_version": "2.35.0",
   "releases": [
+    {
+      "version": "2.35.0",
+      "date": "14 Jul 2026",
+      "title": "Dark mode, ⌘K commands, KPI sparklines, sync resilience",
+      "items": [
+        "Dark mode is here — the moon in the sidebar flips the whole platform to a true dark skin: dark floating window, dark frosted sidebar, inverted bright-pill buttons, re-themed charts and status pills. Remembered per device. (Documents stay paper-white on purpose.)",
+        "⌘K now takes commands, not just searches: type \"log 2h on 6928 writing copy\" to log time, \"pause 7023\" / \"resume 7023\" to flip a job, or \"todo Call printer 30m\" to drop a task on today — hit Enter and it\\'s done.",
+        "The two hour KPIs on the dashboard now carry an 8-week sparkline, so you can see the shape of your workload at a glance, not just this week\\'s number.",
+        "Sync resilience: if the hourly Streamtime export is mid-write and users.json comes back empty, the platform now rebuilds the team from its local cache instead of blanking the To Do board, Schedule and Reporting until the next sync. This exact failure happened today — it\\'s now invisible."
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
     {
       "version": "2.34.0",
       "date": "13 Jul 2026",
