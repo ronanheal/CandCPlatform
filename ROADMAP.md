@@ -1,6 +1,6 @@
 # C&C Platform — Roadmap
 
-*Last updated 14 Jul 2026 · v2.36.0*
+*Last updated 14 Jul 2026 · v2.37.0*
 
 ---
 
@@ -75,6 +75,8 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 | Xero push for natively-created invoices | The local creation half (deposit/split invoices) shipped v2.20.4; the Xero push half needs real Xero API write credentials — a business/access task, not a coding one |
 | @mentions + notifications | Needs a real-time backend (websockets/polling server) — not buildable on the static localStorage architecture |
 | Real durable backend for all `db*` writes | The actual size of the Phase 2→3 jump — see "What's blocking Phase 3" above. Every other Phase 2 feature is UI-complete and just needs its stub swapped once this exists |
+
+**Shipped (v2.37.0):** Focus mode on the To Do board — `toggleFocusToday()`, F/Esc keys + toolbar target button, CSS-only collapse via `.todo-view.focus-today` (today's column full-width, 46px date, enlarged cards; jumps to current week on entry; weekend guard). Esc priority fixed so modal-close still wins.
 
 **Shipped (v2.36.0):** Display type system (Inter Tight on the `--display` token — all headings/titles/big numbers; body stays Inter), branded launch splash (`#cc-splash`, ≤1.8s hard cap, theme-aware), and the root-cause sync fix: `streamtime_sync.py`'s first `save("users.json", …)` ran unguarded, so a transient empty API response could commit an empty file (the guarded second save then baselined against the clobbered file). All four reference-endpoint saves now pass `load_existing(...)` as `previous`.
 
