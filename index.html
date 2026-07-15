@@ -1621,23 +1621,46 @@ body.dark #cc-splash{background:radial-gradient(1100px 720px at 88% -8%,#2A1A1B 
 @keyframes ccSplashIn{from{opacity:0;transform:scale(.92) translateY(8px);}to{opacity:1;transform:none;}}
 #cc-splash.out{opacity:0;pointer-events:none;}
 
-/* ══ v2.37 — Focus mode: F on the To Do board collapses the week to today, big type ══ */
-.todo-view.focus-today .day-col.workday:not(.today){display:none;}
-.todo-view.focus-today .day-col:not(.workday){display:none;}
-.todo-view.focus-today .day-col.today{flex:1;border-right:none;}
-.todo-view.focus-today .day-head{padding:18px 22px 14px;}
-.todo-view.focus-today .day-num{font-size:46px;letter-spacing:-.03em;}
-.todo-view.focus-today .day-name{font-size:12px;letter-spacing:.14em;}
-.todo-view.focus-today .day-todo{padding:12px 18px;gap:8px;}
-.todo-view.focus-today .day-done{padding-left:18px;padding-right:18px;}
-.todo-view.focus-today .task-card{padding:14px 18px;border-radius:12px;}
-.todo-view.focus-today .tc-title{font-size:16px;line-height:1.4;}
-.todo-view.focus-today .tc-job{font-size:12.5px;max-width:340px;}
-.todo-view.focus-today .tc-item-tag{font-size:11.5px;}
-.todo-view.focus-today .tc-hrs{font-size:12px;padding:2px 8px;border-radius:6px;}
-.todo-view.focus-today .tc-icon{font-size:15px;width:20px;}
-.todo-view.focus-today .tc-meta{padding-left:26px;}
+/* ══ v2.38 — Focus mode: rendered as a "Your Day"-style list (same language as the
+   Dashboard block) — no proportional cards, no done divider, just a calm big-type list ══ */
+.todo-view.focus-today .global-divider{display:none!important;}
+.focus-wrap{flex:1;overflow-y:auto;padding:30px 34px 70px;}
+.focus-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px;}
+.focus-dayname{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}
+.focus-daynum{font-family:var(--display);font-size:52px;font-weight:700;letter-spacing:-.035em;line-height:1;color:var(--red);}
+.focus-stats{font-size:13px;color:var(--muted);margin-top:8px;}
+.focus-list-item .todo-check{cursor:pointer;}
+.focus-list-item .fli-title{font-size:15px;}
+.focus-list-item{padding:14px 18px;}
+.focus-done-lbl{margin:26px 0 12px;}
 #focus-btn.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+/* ══ v2.38 — THE BEIGE RETURNS. The cool clinical greys warm back into C&C paper —
+   same modern system, warmer soul. (Dark mode unchanged.) ══ */
+:root{
+  --off:#F4F2EC;--ink:#1D1C19;--muted:#8D887C;--faint:#EBE7DE;--border:#E2DDD2;
+}
+body{background:radial-gradient(1100px 720px at 88% -8%,#F0E5DE 0%,#E8E4DB 55%);}
+.sidebar{background:rgba(248,246,240,.72);}
+.sidebar:hover{background:rgba(250,248,243,.9);}
+.jobs-table tbody tr:hover,.prog-tr:hover,.prog-group-hd{background:#FAF8F3;}
+.prog-group-hd:hover,.exp-head:hover,.detail-back:hover{background:#EBE7DE;}
+.global-divider{background:#EAE6DD;border-color:#D9D4C8;}
+*::-webkit-scrollbar-thumb{background:#D4CFC2;border-color:var(--off);}
+*::-webkit-scrollbar-thumb:hover{background:#BDB6A6;}
+#cc-splash{background:radial-gradient(1100px 720px at 88% -8%,#F0E5DE 0%,#E8E4DB 55%);}
+/* Red full-stop motif retired */
+.view-title::after,.boards-head::after,.sett-tab-hd::after{content:none;}
+
+/* ══ v2.38 — Wallpaper + liquid glass: set a background image and the floating window
+   and sidebar become deep frosted glass over it. Cards stay solid for legibility. ══ */
+body.has-bg{background-size:cover;background-position:center;background-attachment:fixed;}
+body.has-bg .main{background:rgba(246,243,235,.58);backdrop-filter:blur(34px) saturate(1.55);-webkit-backdrop-filter:blur(34px) saturate(1.55);}
+body.has-bg .sidebar{background:rgba(248,246,240,.42);}
+body.has-bg .sidebar:hover{background:rgba(250,248,243,.75);}
+body.dark.has-bg .main{background:rgba(18,18,20,.55);backdrop-filter:blur(34px) saturate(1.4);-webkit-backdrop-filter:blur(34px) saturate(1.4);}
+body.dark.has-bg .sidebar{background:rgba(20,20,22,.4);}
+body.has-bg #cc-splash{background:rgba(240,236,228,.4);backdrop-filter:blur(20px);}
 </style>
 </head>
 <body>
@@ -1731,6 +1754,7 @@ body.dark #cc-splash{background:radial-gradient(1100px 720px at 88% -8%,#2A1A1B 
         </div>
         <!-- JOBS panel -->
         <div id="jt-jobs" class="jt-panel" style="display:flex;">
+          <div style="padding:20px 28px 4px;"><div class="view-title">Jobs</div><div class="view-sub">Every job on the books</div></div>
           <div class="jobs-toolbar">
             <div class="jobs-search"><i class="ti ti-search"></i><input id="jobs-search-inp" placeholder="Search jobs…" oninput="filterJobs(this.value)"/></div>
             <button class="d-action" onclick="_addFilter('jobs')"><i class="ti ti-filter" style="font-size:11px;"></i> Add filter</button>
@@ -1805,6 +1829,7 @@ body.dark #cc-splash{background:radial-gradient(1100px 720px at 88% -8%,#2A1A1B 
         <!-- EXPENSES panel -->
         <div id="jt-expenses" class="jt-panel" style="display:none;flex-direction:column;">
           <div class="qinv-wrap">
+            <div style="padding:20px 28px 4px;"><div class="view-title">Expenses</div><div class="view-sub">Logged purchases across every job</div></div>
             <div class="qinv-toolbar">
               <div class="jobs-search"><i class="ti ti-search"></i><input id="exp-search-inp" placeholder="Search expenses…" oninput="renderExpensesList()"/></div>
               <select class="cc-select" id="exp-status-filter" onchange="renderExpensesList()">
@@ -1823,6 +1848,7 @@ body.dark #cc-splash{background:radial-gradient(1100px 720px at 88% -8%,#2A1A1B 
         <!-- QUOTES panel -->
         <div id="jt-quotes" class="jt-panel" style="display:none;">
           <div class="qinv-wrap">
+            <div style="padding:20px 28px 4px;"><div class="view-title">Quotes</div><div class="view-sub">Streamtime & native quotes, one list</div></div>
             <div class="qinv-toolbar">
               <div class="jobs-search"><i class="ti ti-search"></i><input id="quotes-search-inp" placeholder="Search quotes, job #, company…" oninput="renderQuotes()"/></div>
               <button class="d-action" onclick="_addFilter('qt')"><i class="ti ti-filter" style="font-size:11px;"></i> Add filter</button>
@@ -1846,6 +1872,7 @@ body.dark #cc-splash{background:radial-gradient(1100px 720px at 88% -8%,#2A1A1B 
         <!-- INVOICES panel -->
         <div id="jt-invoices" class="jt-panel" style="display:none;">
           <div class="qinv-wrap">
+            <div style="padding:20px 28px 4px;"><div class="view-title">Invoices</div><div class="view-sub">Issued, paid & still owing</div></div>
             <div class="qinv-toolbar">
               <div class="jobs-search"><i class="ti ti-search"></i><input id="invoices-search-inp" placeholder="Search invoices…" oninput="renderInvoices()"/></div>
               <button class="d-action" onclick="_addFilter('inv')"><i class="ti ti-filter" style="font-size:11px;"></i> Add filter</button>
@@ -1872,7 +1899,8 @@ body.dark #cc-splash{background:radial-gradient(1100px 720px at 88% -8%,#2A1A1B 
         <div id="jt-clients" class="jt-panel" style="display:none;">
           <!-- Clients list view -->
           <div id="clients-list-view" class="clients-wrap" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
-            <div id="clients-wrap" style="flex:1;overflow-y:auto;padding:24px 28px 40px;"><!-- populated by renderClients() --></div>
+            <div style="padding:20px 28px 0;flex-shrink:0;"><div class="view-title">Clients</div><div class="view-sub">Companies, contacts & their work</div></div>
+            <div id="clients-wrap" style="flex:1;overflow-y:auto;padding:14px 28px 40px;"><!-- populated by renderClients() --></div>
           </div>
           <!-- Client detail view (hidden by default) -->
           <div id="client-detail-view" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
@@ -2568,6 +2596,35 @@ function toggleTheme(){
   toast(dark?'Dark mode on':'Light mode on','info');
 }
 document.addEventListener('DOMContentLoaded',_syncThemeIcon);
+// ── Wallpaper: a background image behind the floating window turns the whole frame
+// into frosted glass (see body.has-bg CSS). Stored per device in cc_bg_image.
+function applyBgImage(){
+  let v=null;try{v=localStorage.getItem('cc_bg_image');}catch(e){}
+  document.body.classList.toggle('has-bg',!!v);
+  document.body.style.backgroundImage=v?`url(${v})`:'';
+}
+applyBgImage();
+function setBgImage(file){
+  if(!file||!file.type.startsWith('image/')){toast('Pick an image file','warn');return;}
+  const rd=new FileReader();
+  rd.onload=e=>{
+    const im=new Image();
+    im.onload=()=>{
+      const scale=Math.min(1,1920/Math.max(im.width,im.height));
+      const cv=document.createElement('canvas');
+      cv.width=Math.round(im.width*scale);cv.height=Math.round(im.height*scale);
+      cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);
+      const url=cv.toDataURL('image/jpeg',.78);
+      if(url.length>2500000){toast('Image too large even after compression — try a smaller one','warn');return;}
+      try{localStorage.setItem('cc_bg_image',url);}catch(err){toast('Not enough local storage for this image','warn');return;}
+      applyBgImage();
+      toast('Wallpaper set — hello, glass','success');
+    };
+    im.src=e.target.result;
+  };
+  rd.readAsDataURL(file);
+}
+function clearBgImage(){try{localStorage.removeItem('cc_bg_image');}catch(e){}applyBgImage();toast('Wallpaper removed','info');}
 // Collision-proof id minting (Date.now() alone collides within one ms)
 let _uidN=0;
 function uid(prefix){return (prefix||'')+Date.now().toString(36)+(_uidN++).toString(36)+Math.random().toString(36).slice(2,6);}
@@ -2715,8 +2772,17 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.37.0';
+const APP_VERSION='2.38.0';
 const CHANGELOG=[
+  {version:'2.38.0',date:'15 Jul 2026',title:'The beige returns, focus mode reborn, wallpaper glass',items:[
+    'The C&C beige is back — the whole platform warms from clinical cool grey to the house paper tone, keeping everything from the new design system. (Dark mode unchanged.)',
+    'Focus mode redesigned: today now renders as a calm list in the same style as the Dashboard\'s "Your Day" — big red date, check-circles, a Done section below — no more proportional cards or the divider clipping over tasks.',
+    'Wallpaper + liquid glass: set a background image in Settings → My Profile → Appearance and the floating window and sidebar become deep frosted glass over it. Remove it any time.',
+    'Dashboard breathes: Active clients shows 6 with a "+N more" card, and every Needs-attention card shows 6 rows with "Show all" — expand only what you care about.',
+    'The KPI sparklines are now clickable — tap one for an expanded 26-week chart with weekly average, best week and totals.',
+    'Every section inside Jobs (Jobs, Time, Expenses, Quotes, Invoices, Clients, Deadlines) now opens with the same title treatment.',
+    'The red full-stop on headings is retired.',
+  ]},
   {version:'2.37.0',date:'14 Jul 2026',title:'Focus mode — press F, see only today',items:[
     'New Focus mode on the To Do board: press F (or the target button in the toolbar) and the week collapses to just today — one full-width column, a big red date, larger cards, nothing else. Press F or Esc to get the week back.',
     'Entering Focus from another week jumps you back to the current week first, so "today" always means today.',
@@ -3879,6 +3945,7 @@ const DAY_NAMES=['Monday','Tuesday','Wednesday','Thursday','Friday'];
 
 function getWeekNum(d){const jan1=new Date(d.getFullYear(),0,1);const days=Math.floor((d-jan1)/(86400000));return Math.ceil((days+jan1.getDay()+1)/7);}
 // ---- DASHBOARD ----
+let _dashExpanded={}; // per-block "show more" state (clients, attention cards) — session only
 // 8-week billable/non-billable hour buckets for the current user (Mon-start weeks).
 function _myWeeklySplit(nWeeks){
   const uidST=String(people[MY_PERSON]?._stId||'');
@@ -3906,6 +3973,35 @@ function _sparkSVG(vals,color){
   const line=pts.map(p=>`${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
   const last=pts[n-1];
   return`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block;overflow:visible;" aria-hidden="true"><path d="M0,${h} L${line.split(' ').join(' L')} L${w},${h} Z" fill="${color}" opacity=".09"/><polyline points="${line}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/><circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.6" fill="${color}"/></svg>`;
+}
+// Expanded trend: click a KPI sparkline → 26-week Chart.js view with real numbers.
+function openTrendModal(kind){
+  const n=26;
+  const t=_myWeeklySplit(n);
+  const vals=kind==='bill'?t.bill:t.nbill;
+  const color=kind==='bill'?'#4CAF50':'#FF9800';
+  const label=kind==='bill'?'Billable hours':'Non-billable hours';
+  const mon=new Date();const dow=(mon.getDay()+6)%7;mon.setDate(mon.getDate()-dow-7*(n-1));
+  const labels=Array.from({length:n},(_,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i*7);return`${d.getDate()}/${d.getMonth()+1}`;});
+  const total=vals.reduce((s,v)=>s+v,0);
+  const avg=total/n;
+  const best=Math.max(...vals);
+  document.getElementById('trend-modal')?.remove();
+  const m=document.createElement('div');m.className='modal-bg on';m.id='trend-modal';
+  m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+  m.innerHTML=`<div class="modal" style="max-width:760px;width:92vw;">
+    <div class="modal-hd"><span class="modal-hd-title">${label} — last ${n} weeks</span><button class="modal-x" onclick="document.getElementById('trend-modal').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd">
+      <div style="display:flex;gap:26px;margin-bottom:18px;">
+        <div><div class="micro-lbl">Weekly average</div><div style="font-family:var(--display);font-size:22px;font-weight:700;">${fmtHrs(avg)}</div></div>
+        <div><div class="micro-lbl">Best week</div><div style="font-family:var(--display);font-size:22px;font-weight:700;">${fmtHrs(best)}</div></div>
+        <div><div class="micro-lbl">Total (${n} wks)</div><div style="font-family:var(--display);font-size:22px;font-weight:700;">${fmtHrs(total)}</div></div>
+      </div>
+      <div style="position:relative;height:300px;"><canvas id="trend-big"></canvas></div>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+  _makeChart('trend-big',{type:'bar',data:{labels,datasets:[{data:vals.map(v=>Math.round(v*100)/100),backgroundColor:color+'CC',hoverBackgroundColor:color}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtHrs(c.parsed.y)}}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{callback:v=>fmtHrs(v)}}}}});
 }
 function renderDashboard(){
   const wrap=document.getElementById('dash-scroll');if(!wrap)return;
@@ -4005,7 +4101,7 @@ function renderDashboard(){
   const alerts=jobs.filter(j=>j.status==='inplay'&&((j._bPct||0)>=100||((j._hPct||0)>=100))).sort((a,b)=>(b._bPct||0)-(a._bPct||0)).slice(0,12).map(j=>`<div class="alert"><i class="ti ti-alert-triangle" style="color:var(--red);font-size:16px;flex-shrink:0;"></i><div><div class="alert-job">${j.id} ${esc(j.name)}</div><div class="alert-detail">${(j._bPct||0)>=100?`Budget ${j._bPct}% used · over sell`:`Hours ${j._hPct}% of plan`}</div></div></div>`).join('');
   // Client cards — one per client with active jobs
   const _activeClients=[...new Set(jobs.filter(j=>j.status!=='archived'&&j.status!=='complete').map(j=>j.company).filter(Boolean))];
-  const _clientsHTML=_activeClients.map(co=>{
+  const _clientCards=_activeClients.map(co=>{
     const cl=clientsData.find(c=>c.name===co);
     const cjobs=jobs.filter(j=>j.company===co&&j.status!=='archived'&&j.status!=='complete');
     if(!cjobs.length)return'';
@@ -4023,7 +4119,11 @@ function renderDashboard(){
       <div class="tc-head"><div class="tc-av" style="background:${clColor};">${initials}</div><div><div class="tc-name">${cl?.nickname?`${cl.nickname} <span style='font-size:11px;color:var(--muted);font-weight:400;'>${co}</span>`:co}</div></div><div class="tc-meta">${cjobs.length} job${cjobs.length!==1?'s':''}</div></div>
       <div class="tc-timeline">${jobPills}${moreCount}</div>
     </div>`;
-  }).filter(Boolean).join('');
+  }).filter(Boolean);
+  // Show 6 client cards by default; the rest sit behind an expander card
+  const _clientCap=6;
+  const _clientsShown=_dashExpanded.clients?_clientCards:_clientCards.slice(0,_clientCap);
+  const _clientsHTML=_clientsShown.join('')+(_clientCards.length>_clientCap?`<div class="team-card" style="display:flex;align-items:center;justify-content:center;min-height:96px;cursor:pointer;color:var(--muted);font-size:13px;border-style:dashed;" onclick="_dashExpanded.clients=${_dashExpanded.clients?'false':'true'};renderDashboard()">${_dashExpanded.clients?'Show fewer':'+ '+(_clientCards.length-_clientCap)+' more clients'}</div>`:'');
   // ── Needs attention: deadlines, overdue invoices, quotes awaiting response, uninvoiced ──
   const _t0=new Date();_t0.setHours(0,0,0,0);
   const _inDays=d=>Math.round((_pDate(d)-_t0)/86400000);
@@ -4049,22 +4149,29 @@ function renderDashboard(){
   // Quiet clients: had jobs before, but nothing in play now
   const _coAll={};jobs.forEach(j=>{if(!j.company)return;(_coAll[j.company]=_coAll[j.company]||{total:0,live:0}); _coAll[j.company].total++; if(j.status==='inplay')_coAll[j.company].live++;});
   const quietClients=Object.entries(_coAll).filter(([,v])=>v.total>=2&&v.live===0).map(([co,v])=>({label:co,meta:`${v.total} past`,jid:null})).slice(0,10);
-  const _attCard=(title,items,color,icon)=>items.length?`<div style="flex:1;min-width:220px;background:var(--white);border:1px solid var(--border);border-left:3px solid ${color};border-radius:12px;padding:13px 15px;box-shadow:var(--shadow-s);">
+  const _attCard=(title,items,color,icon,key)=>{
+    if(!items.length)return'';
+    const cap=6;
+    const expanded=key&&_dashExpanded[key];
+    const shown=expanded?items:items.slice(0,cap);
+    const moreLink=items.length>cap&&key?`<div class="att-row" style="font-size:11.5px;color:var(--muted);cursor:pointer;font-weight:500;" onclick="_dashExpanded['${key}']=${expanded?'false':'true'};renderDashboard()">${expanded?'Show fewer':'Show all '+items.length+' ↓'}</div>`:'';
+    return`<div style="flex:1;min-width:220px;background:var(--white);border:1px solid var(--border);border-left:3px solid ${color};border-radius:12px;padding:13px 15px;box-shadow:var(--shadow-s);">
     <div style="display:flex;align-items:center;gap:7px;margin-bottom:9px;">
       ${icon?`<span style="width:22px;height:22px;border-radius:7px;background:color-mix(in srgb,${color} 11%,white);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="ti ${icon}" style="font-size:12px;color:${color};"></i></span>`:''}
       <span style="font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink);">${title}</span>
       <span style="margin-left:auto;font-size:10px;font-weight:600;color:var(--muted);background:var(--off);border:1px solid var(--faint);border-radius:10px;padding:1px 8px;">${items.length}</span>
     </div>
-    ${items.map(x=>`<div class="att-row" style="font-size:12px;display:flex;justify-content:space-between;gap:10px;cursor:${x.jid?'pointer':'default'};" ${x.jid?`onclick="openJobDetail('${x.jid}')"`:''}><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.label}</span><span style="color:${color};flex-shrink:0;font-variant-numeric:tabular-nums;">${x.meta}</span></div>`).join('')}
-  </div>`:'';
+    ${shown.map(x=>`<div class="att-row" style="font-size:12px;display:flex;justify-content:space-between;gap:10px;cursor:${x.jid?'pointer':'default'};" ${x.jid?`onclick="openJobDetail('${x.jid}')"`:''}><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.label}</span><span style="color:${color};flex-shrink:0;font-variant-numeric:tabular-nums;">${x.meta}</span></div>`).join('')}
+    ${moreLink}
+  </div>`;};
   const dh=people[MY_PERSON].dashHide||[];const _show=k=>!dh.includes(k);
   const deadlinesHTML=_show('deadlines')?[
-    _attCard('Jobs due / overdue',dueJobs.map(j=>({label:`${j.id} ${esc(j.name)}`,meta:_inDays(j.dueDate)<0?`${-_inDays(j.dueDate)}d over`:_inDays(j.dueDate)===0?'today':`${_inDays(j.dueDate)}d`,jid:j.id})),'#E65100','ti-flag'),
-    _attCard('Deadline risk',riskJobs,'#D81B60','ti-alert-triangle'),
-    _attCard('Overdue invoices',overdueInv.map(i=>({label:esc(i.company?.name||i.jobName||'—'),meta:`${-_inDays(i.dueDate)}d`,jid:null})),'#C62828','ti-file-invoice'),
-    _attCard('Quotes awaiting response',awaitingQuotes.map(q=>({label:esc(q.company||q.jobName||(q.jobNumber?'Job '+q.jobNumber:q.quoteName)||'—'),meta:`${-_inDays(q.sentDate)}d`,jid:null})),'#6B7FA3','ti-file-text'),
-    _attCard('Uninvoiced work',uninvoiced.map(j=>({label:`${j.id} ${esc(j.name)}`,meta:'$'+Math.round((j._sellUsed||0)-(j._stInvoiced||0)).toLocaleString(),jid:j.id})),'#9C6FD6','ti-coin'),
-    _attCard('Quiet clients',quietClients.map(c=>({...c,label:esc(c.label)})),'#888888','ti-moon'),
+    _attCard('Jobs due / overdue',dueJobs.map(j=>({label:`${j.id} ${esc(j.name)}`,meta:_inDays(j.dueDate)<0?`${-_inDays(j.dueDate)}d over`:_inDays(j.dueDate)===0?'today':`${_inDays(j.dueDate)}d`,jid:j.id})),'#E65100','ti-flag','due'),
+    _attCard('Deadline risk',riskJobs,'#D81B60','ti-alert-triangle','risk'),
+    _attCard('Overdue invoices',overdueInv.map(i=>({label:esc(i.company?.name||i.jobName||'—'),meta:`${-_inDays(i.dueDate)}d`,jid:null})),'#C62828','ti-file-invoice','odinv'),
+    _attCard('Quotes awaiting response',awaitingQuotes.map(q=>({label:esc(q.company||q.jobName||(q.jobNumber?'Job '+q.jobNumber:q.quoteName)||'—'),meta:`${-_inDays(q.sentDate)}d`,jid:null})),'#6B7FA3','ti-file-text','awq'),
+    _attCard('Uninvoiced work',uninvoiced.map(j=>({label:`${j.id} ${esc(j.name)}`,meta:'$'+Math.round((j._sellUsed||0)-(j._stInvoiced||0)).toLocaleString(),jid:j.id})),'#9C6FD6','ti-coin','uninv'),
+    _attCard('Quiet clients',quietClients.map(c=>({...c,label:esc(c.label)})),'#888888','ti-moon','quiet'),
   ].filter(Boolean).join(''):'';
   wrap.innerHTML=`
     <div style="margin-bottom:28px;">
@@ -4073,8 +4180,8 @@ function renderDashboard(){
       <div class="dash-rule"></div>
     </div>
     <div class="kpi-row">
-      <div class="kpi"><div class="kpi-label">Billable this week</div><div class="kpi-val">${formatHrs(billH)||'0h'}</div><div class="kpi-sub">${formatHrs(billDoneH)||'0h'} done · ${formatHrs(billTodoH)||'0h'} planned · of ${totalTarget}h</div>${_wkTrend.bill.some(v=>v)?`<div class="kpi-spark">${_sparkSVG(_wkTrend.bill,'#4CAF50')}<span class="ks-lbl">8-wk trend</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${billPct}%;background:${billPct>=120?'var(--red)':'#4CAF50'};"></div></div></div>
-      <div class="kpi"><div class="kpi-label">Non-billable</div><div class="kpi-val">${formatHrs(nbillH)||'0h'}</div><div class="kpi-sub">internal & admin</div>${_wkTrend.nbill.some(v=>v)?`<div class="kpi-spark">${_sparkSVG(_wkTrend.nbill,'#FF9800')}<span class="ks-lbl">8-wk trend</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${nbillPct}%;background:#FF9800;"></div></div></div>
+      <div class="kpi"><div class="kpi-label">Billable this week</div><div class="kpi-val">${formatHrs(billH)||'0h'}</div><div class="kpi-sub">${formatHrs(billDoneH)||'0h'} done · ${formatHrs(billTodoH)||'0h'} planned · of ${totalTarget}h</div>${_wkTrend.bill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('bill')">${_sparkSVG(_wkTrend.bill,'#4CAF50')}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${billPct}%;background:${billPct>=120?'var(--red)':'#4CAF50'};"></div></div></div>
+      <div class="kpi"><div class="kpi-label">Non-billable</div><div class="kpi-val">${formatHrs(nbillH)||'0h'}</div><div class="kpi-sub">internal & admin</div>${_wkTrend.nbill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('nbill')">${_sparkSVG(_wkTrend.nbill,'#FF9800')}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${nbillPct}%;background:#FF9800;"></div></div></div>
       <div class="kpi"><div class="kpi-label">My tasks today</div><div class="kpi-val">${todayTodo.length}</div><div class="kpi-sub">${urgentCount?urgentCount+' urgent · ':''}${todayDone.length} done</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${todayTasks.length?Math.round(todayDone.length/todayTasks.length*100):0}%;background:${urgentCount?'var(--red)':'#4CAF50'};"></div></div></div>
     </div>
     <div class="section-label" style="margin-bottom:12px;">Your day <button onclick="openTodoModal(null,null,'${MY_PERSON}')" title="Add task" style="background:transparent;border:1px solid var(--border);border-radius:4px;padding:1px 8px;cursor:pointer;font-size:11px;color:var(--muted);font-family:var(--font);margin-left:8px;vertical-align:middle;">+ Add task</button></div>
@@ -5034,6 +5141,7 @@ function showSumTip(el){
 function hideSumTip(el){const tip=document.getElementById('todo-sum-tip');if(tip)tip.style.display='none';}
 
 function renderTodo(){
+  if(window._focusToday){renderFocusToday();return;}
   if(_todoViewMode==='calendar'){renderTodoCalendar();return;}
   const p=people[currentPerson];
   document.getElementById('current-av').textContent=p.initials;
@@ -9866,6 +9974,22 @@ function renderSettings(){
         </div>
       </div>
       <div class="sett-card">
+        <div class="sett-card-hd">Appearance <span style="font-weight:400;color:var(--muted);font-size:11px;">— personal to this device</span></div>
+        <div class="sett-card-body">
+          <div class="sett-row">
+            <div><div class="sett-row-lbl">Theme</div><div class="sett-row-sub">Light or dark — also the moon button in the sidebar, any time</div></div>
+            <div class="sett-row-val"><button class="d-action" onclick="toggleTheme()"><i class="ti ${document.body.classList.contains('dark')?'ti-sun':'ti-moon'}" style="font-size:12px;"></i> Switch to ${document.body.classList.contains('dark')?'light':'dark'}</button></div>
+          </div>
+          <div class="sett-row">
+            <div><div class="sett-row-lbl">Wallpaper</div><div class="sett-row-sub">Set a background image and the whole window becomes frosted glass over it</div></div>
+            <div class="sett-row-val" style="display:flex;gap:8px;">
+              <label class="d-action" style="cursor:pointer;"><i class="ti ti-photo" style="font-size:12px;"></i> Choose image<input type="file" accept="image/*" style="display:none;" onchange="setBgImage(this.files[0]);this.value='';"></label>
+              ${localStorage.getItem('cc_bg_image')?`<button class="d-action" onclick="clearBgImage();renderSettings()"><i class="ti ti-x" style="font-size:12px;"></i> Remove</button>`:''}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sett-card">
         <div class="sett-card-hd">Your wellbeing check-ins <span style="font-weight:400;color:var(--muted);font-size:11px;">— last 8 weeks, personal to this device</span></div>
         <div class="sett-card-body">
           ${renderHappinessTrend(MY_PERSON)}
@@ -10604,18 +10728,65 @@ document.addEventListener('keydown',e=>{
   if(todoActive&&e.key==='ArrowRight'){e.preventDefault();toggleWeek(1);}
   if(todoActive&&(e.key==='f'||e.key==='F')){e.preventDefault();toggleFocusToday();}
 });
-// ── Focus mode: collapse the To Do week to just today — big type, nothing else ──
+// ── Focus mode: today rendered as a calm "Your Day"-style list (same design language
+// as the Dashboard block) — no proportional cards, no done divider. F / Esc toggles.
 function toggleFocusToday(){
   const tv=document.querySelector('.todo-view');if(!tv)return;
-  const on=!tv.classList.contains('focus-today');
+  const on=!window._focusToday;
   if(on){
     const dow=(new Date().getDay()+6)%7;
     if(dow>4){toast('It’s the weekend — no today column to focus on','info');return;}
-    if(weekOffset!==0){weekOffset=0;renderTodo();}
+    if(weekOffset!==0)weekOffset=0;
   }
+  window._focusToday=on;
   tv.classList.toggle('focus-today',on);
   document.getElementById('focus-btn')?.classList.toggle('on',on);
+  renderTodo();
   if(on)toast('Focus — today only · press F or Esc to exit','info');
+}
+function _focusToggleDone(taskId){
+  const dow=(new Date().getDay()+6)%7;const day=dow+1;
+  const wd=getWeekData(currentPerson,0);
+  const t=(wd[day]||[]).find(x=>x.id===taskId);if(!t)return;
+  t.done=!t.done;
+  saveData();renderFocusToday();
+}
+function renderFocusToday(){
+  const cols=document.getElementById('day-cols');if(!cols)return;
+  const dow=(new Date().getDay()+6)%7;
+  if(dow>4){window._focusToday=false;document.querySelector('.todo-view')?.classList.remove('focus-today');renderTodo();return;}
+  const day=dow+1;
+  const wd=getWeekData(currentPerson,0);
+  const tasks=wd[day]||[];
+  const todo=tasks.filter(t=>!t.done),done=tasks.filter(t=>t.done);
+  const todoH=todo.reduce((s,t)=>s+(t.hours||0),0),doneH=done.reduce((s,t)=>s+(t.hours||0),0);
+  const now=new Date();
+  const dayName=['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY'][dow];
+  const row=(t,isDone)=>{
+    const meta=[];const jm=t.job?t.job.match(/^(\d+)\s*(.*)$/):null;
+    if(jm)meta.push(`${jm[1]} ${jm[2]}`.trim());if(t.item&&t.item!==t.title)meta.push(t.item);if(t.hours)meta.push(formatHrs(t.hours));
+    return`<div class="my-todo-item focus-list-item" onclick="openEditTodo(getWeekData(currentPerson,0)[${day}].find(x=>x.id==='${t.id}'),${day})">
+      <div class="todo-check${isDone?' done-c':t.urgent?' urg-c':''}" onclick="event.stopPropagation();_focusToggleDone('${t.id}')" title="${isDone?'Mark as to do':'Mark done'}">${isDone?'<i class="ti ti-check" style="font-size:9px;color:var(--done-ink);"></i>':''}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="fli-title" style="${isDone?'text-decoration:line-through;opacity:.5;':''}">${esc(t.title)}</div>
+        ${meta.length?`<div style="font-size:12px;color:var(--muted);margin-top:2px;">${esc(meta.join(' · '))}</div>`:''}
+      </div>
+      ${t.urgent&&!isDone?'<div class="todo-meta" style="color:var(--red);flex-shrink:0;">Urgent</div>':''}
+    </div>`;
+  };
+  cols.innerHTML=`<div class="focus-wrap">
+    <div class="focus-head">
+      <div>
+        <div class="focus-dayname">${dayName}</div>
+        <div class="focus-daynum">${now.getDate()}</div>
+        <div class="focus-stats">${formatHrs(todoH)||'0h'} to do · ${formatHrs(doneH)||'0h'} done</div>
+      </div>
+      <button class="tb-btn ghost" onclick="openTodoModal(null,${day})" style="font-size:11px;padding:7px 14px;">+ Add task</button>
+    </div>
+    <div class="my-todos">${todo.map(t=>row(t,false)).join('')||`<div class="my-todo-item" style="color:var(--muted);font-size:13px;"><i class="ti ti-sun" style="font-size:16px;margin-right:10px;"></i>Nothing left to do today.</div>`}</div>
+    ${done.length?`<div class="section-label focus-done-lbl">Done · ${formatHrs(doneH)||'0h'}</div><div class="my-todos">${done.map(t=>row(t,true)).join('')}</div>`:''}
+  </div>`;
+  _renderIcons();
 }
 
 document.addEventListener('click',()=>{document.getElementById('ctx').classList.remove('on');document.getElementById('pctx').classList.remove('on');document.getElementById('inv-ctx')?.classList.remove('on');});

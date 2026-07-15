@@ -1,6 +1,6 @@
 # C&C Platform — Roadmap
 
-*Last updated 14 Jul 2026 · v2.37.0*
+*Last updated 15 Jul 2026 · v2.38.0*
 
 ---
 
@@ -75,6 +75,8 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 | Xero push for natively-created invoices | The local creation half (deposit/split invoices) shipped v2.20.4; the Xero push half needs real Xero API write credentials — a business/access task, not a coding one |
 | @mentions + notifications | Needs a real-time backend (websockets/polling server) — not buildable on the static localStorage architecture |
 | Real durable backend for all `db*` writes | The actual size of the Phase 2→3 jump — see "What's blocking Phase 3" above. Every other Phase 2 feature is UI-complete and just needs its stub swapped once this exists |
+
+**Shipped (v2.38.0):** Ronan's refinement round. Warm C&C beige palette returns (light tokens re-warmed; dark unchanged), Focus mode rebuilt as a "Your Day"-style list (`renderFocusToday()` — no divider/proportional cards; circle-click toggles done), red full-stop motif removed, consistent `view-title` headers on all Jobs sections, dashboard show-more caps (`_dashExpanded`: 6 clients + 6 rows per attention card), clickable KPI sparklines → 26-week Chart.js modal (`openTrendModal`), wallpaper + liquid glass (`cc_bg_image`, `body.has-bg` → frosted `.main`/sidebar; Settings → My Profile → Appearance).
 
 **Shipped (v2.37.0):** Focus mode on the To Do board — `toggleFocusToday()`, F/Esc keys + toolbar target button, CSS-only collapse via `.todo-view.focus-today` (today's column full-width, 46px date, enlarged cards; jumps to current week on entry; weekend guard). Esc priority fixed so modal-close still wins.
 
