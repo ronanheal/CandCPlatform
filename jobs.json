@@ -553740,6 +553740,11 @@
         "jobId": 2097420,
         "id": 3843758,
         "name": "June"
+      },
+      {
+        "jobId": 2097420,
+        "id": 3866076,
+        "name": "July"
       }
     ],
     "phases": [
@@ -613587,10 +613592,6 @@
         "name": "corine"
       },
       {
-        "id": 117850,
-        "name": "maggiegoing"
-      },
-      {
         "id": 115258,
         "name": "ange"
       },
@@ -613634,7 +613635,7 @@
               "name": "Item"
             },
             "isBillable": true,
-            "totalScheduledUsers": 3,
+            "totalScheduledUsers": 2,
             "totalJobItemRoles": 0,
             "timeAllocationMethod": {
               "id": 1,
@@ -641126,6 +641127,255 @@
         "estimatedEndDate": null,
         "earliestStartDate": "2026-07-20",
         "latestEndDate": "2026-07-20",
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      }
+    ]
+  },
+  {
+    "id": 2166854,
+    "company": {
+      "id": 535662,
+      "name": "Dairyworks",
+      "branchId": 37900,
+      "companyLeadUserId": null,
+      "companyStatus": {
+        "id": 1,
+        "name": "Active"
+      },
+      "branchName": "Content & Co NZ Ltd",
+      "rateCardId": 43738,
+      "rateCardName": "Standard",
+      "taxNumber": null,
+      "phone1": null,
+      "phone2": null,
+      "websiteAddress": null,
+      "notes": "Dairyworks and Talbot Forest",
+      "physicalAddress": null,
+      "postalAddress": {
+        "id": 627619,
+        "line1": "719 Halswell Junction Road",
+        "line2": "Islington",
+        "line3": "",
+        "city": "Christchurch",
+        "region": null,
+        "countryName": "New Zealand",
+        "postCode": "8042"
+      },
+      "companyLabels": []
+    },
+    "jobLeadUserId": null,
+    "rateCard": {
+      "id": 43738,
+      "name": "Standard",
+      "currency": {
+        "id": "NZD",
+        "name": "New Zealand Dollar",
+        "symbol": "$"
+      }
+    },
+    "isBillable": true,
+    "exchangeRate": 1,
+    "branch": {
+      "id": 37900,
+      "name": "Content & Co NZ Ltd",
+      "externalName": "Content & Co NZ Ltd",
+      "taxNumber": "GST number:  116710013",
+      "address": "Level 1\n53 Fort Street\nAuckland",
+      "active": true
+    },
+    "jobStatus": {
+      "id": 1,
+      "name": "In Play"
+    },
+    "number": "7038",
+    "name": "Brand relaunch concepts & plan",
+    "fullName": "[7038] Brand relaunch concepts & plan",
+    "purchaseOrderNumber": null,
+    "createdUser": "ange",
+    "jobCreatedDate": "2026-07-18",
+    "estimatedStartDate": null,
+    "estimatedEndDate": null,
+    "completedDate": null,
+    "archivedDate": null,
+    "contact": {
+      "id": 684005,
+      "firstName": "Accounts",
+      "lastName": null,
+      "email": "accountspayable@dairyworks.co.nz",
+      "phoneNumber": null,
+      "position": null,
+      "notes": "1",
+      "active": true,
+      "companyId": 535662,
+      "contactStatus": {
+        "id": 1,
+        "name": "Active"
+      },
+      "contactLabels": []
+    },
+    "budget": 0,
+    "finalBudget": 0,
+    "totalPlannedMinutes": null,
+    "totalPlannedTimeExTax": 0,
+    "totalPlannedExpensesExTax": 100,
+    "totalPlannedExpensesCostExTax": 0,
+    "totalIncompleteMinutes": 10,
+    "totalIncompleteTimeExTax": 25,
+    "totalLoggedCostExTax": 0,
+    "totalLoggedExTax": 0,
+    "totalLoggedExpensesCostExTax": 0,
+    "totalLoggedExpensesExTax": 0,
+    "totalLoggedMinutes": null,
+    "totalLoggedTimeCostExTax": 0,
+    "totalLoggedTimeExTax": 0,
+    "totalInvoicedExTax": 0,
+    "totalDraftInvoicesExTax": 0,
+    "totalAwaitingPaymentInvoicesExTax": 0,
+    "totalPaidInvoicesExTax": 0,
+    "totalIssuedInvoicesExTax": 0,
+    "totalApprovedQuoteExTax": 0,
+    "users": [
+      {
+        "id": 115258,
+        "name": "ange"
+      }
+    ],
+    "jobLabels": [
+      {
+        "jobId": 2166854,
+        "id": 3866075,
+        "name": "August"
+      }
+    ],
+    "phases": [],
+    "looseItems": [
+      {
+        "id": 9698066,
+        "jobId": 2166854,
+        "jobPhaseId": null,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Briefing & coordination",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 1,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 0,
+        "totalIncompleteMinutes": 10,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 0,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 25,
+        "jobCurrencyTotalPlannedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 1,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": "2026-07-20",
+        "latestEndDate": "2026-07-20",
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9698067,
+        "jobId": 2166854,
+        "jobPhaseId": null,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Creative Development",
+        "description": "<p></p>",
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 0,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 0,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 0,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 2,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": null,
+        "latestEndDate": null,
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9698068,
+        "jobId": 2166854,
+        "jobPhaseId": null,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Strategy",
+        "description": "Time for strategic work",
+        "sellRate": 200,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 0,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 0,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 0,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 200,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 3,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": null,
+        "latestEndDate": null,
         "completedDate": null,
         "incompleteJobItemSubItems": 0,
         "completeJobItemSubItems": 0
