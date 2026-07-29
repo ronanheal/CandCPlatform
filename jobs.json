@@ -642409,8 +642409,8 @@
     "totalPlannedTimeExTax": 2400,
     "totalPlannedExpensesExTax": 100,
     "totalPlannedExpensesCostExTax": 0,
-    "totalIncompleteMinutes": null,
-    "totalIncompleteTimeExTax": null,
+    "totalIncompleteMinutes": 35,
+    "totalIncompleteTimeExTax": 116.67,
     "totalLoggedCostExTax": 0,
     "totalLoggedExTax": 112.5,
     "totalLoggedExpensesCostExTax": 0,
@@ -642542,19 +642542,19 @@
           "name": "Item"
         },
         "isBillable": true,
-        "totalScheduledUsers": 0,
+        "totalScheduledUsers": 1,
         "totalJobItemRoles": 0,
         "timeAllocationMethod": {
           "id": 1,
           "name": "Time By Item"
         },
         "totalPlannedMinutes": 120,
-        "totalIncompleteMinutes": 0,
+        "totalIncompleteMinutes": 35,
         "totalLoggedMinutes": 0,
         "totalPlannedTimeExTax": 400,
         "totalLoggedTimeExTax": 0,
         "jobCurrencySellRate": 200,
-        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalIncompleteTimeExTax": 116.67,
         "jobCurrencyTotalPlannedTimeExTax": 400,
         "jobCurrencyTotalLoggedTimeExTax": 0,
         "jobCurrencyTotalLoggedTimeCostExTax": 0,
@@ -642562,8 +642562,8 @@
         "orderId": 2,
         "estimatedStartDate": null,
         "estimatedEndDate": null,
-        "earliestStartDate": null,
-        "latestEndDate": null,
+        "earliestStartDate": "2026-07-30",
+        "latestEndDate": "2026-07-30",
         "completedDate": null,
         "incompleteJobItemSubItems": 0,
         "completeJobItemSubItems": 0
@@ -645453,8 +645453,8 @@
     "totalPlannedTimeExTax": 13500,
     "totalPlannedExpensesExTax": 200,
     "totalPlannedExpensesCostExTax": 0,
-    "totalIncompleteMinutes": null,
-    "totalIncompleteTimeExTax": null,
+    "totalIncompleteMinutes": 25,
+    "totalIncompleteTimeExTax": 62.5,
     "totalLoggedCostExTax": 0,
     "totalLoggedExTax": 404.17,
     "totalLoggedExpensesCostExTax": 0,
@@ -645511,12 +645511,12 @@
           "name": "Time By Item"
         },
         "totalPlannedMinutes": 900,
-        "totalIncompleteMinutes": 0,
+        "totalIncompleteMinutes": 25,
         "totalLoggedMinutes": 115,
         "totalPlannedTimeExTax": 2250,
         "totalLoggedTimeExTax": 287.5,
         "jobCurrencySellRate": 150,
-        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalIncompleteTimeExTax": 62.5,
         "jobCurrencyTotalPlannedTimeExTax": 2250,
         "jobCurrencyTotalLoggedTimeExTax": 287.5,
         "jobCurrencyTotalLoggedTimeCostExTax": 0,
@@ -645525,7 +645525,7 @@
         "estimatedStartDate": null,
         "estimatedEndDate": null,
         "earliestStartDate": "2026-07-23",
-        "latestEndDate": "2026-07-28",
+        "latestEndDate": "2026-07-30",
         "completedDate": null,
         "incompleteJobItemSubItems": 0,
         "completeJobItemSubItems": 0
@@ -654201,5 +654201,309 @@
       }
     ],
     "looseItems": []
+  },
+  {
+    "id": 2174217,
+    "company": {
+      "id": 669894,
+      "name": "Natural Pet Food Group",
+      "branchId": 37900,
+      "companyLeadUserId": null,
+      "companyStatus": {
+        "id": 1,
+        "name": "Active"
+      },
+      "branchName": "Content & Co NZ Ltd",
+      "rateCardId": 43738,
+      "rateCardName": "Standard",
+      "taxNumber": null,
+      "phone1": null,
+      "phone2": null,
+      "websiteAddress": null,
+      "notes": null,
+      "physicalAddress": null,
+      "postalAddress": {
+        "id": 771920,
+        "line1": "305 Lincoln Road",
+        "line2": "Addington",
+        "line3": null,
+        "city": "Christchurch",
+        "region": null,
+        "countryName": "New Zealand",
+        "postCode": "8024"
+      },
+      "companyLabels": []
+    },
+    "jobLeadUserId": null,
+    "rateCard": {
+      "id": 43738,
+      "name": "Standard",
+      "currency": {
+        "id": "NZD",
+        "name": "New Zealand Dollar",
+        "symbol": "$"
+      }
+    },
+    "isBillable": true,
+    "exchangeRate": 1,
+    "branch": {
+      "id": 37900,
+      "name": "Content & Co NZ Ltd",
+      "externalName": "Content & Co NZ Ltd",
+      "taxNumber": "GST number:  116710013",
+      "address": "Level 1\n53 Fort Street\nAuckland",
+      "active": true
+    },
+    "jobStatus": {
+      "id": 1,
+      "name": "In Play"
+    },
+    "number": "7063",
+    "name": "US Shelf Talker Assets",
+    "fullName": "[7063] US Shelf Talker Assets",
+    "purchaseOrderNumber": null,
+    "createdUser": "maya",
+    "jobCreatedDate": "2026-07-29",
+    "estimatedStartDate": null,
+    "estimatedEndDate": null,
+    "completedDate": null,
+    "archivedDate": null,
+    "contact": {
+      "id": 929797,
+      "firstName": "Sue",
+      "lastName": null,
+      "email": null,
+      "phoneNumber": null,
+      "position": null,
+      "notes": "1",
+      "active": true,
+      "companyId": 669894,
+      "contactStatus": {
+        "id": 1,
+        "name": "Active"
+      },
+      "contactLabels": []
+    },
+    "budget": 0,
+    "finalBudget": 0,
+    "totalPlannedMinutes": 720,
+    "totalPlannedTimeExTax": 1800,
+    "totalPlannedExpensesExTax": 100,
+    "totalPlannedExpensesCostExTax": 0,
+    "totalIncompleteMinutes": null,
+    "totalIncompleteTimeExTax": null,
+    "totalLoggedCostExTax": 0,
+    "totalLoggedExTax": 0,
+    "totalLoggedExpensesCostExTax": 0,
+    "totalLoggedExpensesExTax": 0,
+    "totalLoggedMinutes": null,
+    "totalLoggedTimeCostExTax": 0,
+    "totalLoggedTimeExTax": 0,
+    "totalInvoicedExTax": 0,
+    "totalDraftInvoicesExTax": 0,
+    "totalAwaitingPaymentInvoicesExTax": 0,
+    "totalPaidInvoicesExTax": 0,
+    "totalIssuedInvoicesExTax": 0,
+    "totalApprovedQuoteExTax": 0,
+    "users": [
+      {
+        "id": 114223,
+        "name": "maya"
+      },
+      {
+        "id": 115258,
+        "name": "ange"
+      },
+      {
+        "id": 132272,
+        "name": "charlotte"
+      },
+      {
+        "id": 114330,
+        "name": "ronan"
+      }
+    ],
+    "jobLabels": [
+      {
+        "jobId": 2174217,
+        "id": 3881430,
+        "name": "August"
+      }
+    ],
+    "phases": [],
+    "looseItems": [
+      {
+        "id": 9742806,
+        "jobId": 2174217,
+        "jobPhaseId": null,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Briefing & coordination",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 3,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 210,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 525,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 525,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 1,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": null,
+        "latestEndDate": null,
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9742807,
+        "jobId": 2174217,
+        "jobPhaseId": null,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Design & Artwork",
+        "description": "<p>3x shelf talkers 1.5hrs each + revisions</p>",
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 1,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 360,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 900,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 900,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 3,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": null,
+        "latestEndDate": null,
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9742808,
+        "jobId": 2174217,
+        "jobPhaseId": null,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Artwork & file despatch",
+        "description": "<p></p>",
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 1,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 90,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 225,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 225,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 4,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": null,
+        "latestEndDate": null,
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9742810,
+        "jobId": 2174217,
+        "jobPhaseId": null,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Copywriting",
+        "description": "<p>3x shelf talkers copy refinement and proofing. </p>",
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 0,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 60,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 150,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 150,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 2,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": null,
+        "latestEndDate": null,
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      }
+    ]
   }
 ]
