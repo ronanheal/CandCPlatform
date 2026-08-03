@@ -1,5 +1,5 @@
 {
-  "last_synced": "2026-08-03T16:25:36.131129+00:00",
+  "last_synced": "2026-08-03T18:56:20.488998+00:00",
   "record_counts": {
     "organisation": 1,
     "users": 37,
@@ -7,7 +7,7 @@
     "branches": 1,
     "rate_cards": 2,
     "jobs": 2514,
-    "logged_times": 9000,
+    "logged_times": 9001,
     "invoices": 110,
     "quotes": 110,
     "companies": 99,
@@ -15,10 +15,15 @@
     "expenses": 261,
     "job_assignments": 2385,
     "milestones": 6,
-    "scheduled_todos": 661
+    "scheduled_todos": 660
   },
   "backfill_complete": true,
   "detail_progress": "2516/2514 jobs have phases+items",
   "logged_times_oldest_fetched": "2025-12-22",
-  "errors": []
+  "errors": [
+    {
+      "resource": "search?search_view=8",
+      "error": "HTTP 504"
+    }
+  ]
 }
