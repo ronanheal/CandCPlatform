@@ -1,11 +1,11 @@
 {
-  "last_synced": "2026-08-26T15:00:18.710788+00:00",
+  "last_synced": "2026-08-26T16:21:10.550214+00:00",
   "record_counts": {
-    "organisation": 0,
+    "organisation": 1,
     "users": 37,
-    "roles": 0,
-    "branches": 0,
-    "rate_cards": 0,
+    "roles": 21,
+    "branches": 1,
+    "rate_cards": 2,
     "jobs": 2568,
     "logged_times": 11636,
     "invoices": 101,
@@ -20,5 +20,10 @@
   "backfill_complete": true,
   "detail_progress": "2571/2568 jobs have phases+items",
   "logged_times_oldest_fetched": "2025-12-22",
-  "errors": []
+  "errors": [
+    {
+      "resource": "search?search_view=8",
+      "error": "HTTP 504"
+    }
+  ]
 }
