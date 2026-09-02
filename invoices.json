@@ -3339,30 +3339,30 @@
       "name": "Invoice"
     },
     "invoiceStatus": {
-      "id": 2,
-      "name": "Awaiting Payment"
+      "id": 3,
+      "name": "Paid"
     },
     "currencyCode": "NZD",
     "currencySymbol": "$",
     "exchangeRate": 1,
     "discount": null,
     "instalment": null,
-    "invoiceCurrencyAmountPaidIncTax": 0,
+    "invoiceCurrencyAmountPaidIncTax": 20925,
     "invoiceCurrencyTotalAmountExTax": 19500,
     "invoiceCurrencyTotalAmountTax": 1425,
     "invoiceCurrencyTotalAmountIncTax": 20925,
-    "invoiceCurrencyBalance": 20925,
-    "jobCurrencyAmountPaidIncTax": 0,
+    "invoiceCurrencyBalance": 0,
+    "jobCurrencyAmountPaidIncTax": 20925,
     "jobCurrencyTotalAmountExTax": 19500,
     "jobCurrencyTotalAmountIncTax": 20925,
-    "amountPaidIncTax": 0,
+    "amountPaidIncTax": 20925,
     "totalAmountExTax": 19500,
     "totalAmountIncTax": 20925,
-    "balance": 20925,
+    "balance": 0,
     "createdDatetime": "2026-07-30T01:50:17+00:00",
     "invoiceDate": "2026-07-31",
     "dueDate": "2026-08-20",
-    "paidDate": null,
+    "paidDate": "2026-08-31",
     "externalAccountingPlatformId": 1,
     "externalAccountingPlatformName": "Xero",
     "externalInvoiceId": "a9fe0bd4-86f0-4399-b8e2-e8219e0b1a72",
@@ -8800,8 +8800,8 @@
   {
     "id": 1717748,
     "createdUser": "ange",
-    "sentByUser": null,
-    "sentDate": null,
+    "sentByUser": "shelleyh",
+    "sentDate": "2026-09-02",
     "company": {
       "id": 669894,
       "name": "Natural Pet Food Group",
@@ -8834,15 +8834,15 @@
     },
     "jobId": 2154710,
     "name": "[6993] DTC brand info booklet amends 50%",
-    "number": null,
-    "reference": "[6993] DTC brand info booklet",
+    "number": "INV-5749",
+    "reference": "[6993] DTC brand info booklet amends 50%",
     "invoiceType": {
       "id": 1,
       "name": "Invoice"
     },
     "invoiceStatus": {
-      "id": 1,
-      "name": "Draft"
+      "id": 2,
+      "name": "Awaiting Payment"
     },
     "currencyCode": "NZD",
     "currencySymbol": "$",
@@ -8865,10 +8865,13 @@
     "invoiceDate": "2026-08-31",
     "dueDate": "2026-09-20",
     "paidDate": null,
-    "externalAccountingPlatformId": null,
-    "externalAccountingPlatformName": null,
-    "externalInvoiceId": null,
-    "sentTo": [],
+    "externalAccountingPlatformId": 1,
+    "externalAccountingPlatformName": "Xero",
+    "externalInvoiceId": "4e8c11ea-bb56-431f-8cc3-e6eda98a45b7",
+    "sentTo": [
+      "Courtney Butcher (cbutcher@naturalpetfoodgroup.com)",
+      "Accounts (ap@naturalpetfoodgroup.com)"
+    ],
     "invoiceLabels": [
       "APPROVED"
     ]
