@@ -6582,14 +6582,15 @@
     "invoiceDate": "2026-08-31",
     "dueDate": "2026-09-20",
     "paidDate": null,
-    "externalAccountingPlatformId": null,
-    "externalAccountingPlatformName": null,
-    "externalInvoiceId": null,
+    "externalAccountingPlatformId": 1,
+    "externalAccountingPlatformName": "Xero",
+    "externalInvoiceId": "4ea2f1da-870e-4ca0-8a5a-105e821e5344",
     "sentTo": [
       "Steve Sutherland (steve.sutherland@silverfernfarms.co.nz)"
     ],
     "invoiceLabels": [
-      "PO Needed"
+      "PO Needed",
+      "Maya approved"
     ]
   },
   {
@@ -8169,82 +8170,6 @@
     ]
   },
   {
-    "id": 1715639,
-    "createdUser": "shelleyh",
-    "sentByUser": null,
-    "sentDate": null,
-    "company": {
-      "id": 535688,
-      "name": "Silver Fern Farms",
-      "branchId": 37900,
-      "companyLeadUserId": null,
-      "companyStatus": {
-        "id": 1,
-        "name": "Active"
-      },
-      "branchName": "Content & Co NZ Ltd",
-      "rateCardId": 43738,
-      "rateCardName": "Standard",
-      "taxNumber": null,
-      "phone1": null,
-      "phone2": null,
-      "websiteAddress": null,
-      "notes": null,
-      "physicalAddress": null,
-      "postalAddress": {
-        "id": 627671,
-        "line1": "PO Box 941",
-        "line2": "",
-        "line3": "",
-        "city": "Dunedin",
-        "region": null,
-        "countryName": "New Zealand",
-        "postCode": "9054"
-      },
-      "companyLabels": []
-    },
-    "jobId": 2166929,
-    "name": "[7041] 5Q Pet Nutrition image retouching and grading",
-    "number": "INV-5690",
-    "reference": "[7041] 5Q Pet Nutrition image retouching",
-    "invoiceType": {
-      "id": 1,
-      "name": "Invoice"
-    },
-    "invoiceStatus": {
-      "id": 1,
-      "name": "Draft"
-    },
-    "currencyCode": "NZD",
-    "currencySymbol": "$",
-    "exchangeRate": 1,
-    "discount": null,
-    "instalment": null,
-    "invoiceCurrencyAmountPaidIncTax": 0,
-    "invoiceCurrencyTotalAmountExTax": 1385,
-    "invoiceCurrencyTotalAmountTax": 207.75,
-    "invoiceCurrencyTotalAmountIncTax": 1592.75,
-    "invoiceCurrencyBalance": 1592.75,
-    "jobCurrencyAmountPaidIncTax": 0,
-    "jobCurrencyTotalAmountExTax": 1385,
-    "jobCurrencyTotalAmountIncTax": 1592.75,
-    "amountPaidIncTax": 0,
-    "totalAmountExTax": 1385,
-    "totalAmountIncTax": 1592.75,
-    "balance": 1592.75,
-    "createdDatetime": "2026-08-31T03:12:03+00:00",
-    "invoiceDate": "2026-08-31",
-    "dueDate": "2026-09-20",
-    "paidDate": null,
-    "externalAccountingPlatformId": null,
-    "externalAccountingPlatformName": null,
-    "externalInvoiceId": null,
-    "sentTo": [],
-    "invoiceLabels": [
-      "PO Needed"
-    ]
-  },
-  {
     "id": 1715646,
     "createdUser": "shelleyh",
     "sentByUser": "maya",
@@ -8312,14 +8237,15 @@
     "invoiceDate": "2026-08-31",
     "dueDate": "2026-09-20",
     "paidDate": null,
-    "externalAccountingPlatformId": null,
-    "externalAccountingPlatformName": null,
-    "externalInvoiceId": null,
+    "externalAccountingPlatformId": 1,
+    "externalAccountingPlatformName": "Xero",
+    "externalInvoiceId": "0992984f-b322-422d-ba8d-711623307e24",
     "sentTo": [
       "Steve Sutherland (steve.sutherland@silverfernfarms.co.nz)"
     ],
     "invoiceLabels": [
-      "PO Needed"
+      "PO Needed",
+      "Maya approved"
     ]
   },
   {
@@ -9032,6 +8958,83 @@
     ],
     "invoiceLabels": [
       "APPROVED"
+    ]
+  },
+  {
+    "id": 1720151,
+    "createdUser": "shelleyh",
+    "sentByUser": "shelleyh",
+    "sentDate": "2026-09-03",
+    "company": {
+      "id": 535688,
+      "name": "Silver Fern Farms",
+      "branchId": 37900,
+      "companyLeadUserId": null,
+      "companyStatus": {
+        "id": 1,
+        "name": "Active"
+      },
+      "branchName": "Content & Co NZ Ltd",
+      "rateCardId": 43738,
+      "rateCardName": "Standard",
+      "taxNumber": null,
+      "phone1": null,
+      "phone2": null,
+      "websiteAddress": null,
+      "notes": null,
+      "physicalAddress": null,
+      "postalAddress": {
+        "id": 627671,
+        "line1": "PO Box 941",
+        "line2": "",
+        "line3": "",
+        "city": "Dunedin",
+        "region": null,
+        "countryName": "New Zealand",
+        "postCode": "9054"
+      },
+      "companyLabels": []
+    },
+    "jobId": 2166929,
+    "name": "[7041] 5Q Pet Nutrition image retouching and grading",
+    "number": "INV-5750",
+    "reference": "[7041] 5Q Pet Nutrition image retouching",
+    "invoiceType": {
+      "id": 1,
+      "name": "Invoice"
+    },
+    "invoiceStatus": {
+      "id": 2,
+      "name": "Awaiting Payment"
+    },
+    "currencyCode": "NZD",
+    "currencySymbol": "$",
+    "exchangeRate": 1,
+    "discount": null,
+    "instalment": null,
+    "invoiceCurrencyAmountPaidIncTax": 0,
+    "invoiceCurrencyTotalAmountExTax": 875,
+    "invoiceCurrencyTotalAmountTax": 131.25,
+    "invoiceCurrencyTotalAmountIncTax": 1006.25,
+    "invoiceCurrencyBalance": 1006.25,
+    "jobCurrencyAmountPaidIncTax": 0,
+    "jobCurrencyTotalAmountExTax": 875,
+    "jobCurrencyTotalAmountIncTax": 1006.25,
+    "amountPaidIncTax": 0,
+    "totalAmountExTax": 875,
+    "totalAmountIncTax": 1006.25,
+    "balance": 1006.25,
+    "createdDatetime": "2026-09-03T02:49:31+00:00",
+    "invoiceDate": "2026-08-31",
+    "dueDate": "2026-09-20",
+    "paidDate": null,
+    "externalAccountingPlatformId": 1,
+    "externalAccountingPlatformName": "Xero",
+    "externalInvoiceId": "d6e2af5b-7b7d-490b-b2f4-d1036e9b3b70",
+    "sentTo": [],
+    "invoiceLabels": [
+      "PO Needed",
+      "Maya approved"
     ]
   }
 ]
