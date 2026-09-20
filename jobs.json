@@ -546015,7 +546015,7 @@
     "totalPlannedTimeExTax": 0,
     "totalPlannedExpensesExTax": null,
     "totalPlannedExpensesCostExTax": null,
-    "totalIncompleteMinutes": 13580,
+    "totalIncompleteMinutes": 13677,
     "totalIncompleteTimeExTax": 0,
     "totalLoggedCostExTax": 0,
     "totalLoggedExTax": 0,
@@ -546217,12 +546217,12 @@
               "name": "Time By Item"
             },
             "totalPlannedMinutes": 0,
-            "totalIncompleteMinutes": 9465,
+            "totalIncompleteMinutes": 9540,
             "totalLoggedMinutes": 32737,
             "totalPlannedTimeExTax": 0,
             "totalLoggedTimeExTax": 86374.11,
             "jobCurrencySellRate": null,
-            "jobCurrencyTotalIncompleteTimeExTax": 25550,
+            "jobCurrencyTotalIncompleteTimeExTax": 25737.5,
             "jobCurrencyTotalPlannedTimeExTax": 0,
             "jobCurrencyTotalLoggedTimeExTax": 86374.11,
             "jobCurrencyTotalLoggedTimeCostExTax": 0,
@@ -546231,7 +546231,7 @@
             "estimatedStartDate": null,
             "estimatedEndDate": null,
             "earliestStartDate": "2026-04-01",
-            "latestEndDate": "2026-12-17",
+            "latestEndDate": "2026-12-18",
             "completedDate": null,
             "incompleteJobItemSubItems": 0,
             "completeJobItemSubItems": 0
@@ -546389,7 +546389,7 @@
               "name": "Time By Item"
             },
             "totalPlannedMinutes": 0,
-            "totalIncompleteMinutes": 500,
+            "totalIncompleteMinutes": 522,
             "totalLoggedMinutes": 23110,
             "totalPlannedTimeExTax": 0,
             "totalLoggedTimeExTax": 0,
@@ -547115,7 +547115,7 @@
     "totalPlannedTimeExTax": 0,
     "totalPlannedExpensesExTax": null,
     "totalPlannedExpensesCostExTax": null,
-    "totalIncompleteMinutes": 3210,
+    "totalIncompleteMinutes": 3345,
     "totalIncompleteTimeExTax": 0,
     "totalLoggedCostExTax": 0,
     "totalLoggedExTax": 0,
@@ -547329,12 +547329,12 @@
               "name": "Time By Item"
             },
             "totalPlannedMinutes": 0,
-            "totalIncompleteMinutes": 2040,
+            "totalIncompleteMinutes": 2115,
             "totalLoggedMinutes": 14565,
             "totalPlannedTimeExTax": 0,
             "totalLoggedTimeExTax": 47779.16,
             "jobCurrencySellRate": null,
-            "jobCurrencyTotalIncompleteTimeExTax": 6450,
+            "jobCurrencyTotalIncompleteTimeExTax": 6700,
             "jobCurrencyTotalPlannedTimeExTax": 0,
             "jobCurrencyTotalLoggedTimeExTax": 47779.16,
             "jobCurrencyTotalLoggedTimeCostExTax": 0,
@@ -547415,12 +547415,12 @@
               "name": "Time By Item"
             },
             "totalPlannedMinutes": 0,
-            "totalIncompleteMinutes": 1020,
+            "totalIncompleteMinutes": 1080,
             "totalLoggedMinutes": 9256,
             "totalPlannedTimeExTax": 0,
             "totalLoggedTimeExTax": 29820.05,
             "jobCurrencySellRate": null,
-            "jobCurrencyTotalIncompleteTimeExTax": 3400,
+            "jobCurrencyTotalIncompleteTimeExTax": 3600,
             "jobCurrencyTotalPlannedTimeExTax": 0,
             "jobCurrencyTotalLoggedTimeExTax": 29820.05,
             "jobCurrencyTotalLoggedTimeCostExTax": 0,
@@ -547429,7 +547429,7 @@
             "estimatedStartDate": null,
             "estimatedEndDate": null,
             "earliestStartDate": "2026-04-01",
-            "latestEndDate": "2026-10-16",
+            "latestEndDate": "2026-10-19",
             "completedDate": null,
             "incompleteJobItemSubItems": 0,
             "completeJobItemSubItems": 0
@@ -684906,28 +684906,548 @@
         "jobId": 2201205,
         "name": "Campaign Management",
         "orderId": 1,
-        "items": []
+        "items": [
+          {
+            "id": 9914318,
+            "jobId": 2201205,
+            "jobPhaseId": 1500494,
+            "jobItemStatus": {
+              "id": 4,
+              "name": "In Play"
+            },
+            "masterJobItemId": null,
+            "name": "Campaign Management & Calendar Development",
+            "description": null,
+            "sellRate": 150,
+            "costingMethod": {
+              "id": 1,
+              "name": "Item"
+            },
+            "isBillable": true,
+            "totalScheduledUsers": 3,
+            "totalJobItemRoles": 2,
+            "timeAllocationMethod": {
+              "id": 1,
+              "name": "Time By Item"
+            },
+            "totalPlannedMinutes": 600,
+            "totalIncompleteMinutes": 0,
+            "totalLoggedMinutes": 0,
+            "totalPlannedTimeExTax": 1500,
+            "totalLoggedTimeExTax": 0,
+            "jobCurrencySellRate": 150,
+            "jobCurrencyTotalIncompleteTimeExTax": 0,
+            "jobCurrencyTotalPlannedTimeExTax": 1500,
+            "jobCurrencyTotalLoggedTimeExTax": 0,
+            "jobCurrencyTotalLoggedTimeCostExTax": 0,
+            "jobCurrencyTotalAmountInvoicedExTax": 0,
+            "orderId": 1,
+            "estimatedStartDate": null,
+            "estimatedEndDate": null,
+            "earliestStartDate": null,
+            "latestEndDate": null,
+            "completedDate": null,
+            "incompleteJobItemSubItems": 0,
+            "completeJobItemSubItems": 0
+          },
+          {
+            "id": 9914319,
+            "jobId": 2201205,
+            "jobPhaseId": 1500494,
+            "jobItemStatus": {
+              "id": 4,
+              "name": "In Play"
+            },
+            "masterJobItemId": null,
+            "name": "Director Management",
+            "description": "<p>Time on Job for Ange and Maya not able to go against a Job Task</p>",
+            "sellRate": 200,
+            "costingMethod": {
+              "id": 1,
+              "name": "Item"
+            },
+            "isBillable": true,
+            "totalScheduledUsers": 2,
+            "totalJobItemRoles": 0,
+            "timeAllocationMethod": {
+              "id": 1,
+              "name": "Time By Item"
+            },
+            "totalPlannedMinutes": 120,
+            "totalIncompleteMinutes": 0,
+            "totalLoggedMinutes": 0,
+            "totalPlannedTimeExTax": 400,
+            "totalLoggedTimeExTax": 0,
+            "jobCurrencySellRate": 200,
+            "jobCurrencyTotalIncompleteTimeExTax": 0,
+            "jobCurrencyTotalPlannedTimeExTax": 400,
+            "jobCurrencyTotalLoggedTimeExTax": 0,
+            "jobCurrencyTotalLoggedTimeCostExTax": 0,
+            "jobCurrencyTotalAmountInvoicedExTax": 0,
+            "orderId": 2,
+            "estimatedStartDate": null,
+            "estimatedEndDate": null,
+            "earliestStartDate": null,
+            "latestEndDate": null,
+            "completedDate": null,
+            "incompleteJobItemSubItems": 0,
+            "completeJobItemSubItems": 0
+          },
+          {
+            "id": 9914320,
+            "jobId": 2201205,
+            "jobPhaseId": 1500494,
+            "jobItemStatus": {
+              "id": 4,
+              "name": "In Play"
+            },
+            "masterJobItemId": null,
+            "name": "Retainer wips & support",
+            "description": null,
+            "sellRate": 150,
+            "costingMethod": {
+              "id": 1,
+              "name": "Item"
+            },
+            "isBillable": true,
+            "totalScheduledUsers": 3,
+            "totalJobItemRoles": 1,
+            "timeAllocationMethod": {
+              "id": 1,
+              "name": "Time By Item"
+            },
+            "totalPlannedMinutes": 300,
+            "totalIncompleteMinutes": 0,
+            "totalLoggedMinutes": 0,
+            "totalPlannedTimeExTax": 750,
+            "totalLoggedTimeExTax": 0,
+            "jobCurrencySellRate": 150,
+            "jobCurrencyTotalIncompleteTimeExTax": 0,
+            "jobCurrencyTotalPlannedTimeExTax": 750,
+            "jobCurrencyTotalLoggedTimeExTax": 0,
+            "jobCurrencyTotalLoggedTimeCostExTax": 0,
+            "jobCurrencyTotalAmountInvoicedExTax": 0,
+            "orderId": 3,
+            "estimatedStartDate": null,
+            "estimatedEndDate": null,
+            "earliestStartDate": null,
+            "latestEndDate": null,
+            "completedDate": null,
+            "incompleteJobItemSubItems": 0,
+            "completeJobItemSubItems": 0
+          }
+        ]
       },
       {
         "id": 1500495,
         "jobId": 2201205,
         "name": "Performance Management",
         "orderId": 2,
-        "items": []
+        "items": [
+          {
+            "id": 9914321,
+            "jobId": 2201205,
+            "jobPhaseId": 1500495,
+            "jobItemStatus": {
+              "id": 4,
+              "name": "In Play"
+            },
+            "masterJobItemId": null,
+            "name": "Performance Media Planning",
+            "description": null,
+            "sellRate": 150,
+            "costingMethod": {
+              "id": 1,
+              "name": "Item"
+            },
+            "isBillable": true,
+            "totalScheduledUsers": 2,
+            "totalJobItemRoles": 1,
+            "timeAllocationMethod": {
+              "id": 1,
+              "name": "Time By Item"
+            },
+            "totalPlannedMinutes": 180,
+            "totalIncompleteMinutes": 0,
+            "totalLoggedMinutes": 0,
+            "totalPlannedTimeExTax": 450,
+            "totalLoggedTimeExTax": 0,
+            "jobCurrencySellRate": 150,
+            "jobCurrencyTotalIncompleteTimeExTax": 0,
+            "jobCurrencyTotalPlannedTimeExTax": 450,
+            "jobCurrencyTotalLoggedTimeExTax": 0,
+            "jobCurrencyTotalLoggedTimeCostExTax": 0,
+            "jobCurrencyTotalAmountInvoicedExTax": 0,
+            "orderId": 4,
+            "estimatedStartDate": null,
+            "estimatedEndDate": null,
+            "earliestStartDate": null,
+            "latestEndDate": null,
+            "completedDate": null,
+            "incompleteJobItemSubItems": 0,
+            "completeJobItemSubItems": 0
+          },
+          {
+            "id": 9914322,
+            "jobId": 2201205,
+            "jobPhaseId": 1500495,
+            "jobItemStatus": {
+              "id": 4,
+              "name": "In Play"
+            },
+            "masterJobItemId": null,
+            "name": "Meta: Scheduling, Optimisations & Pacing Checks",
+            "description": null,
+            "sellRate": 150,
+            "costingMethod": {
+              "id": 1,
+              "name": "Item"
+            },
+            "isBillable": true,
+            "totalScheduledUsers": 2,
+            "totalJobItemRoles": 1,
+            "timeAllocationMethod": {
+              "id": 1,
+              "name": "Time By Item"
+            },
+            "totalPlannedMinutes": 180,
+            "totalIncompleteMinutes": 0,
+            "totalLoggedMinutes": 0,
+            "totalPlannedTimeExTax": 450,
+            "totalLoggedTimeExTax": 0,
+            "jobCurrencySellRate": 150,
+            "jobCurrencyTotalIncompleteTimeExTax": 0,
+            "jobCurrencyTotalPlannedTimeExTax": 450,
+            "jobCurrencyTotalLoggedTimeExTax": 0,
+            "jobCurrencyTotalLoggedTimeCostExTax": 0,
+            "jobCurrencyTotalAmountInvoicedExTax": 0,
+            "orderId": 5,
+            "estimatedStartDate": null,
+            "estimatedEndDate": null,
+            "earliestStartDate": null,
+            "latestEndDate": null,
+            "completedDate": null,
+            "incompleteJobItemSubItems": 0,
+            "completeJobItemSubItems": 0
+          },
+          {
+            "id": 9914323,
+            "jobId": 2201205,
+            "jobPhaseId": 1500495,
+            "jobItemStatus": {
+              "id": 4,
+              "name": "In Play"
+            },
+            "masterJobItemId": null,
+            "name": "Google: Scheduling, Optimisations & Pacing Checks",
+            "description": null,
+            "sellRate": 150,
+            "costingMethod": {
+              "id": 1,
+              "name": "Item"
+            },
+            "isBillable": true,
+            "totalScheduledUsers": 2,
+            "totalJobItemRoles": 0,
+            "timeAllocationMethod": {
+              "id": 1,
+              "name": "Time By Item"
+            },
+            "totalPlannedMinutes": 240,
+            "totalIncompleteMinutes": 0,
+            "totalLoggedMinutes": 0,
+            "totalPlannedTimeExTax": 600,
+            "totalLoggedTimeExTax": 0,
+            "jobCurrencySellRate": 150,
+            "jobCurrencyTotalIncompleteTimeExTax": 0,
+            "jobCurrencyTotalPlannedTimeExTax": 600,
+            "jobCurrencyTotalLoggedTimeExTax": 0,
+            "jobCurrencyTotalLoggedTimeCostExTax": 0,
+            "jobCurrencyTotalAmountInvoicedExTax": 0,
+            "orderId": 6,
+            "estimatedStartDate": null,
+            "estimatedEndDate": null,
+            "earliestStartDate": null,
+            "latestEndDate": null,
+            "completedDate": null,
+            "incompleteJobItemSubItems": 0,
+            "completeJobItemSubItems": 0
+          },
+          {
+            "id": 9914324,
+            "jobId": 2201205,
+            "jobPhaseId": 1500495,
+            "jobItemStatus": {
+              "id": 4,
+              "name": "In Play"
+            },
+            "masterJobItemId": null,
+            "name": "Optimisations",
+            "description": null,
+            "sellRate": 150,
+            "costingMethod": {
+              "id": 1,
+              "name": "Item"
+            },
+            "isBillable": true,
+            "totalScheduledUsers": 0,
+            "totalJobItemRoles": 0,
+            "timeAllocationMethod": {
+              "id": 1,
+              "name": "Time By Item"
+            },
+            "totalPlannedMinutes": 240,
+            "totalIncompleteMinutes": 0,
+            "totalLoggedMinutes": 0,
+            "totalPlannedTimeExTax": 600,
+            "totalLoggedTimeExTax": 0,
+            "jobCurrencySellRate": 150,
+            "jobCurrencyTotalIncompleteTimeExTax": 0,
+            "jobCurrencyTotalPlannedTimeExTax": 600,
+            "jobCurrencyTotalLoggedTimeExTax": 0,
+            "jobCurrencyTotalLoggedTimeCostExTax": 0,
+            "jobCurrencyTotalAmountInvoicedExTax": 0,
+            "orderId": 7,
+            "estimatedStartDate": null,
+            "estimatedEndDate": null,
+            "earliestStartDate": null,
+            "latestEndDate": null,
+            "completedDate": null,
+            "incompleteJobItemSubItems": 0,
+            "completeJobItemSubItems": 0
+          },
+          {
+            "id": 9914325,
+            "jobId": 2201205,
+            "jobPhaseId": 1500495,
+            "jobItemStatus": {
+              "id": 4,
+              "name": "In Play"
+            },
+            "masterJobItemId": null,
+            "name": "Reporting",
+            "description": null,
+            "sellRate": 150,
+            "costingMethod": {
+              "id": 1,
+              "name": "Item"
+            },
+            "isBillable": true,
+            "totalScheduledUsers": 0,
+            "totalJobItemRoles": 0,
+            "timeAllocationMethod": {
+              "id": 1,
+              "name": "Time By Item"
+            },
+            "totalPlannedMinutes": 180,
+            "totalIncompleteMinutes": 0,
+            "totalLoggedMinutes": 0,
+            "totalPlannedTimeExTax": 450,
+            "totalLoggedTimeExTax": 0,
+            "jobCurrencySellRate": 150,
+            "jobCurrencyTotalIncompleteTimeExTax": 0,
+            "jobCurrencyTotalPlannedTimeExTax": 450,
+            "jobCurrencyTotalLoggedTimeExTax": 0,
+            "jobCurrencyTotalLoggedTimeCostExTax": 0,
+            "jobCurrencyTotalAmountInvoicedExTax": 0,
+            "orderId": 8,
+            "estimatedStartDate": null,
+            "estimatedEndDate": null,
+            "earliestStartDate": null,
+            "latestEndDate": null,
+            "completedDate": null,
+            "incompleteJobItemSubItems": 0,
+            "completeJobItemSubItems": 0
+          },
+          {
+            "id": 9914326,
+            "jobId": 2201205,
+            "jobPhaseId": 1500495,
+            "jobItemStatus": {
+              "id": 4,
+              "name": "In Play"
+            },
+            "masterJobItemId": null,
+            "name": "Peer Reviews",
+            "description": null,
+            "sellRate": 150,
+            "costingMethod": {
+              "id": 1,
+              "name": "Item"
+            },
+            "isBillable": true,
+            "totalScheduledUsers": 1,
+            "totalJobItemRoles": 1,
+            "timeAllocationMethod": {
+              "id": 1,
+              "name": "Time By Item"
+            },
+            "totalPlannedMinutes": 120,
+            "totalIncompleteMinutes": 0,
+            "totalLoggedMinutes": 0,
+            "totalPlannedTimeExTax": 300,
+            "totalLoggedTimeExTax": 0,
+            "jobCurrencySellRate": 150,
+            "jobCurrencyTotalIncompleteTimeExTax": 0,
+            "jobCurrencyTotalPlannedTimeExTax": 300,
+            "jobCurrencyTotalLoggedTimeExTax": 0,
+            "jobCurrencyTotalLoggedTimeCostExTax": 0,
+            "jobCurrencyTotalAmountInvoicedExTax": 0,
+            "orderId": 9,
+            "estimatedStartDate": null,
+            "estimatedEndDate": null,
+            "earliestStartDate": null,
+            "latestEndDate": null,
+            "completedDate": null,
+            "incompleteJobItemSubItems": 0,
+            "completeJobItemSubItems": 0
+          }
+        ]
       },
       {
         "id": 1500496,
         "jobId": 2201205,
         "name": "Search",
         "orderId": 3,
-        "items": []
+        "items": [
+          {
+            "id": 9914327,
+            "jobId": 2201205,
+            "jobPhaseId": 1500496,
+            "jobItemStatus": {
+              "id": 4,
+              "name": "In Play"
+            },
+            "masterJobItemId": null,
+            "name": "Google: Scheduling, Optimisations & Pacing Checks",
+            "description": null,
+            "sellRate": 150,
+            "costingMethod": {
+              "id": 1,
+              "name": "Item"
+            },
+            "isBillable": true,
+            "totalScheduledUsers": 0,
+            "totalJobItemRoles": 0,
+            "timeAllocationMethod": {
+              "id": 1,
+              "name": "Time By Item"
+            },
+            "totalPlannedMinutes": 240,
+            "totalIncompleteMinutes": 0,
+            "totalLoggedMinutes": 0,
+            "totalPlannedTimeExTax": 600,
+            "totalLoggedTimeExTax": 0,
+            "jobCurrencySellRate": 150,
+            "jobCurrencyTotalIncompleteTimeExTax": 0,
+            "jobCurrencyTotalPlannedTimeExTax": 600,
+            "jobCurrencyTotalLoggedTimeExTax": 0,
+            "jobCurrencyTotalLoggedTimeCostExTax": 0,
+            "jobCurrencyTotalAmountInvoicedExTax": 0,
+            "orderId": 10,
+            "estimatedStartDate": null,
+            "estimatedEndDate": null,
+            "earliestStartDate": null,
+            "latestEndDate": null,
+            "completedDate": null,
+            "incompleteJobItemSubItems": 0,
+            "completeJobItemSubItems": 0
+          },
+          {
+            "id": 9914328,
+            "jobId": 2201205,
+            "jobPhaseId": 1500496,
+            "jobItemStatus": {
+              "id": 4,
+              "name": "In Play"
+            },
+            "masterJobItemId": null,
+            "name": "Briefing & coordination",
+            "description": null,
+            "sellRate": 150,
+            "costingMethod": {
+              "id": 1,
+              "name": "Item"
+            },
+            "isBillable": true,
+            "totalScheduledUsers": 0,
+            "totalJobItemRoles": 0,
+            "timeAllocationMethod": {
+              "id": 1,
+              "name": "Time By Item"
+            },
+            "totalPlannedMinutes": 60,
+            "totalIncompleteMinutes": 0,
+            "totalLoggedMinutes": 0,
+            "totalPlannedTimeExTax": 150,
+            "totalLoggedTimeExTax": 0,
+            "jobCurrencySellRate": 150,
+            "jobCurrencyTotalIncompleteTimeExTax": 0,
+            "jobCurrencyTotalPlannedTimeExTax": 150,
+            "jobCurrencyTotalLoggedTimeExTax": 0,
+            "jobCurrencyTotalLoggedTimeCostExTax": 0,
+            "jobCurrencyTotalAmountInvoicedExTax": 0,
+            "orderId": 11,
+            "estimatedStartDate": null,
+            "estimatedEndDate": null,
+            "earliestStartDate": null,
+            "latestEndDate": null,
+            "completedDate": null,
+            "incompleteJobItemSubItems": 0,
+            "completeJobItemSubItems": 0
+          }
+        ]
       },
       {
         "id": 1500497,
         "jobId": 2201205,
         "name": "Asset Development",
         "orderId": 4,
-        "items": []
+        "items": [
+          {
+            "id": 9914329,
+            "jobId": 2201205,
+            "jobPhaseId": 1500497,
+            "jobItemStatus": {
+              "id": 4,
+              "name": "In Play"
+            },
+            "masterJobItemId": null,
+            "name": "Asset Design, Spec & Animation",
+            "description": null,
+            "sellRate": 150,
+            "costingMethod": {
+              "id": 1,
+              "name": "Item"
+            },
+            "isBillable": true,
+            "totalScheduledUsers": 4,
+            "totalJobItemRoles": 1,
+            "timeAllocationMethod": {
+              "id": 1,
+              "name": "Time By Item"
+            },
+            "totalPlannedMinutes": 600,
+            "totalIncompleteMinutes": 0,
+            "totalLoggedMinutes": 0,
+            "totalPlannedTimeExTax": 1500,
+            "totalLoggedTimeExTax": 0,
+            "jobCurrencySellRate": 150,
+            "jobCurrencyTotalIncompleteTimeExTax": 0,
+            "jobCurrencyTotalPlannedTimeExTax": 1500,
+            "jobCurrencyTotalLoggedTimeExTax": 0,
+            "jobCurrencyTotalLoggedTimeCostExTax": 0,
+            "jobCurrencyTotalAmountInvoicedExTax": 0,
+            "orderId": 12,
+            "estimatedStartDate": null,
+            "estimatedEndDate": null,
+            "earliestStartDate": null,
+            "latestEndDate": null,
+            "completedDate": null,
+            "incompleteJobItemSubItems": 0,
+            "completeJobItemSubItems": 0
+          }
+        ]
       }
     ],
     "looseItems": []
@@ -685067,188 +685587,14 @@
         "jobId": 2201207,
         "name": "Campaign Management",
         "orderId": 1,
-        "items": [
-          {
-            "id": 9914334,
-            "jobId": 2201207,
-            "jobPhaseId": 1500499,
-            "jobItemStatus": {
-              "id": 4,
-              "name": "In Play"
-            },
-            "masterJobItemId": null,
-            "name": "Campaign Management & Calendar Development",
-            "description": null,
-            "sellRate": 150,
-            "costingMethod": {
-              "id": 1,
-              "name": "Item"
-            },
-            "isBillable": true,
-            "totalScheduledUsers": 3,
-            "totalJobItemRoles": 2,
-            "timeAllocationMethod": {
-              "id": 1,
-              "name": "Time By Item"
-            },
-            "totalPlannedMinutes": 600,
-            "totalIncompleteMinutes": 0,
-            "totalLoggedMinutes": 0,
-            "totalPlannedTimeExTax": 1500,
-            "totalLoggedTimeExTax": 0,
-            "jobCurrencySellRate": 150,
-            "jobCurrencyTotalIncompleteTimeExTax": 0,
-            "jobCurrencyTotalPlannedTimeExTax": 1500,
-            "jobCurrencyTotalLoggedTimeExTax": 0,
-            "jobCurrencyTotalLoggedTimeCostExTax": 0,
-            "jobCurrencyTotalAmountInvoicedExTax": 0,
-            "orderId": 1,
-            "estimatedStartDate": null,
-            "estimatedEndDate": null,
-            "earliestStartDate": null,
-            "latestEndDate": null,
-            "completedDate": null,
-            "incompleteJobItemSubItems": 0,
-            "completeJobItemSubItems": 0
-          },
-          {
-            "id": 9914335,
-            "jobId": 2201207,
-            "jobPhaseId": 1500499,
-            "jobItemStatus": {
-              "id": 4,
-              "name": "In Play"
-            },
-            "masterJobItemId": null,
-            "name": "Director Management",
-            "description": "<p>Time on Job for Ange and Maya not able to go against a Job Task</p>",
-            "sellRate": 200,
-            "costingMethod": {
-              "id": 1,
-              "name": "Item"
-            },
-            "isBillable": true,
-            "totalScheduledUsers": 2,
-            "totalJobItemRoles": 0,
-            "timeAllocationMethod": {
-              "id": 1,
-              "name": "Time By Item"
-            },
-            "totalPlannedMinutes": 60,
-            "totalIncompleteMinutes": 0,
-            "totalLoggedMinutes": 0,
-            "totalPlannedTimeExTax": 200,
-            "totalLoggedTimeExTax": 0,
-            "jobCurrencySellRate": 200,
-            "jobCurrencyTotalIncompleteTimeExTax": 0,
-            "jobCurrencyTotalPlannedTimeExTax": 200,
-            "jobCurrencyTotalLoggedTimeExTax": 0,
-            "jobCurrencyTotalLoggedTimeCostExTax": 0,
-            "jobCurrencyTotalAmountInvoicedExTax": 0,
-            "orderId": 2,
-            "estimatedStartDate": null,
-            "estimatedEndDate": null,
-            "earliestStartDate": null,
-            "latestEndDate": null,
-            "completedDate": null,
-            "incompleteJobItemSubItems": 0,
-            "completeJobItemSubItems": 0
-          },
-          {
-            "id": 9914336,
-            "jobId": 2201207,
-            "jobPhaseId": 1500499,
-            "jobItemStatus": {
-              "id": 4,
-              "name": "In Play"
-            },
-            "masterJobItemId": null,
-            "name": "Retainer wips & support",
-            "description": null,
-            "sellRate": 150,
-            "costingMethod": {
-              "id": 1,
-              "name": "Item"
-            },
-            "isBillable": true,
-            "totalScheduledUsers": 3,
-            "totalJobItemRoles": 1,
-            "timeAllocationMethod": {
-              "id": 1,
-              "name": "Time By Item"
-            },
-            "totalPlannedMinutes": 240,
-            "totalIncompleteMinutes": 0,
-            "totalLoggedMinutes": 0,
-            "totalPlannedTimeExTax": 600,
-            "totalLoggedTimeExTax": 0,
-            "jobCurrencySellRate": 150,
-            "jobCurrencyTotalIncompleteTimeExTax": 0,
-            "jobCurrencyTotalPlannedTimeExTax": 600,
-            "jobCurrencyTotalLoggedTimeExTax": 0,
-            "jobCurrencyTotalLoggedTimeCostExTax": 0,
-            "jobCurrencyTotalAmountInvoicedExTax": 0,
-            "orderId": 3,
-            "estimatedStartDate": null,
-            "estimatedEndDate": null,
-            "earliestStartDate": null,
-            "latestEndDate": null,
-            "completedDate": null,
-            "incompleteJobItemSubItems": 0,
-            "completeJobItemSubItems": 0
-          }
-        ]
+        "items": []
       },
       {
         "id": 1500502,
         "jobId": 2201207,
         "name": "Asset Development",
         "orderId": 2,
-        "items": [
-          {
-            "id": 9914345,
-            "jobId": 2201207,
-            "jobPhaseId": 1500502,
-            "jobItemStatus": {
-              "id": 4,
-              "name": "In Play"
-            },
-            "masterJobItemId": null,
-            "name": "Asset Design, Spec & Animation",
-            "description": null,
-            "sellRate": 150,
-            "costingMethod": {
-              "id": 1,
-              "name": "Item"
-            },
-            "isBillable": true,
-            "totalScheduledUsers": 4,
-            "totalJobItemRoles": 1,
-            "timeAllocationMethod": {
-              "id": 1,
-              "name": "Time By Item"
-            },
-            "totalPlannedMinutes": 360,
-            "totalIncompleteMinutes": 0,
-            "totalLoggedMinutes": 0,
-            "totalPlannedTimeExTax": 900,
-            "totalLoggedTimeExTax": 0,
-            "jobCurrencySellRate": 150,
-            "jobCurrencyTotalIncompleteTimeExTax": 0,
-            "jobCurrencyTotalPlannedTimeExTax": 900,
-            "jobCurrencyTotalLoggedTimeExTax": 0,
-            "jobCurrencyTotalLoggedTimeCostExTax": 0,
-            "jobCurrencyTotalAmountInvoicedExTax": 0,
-            "orderId": 12,
-            "estimatedStartDate": null,
-            "estimatedEndDate": null,
-            "earliestStartDate": null,
-            "latestEndDate": null,
-            "completedDate": null,
-            "incompleteJobItemSubItems": 0,
-            "completeJobItemSubItems": 0
-          }
-        ]
+        "items": []
       }
     ],
     "looseItems": []
@@ -685602,7 +685948,180 @@
       }
     ],
     "phases": [],
-    "looseItems": []
+    "looseItems": [
+      {
+        "id": 9922830,
+        "jobId": 2202474,
+        "jobPhaseId": null,
+        "jobItemStatus": {
+          "id": 1,
+          "name": "Paused"
+        },
+        "masterJobItemId": null,
+        "name": "Briefing & coordination",
+        "description": "<p>Redesign Production Selection Wheel in new brand design</p><p>Product changes + a copy changes </p>",
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 1,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 180,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 30,
+        "totalPlannedTimeExTax": 450,
+        "totalLoggedTimeExTax": 75,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 450,
+        "jobCurrencyTotalLoggedTimeExTax": 75,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 1,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": "2026-09-10",
+        "latestEndDate": "2026-09-10",
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9922831,
+        "jobId": 2202474,
+        "jobPhaseId": null,
+        "jobItemStatus": {
+          "id": 1,
+          "name": "Paused"
+        },
+        "masterJobItemId": null,
+        "name": "Design & Artwork",
+        "description": "<p>Update 3x products</p><p>Add 2 New Products</p><p>Redesign in new brand guidelines </p>",
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 0,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 300,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 750,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 750,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 2,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": null,
+        "latestEndDate": null,
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9922832,
+        "jobId": 2202474,
+        "jobPhaseId": null,
+        "jobItemStatus": {
+          "id": 1,
+          "name": "Paused"
+        },
+        "masterJobItemId": null,
+        "name": "Artwork & file despatch",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 0,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 30,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 75,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 75,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 4,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": null,
+        "latestEndDate": null,
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9934882,
+        "jobId": 2202474,
+        "jobPhaseId": null,
+        "jobItemStatus": {
+          "id": 1,
+          "name": "Paused"
+        },
+        "masterJobItemId": null,
+        "name": "Creative Direction",
+        "description": "<p></p>",
+        "sellRate": 200,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 0,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 30,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 100,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 200,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 100,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 3,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": null,
+        "latestEndDate": null,
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      }
+    ]
   },
   {
     "id": 2203913,
@@ -685774,7 +686293,352 @@
       }
     ],
     "phases": [],
-    "looseItems": []
+    "looseItems": [
+      {
+        "id": 9932767,
+        "jobId": 2203913,
+        "jobPhaseId": 1504659,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Campaign Management & Calendar Development",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 5,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 550,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 1375,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 1375,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 1,
+        "estimatedStartDate": "2026-10-01",
+        "estimatedEndDate": "2026-11-03",
+        "earliestStartDate": "2026-10-01",
+        "latestEndDate": "2026-11-03",
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9932768,
+        "jobId": 2203913,
+        "jobPhaseId": 1504659,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Scheduling, Planning, Optimisations",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 5,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 300,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 750,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 750,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 2,
+        "estimatedStartDate": "2026-11-13",
+        "estimatedEndDate": "2026-12-18",
+        "earliestStartDate": "2026-11-13",
+        "latestEndDate": "2026-12-18",
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9932769,
+        "jobId": 2203913,
+        "jobPhaseId": 1504659,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Peer Reviews",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 4,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 30,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 75,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 75,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 3,
+        "estimatedStartDate": "2026-11-14",
+        "estimatedEndDate": "2026-11-19",
+        "earliestStartDate": "2026-11-14",
+        "latestEndDate": "2026-11-19",
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9932770,
+        "jobId": 2203913,
+        "jobPhaseId": 1504659,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Reporting",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 2,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 120,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 300,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 300,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 4,
+        "estimatedStartDate": "2026-12-19",
+        "estimatedEndDate": "2026-12-25",
+        "earliestStartDate": "2026-12-19",
+        "latestEndDate": "2026-12-25",
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9932771,
+        "jobId": 2203913,
+        "jobPhaseId": 1504659,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Retainer wips & support",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 3,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 60,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 150,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 150,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 5,
+        "estimatedStartDate": "2026-11-20",
+        "estimatedEndDate": "2026-12-18",
+        "earliestStartDate": "2026-11-20",
+        "latestEndDate": "2026-12-18",
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9932772,
+        "jobId": 2203913,
+        "jobPhaseId": 1504659,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Pinterest Management",
+        "description": null,
+        "sellRate": null,
+        "costingMethod": {
+          "id": 3,
+          "name": "Value With Calculated Sell"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 1,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 0,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 450,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": null,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 450,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 6,
+        "estimatedStartDate": "2026-11-20",
+        "estimatedEndDate": "2026-12-18",
+        "earliestStartDate": "2026-11-20",
+        "latestEndDate": "2026-12-18",
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9932773,
+        "jobId": 2203913,
+        "jobPhaseId": 1504659,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Director Management",
+        "description": "<p>Time on Job for Ange and Maya not able to go against a Job Task</p>",
+        "sellRate": 200,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 1,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 60,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 200,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 200,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 200,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 7,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": null,
+        "latestEndDate": null,
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9932774,
+        "jobId": 2203913,
+        "jobPhaseId": 1504660,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Asset Design, Spec & Animation",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 6,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 480,
+        "totalIncompleteMinutes": 60,
+        "totalLoggedMinutes": 120,
+        "totalPlannedTimeExTax": 1200,
+        "totalLoggedTimeExTax": 300,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 150,
+        "jobCurrencyTotalPlannedTimeExTax": 1200,
+        "jobCurrencyTotalLoggedTimeExTax": 300,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 8,
+        "estimatedStartDate": "2026-10-27",
+        "estimatedEndDate": "2026-11-19",
+        "earliestStartDate": "2026-09-17",
+        "latestEndDate": "2026-11-19",
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      }
+    ]
   },
   {
     "id": 2203914,
@@ -685926,7 +686790,94 @@
       }
     ],
     "phases": [],
-    "looseItems": []
+    "looseItems": [
+      {
+        "id": 9932776,
+        "jobId": 2203914,
+        "jobPhaseId": 1504661,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "eDm Copywriting & Platform Design",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 3,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 210,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 135,
+        "totalPlannedTimeExTax": 525,
+        "totalLoggedTimeExTax": 337.5,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 525,
+        "jobCurrencyTotalLoggedTimeExTax": 337.5,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 1,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": "2026-09-17",
+        "latestEndDate": "2026-09-18",
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9932777,
+        "jobId": 2203914,
+        "jobPhaseId": 1504661,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Design & Artwork",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 5,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 60,
+        "totalIncompleteMinutes": 40,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 150,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 100,
+        "jobCurrencyTotalPlannedTimeExTax": 150,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 2,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": "2026-09-22",
+        "latestEndDate": "2026-09-22",
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      }
+    ]
   },
   {
     "id": 2203949,
@@ -686065,7 +687016,481 @@
       }
     ],
     "phases": [],
-    "looseItems": []
+    "looseItems": [
+      {
+        "id": 9932929,
+        "jobId": 2203949,
+        "jobPhaseId": 1504692,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Design & Artwork",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 0,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 0,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 0,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 1,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": null,
+        "latestEndDate": null,
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9932930,
+        "jobId": 2203949,
+        "jobPhaseId": 1504692,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Briefing & coordination",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 0,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 0,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 0,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 2,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": null,
+        "latestEndDate": null,
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9932931,
+        "jobId": 2203949,
+        "jobPhaseId": 1504693,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Campaign Management & Calendar Development",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 1,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 600,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 1500,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 1500,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 3,
+        "estimatedStartDate": "2026-10-25",
+        "estimatedEndDate": "2026-11-24",
+        "earliestStartDate": "2026-10-25",
+        "latestEndDate": "2026-11-24",
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9932932,
+        "jobId": 2203949,
+        "jobPhaseId": 1504694,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Social Scheduling & Planning",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 2,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 300,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 60,
+        "totalPlannedTimeExTax": 750,
+        "totalLoggedTimeExTax": 150,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 750,
+        "jobCurrencyTotalLoggedTimeExTax": 150,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 4,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": null,
+        "latestEndDate": null,
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9932933,
+        "jobId": 2203949,
+        "jobPhaseId": 1504694,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Peer Reviews",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 1,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 110,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 275,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 275,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 5,
+        "estimatedStartDate": "2026-10-25",
+        "estimatedEndDate": "2026-11-24",
+        "earliestStartDate": "2026-10-25",
+        "latestEndDate": "2026-11-24",
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9932934,
+        "jobId": 2203949,
+        "jobPhaseId": 1504694,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Meta Management & Optimisations",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 4,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 150,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 375,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 375,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 6,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": null,
+        "latestEndDate": null,
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9932935,
+        "jobId": 2203949,
+        "jobPhaseId": 1504694,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Search Management & Optimisations",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 3,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 150,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 375,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 375,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 7,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": null,
+        "latestEndDate": null,
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9932936,
+        "jobId": 2203949,
+        "jobPhaseId": 1504694,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Reporting - bi-monthly full reports",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 0,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 150,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 375,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 375,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 8,
+        "estimatedStartDate": "2026-11-01",
+        "estimatedEndDate": "2026-11-05",
+        "earliestStartDate": "2026-11-01",
+        "latestEndDate": "2026-11-05",
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9932937,
+        "jobId": 2203949,
+        "jobPhaseId": 1504695,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Director Management",
+        "description": "<p>Time on Job for Ange and Maya not able to go against a Job Task</p>",
+        "sellRate": 200,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 1,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 120,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 400,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 200,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 400,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 9,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": null,
+        "latestEndDate": null,
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9932938,
+        "jobId": 2203949,
+        "jobPhaseId": 1504695,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Client Comms / WIPS",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 2,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 300,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 20,
+        "totalPlannedTimeExTax": 750,
+        "totalLoggedTimeExTax": 50,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 750,
+        "jobCurrencyTotalLoggedTimeExTax": 50,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 10,
+        "estimatedStartDate": "2026-10-25",
+        "estimatedEndDate": "2026-11-24",
+        "earliestStartDate": "2026-09-14",
+        "latestEndDate": "2026-11-24",
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9932939,
+        "jobId": 2203949,
+        "jobPhaseId": 1504696,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Asset Design, Spec & Animation",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 1,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 480,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 1200,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 1200,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 11,
+        "estimatedStartDate": "2026-09-14",
+        "estimatedEndDate": "2026-09-18",
+        "earliestStartDate": "2026-09-14",
+        "latestEndDate": "2026-09-18",
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      }
+    ]
   },
   {
     "id": 2204054,
@@ -686200,7 +687625,266 @@
       }
     ],
     "phases": [],
-    "looseItems": []
+    "looseItems": [
+      {
+        "id": 9933519,
+        "jobId": 2204054,
+        "jobPhaseId": 1504812,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Community Management",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 3,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 240,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 125,
+        "totalPlannedTimeExTax": 600,
+        "totalLoggedTimeExTax": 312.5,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 600,
+        "jobCurrencyTotalLoggedTimeExTax": 312.5,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 1,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": "2026-09-14",
+        "latestEndDate": "2026-09-18",
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9933520,
+        "jobId": 2204054,
+        "jobPhaseId": 1504812,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Briefing & coordination",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 3,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 120,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 48,
+        "totalPlannedTimeExTax": 300,
+        "totalLoggedTimeExTax": 120,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 300,
+        "jobCurrencyTotalLoggedTimeExTax": 120,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 2,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": "2026-09-14",
+        "latestEndDate": "2026-09-15",
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9933521,
+        "jobId": 2204054,
+        "jobPhaseId": 1504813,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Community Management",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 3,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 0,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 0,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 3,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": null,
+        "latestEndDate": null,
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9933522,
+        "jobId": 2204054,
+        "jobPhaseId": 1504813,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Briefing & coordination",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 2,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 0,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 45,
+        "totalPlannedTimeExTax": 0,
+        "totalLoggedTimeExTax": 112.5,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeExTax": 112.5,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 4,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": null,
+        "latestEndDate": null,
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9933523,
+        "jobId": 2204054,
+        "jobPhaseId": 1504814,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Community Management",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 3,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 0,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 0,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 5,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": null,
+        "latestEndDate": null,
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      },
+      {
+        "id": 9933524,
+        "jobId": 2204054,
+        "jobPhaseId": 1504814,
+        "jobItemStatus": {
+          "id": 4,
+          "name": "In Play"
+        },
+        "masterJobItemId": null,
+        "name": "Briefing & coordination",
+        "description": null,
+        "sellRate": 150,
+        "costingMethod": {
+          "id": 1,
+          "name": "Item"
+        },
+        "isBillable": true,
+        "totalScheduledUsers": 1,
+        "totalJobItemRoles": 0,
+        "timeAllocationMethod": {
+          "id": 1,
+          "name": "Time By Item"
+        },
+        "totalPlannedMinutes": 0,
+        "totalIncompleteMinutes": 0,
+        "totalLoggedMinutes": 0,
+        "totalPlannedTimeExTax": 0,
+        "totalLoggedTimeExTax": 0,
+        "jobCurrencySellRate": 150,
+        "jobCurrencyTotalIncompleteTimeExTax": 0,
+        "jobCurrencyTotalPlannedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeExTax": 0,
+        "jobCurrencyTotalLoggedTimeCostExTax": 0,
+        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "orderId": 6,
+        "estimatedStartDate": null,
+        "estimatedEndDate": null,
+        "earliestStartDate": null,
+        "latestEndDate": null,
+        "completedDate": null,
+        "incompleteJobItemSubItems": 0,
+        "completeJobItemSubItems": 0
+      }
+    ]
   },
   {
     "id": 2204878,
@@ -686330,138 +688014,146 @@
         "name": "September"
       }
     ],
-    "phases": [],
-    "looseItems": [
+    "phases": [
       {
-        "id": 9938640,
+        "id": 1506000,
         "jobId": 2204878,
-        "jobPhaseId": 1506000,
-        "jobItemStatus": {
-          "id": 4,
-          "name": "In Play"
-        },
-        "masterJobItemId": null,
-        "name": "Briefing & coordination",
-        "description": "<p></p>",
-        "sellRate": 150,
-        "costingMethod": {
-          "id": 1,
-          "name": "Item"
-        },
-        "isBillable": true,
-        "totalScheduledUsers": 3,
-        "totalJobItemRoles": 0,
-        "timeAllocationMethod": {
-          "id": 1,
-          "name": "Time By Item"
-        },
-        "totalPlannedMinutes": 60,
-        "totalIncompleteMinutes": 0,
-        "totalLoggedMinutes": 50,
-        "totalPlannedTimeExTax": 150,
-        "totalLoggedTimeExTax": 125,
-        "jobCurrencySellRate": 150,
-        "jobCurrencyTotalIncompleteTimeExTax": 0,
-        "jobCurrencyTotalPlannedTimeExTax": 150,
-        "jobCurrencyTotalLoggedTimeExTax": 125,
-        "jobCurrencyTotalLoggedTimeCostExTax": 0,
-        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "name": "Resize Cycle Video 9:16",
         "orderId": 1,
-        "estimatedStartDate": null,
-        "estimatedEndDate": null,
-        "earliestStartDate": "2026-09-15",
-        "latestEndDate": "2026-09-15",
-        "completedDate": null,
-        "incompleteJobItemSubItems": 0,
-        "completeJobItemSubItems": 0
-      },
-      {
-        "id": 9938642,
-        "jobId": 2204878,
-        "jobPhaseId": 1506000,
-        "jobItemStatus": {
-          "id": 4,
-          "name": "In Play"
-        },
-        "masterJobItemId": null,
-        "name": "Asset Design, Spec & Animation",
-        "description": null,
-        "sellRate": 150,
-        "costingMethod": {
-          "id": 1,
-          "name": "Item"
-        },
-        "isBillable": true,
-        "totalScheduledUsers": 2,
-        "totalJobItemRoles": 0,
-        "timeAllocationMethod": {
-          "id": 1,
-          "name": "Time By Item"
-        },
-        "totalPlannedMinutes": 120,
-        "totalIncompleteMinutes": 0,
-        "totalLoggedMinutes": 165,
-        "totalPlannedTimeExTax": 300,
-        "totalLoggedTimeExTax": 412.5,
-        "jobCurrencySellRate": 150,
-        "jobCurrencyTotalIncompleteTimeExTax": 0,
-        "jobCurrencyTotalPlannedTimeExTax": 300,
-        "jobCurrencyTotalLoggedTimeExTax": 412.5,
-        "jobCurrencyTotalLoggedTimeCostExTax": 0,
-        "jobCurrencyTotalAmountInvoicedExTax": 0,
-        "orderId": 2,
-        "estimatedStartDate": null,
-        "estimatedEndDate": null,
-        "earliestStartDate": "2026-09-15",
-        "latestEndDate": "2026-09-15",
-        "completedDate": null,
-        "incompleteJobItemSubItems": 0,
-        "completeJobItemSubItems": 0
-      },
-      {
-        "id": 9938643,
-        "jobId": 2204878,
-        "jobPhaseId": 1506000,
-        "jobItemStatus": {
-          "id": 4,
-          "name": "In Play"
-        },
-        "masterJobItemId": null,
-        "name": "Artwork & file despatch",
-        "description": null,
-        "sellRate": 150,
-        "costingMethod": {
-          "id": 1,
-          "name": "Item"
-        },
-        "isBillable": true,
-        "totalScheduledUsers": 0,
-        "totalJobItemRoles": 0,
-        "timeAllocationMethod": {
-          "id": 1,
-          "name": "Time By Item"
-        },
-        "totalPlannedMinutes": 30,
-        "totalIncompleteMinutes": 0,
-        "totalLoggedMinutes": 0,
-        "totalPlannedTimeExTax": 75,
-        "totalLoggedTimeExTax": 0,
-        "jobCurrencySellRate": 150,
-        "jobCurrencyTotalIncompleteTimeExTax": 0,
-        "jobCurrencyTotalPlannedTimeExTax": 75,
-        "jobCurrencyTotalLoggedTimeExTax": 0,
-        "jobCurrencyTotalLoggedTimeCostExTax": 0,
-        "jobCurrencyTotalAmountInvoicedExTax": 0,
-        "orderId": 3,
-        "estimatedStartDate": null,
-        "estimatedEndDate": null,
-        "earliestStartDate": null,
-        "latestEndDate": null,
-        "completedDate": null,
-        "incompleteJobItemSubItems": 0,
-        "completeJobItemSubItems": 0
+        "items": [
+          {
+            "id": 9938640,
+            "jobId": 2204878,
+            "jobPhaseId": 1506000,
+            "jobItemStatus": {
+              "id": 4,
+              "name": "In Play"
+            },
+            "masterJobItemId": null,
+            "name": "Briefing & coordination",
+            "description": "<p></p>",
+            "sellRate": 150,
+            "costingMethod": {
+              "id": 1,
+              "name": "Item"
+            },
+            "isBillable": true,
+            "totalScheduledUsers": 3,
+            "totalJobItemRoles": 0,
+            "timeAllocationMethod": {
+              "id": 1,
+              "name": "Time By Item"
+            },
+            "totalPlannedMinutes": 60,
+            "totalIncompleteMinutes": 0,
+            "totalLoggedMinutes": 50,
+            "totalPlannedTimeExTax": 150,
+            "totalLoggedTimeExTax": 125,
+            "jobCurrencySellRate": 150,
+            "jobCurrencyTotalIncompleteTimeExTax": 0,
+            "jobCurrencyTotalPlannedTimeExTax": 150,
+            "jobCurrencyTotalLoggedTimeExTax": 125,
+            "jobCurrencyTotalLoggedTimeCostExTax": 0,
+            "jobCurrencyTotalAmountInvoicedExTax": 0,
+            "orderId": 1,
+            "estimatedStartDate": null,
+            "estimatedEndDate": null,
+            "earliestStartDate": "2026-09-15",
+            "latestEndDate": "2026-09-15",
+            "completedDate": null,
+            "incompleteJobItemSubItems": 0,
+            "completeJobItemSubItems": 0
+          },
+          {
+            "id": 9938642,
+            "jobId": 2204878,
+            "jobPhaseId": 1506000,
+            "jobItemStatus": {
+              "id": 4,
+              "name": "In Play"
+            },
+            "masterJobItemId": null,
+            "name": "Asset Design, Spec & Animation",
+            "description": null,
+            "sellRate": 150,
+            "costingMethod": {
+              "id": 1,
+              "name": "Item"
+            },
+            "isBillable": true,
+            "totalScheduledUsers": 2,
+            "totalJobItemRoles": 0,
+            "timeAllocationMethod": {
+              "id": 1,
+              "name": "Time By Item"
+            },
+            "totalPlannedMinutes": 120,
+            "totalIncompleteMinutes": 0,
+            "totalLoggedMinutes": 165,
+            "totalPlannedTimeExTax": 300,
+            "totalLoggedTimeExTax": 412.5,
+            "jobCurrencySellRate": 150,
+            "jobCurrencyTotalIncompleteTimeExTax": 0,
+            "jobCurrencyTotalPlannedTimeExTax": 300,
+            "jobCurrencyTotalLoggedTimeExTax": 412.5,
+            "jobCurrencyTotalLoggedTimeCostExTax": 0,
+            "jobCurrencyTotalAmountInvoicedExTax": 0,
+            "orderId": 2,
+            "estimatedStartDate": null,
+            "estimatedEndDate": null,
+            "earliestStartDate": "2026-09-15",
+            "latestEndDate": "2026-09-15",
+            "completedDate": null,
+            "incompleteJobItemSubItems": 0,
+            "completeJobItemSubItems": 0
+          },
+          {
+            "id": 9938643,
+            "jobId": 2204878,
+            "jobPhaseId": 1506000,
+            "jobItemStatus": {
+              "id": 4,
+              "name": "In Play"
+            },
+            "masterJobItemId": null,
+            "name": "Artwork & file despatch",
+            "description": null,
+            "sellRate": 150,
+            "costingMethod": {
+              "id": 1,
+              "name": "Item"
+            },
+            "isBillable": true,
+            "totalScheduledUsers": 0,
+            "totalJobItemRoles": 0,
+            "timeAllocationMethod": {
+              "id": 1,
+              "name": "Time By Item"
+            },
+            "totalPlannedMinutes": 30,
+            "totalIncompleteMinutes": 0,
+            "totalLoggedMinutes": 0,
+            "totalPlannedTimeExTax": 75,
+            "totalLoggedTimeExTax": 0,
+            "jobCurrencySellRate": 150,
+            "jobCurrencyTotalIncompleteTimeExTax": 0,
+            "jobCurrencyTotalPlannedTimeExTax": 75,
+            "jobCurrencyTotalLoggedTimeExTax": 0,
+            "jobCurrencyTotalLoggedTimeCostExTax": 0,
+            "jobCurrencyTotalAmountInvoicedExTax": 0,
+            "orderId": 3,
+            "estimatedStartDate": null,
+            "estimatedEndDate": null,
+            "earliestStartDate": null,
+            "latestEndDate": null,
+            "completedDate": null,
+            "incompleteJobItemSubItems": 0,
+            "completeJobItemSubItems": 0
+          }
+        ]
       }
-    ]
+    ],
+    "looseItems": []
   },
   {
     "id": 2204914,
@@ -686587,138 +688279,146 @@
         "name": "September"
       }
     ],
-    "phases": [],
-    "looseItems": [
+    "phases": [
       {
-        "id": 9938915,
+        "id": 1506053,
         "jobId": 2204914,
-        "jobPhaseId": 1506053,
-        "jobItemStatus": {
-          "id": 4,
-          "name": "In Play"
-        },
-        "masterJobItemId": null,
-        "name": "Briefing & coordination",
-        "description": null,
-        "sellRate": 150,
-        "costingMethod": {
-          "id": 1,
-          "name": "Item"
-        },
-        "isBillable": true,
-        "totalScheduledUsers": 2,
-        "totalJobItemRoles": 0,
-        "timeAllocationMethod": {
-          "id": 1,
-          "name": "Time By Item"
-        },
-        "totalPlannedMinutes": 150,
-        "totalIncompleteMinutes": 60,
-        "totalLoggedMinutes": 35,
-        "totalPlannedTimeExTax": 375,
-        "totalLoggedTimeExTax": 87.5,
-        "jobCurrencySellRate": 150,
-        "jobCurrencyTotalIncompleteTimeExTax": 150,
-        "jobCurrencyTotalPlannedTimeExTax": 375,
-        "jobCurrencyTotalLoggedTimeExTax": 87.5,
-        "jobCurrencyTotalLoggedTimeCostExTax": 0,
-        "jobCurrencyTotalAmountInvoicedExTax": 0,
+        "name": "Costco Email Banner",
         "orderId": 1,
-        "estimatedStartDate": null,
-        "estimatedEndDate": null,
-        "earliestStartDate": "2026-09-15",
-        "latestEndDate": "2026-09-18",
-        "completedDate": null,
-        "incompleteJobItemSubItems": 0,
-        "completeJobItemSubItems": 0
-      },
-      {
-        "id": 9938916,
-        "jobId": 2204914,
-        "jobPhaseId": 1506053,
-        "jobItemStatus": {
-          "id": 4,
-          "name": "In Play"
-        },
-        "masterJobItemId": null,
-        "name": "Design & Artwork",
-        "description": "<p>1x design in new brand look with 1 spec output </p>",
-        "sellRate": 150,
-        "costingMethod": {
-          "id": 1,
-          "name": "Item"
-        },
-        "isBillable": true,
-        "totalScheduledUsers": 1,
-        "totalJobItemRoles": 0,
-        "timeAllocationMethod": {
-          "id": 1,
-          "name": "Time By Item"
-        },
-        "totalPlannedMinutes": 180,
-        "totalIncompleteMinutes": 0,
-        "totalLoggedMinutes": 0,
-        "totalPlannedTimeExTax": 450,
-        "totalLoggedTimeExTax": 0,
-        "jobCurrencySellRate": 150,
-        "jobCurrencyTotalIncompleteTimeExTax": 0,
-        "jobCurrencyTotalPlannedTimeExTax": 450,
-        "jobCurrencyTotalLoggedTimeExTax": 0,
-        "jobCurrencyTotalLoggedTimeCostExTax": 0,
-        "jobCurrencyTotalAmountInvoicedExTax": 0,
-        "orderId": 3,
-        "estimatedStartDate": null,
-        "estimatedEndDate": null,
-        "earliestStartDate": null,
-        "latestEndDate": null,
-        "completedDate": null,
-        "incompleteJobItemSubItems": 0,
-        "completeJobItemSubItems": 0
-      },
-      {
-        "id": 9942848,
-        "jobId": 2204914,
-        "jobPhaseId": 1506053,
-        "jobItemStatus": {
-          "id": 4,
-          "name": "In Play"
-        },
-        "masterJobItemId": null,
-        "name": "Copywriting",
-        "description": "<p></p>",
-        "sellRate": 150,
-        "costingMethod": {
-          "id": 1,
-          "name": "Item"
-        },
-        "isBillable": true,
-        "totalScheduledUsers": 0,
-        "totalJobItemRoles": 0,
-        "timeAllocationMethod": {
-          "id": 1,
-          "name": "Time By Item"
-        },
-        "totalPlannedMinutes": 30,
-        "totalIncompleteMinutes": 0,
-        "totalLoggedMinutes": 0,
-        "totalPlannedTimeExTax": 75,
-        "totalLoggedTimeExTax": 0,
-        "jobCurrencySellRate": 150,
-        "jobCurrencyTotalIncompleteTimeExTax": 0,
-        "jobCurrencyTotalPlannedTimeExTax": 75,
-        "jobCurrencyTotalLoggedTimeExTax": 0,
-        "jobCurrencyTotalLoggedTimeCostExTax": 0,
-        "jobCurrencyTotalAmountInvoicedExTax": 0,
-        "orderId": 2,
-        "estimatedStartDate": null,
-        "estimatedEndDate": null,
-        "earliestStartDate": null,
-        "latestEndDate": null,
-        "completedDate": null,
-        "incompleteJobItemSubItems": 0,
-        "completeJobItemSubItems": 0
+        "items": [
+          {
+            "id": 9938915,
+            "jobId": 2204914,
+            "jobPhaseId": 1506053,
+            "jobItemStatus": {
+              "id": 4,
+              "name": "In Play"
+            },
+            "masterJobItemId": null,
+            "name": "Briefing & coordination",
+            "description": null,
+            "sellRate": 150,
+            "costingMethod": {
+              "id": 1,
+              "name": "Item"
+            },
+            "isBillable": true,
+            "totalScheduledUsers": 2,
+            "totalJobItemRoles": 0,
+            "timeAllocationMethod": {
+              "id": 1,
+              "name": "Time By Item"
+            },
+            "totalPlannedMinutes": 150,
+            "totalIncompleteMinutes": 60,
+            "totalLoggedMinutes": 35,
+            "totalPlannedTimeExTax": 375,
+            "totalLoggedTimeExTax": 87.5,
+            "jobCurrencySellRate": 150,
+            "jobCurrencyTotalIncompleteTimeExTax": 150,
+            "jobCurrencyTotalPlannedTimeExTax": 375,
+            "jobCurrencyTotalLoggedTimeExTax": 87.5,
+            "jobCurrencyTotalLoggedTimeCostExTax": 0,
+            "jobCurrencyTotalAmountInvoicedExTax": 0,
+            "orderId": 1,
+            "estimatedStartDate": null,
+            "estimatedEndDate": null,
+            "earliestStartDate": "2026-09-15",
+            "latestEndDate": "2026-09-18",
+            "completedDate": null,
+            "incompleteJobItemSubItems": 0,
+            "completeJobItemSubItems": 0
+          },
+          {
+            "id": 9938916,
+            "jobId": 2204914,
+            "jobPhaseId": 1506053,
+            "jobItemStatus": {
+              "id": 4,
+              "name": "In Play"
+            },
+            "masterJobItemId": null,
+            "name": "Design & Artwork",
+            "description": "<p>1x design in new brand look with 1 spec output </p>",
+            "sellRate": 150,
+            "costingMethod": {
+              "id": 1,
+              "name": "Item"
+            },
+            "isBillable": true,
+            "totalScheduledUsers": 1,
+            "totalJobItemRoles": 0,
+            "timeAllocationMethod": {
+              "id": 1,
+              "name": "Time By Item"
+            },
+            "totalPlannedMinutes": 180,
+            "totalIncompleteMinutes": 0,
+            "totalLoggedMinutes": 0,
+            "totalPlannedTimeExTax": 450,
+            "totalLoggedTimeExTax": 0,
+            "jobCurrencySellRate": 150,
+            "jobCurrencyTotalIncompleteTimeExTax": 0,
+            "jobCurrencyTotalPlannedTimeExTax": 450,
+            "jobCurrencyTotalLoggedTimeExTax": 0,
+            "jobCurrencyTotalLoggedTimeCostExTax": 0,
+            "jobCurrencyTotalAmountInvoicedExTax": 0,
+            "orderId": 3,
+            "estimatedStartDate": null,
+            "estimatedEndDate": null,
+            "earliestStartDate": null,
+            "latestEndDate": null,
+            "completedDate": null,
+            "incompleteJobItemSubItems": 0,
+            "completeJobItemSubItems": 0
+          },
+          {
+            "id": 9942848,
+            "jobId": 2204914,
+            "jobPhaseId": 1506053,
+            "jobItemStatus": {
+              "id": 4,
+              "name": "In Play"
+            },
+            "masterJobItemId": null,
+            "name": "Copywriting",
+            "description": "<p></p>",
+            "sellRate": 150,
+            "costingMethod": {
+              "id": 1,
+              "name": "Item"
+            },
+            "isBillable": true,
+            "totalScheduledUsers": 0,
+            "totalJobItemRoles": 0,
+            "timeAllocationMethod": {
+              "id": 1,
+              "name": "Time By Item"
+            },
+            "totalPlannedMinutes": 30,
+            "totalIncompleteMinutes": 0,
+            "totalLoggedMinutes": 0,
+            "totalPlannedTimeExTax": 75,
+            "totalLoggedTimeExTax": 0,
+            "jobCurrencySellRate": 150,
+            "jobCurrencyTotalIncompleteTimeExTax": 0,
+            "jobCurrencyTotalPlannedTimeExTax": 75,
+            "jobCurrencyTotalLoggedTimeExTax": 0,
+            "jobCurrencyTotalLoggedTimeCostExTax": 0,
+            "jobCurrencyTotalAmountInvoicedExTax": 0,
+            "orderId": 2,
+            "estimatedStartDate": null,
+            "estimatedEndDate": null,
+            "earliestStartDate": null,
+            "latestEndDate": null,
+            "completedDate": null,
+            "incompleteJobItemSubItems": 0,
+            "completeJobItemSubItems": 0
+          }
+        ]
       }
-    ]
+    ],
+    "looseItems": []
   },
   {
     "id": 2204931,
