@@ -1860,30 +1860,30 @@
       "name": "Invoice"
     },
     "invoiceStatus": {
-      "id": 2,
-      "name": "Awaiting Payment"
+      "id": 3,
+      "name": "Paid"
     },
     "currencyCode": "NZD",
     "currencySymbol": "$",
     "exchangeRate": 1,
     "discount": null,
     "instalment": null,
-    "invoiceCurrencyAmountPaidIncTax": 0,
+    "invoiceCurrencyAmountPaidIncTax": 1681.88,
     "invoiceCurrencyTotalAmountExTax": 1462.5,
     "invoiceCurrencyTotalAmountTax": 219.38,
     "invoiceCurrencyTotalAmountIncTax": 1681.88,
-    "invoiceCurrencyBalance": 1681.88,
-    "jobCurrencyAmountPaidIncTax": 0,
+    "invoiceCurrencyBalance": 0,
+    "jobCurrencyAmountPaidIncTax": 1681.88,
     "jobCurrencyTotalAmountExTax": 1462.5,
     "jobCurrencyTotalAmountIncTax": 1681.88,
-    "amountPaidIncTax": 0,
+    "amountPaidIncTax": 1681.88,
     "totalAmountExTax": 1462.5,
     "totalAmountIncTax": 1681.88,
-    "balance": 1681.88,
+    "balance": 0,
     "createdDatetime": "2026-08-26T02:25:58+00:00",
     "invoiceDate": "2026-08-31",
     "dueDate": "2026-09-20",
-    "paidDate": null,
+    "paidDate": "2026-09-30",
     "externalAccountingPlatformId": 1,
     "externalAccountingPlatformName": "Xero",
     "externalInvoiceId": "4ea2f1da-870e-4ca0-8a5a-105e821e5344",
@@ -2334,30 +2334,30 @@
       "name": "Invoice"
     },
     "invoiceStatus": {
-      "id": 2,
-      "name": "Awaiting Payment"
+      "id": 3,
+      "name": "Paid"
     },
     "currencyCode": "NZD",
     "currencySymbol": "$",
     "exchangeRate": 1,
     "discount": null,
     "instalment": null,
-    "invoiceCurrencyAmountPaidIncTax": 0,
+    "invoiceCurrencyAmountPaidIncTax": 575,
     "invoiceCurrencyTotalAmountExTax": 500,
     "invoiceCurrencyTotalAmountTax": 75,
     "invoiceCurrencyTotalAmountIncTax": 575,
-    "invoiceCurrencyBalance": 575,
-    "jobCurrencyAmountPaidIncTax": 0,
+    "invoiceCurrencyBalance": 0,
+    "jobCurrencyAmountPaidIncTax": 575,
     "jobCurrencyTotalAmountExTax": 500,
     "jobCurrencyTotalAmountIncTax": 575,
-    "amountPaidIncTax": 0,
+    "amountPaidIncTax": 575,
     "totalAmountExTax": 500,
     "totalAmountIncTax": 575,
-    "balance": 575,
+    "balance": 0,
     "createdDatetime": "2026-08-31T03:14:32+00:00",
     "invoiceDate": "2026-08-31",
     "dueDate": "2026-09-20",
-    "paidDate": null,
+    "paidDate": "2026-10-02",
     "externalAccountingPlatformId": 1,
     "externalAccountingPlatformName": "Xero",
     "externalInvoiceId": "0992984f-b322-422d-ba8d-711623307e24",
@@ -2922,8 +2922,8 @@
   {
     "id": 1733262,
     "createdUser": "shelleyh",
-    "sentByUser": null,
-    "sentDate": null,
+    "sentByUser": "shelleyh",
+    "sentDate": "2026-10-04",
     "company": {
       "id": 535659,
       "name": "Comvita New Zealand Ltd",
@@ -2956,15 +2956,15 @@
     },
     "jobId": 2176208,
     "name": "[7069] Manawaimai First Harvest packaging 2026",
-    "number": null,
+    "number": "INV-5820",
     "reference": "[7069] Manawaimai First Harvest packagin",
     "invoiceType": {
       "id": 1,
       "name": "Invoice"
     },
     "invoiceStatus": {
-      "id": 1,
-      "name": "Draft"
+      "id": 2,
+      "name": "Awaiting Payment"
     },
     "currencyCode": "NZD",
     "currencySymbol": "$",
@@ -2987,13 +2987,15 @@
     "invoiceDate": "2026-09-30",
     "dueDate": "2026-10-20",
     "paidDate": null,
-    "externalAccountingPlatformId": null,
-    "externalAccountingPlatformName": null,
-    "externalInvoiceId": null,
-    "sentTo": [],
+    "externalAccountingPlatformId": 1,
+    "externalAccountingPlatformName": "Xero",
+    "externalInvoiceId": "339ef0d9-3023-4885-a6d9-9b72db2c091a",
+    "sentTo": [
+      "Chelsyee (chelsyee.norman@comvita.com)",
+      "Comvita Accounts NZ (accounts@comvita.com)"
+    ],
     "invoiceLabels": [
-      "APPROVED",
-      "PENDING PO"
+      "APPROVED"
     ]
   },
   {
@@ -4179,80 +4181,6 @@
     "invoiceLabels": [
       "APPROVED"
     ]
-  },
-  {
-    "id": 1734133,
-    "createdUser": "shelleyh",
-    "sentByUser": null,
-    "sentDate": null,
-    "company": {
-      "id": 535688,
-      "name": "Silver Fern Farms",
-      "branchId": 37900,
-      "companyLeadUserId": null,
-      "companyStatus": {
-        "id": 1,
-        "name": "Active"
-      },
-      "branchName": "Content & Co NZ Ltd",
-      "rateCardId": 43738,
-      "rateCardName": "Standard",
-      "taxNumber": null,
-      "phone1": null,
-      "phone2": null,
-      "websiteAddress": null,
-      "notes": null,
-      "physicalAddress": null,
-      "postalAddress": {
-        "id": 627671,
-        "line1": "PO Box 941",
-        "line2": "",
-        "line3": "",
-        "city": "Dunedin",
-        "region": null,
-        "countryName": "New Zealand",
-        "postCode": "9054"
-      },
-      "companyLabels": []
-    },
-    "jobId": 2194738,
-    "name": "[7148] SFF 5Q Trade Presenter SEPT updates",
-    "number": null,
-    "reference": "[7148] SFF 5Q Trade Presenter SEPT updat",
-    "invoiceType": {
-      "id": 1,
-      "name": "Invoice"
-    },
-    "invoiceStatus": {
-      "id": 1,
-      "name": "Draft"
-    },
-    "currencyCode": "NZD",
-    "currencySymbol": "$",
-    "exchangeRate": 1,
-    "discount": null,
-    "instalment": null,
-    "invoiceCurrencyAmountPaidIncTax": 0,
-    "invoiceCurrencyTotalAmountExTax": 2950,
-    "invoiceCurrencyTotalAmountTax": 442.5,
-    "invoiceCurrencyTotalAmountIncTax": 3392.5,
-    "invoiceCurrencyBalance": 3392.5,
-    "jobCurrencyAmountPaidIncTax": 0,
-    "jobCurrencyTotalAmountExTax": 2950,
-    "jobCurrencyTotalAmountIncTax": 3392.5,
-    "amountPaidIncTax": 0,
-    "totalAmountExTax": 2950,
-    "totalAmountIncTax": 3392.5,
-    "balance": 3392.5,
-    "createdDatetime": "2026-09-29T01:12:52+00:00",
-    "invoiceDate": "2026-10-31",
-    "dueDate": "2026-11-20",
-    "paidDate": null,
-    "externalAccountingPlatformId": null,
-    "externalAccountingPlatformName": null,
-    "externalInvoiceId": null,
-    "sentTo": [],
-    "invoiceLabels": []
   },
   {
     "id": 1734139,
@@ -6940,8 +6868,8 @@
   {
     "id": 1736033,
     "createdUser": "ange",
-    "sentByUser": null,
-    "sentDate": null,
+    "sentByUser": "shelleyh",
+    "sentDate": "2026-10-04",
     "company": {
       "id": 535659,
       "name": "Comvita New Zealand Ltd",
@@ -6974,15 +6902,15 @@
     },
     "jobId": 2198408,
     "name": "[7155] Singapore presentation video",
-    "number": null,
-    "reference": null,
+    "number": "INV-5821",
+    "reference": "[7155] Singapore presentation video",
     "invoiceType": {
       "id": 1,
       "name": "Invoice"
     },
     "invoiceStatus": {
-      "id": 1,
-      "name": "Draft"
+      "id": 2,
+      "name": "Awaiting Payment"
     },
     "currencyCode": "NZD",
     "currencySymbol": "$",
@@ -7005,13 +6933,15 @@
     "invoiceDate": "2026-09-30",
     "dueDate": "2026-10-20",
     "paidDate": null,
-    "externalAccountingPlatformId": null,
-    "externalAccountingPlatformName": null,
-    "externalInvoiceId": null,
-    "sentTo": [],
+    "externalAccountingPlatformId": 1,
+    "externalAccountingPlatformName": "Xero",
+    "externalInvoiceId": "d5ece393-4b75-40c2-9a21-6bcc94e2c9c3",
+    "sentTo": [
+      "Chelsyee (chelsyee.norman@comvita.com)",
+      "Comvita Accounts NZ (accounts@comvita.com)"
+    ],
     "invoiceLabels": [
-      "APPROVED",
-      "PENDING PO"
+      "APPROVED"
     ]
   },
   {
