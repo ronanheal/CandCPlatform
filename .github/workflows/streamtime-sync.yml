@@ -2,14 +2,11 @@ name: Streamtime Sync
 
 on:
   schedule:
-    - cron: '0 * * * *'  # every hour on the hour — see streamtime-fast-sync.yml for the
-                          # cheap, frequent logged_times/scheduled_todos-only sync. This
-                          # full sync stays hourly because it costs ~610 of our 720
-                          # req/hour API budget (job phase/item detail backfill).
-  workflow_dispatch:       # allow manual trigger from GitHub UI
+    - cron: '17 */2 * * *'  # backup only — restarts the loop if the chain below ever breaks.
+                            # GitHub drops most scheduled runs, so this is not the main trigger.
+  workflow_dispatch:         # manual trigger, and how each run queues the next one
 
-# Prevent overlapping syncs from racing to push the streamtime-data branch —
-# shared with streamtime-fast-sync.yml so the two never push at the same time.
+# One sync at a time. A run queued while another is going waits and starts right after it.
 concurrency:
   group: streamtime-data-branch
   cancel-in-progress: false
@@ -17,39 +14,26 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    timeout-minutes: 355
     permissions:
-      contents: write
+      contents: write   # push to streamtime-data
+      actions: write    # queue the next run
 
     steps:
-      - name: Checkout main (for the sync script)
+      - name: Checkout main (for the sync scripts)
         uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: 0
 
-      - name: Restore previous data + progress from streamtime-data branch
-        run: |
-          git fetch origin streamtime-data
-          mkdir -p streamtime-data
-          for f in jobs.json logged_times.json invoices.json quotes.json companies.json contacts.json users.json expenses.json sync_progress.json; do
-            git show origin/streamtime-data:$f > streamtime-data/$f 2>/dev/null || true
-          done
-
-      - name: Run sync script
-        run: python3 scripts/streamtime_sync.py
+      - name: Sync loop (fast sync every 15 min, full sync hourly, ~5.5h)
+        run: bash scripts/sync_loop.sh
         env:
           STREAMTIME_API_KEY: ${{ secrets.STREAMTIME_API_KEY }}
 
-      - name: Push data files to streamtime-data branch
-        run: |
-          git worktree add ../data-branch origin/streamtime-data
-
-          # Copy all generated JSON files including progress tracker
-          cp streamtime-data/*.json ../data-branch/
-
-          cd ../data-branch
-          git config user.name "streamtime-sync[bot]"
-          git config user.email "noreply@github.com"
-          git add *.json
-          git diff --staged --quiet || git commit -m "sync: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          git push origin HEAD:streamtime-data
+      # Only on success, so a broken run (e.g. bad API key) can't spin in a tight loop —
+      # the 2-hourly schedule above picks things back up instead.
+      - name: Queue next run
+        if: success()
+        run: gh workflow run streamtime-sync.yml --ref main
+        env:
+          GH_TOKEN: ${{ github.token }}

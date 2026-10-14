@@ -108,7 +108,9 @@ def search(view_id, query="", additional_data=None, timeout=120):
                     time.sleep(RETRY_DELAY * (attempt + 1))
                     continue
                 errors.append({"resource": f"search?search_view={view_id}", "error": f"HTTP {e.code}"})
-                return all_records
+                # Discard any pages already fetched: a partial list (e.g. page 1 of 2) would
+                # otherwise overwrite the complete file. Empty trips the keep-previous guards.
+                return []
             except Exception as e:
                 if attempt < 3:
                     wait = RETRY_DELAY * (attempt + 1)
@@ -116,7 +118,7 @@ def search(view_id, query="", additional_data=None, timeout=120):
                     time.sleep(wait)
                     continue
                 errors.append({"resource": f"search?search_view={view_id}", "error": str(e)})
-                return all_records
+                return []
 
         if result is None:
             break
