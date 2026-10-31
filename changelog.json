@@ -1,0 +1,1553 @@
+{
+  "generated_at": "2026-07-15T02:55:22.335804+00:00",
+  "current_version": "2.38.0",
+  "releases": [
+    {
+      "version": "2.38.0",
+      "date": "15 Jul 2026",
+      "title": "The beige returns, focus mode reborn, wallpaper glass",
+      "items": [
+        "The C&C beige is back — the whole platform warms from clinical cool grey to the house paper tone, keeping everything from the new design system. (Dark mode unchanged.)",
+        "Focus mode redesigned: today now renders as a calm list in the same style as the Dashboard\\'s \"Your Day\" — big red date, check-circles, a Done section below — no more proportional cards or the divider clipping over tasks.",
+        "Wallpaper + liquid glass: set a background image in Settings → My Profile → Appearance and the floating window and sidebar become deep frosted glass over it. Remove it any time.",
+        "Dashboard breathes: Active clients shows 6 with a \"+N more\" card, and every Needs-attention card shows 6 rows with \"Show all\" — expand only what you care about.",
+        "The KPI sparklines are now clickable — tap one for an expanded 26-week chart with weekly average, best week and totals.",
+        "Every section inside Jobs (Jobs, Time, Expenses, Quotes, Invoices, Clients, Deadlines) now opens with the same title treatment.",
+        "The red full-stop on headings is retired."
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.37.0",
+      "date": "14 Jul 2026",
+      "title": "Focus mode — press F, see only today",
+      "items": [
+        "New Focus mode on the To Do board: press F (or the target button in the toolbar) and the week collapses to just today — one full-width column, a big red date, larger cards, nothing else. Press F or Esc to get the week back.",
+        "Entering Focus from another week jumps you back to the current week first, so \"today\" always means today."
+      ],
+      "sections": [
+        "Boards",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.36.0",
+      "date": "14 Jul 2026",
+      "title": "Display type, launch moment, sync hardening",
+      "items": [
+        "The platform gets a true display typeface: every heading, view title and big number now sets in Inter Tight — tighter, more editorial, more confident — while body text stays in Inter. One family for reading, one for headlines.",
+        "A branded launch moment: the red C&C mark greets you on the desktop wash while the app wakes, then fades out. Capped at under two seconds no matter what.",
+        "Sync hardening at the source: the hourly export script could overwrite users.json with an empty file when the Streamtime API hiccuped (its safety guard was only wired up on the second of two saves). Both saves are now guarded — yesterday\\'s blank-board failure can\\'t recur, and the in-app cache fallback from v2.35 remains as the second line of defence."
+      ],
+      "sections": [
+        "Boards",
+        "Data",
+        "Jobs → Time",
+        "Settings"
+      ]
+    },
+    {
+      "version": "2.35.0",
+      "date": "14 Jul 2026",
+      "title": "Dark mode, ⌘K commands, KPI sparklines, sync resilience",
+      "items": [
+        "Dark mode is here — the moon in the sidebar flips the whole platform to a true dark skin: dark floating window, dark frosted sidebar, inverted bright-pill buttons, re-themed charts and status pills. Remembered per device. (Documents stay paper-white on purpose.)",
+        "⌘K now takes commands, not just searches: type \"log 2h on 6928 writing copy\" to log time, \"pause 7023\" / \"resume 7023\" to flip a job, or \"todo Call printer 30m\" to drop a task on today — hit Enter and it\\'s done.",
+        "The two hour KPIs on the dashboard now carry an 8-week sparkline, so you can see the shape of your workload at a glance, not just this week\\'s number.",
+        "Sync resilience: if the hourly Streamtime export is mid-write and users.json comes back empty, the platform now rebuilds the team from its local cache instead of blanking the To Do board, Schedule and Reporting until the next sync. This exact failure happened today — it\\'s now invisible."
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.34.0",
+      "date": "13 Jul 2026",
+      "title": "The drag family grows + the red thread",
+      "items": [
+        "Split a task across two days: while dragging a card on the To Do board, thin red seams appear between the day columns — drop the card on a seam and it splits in half across both days (5-minute-snapped halves).",
+        "Drag a client card and a drop pad offers \"Create client board\" — drop it and that client\\'s live board exists and opens. If they already have one, it opens instead.",
+        "Drag an uninvoiced job row (Invoices → Uninvoiced) onto the \"Create draft invoice\" pad to jump straight into a draft invoice for that job.",
+        "Drop a file onto a job\\'s Activity feed to attach it — images appear inline (auto-compressed), click to view full size; other files are noted by name.",
+        "⌘-drag now duplicates a task card, same as Alt-drag.",
+        "THE RED THREAD — a brand signature woven through the whole platform: every view title ends in a brand-red full stop, the desktop behind the floating panels carries a whisper of warmth in one corner, primary buttons glow faintly red on hover, and the To Do day numbers read like a beautiful calendar."
+      ],
+      "sections": [
+        "Boards",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.33.0",
+      "date": "13 Jul 2026",
+      "title": "Task drop-dock, floating pill sidebar, boards reskin, fixes",
+      "items": [
+        "New drop-dock on the To Do board: start dragging any task card and a frosted dock appears — drop it on \"← Last week\" / \"Next week →\" to reschedule it a week either way, or drop it on a teammate\\'s avatar to hand it to them. Same one-motion family as drag-to-schedule.",
+        "The sidebar is now its own floating glass pill — detached from the screen edge with rounded corners and a soft shadow, matching the floating content window.",
+        "Boards redesigned onto the new language: columns are soft grey wells, cards float on them with rounded corners and shadows, add-buttons are quiet dashed pills.",
+        "Fixed: dragging a task\\'s edge can now actually reach the 5-minute minimum — a leftover height clamp had silently stopped resizes below ~50 minutes.",
+        "Job detail: the Progress tab now uses the full page width instead of stopping at 1100px."
+      ],
+      "sections": [
+        "Boards",
+        "Jobs",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.32.0",
+      "date": "13 Jul 2026",
+      "title": "Column picker, beautiful documents, drag-to-schedule",
+      "items": [
+        "Choose your columns: a new Columns button on the Jobs, Invoices and Quotes lists lets you show/hide any column — hide what you don\\'t use and the table breathes. Remembered per list, per browser.",
+        "Quote and invoice previews got the full letterhead treatment: the red C&C mark, a big confident document title, the brand rule, refined line-item table with phase subtotals, a boxed totals block and a proper company footer — they finally look like documents you\\'d be proud to send.",
+        "Drag-to-schedule: drag any item row on a job plan and a frosted strip of this week\\'s days appears at the bottom of the screen — drop the item on a day and it lands on your To Do board with the item\\'s planned hours, linked to the job.",
+        "The Uninvoiced-jobs section respects the same column choices as the invoice table."
+      ],
+      "sections": [
+        "Boards",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.31.0",
+      "date": "13 Jul 2026",
+      "title": "The new skin — a full visual reset",
+      "items": [
+        "The whole platform moves to a new design language: the warm paper palette is retired for a cool, modern light system — crisp near-black ink, soft cool greys, hairline borders.",
+        "The sidebar transforms: the black rail becomes frosted light glass that blurs whatever is behind it as it expands over the page.",
+        "The app now lives in a floating window — content sits on a rounded, softly-shadowed panel above a slightly darker desktop, like a native Mac app.",
+        "Dark chrome goes light: modal headers, job-plan phase bars, invoice section headers and the follow-up card all move from black bars to clean light surfaces with confident type.",
+        "Primary actions are now pills — Create, Save, New job and friends get the rounded treatment, while secondary buttons stay rectangular, so hierarchy is instant.",
+        "Modals and search float over a deeply blurred, gently dimmed page instead of a dark scrim.",
+        "Bigger, softer radii everywhere (cards 16px, modals 18px), softer larger shadows, borderless status pills, and slightly tighter tracking on the big headings."
+      ],
+      "sections": [
+        "Jobs",
+        "Jobs → Invoices",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.30.0",
+      "date": "13 Jul 2026",
+      "title": "Search glow-up, skeleton loading, dashboard attention cards",
+      "items": [
+        "Global Search (⌘K) redesigned: colour-coded category icons (jobs red, clients slate, invoices plum, quotes amber), a red accent marks the selected row, and a footer shows keyboard hints plus a live result count. Special characters in results no longer break the list.",
+        "Jobs list now loads with shimmering skeleton rows shaped like the real table instead of a spinner — the page reads as itself while Streamtime syncs.",
+        "Dashboard \"Needs attention\" cards each get an identity: a tinted icon, uppercase title and count pill, with rows that highlight on hover where they\\'re clickable.",
+        "Toasts now carry a status icon (tick, warning, info) so the colour isn\\'t doing all the work.",
+        "The app finally has a proper identity in your browser: the tab says \"C&C Platform\" with a red C&C favicon — no more generic blank tab.",
+        "Depth pass: primary buttons get a subtle pressed-metal shadow, all thin progress bars step up to rounded 4px tracks, calendar event chips soften, and the text caret is brand red everywhere."
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.29.0",
+      "date": "13 Jul 2026",
+      "title": "Bug audit + design pass — sharper, calmer, more alive",
+      "items": [
+        "Fixed: every \"due in N days\" badge was one day high (a job due today said \"1d\", tomorrow said \"2d\") — date-only values were being parsed as UTC, which in NZ shifts them half a day. Dashboard Needs-attention cards, overdue counts and the job header badge now agree with the calendar.",
+        "Fixed: special characters in Streamtime task titles, job names and expense names could break rendering on the To Do board, Dashboard, Schedule, Expenses and Invoices — the remaining unescaped render sites from the v2.24 pass are now covered.",
+        "Fixed: \"Skip this week\" on the mood check-in now actually skips the week instead of re-asking on every page load.",
+        "To Do board: when a task card is too small for its text, the text now fades out gently at the card edge instead of being chopped mid-line.",
+        "Reporting: all charts get a proper design system — rounded slimmer bars, whisper-faint gridlines, no axis chrome, dark rounded tooltips, ring-style doughnuts and dot legends, all in the house type.",
+        "Schedule: standard view header like every other section, and the person filter pills are calmer — colour lives only in the avatar, selection reads as a clean ink outline.",
+        "One radius language everywhere: menus, boards, cards, modals and controls that still carried square or 2px corners now sit on the same rounded surface system as the rest of the app.",
+        "Motion system: modals and search rise in with a soft spring, KPI bars fill on load, dashboard cards stagger in, buttons press down, clickable cards lift on hover — all subtle, all instant, and fully disabled if your OS asks for reduced motion."
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Invoices",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.28.0",
+      "date": "2 Jul 2026",
+      "title": "Merged Progress view, one dates control, finer scheduling",
+      "items": [
+        "Job detail: Progress and Profitability are now one view — progress bars, the time table, and the full profitability breakdown (revenue vs cost vs margin) in a single scroll.",
+        "Job header: the two Set start date / Set due date pills are now one dates control — it shows the range (\"1 Sep → 30 Sep\"), and clicking opens a small panel to set both dates at once. Overdue still shows red.",
+        "To Do board: tasks can now be resized down to 5 minutes (was 15) with 5-minute snapping on both the board and calendar views.",
+        "The add-task title field no longer gets the odd red focus box; text fields use a soft focus ring, the red outline is reserved for keyboard-tabbing buttons.",
+        "Brief/notes box on jobs finally has proper padding, and gently lifts to white while you type in it.",
+        "Sharper details throughout: tighter letter-spacing on tabs/buttons/labels, task cards get rounded corners and a soft shadow, and the topbar tabs read heavier."
+      ],
+      "sections": [
+        "Boards",
+        "Jobs",
+        "Jobs → Time",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.27.0",
+      "date": "2 Jul 2026",
+      "title": "Modern type system, control system, searchable job picker",
+      "items": [
+        "New typography: the platform moves to a modern SaaS type system — one contemporary typeface (Inter) everywhere, with bold tight-tracked headings, weight-based hierarchy instead of italics, and tabular numerals so numbers line up in every table and KPI.",
+        "Add-task modal: the Job field is now a searchable picker — your recent jobs at the top, the full list scrollable below, type to filter. Styled to match the item picker beside it.",
+        "One control system: every dropdown gets a custom chevron and consistent styling, and all inputs share the same focus ring, radius and padding.",
+        "Groundwork for pushing the visual system further — the serif era is retired."
+      ],
+      "sections": [
+        "Dashboard",
+        "Jobs",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.26.0",
+      "date": "2 Jul 2026",
+      "title": "Hover sidebar, one heading system, Settings redesign",
+      "items": [
+        "The sidebar now rests as a slim icon rail and expands over the page when you hover it — full labels slide in, nothing shifts underneath.",
+        "Every view title now uses the same serif style, size and position — Reporting, Time, Deadlines, Boards and Settings all match (the Dashboard greeting stays the big hero moment).",
+        "Settings redesigned: section titles in the house serif, cards on the new surface system with uppercase card headers, pill-style section nav with the active page lifted on white.",
+        "Settings now scrolls like a normal web page — the scrollbar sits at the edge of the window instead of floating mid-screen at the end of the content column."
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Jobs",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.25.0",
+      "date": "2 Jul 2026",
+      "title": "Design overhaul — new navigation, surfaces and type",
+      "items": [
+        "The sidebar is now a full labelled navigation — Search, Dashboard, To Do, Jobs, Schedule, Reporting, Boards and Settings by name, with a red rail marking where you are, on a deep warm-black panel.",
+        "New surface system across the app: rounded cards with soft layered shadows on the dashboard KPIs, reporting cards, tables, modals and drawers — everything sits on a warmer paper background.",
+        "Bigger, more confident type: the dashboard greeting and KPI numbers get the full serif treatment; view titles and labels follow one scale.",
+        "Softer chrome everywhere: rounded buttons and inputs, warm thin scrollbars, a gentle fade when switching sections, and dimmed-blur backdrops behind modals and search.",
+        "Same platform, same layout logic — nothing moved, it just looks like it was designed on purpose."
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Jobs",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.24.0",
+      "date": "29 Jun 2026",
+      "title": "Full refinement pass — durability fixes + design system tidy-up",
+      "items": [
+        "Fixed 5 data-loss bugs found in a full code review: jobs created natively were silently deleted by the next sync; archiving or starring a job reverted within 5 minutes; deleting a Streamtime job brought it back on the next sync; a failed sync could discard a job\\'s native activity/expenses; natively-logged time double-counted once Streamtime ingested the same entry.",
+        "Editing a job\\'s date or status from the header no longer records the change twice in the Activity log.",
+        "Profitability tab: the \"cost is an estimate\" flag now reports honestly — it was effectively always off because Streamtime cost rates are pre-defaulted.",
+        "Special characters (quotes, angle brackets) in job names, task titles and time-entry notes no longer break rendering in the activity log, tooltips, job list, alerts or label chips.",
+        "Design tidy-up across the app: one primary-button style everywhere, one badge/pill shape language, consistent tab styling (red active underline everywhere), semantic status colours unified, keyboard focus outlines added, hover transitions and a real loading spinner, and 5 duplicate conflicting CSS blocks removed."
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.23.0",
+      "date": "29 Jun 2026",
+      "title": "Per-task done sync, profitability tab, deadline risk, header tidy-up",
+      "items": [
+        "To Do board: a task now moves to Done the moment its time is logged in Streamtime and synced — per task, not per day. Previously a finished task lingered in the To Do column until the whole day\\'s work had landed.",
+        "New Profitability tab on every job — revenue vs cost vs margin %, with a budget-vs-actual view. Staff cost is derived (Streamtime has no cost rate for most people, so their time is valued at the $150/h default) and flagged as an estimate where that applies.",
+        "Dashboard: new \"Deadline risk\" card — live jobs not yet overdue but whose remaining hours can\\'t realistically fit the days left.",
+        "Job header tidy-up: the duplicated status (the \"Live job\" workflow badge and a separate \"In Play\" pill) is now a single control — click the label to set status, click the arrow to advance the stage. Start and due dates now match each other\\'s styling.",
+        "Cross-tab live sync: a change made in one open tab (archive a job, log time, etc.) now refreshes other open tabs automatically.",
+        "Fixed: editing a task could attach it to the wrong job (the job picker matched job numbers loosely); plus a primary button in several dialogs that had been rendering unstyled."
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.22.0",
+      "date": "29 Jun 2026",
+      "title": "Native data now persists — survives reload & sync",
+      "items": [
+        "Big one: anything you create or edit natively in the platform — job name/date/status edits, milestones, expenses, added phases/items, split invoices, activity notes, and logged time — now survives a page reload AND the background Streamtime sync. Previously all of it lived in memory only and silently vanished on refresh, which made native data untrustworthy. It\\'s now written to a durable local store and re-applied after every sync.",
+        "Fixed: editing a task could pre-select / save the wrong job — the job picker matched job numbers as substrings (so \"677\" matched \"6774\", etc.). Now matches the exact job number.",
+        "Global Search (⌘K) now also searches invoices and quotes, not just jobs/clients/tasks/items.",
+        "Workspace export/import now includes native quotes and the new native-data store, so a backup captures everything."
+      ],
+      "sections": [
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.21.0",
+      "date": "29 Jun 2026",
+      "title": "Phase 2: native job editing, milestones, folded-in time logging",
+      "items": [
+        "Job detail: click to edit job name, start date, due date, and status directly — backed by a new dbUpdateJob() stub, API-ready like the other db* functions. Edits survive the next Streamtime sync (kept in j._native and re-applied after every refresh)",
+        "Milestones are now natively creatable/editable/deletable from the job detail Timeline tab, merged alongside Streamtime-sourced milestones (tagged \"ST\") and preserved across syncs the same way",
+        "Time logging is back, folded into the existing mark-task-done flow instead of a separate Log Time modal (which felt redundant and was removed in v2.20.1) — completing a task now offers an hours field, pre-filled with the planned time, that logs straight into Progress tab / job detail Time used",
+        "Reporting → Jobs job filter dropdown verified working end-to-end (was wired up in v2.20.13)"
+      ],
+      "sections": [
+        "Data",
+        "Jobs",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.20.13",
+      "date": "23 Jun 2026",
+      "title": "Wire up the Reporting Jobs tab job filter",
+      "items": [
+        "Reporting → Jobs now has a job picker dropdown — getFilteredTasks() already had the matching logic wired in, it was just missing the actual #r-job select element, so the filter had been a permanent no-op"
+      ],
+      "sections": [
+        "Jobs",
+        "Reporting",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.20.12",
+      "date": "23 Jun 2026",
+      "title": "Settings width, full-codebase bug review",
+      "items": [
+        "Settings page was capped at 860px wide regardless of screen size — widened to 1180px",
+        "Fixed: reassigning a task to another person while viewing a non-current week silently moved it to an arbitrary other week instead of the one being viewed",
+        "Fixed: Boards person-card \"this week\" stats actually followed whatever week the Todo/Schedule board was last left on, not necessarily this week",
+        "Fixed: Reporting → Business company filter used startsWith on job numbers, so filtering to job \"12\" also pulled in hours from job 120, 123, 1234, etc. — same substring bug class fixed elsewhere in the v2.20.2 data audit, this call site had been missed",
+        "Removed a dead duplicate toggleTaskDone() definition that function hoisting had made unreachable — no behaviour change, just a maintenance trap removed"
+      ],
+      "sections": [
+        "Boards",
+        "Jobs",
+        "Jobs → Clients",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.20.11",
+      "date": "23 Jun 2026",
+      "title": "Activity comments, weekly Happiness check-in",
+      "items": [
+        "Job detail Activity tab: add a free-text note directly to the timeline — for decisions/context that don\\'t have their own automatic event, not just a record of what changed in the UI",
+        "Activity tab: Streamtime logged-time entries now show billable/non-billable and $ value, not just hours",
+        "New weekly Happiness check-in — a one-tap mood prompt on Dashboard (skippable), with an 8-week trend on your Profile in Settings. Personal to this device — there\\'s no shared backend yet, so this isn\\'t a cross-team aggregated report, just a personal tracker"
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.20.10",
+      "date": "23 Jun 2026",
+      "title": "Fix Custom board job cards breaking after first click",
+      "items": [
+        "Fixed: expanding a job card on a Custom board silently lost its drag handle and delete button — it was rebuilding from the wrong template after the first click",
+        "Custom board job cards now show the same expanded task list + \"Open job plan\" button the Client board\\'s cards already had"
+      ],
+      "sections": [
+        "Boards",
+        "Jobs",
+        "Jobs → Clients",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.20.9",
+      "date": "23 Jun 2026",
+      "title": "Sidebar cleanup, invoices view fix, sort cycle, deadlines polish",
+      "items": [
+        "Removed the separate Starred sidebar icon/panel — the star icon inside global search already covers it",
+        "Reordered sidebar: Search, Dashboard, To Do, Jobs, Schedule, Reporting, Boards, Settings",
+        "Invoices: ticking \"Uninvoiced jobs\" now replaces the list instead of showing both and needing a scroll",
+        "Invoiced/Uninvoiced table headers: third click on the same column clears the sort instead of toggling forever",
+        "Deadlines calendar: taller cells, more events visible per day, bigger text"
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Jobs",
+        "Jobs → Invoices",
+        "Reporting",
+        "Settings"
+      ]
+    },
+    {
+      "version": "2.20.8",
+      "date": "23 Jun 2026",
+      "title": "Schedule tab redesign — multi-person mini todo board",
+      "items": [
+        "Schedule is now a real working board: pick which people to show (chips, remembered), drag tasks onto a different day or a different person to reschedule/reassign",
+        "No more separate to-do/done split — completed tasks just grey out and strike through in place, still draggable and clickable",
+        "Day columns no longer stretch to fit long task titles — they truncate properly now"
+      ],
+      "sections": [
+        "Boards",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.20.7",
+      "date": "23 Jun 2026",
+      "title": "Fix Deadlines tab crash, Jobs/Clients reporting bugs",
+      "items": [
+        "Fixed: Deadlines tab rendered nothing at all — it referenced a variable that only existed inside a different function",
+        "Fixed: Jobs report never applied the date-range filter to anything except the hours column — relabelled \"Jobs shown\" to \"Active in period\" so the count actually moves with the dropdown",
+        "Fixed: Clients report dropped any client with invoices but no logged time that period entirely, instead of showing $0/0h"
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Time",
+        "Reporting"
+      ]
+    },
+    {
+      "version": "2.20.6",
+      "date": "23 Jun 2026",
+      "title": "Expense detail modal, starred-in-search, invoiced/uninvoiced table parity",
+      "items": [
+        "Expenses list: clicking a row now opens an expense detail modal (same fields as the job-plan Expenses tab) instead of jumping straight to the job",
+        "Global search: star icon in the search bar surfaces starred jobs/clients/quotes/invoices directly in results",
+        "Uninvoiced jobs table columns now align to the Invoiced table; both get sortable column headers",
+        "Uninvoiced rows can be hidden — persisted so stale ones don\\'t reappear on the next Streamtime sync",
+        "Dropped the \"#\" prefix on job numbers in the Invoiced table and quote chips"
+      ],
+      "sections": [
+        "Boards",
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Settings"
+      ]
+    },
+    {
+      "version": "2.20.5",
+      "date": "23 Jun 2026",
+      "title": "Job timeline, starred items panel, native quote creation",
+      "items": [
+        "New Job Timeline tab on job detail — phase-level Gantt-style view built from phase start/due dates",
+        "New Starred panel — star any job or client, browse them in one place",
+        "New quote creation — \"New quote\" modal on the Quotes list and job detail, with print preview, alongside real Streamtime quotes"
+      ],
+      "sections": [
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Quotes",
+        "Jobs → Time"
+      ]
+    },
+    {
+      "version": "2.20.4",
+      "date": "23 Jun 2026",
+      "title": "Phase dates, quote versioning, split invoicing, contact title on print",
+      "items": [
+        "Job detail: phase date ranges now shown on the Job Plan tab (calendar chip per phase)",
+        "Quotes: local version history — \"Revise quote\" saves a new value/note without touching the Streamtime record",
+        "Invoices: deposit/split invoicing — raise named partial invoices (% or $) against a job, each with its own status",
+        "Invoice and quote print previews now show the client contact\\'s job title underneath their name",
+        "Fixed: tasks marked complete in Streamtime without logging time were invisible in the Done column — now cross-checked against job assignment completion status",
+        "Streamtime sync: added a 15-minute fast sync for logged time/scheduled todos/assignments (previously only hourly), plus a checkpointed deep-history backfill so Reporting can reach back past the last ~12 months over time"
+      ],
+      "sections": [
+        "Boards",
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.20.3",
+      "date": "19 Jun 2026",
+      "title": "Budget total fix, quote/invoice document preview, non-billable rates, data-freshness indicator",
+      "items": [
+        "Fixed: jobs $ budget total was way over (e.g. $920k vs Streamtime $704k) — it fell back to \"planned time\" for jobs with no agreed budget. Now uses finalBudget like Streamtime, so the footer total matches",
+        "New: clicking a quote or invoice opens a full branded document preview (C&C letterhead, line items from the job plan, GST, totals, paid/balance) instead of just a details strip",
+        "Non-billable phases/items: rate is now always editable (shows a \"+ rate\" you can click to add one, even on a non-billable job). Billable is a job-level setting and defaults to billable — no more guessing from a $0 rate",
+        "New: Todo board shows a \"Streamtime data through <date>\" indicator — turns orange when today isn\\'t synced yet, so it\\'s clear when completed tasks just haven\\'t exported, not gone missing"
+      ],
+      "sections": [
+        "Boards",
+        "Data",
+        "Jobs",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.20.2",
+      "date": "19 Jun 2026",
+      "title": "Platform-wide data audit — billable %, quotes, invoices, paused filter, per-job totals",
+      "items": [
+        "Fixed: billable vs non-billable was wrong everywhere — logged time read a field that doesn\\'t exist (isBillable lives on the job), so ALL hours counted as billable. 1,760 of 5,359 logged entries (33%) are actually non-billable. Corrects dashboard split, Business %-billable KPI, People utilisation, and the Time view billable stat/filter",
+        "Fixed: the entire Quotes screen was mis-mapped — company (a plain string), quote name & number, and \"sent by\" all showed blank or raw IDs; company filter/dropdown/group-by were non-functional. Now read the correct Streamtime fields",
+        "Fixed: Invoice \"Job\" column / detail / filter / group-by were always blank — invoices carry a jobId, not a job number/name; now resolved from the linked job",
+        "Fixed: Jobs \"Paused\" status filter & group-by never matched (paused jobs are stored as In Play + a separate flag) — 8 paused jobs now filter correctly",
+        "Fixed: Progress-tab per-row \"Sell\" and Time-view \"Revenue\" were re-estimated at a flat rate instead of using the real logged sell value — now reconcile with Streamtime",
+        "Fixed: invoice issued/paid totals grossed-up ex-tax by a flat 15% instead of using the real inc-GST amounts (wrong when discounts apply)",
+        "Fixed: three more \"job 123 matches job 1234\" substring bugs that pulled unrelated jobs\\' hours/notes into a job\\'s totals",
+        "Removed: \"Quotes expiring soon\" dashboard card and quote expiry filters — Streamtime\\'s export carries no quote expiry date, so they never worked",
+        "Add-team-member and new-client modals no longer stack duplicates if reopened"
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.20.1",
+      "date": "19 Jun 2026",
+      "title": "Job detail crash fix, Progress reallocate restored, budget total fix, expenses data fix, todo cleanup",
+      "items": [
+        "Fixed: jobs with a due date set failed to open at all (job detail crashed on a missing fmtDate reference) — affected job 6860 and others",
+        "Fixed: Progress tab reallocate menu (⋮) was hidden on every row, ST-sourced or not — restored, and fixed the underlying week lookup so it actually finds the entry to move",
+        "Fixed: Quote tab stacked a duplicate \"Streamtime Quotes\" block every time you switched tabs and back — was inserted outside the area that gets cleared on re-render",
+        "Fixed: Jobs list budget total didn\\'t match Streamtime — was reading totalPlannedTimeExTax first instead of finalBudget",
+        "Fixed: Expenses list showed $0 cost/sell and always \"Draft\" status — was reading the wrong field names from the Streamtime export (totalCost/totalExTax/itemName, status is a plain string not an object)",
+        "Fixed: \"Hours\" view setting had no effect on initial render — only worked while actively resizing a card",
+        "Fixed: \"Notes\" view setting now actually hides the note text baked into task titles, falling back to the item/job name — relabelled \"Notes (in task title)\" for clarity",
+        "View settings panel now shows a \"drag to reorder\" hint and a visible grip icon on each row",
+        "Removed: Log Time button (Todo bar + job detail), Plan My Week, and My Items panel — redundant with Add Task"
+      ],
+      "sections": [
+        "Data",
+        "Jobs",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.20.0",
+      "date": "18 Jun 2026",
+      "title": "Phase 2 foundations — Log Time, Schedule, My Items, Global Search, Expenses list, Add Phase/Item",
+      "items": [
+        "New: Log Time — create time entries natively from the Todo bar (persists locally, Phase 2 API-ready)",
+        "New: My Items panel — see all job items assigned to you across all active jobs",
+        "New: Plan My Week — auto-distribute remaining item hours across Mon-Fri based on your capacity",
+        "New: Schedule view — team week-at-a-glance showing hours/capacity per person per day",
+        "New: Global Search (⌘K) — search across jobs, clients, invoices and quotes",
+        "New: Expenses list — cross-job expense view with search, filters, status and client breakdown",
+        "New: Add expense from Expenses tab with job, description, cost and sell fields",
+        "New: Add Phase to any job — creates a new phase in the job plan",
+        "New: Add Item to any phase — with planned hours and rate",
+        "Architecture: DB stub layer added — all native-create functions ready to swap localStorage for real API calls"
+      ],
+      "sections": [
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.19.0",
+      "date": "18 Jun 2026",
+      "title": "Settings overhaul, invoice merge, client folder nav, reporting filters, data connections, bug fixes",
+      "items": [
+        "Settings: replaced accordion layout with sidebar navigation — My Profile, Team, Workspace Defaults, Job Items, Labels, Workspace Sync, Data, About tabs",
+        "Team tab: rich member card grid showing role, cost rate, billable rate, and hours/day per person",
+        "Team tab: click any team member card to open a detail slide-out panel with full profile editing — name, role, team, cost rate, hours/day, colour picker, archive",
+        "My Profile tab: inline editing of name, role, team, colour, cost rate and hours/day — no redirect to Team tab",
+        "My Profile tab: click avatar in sidenav profile card to open My Profile tab directly",
+        "My Profile tab: dashboard team filter toggles and block visibility controls — changes now live-update the dashboard immediately (bug fix)",
+        "Data tab: Streamtime connection card with live sync counts; \"coming soon\" integrations — Xero, Google Calendar, Slack, Google Sheets",
+        "Invoices: merged \"To Be Invoiced\" and \"All Invoices\" tabs into a single view — Uninvoiced jobs appears as a collapsible section above the invoice table when the checkbox is ticked",
+        "Jobs: Uninvoiced chip filter now works correctly — finds completed jobs with no invoicing",
+        "Clients: group folder headers are now clickable — navigates to a full sub-view of that group with header stats and individual client cards; Back button returns to main client list",
+        "Reporting: Business tab company filter — filter all KPIs, charts and the YoY table by a single client",
+        "Reporting: Year-over-year revenue breakdown table on Business tab — shows invoiced and paid totals for every year across all historical ST data",
+        "Reporting: People, Jobs, and Clients tabs now have data-driven filter selects populated from the live dataset",
+        "Bug fix: Settings sidenav profile card now updates instantly when you change your name or colour on the My Profile tab",
+        "Bug fix: Uninvoiced jobs (TBI) filter no longer shows already-invoiced completed jobs"
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.18.0",
+      "date": "18 Jun 2026",
+      "title": "Jobs filters, client groups, quote detail drawer, activity timeline, studio board fix, default cost rate in Settings",
+      "items": [
+        "Jobs: replaced 6 dropdown filters with stackable chip filter system — filter by status, workflow, company, label, health, PO, lead, member, billable, due/start date range, budget range",
+        "Jobs: group by Company, Status, Workflow, or Lead — same preset save/load as Quotes and Invoices",
+        "Clients: master client grouping — set a Group field on any client, clients with the same group are shown under a shared header in the list with combined job and revenue stats",
+        "Clients: group field searchable and editable in client detail info strip; autocomplete from existing groups",
+        "Quotes + Invoices: click \"View detail\" on any quote or invoice card to open a slide-out drawer with full ST data (dates, amounts, PO, linked job, open job button)",
+        "Job detail Quote tab: Streamtime quotes linked to this job shown above the quote document as a clickable list — supports multiple quotes per job",
+        "Activity tab: full timeline redesign — date-group headers (Today, Yesterday, weekday name, full date), card layout with avatar, Streamtime vs local badge, and time stamp",
+        "Studio board: fixed — the Studio board preset now creates live job cards with hours/budget bars, workflow badge, and team avatars instead of plain note cards",
+        "Settings: new Workspace Defaults section — set company-wide default cost rate and invoice payment terms; default cost rate is used wherever Streamtime returns $0 for a user",
+        "All $150 hardcoded cost rate fallbacks now read from the workspace default setting",
+        "Dropdown (cc-select) styling: refined arrow, hover state, focus ring — consistent across all panels"
+      ],
+      "sections": [
+        "Boards",
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.17.0",
+      "date": "18 Jun 2026",
+      "title": "Smart filter system for Quotes and Invoices — stackable filters, group-by, saved presets, job numbers, $150 default cost rate",
+      "items": [
+        "Quotes and Invoices: stackable AND filter chips — filter by status, company, job number, job name, PO, lead, value/amount range, sent/due/paid/expiry date ranges",
+        "Filter chips are saveable as named presets (stored in localStorage, one click to reload)",
+        "Group by Status, Company, or Job on both Quotes and Invoices tables",
+        "Job number now shown prominently on every quote card header (#jobNum chip below quote number)",
+        "Job number shown with # prefix in invoice table Job column",
+        "Quote search now includes job number in scope",
+        "All historical quotes and invoices visible — no date cutoff applied",
+        "Default cost rate set to $150/h when Streamtime returns 0 for a user (resolves profitability data gap)",
+        "PO number on invoices now reads from invoice purchaseOrderNumber field first, then falls back to linked job PO"
+      ],
+      "sections": [
+        "Boards",
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.16.0",
+      "date": "18 Jun 2026",
+      "title": "Full roadmap sweep — address, expiry alerts, DSO, invoice filters, date range, capacity, studio board, uninvoiced report",
+      "items": [
+        "Client detail: company address shown when mapped from Streamtime",
+        "Invoice print: client address appears on the tax invoice when available",
+        "Dashboard: \"Quotes expiring soon\" alert card — quotes expiring within 14 days appear in Needs attention",
+        "Invoices: PO number column in All Invoices table — linked from job PO",
+        "Invoices: status filter (Overdue / Sent / Awaiting / Paid / Draft / Voided) in All Invoices",
+        "Invoices: DSO (Days Sales Outstanding) shown in toolbar — average days from sent to paid",
+        "Reporting: custom date-range picker — select any From/To dates for precise period analysis",
+        "Todo: day header tints amber when person is at or over capacity for the day",
+        "Todo: day capacity now uses per-person Hrs/day from Settings (not hardcoded 8h)",
+        "Boards: \"Studio board\" one-click preset — creates a board of all live jobs grouped by workflow stage (Quote / Live / Completed / Invoiced)",
+        "Reporting → Business: Uninvoiced work table — all jobs with a gap between revenue logged and invoiced, sorted by gap size"
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.15.0",
+      "date": "18 Jun 2026",
+      "title": "PO tracking, deadline calendar, rollover prompt, contact management, per-person rates",
+      "items": [
+        "Jobs: PO filter (All / Has PO / No PO) — instantly see which jobs have a purchase order",
+        "Jobs: PO number shown in status column of jobs table for quick scanning",
+        "New Deadlines tab — month-view calendar of all job due dates and unpaid invoice due dates, colour-coded and clickable",
+        "Monday rollover prompt — on the first open each Monday, shows count of unfinished tasks from last week with quick link to review them",
+        "Clients: Add / edit / delete local contacts per client (alongside read-only Streamtime contacts)",
+        "Settings: per-person Hours/day and Rate $/h fields — sets working hours and default hourly rate for each team member"
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.14.0",
+      "date": "17 Jun 2026",
+      "title": "Big roadmap push — data fixes, intelligence & analytics",
+      "items": [
+        "Fixed a Streamtime sync bug that had quotes and invoices swapped — the Quotes tab now shows real quote status & value, and Invoices show real status, due date, paid date and overdue flags.",
+        "Dashboard \"Needs attention\": jobs due/overdue, overdue invoices, quotes awaiting response, uninvoiced work, and quiet clients — all from live data.",
+        "Dashboard customisation: show/hide the Needs attention, Team, Business KPIs and Clients blocks (Settings → Dashboard).",
+        "Reporting: utilisation % per person (billable vs capacity), monthly client revenue trend, and a quote→cash pipeline funnel.",
+        "Jobs list: budget-health filter (on track / at risk / over / needs attention). Fixed over-budget alerts that were silently empty.",
+        "Clients: search by name/contact/email, sort by jobs or revenue, active-only filter; company website now shows and links.",
+        "Calendar: hour gridlines now align with cards.",
+        "Workspace backup: export/import all local data as a JSON file (Settings → Data)."
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.13.0",
+      "date": "17 Jun 2026",
+      "title": "Card colours, urgent fix, activity & expense detail",
+      "items": [
+        "Every todo card now shares one design; the left border colour shows status — green billable, amber non-billable, red urgent — matching the dashboard bars.",
+        "Fixed: marking a task urgent now actually shows red (a styling conflict was hiding it).",
+        "Done buckets now collapse uniformly across the week (triggered by the lightest day) for a calmer view.",
+        "Dashboard loads fully on first open (no need to visit To Do first), and uses your real Streamtime weekly capacity (e.g. 40h) instead of a fixed 30h.",
+        "Dashboard stat bars now read green when healthy; the billable bar fills green toward your capacity.",
+        "\"Add more time?\" follow-up now pre-fills the new task with the job, item, hours and title.",
+        "Task notes now fall back to the Streamtime schedule note, so more notes come through; repeating tasks show as their individual dated blocks.",
+        "Job team: the + picker is now searchable and active-only, and anyone who has logged or scheduled time on the job is added automatically.",
+        "Job Activity tab now lists everyone who logged time on the job (from Streamtime), with their notes and dates.",
+        "Expenses: a single expense line (e.g. Disbursements) can be itemised into editable sub-lines that total up — see job 6964. Edits are local for now.",
+        "Job detail shows the PO number when Streamtime has one."
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.12.0",
+      "date": "17 Jun 2026",
+      "title": "Streamtime is the source of truth",
+      "items": [
+        "The Todo board now reads entirely from Streamtime — scheduled blocks are your to-dos, logged blocks are done. The old manual-task layer is gone.",
+        "Everything is editable: drag, resize, edit, mark done, move between days. Changes apply instantly but are local — they revert on refresh until Streamtime write-back is added.",
+        "Dashboard now counts planned to-dos, not just done: \"Billable this week\" shows done + planned against your real Streamtime weekly capacity.",
+        "Team blocks and \"My tasks today\" now show each person\\'s scheduled Streamtime to-dos.",
+        "Todo buckets are now per-day: a day collapses to a summary only when its own cards can\\'t fit — light days keep showing cards even when a busy day buckets.",
+        "The bucket \"View\" button now glides the divider smoothly to reveal that zone.",
+        "Calendar: done blocks now stack above to-do blocks for each day."
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.11.1",
+      "date": "17 Jun 2026",
+      "title": "Todo bucket timing, today line, billable accuracy",
+      "items": [
+        "Todo bucket now appears as soon as a day\\'s tasks no longer fit at a readable size (not only when the divider is dragged near the top)",
+        "Fixed: the \"today\" red indicator no longer adds height to that column\\'s header, so the done divider and padding line up across all days",
+        "More consistent breathing room under the done divider",
+        "Fixed billable accuracy: logged-time billable status is read from the job (was always counting as billable) — dashboard billable hours and capacity bars are now correct"
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Jobs",
+        "Jobs → Time",
+        "Reporting",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.11.0",
+      "date": "17 Jun 2026",
+      "title": "Real scheduled ToDo blocks from Streamtime",
+      "items": [
+        "Todo board now reads actual Streamtime \"Scheduled\" ToDo blocks — each planned block shows with its own note, exact date, and exact minutes",
+        "Notes pull through correctly: the block note (e.g. \"🥫 RECORP - New Can Spec Sheet\") is the task title",
+        "Multiple blocks for the same job+item are kept as separate tasks (each is its own scheduled block)",
+        "No more aggregate/spanning assignments cluttering every day — blocks sit only on their real scheduled day",
+        "Done column reads \"Logged\" blocks; to-do column reads \"Scheduled\" blocks — Streamtime moves a block between them when completed, so no duplication",
+        "Removed the per-block note duplication on cards (note shown once, as the title)",
+        "New data file scheduled_todos.json synced hourly from Streamtime"
+      ],
+      "sections": [
+        "Boards",
+        "Data",
+        "Jobs",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.10.6",
+      "date": "17 Jun 2026",
+      "title": "Assignment dedup, notes, and display fixes",
+      "items": [
+        "Assignments now appear once per week on their first applicable day — no more repeating the same card Mon–Fri",
+        "Assignment card notes: uses item description when available, falls back to most recent logged-time note for same job+item",
+        "Removed dedup between ST assignments and logged times — assignments show remaining work, logged entries show done work; these coexist correctly",
+        "Manual todo dedup now per-day only: a manual task for job+item moves to done if time was logged against that exact job+item on that same day",
+        "Removed 30-day span filter — retainer and long-running assignments correctly appear again",
+        "Calendar view uses same per-day manual-todo dedup logic (ST assignments never deduped)"
+      ],
+      "sections": [
+        "Jobs",
+        "Jobs → Time",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.10.5",
+      "date": "17 Jun 2026",
+      "title": "Fix assignment clutter and dedup accuracy",
+      "items": [
+        "Assignment filter: skip items with 0 planned/incomplete minutes (nothing to show)",
+        "Assignment filter: skip retainer-style items spanning more than 30 days (they were flooding every week)",
+        "Dedup now uses week-level matching — if a job+item was logged on any day this week, matching todo/assignment cards are removed from all days (not just the day the time was logged)",
+        "Day header stats (To do / Done) now reflect post-dedup values",
+        "Calendar view dedup also upgraded to week-level matching"
+      ],
+      "sections": [
+        "Jobs",
+        "Jobs → Time",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.10.4",
+      "date": "17 Jun 2026",
+      "title": "Todo/done dedup, notes fix, hours per day",
+      "items": [
+        "Fixed: manual todo tasks no longer show as todo when ST has already logged time for the same job+item on the same day — they move to the done zone",
+        "Fixed: ST planned assignment hours now divided across days active this week (not total on every day)",
+        "Fixed: item description now included in mapped job items — assignment cards show notes correctly",
+        "Dedup applied in both list view and calendar view"
+      ],
+      "sections": [
+        "Jobs",
+        "Jobs → Time",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.10.3",
+      "date": "17 Jun 2026",
+      "title": "Planned assignment hours & notes fix",
+      "items": [
+        "Fixed planned ST assignment hours — total minutes now divided by working days in span (was showing total on every day)",
+        "Item description now used as card note on planned assignments",
+        "Item estimated dates used as fallback when assignment has no start/end dates",
+        "Duplicate info lookup removed from inner loop"
+      ],
+      "sections": [
+        "Jobs",
+        "Jobs → Time",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.10.1",
+      "date": "16 Jun 2026",
+      "title": "Done divider, NaN fix, expenses & paused phases",
+      "items": [
+        "Fixed NaN in phase header sell totals — em-dash items (no planned hours) now correctly count as $0",
+        "Fixed expenses not loading from ST — corrected field names (jobNumber, costRate, loggedExpenseStatus)",
+        "Fixed paused phases from ST — phases where all items are Paused now render as paused",
+        "Done divider bar now has a distinct warm grey colour so it stands out from the background",
+        "Removed the \"N done hidden\" overflow pill from the done zone (redundant with bucket view)",
+        "Fixed done cards clipping behind divider bar — restored 24px top padding on done zone"
+      ],
+      "sections": [
+        "Jobs",
+        "Jobs → Time",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.10.0",
+      "date": "16 Jun 2026",
+      "title": "Bug fixes, collapsible settings & card improvements",
+      "items": [
+        "Fixed jobs not opening when job has no phases or is missing data (null guard + ST jobs default to empty phases)",
+        "Fixed expenses tab — now shows expenses from Streamtime data (stExpenses) merged with manual entries, with ST badge",
+        "Fixed paused phases from ST — handles both jobPhaseStatus and status field names from subdomain API",
+        "Removed Done zone watermark leftover padding",
+        "Todo cards now have a minimum height (52px) so title + hours are always readable",
+        "Settings sections are now collapsible — Team open by default, all others collapsed"
+      ],
+      "sections": [
+        "Data",
+        "Jobs",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.9.7",
+      "date": "16 Jun 2026",
+      "title": "Data fixes, expenses & assignments sync",
+      "items": [
+        "Fixed job due dates — now correctly reads estimatedStartDate/estimatedEndDate from ST (deadline badges now work)",
+        "Fixed user capacity — reads hoursWorkedMonday…Friday per-day values instead of null capacity field",
+        "Fixed user billableRate — mapped from correct ST field",
+        "Sync now pulls expenses (view 9), job assignments/planned hours (view 17), milestones (view 18)",
+        "ST planned assignments now appear in the Todo zone — shows what you\\'re scheduled to work on this week"
+      ],
+      "sections": [
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.9.6",
+      "date": "16 Jun 2026",
+      "title": "Zone buckets, fill-to-zone cards, paused jobs fix",
+      "items": [
+        "Todo/Done zones collapse to summary buckets (\"N To Do\\'s · Xh · view\") when dragged too small",
+        "Done zone shows \"N Done · Xh · view\" bucket with View ↓ to expand",
+        "Task cards now fill their zone — cards stretch proportionally so total height equals zone height",
+        "Progressive info: icon/hours/job/note hide/show smoothly as cards resize during drag",
+        "Done zone watermark \"Done\" text in background when cards are present",
+        "ST Paused jobs now show as In Play + Paused badge (matching platform pause behaviour)"
+      ],
+      "sections": [
+        "Jobs",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.9.5",
+      "date": "16 Jun 2026",
+      "title": "ST task drag, done-bar resize, job budgets, quick wins",
+      "items": [
+        "ST logged-time tasks are now draggable — drag to another day or to To Do; always clones (ST is read-only)",
+        "Done-bar drag now resizes both todo AND done cards based on their zone height",
+        "Done zone collapse pill: \"N done hidden · Xh · View ↓\" when done area is too small",
+        "Job phase budget hours fixed — phases now show planned/budgeted hours not logged hours",
+        "Job detail: due date badge in meta line; overdue and due-within-7-days highlighted",
+        "Dashboard: new Deadlines section lists overdue and due-soon live jobs",
+        "Quotes: real ST status (Approved / Declined / Sent / Draft); value, expiry, approved/declined dates shown",
+        "Quotes: Expiring soon / Expired badges on quotes near or past expiry date",
+        "Invoices: due date column; overdue highlighted in red with day count; real ST status used",
+        "Clients: website link from ST shown on client detail page",
+        "Users: ST capacity (hours/day) now mapped from users.json"
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.9.4",
+      "date": "16 Jun 2026",
+      "title": "Todo: arrow keys, drag fixes, data warning",
+      "items": [
+        "Arrow keys ← → navigate between weeks on the todo view",
+        "Alt+drag to duplicate tasks to another day (existing feature now documented in changelog)",
+        "Done-bar drag: task cards in the Done zone no longer shrink/hide content while dragging",
+        "Todo cards stay at least 52px tall while dragging the done bar — info stays visible",
+        "Warning banner shown when Streamtime logged-time data fails to load",
+        "Streamtime sync script: 180s timeout, 500-record pages, backup file, exponential retry for large datasets"
+      ],
+      "sections": [
+        "Data",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.9.3",
+      "date": "16 Jun 2026",
+      "title": "Job avatar stack shows active users only",
+      "items": [
+        "Avatar stack on job plan items now filters to active Streamtime users only",
+        "Hibernated and Deleted users are hidden from the main avatar row",
+        "+N overflow chip still shows inactive users in the tooltip, marked \"(inactive)\" so time history is preserved",
+        "userStatus (Active/Hibernated/Deleted) now stored on every user in stUsersById"
+      ],
+      "sections": [
+        "Data",
+        "Jobs",
+        "Jobs → Time"
+      ]
+    },
+    {
+      "version": "2.9.2",
+      "date": "16 Jun 2026",
+      "title": "Fix ST card interactions, reporting, jobs sort, budget accuracy",
+      "items": [
+        "Fixed: hover tooltip and right-click menu now work on Streamtime logged-time cards (same as manual tasks)",
+        "Fixed: Reporting pages no longer blank — null filter elements no longer crash getFilteredTasks()",
+        "Fixed: Jobs always sort newest-first regardless of \"hide archived\" state (uses internal ST ID)",
+        "Fixed: +N avatar chip now shows full team hours breakdown on hover",
+        "Fixed: Job footer totals now include logged expenses in the used amount",
+        "Fixed: Planned budget now uses totalPlannedTimeExTax (matching Streamtime\\'s Budget column)"
+      ],
+      "sections": [
+        "Boards",
+        "Data",
+        "Jobs",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.9.1",
+      "date": "16 Jun 2026",
+      "title": "Accurate NZD costs",
+      "items": [
+        "Fixed: monetary values from Streamtime now preserved with full cent precision (no more Math.round per job)",
+        "Totals in the jobs footer now match Streamtime cent-for-cent"
+      ],
+      "sections": [
+        "Data",
+        "Jobs",
+        "Jobs → Time"
+      ]
+    },
+    {
+      "version": "2.9.0",
+      "date": "16 Jun 2026",
+      "title": "Lucide icons, jobs lazy loading, data roadmap",
+      "items": [
+        "Site-wide icon library migrated to Lucide — crisp SVG icons replace Tabler font icons",
+        "ITEM_ICONS expanded to 30+ job type mappings (palette, video, film, camera, pen-line, etc.)",
+        "Jobs page now lazy-loads in batches of 60 — first render is instant, more load as you scroll",
+        "IntersectionObserver sentinel shows \"Showing X of Y — scroll for more\" with auto-load on scroll",
+        "ROADMAP.md written: full audit of all 7 ST datasets, what\\'s wired vs available, 20 proposed features",
+        "Key data gaps identified: user capacity, profitability, job deadlines, quote status, invoice due dates"
+      ],
+      "sections": [
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Invoices",
+        "Jobs → Quotes"
+      ]
+    },
+    {
+      "version": "2.8.1",
+      "date": "16 Jun 2026",
+      "title": "Todo overflow pill and divider flash fix",
+      "items": [
+        "When done bar is dragged up and todos overflow: sticky pill shows \"N hidden · Xh\" with View ↑ button",
+        "View ↑ button expands the divider just enough to reveal all hidden tasks",
+        "Fixed: done bar no longer flashes at y=0 when clicking a task card (pre-positioned before DOM insert)",
+        "Overflow pill updates live after every drag-end"
+      ],
+      "sections": [
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.8.0",
+      "date": "16 Jun 2026",
+      "title": "Reporting fixed, todo improvements, jobs footer totals",
+      "items": [
+        "Fixed: reporting pages no longer blank — nav now calls _buildTabFilters on first load",
+        "Fixed: ST data now loads immediately on site open (not only after visiting todo tab)",
+        "Todo task cards always show hours regardless of card height",
+        "Todo summary bar: hover to see per-day breakdown (Mon–Fri, To Do / Done columns)",
+        "Right-click anywhere on todo board background → Add task menu at that day",
+        "Jobs footer bar: TOTAL (N) with $used / $budget progress bar and over-budget count",
+        "Jobs sort is NaN-safe — non-numeric IDs sort to bottom consistently"
+      ],
+      "sections": [
+        "Boards",
+        "Data",
+        "Jobs",
+        "Reporting",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.7.0",
+      "date": "16 Jun 2026",
+      "title": "Reporting redesign, non-billable clarity, avatar breakdown",
+      "items": [
+        "Reporting page now has four sub-tabs: Business, People, Jobs, Clients",
+        "Business tab: KPIs (total hours, billable %, revenue invoiced, active jobs), hours trend chart, billable split doughnut, over-budget job list",
+        "People tab: per-person cards with hours and billable %, hours-by-person bar chart, hours-by-day chart, full breakdown table",
+        "Jobs tab: filters by status and client, hours-by-job and budget-used charts, scrollable job list with inline progress bars",
+        "Clients tab: client cards with hours / jobs / revenue, hours and revenue charts",
+        "Export CSV scoped to the active tab and current filters",
+        "Non-billable items: hours column now shows just the logged hours without \"/ 0h\" — no more misleading red over-budget appearance",
+        "+N team avatar overflow chip now shows a hover tooltip listing every team member and their hours"
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.6.0",
+      "date": "16 Jun 2026",
+      "title": "Streamtime data fully unified — todos, calendar, dashboard, reporting",
+      "items": [
+        "ST logged time entries now render identically to manual tasks — same card style, hover tooltip, colours, and click-to-view modal",
+        "Todo list: done cards from Streamtime show job chip, item name, billable colour, and hours — no longer plain grey blocks",
+        "Todo calendar: ST entries appear in the Completed drawer and are clickable",
+        "Clicking any ST card opens a modal showing all entry details (title, hours, job, item) with a Streamtime source badge",
+        "Day capacity bar now counts ST logged hours in the done/billable split — bar fills correctly",
+        "Dashboard \"Billable this week\" and \"My tasks today\" include ST logged time",
+        "Reporting charts and table now pull from Streamtime logged_times as primary source with period/person/job filters",
+        "Job time tab entry titles now show the note written in Streamtime (not just item name)",
+        "Job plan: team avatar stack per item — shows who logged time with hover showing name + hours",
+        "Job plan: non-billable phases show lock badge and $0 / $0 with a tooltip, matching Streamtime display",
+        "ST done cards link directly to the relevant job when clicked"
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Data",
+        "Jobs",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.5.0",
+      "date": "15 Jun 2026",
+      "title": "Invoice overhaul, person picker teams, item progress bars, undo",
+      "items": [
+        "Invoices page redesigned as a table with Company, Issue date, Inv #, Job, Due date, Status, Amount columns",
+        "\"To Be Invoiced\" filter built into Invoices page — shows completed jobs ready to bill; \"All Invoices\" shows full history",
+        "Invoice ⋮ menu: view, open job, mark as Draft/Sent/Paid, delete invoice record",
+        "Overdue invoices auto-detected and shown in red when past due date and not paid",
+        "Todo person picker now groups team members by team with headers",
+        "Job plan: each item shows a thin progress bar — green/amber/red based on logged vs planned hours",
+        "Phase delete now shows an 8-second Undo toast instead of a confirm dialog",
+        "\"To Be Invoiced\" subnav tab removed — functionality merged into Invoices tab"
+      ],
+      "sections": [
+        "Boards",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.4.0",
+      "date": "15 Jun 2026",
+      "title": "Client nicknames, job status overhaul, pause, dashboard task adding",
+      "items": [
+        "URLs in job notes and task notes are now clickable hyperlinks",
+        "Todo task modal: removed per-task notes; job\\'s own brief now shows as read-only context when a job is selected",
+        "Clients: add a short name / nickname (e.g. SFF) — appears in dropdowns, client list, and client cards on dashboard",
+        "Approving a quote now automatically moves the job from Quote → Live Job",
+        "New workflow stage: Completed (between Live and Invoiced) — jobs marked Completed appear in the new \"To Be Invoiced\" tab",
+        "Pause jobs and phases — paused jobs/phases show a badge and block time logging",
+        "Dashboard: \"+\" button on Your Day and each team member card to add tasks directly",
+        "Dashboard: new Clients section showing active clients with their live jobs",
+        "Jobs list: label filter added; workflow filter includes Completed"
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.3.0",
+      "date": "12 Jun 2026",
+      "title": "Searchable pickers, drag fixes, repeats that actually repeat",
+      "items": [
+        "Client fields (job settings + new job) are now searchable dropdowns of all clients; add-item gets the same treatment for the item list",
+        "Fixed: reordering tasks in the day list now drops exactly where the red line shows (the indicator was being cleared before it was read)",
+        "Dragging the Done line now tidies card content live while you drag, not after release",
+        "Calendar: resizing a block reflows the blocks below it live",
+        "Fixed: turning Repeat on while editing an existing task now books future weeks (previously only brand-new tasks repeated)",
+        "Repeating tasks show a repeat icon on list cards and calendar blocks",
+        "Fixed: task modal Delete now sits beside Save (two auto-margins had parked it mid-footer)",
+        "Boards: one-time cleanup of cards the old id-collision bug had copied into multiple boards; Client/People boards are labelled “live view” to show they mirror live data by design"
+      ],
+      "sections": [
+        "Boards",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.2.0",
+      "date": "12 Jun 2026",
+      "title": "Resize is back, job numbers fixed, board deletes fixed",
+      "items": [
+        "Todo list: edge-resize on task cards is back, and dragging the Done line rescales all cards live (relative to their hours)",
+        "Fixed: job numbers no longer duplicate — numbering continues from the highest existing number, duplicates from before are auto-renumbered",
+        "Task cards now show the live job name (renaming a job updates every task)",
+        "Fixed: board delete and column delete did nothing (confirm dialog lost its callback)",
+        "Task modal: Delete is back — underlined, left of Save (it was invisible due to a CSS clash)",
+        "Time view: per-person groups start minimised — summary first, click to expand",
+        "Settings: new My Profile section — choose which teams appear on your dashboard",
+        "Removed ~700 lines of dead legacy code (an entire inert script block and an orphaned calendar view)"
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Jobs",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.1.0",
+      "date": "12 Jun 2026",
+      "title": "Progress tab, real logo, teams & a deep consistency pass",
+      "items": [
+        "Job plan: new Progress tab — per-person time table (logged & scheduled) with one-click reallocation of time to another item or job",
+        "Fixed: done todos now reliably feed job plan item hours (stale item links fall back to name matching)",
+        "Fixed: job plan Sell \\u201cused\\u201d now computed live from logged hours \\u00d7 item rate",
+        "Fixed: item picker now explains when a job has no plan items (was a confusing \\u201cSelect a job first\\u201d)",
+        "Fixed: priority boards no longer share columns/cards (id collisions); new boards default to Custom",
+        "C&C logo now appears on quotes and invoices (and prints)",
+        "Team members can be assigned a team in Settings — dashboard and reporting group by it",
+        "Todo list: cards are content-sized with even gaps (calendar keeps time-blocks)",
+        "Task & expense forms: proper field styling (the form-inp class had no CSS at all)",
+        "Consistent page titles, spacing and paddings across all views"
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Jobs",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Reporting",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "2.0.0",
+      "date": "12 Jun 2026",
+      "title": "MVP milestone — search, print, real team management",
+      "items": [
+        "Global search: press ⌘K (or the sidebar magnifier) to search jobs, clients, tasks and plan items",
+        "Team members now persist — add and remove people from Settings, no code edit needed",
+        "Quote + invoice Print / PDF: clean print stylesheet, Send quote marks it sent",
+        "Invoiced ex GST stat in the job plan now reads from the real invoice total",
+        "Jobs list: bulk select with Archive / Delete / Label actions; Hide archived now works",
+        "Global labels: manage in Settings, pick from the list on any job (coloured chips everywhere)",
+        "Designed empty states for jobs, schedule, boards and clients",
+        "Keyboard: Esc closes any modal, N adds a task in the schedule view",
+        "Activity log now covers task add/edit/delete/done, item edits, team and note changes"
+      ],
+      "sections": [
+        "Boards",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "1.9.0",
+      "date": "10 Jun 2026",
+      "title": "Stats fix, quote redesign, Create dropdown, calendar improvements",
+      "items": [
+        "Job plan stats: compute live from phases (hours, sell, logged) — no more stale $0",
+        "Quote tab: full Streamtime-style redesign with display options panel and T&Cs",
+        "Job plan: Create dropdown (Item, Phase, To Do, Expense, Invoice, Quote)",
+        "Job plan: Settings gear modal and 3-dot menu (Duplicate, Star, Archive, Delete)",
+        "Calendar: Show completed toggle filter; right-click context menu on blocks",
+        "Calendar: Edge-resize task blocks to change hours; Alt+drag to duplicate",
+        "Clients: Lead field (assign from team); shown on card and detail",
+        "Job detail: Lead shown in meta line, auto-defaulting from client record",
+        "Expenses: Restyled section with better table and status badges",
+        "Priority boards: wider columns (280px), better card content wrapping"
+      ],
+      "sections": [
+        "Boards",
+        "Data",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "1.8.0",
+      "date": "10 Jun 2026",
+      "title": "MVP polish — context menus, inline expenses, toast UI",
+      "items": [
+        "Calendar: \"Done\" divider no longer bleeds into calendar view",
+        "Calendar: drag tasks between days; drop to drawer marks done",
+        "Calendar: fullscreen completed view — see done tasks in day columns",
+        "Calendar: drawer is larger, cleaner, no distracting hint text",
+        "Job plan: Hours column now shows logged/planned (e.g. 2h30m / 6h); Sell column restored",
+        "Job plan: Add expense inline (next to Add item) with predefined list",
+        "Workflow advance: styled confirmation modal (no more browser confirm)",
+        "Right-click on any task card: Edit, Duplicate, Reassign, Mark done, Go to job, Delete",
+        "Toast notifications replace browser alert() dialogs",
+        "Person card in boards: hours bar, capacity %, task count, urgent flag",
+        "Settings: manage Job Plan items and Expense types (add/remove)",
+        "Sidebar wider (68px), icons larger",
+        "Task card title stays same size while resizing"
+      ],
+      "sections": [
+        "Boards",
+        "Dashboard",
+        "Jobs",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "1.7.0",
+      "date": "9 Jun 2026",
+      "title": "Calendar view, boards, job plan hours & polish",
+      "items": [
+        "New: Calendar view for todo — filter by type, drag tasks to \"done\" drawer",
+        "Calendar: completed tasks drawer with drag-to-complete support",
+        "Calendar: filter chips (Personal / Job tasks / Urgent only / Time toggle)",
+        "Boards: Add column now lets you choose Generic, Client, or Person type",
+        "Boards: Client column auto-fills with all active jobs for that client",
+        "Job plan: Logged / Planned hours column — shows hours from completed todos vs. plan",
+        "Job plan: Workflow badge is now clickable to advance Quote → Live → Invoiced",
+        "Expenses: completely rebuilt form with live sell-price preview",
+        "Task cards: content responds live as you resize (title → hours → job → note)",
+        "Delete task button now has a clear visual style in the task modal",
+        "Sidebar: nicer hover states; removed duplicate Calendar nav item",
+        "Modals: wider across the board for more comfortable editing"
+      ],
+      "sections": [
+        "Boards",
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    },
+    {
+      "version": "1.3.0",
+      "date": "9 Jun 2026",
+      "title": "Job plans, reporting & repeat tasks",
+      "items": [
+        "Fixed: job plans now open correctly from any job in the list",
+        "Fixed: reporting charts now display data correctly (Chart.js data structure corrected)",
+        "Improved: calendar icon in task modal now opens a proper date picker",
+        "Improved: repeat task feature — choose to repeat Never, After N occurrences, or until a specific date",
+        "Improved: repeat tasks skip weekends automatically",
+        "Added: this changelog — shown on first load after each update"
+      ],
+      "sections": [
+        "Jobs",
+        "Reporting",
+        "Todo"
+      ]
+    },
+    {
+      "version": "1.2.0",
+      "date": "7 Jun 2026",
+      "title": "Jobs sub-tabs & clients",
+      "items": [
+        "Jobs page now has sub-tabs: Jobs, Time, Expenses, Quotes, Invoices, Clients",
+        "Clients tab added — auto-populated from jobs data",
+        "Job workflow status: Quote → Live Job → Invoiced",
+        "Job plan items are now inline-editable (click hours or rate to edit)",
+        "Dynamic team member avatars in job detail header (clickable)",
+        "Task modal redesigned — personal mode, calendar icon, repeat button",
+        "Task modal: reassign task to another team member",
+        "Custom job plan line items with free-text or datalist suggestions",
+        "Site-wide dropdown styling (.cc-select)"
+      ],
+      "sections": [
+        "Jobs",
+        "Jobs → Clients",
+        "Jobs → Invoices",
+        "Jobs → Quotes",
+        "Jobs → Time",
+        "Settings",
+        "Todo"
+      ]
+    }
+  ]
+}
