@@ -1,6 +1,6 @@
 # C&C Platform — Roadmap
 
-*Last updated 15 Jul 2026 · v2.38.0*
+*Last updated 3 Nov 2026 · v2.38.1*
 
 ---
 
@@ -75,6 +75,8 @@ The following features are live in the UI with a localStorage stub. Swapping to 
 | Xero push for natively-created invoices | The local creation half (deposit/split invoices) shipped v2.20.4; the Xero push half needs real Xero API write credentials — a business/access task, not a coding one |
 | @mentions + notifications | Needs a real-time backend (websockets/polling server) — not buildable on the static localStorage architecture |
 | Real durable backend for all `db*` writes | The actual size of the Phase 2→3 jump — see "What's blocking Phase 3" above. Every other Phase 2 feature is UI-complete and just needs its stub swapped once this exists |
+
+**Shipped (v2.38.1):** Logged-time gap fix. ~28 Sep–1 Oct 2026 Streamtime switched search view 8's default order from newest-first to job-grouped. The sync had always been rate-limit-truncated after 1–6 pages (harmless while page 1 = newest), so from then on it re-read the same old-job records: ~10% of Oct captured, 0 new records by Nov, with `errors: []` because a 429-exhausted fetch fell out of `search()` as a normal end of results. The 14 Oct loop rework (fast sync every 15 min) made it worse — each cycle's unbounded `search(8)` burned the 720/h budget. Fix: new `scripts/logged_times_sweep.py` — order-independent resumable sweep of the whole view (cursor + 50-record page overlap in `logged_times_sweep.json`, 25 pages/fast cycle, 40/full), an hourly probe that finds a working recent-window query (date filter or newest-first under a status filter) for a 21-day fast path, record slimming (~5 KB → ~0.5 KB; the nested job object was 80%), and compact JSON writes. `search()` in both scripts now records 429 exhaustion as an error and returns []. The To Do "data through…" indicator reads `logged_times_sweep.json` (last full pass) instead of the newest entry's date. Verified against a mock API reproducing job-grouped order + 429s + mid-list inserts: stale 46% → 99.9% coverage after one pass; with a working date filter, 100% of the last 21 days every cycle. Not yet done: pruning entries deleted in Streamtime (union-merge never removes).
 
 **Shipped (v2.38.0):** Ronan's refinement round. Warm C&C beige palette returns (light tokens re-warmed; dark unchanged), Focus mode rebuilt as a "Your Day"-style list (`renderFocusToday()` — no divider/proportional cards; circle-click toggles done), red full-stop motif removed, consistent `view-title` headers on all Jobs sections, dashboard show-more caps (`_dashExpanded`: 6 clients + 6 rows per attention card), clickable KPI sparklines → 26-week Chart.js modal (`openTrendModal`), wallpaper + liquid glass (`cc_bg_image`, `body.has-bg` → frosted `.main`/sidebar; Settings → My Profile → Appearance).
 

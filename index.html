@@ -2772,8 +2772,15 @@ let currentPerson='st_114330';
 const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
-const APP_VERSION='2.38.0';
+const APP_VERSION='2.38.1';
 const CHANGELOG=[
+  {version:'2.38.1',date:'3 Nov 2026',title:'Fixed: logged time missing since October',items:[
+    'Since about 1 October only ~10% of logged time was reaching the platform, and by November none at all — so Done columns, billable hours, Progress, profitability and Reporting have all been badly under-counting for the last five weeks. Scheduled tasks, jobs and invoices were unaffected.',
+    'Cause: Streamtime changed the order its export returns logged time in (newest-first → grouped by job). Our sync only ever read the first few pages before hitting Streamtime\'s rate limit, which was harmless while those pages held the newest entries — after the change it kept re-reading old jobs instead.',
+    'The sync now walks through ALL logged time in rotation regardless of order, and keeps the last three weeks topped up separately where Streamtime allows it. The missing October–November time backfills automatically within a couple of hours of this going live.',
+    'The "Streamtime data through…" note on the To Do board now tells the truth: it shows when logged time was last fully re-read, and turns orange if that\'s more than 4 hours ago. Before, it only looked at the newest entry\'s date — one entry logged ahead kept it green the whole time.',
+    'The logged-time data file is also ~10× smaller (it was carrying a full copy of each job on every entry), so the platform loads faster.',
+  ]},
   {version:'2.38.0',date:'15 Jul 2026',title:'The beige returns, focus mode reborn, wallpaper glass',items:[
     'The C&C beige is back — the whole platform warms from clinical cool grey to the house paper tone, keeping everything from the new design system. (Dark mode unchanged.)',
     'Focus mode redesigned: today now renders as a calm list in the same style as the Dashboard\'s "Your Day" — big red date, check-circles, a Done section below — no more proportional cards or the divider clipping over tasks.',
@@ -3495,6 +3502,7 @@ let stExpenses=[];        // logged expenses from ST view 9
 let stJobAssignments=[];  // job_item_users: who is assigned to what item (view 17)
 let stMilestones=[];      // job milestones (view 18)
 let stScheduledTodos=[];  // scheduled ToDo blocks (view 8, status=Scheduled) — planned work with per-block notes
+let stSweepState=null;    // logged_times_sweep.json — when the sync last completed a full pass of logged time
 let stUsersById={};   // userId → {name,initials,color,key,capacityH,billableRate}
 let _stIdToJobNum={}; // Streamtime internal job ID → job number string
 function _stFmtH(mins){return mins>=60?`${Math.floor(mins/60)}h${mins%60?mins%60+'m':''}`:mins>0?mins+'m':'0h';}
@@ -3824,6 +3832,13 @@ async function initStreamtime(silent){
     if(msRes.ok)stMilestones=await msRes.json();
     // Scheduled ToDo blocks (planned work with per-block notes) — powers the Todo board
     if(schedRes&&schedRes.ok)stScheduledTodos=await schedRes.json();
+    // Logged-time sweep state — how recently the sync last re-read ALL of Streamtime's logged
+    // time. Drives the To Do "data through…" indicator (see renderTodo). Optional: absent
+    // until the sweep-based sync has run, in which case the indicator falls back.
+    try{
+      const swRes=await fetch(`${ST_BASE}/logged_times_sweep.json${_v}`);
+      stSweepState=swRes.ok?await swRes.json():null;
+    }catch(e){stSweepState=null;}
     // Platform config (people, labels, item types) published by admin
     try{
       const cfgRes=await fetch(`${ST_BASE}/platform_config.json${_v}`);
@@ -5176,8 +5191,21 @@ function renderTodo(){
   // Data-freshness indicator — the done column can only show logged time that's in the latest
   // Streamtime export. If today's completions aren't exported yet, this explains why they're
   // missing (rather than it being a bug).
+  // Prefer the sync's sweep state: logged time is only known complete as of the last full pass.
+  // The newest entry's date (fallback below) can't detect gaps — through Oct 2026 it showed a
+  // green tick while ~90% of logged time was missing, because one entry was dated ahead.
   const freshEl=document.getElementById('todo-data-fresh');
-  if(freshEl){
+  const _pass=stSweepState?.last_complete_pass_at?new Date(stSweepState.last_complete_pass_at):null;
+  if(freshEl&&stSweepState){
+    const ago=ms=>{const m=Math.round(ms/60000);return m<60?`${m} min ago`:m<1440?`${Math.round(m/60)}h ago`:`${Math.round(m/1440)}d ago`;};
+    const stale=!_pass||(Date.now()-_pass)>4*3600000;
+    const pct=stSweepState.total?Math.min(99,Math.round((stSweepState.offset||0)/stSweepState.total*100)):null;
+    const txt=!_pass?`Streamtime logged time catching up${pct!=null?` · ${pct}%`:''} — click to reload`
+      :stale?`Logged time last fully synced ${ago(Date.now()-_pass)} — click to reload`
+      :`Streamtime logged time complete as of ${ago(Date.now()-_pass)}`;
+    freshEl.innerHTML=`<i class="ti ti-${stale?'alert-circle':'check'}" style="font-size:11px;vertical-align:-1px;${stale?'color:#E65100;':''}"></i> ${txt}`;
+    freshEl.style.color=stale?'#E65100':'var(--muted)';
+  }else if(freshEl){
     let maxD='';
     stLoggedTimes.forEach(lt=>{const d=(lt.date||'').slice(0,10);if(d>maxD)maxD=d;});
     if(maxD){

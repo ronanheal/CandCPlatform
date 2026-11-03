@@ -33,6 +33,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 
+import logged_times_sweep as lts  # scripts/ is sys.path[0] when run as scripts/streamtime_sync.py
+
 API_BASE = "https://api.streamtime.net/v1"
 ST_SUBDOMAIN = "https://contentco.app.streamtime.net/api/v1"
 API_KEY = os.environ["STREAMTIME_API_KEY"]
@@ -121,7 +123,12 @@ def search(view_id, query="", additional_data=None, timeout=120):
                 return []
 
         if result is None:
-            break
+            # Only reachable when every attempt was a 429. This used to `break` and return the
+            # pages so far as if they were the complete result — a silent truncation that hid
+            # the Oct 2026 logged-time gap (no error was ever recorded). Treat it as a failure.
+            errors.append({"resource": f"search?search_view={view_id}",
+                           "error": f"rate limited, gave up at offset {offset}"})
+            return []
         raw = result.get("searchResults", [])
         page = list(raw.values()) if isinstance(raw, dict) else raw
         all_records.extend(page)
@@ -172,13 +179,14 @@ def save(filename, data, previous=None, min_records=0):
             print(f"  SKIPPED {filename} — API returned 0, keeping {prev_count} existing")
             if prev_count > 0:
                 path = OUT_DIR / filename
-                path.write_text(json.dumps(previous, ensure_ascii=False, indent=2))
+                path.write_text(json.dumps(previous, ensure_ascii=False))
             return max(prev_count, 0)
         if count < prev_count * 0.5:
             print(f"  SKIPPED {filename} — {count} records vs {prev_count} existing (API error?), keeping existing")
             return prev_count
     path = OUT_DIR / filename
-    path.write_text(json.dumps(data, ensure_ascii=False, indent=2))
+    # Compact: the browser downloads these whole on every page load (indent=2 added ~30%).
+    path.write_text(json.dumps(data, ensure_ascii=False))
     print(f"  saved {filename} ({count} records)")
     return count
 
@@ -252,7 +260,6 @@ if progress_path.exists():
 
 detail_done = set(progress.get("detail_done", []))
 backfill_complete = progress.get("backfill_complete", False)
-logged_times_oldest_fetched = progress.get("logged_times_oldest_fetched")  # YYYY-MM-DD checkpoint, see step 5
 
 # Jobs that still need phases/items fetched — active jobs first, then rest
 active_statuses = {"In Play", "Paused"}
@@ -302,7 +309,6 @@ if not skip_detail:
         "total_jobs": len(fresh_jobs),
         "detail_count": len(detail_done),
         "last_run": datetime.now(timezone.utc).isoformat(),
-        "logged_times_oldest_fetched": logged_times_oldest_fetched,
     }
     progress_path.write_text(json.dumps(progress, indent=2))
 else:
@@ -320,45 +326,15 @@ prev_expenses        = load_existing("expenses.json")
 prev_job_assignments = load_existing("job_assignments.json")
 prev_milestones      = load_existing("milestones.json")
 
-logged_times = search(8, timeout=180)  # large dataset, extra time
-# Back up a good copy so we can recover if the next sync times out
-if len(logged_times) > 100:
-    backup_path = OUT_DIR / "logged_times.json.bak"
-    backup_path.write_text(json.dumps(logged_times, ensure_ascii=False))
-    print(f"  backed up {len(logged_times)} logged_times records")
-
-# The plain fetch above paginates newest-first and reliably gets recent months, but deep
-# pages reaching further back (2022-2024 history) have been hitting HTTP 504s from
-# Streamtime's side — confirmed via sync_meta.json errors — so the same ~12-month window
-# gets re-fetched every run and never gets further. Checkpointed deep-history backfill:
-# each run asks for one bounded slice strictly older than the oldest date reached so far,
-# merges it into the FULL accumulated set (this run's fetch + every prior run's progress —
-# not just this run's two fetches, or each run would forget what earlier runs backfilled),
-# and advances the checkpoint. If Streamtime's search doesn't support this date-comparison
-# query, this just yields zero records each run — no harm to the main fetch above.
-combined_by_id = {lt.get("id"): lt for lt in prev_logged_times if lt.get("id") is not None}
-for lt in logged_times:
-    if lt.get("id") is not None:
-        combined_by_id[lt["id"]] = lt  # fresh fetch wins for any id seen before (latest status)
-
-_lt_dates = [str((lt.get("date") or "")[:10]) for lt in logged_times if lt.get("date")]
-if _lt_dates and (logged_times_oldest_fetched is None or min(_lt_dates) < logged_times_oldest_fetched):
-    logged_times_oldest_fetched = min(_lt_dates)
-if logged_times_oldest_fetched:
-    print(f"  logged_times deep-history: fetching before {logged_times_oldest_fetched}...")
-    older = search(8, query=f'date < "{logged_times_oldest_fetched}"', timeout=120)
-    if older:
-        new_count = sum(1 for lt in older if lt.get("id") not in combined_by_id)
-        for lt in older:
-            if lt.get("id") is not None:
-                combined_by_id[lt["id"]] = lt
-        older_dates = [str((lt.get("date") or "")[:10]) for lt in older if lt.get("date")]
-        if older_dates:
-            logged_times_oldest_fetched = min(older_dates)
-        print(f"  logged_times deep-history: +{new_count} new older records, now back to {logged_times_oldest_fetched}")
-    else:
-        print(f"  logged_times deep-history: 0 records returned (query unsupported, or genuinely no older data)")
-logged_times = list(combined_by_id.values())
+# Logged time: an order-independent sweep of the whole view plus a recent-window fast path —
+# see scripts/logged_times_sweep.py for why the old "fetch until it stops" approach broke in
+# Oct 2026. Existing records are re-slimmed on load so the file shrinks on the first run.
+sweep_state_path = OUT_DIR / "logged_times_sweep.json"
+lt_by_id = {lt["id"]: lts.slim(lt) for lt in prev_logged_times if lt.get("id") is not None}
+lts.probe_recent_queries(API_BASE, HEADERS, sweep_state_path, errors)
+lts.recent(API_BASE, HEADERS, sweep_state_path, lt_by_id, errors)
+sweep_state = lts.sweep(API_BASE, HEADERS, sweep_state_path, lt_by_id, max_pages=40, errors=errors)
+logged_times = list(lt_by_id.values())
 # Note: search view 10 = quotes, view 11 = invoices (do not swap these)
 quotes       = search(10)
 invoices     = search(11)
@@ -417,17 +393,17 @@ counts = {
     "scheduled_todos": save("scheduled_todos.json", scheduled_todos,    load_existing("scheduled_todos.json")),
 }
 
-# Re-save progress with the logged_times deep-history checkpoint (the earlier write, right
-# after the phases/items backfill, happened before this checkpoint was computed).
-progress["logged_times_oldest_fetched"] = logged_times_oldest_fetched
-progress_path.write_text(json.dumps(progress, indent=2))
-
 meta = {
     "last_synced": datetime.now(timezone.utc).isoformat(),
     "record_counts": counts,
     "backfill_complete": backfill_complete,
     "detail_progress":  f"{len(detail_done)}/{len(fresh_jobs)} jobs have phases+items",
-    "logged_times_oldest_fetched": logged_times_oldest_fetched,
+    # Read by index.html's "Streamtime data through…" indicator: logged time is only known
+    # complete up to the last finished sweep pass, not up to the newest entry's date.
+    "logged_times_sweep": {k: sweep_state.get(k) for k in (
+        "last_complete_pass_at", "passes_completed", "total", "offset",
+        "skipped_pages_last_pass", "last_cycle_stop")},
+    "logged_times_recent_query": sweep_state.get("recent_query"),
     "errors": errors,
 }
 (OUT_DIR / "sync_meta.json").write_text(json.dumps(meta, indent=2))

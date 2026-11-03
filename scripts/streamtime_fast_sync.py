@@ -16,8 +16,9 @@ This script re-fetches just the cheap, fast-changing views so Done/To Do
 reflect Streamtime within ~15 minutes instead of up to an hour, without
 touching the job detail backfill or its progress tracker.
 
-Cost per run: ~15-20 API calls (well under the 720/hour limit even running
-4x/hour alongside the hourly full sync).
+Cost per run: ~35 API calls — scheduled todos and assignments, up to 8 pages of recent
+logged time, 25 pages of the full logged-time sweep (well under the 720/hour limit
+running 3x/hour alongside the hourly full sync's ~330).
 
 Requires STREAMTIME_API_KEY env var. Run via GitHub Actions, every 15 min.
 """
@@ -28,6 +29,8 @@ import time
 import urllib.request
 import urllib.error
 from pathlib import Path
+
+import logged_times_sweep as lts  # scripts/ is sys.path[0] when run as scripts/streamtime_fast_sync.py
 
 API_BASE = "https://api.streamtime.net/v1"
 API_KEY = os.environ["STREAMTIME_API_KEY"]
@@ -87,7 +90,11 @@ def search(view_id, query="", timeout=120):
                 return []
 
         if result is None:
-            break
+            # Every attempt was a 429. Returning the pages so far would let a partial list
+            # (e.g. page 1 of 2 of scheduled todos) overwrite the complete file.
+            errors.append({"resource": f"search?search_view={view_id}",
+                           "error": f"rate limited, gave up at offset {offset}"})
+            return []
         raw = result.get("searchResults", [])
         page = list(raw.values()) if isinstance(raw, dict) else raw
         all_records.extend(page)
@@ -124,17 +131,15 @@ prev_logged_times = load_existing("logged_times.json")
 prev_scheduled = load_existing("scheduled_todos.json")
 prev_assignments = load_existing("job_assignments.json")
 
-logged_times = search(8, timeout=180)
-# Merge onto the existing file rather than overwrite it — the full sync runs a checkpointed
-# deep-history backfill (logged_times can genuinely go back to 2022+, but Streamtime 504s on
-# deep pagination so it accumulates gradually across runs). This fetch is recent-only by
-# nature (newest-first, stops well before any deep timeout), so overwriting wholesale would
-# erase that accumulated history every 15 minutes.
-_combined = {lt.get("id"): lt for lt in prev_logged_times if lt.get("id") is not None}
-for lt in logged_times:
-    if lt.get("id") is not None:
-        _combined[lt["id"]] = lt
-logged_times = list(_combined.values())
+# Logged time: recent-window fast path (if the hourly probe found a working query) plus the
+# next slice of the order-independent full sweep. Both merge by id onto the existing file.
+# The old unbounded search(8) here re-read the same job-grouped first pages every 15 min and
+# burned the hourly rate limit doing it — see scripts/logged_times_sweep.py.
+_sweep_state = OUT_DIR / "logged_times_sweep.json"
+_by_id = {lt["id"]: lts.slim(lt) for lt in prev_logged_times if lt.get("id") is not None}
+lts.recent(API_BASE, HEADERS, _sweep_state, _by_id, errors)
+lts.sweep(API_BASE, HEADERS, _sweep_state, _by_id, max_pages=25, errors=errors)
+logged_times = list(_by_id.values())
 
 raw_scheduled = search(8, query="logged_time_status = 1", timeout=120)
 scheduled_todos = [{
