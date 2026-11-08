@@ -1661,6 +1661,39 @@ body.has-bg .sidebar:hover{background:rgba(250,248,243,.75);}
 body.dark.has-bg .main{background:rgba(18,18,20,.55);backdrop-filter:blur(34px) saturate(1.4);-webkit-backdrop-filter:blur(34px) saturate(1.4);}
 body.dark.has-bg .sidebar{background:rgba(20,20,22,.4);}
 body.has-bg #cc-splash{background:rgba(240,236,228,.4);backdrop-filter:blur(20px);}
+
+/* ══ v2.39 — To Do toolbar: compact chips with hover detail, no wrapping ══ */
+.todo-bar{flex-wrap:nowrap;gap:12px;min-width:0;}
+.person-switcher{min-width:0;flex-shrink:1;}
+.person-av{flex-shrink:0;}  /* was being squeezed into an oval on narrow windows */
+.person-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px;}
+.week-nav{margin-left:8px;flex-shrink:0;}
+.wlabel{white-space:nowrap;min-width:0;}
+.tb-chip{position:relative;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:999px;background:var(--off);border:1px solid var(--border);font-size:12px;color:var(--muted);white-space:nowrap;cursor:default;flex-shrink:0;transition:border-color .12s,background .12s;}
+.tb-chip:hover{border-color:#CFC8BA;background:var(--white);}
+.tb-chip b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums;}
+.tb-chip i{font-size:13px;}
+.tb-chip.clickable{cursor:pointer;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(76,175,80,.16);flex-shrink:0;}
+.tb-chip.is-stale .sync-dot{background:#E65100;box-shadow:0 0 0 3px rgba(230,81,0,.16);}
+.tb-chip.is-stale{color:#B84A00;}
+.tb-tip{display:none;position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1D1C19;color:#E9E6DF;border-radius:10px;padding:12px 14px;font-size:12px;line-height:1.5;white-space:normal;width:max-content;max-width:300px;z-index:300;box-shadow:var(--shadow-l);pointer-events:none;}
+.tb-tip::before{content:'';position:absolute;top:-5px;left:50%;transform:translateX(-50%) rotate(45deg);width:10px;height:10px;background:#1D1C19;border-radius:2px;}
+#todo-data-fresh:hover .tb-tip{display:block;}
+#todo-sum-tip{min-width:250px;max-width:none;}
+.todo-add-btn{white-space:nowrap;flex-shrink:0;}
+@media (max-width:1240px){
+  .tb-chip .tb-w,#todo-data-fresh .tb-chip-lbl{display:none;}  /* words drop; numbers + dot stay */
+  #todo-data-fresh{padding:0 9px;}
+  .todo-bar{gap:8px;padding-left:16px;padding-right:16px;}
+  .wlabel{min-width:0;padding:0 4px;}
+}
+/* The done divider read as background on the warm paper — give it a real edge */
+.global-divider{background:var(--white);border-top:1px solid var(--border);border-bottom:1px solid var(--border);box-shadow:0 1px 3px rgba(35,28,18,.06);}
+.global-divider .gd-label{color:var(--ink);font-weight:600;opacity:.75;}
+.global-divider .gd-handle{color:var(--muted);}
+.global-divider:hover{background:#FBFAF6;}
+body.dark .global-divider{background:#2A2A2E;border-color:#3A3A3F;}
 </style>
 </head>
 <body>
@@ -1721,8 +1754,8 @@ body.has-bg #cc-splash{background:rgba(240,236,228,.4);backdrop-filter:blur(20px
               </button>
               <button class="wbtn" id="wbtn-next"><i class="ti ti-chevron-right" style="font-size:13px;"></i></button>
             </div>
-            <div class="todo-summary" style="margin-left:16px;position:relative;cursor:default;" onmouseenter="showSumTip(this)" onmouseleave="hideSumTip(this)"><span id="todo-sum-text">To do: 0h · Done: 0h</span><div class="todo-sum-tip" id="todo-sum-tip" style="display:none;position:absolute;bottom:calc(100%+10px);left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;border-radius:8px;padding:14px 18px;white-space:nowrap;z-index:200;min-width:260px;box-shadow:0 4px 16px rgba(0,0,0,.25);font-size:12px;pointer-events:none;"></div></div>
-            <span id="todo-data-fresh" style="margin-left:12px;font-size:11px;color:var(--muted);cursor:pointer;" title="Click to reload the latest Streamtime data" onclick="toast('Fetching latest from Streamtime…','info');initStreamtime();"></span>
+            <div class="tb-chip" id="todo-sum-chip" onmouseenter="showSumTip(this)" onmouseleave="hideSumTip(this)"><i class="ti ti-clock-hour-4"></i><span id="todo-sum-text"><b>0h</b><span class="tb-w"> to do</span> · <b>0h</b><span class="tb-w"> done</span></span><div class="tb-tip" id="todo-sum-tip"></div></div>
+            <div class="tb-chip clickable" id="todo-data-fresh" onclick="toast('Fetching latest from Streamtime…','info');initStreamtime();" style="display:none;"></div>
             <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
               <!-- View toggle: List vs Calendar+Drawer -->
               <button class="wbtn" id="focus-btn" title="Focus on today (F)" onclick="toggleFocusToday()"><i class="ti ti-focus-2" style="font-size:13px;pointer-events:none;"></i></button>
@@ -1731,7 +1764,7 @@ body.has-bg #cc-splash{background:rgba(240,236,228,.4);backdrop-filter:blur(20px
                 <button class="tvt-btn" id="tvt-cal" onclick="setTodoView('calendar')" title="Calendar view"><i class="ti ti-calendar-week" style="font-size:12px;"></i></button>
               </div>
               <button class="wbtn" id="vsp-btn" title="View settings" onclick="toggleVSP(event)" style="padding:5px 7px;"><i class="ti ti-adjustments-horizontal" style="font-size:13px;pointer-events:none;"></i></button>
-              <button class="tb-btn ghost" onclick="openTodoModal(null,5)" style="font-size:11px;padding:6px 12px;">+ Add task</button>
+              <button class="d-action primary todo-add-btn" onclick="openTodoModal(null,5)"><i class="ti ti-plus" style="font-size:12px;"></i> Add task</button>
             </div>
           </div>
           <div class="todo-body">
@@ -4799,7 +4832,7 @@ function renderTodoCalendar(){
   const p=people[currentPerson];
   document.getElementById('current-av').textContent=p.initials;
   document.getElementById('current-av').style.background=p.color;
-  document.getElementById('current-name').textContent=p.name;
+  _setSwitcherName(p.name);
   const wrap=document.getElementById('day-cols');
   const banner=document.getElementById('todo-banner');
   if(banner){
@@ -5105,8 +5138,7 @@ function checkTodoOverflow(){_bucketCramped('dtodo-','.todo-bucket',ZONE_PAD_PX,
 function checkDoneOverflow(){_bucketUniform('ddone-','.done-bucket',DONE_PAD_PX,'done');}
 // Animate the divider/split to a target todo-zone height, then re-check buckets.
 function animateSplit(targetPx){
-  const usable=_todoUsableH();
-  targetPx=Math.max(80,Math.min(targetPx,usable-80));
+  targetPx=_clampSplit(targetPx);
   const todos=document.querySelectorAll('.day-todo');
   const gd=document.getElementById('global-divider');
   todos.forEach(el=>el.classList.add('animating'));
@@ -5148,12 +5180,35 @@ function showSumTip(el){
     const doneH=tasks.filter(t=>t.done).reduce((s,t)=>s+(t.hours||0),0);
     const colDate=new Date(weekMon);colDate.setDate(weekMon.getDate()+i);
     const dn=['Monday','Tuesday','Wednesday','Thursday','Friday'][i];
-    rows+=`<div style="color:#aaa;">${dn} ${colDate.getDate()}</div><div style="text-align:right;color:${todoH>0?'#fff':'#555'};">${todoH>0?formatHrs(todoH):'0h'}</div><div style="text-align:right;color:${doneH>0?'#4CAF50':'#555'};">${doneH>0?formatHrs(doneH):'0h'}</div>`;
+    rows+=`<div style="color:#BDB8AE;">${dn} ${colDate.getDate()}</div><div style="text-align:right;color:${todoH>0?'#fff':'#77736B'};">${todoH>0?formatHrs(todoH):'0h'}</div><div style="text-align:right;color:${doneH>0?'#7FD08A':'#77736B'};">${doneH>0?formatHrs(doneH):'0h'}</div>`;
   });
   rows+='</div>';
   tip.innerHTML=rows;tip.style.display='block';
 }
 function hideSumTip(el){const tip=document.getElementById('todo-sum-tip');if(tip)tip.style.display='none';}
+// Toolbar person switcher: "Ronan H." keeps the toolbar on one line yet still separates the two
+// Harrys/Biancas in the team; the full name is the hover title.
+function _setSwitcherName(full){
+  const el=document.getElementById('current-name');if(!el)return;
+  const parts=String(full||'').trim().split(/\s+/);
+  el.textContent=parts.length>1?`${parts[0]} ${parts[parts.length-1][0]}.`:(parts[0]||'');
+  el.title=full||'';
+}
+// Toolbar hours chip. The words collapse away on narrow windows (CSS .tb-w), numbers stay.
+function _setTodoSumText(todoH,doneH){
+  const el=document.getElementById('todo-sum-text');if(!el)return;
+  el.innerHTML=`<b>${formatHrs(todoH)||'0h'}</b><span class="tb-w"> to do</span> · <b>${formatHrs(doneH)||'0h'}</b><span class="tb-w"> done</span>`;
+}
+// Every write to todoSplitPx goes through here. A non-finite split silently breaks the board:
+// the browser drops "height:NaNpx" on each .day-todo and "top:NaNpx" on the divider, so cards
+// hang from the top at natural height and the Done divider vanishes (seen live, Nov 2026).
+// Also keeps the divider on screen — drags had a floor but no ceiling.
+function _clampSplit(px,min=80){
+  if(!Number.isFinite(px))px=Math.round((window.innerHeight-120)*.72);
+  const usable=_todoUsableH();
+  if(usable>200)px=Math.min(px,usable-60);  // only when the board is actually laid out
+  return Math.max(min,Math.round(px));
+}
 
 function renderTodo(){
   if(window._focusToday){renderFocusToday();return;}
@@ -5161,7 +5216,7 @@ function renderTodo(){
   const p=people[currentPerson];
   document.getElementById('current-av').textContent=p.initials;
   document.getElementById('current-av').style.background=p.color;
-  document.getElementById('current-name').textContent=p.name;
+  _setSwitcherName(p.name);
   // Person-viewing banner
   const banner=document.getElementById('todo-banner');
   if(banner){
@@ -5172,6 +5227,7 @@ function renderTodo(){
       banner.classList.add('hidden');
     }
   }
+  todoSplitPx=_clampSplit(todoSplitPx); // never build the columns from a bad split
   const wrap=document.getElementById('day-cols');wrap.innerHTML='';
   wrap.oncontextmenu=null; // re-wire each render
   wrap.addEventListener('contextmenu',ev=>{
@@ -5186,36 +5242,38 @@ function renderTodo(){
   // Week totals for summary bar (all tasks come from the ST-seeded store)
   let totalTodoH=0,totalDoneH=0;
   [1,2,3,4,5].forEach(d=>{(data[d]||[]).forEach(t=>{if(t.done)totalDoneH+=t.hours||0;else totalTodoH+=t.hours||0;});});
-  const sumEl=document.getElementById('todo-sum-text');
-  if(sumEl)sumEl.textContent=`To do: ${formatHrs(totalTodoH)||'0h'} · Done: ${formatHrs(totalDoneH)||'0h'}`;
-  // Data-freshness indicator — the done column can only show logged time that's in the latest
-  // Streamtime export. If today's completions aren't exported yet, this explains why they're
-  // missing (rather than it being a bug).
+  _setTodoSumText(totalTodoH,totalDoneH);
+  // Data-freshness chip — the done column can only show logged time that's in the latest
+  // Streamtime export. A short label sits in the toolbar; the full explanation is the hover tip.
   // Prefer the sync's sweep state: logged time is only known complete as of the last full pass.
   // The newest entry's date (fallback below) can't detect gaps — through Oct 2026 it showed a
   // green tick while ~90% of logged time was missing, because one entry was dated ahead.
   const freshEl=document.getElementById('todo-data-fresh');
   const _pass=stSweepState?.last_complete_pass_at?new Date(stSweepState.last_complete_pass_at):null;
-  if(freshEl&&stSweepState){
-    const ago=ms=>{const m=Math.round(ms/60000);return m<60?`${m} min ago`:m<1440?`${Math.round(m/60)}h ago`:`${Math.round(m/1440)}d ago`;};
+  let _fresh=null; // {stale, short, long}
+  if(stSweepState){
+    const ago=ms=>{const m=Math.round(ms/60000);return m<60?`${m}m ago`:m<1440?`${Math.round(m/60)}h ago`:`${Math.round(m/1440)}d ago`;};
     const stale=!_pass||(Date.now()-_pass)>4*3600000;
     const pct=stSweepState.total?Math.min(99,Math.round((stSweepState.offset||0)/stSweepState.total*100)):null;
-    const txt=!_pass?`Streamtime logged time catching up${pct!=null?` · ${pct}%`:''} — click to reload`
-      :stale?`Logged time last fully synced ${ago(Date.now()-_pass)} — click to reload`
-      :`Streamtime logged time complete as of ${ago(Date.now()-_pass)}`;
-    freshEl.innerHTML=`<i class="ti ti-${stale?'alert-circle':'check'}" style="font-size:11px;vertical-align:-1px;${stale?'color:#E65100;':''}"></i> ${txt}`;
-    freshEl.style.color=stale?'#E65100':'var(--muted)';
-  }else if(freshEl){
+    _fresh=!_pass?{stale,short:`Catching up${pct!=null?` ${pct}%`:''}`,long:'Streamtime logged time is still being re-read in full after a sync change, so Done columns and hours may be incomplete for now.'}
+      :stale?{stale,short:`Synced ${ago(Date.now()-_pass)}`,long:`Logged time was last fully re-read from Streamtime ${ago(Date.now()-_pass)} — recent completions may be missing.`}
+      :{stale,short:`Synced ${ago(Date.now()-_pass)}`,long:`All Streamtime logged time was re-read ${ago(Date.now()-_pass)}. Time logged since then appears after the next sync (every 15 min).`};
+  }else{
     let maxD='';
     stLoggedTimes.forEach(lt=>{const d=(lt.date||'').slice(0,10);if(d>maxD)maxD=d;});
     if(maxD){
       const md=new Date(maxD+'T12:00:00');
-      const todayStr=new Date().toISOString().slice(0,10);
-      const stale=maxD<todayStr;
+      const stale=maxD<new Date().toISOString().slice(0,10);
       const lbl=`${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][md.getDay()]} ${md.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][md.getMonth()]}`;
-      freshEl.innerHTML=`<i class="ti ti-${stale?'alert-circle':'check'}" style="font-size:11px;vertical-align:-1px;${stale?'color:#E65100;':''}"></i> Streamtime data through ${lbl}${stale?' · today not synced yet — click to reload':''}`;
-      freshEl.style.color=stale?'#E65100':'var(--muted)';
-    } else freshEl.textContent='';
+      _fresh={stale,short:`Data to ${lbl}`,long:`Streamtime data runs through ${lbl}.${stale?' Today’s logged time hasn’t synced yet.':''}`};
+    }
+  }
+  if(freshEl){
+    freshEl.style.display=_fresh?'':'none';
+    if(_fresh){
+      freshEl.classList.toggle('is-stale',_fresh.stale);
+      freshEl.innerHTML=`<span class="sync-dot"></span><span class="tb-chip-lbl">${_fresh.short}</span><div class="tb-tip">${_fresh.long}<div style="margin-top:6px;color:#A39E93;font-size:11px;">Click to reload now</div></div>`;
+    }
   }
 
   const _dow=new Date().getDay();
@@ -5544,10 +5602,9 @@ function createTaskCard(t,day,isDone){
           const task=arr.find(x=>x.id===t.id);
           if(task){task.hours=curHours;t.hours=curHours;card.dataset.hours=curHours;saveData();_refreshJobStats();}
           renderTodoHeader(day);
-          const sumEl=document.getElementById('todo-sum-text');
           let wTodo=0,wDone=0;
           [1,2,3,4,5].forEach(d=>{(getWeekData(currentPerson)[d]||[]).forEach(x=>{if(x.done)wDone+=x.hours||0;else wTodo+=x.hours||0;});});
-          if(sumEl)sumEl.textContent=`To do: ${formatHrs(wTodo)||'0h'} · Done: ${formatHrs(wDone)||'0h'}`;
+          _setTodoSumText(wTodo,wDone);
         }
       };
       document.addEventListener('mousemove',onMove);
@@ -6133,7 +6190,7 @@ function renderPSMenu(query){
       currentPerson=key;
       document.getElementById('current-av').style.background=p.color;
       document.getElementById('current-av').textContent=p.initials;
-      document.getElementById('current-name').textContent=p.name;
+      _setSwitcherName(p.name);
       renderTodo();
       document.getElementById('ps-menu').classList.remove('on');
     };
@@ -6265,7 +6322,11 @@ function updateWeekLabel(){
   const sunday=new Date(monday);
   sunday.setDate(monday.getDate()+6);
   const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const label=`${months[monday.getMonth()]} ${monday.getDate()} – ${months[sunday.getMonth()]} ${sunday.getDate()}`;
+  // NZ day-month order, and the month only once when the week doesn't cross one: "9–15 Nov",
+  // "27 Oct – 2 Nov" (was the longer US-style "Nov 9 – Nov 15").
+  const label=monday.getMonth()===sunday.getMonth()
+    ?`${monday.getDate()}–${sunday.getDate()} ${months[sunday.getMonth()]}`
+    :`${monday.getDate()} ${months[monday.getMonth()]} – ${sunday.getDate()} ${months[sunday.getMonth()]}`;
   document.getElementById('week-label').textContent=label;
 }
 
@@ -6555,11 +6616,24 @@ function closeChangelog(evt){
   localStorage.setItem('cc_seen_version',APP_VERSION);
 }
 
+// Window resize: re-clamp the split so the Done divider stays on screen (it used to keep the
+// height computed at page load, so shrinking the window could push the divider out of view).
+let _todoResizeT=null;
+window.addEventListener('resize',()=>{
+  clearTimeout(_todoResizeT);
+  _todoResizeT=setTimeout(()=>{
+    if(document.getElementById('view-todo')?.classList.contains('hidden'))return;
+    if(window._focusToday||_todoViewMode!=='list')return;
+    const next=_clampSplit(todoSplitPx);
+    if(next!==todoSplitPx){todoSplitPx=next;renderTodo();}
+    else positionGlobalDivider();
+  },150);
+});
 // Global divider drag handlers
 document.addEventListener('mousemove',e=>{
   if(!isDivDrag)return;
   const delta=e.clientY-divDragStartY;
-  todoSplitPx=Math.max(32,divDragStartPx+delta);
+  todoSplitPx=_clampSplit(divDragStartPx+delta,32);
   document.querySelectorAll('.day-todo').forEach(el=>el.style.height=todoSplitPx+'px');
   // Resize all task cards using absolute scale (same formula as renderTodo)
   document.querySelectorAll('.task-card[data-hours]').forEach(c=>{

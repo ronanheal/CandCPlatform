@@ -34,6 +34,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import logged_times_sweep as lts  # scripts/ is sys.path[0] when run as scripts/streamtime_sync.py
+from jobs_slim import slim_job
 
 API_BASE = "https://api.streamtime.net/v1"
 ST_SUBDOMAIN = "https://contentco.app.streamtime.net/api/v1"
@@ -179,14 +180,14 @@ def save(filename, data, previous=None, min_records=0):
             print(f"  SKIPPED {filename} — API returned 0, keeping {prev_count} existing")
             if prev_count > 0:
                 path = OUT_DIR / filename
-                path.write_text(json.dumps(previous, ensure_ascii=False))
+                path.write_text(json.dumps(previous, ensure_ascii=False, separators=(",", ":")))
             return max(prev_count, 0)
         if count < prev_count * 0.5:
             print(f"  SKIPPED {filename} — {count} records vs {prev_count} existing (API error?), keeping existing")
             return prev_count
     path = OUT_DIR / filename
     # Compact: the browser downloads these whole on every page load (indent=2 added ~30%).
-    path.write_text(json.dumps(data, ensure_ascii=False))
+    path.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")))
     print(f"  saved {filename} ({count} records)")
     return count
 
@@ -374,7 +375,8 @@ scheduled_todos = [{
 print(f"  scheduled_todos (status=Scheduled): {len(scheduled_todos)} records")
 
 # ── 6. Save everything ────────────────────────────────────────────────────────
-jobs = list(job_map.values())
+# Slimmed to the fields index.html reads — see scripts/jobs_slim.py (21.9 MB -> 3.5 MB).
+jobs = [slim_job(j) for j in job_map.values()]
 counts = {
     "organisation":    1 if organisation else 0,
     "users":           save("users.json",           users or [],        prev_users),
