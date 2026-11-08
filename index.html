@@ -6409,14 +6409,19 @@ async function _logTimeFromFup(){
     itemName:t.item||'',
     notes:t.title||'',
     hours,
-    date:new Date().toISOString().slice(0,10)
+    // Local date, not UTC (toISOString was yesterday before 1pm NZ). jobItemUser lets
+    // seedWeekFromST pair this entry with its scheduled block instead of a duplicate card.
+    date:(n=>`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`)(new Date()),
+    jobItemUser:t._stItemId?{jobItemId:t._stItemId}:null
   });
   renderTodo();_refreshJobStats();
 }
 
 function closeFup(yes){
   document.getElementById('fup').classList.remove('on');
-  _logTimeFromFup();
+  // Only log time on an explicit yes — "No thanks" used to log the pre-filled hours too,
+  // which duplicated time once Streamtime's own entry synced (bug audit H1, Nov 2026).
+  if(yes)_logTimeFromFup();
   if(yes){
     const t=_fupTask;
     const jobId=t&&t.job?(t.job.match(/^(\d+)/)||[])[1]:null;
