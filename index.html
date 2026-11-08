@@ -1694,6 +1694,50 @@ body.has-bg #cc-splash{background:rgba(240,236,228,.4);backdrop-filter:blur(20px
 .global-divider .gd-handle{color:var(--muted);}
 .global-divider:hover{background:#FBFAF6;}
 body.dark .global-divider{background:#2A2A2E;border-color:#3A3A3F;}
+
+/* ══ v2.39 — Design-system fixes (from docs/handover/DESIGN_SYSTEM.md §8) ══ */
+/* Text that sits on an ink-coloured fill. In dark mode --ink flips to near-white, so a literal
+   #fff on it vanished — 13 places did that (selected chips, calendar today, focus button…). */
+:root{--on-ink:#FFFFFF;}
+body.dark{--on-ink:#141416;}
+.todo-ov-btn,.fup-y,.cal-pop-day.cal-today,.cal-pop-day.cal-sel-week.cal-today,.wf-stage-btn.on,
+.cal-filter-chip.on,.rep-end-chip.on,#focus-btn.on{color:var(--on-ink);}
+.mc-day.mc-sel{color:var(--on-ink)!important;}
+/* The create-board side panel is a deliberately dark slab with white type — keep it dark */
+body.dark .cb-modal-left{background:#2C2C31;}
+body.dark #bulk-bar{background:#3A3A40!important;}
+/* Drop dock targets: hardcoded pink made the label unreadable in dark mode */
+.ss-day.drop-ok,.ss-person.drop-ok{background:rgba(237,30,36,.10);}
+/* Dark toasts kept one grey for every status — success/error/warn colours win again */
+body.dark .cc-toast.toast-success{background:#2E7D32;}
+body.dark .cc-toast.toast-error{background:#C62828;}
+body.dark .cc-toast.toast-warn{background:#B84A00;}
+/* Status pills: v2.31 meant them borderless, but the coloured variants still drew outlines */
+.inv-pill.draft,.inv-pill.sent,.inv-pill.paid,.inv-pill.approved,.inv-pill.overdue,.inv-pill.voided{border:none;}
+/* Re-warm the cool v2.31 leftovers that the v2.38 beige return missed (light mode only) */
+:root{
+  --shadow-s:0 1px 2px rgba(35,28,18,.05),0 2px 8px rgba(35,28,18,.045);
+  --shadow-m:0 2px 8px rgba(35,28,18,.06),0 12px 32px rgba(35,28,18,.10);
+  --shadow-l:0 8px 24px rgba(35,28,18,.10),0 32px 80px rgba(35,28,18,.18);
+}
+.main{box-shadow:0 4px 18px rgba(35,28,18,.05),0 18px 60px rgba(35,28,18,.09);}
+.day-todo.drop-hi{background:#FFFBF0;}
+.done-overflow-pill{background:rgba(250,248,243,.97);}
+.dcb-nbill-todo{background:#CFC6B6;}
+.s-btn{color:#948E83;}
+.modal-bg,.gs-bg,.cb-overlay,.inv-bg{background:rgba(35,28,18,.28);}
+body.dark .modal-bg,body.dark .gs-bg,body.dark .cb-overlay,body.dark .inv-bg{background:rgba(10,10,12,.45);}
+/* Streamtime data warning — was a dark-brown slab (dark-mode colours) on light paper */
+#st-data-warn{background:var(--warn-bg)!important;border-color:#F3CFA0!important;color:var(--warn-ink)!important;}
+#st-data-warn button{color:var(--warn-ink)!important;}
+/* Light-only tints that glared in dark mode */
+body.dark .item-pick-opt.selected{background:rgba(237,30,36,.14);color:#FF8A80;}
+body.dark .tcm-item.danger:hover{background:rgba(244,67,54,.14);}
+body.dark .cal-week-day.today,body.dark .cal-month-day.today{background:rgba(237,30,36,.08);}
+body.dark .paused-warn{background:var(--warn-bg);border-color:rgba(255,152,0,.3);color:var(--warn-ink);}
+body.dark #create-item-menu{background:var(--white)!important;}
+/* Print always uses the current light palette (the old print reset still had the v1 colours) */
+@media print{body.dark{--ink:#1D1C19;--muted:#8D887C;--white:#FFFFFF;--off:#F4F2EC;--border:#E2DDD2;--faint:#EBE7DE;--on-ink:#FFFFFF;}}
 </style>
 </head>
 <body>
@@ -2109,7 +2153,7 @@ body.dark .global-divider{background:#2A2A2E;border-color:#3A3A3F;}
           <div class="r-filter-row" style="padding:14px 28px;border-bottom:1px solid var(--border);flex-shrink:0;gap:10px;">
             <button class="detail-back" onclick="closeBoardDetail()" style="margin-right:8px;"><i class="ti ti-arrow-left" style="font-size:12px;"></i> Boards</button>
             <span id="bd-title" style="font-family:var(--display);font-size:18px;font-weight:400;flex:1;"></span>
-            <span id="bd-type-badge" style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:var(--ink);color:#fff;padding:3px 8px;border-radius:2px;"></span>
+            <span id="bd-type-badge" style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:var(--ink);color:var(--on-ink);padding:3px 8px;border-radius:2px;"></span>
           </div>
           <div id="board-detail-body" style="flex:1;overflow:auto;padding:24px 28px;"></div>
         </div>
@@ -4205,7 +4249,7 @@ function renderDashboard(){
     const moreLink=items.length>cap&&key?`<div class="att-row" style="font-size:11.5px;color:var(--muted);cursor:pointer;font-weight:500;" onclick="_dashExpanded['${key}']=${expanded?'false':'true'};renderDashboard()">${expanded?'Show fewer':'Show all '+items.length+' ↓'}</div>`:'';
     return`<div style="flex:1;min-width:220px;background:var(--white);border:1px solid var(--border);border-left:3px solid ${color};border-radius:12px;padding:13px 15px;box-shadow:var(--shadow-s);">
     <div style="display:flex;align-items:center;gap:7px;margin-bottom:9px;">
-      ${icon?`<span style="width:22px;height:22px;border-radius:7px;background:color-mix(in srgb,${color} 11%,white);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="ti ${icon}" style="font-size:12px;color:${color};"></i></span>`:''}
+      ${icon?`<span style="width:22px;height:22px;border-radius:7px;background:color-mix(in srgb,${color} 13%,var(--white));display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="ti ${icon}" style="font-size:12px;color:${color};"></i></span>`:''}
       <span style="font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink);">${title}</span>
       <span style="margin-left:auto;font-size:10px;font-weight:600;color:var(--muted);background:var(--off);border:1px solid var(--faint);border-radius:10px;padding:1px 8px;">${items.length}</span>
     </div>
@@ -10118,7 +10162,7 @@ function renderSettings(){
           <div style="display:flex;flex-wrap:wrap;gap:6px;">
             ${!allTeams.length?'<span style="font-size:12px;color:var(--muted);">No teams defined yet — add team names in the Team tab.</span>':allTeams.map(tn=>{
               const on=myT.includes(tn);
-              return`<button onclick="toggleDashTeam('${tn.replace(/'/g,"\\'")}');renderSettings()" class="filter-btn" style="cursor:pointer;font-size:12px;${on?'background:var(--ink);color:#fff;border-color:var(--ink);':''}">${on?'✓ ':''}${tn}</button>`;
+              return`<button onclick="toggleDashTeam('${tn.replace(/'/g,"\\'")}');renderSettings()" class="filter-btn" style="cursor:pointer;font-size:12px;${on?'background:var(--ink);color:var(--on-ink);border-color:var(--ink);':''}">${on?'✓ ':''}${tn}</button>`;
             }).join('')}
           </div>
         </div>
@@ -10131,7 +10175,7 @@ function renderSettings(){
               const on=!dh.includes(k);
               return`<div class="sett-row">
                 <div><div class="sett-row-lbl">${lbl}</div><div class="sett-row-sub">${desc}</div></div>
-                <button onclick="toggleDashBlock('${k}');renderSettings()" class="filter-btn" style="cursor:pointer;font-size:12px;${on?'background:var(--ink);color:#fff;border-color:var(--ink);':''}">${on?'✓ On':'Off'}</button>
+                <button onclick="toggleDashBlock('${k}');renderSettings()" class="filter-btn" style="cursor:pointer;font-size:12px;${on?'background:var(--ink);color:var(--on-ink);border-color:var(--ink);':''}">${on?'✓ On':'Off'}</button>
               </div>`;
             }).join('')}
           </div>
