@@ -3204,6 +3204,12 @@ const CHANGELOG=[
     'New: leave. Add time away in Settings → Team → a person. Those days show "Away" on To Do and Schedule, and capacity and utilisation leave them out.',
     'Time tab: group entries by person, job, client or week, and export what you\'re looking at to CSV.',
     'Keyboard shortcuts: J new job, Q new quote, E expense, L add task — press ? to see them all.',
+    'New quotes have line items: they fill from the job plan, you can add or edit lines, and add a % or $ discount — subtotal, GST and total are worked out for you and the preview matches.',
+    'Invoices can be created from the job plan, an approved quote, or logged time in a date range (hours × item rate). Record part payments — the balance updates and it\'s marked Paid once fully paid.',
+    'Schedule: switch between People and Jobs, and look 1, 2 or 4 weeks ahead.',
+    'Rate cards: set up client rates in Settings → Job items and pick one in a job\'s settings. They price items added in the platform; Streamtime items keep their Streamtime rates.',
+    'Add and edit now use the same task box, and the To Do toolbar is simpler: pick the week from the date, and switch Today / Week / Calendar in one place. Dragging a task between days to split it shows a clearer split handle.',
+    'Fixes: unpriced items no longer show "$NaN" or count as 1 hour, and invoice buttons always act on the invoice you opened.',
     'Smaller polish: every table header looks the same, the Data settings page has proper icons, no emoji in system messages, and task cards lost the dot icon to give titles more room.',
   ]},
   {version:'2.41.0',date:'12 Nov 2026',title:'Add task logs time too, a timer, and one consistent look',items:[
@@ -12467,7 +12473,7 @@ function doInvCtx(a){
   document.getElementById('inv-ctx').classList.remove('on');
   const id=_invCtxJobId;if(!id)return;
   const j=jobs.find(x=>x.id===id);if(!j)return;
-  if(a==='view'){const prev=activeJobId;activeJobId=id;if(!j.invNum){j.invNum=_nextInvNum();_keepJobEdits(j,['invNum']);}openInvoice();if(id!==prev)activeJobId=prev;}
+  if(a==='view'){activeJobId=id;if(!j.invNum){j.invNum=_nextInvNum();_keepJobEdits(j,['invNum']);}openInvoice();}
   else if(a==='openjob'){openJobDetail(id);}
   else if(a==='draft'||a==='sent'||a==='paid'){saveInvStatusForJob(id,a);}
   else if(a==='delete'){
@@ -12658,8 +12664,8 @@ function openInvoiceForJob(id){
   const j=jobs.find(x=>x.id===id);if(!j)return;
   if(!j.invNum){j.invNum=_nextInvNum();if(!j.invIssueDate)j.invIssueDate=_localISO();if(!j.invDueDate){const _dd=new Date();_dd.setDate(_dd.getDate()+30);j.invDueDate=_localISO(_dd);}_keepJobEdits(j,['invNum','invIssueDate','invDueDate']);}
   openInvoice();
-  // restore activeJobId if we didn't open the job detail
-  if(id!==prev)activeJobId=prev;
+  // Keep activeJobId on this job while its invoice is open: the modal's status, print and
+  // Xero buttons all act on activeJobId, so restoring it here made them hit the wrong job.
 }
 function saveInvStatusForJob(jobId,val){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
