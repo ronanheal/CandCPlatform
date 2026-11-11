@@ -3179,8 +3179,18 @@ const MY_PERSON=(()=>{try{return localStorage.getItem('cc_me')||'st_114330';}cat
 let currentPerson=MY_PERSON;
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:MY_PERSON==='st_114330'?'Ronan Heal':'…',initials:MY_PERSON==='st_114330'?'RH':'?',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true,_stub:true};
-const APP_VERSION='2.41.0';
+const APP_VERSION='2.42.0';
 const CHANGELOG=[
+  {version:'2.42.0',date:'12 Nov 2026',title:'A new look, job templates, My items and leave',items:[
+    'A fresh design language: sharper headings, softer cards, one header layout on every page, warm focus rings and gentle hover feedback. Dark mode was gone through screen by screen so every icon and label follows the theme.',
+    'Needs attention on the Dashboard is redesigned — each item shows what it is and who it\'s for, with a coloured pill for how urgent it is.',
+    'New: job templates. On any job use ⋮ → Save as template, then pick it under "Start from template" when creating a job — phases, items, hours, rates, labels and brief come with it.',
+    'New: My items. A button on the To Do toolbar opens your assigned job items that aren\'t on this week\'s board yet. Drag one onto a day, or use its button, to schedule it.',
+    'New: leave. Add time away in Settings → Team → a person. Those days show "Away" on To Do and Schedule, and capacity and utilisation leave them out.',
+    'Time tab: group entries by person, job, client or week, and export what you\'re looking at to CSV.',
+    'Keyboard shortcuts: J new job, Q new quote, E expense, L add task — press ? to see them all.',
+    'Smaller polish: every table header looks the same, the Data settings page has proper icons, no emoji in system messages, and task cards lost the dot icon to give titles more room.',
+  ]},
   {version:'2.41.0',date:'12 Nov 2026',title:'Add task logs time too, a timer, and one consistent look',items:[
     'Add task can now log time: tick "Already done — log the time", enter the time spent, done. Press L anywhere or use the + in the sidebar to add a task.',
     'New: Start timer. Add a task and hit Start timer, or use Create → Start timer on a job. A pill at the bottom of the screen shows the clock and keeps going across pages and reloads. Stop it and the task is marked done with the time logged (rounded up to 5 minutes).',
