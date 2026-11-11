@@ -109,7 +109,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:13
 .sched-av.on{opacity:1;filter:none;box-shadow:0 0 0 2px var(--off),0 0 0 3.5px var(--ink);}
 .sched-av:hover{transform:translateY(-1px);opacity:1;}
 .dash-rule{width:56px;height:3px;background:var(--red);margin:18px 0 30px;}
-.att-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}
+.att-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px;}
 .kpi-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:32px;}
 .kpi{background:var(--white);border:1px solid var(--border);border-radius:var(--r-card);padding:20px 22px;box-shadow:var(--shadow-s);transition:box-shadow .18s,transform .18s;}
 .kpi:hover{box-shadow:var(--shadow-m);}
@@ -308,14 +308,14 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 .p-btn:hover{border-color:var(--ink);}
 .phase{margin-bottom:4px;}
 .phase-head{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--ink);color:var(--white);cursor:pointer;user-select:none;}
-.ph-chv{font-size:14px;color:#555;transition:transform .2s;}
+.ph-chv{font-size:14px;color:var(--muted);transition:transform .2s;}
 .ph-n{font-size:13px;font-weight:400;letter-spacing:.02em;flex:1;}
-.ph-cnt{font-size:11px;color:#666;display:none;}
+.ph-cnt{font-size:11px;color:var(--muted);display:none;}
 .ph-inf{display:flex;gap:12px;align-items:center;margin-left:auto;}
 .ph-meta{font-size:11px;color:#888;white-space:nowrap;}
 .ph-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
 .ph-dot.c{background:var(--ok);}.ph-dot.p{background:var(--red);}
-.ph-mb{font-size:14px;color:#555;cursor:pointer;padding:2px 4px;border-radius:8px;display:flex;}
+.ph-mb{font-size:14px;color:var(--muted);cursor:pointer;padding:2px 4px;border-radius:8px;display:flex;}
 .ph-mb:hover{color:#fff;background:#333;}
 .phase.collapsed .ph-chv{transform:rotate(-90deg);}
 .phase.collapsed .ph-cnt{display:inline;}
@@ -445,7 +445,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 .r-job-hd{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-bottom:8px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:2fr 1fr 1fr 90px 80px;gap:12px;margin-bottom:4px;}
 .r-client-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
 .r-client-card{background:var(--white);border:1px solid var(--border);padding:20px;cursor:pointer;transition:border-color .15s;}
-.r-client-card:hover{border-color:#bbb;}
+.r-client-card:hover{border-color:var(--muted);}
 .r-export-btn{background:var(--black);color:var(--white);border:none;padding:7px 14px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-family:var(--font);cursor:pointer;border-radius:8px;margin-left:auto;}
 .r-export-btn:hover{opacity:.85;}
 
@@ -526,16 +526,16 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 .bdet-col:hover .bdet-col-del{opacity:1;}
 .bdet-col-cards{flex:1;overflow-y:auto;padding:10px 10px 0;}
 .bdet-card{background:var(--white);border:1px solid var(--border);padding:12px 12px 10px;margin-bottom:8px;transition:border-color .15s,box-shadow .15s;font-size:13px;position:relative;}
-.bdet-card:hover{border-color:#bbb;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.bdet-card:hover{border-color:var(--muted);box-shadow:0 2px 8px rgba(0,0,0,.06);}
 .bdet-card-del{position:absolute;top:6px;right:6px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 3px;opacity:0;transition:opacity .1s;line-height:1;}
 .bdet-card:hover .bdet-card-del{opacity:1;}
 .bdet-card .bc-name{font-weight:400;margin-bottom:3px;padding-right:18px;line-height:1.4;}
 .bdet-card .bc-client{font-size:11px;color:var(--muted);}
 .bdet-col-footer{padding:8px 10px 10px;flex-shrink:0;}
 .bdet-add-btn{display:flex;align-items:center;gap:6px;width:100%;border:1px dashed var(--border);background:none;padding:8px 10px;font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s;font-family:var(--font);}
-.bdet-add-btn:hover{background:var(--white);border-color:#bbb;color:var(--ink);}
+.bdet-add-btn:hover{background:var(--white);border-color:var(--muted);color:var(--ink);}
 .bdet-add-col-btn{display:flex;align-items:center;gap:6px;border:1px dashed var(--border);background:var(--off);padding:10px 14px;font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s;font-family:var(--font);white-space:nowrap;align-self:flex-start;flex-shrink:0;margin-top:0;min-width:44px;}
-.bdet-add-col-btn:hover{background:var(--white);border-color:#bbb;color:var(--ink);}
+.bdet-add-col-btn:hover{background:var(--white);border-color:var(--muted);color:var(--ink);}
 /* ── Add card menu ── */
 .add-card-menu{position:fixed;background:var(--white);border:1px solid var(--border);box-shadow:0 8px 28px rgba(0,0,0,.14);z-index:1050;min-width:160px;display:none;padding:4px 0;}
 .add-card-menu.on{display:block;}
@@ -588,7 +588,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 .modal{background:var(--white);border-radius:14px;width:600px;max-width:96vw;overflow:hidden;box-shadow:var(--shadow-l);}
 .modal-hd{background:var(--ink);color:var(--white);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;}
 .modal-hd-title{font-family:var(--display);font-size:15px;font-weight:600;letter-spacing:-.01em;}
-.modal-x{background:none;border:none;color:#666;font-size:18px;cursor:pointer;}
+.modal-x{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;}
 .modal-x:hover{color:#fff;}
 .modal-bd{padding:22px 24px;}
 .field{margin-bottom:15px;}
@@ -701,7 +701,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 /* ── Team member card grid ── */
 .team-member-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;}
 .tm-card{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:14px 16px;cursor:pointer;transition:border-color .12s,box-shadow .12s;display:flex;align-items:center;gap:12px;}
-.tm-card:hover{border-color:#bbb;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.tm-card:hover{border-color:var(--muted);box-shadow:0 2px 8px rgba(0,0,0,.06);}
 .tm-card.archived{opacity:.5;}
 .tm-av{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff;flex-shrink:0;}
 .tm-info{flex:1;min-width:0;}
@@ -1001,7 +1001,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 .task-tooltip.on{display:block;}
 .tt-title{color:#fff;font-weight:500;margin-bottom:6px;font-size:13px;line-height:1.3;}
 .tt-row{display:flex;gap:8px;margin-top:2px;font-size:11px;}
-.tt-label{color:#666;min-width:44px;flex-shrink:0;}
+.tt-label{color:var(--muted);min-width:44px;flex-shrink:0;}
 .tt-urgent{color:var(--red);font-size:10px;margin-left:4px;letter-spacing:.04em;text-transform:uppercase;}
 
 /* ── Jobs sub-nav ─────────────────────────────────────────── */
@@ -1013,7 +1013,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 .jt-panel.scroll{overflow-y:auto;}
 /* ── Global restyled select (.cc-select) ──────────────────── */
 .cc-select{appearance:none;-webkit-appearance:none;background:var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center;border:1px solid var(--border);padding:6px 28px 6px 10px;font-size:12px;font-family:var(--font);color:var(--ink);cursor:pointer;border-radius:8px;outline:none;transition:border-color .12s,box-shadow .12s;min-height:30px;white-space:nowrap;}
-.cc-select:hover{border-color:#bbb;background-color:var(--off);}
+.cc-select:hover{border-color:var(--muted);background-color:var(--off);}
 .cc-select:focus{border-color:var(--ink);box-shadow:0 0 0 2px rgba(0,0,0,.06);}
 /* Apply cc-select style to all filter-btn selects too */
 select.filter-btn{appearance:none;-webkit-appearance:none;background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center;padding-right:28px;text-transform:none;letter-spacing:0;font-size:12px;color:var(--ink);}
@@ -1101,7 +1101,7 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:transparent
 .ph-nonbill-badge{font-size:10px;color:var(--muted);margin-left:6px;cursor:default;display:inline-flex;align-items:center;gap:3px;}
 /* Rich board job cards */
 .bc-rich{cursor:pointer;transition:box-shadow .15s,border-color .15s;}
-.bc-rich:hover{border-color:#bbb;box-shadow:0 3px 12px rgba(0,0,0,.08);}
+.bc-rich:hover{border-color:var(--muted);box-shadow:0 3px 12px rgba(0,0,0,.08);}
 .bc-header-row{display:flex;align-items:center;gap:6px;margin-top:3px;margin-bottom:6px;}
 .bc-id{font-size:10px;color:var(--muted);}
 .bc-bill-dot{width:6px;height:6px;border-radius:50%;background:var(--ok);display:inline-block;}
@@ -1288,7 +1288,7 @@ tr:hover .i-todo-btn{opacity:1;}
 .plan-row-actions .add-i-row{flex:1;border-radius:0;}
 .item-editable{cursor:pointer;border-radius:8px;padding:1px 4px;transition:background .1s;}
 .item-editable:hover{background:var(--off);}
-.item-edit-inp{width:72px;border:1px solid var(--ink);border-radius:8px;padding:2px 5px;font-size:12px;font-family:var(--font);outline:none;background:#fff;}
+.item-edit-inp{width:72px;border:1px solid var(--ink);border-radius:8px;padding:2px 5px;font-size:12px;font-family:var(--font);outline:none;background:var(--white);color:var(--ink);}
 /* d-meta-line with badge */
 #d-meta-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
 
@@ -1911,11 +1911,85 @@ body.dark .hp-card-eyebrow{color:#D9B48A;}
 .tm-modal{overflow-x:hidden;}
 .tm-hd-personal{display:none!important;}
 #td-save-btn .ti-chevron-down{display:none;}
+/* Dark mode: controls and icons follow the theme */
+.wbtn,.tvt-btn,.sched-pick-btn,.mini-cal-nav-btn,.item-editable{color:var(--ink);}
+body.dark{--red:#F04A4F;}
+body.dark .day-done-empty{color:var(--muted);}
+body.dark .s-tip{color:var(--ink);}
+body.dark .att-ico,body.dark .att-count,body.dark .att-val{color:color-mix(in srgb,var(--att) 55%,#fff)!important;}
+body.dark .att-ico,body.dark .att-count,body.dark .att-val{background:color-mix(in srgb,var(--att) 22%,var(--white))!important;}
+/* Table headers: one style in every list */
+.jobs-table thead th,.inv-th,.time-table thead th,#exp-list-wrap thead th,.exp-t thead th,.qinv-head-row,.prog-table thead th{background:var(--off)!important;color:var(--muted)!important;font-size:10.5px!important;font-weight:500!important;letter-spacing:.08em!important;text-transform:uppercase!important;border-bottom:1px solid var(--border)!important;}
+/* Needs attention (redesign) */
+.att-grid{align-items:start;}
+.att-card{min-width:0;background:var(--white);border:1px solid var(--border);border-radius:var(--r-card);padding:14px 14px 8px;box-shadow:var(--shadow-s);}
+.att-hd{display:flex;align-items:center;gap:10px;padding:0 4px 8px;}
+.att-ico{width:28px;height:28px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--att) 14%,var(--white));color:var(--att);flex-shrink:0;font-size:14px;}
+.att-title{font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;}
+.att-count{margin-left:auto;font-size:11px;font-weight:600;color:var(--att);background:color-mix(in srgb,var(--att) 12%,var(--white));border-radius:999px;padding:2px 9px;}
+.att-row2{display:flex;align-items:center;gap:12px;padding:8px 6px;border-radius:10px;}
+.att-row2.click{cursor:pointer;}
+.att-row2.click:hover{background:var(--off);}
+.att-main{min-width:0;flex:1;}
+.att-l1{font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.att-l2{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+.att-val{font-size:11.5px;font-weight:600;color:var(--att);background:color-mix(in srgb,var(--att) 11%,var(--white));border-radius:999px;padding:3px 9px;white-space:nowrap;font-variant-numeric:tabular-nums;flex-shrink:0;}
+.att-more{display:inline-flex;align-items:center;gap:4px;margin:4px 0 2px 4px;background:none;border:none;color:var(--muted);font:500 12px var(--font);cursor:pointer;padding:4px 6px;border-radius:8px;}
+.att-more:hover{background:var(--off);color:var(--ink);}
 /* Check-in faces (drawn, not emoji) */
 .hp-card-face span{background:transparent!important;border:none!important;box-shadow:none!important;width:auto!important;height:auto!important;}
 .hp-card-face svg{display:block;filter:drop-shadow(0 1px 1.5px rgba(35,28,18,.18));transition:transform .15s;}
 .hp-card-face:hover svg{transform:translateY(-2px) scale(1.07);}
 .hp-done svg{display:block;}
+
+/* ═══ Design language v2 (v2.42) ═══════════════════════════════════════════════════════════
+   Display type in Inter Tight (already loaded), body in Inter with its tidier alternates;
+   softer layered card shadows on a 16px radius; one header rhythm for every page; quiet
+   hover feedback on anything clickable; warm focus rings. */
+:root{
+  --display:'Inter Tight','Inter',-apple-system,sans-serif;
+  --r-card:16px;
+  --shadow-s:0 1px 1px rgba(35,28,18,.03),0 2px 6px rgba(35,28,18,.045);
+  --shadow-m:0 1px 2px rgba(35,28,18,.04),0 6px 18px rgba(35,28,18,.08);
+  --shadow-l:0 4px 12px rgba(35,28,18,.08),0 24px 60px rgba(35,28,18,.16);
+  --border:#E5E0D6;
+}
+body.dark{--border:#38383D;--shadow-s:0 1px 2px rgba(0,0,0,.35);--shadow-m:0 4px 16px rgba(0,0,0,.4);}
+body{font-feature-settings:"cv11","ss01","ss03";}
+/* Page headers: one rhythm everywhere */
+.view-title,.boards-head,.sett-tab-hd{font-family:var(--display)!important;font-size:27px!important;font-weight:700!important;letter-spacing:-.035em!important;line-height:1.15!important;}
+.view-sub{margin-top:5px!important;color:var(--muted)!important;}
+.dash-greeting{font-family:var(--display)!important;font-size:34px!important;font-weight:700!important;letter-spacing:-.04em!important;}
+.detail-title{font-family:var(--display)!important;font-size:26px!important;font-weight:700!important;letter-spacing:-.035em!important;}
+.section-label{font-size:11px!important;font-weight:600!important;letter-spacing:.1em!important;color:var(--muted)!important;}
+/* Numbers that matter read big and tight */
+.kpi-val,.r-kpi-val,.time-stat .ts-val,.stat-val{font-family:var(--display)!important;font-weight:700!important;letter-spacing:-.035em!important;}
+.kpi-val{font-size:32px!important;}
+.kpi-label,.r-kpi-lbl,.time-stat .ts-lbl,.stat-label{font-weight:600!important;letter-spacing:.09em!important;}
+/* Cards: one surface language */
+.kpi,.r-kpi,.att-card,.time-stat,.client-card-full,.team-card,.hp-card,.r-section,.sett-card,.bc-card{border-radius:var(--r-card)!important;box-shadow:var(--shadow-s)!important;border:1px solid var(--border)!important;}
+.kpi,.att-card,.client-card-full,.team-card{transition:box-shadow .18s ease,transform .18s ease,border-color .18s;}
+.client-card-full:hover,.team-card:hover,.kpi:hover{box-shadow:var(--shadow-m)!important;transform:translateY(-1px);}
+/* Lists: comfortable rows with a warm hover */
+.jobs-table tbody tr,.inv-table tbody tr,.time-table tbody tr,#exp-list-wrap tbody tr{transition:background .12s;}
+.jobs-table tbody tr:hover td,.inv-table tbody tr:hover td,#exp-list-wrap tbody tr:hover td,.qinv-card-head:hover{background:color-mix(in srgb,var(--off) 70%,var(--white))!important;}
+.jobs-table tbody td,.inv-td,#exp-list-wrap tbody td{border-bottom:1px solid var(--faint)!important;}
+/* Tabs: one style — muted, ink when active, short red underline */
+.jsn-tab,.d-tab,.r-subtab{color:var(--muted)!important;border-bottom-width:2px!important;}
+.jsn-tab:hover,.d-tab:hover,.r-subtab:hover{color:var(--ink)!important;}
+.jsn-tab.on,.d-tab.on,.r-subtab.on{color:var(--ink)!important;border-bottom-color:var(--red)!important;}
+/* Controls: warm focus ring, gentle lift on primary */
+.form-inp:focus,.cc-select:focus,.field input:focus,.field select:focus,.field textarea:focus,.tm-title-inp:focus,.tm-hours-inp:focus,.tm-day-sel:focus,.jobs-search:focus-within{border-color:var(--ink)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 14%,transparent)!important;outline:none;}
+.d-action,.tm-btn-save,.modal-save,.modal-ok{transition:transform .12s ease,box-shadow .15s,border-color .15s,background .15s!important;}
+.d-action.primary:hover,.tm-btn-save:hover,.modal-save:hover,.modal-ok:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(25,23,20,.18)!important;}
+.d-action:active,.tm-btn-save:active,.modal-save:active{transform:translateY(0) scale(.98);}
+/* Pills and badges: one shape */
+.inv-pill,.wf-badge,.exp-badg,.i-badge,.task-status{border-radius:999px!important;font-weight:600!important;letter-spacing:.04em!important;}
+/* Toasts: dark capsule with a coloured icon */
+.cc-toast{border-radius:14px!important;box-shadow:var(--shadow-l)!important;font-weight:500;}
+/* Modals: roomier header, softer entrance */
+.modal-hd,.tm-hd{padding:20px 24px 14px!important;}
+.modal-hd-title,.tm-hd-title{font-family:var(--display)!important;font-size:17px!important;font-weight:700!important;letter-spacing:-.02em!important;}
 </style>
 </head>
 <body>
@@ -1925,7 +1999,7 @@ body.dark .hp-card-eyebrow{color:#D9B48A;}
     <svg class="s-logo" viewBox="0 0 621.5 266.3" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M546.7,26.9c14.2,0,24.7,10,28.4,37.9c0.5,9.5,5.3,16.9,14.2,16.9c13.2,0,32.1-12.6,32.1-29.5c0-25.3-25.3-44.8-63.7-44.8c-59,0-104.6,43.4-127.1,95c-12.6,28.9-20,62.7-16.6,94.2c2.1,19.5,9.9,39.1,24.9,51.7c-19.3,2.3-53.8-15.3-81.8-42.5c23.2-21.6,41.8-48,54.4-77c3.7-8.6,8.7-21.6,3.4-30.6c-4.2-7.2-14.6-6.8-21.4-4.2c-16,6.2-14.5,22.1-17.5,36.2c-4.8,23.3-13.2,46.3-29.7,63.9c-25.3-26.5-45.7-55.3-58.5-78.6c43.3-17.2,72.8-28.1,72.8-67c0-31.3-27.9-48.5-58-48.5c-35.7,0-67.3,26-67.3,70.2c0,15.5,4.3,30.7,11.9,44.1c-15.8,4.9-31.1,11.9-43.7,22.8c-13.9,12.1-24,28.8-35.2,43.3c-18,23.3-45.6,57.7-79.3,53.3c-31-4-35.8-37-35.8-62.8c0-64.2,35.8-145.3,80-145.3c14.2,0,24.7,10,28.4,37.9c0.5,9.5,5.3,16.8,14.2,16.8c13.2,0,32.1-12.6,32.1-29.5c0-25.3-25.2-44.8-63.7-44.8C54.2,6.2,0,102,0,181.5c0,59,34.7,80.6,71.6,80.6c37.2,0,76.4-13.5,108.2-56.8c4.6,29.1,28.5,55.4,72.6,55.4c29.7,0,51.3-8.4,77.4-30.5c0,0,11.3,8.7,12.4,9.5c19.4,12.8,42.6,19.4,65.3,22.9c25.4,3.9,51.4,5,77,2.5c0.3,0,0.5-0.1,0.8-0.1c23.3-2.4,46.9-7.5,67.2-20c19.5-12,35.3-29.2,47.6-48.4c3.3-5.1,2.4-11.9-2.1-16.1c-2.9-2.7-7.5-2.2-9.9,1c-11.6,15.7-27.3,32.4-44.7,43c-10.9,6.7-22.5,10.9-34.2,10.9c-35.3,0-42.7-29.5-42.7-63.2C466.7,108,502.5,26.9,546.7,26.9z M299.7,15.6c18.9,0,26.9,13.2,26.9,28.1c0,29.3-21.6,49.3-45.7,60.1c-8-12.4-13.2-30.9-13.2-45.3C267.7,32.9,283.3,15.6,299.7,15.6z M269.7,238.6c-31.7,0-52.1-23.7-52.1-50.5c0-38.5,30.9-57.3,37.7-58.1c18,30.9,38.1,62.1,63.7,89.8C305.3,231,290.5,238.6,269.7,238.6z"/></svg>
     <div class="s-nav">
       <div class="s-btn" onclick="openGlobalSearch()"><i class="ti ti-search"></i><span class="s-tip">Search (⌘K)</span></div>
-      <div class="s-btn" id="snav-logtime" onclick="_getTimer()?stopTimer():openTodoModal(null,_todayDayNum())"><i class="ti ti-square-plus"></i><span class="s-tip">Add task (L) · stops a running timer</span></div>
+      <div class="s-btn" id="snav-logtime" onclick="_getTimer()?stopTimer():openTodoModal(null,_todayDayNum())"><i class="ti ti-square-plus"></i><span class="s-tip">Add task (L)</span></div>
       <div class="s-btn on" id="snav-dashboard" onclick="navTo('dashboard')"><i class="ti ti-grid-dots"></i><span class="s-tip">Dashboard</span></div>
       <div class="s-btn" id="snav-todo" onclick="navTo('todo')"><i class="ti ti-checklist"></i><span class="s-tip">To Do</span></div>
       <div class="s-btn" id="snav-jobs" onclick="navTo('jobs')"><i class="ti ti-briefcase"></i><span class="s-tip">Jobs</span></div>
@@ -2177,11 +2251,11 @@ body.dark .hp-card-eyebrow{color:#D9B48A;}
           </div>
         </div>
         <!-- DEADLINES panel -->
-        <div id="jt-deadlines" class="jt-panel scroll" style="display:none;padding:24px 28px 40px;">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <div id="jt-deadlines" class="jt-panel scroll" style="display:none;padding:20px 28px 40px;">
+          <div style="display:flex;align-items:flex-end;gap:12px;margin-bottom:16px;">
             <div>
               <div class="view-title">Deadlines</div>
-              <div class="dash-date" id="dcal-sub">Job due dates &amp; invoice due dates</div>
+              <div class="view-sub" id="dcal-sub">Job due dates &amp; invoice due dates</div>
             </div>
             <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
               <button class="d-action" onclick="deadlinesCalNav(-1)"><i class="ti ti-chevron-left" style="font-size:13px;"></i></button>
@@ -2589,7 +2663,7 @@ body.dark .hp-card-eyebrow{color:#D9B48A;}
         <label class="tm-urgent-lbl tm-done-lbl" id="td-done-lbl">
           <input type="checkbox" id="td-done" onchange="_tdDoneChanged()">
           <i class="ti ti-circle-check" style="font-size:13px;"></i>
-          Already done — log the time
+          Log as done
         </label>
         <label class="tm-urgent-lbl" id="td-personal-lbl">
           <input type="checkbox" id="td-personal" onchange="togglePersonalMode(this.checked);document.getElementById('td-personal-lbl').classList.toggle('on',this.checked)">
@@ -4604,29 +4678,30 @@ function renderDashboard(){
   // Quiet clients: had jobs before, but nothing in play now
   const _coAll={};jobs.forEach(j=>{if(!j.company)return;(_coAll[j.company]=_coAll[j.company]||{total:0,live:0}); _coAll[j.company].total++; if(j.status==='inplay')_coAll[j.company].live++;});
   const quietClients=Object.entries(_coAll).filter(([co,v])=>v.total>=2&&v.live===0&&!/content\s*(&|and)\s*co/i.test(co)).map(([co,v])=>({label:co,meta:`${v.total} past`,jid:null})).slice(0,10);
-  const _attCard=(title,items,color,icon,key)=>{
+  // Needs attention cards (redesign): a calm card per signal — tinted icon, title, count;
+  // rows are two lines (what · who/number) with the urgency as a small tinted pill.
+  const _attCard=(title,items,color,icon,key,emptyNote)=>{
     if(!items.length)return'';
-    const cap=6;
+    const cap=5;
     const expanded=key&&_dashExpanded[key];
     const shown=expanded?items:items.slice(0,cap);
-    const moreLink=items.length>cap&&key?`<div class="att-row" style="font-size:11px;color:var(--muted);cursor:pointer;font-weight:500;" onclick="_dashExpanded['${key}']=${expanded?'false':'true'};renderDashboard()">${expanded?'Show fewer':'Show all '+items.length+' ↓'}</div>`:'';
-    return`<div style="min-width:0;background:var(--white);border:1px solid var(--border);border-left:3px solid ${color};border-radius:12px;padding:13px 15px;box-shadow:var(--shadow-s);">
-    <div style="display:flex;align-items:center;gap:7px;margin-bottom:9px;">
-      ${icon?`<span style="width:22px;height:22px;border-radius:7px;background:color-mix(in srgb,${color} 13%,var(--white));display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="ti ${icon}" style="font-size:12px;color:${color};"></i></span>`:''}
-      <span style="font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink);">${title}</span>
-      <span style="margin-left:auto;font-size:10px;font-weight:600;color:var(--muted);background:var(--off);border:1px solid var(--faint);border-radius:10px;padding:1px 8px;">${items.length}</span>
-    </div>
-    ${shown.map(x=>`<div class="att-row" style="font-size:12px;display:flex;justify-content:space-between;gap:10px;cursor:${x.jid||x.on?'pointer':'default'};" ${x.jid?`onclick="openJobDetail('${x.jid}')"`:x.on?`onclick="${x.on}"`:''} title="${x.tip||''}"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.label}</span><span style="color:${color};flex-shrink:0;font-variant-numeric:tabular-nums;">${x.meta}</span></div>`).join('')}
-    ${moreLink}
-  </div>`;};
+    const more=items.length>cap&&key?`<button class="att-more" onclick="_dashExpanded['${key}']=${expanded?'false':'true'};renderDashboard()">${expanded?'Show fewer':`Show all ${items.length}`}<i class="ti ti-chevron-${expanded?'up':'down'}"></i></button>`:'';
+    return`<div class="att-card" style="--att:${color};">
+      <div class="att-hd"><span class="att-ico"><i class="ti ${icon}"></i></span><span class="att-title">${title}</span><span class="att-count">${items.length}</span></div>
+      <div class="att-rows">${shown.map(x=>`<div class="att-row2${x.jid||x.on?' click':''}" ${x.jid?`onclick="openJobDetail('${x.jid}')"`:x.on?`onclick="${x.on}"`:''} title="${x.tip||''}">
+        <div class="att-main"><div class="att-l1">${x.label}</div>${x.sub?`<div class="att-l2">${x.sub}</div>`:''}</div>
+        <span class="att-val">${x.meta}</span></div>`).join('')}</div>
+      ${more}
+    </div>`;};
+  const _jobSub=j=>`${j.id}${j.company?' · '+esc(j.company):''}`;
   const dh=people[MY_PERSON].dashHide||[];const _show=k=>!dh.includes(k);
   const deadlinesHTML=_show('deadlines')?[
-    _attCard('Jobs due / overdue',dueJobs.map(j=>({label:`${j.id} ${esc(j.name)}`,meta:_inDays(j.dueDate)<0?`${-_inDays(j.dueDate)}d over`:_inDays(j.dueDate)===0?'today':`${_inDays(j.dueDate)}d`,jid:j.id})),'#E65100','ti-flag','due'),
-    _attCard('Deadline risk',riskJobs,'#D81B60','ti-alert-triangle','risk'),
-    _attCard('Overdue invoices',overdueInv.map(i=>({label:`${esc(i.number||'')} · ${esc(i.company?.name||i.jobName||'—')}`,meta:`${fmtDollar(i.totalAmountIncTax||i.totalAmountExTax||0)} · ${-_inDays(i.dueDate)}d`,jid:null,on:`openInvoiceDetail('${i.id}')`,tip:esc(i.company?.name||'')})),'#C62828','ti-file-invoice','odinv'),
-    _attCard('Quotes awaiting response',awaitingQuotes.map(q=>({label:esc(String(q.quoteName||q.jobName||(q.jobNumber?'Job '+q.jobNumber:'')||'—').replace(/^\[\d+\]\s*/,'')),meta:`${-_inDays(q.sentDate)}d`,jid:null,on:`openQuoteDetail('${q.id}')`,tip:esc(q.company||'')})),'#8A6A2E','ti-file-text','awq'),
-    _attCard('Uninvoiced work',uninvoiced.map(j=>({label:`${j.id} ${esc(j.name)}`,meta:'$'+Math.round((j._sellUsed||0)-(j._stInvoiced||0)).toLocaleString(),jid:j.id})),'#9C6FD6','ti-coin','uninv'),
-    _attCard('Quiet clients',quietClients.map(c=>({...c,label:esc(c.label)})),'#888888','ti-moon','quiet'),
+    _attCard('Due or overdue',dueJobs.map(j=>({label:esc(j.name),sub:_jobSub(j),meta:_inDays(j.dueDate)<0?`${-_inDays(j.dueDate)}d over`:_inDays(j.dueDate)===0?'Today':`in ${_inDays(j.dueDate)}d`,jid:j.id})),'#D9622B','ti-flag','due'),
+    _attCard('Deadline risk',riskJobs.map(r=>{const j=jobs.find(x=>x.id===r.jid);return j?{...r,label:esc(j.name),sub:_jobSub(j)}:r;}),'#C2185B','ti-alert-triangle','risk'),
+    _attCard('Overdue invoices',overdueInv.map(i=>({label:esc(i.company?.name||i.jobName||'—'),sub:`${esc(i.number||'')} · ${fmtDollar(i.totalAmountIncTax||i.totalAmountExTax||0)}`,meta:`${-_inDays(i.dueDate)}d late`,jid:null,on:`openInvoiceDetail('${i.id}')`})),'#C62828','ti-file-invoice','odinv'),
+    _attCard('Quotes awaiting reply',awaitingQuotes.map(q=>({label:esc(String(q.quoteName||q.jobName||(q.jobNumber?'Job '+q.jobNumber:'')||'—').replace(/^\[\d+\]\s*/,'')),sub:esc(q.company||''),meta:`${-_inDays(q.sentDate)}d`,jid:null,on:`openQuoteDetail('${q.id}')`})),'#A07B45','ti-file-text','awq'),
+    _attCard('Uninvoiced work',uninvoiced.map(j=>({label:esc(j.name),sub:_jobSub(j),meta:fmtDollar((j._sellUsed||0)-(j._stInvoiced||0)),jid:j.id})),'#7E57C2','ti-coin','uninv'),
+    _attCard('Quiet clients',quietClients.map(c=>({label:esc(c.label),meta:c.meta})),'#8A857C','ti-moon','quiet'),
   ].filter(Boolean).join(''):'';
   wrap.innerHTML=`
     <div style="margin-bottom:28px;">
@@ -5979,7 +6054,7 @@ function createTaskCard(t,day,isDone){
 
   card.innerHTML=`
     <div class="tc-top">
-      <span class="tc-icon">${icon}</span>
+      ${_iconName==='circle-dot'?'':`<span class="tc-icon">${icon}</span>`}
       <span class="tc-title">${esc(displayTitle)}${(t.repeat||t.repeatGroup)?' <i class="ti ti-repeat" title="Repeating task" style="font-size:10px;color:var(--muted);"></i>':''}${t._completedViaAssignment?' <i class="ti ti-check" title="Marked complete in Streamtime — no time was logged against it" style="font-size:10px;color:var(--ok);"></i>':''}</span>
       ${(showHours&&hrsLabel)?`<span class="tc-hrs" id="hrs-${t.id}">${hrsLabel}</span>`:''}
     </div>
@@ -7745,7 +7820,7 @@ function openJobSettingsModal(){
     <div class="modal-hd">
       <div>
         <div class="modal-hd-title">Job Settings</div>
-        <div style="font-size:11px;color:#666;margin-top:2px;">${j.id} · ${j.company||'No company'}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">${j.id} · ${esc(j.company||'No company')}</div>
       </div>
       <button class="modal-x" onclick="document.getElementById('job-sett-modal')?.remove()"><i class="ti ti-x"></i></button>
     </div>
@@ -8934,7 +9009,7 @@ function renderQuoteTab(){
     </div>
 
     <!-- DISPLAY OPTIONS PANEL -->
-    <div style="width:200px;flex-shrink:0;background:#fff;border:1px solid var(--border);border-radius:6px;padding:16px;">
+    <div style="width:200px;flex-shrink:0;background:var(--white);border:1px solid var(--border);border-radius:6px;padding:16px;">
       <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;color:var(--ink);">Display options</div>
       ${[
         ['showJobNum','Job number'],
@@ -8971,9 +9046,9 @@ function setQuoteStatus(jobId,status){
   if(status==='approved'&&(j.workflowStatus||'quote')==='quote'){
     j.workflowStatus='live';
     logActivity(jobId,MY_PERSON,'workflow_change','Job moved to <strong>Live Job</strong> on quote approval');
-    toast('Quote approved — job moved to Live Job 🚀','success');
+    toast('Quote approved — job moved to Live job','success');
   } else {
-    toast(status==='approved'?'Quote approved 🎉':'Quote declined',status==='approved'?'success':'warn');
+    toast(status==='approved'?'Quote approved':'Quote declined',status==='approved'?'success':'warn');
   }
   logActivity(jobId,MY_PERSON,'quote_status',`Quote marked <strong>${status}</strong>`);
   _keepJobEdits(j,['quoteStatus','workflowStatus']);renderQuoteTab();
@@ -9154,7 +9229,7 @@ function renderItems(phId,_readonly){
     const _avHTML=_activeEntries.slice(0,MAX_AV).map(({u,mins})=>`<span class="item-av" style="background:${u.color};">${u.initials}<span class="item-av-tip">${u.name}<br><span style="color:#aaa;">${_stFmtH(mins)}</span></span></span>`).join('');
     const _moreActive=_activeEntries.length>MAX_AV?_activeEntries.slice(MAX_AV):[];
     const _moreAll=[..._moreActive,..._inactiveEntries];
-    const _moreList=_moreAll.map(({u,mins})=>`${u.name}${u.active===false?' <span style="color:#666;font-size:10px;">(inactive)</span>':''}: ${_stFmtH(mins)}`).join('<br>');
+    const _moreList=_moreAll.map(({u,mins})=>`${u.name}${u.active===false?' <span style="color:var(--muted);font-size:10px;">(inactive)</span>':''}: ${_stFmtH(mins)}`).join('<br>');
     const _moreCount=(_activeEntries.length-Math.min(MAX_AV,_activeEntries.length))+_inactiveEntries.length;
     const _moreAv=_moreCount>0?`<span class="item-av-more" style="position:relative;cursor:default;">+${_moreCount}<span class="item-av-tip" style="min-width:160px;text-align:left;">${_moreList}</span></span>`:'';
     const teamCell=`<td><div class="item-av-stack">${_avHTML}${_moreAv}</div></td>`;
@@ -9723,13 +9798,13 @@ function advanceWorkflow(jobId){
   if(curIdx===seq.length-1){toast('Already at final stage (Invoiced)','warn');return;}
   const next=seq[curIdx+1];
   const labels={quote:'Quote',live:'Live job',completed:'Completed',invoiced:'Invoiced'};
-  const emojis={live:'🚀',completed:'✅',invoiced:'📄'};
+  const emojis={live:'ti-rocket',completed:'ti-circle-check',invoiced:'ti-file-invoice'};
   const descs={live:'Client has approved — work is now in progress.',completed:'Work is done — ready to raise an invoice.',invoiced:'Invoice has been sent to the client.'};
   document.getElementById('wf-confirm-modal')?.remove();
   const m=document.createElement('div');m.className='modal-bg on';m.id='wf-confirm-modal';
   m.innerHTML=`<div class="modal" style="max-width:400px;text-align:center;">
     <div class="modal-bd" style="padding:32px 28px 8px;">
-      <div style="font-size:36px;margin-bottom:14px;">${emojis[next]||'✅'}</div>
+      <div style="width:56px;height:56px;border-radius:16px;background:var(--off);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:28px;color:var(--ink);"><i class="ti ${emojis[next]||'ti-circle-check'}"></i></div>
       <div style="font-size:17px;font-weight:600;margin-bottom:8px;font-family:var(--display);">Move to ${labels[next]}</div>
       <div style="font-size:13px;color:var(--muted);line-height:1.5;">${descs[next]||''}</div>
       <div style="font-size:11px;color:var(--muted);margin-top:12px;padding:8px 14px;background:var(--off);border-radius:6px;">${j.id} · ${j.name}</div>
@@ -10187,7 +10262,7 @@ function copyInvoiceToXero(){
       rows.push(`"${j.company}","${j.invNum}","${ph.name} — ${i.name}",1,${amt},"OUTPUT2","200"`);
     });
   });
-  navigator.clipboard.writeText(rows.join('\n')).then(()=>alert('Xero CSV copied to clipboard ✓'));
+  navigator.clipboard.writeText(rows.join('\n')).then(()=>toast('Xero CSV copied to clipboard','success'));
 }
 
 
@@ -10406,7 +10481,7 @@ function openClientDetail(id){
       ${ct.jobTitle||ct.position?`<div style="color:var(--muted);font-size:11px;">${ct.jobTitle||ct.position}</div>`:''}
       ${ct.email?`<div style="color:var(--muted);font-size:11px;">${ct.email}</div>`:''}
       ${ct.phone||ct.phoneNumber||ct.mobile?`<div style="color:var(--muted);font-size:11px;">${ct.phone||ct.phoneNumber||ct.mobile}</div>`:''}
-      <div style="font-size:10px;color:#bbb;margin-top:4px;">Streamtime</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;">Streamtime</div>
     </div>`;
   }).join('');
   const localContactsHTML=localContacts.map((ct,i)=>`
@@ -10843,9 +10918,9 @@ function renderSettings(){
     const lastSync=localStorage.getItem('cc_last_sync')?new Date(+localStorage.getItem('cc_last_sync')).toLocaleString():'Unknown';
     const connRow=(icon,name,status,desc,badge,action)=>`<div class="sett-row" style="align-items:flex-start;padding:14px 0;">
       <div style="display:flex;gap:12px;align-items:flex-start;flex:1;">
-        <div style="width:36px;height:36px;border-radius:8px;background:var(--off);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;">${icon}</div>
+        <div style="width:36px;height:36px;border-radius:8px;background:var(--off);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;color:var(--ink);"><i class="ti ${icon}"></i></div>
         <div>
-          <div style="font-size:13px;font-weight:500;">${name} <span style="font-size:10px;padding:2px 7px;border-radius:6px;font-weight:500;margin-left:4px;${badge==='live'?'background:var(--ok-bg);color:var(--ok-ink);':badge==='soon'?'background:#FFF8E1;color:#F57F17;':'background:var(--off);color:var(--muted);'}">${badge==='live'?'Live':badge==='soon'?'Coming soon':'Not connected'}</span></div>
+          <div style="font-size:13px;font-weight:500;">${name} <span style="font-size:10px;padding:2px 7px;border-radius:6px;font-weight:500;margin-left:4px;${badge==='live'?'background:var(--ok-bg);color:var(--ok-ink);':badge==='soon'?'background:var(--warn-bg);color:var(--warn-ink);':'background:var(--off);color:var(--muted);'}">${badge==='live'?'Live':badge==='soon'?'Coming soon':'Not connected'}</span></div>
           <div style="font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5;">${desc}</div>
         </div>
       </div>
@@ -10858,7 +10933,7 @@ function renderSettings(){
       <div class="sett-card">
         <div class="sett-card-hd">Active connections</div>
         <div class="sett-card-body" style="padding:0 16px;">
-          ${connRow('⏱','Streamtime','live',`Jobs, time logs, quotes, invoices, users, contacts, expenses synced hourly via GitHub Actions. Last synced: ${lastSync}.`,'live',`<div style="display:flex;flex-direction:column;gap:4px;text-align:right;font-size:11px;color:var(--muted);">
+          ${connRow('ti-clock-hour-4','Streamtime','live',`Jobs, time logs, quotes, invoices, users, contacts, expenses synced hourly via GitHub Actions. Last synced: ${lastSync}.`,'live',`<div style="display:flex;flex-direction:column;gap:4px;text-align:right;font-size:11px;color:var(--muted);">
             <span>${stCount.jobs} jobs</span><span>${stCount.times} time entries</span><span>${stCount.invoices} invoices</span><span>${stCount.quotes} quotes</span>
           </div>`)}
         </div>
@@ -10867,10 +10942,10 @@ function renderSettings(){
       <div class="sett-card">
         <div class="sett-card-hd">Available connections</div>
         <div class="sett-card-body" style="padding:0 16px;">
-          ${connRow('💼','Xero','soon','Reconcile invoice payments directly — see paid status update in real time without waiting for the ST sync cycle. Requires Xero OAuth.','soon','')}
-          ${connRow('📅','Google Calendar','soon','Pull team leave and public holidays into the capacity planner so the Todo board accounts for unavailable days.','soon','')}
-          ${connRow('💬','Slack','soon','Post job milestone notifications, overdue invoice alerts, and uninvoiced work nudges to a Slack channel automatically.','soon','')}
-          ${connRow('📊','Google Sheets','soon','Push your weekly reporting snapshot to a shared Sheet — revenue, utilisation, and pipeline stats auto-updated.','soon','')}
+          ${connRow('ti-building-bank','Xero','soon','Reconcile invoice payments directly — see paid status update in real time without waiting for the ST sync cycle. Requires Xero OAuth.','soon','')}
+          ${connRow('ti-calendar-event','Google Calendar','soon','Pull team leave and public holidays into the capacity planner so the Todo board accounts for unavailable days.','soon','')}
+          ${connRow('ti-message-circle','Slack','soon','Post job milestone notifications, overdue invoice alerts, and uninvoiced work nudges to a Slack channel automatically.','soon','')}
+          ${connRow('ti-table','Google Sheets','soon','Push your weekly reporting snapshot to a shared Sheet — revenue, utilisation, and pipeline stats auto-updated.','soon','')}
         </div>
       </div>
 
