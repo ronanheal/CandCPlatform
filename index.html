@@ -14734,5 +14734,1070 @@ function _ccDecorateTodo(){
   };
 })();
 </script>
+<style id="feat-c2-styles">
+/* ── Feature set C2 (C5 quote lines · C6 invoice sources + payments · C3 schedule views · C10 rate cards) ── */
+/* Shared line-item editor */
+.c2-ed{display:flex;flex-direction:column;gap:10px;}
+.c2-ed-scroll{border:1px solid var(--border);border-radius:var(--r-card);overflow:auto;max-height:320px;background:var(--white);}
+.c2-lines{width:100%;border-collapse:collapse;table-layout:fixed;}
+.c2-lines th{position:sticky;top:0;background:var(--off);font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600;text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);z-index:1;}
+.c2-lines td{padding:4px 6px;border-bottom:1px solid var(--faint);vertical-align:middle;}
+.c2-lines tr:last-child td{border-bottom:none;}
+.c2-lines .c2-col-num{width:96px;text-align:right;}
+.c2-lines .c2-col-amt{width:104px;text-align:right;}
+.c2-lines .c2-col-x{width:34px;}
+.c2-lines .form-inp{width:100%;min-width:0;}
+.c2-lines .c2-in-num{text-align:right;font-variant-numeric:tabular-nums;}
+.c2-amt{text-align:right;font-size:12px;color:var(--ink);font-variant-numeric:tabular-nums;padding-right:10px!important;white-space:nowrap;}
+.c2-empty{padding:16px 10px!important;font-size:12px;color:var(--muted);text-align:center;}
+.c2-ed-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.c2-tot{align-self:flex-end;min-width:300px;max-width:100%;background:var(--off);border:1px solid var(--border);border-radius:var(--r-card);padding:8px 14px;font-size:12px;}
+.c2-tot-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0;font-variant-numeric:tabular-nums;}
+.c2-tot-row .lbl{color:var(--muted);display:flex;align-items:center;gap:6px;}
+.c2-tot-row.strong{font-weight:600;color:var(--ink);border-top:1px solid var(--border);margin-top:4px;padding-top:7px;}
+.c2-tot-row.strong .lbl{color:var(--ink);}
+.c2-tot-row .cc-select{font-size:11px;padding:3px 6px;}
+.c2-tot-row .c2-disc-inp{width:76px;text-align:right;padding:3px 6px;font-size:12px;}
+.c2-hint{font-size:11px;color:var(--muted);line-height:1.5;}
+.c2-warn{font-size:11px;color:var(--warn-ink);background:var(--warn-bg);border-radius:var(--r-ctl);padding:6px 10px;line-height:1.5;}
+#new-quote-modal .modal{max-width:760px;width:94vw;}
+.c2-modal-wide{max-width:760px!important;width:94vw;}
+.c2-modal-wide .modal-bd{max-height:70vh;overflow-y:auto;}
+/* Quote detail drawer */
+.c2-dd-lines{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px;}
+.c2-dd-lines td{padding:5px 0;border-bottom:1px solid var(--faint);vertical-align:top;}
+.c2-dd-lines td.num{text-align:right;white-space:nowrap;padding-left:10px;font-variant-numeric:tabular-nums;}
+.c2-dd-lines td.sub{color:var(--muted);}
+.c2-dd-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;}
+/* Invoice modal: source bar, line qty and payments */
+.c2-inv-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;margin-bottom:18px;background:var(--off);border:1px solid var(--border);border-radius:var(--r-card);font-size:12px;color:var(--muted);}
+.c2-inv-bar strong{color:var(--ink);font-weight:500;}
+.c2-inv-bar .sp{flex:1;}
+.c2-inv-q{display:block;font-size:11px;color:var(--muted);margin-top:1px;font-variant-numeric:tabular-nums;}
+.c2-inv-line-neg .inv-lv{color:var(--ok-ink);}
+.c2-pay{margin-top:22px;border:1px solid var(--border);border-radius:var(--r-card);padding:12px 14px;background:var(--white);}
+.c2-pay-hd{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.c2-pay-hd span:last-child{text-transform:none;letter-spacing:0;}
+.c2-pay-li{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--faint);font-size:12px;font-variant-numeric:tabular-nums;}
+.c2-pay-li .d{width:110px;color:var(--muted);}
+.c2-pay-li .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);}
+.c2-pay-li .a{color:var(--ok-ink);}
+.c2-pay-sum{display:flex;justify-content:flex-end;gap:22px;padding:8px 0 2px;font-size:13px;font-variant-numeric:tabular-nums;}
+.c2-pay-sum .out{font-weight:600;color:var(--ink);}
+.c2-pay-sum .out.zero{color:var(--ok-ink);}
+.c2-pay-form{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;}
+.c2-pay-form .form-inp{width:130px;}
+.c2-src-opts{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.c2-src-opt{flex:1;min-width:150px;text-align:left;border:1px solid var(--border);border-radius:var(--r-card);background:var(--white);padding:10px 12px;cursor:pointer;font:inherit;color:var(--ink);}
+.c2-src-opt:hover{border-color:var(--muted);}
+.c2-src-opt.on{border-color:var(--ink);box-shadow:var(--shadow-s);}
+.c2-src-opt .t{font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;}
+.c2-src-opt .s{font-size:11px;color:var(--muted);margin-top:3px;}
+/* Schedule — view switch + multi-week grids */
+.c2-sched-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:-4px 0 12px;}
+.c2-seg{display:inline-flex;gap:4px;align-items:center;}
+.c2-seg-lbl{font-size:11px;color:var(--muted);margin-right:2px;}
+.c2-sched-wrap{overflow-x:auto;}
+.c2-sg{width:100%;table-layout:fixed;border-collapse:collapse;background:var(--white);border:1px solid var(--border);border-radius:var(--r-card);}
+.c2-sg th{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:500;text-align:left;padding:6px 6px;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.c2-sg th.wk{cursor:pointer;color:var(--ink);font-weight:600;border-left:1px solid var(--border);}
+.c2-sg th.wk:hover{background:var(--off);}
+.c2-sg th.today{color:var(--red);font-weight:700;}
+.c2-sg th.wk-start,.c2-sg td.wk-start{border-left:1px solid var(--border);}
+.c2-sg td{vertical-align:top;padding:5px 5px;border-bottom:1px solid var(--faint);border-left:1px solid var(--faint);font-size:11px;}
+.c2-sg td.lbl{border-left:none;padding:8px 10px;}
+.c2-sg td.tot,.c2-sg th.tot{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap;}
+.c2-sg tfoot td{background:var(--off);font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;border-bottom:none;}
+.c2-sg td.today{background:var(--off);}
+.c2-sg td.away{background-image:repeating-linear-gradient(135deg,transparent 0 6px,var(--faint) 6px 7px);}
+.c2-pcell{cursor:pointer;}
+.c2-pcell:hover{background:var(--off);}
+.c2-ph{font-variant-numeric:tabular-nums;color:var(--muted);}
+.c2-ph.has{color:var(--ink);}
+.c2-ph.over{color:var(--red);font-weight:600;}
+.c2-bar{height:3px;background:var(--faint);border-radius:2px;overflow:hidden;margin-top:4px;}
+.c2-bar>span{display:block;height:100%;background:var(--ok);}
+.c2-bar>span.over{background:var(--red);}
+.c2-sj{cursor:pointer;min-width:0;}
+.c2-sj-top{display:flex;gap:6px;align-items:baseline;min-width:0;}
+.c2-sj-num{font-size:10px;color:var(--muted);flex-shrink:0;font-variant-numeric:tabular-nums;}
+.c2-sj-name{font-size:12px;font-weight:500;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.c2-sj:hover .c2-sj-name{text-decoration:underline;}
+.c2-sj-co{font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;}
+.c2-chip{display:flex;align-items:center;gap:4px;margin-bottom:3px;font-size:10px;color:var(--ink);white-space:nowrap;overflow:hidden;font-variant-numeric:tabular-nums;}
+.c2-chip.done{opacity:.55;}
+.c2-av{width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:7px;font-weight:600;color:#fff;flex-shrink:0;}
+.c2-avs{display:flex;flex-wrap:wrap;gap:2px;margin-top:3px;}
+.c2-more{font-size:9px;color:var(--muted);align-self:center;}
+.c2-sched-note{font-size:11px;color:var(--muted);margin-top:8px;}
+/* Rate cards (Settings → Job items) */
+.c2-rc-li{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-ctl);margin-bottom:6px;background:var(--white);}
+.c2-rc-li-main{flex:1;min-width:0;}
+.c2-rc-li-name{font-size:13px;color:var(--ink);}
+.c2-rc-li-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+.c2-rc-table{width:100%;border-collapse:collapse;font-size:12px;}
+.c2-rc-table td{padding:4px 6px;border-bottom:1px solid var(--faint);}
+.c2-rc-table td:last-child{width:130px;}
+.c2-rc-table .form-inp{width:100%;text-align:right;}
+</style>
+<script id="feat-c2-script">
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Feature set C2 — quote line items + discount (C5), invoice from quote / logged time
+//  + part payments (C6), schedule by job + multi-week (C3), rate cards (C10).
+//  Same pattern as feat-c: existing functions are wrapped here (original first, then extra
+//  UI / data), so the main script carries no edits for this block.
+//  Wrapped: openNewQuoteModal, saveNewQuote, openQuoteDetail, openQuoteDocPreview,
+//  renderInvoice, _splitInvTotal, copyInvoiceToXero, renderSchedule, renderSettings, openJobSettingsModal,
+//  saveJobSettings, saveItem.
+//  Money is worked in cents (_c2r) so lines, discount, GST and totals always add up.
+// ═══════════════════════════════════════════════════════════════════════════════
+function _c2r(n){n=+n;if(!isFinite(n))return 0;return Math.round(n*100+(n>=0?1e-7:-1e-7))/100;}
+function _c2num(v){if(typeof v==='number')return isFinite(v)?v:0;const n=parseFloat(String(v??'').replace(/[$,\s]/g,''));return isFinite(n)?n:0;}
+// Hours from "2h 30m" / "45m" / 1.5. '—' and '' are 0 (parseHrsInput would read them as 1h).
+function _c2hrs(v){
+  if(typeof v==='number')return isFinite(v)&&v>0?v:0;
+  const s=String(v??'').trim();if(!/\d/.test(s))return 0;
+  const h=parseHrsInput(s);return isFinite(h)&&h>0?h:0;
+}
+function _c2m(n){n=_c2r(n);return (n<0?'−':'')+_money(Math.abs(n));}
+function _c2m2(n){n=_c2r(n);return (n<0?'−':'')+'$'+Math.abs(n).toLocaleString('en-NZ',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function _c2qty(n){n=Math.round((+n||0)*10000)/10000;return String(n);}
+function _c2QtyLabel(r){return r&&r.mins!=null?(formatHrs(r.mins/60)||'0h'):_c2qty(r?r.qty:0);}
+function _c2JobPhases(j){
+  if(!j)return[];
+  if(j.id===activeJobId&&Array.isArray(phases)&&phases.length)return phases;
+  return j.phases||[];
+}
+function _c2FindJob(input){
+  const s=String(input||'').trim();if(!s)return null;
+  return jobs.find(j=>j.id===s||`${j.id} — ${j.name}`===s)||null;
+}
+// Lines {desc,qty,unit} → totals. discount {type:'none'|'pct'|'amt',value}.
+function _c2Totals(lines,discount){
+  // Time lines carry `mins` so qty stays exact (280m = 4.666…h, not 4.6667h).
+  const rows=(lines||[]).map(l=>{const hasM=l.mins!=null&&isFinite(+l.mins);const qty=hasM?(+l.mins)/60:_c2num(l.qty),unit=_c2num(l.unit);const r={desc:String(l.desc||''),qty,unit,amount:_c2r(qty*unit)};if(hasM)r.mins=+l.mins;return r;});
+  const subtotal=_c2r(rows.reduce((s,l)=>s+l.amount,0));
+  const d=discount||{};const dv=Math.max(0,_c2num(d.value));
+  let disc=0;
+  if(d.type==='pct')disc=_c2r(subtotal*Math.min(dv,100)/100);
+  else if(d.type==='amt')disc=_c2r(Math.min(dv,Math.max(subtotal,0)));
+  if(subtotal<=0)disc=0;
+  const ex=_c2r(subtotal-disc),gst=_c2r(ex*0.15),inc=_c2r(ex+gst);
+  return{rows,subtotal,discount:disc,ex,gst,inc};
+}
+function _c2DiscLabel(d){
+  if(!d||d.type==='none'||!_c2num(d.value))return'';
+  return d.type==='pct'?`Discount (${_c2num(d.value)}%)`:'Discount';
+}
+// Job plan → quote/invoice lines: hours × rate where both exist, else the item's total as qty 1.
+function _c2PlanLines(j){
+  const out=[];const phs=_c2JobPhases(j);
+  const multi=phs.filter(p=>(p.items||[]).length).length>1;
+  phs.forEach(ph=>(ph.items||[]).forEach(it=>{
+    const h=_c2hrs(it.hours),rate=_c2num(it.rate),tot=_c2num(it.total);
+    let qty,unit;
+    if(h>0&&rate>0){qty=Math.round(h*10000)/10000;unit=rate;}
+    else if(tot>0){qty=1;unit=tot;}
+    else return;
+    out.push({desc:(multi&&ph.name?ph.name+' — ':'')+(it.name||'Item'),qty,unit});
+  }));
+  return out;
+}
+
+// ───────────────────────────── Shared line editor ─────────────────────────────
+const _c2Ed={};
+function _c2EdHTML(id,opts){
+  opts=opts||{};
+  return`<div class="c2-ed" id="c2ed-${id}">
+    <div class="c2-ed-scroll"><table class="c2-lines"><thead><tr><th>Description</th><th class="c2-col-num">Qty</th><th class="c2-col-num">Unit price</th><th class="c2-col-amt">Amount</th><th class="c2-col-x"></th></tr></thead><tbody id="c2ed-${id}-body"></tbody></table></div>
+    <div class="c2-ed-actions">
+      <button type="button" class="d-action" onclick="_c2EdAdd('${id}')"><i class="ti ti-plus" style="font-size:12px;"></i> Add line</button>
+      ${opts.planBtn?`<button type="button" class="d-action" onclick="_c2EdFillPlan('${id}')"><i class="ti ti-list-details" style="font-size:12px;"></i> Fill from job plan</button>`:''}
+    </div>
+    <div class="c2-tot">
+      <div class="c2-tot-row"><span class="lbl">Subtotal</span><span id="c2ed-${id}-sub">$0</span></div>
+      ${opts.discount?`<div class="c2-tot-row"><span class="lbl">Discount
+        <select class="cc-select" id="c2ed-${id}-dt" onchange="_c2EdDisc('${id}')"><option value="none">None</option><option value="pct">%</option><option value="amt">$</option></select>
+        <input class="form-inp c2-disc-inp" id="c2ed-${id}-dv" type="number" min="0" step="any" placeholder="0" oninput="_c2EdDisc('${id}')"></span><span id="c2ed-${id}-disc">—</span></div>`:''}
+      <div class="c2-tot-row strong"><span class="lbl">Total ex GST</span><span id="c2ed-${id}-ex">$0</span></div>
+      <div class="c2-tot-row"><span class="lbl">GST 15%</span><span id="c2ed-${id}-gst">$0</span></div>
+      <div class="c2-tot-row strong"><span class="lbl">Total inc GST</span><span id="c2ed-${id}-inc">$0</span></div>
+    </div>
+  </div>`;
+}
+function _c2EdInit(id,lines,discount,opts){
+  _c2Ed[id]={lines:(lines||[]).map(l=>{const o={desc:String(l.desc||''),qty:l.mins!=null?_c2qty(l.mins/60):(l.qty??1),unit:l.unit??0};if(l.mins!=null)o.mins=+l.mins;return o;}),discount:{type:(discount&&discount.type)||'none',value:discount&&discount.value!=null?discount.value:''},opts:opts||{},touched:false};
+  const dt=document.getElementById(`c2ed-${id}-dt`),dv=document.getElementById(`c2ed-${id}-dv`);
+  if(dt)dt.value=_c2Ed[id].discount.type;
+  if(dv){dv.value=_c2Ed[id].discount.value;dv.disabled=_c2Ed[id].discount.type==='none';}
+  _c2EdRender(id);
+}
+function _c2EdRender(id){
+  const st=_c2Ed[id];const body=document.getElementById(`c2ed-${id}-body`);if(!st||!body)return;
+  body.innerHTML=st.lines.length?st.lines.map((l,i)=>`<tr>
+      <td><input class="form-inp" value="${esc(l.desc)}" placeholder="Description" oninput="_c2EdSet('${id}',${i},'desc',this.value)"></td>
+      <td><input class="form-inp c2-in-num" type="number" step="any" value="${esc(l.qty)}" oninput="_c2EdSet('${id}',${i},'qty',this.value)"></td>
+      <td><input class="form-inp c2-in-num" type="number" step="any" value="${esc(l.unit)}" oninput="_c2EdSet('${id}',${i},'unit',this.value)"></td>
+      <td class="c2-amt" id="c2ed-${id}-a${i}">${_c2m2((l.mins!=null?l.mins/60:_c2num(l.qty))*_c2num(l.unit))}</td>
+      <td><button type="button" class="cc-icon-btn danger" title="Remove line" onclick="_c2EdDel('${id}',${i})"><i class="ti ti-x"></i></button></td>
+    </tr>`).join('')
+    :`<tr><td colspan="5" class="c2-empty">No lines yet. Add one${st.opts.planBtn?' or fill from the job plan':''}.</td></tr>`;
+  _c2EdTotals(id);
+}
+function _c2EdTotals(id){
+  const st=_c2Ed[id];if(!st)return;
+  const t=_c2Totals(st.lines,st.opts.discount?st.discount:null);
+  const set=(k,v)=>{const e=document.getElementById(`c2ed-${id}-${k}`);if(e)e.textContent=v;};
+  set('sub',_c2m2(t.subtotal));set('disc',t.discount?_c2m2(-t.discount):'—');
+  set('ex',_c2m2(t.ex));set('gst',_c2m2(t.gst));set('inc',_c2m2(t.inc));
+  return t;
+}
+function _c2EdSet(id,i,f,v){
+  const st=_c2Ed[id];if(!st||!st.lines[i])return;
+  st.lines[i][f]=v;st.touched=true;
+  if(f==='qty')delete st.lines[i].mins; // typed hours replace the exact logged minutes
+  const L=st.lines[i];
+  if(f!=='desc'){const a=document.getElementById(`c2ed-${id}-a${i}`);if(a)a.textContent=_c2m2((L.mins!=null?L.mins/60:_c2num(L.qty))*_c2num(L.unit));}
+  _c2EdTotals(id);
+}
+function _c2EdAdd(id){
+  const st=_c2Ed[id];if(!st)return;
+  st.lines.push({desc:'',qty:1,unit:0});st.touched=true;_c2EdRender(id);
+  const rows=document.querySelectorAll(`#c2ed-${id}-body tr`);rows[rows.length-1]?.querySelector('input')?.focus();
+}
+function _c2EdDel(id,i){const st=_c2Ed[id];if(!st)return;st.lines.splice(i,1);st.touched=true;_c2EdRender(id);}
+function _c2EdDisc(id){
+  const st=_c2Ed[id];if(!st)return;
+  const dt=document.getElementById(`c2ed-${id}-dt`),dv=document.getElementById(`c2ed-${id}-dv`);
+  st.discount={type:dt?.value||'none',value:dv?.value??''};
+  if(dv)dv.disabled=st.discount.type==='none';
+  st.touched=true;_c2EdTotals(id);
+}
+function _c2EdFillPlan(id){
+  const st=_c2Ed[id];if(!st)return;
+  const j=st.opts.jobFn?st.opts.jobFn():null;
+  if(!j){toast('Link a job first to fill lines from its plan','warn');return;}
+  const lines=_c2PlanLines(j);
+  if(!lines.length){toast('That job has no plan items with hours and a rate','warn');return;}
+  st.lines=lines.map(l=>({...l}));st.touched=false;st.seededFrom=j.id;_c2EdRender(id);
+  toast(`${lines.length} line${lines.length!==1?'s':''} from job ${esc(j.id)}`,'info');
+}
+// Clean lines for saving: drop empty rows, numbers parsed.
+function _c2EdLines(id){
+  const st=_c2Ed[id];if(!st)return[];
+  return st.lines
+    .map(l=>{const o={desc:String(l.desc||'').trim(),qty:l.mins!=null?l.mins/60:_c2num(l.qty),unit:_c2num(l.unit)};if(l.mins!=null)o.mins=l.mins;return o;})
+    .filter(l=>l.desc||_c2r(l.qty*l.unit)!==0)
+    .map(l=>{const o={desc:l.desc||'Item',qty:l.qty,unit:l.unit,amount:_c2r(l.qty*l.unit)};if(l.mins!=null)o.mins=l.mins;return o;});
+}
+function _c2EdDiscount(id){
+  const st=_c2Ed[id];if(!st||!st.opts.discount)return{type:'none',value:0};
+  const v=Math.max(0,_c2num(st.discount.value));
+  return st.discount.type==='none'||!v?{type:'none',value:0}:{type:st.discount.type,value:st.discount.type==='pct'?Math.min(v,100):v};
+}
+
+// ───────────────────────────── C5 · Quote line items ─────────────────────────────
+// Native quotes (localQuotes / cc_local_quotes) carry lines:[{desc,qty,unit,amount}],
+// discount:{type,value}, subtotalExTax, discountExTax, totalAmountExTax (after discount),
+// taxAmount, totalAmountIncTax. Streamtime quotes are never touched.
+function _c2ApplyQuoteLines(q,lines,discount){
+  const t=_c2Totals(lines,discount);
+  q.lines=t.rows.map(r=>({desc:r.desc,qty:r.qty,unit:r.unit,amount:r.amount}));
+  q.discount={type:discount?.type||'none',value:discount?.value||0};
+  q.subtotalExTax=t.subtotal;q.discountExTax=t.discount;
+  q.totalAmountExTax=t.ex;q.taxAmount=t.gst;q.totalAmountIncTax=t.inc;
+  return t;
+}
+function _c2QuoteLinesOf(q){
+  if(Array.isArray(q.lines)&&q.lines.length)return q.lines;
+  const v=_c2num(q.totalAmountExTax);
+  return v?[{desc:String(q.quoteName||'Quote').replace(/^\[\d+\]\s*/,''),qty:1,unit:v,amount:_c2r(v)}]:[];
+}
+function _c2NqJob(){return _c2FindJob(document.getElementById('nq-job')?.value);}
+function _c2NqEnsureEditor(){
+  const modal=document.getElementById('new-quote-modal');if(!modal)return;
+  if(document.getElementById('c2-nq-lines'))return;
+  const valInp=document.getElementById('nq-value');
+  const valField=valInp?.closest('.field');
+  if(valField)valField.style.display='none'; // value now comes from the lines (kept for saveNewQuote)
+  const f=document.createElement('div');f.className='field';f.id='c2-nq-lines';
+  f.innerHTML=`<label>Line items</label>${_c2EdHTML('nq',{planBtn:true,discount:true})}<div class="c2-hint" style="margin-top:6px;">The quote value is the total ex GST after any discount.</div>`;
+  const notes=document.getElementById('nq-notes')?.closest('.field');
+  const bd=modal.querySelector('.modal-bd');
+  if(notes)bd.insertBefore(f,notes);else bd.appendChild(f);
+  const jb=document.getElementById('nq-job');
+  jb?.addEventListener('change',()=>{
+    const st=_c2Ed.nq;const j=_c2NqJob();if(!st||!j)return;
+    // Seed from the plan unless the user already typed their own lines.
+    if(!st.lines.length||(!st.touched&&st.seededFrom!==j.id)){
+      const lines=_c2PlanLines(j);
+      if(lines.length){st.lines=lines;st.touched=false;st.seededFrom=j.id;_c2EdRender('nq');}
+    }
+  });
+}
+(function(){
+  const _origOpen=openNewQuoteModal;
+  openNewQuoteModal=function(presetJobId){
+    const r=_origOpen.apply(this,arguments);
+    try{
+      _c2NqEnsureEditor();
+      const j=presetJobId?jobs.find(x=>x.id===presetJobId):null;
+      const lines=j?_c2PlanLines(j):[];
+      _c2EdInit('nq',lines,null,{planBtn:true,discount:true,jobFn:_c2NqJob});
+      if(j&&lines.length)_c2Ed.nq.seededFrom=j.id;
+    }catch(e){console.error('feat-c2 quote editor',e);}
+    return r;
+  };
+  const _origSave=saveNewQuote;
+  saveNewQuote=function(){
+    if(!_c2Ed.nq||!document.getElementById('c2-nq-lines'))return _origSave.apply(this,arguments);
+    const lines=_c2EdLines('nq');const disc=_c2EdDiscount('nq');
+    if(!lines.length){toast('Add at least one line item','warn');return;}
+    const t=_c2Totals(lines,disc);
+    if(t.ex<=0){toast('The quote total must be more than $0','warn');return;}
+    document.getElementById('nq-value').value=String(t.ex);
+    const before=localQuotes.length;
+    const r=_origSave.apply(this,arguments);
+    if(localQuotes.length>before){
+      const q=localQuotes[localQuotes.length-1];
+      _c2ApplyQuoteLines(q,lines,disc);saveLocalQuotes();
+      try{if(typeof renderQuotes==='function')renderQuotes();}catch(e){}
+      try{if(q.jobNumber&&activeJobId===q.jobNumber&&typeof renderQuoteTab==='function')renderQuoteTab();}catch(e){}
+    }
+    return r;
+  };
+})();
+function _c2QuoteStatus(q){return typeof q.quoteStatus==='string'?q.quoteStatus:(q.quoteStatus?.name||'Draft');}
+function _c2QuoteApproved(q){const s=_c2QuoteStatus(q).toLowerCase();return s.includes('approv')&&!s.includes('pending');}
+function _c2QuoteRefresh(q){
+  try{if(document.getElementById('quotes-list')?.offsetParent)renderQuotes();}catch(e){}
+  try{if(q.jobNumber&&activeJobId===String(q.jobNumber)&&typeof renderQuoteTab==='function')renderQuoteTab();}catch(e){}
+}
+function c2SetQuoteStatus(qtId,val){
+  const q=localQuotes.find(x=>String(x.id)===String(qtId));if(!q)return;
+  const today=_localISO();
+  q.quoteStatus=val;
+  if(val==='Draft'){q.sentDate=null;q.approvedDate=null;}
+  if(val==='Sent'){q.sentDate=q.sentDate||today;q.approvedDate=null;}
+  if(val==='Approved'){q.sentDate=q.sentDate||today;q.approvedDate=q.approvedDate||today;}
+  if(val==='Declined'){q.sentDate=q.sentDate||today;q.approvedDate=null;}
+  saveLocalQuotes();_c2QuoteRefresh(q);openQuoteDetail(q.id);
+  toast(`Quote marked ${val.toLowerCase()}`,'success');
+}
+function openC2QuoteLines(qtId){
+  const q=localQuotes.find(x=>String(x.id)===String(qtId));if(!q){toast('Only quotes created in C&C can be edited','warn');return;}
+  document.getElementById('c2-qe-modal')?.remove();
+  const m=document.createElement('div');m.className='modal-bg on';m.id='c2-qe-modal';
+  m.innerHTML=`<div class="modal c2-modal-wide">
+    <div class="modal-hd"><span class="modal-hd-title">Edit lines · ${esc(q.quoteNumber||q.id)}</span><button class="modal-x" onclick="document.getElementById('c2-qe-modal').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd">${_c2EdHTML('qe',{planBtn:!!q.jobNumber,discount:true})}</div>
+    <div class="modal-ft"><button class="modal-cancel" onclick="document.getElementById('c2-qe-modal').remove()">Cancel</button><button class="modal-save" onclick="saveC2QuoteLines('${esc(String(q.id))}')">Save lines</button></div>
+  </div>`;
+  m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+  document.body.appendChild(m);
+  _c2EdInit('qe',_c2QuoteLinesOf(q),q.discount||null,{planBtn:!!q.jobNumber,discount:true,jobFn:()=>jobs.find(j=>j.id===String(q.jobNumber))});
+}
+function saveC2QuoteLines(qtId){
+  const q=localQuotes.find(x=>String(x.id)===String(qtId));if(!q)return;
+  const lines=_c2EdLines('qe'),disc=_c2EdDiscount('qe');
+  if(!lines.length){toast('Add at least one line item','warn');return;}
+  const t=_c2Totals(lines,disc);
+  if(t.ex<=0){toast('The quote total must be more than $0','warn');return;}
+  _c2ApplyQuoteLines(q,lines,disc);saveLocalQuotes();
+  document.getElementById('c2-qe-modal')?.remove();
+  _c2QuoteRefresh(q);
+  if(document.getElementById('dd-body'))openQuoteDetail(q.id);
+  toast(`Quote updated · ${_c2m2(t.ex)} ex GST`,'success');
+}
+function _c2QuoteLinesSection(q){
+  const lines=_c2QuoteLinesOf(q);
+  const t=_c2Totals(lines,q.discount);
+  const st=_c2QuoteStatus(q);
+  const opts=['Draft','Sent','Approved','Declined'];
+  const cur=opts.find(o=>o.toLowerCase()===st.toLowerCase())||'Draft';
+  const linked=q.jobNumber?jobs.find(j=>j.id===String(q.jobNumber)):null;
+  return`<div class="dd-section" id="c2-dd-qlines">
+    <div class="dd-section-lbl">Line items</div>
+    ${lines.length?`<table class="c2-dd-lines">${t.rows.map(r=>`<tr><td>${esc(r.desc)}<div class="sub" style="font-size:11px;color:var(--muted);">${esc(_c2qty(r.qty))} × ${_c2m2(r.unit)}</div></td><td class="num">${_c2m2(r.amount)}</td></tr>`).join('')}
+      <tr><td class="sub">Subtotal</td><td class="num">${_c2m2(t.subtotal)}</td></tr>
+      ${t.discount?`<tr><td class="sub">${esc(_c2DiscLabel(q.discount))}</td><td class="num">${_c2m2(-t.discount)}</td></tr>`:''}
+      <tr><td><strong>Total ex GST</strong></td><td class="num"><strong>${_c2m2(t.ex)}</strong></td></tr>
+      <tr><td class="sub">GST 15%</td><td class="num">${_c2m2(t.gst)}</td></tr>
+      <tr><td><strong>Total inc GST</strong></td><td class="num"><strong>${_c2m2(t.inc)}</strong></td></tr>
+    </table>`:'<div class="c2-hint">No lines yet.</div>'}
+    <div class="c2-dd-row">
+      <button class="d-action" onclick="openC2QuoteLines('${esc(String(q.id))}')"><i class="ti ti-edit" style="font-size:12px;"></i> Edit lines</button>
+      <select class="cc-select" onchange="c2SetQuoteStatus('${esc(String(q.id))}',this.value)" title="Quote status">${opts.map(o=>`<option value="${o}"${o===cur?' selected':''}>${o}</option>`).join('')}</select>
+      ${linked&&_c2QuoteApproved(q)?`<button class="d-action" onclick="c2InvoiceFromQuote('${esc(linked.id)}','${esc(String(q.id))}')"><i class="ti ti-file-invoice" style="font-size:12px;"></i> Create invoice</button>`:''}
+    </div>
+  </div>`;
+}
+(function(){
+  const _origDetail=openQuoteDetail;
+  openQuoteDetail=function(qtId){
+    const r=_origDetail.apply(this,arguments);
+    try{
+      const q=localQuotes.find(x=>String(x.id)===String(qtId));
+      const body=document.getElementById('dd-body');
+      if(q&&body){
+        document.getElementById('c2-dd-qlines')?.remove();
+        const tmp=document.createElement('div');tmp.innerHTML=_c2QuoteLinesSection(q);
+        const first=body.firstElementChild;
+        if(first&&first.nextSibling)body.insertBefore(tmp.firstElementChild,first.nextSibling);else body.appendChild(tmp.firstElementChild);
+      }
+    }catch(e){console.error('feat-c2 quote detail',e);}
+    return r;
+  };
+  const _origPrev=openQuoteDocPreview;
+  openQuoteDocPreview=function(qtId){
+    const q=localQuotes.find(x=>String(x.id)===String(qtId));
+    if(!q||!Array.isArray(q.lines)||!q.lines.length)return _origPrev.apply(this,arguments);
+    const job=q.jobNumber?jobs.find(j=>j.id===String(q.jobNumber)):null;
+    const status=_c2QuoteStatus(q);const sc=_docStatusColor(status);
+    const t=_c2Totals(q.lines,q.discount);
+    const pill=`<span style="display:inline-block;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:500;background:${sc}22;color:${sc};border:1px solid ${sc}44;">${esc(status)}</span>`;
+    const cl=clientsData.find(c=>c.name===q.company);
+    const contact=cl&&cl.contact?`${cl.contact}${cl.contactTitle?` — ${cl.contactTitle}`:''}`:'';
+    const meta=`<div style="flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Prepared for</div><div style="font-weight:500;font-size:13px;">${esc(q.company||'—')}</div>${contact?`<div style="color:var(--muted);margin-top:2px;">${esc(contact)}</div>`:''}${job?`<div style="color:var(--muted);margin-top:2px;">Job #${esc(job.id)} · ${esc(job.name)}</div>`:''}</div>
+      <div style="text-align:right;color:var(--muted);"><div><strong style="color:var(--ink);">Quote #:</strong> ${esc(q.quoteNumber||q.id)}</div><div><strong style="color:var(--ink);">Issued:</strong> ${_docFmtDate(q.quoteDate)}</div><div><strong style="color:var(--ink);">Sent:</strong> ${_docFmtDate(q.sentDate)}</div>${q.approvedDate?`<div><strong style="color:var(--ink);">Approved:</strong> ${_docFmtDate(q.approvedDate)}</div>`:''}</div>`;
+    const rows=t.rows.map(r=>`<tr style="border-bottom:1px solid var(--faint);"><td style="padding:7px 14px;font-size:12px;">${esc(r.desc)}</td><td style="padding:7px 14px;font-size:12px;text-align:right;color:var(--muted);white-space:nowrap;">${esc(_c2qty(r.qty))} × ${_c2m2(r.unit)}</td><td style="padding:7px 14px;font-size:12px;text-align:right;white-space:nowrap;">${_c2m2(r.amount)}</td></tr>`).join('');
+    const tr=(l,v,strong)=>`<tr${strong?' style="border-top:1px solid var(--border);"':''}><td style="padding:${strong?'7px':'5px'} 10px;${strong?'font-weight:600;':'color:var(--muted);'}">${l}</td><td style="padding:${strong?'7px':'5px'} 10px;text-align:right;${strong?'font-weight:600;':''}">${v}</td></tr>`;
+    const totals=tr('Subtotal',_c2m2(t.subtotal))
+      +(t.discount?tr(esc(_c2DiscLabel(q.discount)),_c2m2(-t.discount)):'')
+      +tr('Total (ex GST)',_c2m2(t.ex),true)+tr('GST (15%)',_c2m2(t.gst))
+      +`<tr style="border-top:1px solid var(--border);"><td style="padding:7px 10px;font-weight:600;">Total (inc GST)</td><td style="padding:7px 10px;text-align:right;font-weight:600;font-family:var(--display);font-size:15px;">${_c2m2(t.inc)}</td></tr>`;
+    const terms=`<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--faint);font-size:11px;color:var(--muted);line-height:1.6;">Valid for 30 days from issue. Full terms: <a href="https://content-co.nz/terms/" target="_blank" style="color:var(--red);">content-co.nz/terms</a></div>`;
+    _docModalShell('Quote',pill,meta,rows,totals,terms);
+    try{
+      const m=document.getElementById('doc-preview-modal');
+      const ths=m?.querySelectorAll('thead th');if(ths&&ths[1])ths[1].textContent='QTY × UNIT';
+      const cap=[...(m?.querySelectorAll('div')||[])].find(d=>/Breakdown reflects the current job plan/.test(d.textContent)&&!d.children.length);
+      if(cap)cap.textContent='Prices in NZD. Line items as quoted.';
+    }catch(e){}
+  };
+})();
+
+// ──────────────────── C6 · Invoice from quote / logged time + part payments ────────────────────
+// Stored on the job (persisted via _keepJobEdits): invLines [{desc,qty,unit,amount}],
+// invSource {type:'quote'|'time',label,quoteId?,from?,to?}, invPayments [{id,amount,date,note}]
+// (amounts inc GST). No invLines = the original job-plan invoice, unchanged.
+function _c2InvTotals(j){
+  if(Array.isArray(j.invLines)&&j.invLines.length){const t=_c2Totals(j.invLines,null);return{ex:t.ex,gst:t.gst,inc:t.inc,t};}
+  // Plan invoice: same whole-dollar maths as renderInvoice.
+  let sub=j.invTotal;
+  if(sub==null){computeJobStats(j);sub=j._plannedSell||0;}
+  sub=_c2num(sub);const gst=Math.round(sub*0.15);
+  return{ex:sub,gst,inc:sub+gst};
+}
+function _c2Paid(j){return _c2r((j.invPayments||[]).reduce((s,p)=>s+_c2num(p.amount),0));}
+function _c2KeepInv(j,extra){_keepJobEdits(j,['invLines','invSource','invPayments','invTotal','invStatus','invPaidDate','_c2PaidByPayments',...(extra||[])]);}
+function _c2InvSourceLabel(j){
+  const s=j.invSource;
+  if(!(Array.isArray(j.invLines)&&j.invLines.length)||!s)return'Job plan';
+  if(s.type==='quote')return`Quote ${s.label||''}`.trim();
+  if(s.type==='time')return`Logged time ${s.from?fmtDate(s.from):'start'} – ${s.to?fmtDate(s.to):'today'}`;
+  return s.label||'Custom lines';
+}
+function _c2InvLinesHTML(j){
+  const t=_c2Totals(j.invLines,null);
+  const lines=t.rows.map(r=>`<div class="inv-line${r.amount<0?' c2-inv-line-neg':''}"><span class="inv-ln">${esc(r.desc)}<span class="c2-inv-q">${esc(_c2QtyLabel(r))} × ${_c2m2(r.unit)}</span></span><span class="inv-lv">${_c2m2(r.amount)}</span></div>`).join('');
+  return{html:`<div class="inv-sec"><div class="inv-sec-h">${esc(_c2InvSourceLabel(j))}</div>${lines}</div>
+    <div class="inv-tot"><span class="inv-tot-l">Subtotal ex GST</span><span>${_c2m2(t.ex)}</span></div>
+    <div class="inv-tot" style="border-top:none;padding-top:0;"><span class="inv-tot-l">GST 15%</span><span>${_c2m2(t.gst)}</span></div>
+    <div class="inv-tot" style="font-size:16px;"><span>Total inc GST</span><span style="font-weight:500;">${_c2m2(t.inc)}</span></div>`,t};
+}
+function _c2PaymentsHTML(j){
+  const tot=_c2InvTotals(j);const pays=(j.invPayments||[]).slice().sort((a,b)=>(a.date||'')<(b.date||'')?-1:1);
+  const paid=_c2Paid(j);const out=_c2r(tot.inc-paid);
+  const jid=esc(j.id);
+  return`<div class="c2-pay${pays.length?'':' no-print'}" id="c2-pay">
+    <div class="c2-pay-hd"><span>Payments</span><span>Amounts inc GST</span></div>
+    ${pays.map(p=>`<div class="c2-pay-li"><span class="d">${esc(fmtDate(p.date))}</span><span class="n">${esc(p.note||'')}</span><span class="a">${_c2m2(p.amount)}</span><button class="cc-icon-btn danger no-print" title="Remove payment" onclick="c2RemovePayment('${jid}','${esc(p.id)}')"><i class="ti ti-x"></i></button></div>`).join('')||'<div class="c2-hint">No payments recorded yet.</div>'}
+    <div class="c2-pay-sum"><span>Paid ${_c2m2(paid)}</span><span class="out${out<=0?' zero':''}">Outstanding ${_c2m2(Math.max(0,out))}</span></div>
+    ${out>0?`<div class="c2-pay-form no-print">
+      <input class="form-inp" id="c2-pay-amt" type="number" min="0" step="0.01" placeholder="Amount">
+      <input class="form-inp" id="c2-pay-date" type="date" value="${_localISO()}">
+      <input class="form-inp" id="c2-pay-note" placeholder="Note (optional)" maxlength="60" style="width:160px;">
+      <button class="d-action" onclick="document.getElementById('c2-pay-amt').value='${out.toFixed(2)}'">Fill balance</button>
+      <button class="d-action primary" onclick="c2AddPayment('${jid}')"><i class="ti ti-cash" style="font-size:12px;"></i> Record payment</button>
+    </div>`:''}
+  </div>`;
+}
+function _c2SyncInvStatus(j){
+  const tot=_c2InvTotals(j);const paid=_c2Paid(j);
+  if(tot.inc>0&&paid>=_c2r(tot.inc)){
+    j.invStatus='paid';
+    const last=(j.invPayments||[]).map(p=>p.date).filter(Boolean).sort().pop();
+    j.invPaidDate=last||_localISO();
+  }else if(j.invStatus==='paid'&&j._c2PaidByPayments){
+    j.invStatus='sent';j.invPaidDate=null; // a payment was removed / total raised: no longer fully paid
+  }
+  j._c2PaidByPayments=j.invStatus==='paid'&&tot.inc>0&&paid>=_c2r(tot.inc);
+  const sel=document.getElementById('inv-status');if(sel&&_c2InvJobId===j.id)sel.value=j.invStatus||'draft';
+}
+function c2AddPayment(jobId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  const amt=_c2r(_c2num(document.getElementById('c2-pay-amt')?.value));
+  const date=document.getElementById('c2-pay-date')?.value||'';
+  const note=(document.getElementById('c2-pay-note')?.value||'').trim();
+  if(!(amt>0)){toast('Enter a payment amount','warn');return;}
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){toast('Pick a payment date','warn');return;}
+  const out=_c2r(_c2InvTotals(j).inc-_c2Paid(j));
+  if(amt>out+0.004){toast(`That's more than the ${_c2m2(out)} outstanding`,'warn');return;}
+  j.invPayments=[...(j.invPayments||[]),{id:uid('pay'),amount:amt,date,note}];
+  if(!j.invStatus||j.invStatus==='draft')j.invStatus='sent';
+  _c2SyncInvStatus(j);_c2KeepInv(j);
+  logActivity(j.id,MY_PERSON,'invoice_payment',`Recorded a payment of <strong>${_c2m2(amt)}</strong> on invoice #${esc(j.invNum)}`);
+  renderInvoice(j);try{renderStats(j);}catch(e){}
+  toast(j.invStatus==='paid'?`Payment recorded — invoice #${esc(j.invNum)} is paid`:`Payment of ${_c2m2(amt)} recorded`,'success');
+}
+function c2RemovePayment(jobId,payId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  const p=(j.invPayments||[]).find(x=>x.id===payId);if(!p)return;
+  ccConfirm(`Remove the ${_c2m2(p.amount)} payment from ${esc(fmtDate(p.date))}?`,()=>{
+    j.invPayments=(j.invPayments||[]).filter(x=>x.id!==payId);
+    _c2SyncInvStatus(j);_c2KeepInv(j);renderInvoice(j);
+    toast('Payment removed','success');
+  },'Remove',true);
+}
+let _c2InvJobId=null; // job whose invoice the invoice modal is showing
+(function(){
+  const _origRI=renderInvoice;
+  renderInvoice=function(j){
+    const r=_origRI.apply(this,arguments);
+    _c2InvJobId=j?j.id:null;
+    try{
+      const wrap=document.getElementById('inv-body');if(!wrap||!j)return r;
+      const hasLines=Array.isArray(j.invLines)&&j.invLines.length;
+      if(hasLines){
+        const secs=[...wrap.querySelectorAll(':scope > .inv-sec, :scope > .inv-tot')];
+        const holder=document.createElement('div');
+        const{html,t}=_c2InvLinesHTML(j);holder.innerHTML=html;
+        if(secs.length){secs[0].before(...holder.childNodes);secs.forEach(s=>s.remove());}else wrap.append(...holder.childNodes);
+        j.invTotal=t.ex;
+        // Split/deposit box was drawn against the plan total — redraw it against these lines.
+        const title=wrap.querySelector(':scope > .inv-job-title');const split=title?.nextElementSibling;
+        if(split&&!split.classList.contains('inv-sec')){const tmp=document.createElement('div');tmp.innerHTML=_splitInvoicesHTML(j);split.replaceWith(tmp.firstElementChild);}
+      }
+      // Source bar (not printed)
+      const bar=document.createElement('div');bar.className='c2-inv-bar no-print';
+      bar.innerHTML=`<i class="ti ti-list-details" style="font-size:14px;"></i><span>Lines from <strong>${esc(_c2InvSourceLabel(j))}</strong></span><span class="sp"></span>
+        ${hasLines?`<button class="d-action" onclick="openC2InvLines('${esc(j.id)}')"><i class="ti ti-edit" style="font-size:12px;"></i> Edit lines</button>`:''}
+        <button class="d-action" onclick="openC2InvSource('${esc(j.id)}')"><i class="ti ti-switch-horizontal" style="font-size:12px;"></i> Create from…</button>`;
+      wrap.prepend(bar);
+      document.getElementById('c2-pay')?.remove();
+      const tmp=document.createElement('div');tmp.innerHTML=_c2PaymentsHTML(j);wrap.appendChild(tmp.firstElementChild);
+    }catch(e){console.error('feat-c2 invoice render',e);}
+    return r;
+  };
+  // Deposits / splits are a share of this invoice's total when it has its own lines.
+  const _origSplitTot=_splitInvTotal;
+  _splitInvTotal=function(j){
+    if(j&&Array.isArray(j.invLines)&&j.invLines.length)return _c2Totals(j.invLines,null).ex;
+    return _origSplitTot.apply(this,arguments);
+  };
+  const _origXero=copyInvoiceToXero;
+  copyInvoiceToXero=function(){
+    const j=jobs.find(x=>x.id===activeJobId);
+    if(!j||!(Array.isArray(j.invLines)&&j.invLines.length))return _origXero.apply(this,arguments);
+    const q=s=>`"${String(s??'').replace(/"/g,'""')}"`;
+    const rows=['ContactName,InvoiceNumber,Description,Quantity,UnitAmount,TaxType,AccountCode'];
+    // Time lines go as qty 1 at the line amount (hours in the description) so Xero's total matches to the cent.
+    _c2Totals(j.invLines,null).rows.forEach(l=>rows.push(l.mins!=null
+      ?`${q(j.company)},${q(j.invNum)},${q(`${l.desc} (${_c2QtyLabel(l)} @ ${_c2m2(l.unit)}/h)`)},1,${l.amount},"OUTPUT2","200"`
+      :`${q(j.company)},${q(j.invNum)},${q(l.desc)},${_c2qty(l.qty)},${_c2r(l.unit)},"OUTPUT2","200"`));
+    navigator.clipboard.writeText(rows.join('\n')).then(()=>toast('Xero CSV copied to clipboard','success'));
+  };
+})();
+// Quotes that can be invoiced for a job: approved ST + native quotes.
+function _c2JobQuotes(j){
+  return[
+    ...(j._stId?stQuotes.filter(q=>String(q.jobId)===String(j._stId)):[]),
+    ...localQuotes.filter(q=>String(q.jobNumber)===String(j.id)),
+  ].filter(_c2QuoteApproved);
+}
+function _c2QuoteInvLines(q){
+  const lines=_c2QuoteLinesOf(q).map(l=>({desc:l.desc,qty:_c2num(l.qty),unit:_c2num(l.unit)}));
+  const t=_c2Totals(lines,q.discount);
+  if(t.discount)lines.push({desc:_c2DiscLabel(q.discount)||'Discount',qty:1,unit:-t.discount});
+  return lines;
+}
+// Logged time on a job in [from,to], grouped by plan item: hours × the item's rate.
+function _c2TimeLines(j,from,to){
+  const items=[];_c2JobPhases(j).forEach(ph=>(ph.items||[]).forEach(it=>items.push(it)));
+  const byStId={},byName={},phOf=new Map();
+  _c2JobPhases(j).forEach(ph=>(ph.items||[]).forEach(it=>phOf.set(it,ph.name||'')));
+  items.forEach(it=>{if(it._stId)byStId[String(it._stId)]=it;const n=(it.name||'').trim().toLowerCase();if(n&&!byName[n])byName[n]=it;});
+  const groups={};let skippedNonBill=0,entries=0;
+  (stLoggedTimes||[]).forEach(lt=>{
+    if(String(lt.job?.number||'')!==String(j.id))return;
+    const d=String(lt.date||'').slice(0,10);if(!d)return;
+    if(from&&d<from)return;if(to&&d>to)return;
+    const mins=+lt.minutes||0;if(mins<=0)return;
+    if(lt.job?.isBillable===false){skippedNonBill+=mins;return;}
+    entries++;
+    const it=(lt.jobItemUser?.jobItemId!=null&&byStId[String(lt.jobItemUser.jobItemId)])||byName[(lt.itemName||'').trim().toLowerCase()]||null;
+    const key=it?('it:'+(it.id||it.name)):('nm:'+(lt.itemName||'').trim().toLowerCase());
+    const g=groups[key]||(groups[key]={desc:it?.name||lt.itemName||'Time (no item)',item:it,mins:0,stSell:0,stMins:0});
+    g.mins+=mins;
+    if(lt.totalExTax!=null&&isFinite(+lt.totalExTax)){g.stSell+=+lt.totalExTax;g.stMins+=mins;}
+  });
+  const lines=[],warn=[];
+  // Same item name in two phases → say which phase.
+  const nameCount={};Object.values(groups).forEach(g=>{const k=g.desc.trim().toLowerCase();nameCount[k]=(nameCount[k]||0)+1;});
+  Object.values(groups).forEach(g=>{if(g.item&&nameCount[g.desc.trim().toLowerCase()]>1&&phOf.get(g.item))g.desc=`${phOf.get(g.item)} — ${g.desc}`;});
+  Object.values(groups).sort((a,b)=>b.mins-a.mins).forEach(g=>{
+    const qty=g.mins/60;
+    let unit=_c2num(g.item?.rate),src='plan';
+    if(!(unit>0)&&g.stMins>0&&g.stMins===g.mins&&g.stSell>0){unit=_c2r(g.stSell/(g.stMins/60));src='streamtime';}
+    if(!(unit>0)){unit=0;warn.push(g.desc);}
+    lines.push({desc:g.desc,qty,unit,mins:g.mins,_mins:g.mins,_src:src});
+  });
+  return{lines,warn,skippedNonBill,entries};
+}
+let _c2Src={};
+function openC2InvSource(jobId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  document.getElementById('c2-src-modal')?.remove();
+  const now=new Date();
+  const qs=_c2JobQuotes(j);
+  _c2Src={jobId,type:qs.length?'quote':'time',quoteId:qs[0]?String(qs[0].id):null,
+    from:_localISO(new Date(now.getFullYear(),now.getMonth(),1)),to:_localISO(now)};
+  const m=document.createElement('div');m.className='modal-bg on';m.id='c2-src-modal';
+  m.innerHTML=`<div class="modal c2-modal-wide">
+    <div class="modal-hd"><span class="modal-hd-title">Create invoice #${esc(j.invNum||'')} from…</span><button class="modal-x" onclick="document.getElementById('c2-src-modal').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd">
+      <div class="c2-src-opts">
+        <button class="c2-src-opt" data-t="plan" onclick="_c2SrcPick('plan')"><div class="t"><i class="ti ti-layout-list"></i> Job plan</div><div class="s">Every plan item at its planned sell</div></button>
+        <button class="c2-src-opt" data-t="quote" onclick="_c2SrcPick('quote')"><div class="t"><i class="ti ti-file-text"></i> Approved quote</div><div class="s">${qs.length} approved quote${qs.length!==1?'s':''} on this job</div></button>
+        <button class="c2-src-opt" data-t="time" onclick="_c2SrcPick('time')"><div class="t"><i class="ti ti-clock"></i> Logged time</div><div class="s">Hours × item rate for a date range</div></button>
+      </div>
+      <div id="c2-src-body"></div>
+    </div>
+    <div class="modal-ft"><button class="modal-cancel" onclick="document.getElementById('c2-src-modal').remove()">Cancel</button><button class="modal-save" onclick="c2ApplyInvSource()">Use these lines</button></div>
+  </div>`;
+  m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+  document.body.appendChild(m);
+  _c2SrcPick(_c2Src.type);
+}
+function _c2SrcPick(t){_c2Src.type=t;document.querySelectorAll('#c2-src-modal .c2-src-opt').forEach(b=>b.classList.toggle('on',b.dataset.t===t));_c2SrcRender();}
+function _c2SrcLines(){
+  const j=jobs.find(x=>x.id===_c2Src.jobId);if(!j)return{lines:[]};
+  if(_c2Src.type==='plan')return{lines:_c2PlanLines(j)};
+  if(_c2Src.type==='quote'){
+    const q=_c2JobQuotes(j).find(x=>String(x.id)===String(_c2Src.quoteId));
+    return q?{lines:_c2QuoteInvLines(q),quote:q}:{lines:[]};
+  }
+  return _c2TimeLines(j,_c2Src.from,_c2Src.to);
+}
+function _c2SrcRender(){
+  const el=document.getElementById('c2-src-body');if(!el)return;
+  const j=jobs.find(x=>x.id===_c2Src.jobId);if(!j)return;
+  let head='';
+  if(_c2Src.type==='plan')head=`<div class="c2-hint" style="margin-bottom:10px;">Uses the live job plan — the invoice’s standard layout. Any custom lines on this invoice are cleared.</div>`;
+  if(_c2Src.type==='quote'){
+    const qs=_c2JobQuotes(j);
+    head=qs.length?`<div class="field"><label>Quote</label><select class="cc-select" style="width:100%;" onchange="_c2Src.quoteId=this.value;_c2SrcRender()">${qs.map(q=>`<option value="${esc(String(q.id))}"${String(q.id)===String(_c2Src.quoteId)?' selected':''}>${esc(q.quoteNumber||q.id)} · ${esc(String(q.quoteName||'Quote').replace(/^\[\d+\]\s*/,''))} · ${_c2m2(q.totalAmountExTax)} ex GST${q._local?'':' (Streamtime)'}</option>`).join('')}</select></div>`
+      :`<div class="c2-warn">No approved quotes on this job. Mark a quote approved first (Quotes → open a quote).</div>`;
+  }
+  if(_c2Src.type==='time'){
+    head=`<div class="field-row">
+      <div class="field"><label>From</label><input type="date" class="form-inp" style="width:100%;" value="${esc(_c2Src.from||'')}" onchange="_c2Src.from=this.value;_c2SrcRender()"></div>
+      <div class="field"><label>To (inclusive)</label><input type="date" class="form-inp" style="width:100%;" value="${esc(_c2Src.to||'')}" onchange="_c2Src.to=this.value;_c2SrcRender()"></div>
+    </div>`;
+  }
+  const res=_c2SrcLines();const t=_c2Totals(res.lines,null);
+  const rows=t.rows.map((r,i)=>{const l=res.lines[i];return`<tr><td>${esc(r.desc)}${l._src==='streamtime'?' <span class="c2-hint">(Streamtime rate)</span>':''}</td><td class="c2-amt">${l._mins!=null?esc(formatHrs(l._mins/60)):esc(_c2qty(r.qty))}</td><td class="c2-amt">${r.unit>0||r.unit<0?_c2m2(r.unit):'<span style="color:var(--warn-ink);">No rate</span>'}</td><td class="c2-amt">${_c2m2(r.amount)}</td></tr>`;}).join('');
+  const notes=[];
+  if(res.warn&&res.warn.length)notes.push(`<div class="c2-warn">No rate for: ${res.warn.map(esc).join(', ')}. These lines are $0 — set a rate on the plan item, or edit the lines after.</div>`);
+  if(res.skippedNonBill)notes.push(`<div class="c2-hint">${esc(formatHrs(res.skippedNonBill/60))} of non-billable time left out.</div>`);
+  if(_c2Src.type==='time'&&!res.lines.length)notes.push(`<div class="c2-hint">No logged time on job ${esc(j.id)} in this range.</div>`);
+  el.innerHTML=`${head}
+    ${res.lines.length?`<div class="c2-ed-scroll" style="margin-top:6px;"><table class="c2-lines"><thead><tr><th>Description</th><th class="c2-col-num">${_c2Src.type==='time'?'Hours':'Qty'}</th><th class="c2-col-num">Rate</th><th class="c2-col-amt">Amount</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="c2-tot" style="margin-top:10px;margin-left:auto;width:300px;">
+      <div class="c2-tot-row strong"><span class="lbl">Total ex GST</span><span>${_c2m2(t.ex)}</span></div>
+      <div class="c2-tot-row"><span class="lbl">GST 15%</span><span>${_c2m2(t.gst)}</span></div>
+      <div class="c2-tot-row strong"><span class="lbl">Total inc GST</span><span>${_c2m2(t.inc)}</span></div>
+    </div>`:''}
+    <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">${notes.join('')}</div>`;
+}
+function _c2SetInvLines(j,lines,source){
+  if(!j.invNum){j.invNum=_nextInvNum();if(!j.invIssueDate)j.invIssueDate=_localISO();if(!j.invDueDate){const d=new Date();d.setDate(d.getDate()+30);j.invDueDate=_localISO(d);}}
+  if(lines){
+    j.invLines=_c2Totals(lines,null).rows.map(r=>{const o={desc:r.desc,qty:r.qty,unit:r.unit,amount:r.amount};if(r.mins!=null)o.mins=r.mins;return o;});
+    j.invSource=source;j.invTotal=_c2Totals(j.invLines,null).ex;
+  }else{j.invLines=null;j.invSource=null;j.invTotal=null;}
+  _c2KeepInv(j,['invNum','invIssueDate','invDueDate']);
+}
+function c2ApplyInvSource(){
+  const j=jobs.find(x=>x.id===_c2Src.jobId);if(!j)return;
+  if(_c2Src.type==='plan'){
+    const go=()=>{_c2SetInvLines(j,null,null);document.getElementById('c2-src-modal')?.remove();_c2ReopenInvoice(j);toast('Invoice uses the job plan','success');};
+    if(Array.isArray(j.invLines)&&j.invLines.length){ccConfirm('Replace this invoice’s lines with the job plan?',go,'Replace');return;}
+    go();return;
+  }
+  const res=_c2SrcLines();
+  if(!res.lines.length){toast(_c2Src.type==='quote'?'Pick an approved quote':'No logged time in that range','warn');return;}
+  const src=_c2Src.type==='quote'?{type:'quote',quoteId:String(res.quote.id),label:String(res.quote.quoteNumber||res.quote.id)}:{type:'time',from:_c2Src.from||null,to:_c2Src.to||null};
+  const t=_c2Totals(res.lines,null);
+  const go=()=>{
+    _c2SetInvLines(j,res.lines.map(l=>({desc:l.desc,qty:l.qty,unit:l.unit,mins:l.mins})),src);
+    document.getElementById('c2-src-modal')?.remove();
+    logActivity(j.id,MY_PERSON,'invoice_lines',`Invoice #${esc(j.invNum)} built from ${esc(_c2InvSourceLabel(j).toLowerCase())} — ${_c2m2(t.ex)} ex GST`);
+    _c2ReopenInvoice(j);
+    toast(`Invoice lines set · ${_c2m2(t.ex)} ex GST`,'success');
+  };
+  if(Array.isArray(j.invLines)&&j.invLines.length){ccConfirm('Replace this invoice’s current lines?',go,'Replace');return;}
+  go();
+}
+function _c2ReopenInvoice(j){
+  const open=document.getElementById('inv-modal')?.classList.contains('on');
+  if(open&&_c2InvJobId===j.id){renderInvoice(j);if(activeJobId===j.id){try{renderStats(j);}catch(e){}}return;}
+  _c2OpenJobInvoice(j);
+}
+// Open the job, then its invoice — so the invoice's status / print / Xero buttons (which act on
+// activeJobId) all point at this job.
+function _c2OpenJobInvoice(j){
+  if(activeJobId!==j.id||document.getElementById('view-detail')?.classList.contains('hidden')){openJobDetail(j.id);setTimeout(()=>openInvoice(),250);}
+  else openInvoice();
+}
+function openC2InvLines(jobId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  document.getElementById('c2-il-modal')?.remove();
+  const m=document.createElement('div');m.className='modal-bg on';m.id='c2-il-modal';
+  m.innerHTML=`<div class="modal c2-modal-wide">
+    <div class="modal-hd"><span class="modal-hd-title">Edit invoice lines · #${esc(j.invNum||'')}</span><button class="modal-x" onclick="document.getElementById('c2-il-modal').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd">${_c2EdHTML('il',{})}<div class="c2-hint" style="margin-top:8px;">Use a negative unit price for a discount or credit line.</div></div>
+    <div class="modal-ft"><button class="modal-cancel" onclick="document.getElementById('c2-il-modal').remove()">Cancel</button><button class="modal-save" onclick="saveC2InvLines('${esc(j.id)}')">Save lines</button></div>
+  </div>`;
+  m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+  document.body.appendChild(m);
+  _c2EdInit('il',j.invLines||[],null,{});
+}
+function saveC2InvLines(jobId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  const lines=_c2EdLines('il');
+  if(!lines.length){toast('Add at least one line','warn');return;}
+  const t=_c2Totals(lines,null);
+  if(t.inc<_c2Paid(j)){toast(`Payments of ${_c2m2(_c2Paid(j))} are more than this total — remove a payment first`,'warn');return;}
+  _c2SetInvLines(j,lines,{...(j.invSource||{type:'custom'}),edited:true});
+  _c2SyncInvStatus(j);_c2KeepInv(j);
+  document.getElementById('c2-il-modal')?.remove();
+  _c2ReopenInvoice(j);
+  toast(`Invoice lines saved · ${_c2m2(t.ex)} ex GST`,'success');
+}
+// From an approved native quote's drawer.
+function c2InvoiceFromQuote(jobId,qtId){
+  const j=jobs.find(x=>x.id===jobId);const q=_findQuote(qtId);if(!j||!q)return;
+  const lines=_c2QuoteInvLines(q);if(!lines.length){toast('This quote has no value to invoice','warn');return;}
+  const go=()=>{
+    _c2SetInvLines(j,lines,{type:'quote',quoteId:String(q.id),label:String(q.quoteNumber||q.id)});
+    try{closeDetailDrawer();}catch(e){}
+    _c2OpenJobInvoice(j);
+    toast(`Invoice #${esc(j.invNum)} created from quote ${esc(q.quoteNumber||q.id)}`,'success');
+  };
+  if(Array.isArray(j.invLines)&&j.invLines.length){ccConfirm(`Job ${esc(j.id)} already has invoice lines. Replace them with this quote?`,go,'Replace');return;}
+  go();
+}
+
+// ───────────────────────── C3 · Schedule by job + multi-week ─────────────────────────
+// Per-viewer view choice (localStorage, harmless if blocked). People × 1 week is the
+// original view, untouched. Everything else is drawn from the same getWeekData() the
+// people view uses, so hours match it exactly (scheduled + done/logged, no double count).
+let _c2Sched=(()=>{try{const v=JSON.parse(localStorage.getItem('cc_sched_view')||'{}');return{mode:v.mode==='jobs'?'jobs':'people',weeks:[1,2,4].includes(+v.weeks)?+v.weeks:1};}catch(e){return{mode:'people',weeks:1};}})();
+function c2SetSched(k,v){
+  _c2Sched[k]=k==='weeks'?(+v||1):v;
+  try{localStorage.setItem('cc_sched_view',JSON.stringify(_c2Sched));}catch(e){}
+  renderSchedule();
+}
+function c2SchedGoWeek(off){weekOffset=off;c2SetSched('weeks',1);}
+function _c2TaskHrs(t){return typeof t.hours==='number'?(isFinite(t.hours)&&t.hours>0?t.hours:0):_c2hrs(t.hours);}
+function _c2PersonCap(k){const p=people[k]||{};const u=stUsersById[p._stId];return(u?.capacityH)||p.hoursPerDay||8;}
+function _c2SchedDays(){
+  const out=[];
+  for(let w=0;w<_c2Sched.weeks;w++){
+    const off=weekOffset+w;const dates=_ccWeekDates(off);
+    dates.forEach((iso,i)=>out.push({off,day:i+1,iso,w,first:i===0}));
+  }
+  return out;
+}
+function _c2SchedHead(days,firstCol,totCol){
+  const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const DN=['Mon','Tue','Wed','Thu','Fri'];
+  const today=_localISO();const multi=_c2Sched.weeks>1;
+  const wkRow=multi?`<tr><th style="width:${firstCol}px;"></th>${[...new Set(days.map(d=>d.off))].map(off=>{const d0=_pDate(days.find(d=>d.off===off).iso);return`<th class="wk" colspan="5" onclick="c2SchedGoWeek(${off})" title="Open this week">Week of ${d0.getDate()} ${MON[d0.getMonth()]}</th>`;}).join('')}<th style="width:${totCol}px;"></th></tr>`:'';
+  const dayRow=`<tr><th style="width:${firstCol}px;"></th>${days.map(d=>{const dt=_pDate(d.iso);return`<th class="${d.first?'wk-start ':''}${d.iso===today?'today':''}">${multi?DN[d.day-1].charAt(0):DN[d.day-1]} ${dt.getDate()}</th>`;}).join('')}<th class="tot" style="width:${totCol}px;">Total</th></tr>`;
+  return`<thead>${wkRow}${dayRow}</thead>`;
+}
+function _c2SchedPeopleGrid(keys,days){
+  const today=_localISO();
+  let grand=0;const dayTot=days.map(()=>0);
+  const rows=keys.map(k=>{
+    const p=people[k];if(!p)return'';
+    const cap=_c2PersonCap(k);let tot=0,capTot=0;
+    const cells=days.map((d,i)=>{
+      const tasks=getWeekData(k,d.off)[d.day]||[];
+      const h=tasks.reduce((s,t)=>s+_c2TaskHrs(t),0);
+      const away=typeof _ccAwayOn==='function'?_ccAwayOn(k,d.iso):null;
+      const c=away?0:cap;tot+=h;capTot+=c;dayTot[i]+=h;
+      const over=h>c+1e-9&&h>0;const pct=c>0?Math.min(100,h/c*100):(h>0?100:0);
+      return`<td class="c2-pcell${d.first?' wk-start':''}${d.iso===today?' today':''}${away?' away':''}" onclick="c2SchedGoWeek(${d.off})" title="${esc(p.name)} · ${esc(fmtDate(d.iso))}: ${esc(formatHrs(h)||'0h')} of ${esc(formatHrs(c)||'0h')}${away?' (away)':''}">
+        <div class="c2-ph${h>0?' has':''}${over?' over':''}">${h>0?esc(formatHrs(h)):(away?'Away':'—')}</div>
+        ${c>0||h>0?`<div class="c2-bar"><span class="${over?'over':''}" style="width:${pct.toFixed(1)}%;"></span></div>`:''}
+      </td>`;
+    }).join('');
+    grand+=tot;
+    return`<tr><td class="lbl"><div style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="c2-av" style="background:${esc(p.color||'#999')};width:20px;height:20px;font-size:8px;">${esc(p.initials||'?')}</span><span style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.name)}</span></div></td>${cells}<td class="tot" title="Capacity ${esc(formatHrs(capTot)||'0h')}">${esc(formatHrs(tot)||'—')}<div class="c2-hint">of ${esc(formatHrs(capTot)||'0h')}</div></td></tr>`;
+  }).join('');
+  const foot=`<tfoot><tr><td class="lbl">Total</td>${days.map((d,i)=>`<td class="${d.first?'wk-start':''}">${esc(formatHrs(dayTot[i])||'—')}</td>`).join('')}<td class="tot" id="c2-sched-grand">${esc(formatHrs(grand)||'—')}</td></tr></tfoot>`;
+  return{html:`<table class="c2-sg" style="min-width:${180+days.length*(_c2Sched.weeks>2?40:64)+80}px;">${_c2SchedHead(days,180,80)}<tbody>${rows}</tbody>${foot}</table>`,grand};
+}
+function _c2SchedJobsGrid(keys,days){
+  const jobById=new Map(jobs.map(j=>[String(j.id),j]));
+  const agg=new Map(); // jobKey → {cells:[Map person→{h,done,all}], tot}
+  days.forEach((d,i)=>{
+    keys.forEach(k=>{
+      (getWeekData(k,d.off)[d.day]||[]).forEach(t=>{
+        const h=_c2TaskHrs(t);if(h<=0)return;
+        const jid=_taskJobId(t);const key=jid?String(jid):'';
+        let a=agg.get(key);if(!a){a={cells:days.map(()=>new Map()),tot:0};agg.set(key,a);}
+        const c=a.cells[i].get(k)||{h:0,doneH:0};c.h+=h;if(t.done)c.doneH+=h;a.cells[i].set(k,c);a.tot+=h;
+      });
+    });
+  });
+  const multi=_c2Sched.weeks>1;
+  const order=[...agg.entries()].sort((a,b)=>{if(!a[0])return 1;if(!b[0])return-1;return b[1].tot-a[1].tot;});
+  const dayTot=days.map(()=>0);let grand=0;
+  const rows=order.map(([key,a])=>{
+    const j=key?jobById.get(key):null;
+    const label=key?`<div class="c2-sj" onclick="openJobDetail('${esc(key)}')" title="Open job"><div class="c2-sj-top"><span class="c2-sj-num">${esc(key)}</span><span class="c2-sj-name">${esc(j?j.name:'Job '+key)}</span></div>${j?.company?`<div class="c2-sj-co">${esc(j.company)}</div>`:''}</div>`
+      :`<div class="c2-sj-top"><span class="c2-sj-name" style="color:var(--muted);">No job</span></div><div class="c2-sj-co">Personal and internal tasks</div>`;
+    const cells=a.cells.map((m,i)=>{
+      const d=days[i];const list=[...m.entries()].sort((x,y)=>y[1].h-x[1].h);
+      const h=list.reduce((s,[,c])=>s+c.h,0);dayTot[i]+=h;
+      if(!list.length)return`<td class="${d.first?'wk-start':''}${d.iso===_localISO()?' today':''}"></td>`;
+      const tip=list.map(([k,c])=>`${people[k]?.name||k}: ${formatHrs(c.h)}${c.doneH>=c.h-1e-9?' (done)':c.doneH>0?` (${formatHrs(c.doneH)} done)`:''}`).join('\n');
+      const av=k=>`<span class="c2-av" style="background:${esc(people[k]?.color||'#999')};">${esc(people[k]?.initials||'?')}</span>`;
+      const inner=multi
+        ?`<div class="c2-ph has">${esc(formatHrs(h))}</div><div class="c2-avs">${list.slice(0,3).map(([k])=>av(k)).join('')}${list.length>3?`<span class="c2-more">+${list.length-3}</span>`:''}</div>`
+        :list.map(([k,c])=>`<div class="c2-chip${c.doneH>=c.h-1e-9?' done':''}">${av(k)}${esc(formatHrs(c.h))}</div>`).join('');
+      return`<td class="${d.first?'wk-start':''}${d.iso===_localISO()?' today':''}" title="${esc(tip)}">${inner}</td>`;
+    }).join('');
+    grand+=a.tot;
+    return`<tr><td class="lbl">${label}</td>${cells}<td class="tot">${esc(formatHrs(a.tot))}</td></tr>`;
+  }).join('');
+  const foot=`<tfoot><tr><td class="lbl">Total</td>${days.map((d,i)=>`<td class="${d.first?'wk-start':''}">${esc(formatHrs(dayTot[i])||'—')}</td>`).join('')}<td class="tot" id="c2-sched-grand">${esc(formatHrs(grand)||'—')}</td></tr></tfoot>`;
+  const empty=`<tr><td colspan="${days.length+2}" style="padding:36px;text-align:center;color:var(--muted);">${keys.length?'Nothing scheduled or logged for these people in this range.':'No people selected — pick someone above.'}</td></tr>`;
+  return{html:`<table class="c2-sg" style="min-width:${220+days.length*(multi?44:96)+70}px;">${_c2SchedHead(days,220,70)}<tbody>${rows||empty}</tbody>${rows?foot:''}</table>
+    <div class="c2-sched-note">Scheduled and done (logged) time for the people selected above. Faded = done. Hover a cell for names.</div>`,grand};
+}
+function _c2DecorateSchedule(){
+  const el=document.getElementById('schedule-scroll');if(!el)return;
+  const head=el.firstElementChild;if(!head)return;
+  el.querySelector('.c2-sched-bar')?.remove();
+  const bar=document.createElement('div');bar.className='c2-sched-bar';
+  const seg=(k,v,l)=>`<button class="sched-pick-btn${_c2Sched[k]===v?' on':''}" onclick="c2SetSched('${k}','${v}')">${l}</button>`;
+  bar.innerHTML=`<span class="c2-seg"><span class="c2-seg-lbl">View</span>${seg('mode','people','People')}${seg('mode','jobs','Jobs')}</span>
+    <span class="c2-seg"><span class="c2-seg-lbl">Range</span>${seg('weeks',1,'1 week')}${seg('weeks',2,'2 weeks')}${seg('weeks',4,'4 weeks')}</span>`;
+  head.after(bar);
+  if(_c2Sched.mode==='people'&&_c2Sched.weeks===1)return; // the original view, untouched
+  const tbl=el.querySelector('table.sched-table');const wrapDiv=tbl?.parentElement;if(!wrapDiv)return;
+  const keys=(_getScheduleSelectedPeople()||[]).filter(k=>people[k]);
+  const days=_c2SchedDays();
+  const g=_c2Sched.mode==='jobs'?_c2SchedJobsGrid(keys,days):_c2SchedPeopleGrid(keys,days);
+  wrapDiv.className='c2-sched-wrap';wrapDiv.removeAttribute('style');wrapDiv.innerHTML=g.html;
+  if(_c2Sched.weeks>1){
+    const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const a=_pDate(days[0].iso),b=_pDate(days[days.length-1].iso);
+    const span=head.querySelector('span');if(span)span.textContent=`${a.getDate()} ${MON[a.getMonth()]} – ${b.getDate()} ${MON[b.getMonth()]}`;
+  }
+  const sub=head.querySelector('.view-sub');if(sub)sub.textContent=_c2Sched.mode==='jobs'?'Who is on each job':'Team load across weeks';
+}
+(function(){
+  const _origSched=renderSchedule;
+  renderSchedule=function(){
+    const r=_origSched.apply(this,arguments);
+    try{_c2DecorateSchedule();}catch(e){console.error('feat-c2 schedule',e);}
+    return r;
+  };
+})();
+
+// ───────────────────────────── C10 · Rate cards ─────────────────────────────
+// cc_rate_cards: [{id,name,multiplier:%,rates:{[item type]:$/h}}]. A job picks one in Job
+// settings (j.rateCard). It sets the sell rate of items added in C&C only (no Streamtime id):
+// rate = the card's rate for that item type, else the item's own rate × multiplier.
+// The item's own rate is kept in _c2Base so switching card / no card restores it.
+// Streamtime items keep their Streamtime rates — their data is never rewritten.
+const C2_RC_KEY='cc_rate_cards';
+function _c2Cards(){const l=_ccLoad(C2_RC_KEY,[]);return Array.isArray(l)?l:[];}
+function _c2Card(id){return id?_c2Cards().find(c=>c.id===id)||null:null;}
+function _c2CardMeta(c){
+  const n=Object.keys(c.rates||{}).filter(k=>_c2num(c.rates[k])>0).length;
+  const m=_c2num(c.multiplier)||100;
+  return`${m!==100?`${m}% of item rates`:'Item rates'}${n?` · ${n} item rate${n!==1?'s':''} set`:''}`;
+}
+function _c2CardRate(card,it){
+  const base=_c2num(it._c2Base!==undefined?it._c2Base:it.rate);
+  if(!card)return base;
+  const ov=_c2num((card.rates||{})[it.name]);
+  if(ov>0)return Math.round(ov);
+  if(base>0)return Math.round(base*(_c2num(card.multiplier)||100)/100);
+  return 0;
+}
+function _c2IsNativeItem(it){return!it._stId;}
+// Re-price one native item for `card` (null = back to its own rate). Returns true if changed.
+function _c2PriceItem(it,card){
+  if(!_c2IsNativeItem(it))return false;
+  if(it._c2Base===undefined){it._c2Base=it.rate||'—';it._c2BaseTotal=it.total||'—';}
+  const before=it.rate+'|'+it.total;
+  if(!card){
+    it.rate=it._c2Base;const base=_c2num(it._c2Base),h=_c2hrs(it.hours);
+    it.total=base>0&&h>0?'$'+Math.round(h*base).toLocaleString():it._c2BaseTotal;
+    delete it._c2Base;delete it._c2BaseTotal;
+  }else{
+    const rate=_c2CardRate(card,it);
+    if(rate>0){const h=_c2hrs(it.hours);it.rate='$'+rate;it.total=h>0?'$'+Math.round(h*rate).toLocaleString():'—';}
+  }
+  it._local=true; // native items on Streamtime jobs persist through the item overlay
+  return before!==it.rate+'|'+it.total;
+}
+function _c2ApplyRateCard(j){
+  const card=_c2Card(j.rateCard);let n=0;
+  _c2JobPhases(j).forEach(ph=>(ph.items||[]).forEach(it=>{if(_c2PriceItem(it,card))n++;}));
+  if(j.id===activeJobId){try{saveData();renderPhases();renderStats(j);}catch(e){}}
+  else saveData();
+  return n;
+}
+function _c2SaveCards(list){return _ccSave(C2_RC_KEY,list);}
+function _c2RateCardsSectionHTML(){
+  const cards=_c2Cards();
+  return`<div class="sett-card" id="c2-rc-card">
+    <div class="sett-card-hd">Rate cards</div>
+    <div class="sett-card-body">
+      ${cards.length?cards.map(c=>{const used=jobs.filter(j=>j.rateCard===c.id).length;return`<div class="c2-rc-li"><div class="c2-rc-li-main"><div class="c2-rc-li-name">${esc(c.name)}</div><div class="c2-rc-li-meta">${esc(_c2CardMeta(c))}${used?` · ${used} job${used!==1?'s':''}`:''}</div></div>
+        <button class="cc-icon-btn" title="Edit rate card" onclick="openC2RateCard('${esc(c.id)}')"><i class="ti ti-edit"></i></button>
+        <button class="cc-icon-btn danger" title="Delete rate card" onclick="deleteC2RateCard('${esc(c.id)}')"><i class="ti ti-trash"></i></button></div>`;}).join('')
+        :'<div class="cc-empty-note" style="padding-top:0;">No rate cards yet.</div>'}
+      <button class="d-action" onclick="openC2RateCard()"><i class="ti ti-plus" style="font-size:11px"></i> New rate card</button>
+      <div class="c2-hint" style="margin-top:10px;">Pick a card for a job in its Job settings. A card sets the sell rate of items added in C&amp;C only; Streamtime items keep their Streamtime rates. Rate cards are saved in this browser.</div>
+    </div>
+  </div>`;
+}
+function openC2RateCard(id){
+  const c=id?_c2Card(id):{id:null,name:'',multiplier:100,rates:{}};if(!c)return;
+  document.getElementById('c2-rc-modal')?.remove();
+  const m=document.createElement('div');m.className='modal-bg on';m.id='c2-rc-modal';
+  const types=[...new Set([...LINE_ITEMS,...Object.keys(c.rates||{})])];
+  m.innerHTML=`<div class="modal" style="max-width:520px;">
+    <div class="modal-hd"><span class="modal-hd-title">${id?'Edit rate card':'New rate card'}</span><button class="modal-x" onclick="document.getElementById('c2-rc-modal').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd" style="max-height:70vh;overflow-y:auto;">
+      <div class="field-row">
+        <div class="field" style="flex:2;"><label>Name</label><input id="c2-rc-name" class="form-inp" style="width:100%;" value="${esc(c.name)}" placeholder="e.g. Not-for-profit"></div>
+        <div class="field" style="flex:1;"><label>Multiplier %</label><input id="c2-rc-mult" class="form-inp" type="number" min="1" step="any" style="width:100%;" value="${esc(_c2num(c.multiplier)||100)}"></div>
+      </div>
+      <div class="c2-hint" style="margin-bottom:8px;">Set a rate for an item type to override it, or leave it blank to use the item’s own rate × the multiplier (e.g. 90% = 10% off).</div>
+      <table class="c2-rc-table">${types.map((t,i)=>`<tr><td>${esc(t)}</td><td><input class="form-inp c2-rc-rate" data-type="${esc(t)}" type="number" min="0" step="1" placeholder="$/h" value="${_c2num((c.rates||{})[t])>0?esc(_c2num(c.rates[t])):''}"></td></tr>`).join('')}</table>
+    </div>
+    <div class="modal-ft"><button class="modal-cancel" onclick="document.getElementById('c2-rc-modal').remove()">Cancel</button><button class="modal-save" onclick="saveC2RateCard(${id?`'${esc(id)}'`:'null'})">Save rate card</button></div>
+  </div>`;
+  m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+  document.body.appendChild(m);
+  setTimeout(()=>document.getElementById('c2-rc-name')?.focus(),50);
+}
+function saveC2RateCard(id){
+  const name=(document.getElementById('c2-rc-name')?.value||'').trim();
+  if(!name){document.getElementById('c2-rc-name')?.focus();toast('Name the rate card','warn');return;}
+  const mult=_c2num(document.getElementById('c2-rc-mult')?.value);
+  if(!(mult>0)){toast('Multiplier must be more than 0%','warn');return;}
+  const rates={};
+  document.querySelectorAll('#c2-rc-modal .c2-rc-rate').forEach(inp=>{const v=_c2num(inp.value);if(v>0)rates[inp.dataset.type]=Math.round(v);});
+  const list=_c2Cards();
+  if(list.some(c=>c.id!==id&&c.name.toLowerCase()===name.toLowerCase())){toast('A rate card with that name already exists','warn');return;}
+  if(id){const c=list.find(x=>x.id===id);if(!c)return;Object.assign(c,{name,multiplier:mult,rates});}
+  else list.push({id:uid('rc'),name,multiplier:mult,rates});
+  if(!_c2SaveCards(list))return;
+  document.getElementById('c2-rc-modal')?.remove();
+  let n=0;
+  if(id)jobs.filter(j=>j.rateCard===id).forEach(j=>{n+=_c2ApplyRateCard(j);}); // re-price jobs on this card
+  toast(`Rate card “${esc(name)}” saved${n?` · ${n} item${n!==1?'s':''} re-priced`:''}`,'success');
+  if(_settActiveTab==='items')renderSettings();
+}
+function deleteC2RateCard(id){
+  const c=_c2Card(id);if(!c)return;
+  const used=jobs.filter(j=>j.rateCard===id);
+  ccConfirm(`Delete the rate card “${esc(c.name)}”?${used.length?` ${used.length} job${used.length!==1?'s':''} using it go back to their items’ own rates.`:''}`,()=>{
+    _c2SaveCards(_c2Cards().filter(x=>x.id!==id));
+    used.forEach(j=>{j.rateCard=null;_c2ApplyRateCard(j);_keepJobEdits(j,['rateCard']);});
+    toast('Rate card deleted','success');
+    if(_settActiveTab==='items')renderSettings();
+  },'Delete',true);
+}
+(function(){
+  const _origSett=renderSettings;
+  renderSettings=function(){
+    const r=_origSett.apply(this,arguments);
+    try{
+      if((_settActiveTab||'profile')==='items'){
+        const wrap=document.getElementById('settings-scroll');
+        if(wrap){document.getElementById('c2-rc-card')?.remove();const t=document.createElement('div');t.innerHTML=_c2RateCardsSectionHTML();wrap.appendChild(t.firstElementChild);}
+      }
+    }catch(e){console.error('feat-c2 rate cards settings',e);}
+    return r;
+  };
+  const _origJS=openJobSettingsModal;
+  openJobSettingsModal=function(){
+    const r=_origJS.apply(this,arguments);
+    try{
+      const j=jobs.find(x=>x.id===activeJobId);const modal=document.getElementById('job-sett-modal');
+      const bd=modal?.querySelector('.modal-bd');
+      if(j&&bd){
+        const cards=_c2Cards();
+        const f=document.createElement('div');f.className='field';f.id='c2-jsett-rc';f.style.marginBottom='12px';
+        const nNative=_c2JobPhases(j).reduce((s,p)=>s+(p.items||[]).filter(_c2IsNativeItem).length,0);
+        f.innerHTML=`<label>Rate card</label>
+          <select id="jsett-ratecard" class="cc-select" style="width:100%;"><option value="">None — items keep their own rates</option>${cards.map(c=>`<option value="${esc(c.id)}"${j.rateCard===c.id?' selected':''}>${esc(c.name)} · ${esc(_c2CardMeta(c))}</option>`).join('')}</select>
+          <div class="c2-hint" style="margin-top:4px;">Applies to items added in C&amp;C (${nNative} on this job). Streamtime items keep their Streamtime rates.${cards.length?'':' Create rate cards in Settings → Job items.'}</div>`;
+        const billBox=document.getElementById('jsett-billable')?.closest('div[style]');
+        if(billBox&&billBox.parentElement===bd)bd.insertBefore(f,billBox);else bd.appendChild(f);
+      }
+    }catch(e){console.error('feat-c2 job settings',e);}
+    return r;
+  };
+  const _origJSave=saveJobSettings;
+  saveJobSettings=function(){
+    const j=jobs.find(x=>x.id===activeJobId);
+    const sel=document.getElementById('jsett-ratecard');
+    let changed=false,n=0;
+    if(j&&sel){
+      const v=sel.value||null;
+      if(v!==(j.rateCard||null)){j.rateCard=v;changed=true;n=_c2ApplyRateCard(j);}
+    }
+    const r=_origJSave.apply(this,arguments);
+    if(changed&&j){
+      _keepJobEdits(j,['rateCard']);
+      const c=_c2Card(j.rateCard);
+      toast(c?`Rate card “${esc(c.name)}” applied · ${n} item${n!==1?'s':''} re-priced`:`Rate card removed · ${n} item${n!==1?'s':''} back to their own rates`,'info');
+    }
+    return r;
+  };
+  // New plan items on a job with a card are priced from it; tagged _local so they persist.
+  const _origSaveItem=saveItem;
+  saveItem=function(phId){
+    const ph=(phases||[]).find(p=>p.id===phId);const before=ph?ph.items.length:0;
+    const r=_origSaveItem.apply(this,arguments);
+    try{
+      const j=jobs.find(x=>x.id===activeJobId);
+      if(ph&&ph.items.length>before){
+        const it=ph.items[ph.items.length-1];
+        if(!it._stId)it._local=true;
+        const card=j?_c2Card(j.rateCard):null;
+        if(card){_c2PriceItem(it,card);renderPhases();try{renderStats(j);}catch(e){}}
+        saveData();
+      }
+    }catch(e){console.error('feat-c2 item price',e);}
+    return r;
+  };
+})();
+</script>
 </body>
 </html>
