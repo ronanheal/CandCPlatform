@@ -86,6 +86,21 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:13
 .hp-card-links a{color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
 .i-badge{white-space:nowrap;}
 .ccf-meta{flex-wrap:wrap;row-gap:2px;}.ccf-meta>span{white-space:nowrap;}
+.lt-hint{display:flex;gap:7px;font-size:11.5px;line-height:1.45;color:var(--muted);background:var(--off);border-radius:var(--r-ctl);padding:9px 11px;margin-top:4px;}
+.lt-hint i{font-size:13px;margin-top:1px;}
+#timer-pill{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;z-index:850;display:flex;align-items:center;gap:10px;background:var(--ink);color:var(--white);border-radius:999px;padding:7px 8px 7px 14px;box-shadow:var(--shadow-l);font-size:12.5px;max-width:min(560px,calc(100vw - 140px));}
+#timer-pill .tp-dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0;animation:tpPulse 1.6s ease-in-out infinite;}
+@keyframes tpPulse{0%,100%{opacity:1}50%{opacity:.35}}
+#timer-pill .tp-job{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+#timer-pill .tp-job span{font-weight:400;opacity:.7;}
+#timer-pill .tp-time{font-variant-numeric:tabular-nums;font-weight:600;letter-spacing:.02em;}
+#timer-pill button{border:none;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:4px;}
+#timer-pill .tp-stop{background:var(--red);color:#fff;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600;}
+#timer-pill .tp-x{background:transparent;color:var(--white);opacity:.55;font-size:14px;padding:4px;}
+#timer-pill .tp-x:hover{opacity:1;}
+#snav-logtime.timing::after{content:'';position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:var(--red);}
+#snav-logtime{position:relative;}
+@media print{#timer-pill{display:none;}}
 .sched-pick{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
 .sched-pick-btn{font:500 11px var(--font);color:var(--muted);background:transparent;border:1px solid var(--border);border-radius:14px;padding:4px 10px;cursor:pointer;}
 .sched-pick-btn.on{color:var(--ink);background:var(--white);border-color:var(--ink);}
@@ -1778,6 +1793,7 @@ body.not-admin .admin-only{display:none!important;}
     <svg class="s-logo" viewBox="0 0 621.5 266.3" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M546.7,26.9c14.2,0,24.7,10,28.4,37.9c0.5,9.5,5.3,16.9,14.2,16.9c13.2,0,32.1-12.6,32.1-29.5c0-25.3-25.3-44.8-63.7-44.8c-59,0-104.6,43.4-127.1,95c-12.6,28.9-20,62.7-16.6,94.2c2.1,19.5,9.9,39.1,24.9,51.7c-19.3,2.3-53.8-15.3-81.8-42.5c23.2-21.6,41.8-48,54.4-77c3.7-8.6,8.7-21.6,3.4-30.6c-4.2-7.2-14.6-6.8-21.4-4.2c-16,6.2-14.5,22.1-17.5,36.2c-4.8,23.3-13.2,46.3-29.7,63.9c-25.3-26.5-45.7-55.3-58.5-78.6c43.3-17.2,72.8-28.1,72.8-67c0-31.3-27.9-48.5-58-48.5c-35.7,0-67.3,26-67.3,70.2c0,15.5,4.3,30.7,11.9,44.1c-15.8,4.9-31.1,11.9-43.7,22.8c-13.9,12.1-24,28.8-35.2,43.3c-18,23.3-45.6,57.7-79.3,53.3c-31-4-35.8-37-35.8-62.8c0-64.2,35.8-145.3,80-145.3c14.2,0,24.7,10,28.4,37.9c0.5,9.5,5.3,16.8,14.2,16.8c13.2,0,32.1-12.6,32.1-29.5c0-25.3-25.2-44.8-63.7-44.8C54.2,6.2,0,102,0,181.5c0,59,34.7,80.6,71.6,80.6c37.2,0,76.4-13.5,108.2-56.8c4.6,29.1,28.5,55.4,72.6,55.4c29.7,0,51.3-8.4,77.4-30.5c0,0,11.3,8.7,12.4,9.5c19.4,12.8,42.6,19.4,65.3,22.9c25.4,3.9,51.4,5,77,2.5c0.3,0,0.5-0.1,0.8-0.1c23.3-2.4,46.9-7.5,67.2-20c19.5-12,35.3-29.2,47.6-48.4c3.3-5.1,2.4-11.9-2.1-16.1c-2.9-2.7-7.5-2.2-9.9,1c-11.6,15.7-27.3,32.4-44.7,43c-10.9,6.7-22.5,10.9-34.2,10.9c-35.3,0-42.7-29.5-42.7-63.2C466.7,108,502.5,26.9,546.7,26.9z M299.7,15.6c18.9,0,26.9,13.2,26.9,28.1c0,29.3-21.6,49.3-45.7,60.1c-8-12.4-13.2-30.9-13.2-45.3C267.7,32.9,283.3,15.6,299.7,15.6z M269.7,238.6c-31.7,0-52.1-23.7-52.1-50.5c0-38.5,30.9-57.3,37.7-58.1c18,30.9,38.1,62.1,63.7,89.8C305.3,231,290.5,238.6,269.7,238.6z"/></svg>
     <div class="s-nav">
       <div class="s-btn" onclick="openGlobalSearch()"><i class="ti ti-search"></i><span class="s-tip">Search (⌘K)</span></div>
+      <div class="s-btn" id="snav-logtime" onclick="_getTimer()?stopTimer():openLogTimeModal()"><i class="ti ti-clock-plus"></i><span class="s-tip">Log time (L)</span></div>
       <div class="s-btn on" id="snav-dashboard" onclick="navTo('dashboard')"><i class="ti ti-grid-dots"></i><span class="s-tip">Dashboard</span></div>
       <div class="s-btn" id="snav-todo" onclick="navTo('todo')"><i class="ti ti-checklist"></i><span class="s-tip">To Do</span></div>
       <div class="s-btn" id="snav-jobs" onclick="navTo('jobs')"><i class="ti ti-briefcase"></i><span class="s-tip">Jobs</span></div>
@@ -2068,6 +2084,8 @@ body.not-admin .admin-only{display:none!important;}
                     <div class="tcm-item" onclick="closeCreateItemMenu();showAddItemForm(null)"><i class="ti ti-list-check" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Item</div>
                     <div class="tcm-item" onclick="closeCreateItemMenu();addPhase()"><i class="ti ti-layout-rows" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Phase</div>
                     <div class="tcm-item" onclick="closeCreateItemMenu();openTodoModal(activeJobId,5)"><i class="ti ti-checklist" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>To Do</div>
+                    <div class="tcm-item" onclick="closeCreateItemMenu();openLogTimeModal({jobId:activeJobId})"><i class="ti ti-clock-plus" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Time entry</div>
+                    <div class="tcm-item" onclick="closeCreateItemMenu();startTimer(activeJobId)"><i class="ti ti-player-play" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Start timer</div>
                     <div class="tcm-item" onclick="closeCreateItemMenu();showAddExpenseInline()"><i class="ti ti-receipt" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Expense</div>
                     <div style="border-top:1px solid var(--border);margin:4px 0;"></div>
                     <div class="tcm-item" onclick="closeCreateItemMenu();openInvoice()"><i class="ti ti-file-invoice" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Invoice</div>
@@ -2943,8 +2961,14 @@ const MY_PERSON=(()=>{try{return localStorage.getItem('cc_me')||'st_114330';}cat
 let currentPerson=MY_PERSON;
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:MY_PERSON==='st_114330'?'Ronan Heal':'…',initials:MY_PERSON==='st_114330'?'RH':'?',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true,_stub:true};
-const APP_VERSION='2.40.0';
+const APP_VERSION='2.41.0';
 const CHANGELOG=[
+  {version:'2.41.0',date:'12 Nov 2026',title:'Log time anywhere, plus a timer',items:[
+    'New: Log time. Press L anywhere, click the clock in the sidebar, use the Log time button on the Time tab, or Create → Time entry on a job. Pick the job and item, type 45m or 1h 30m, add a note, done. Meetings and quick fixes no longer need a task first.',
+    'New: a running timer. Start one from the Log time box or Create → Start timer on a job. A pill at the bottom of the screen shows the clock, and it keeps going across pages and reloads. Stop it and the time is filled in for you (rounded up to 5 minutes). Cancel puts the timer back.',
+    'Producers can log time for someone else by picking the person.',
+    'Until Streamtime is switched off, add the same time in Streamtime too — the platform drops its own copy once Streamtime\'s arrives, so nothing counts twice.',
+  ]},
   {version:'2.40.0',date:'12 Nov 2026',title:'Design polish — calmer, tidier, more consistent',items:[
     'Every page now has the same header: title and subtitle on the left, one main button top right. In the Jobs area that button follows the tab — New job, New quote, Add expense or Add client.',
     'Quotes is now a proper table with column headers like Invoices, and the job number no longer appears twice.',
@@ -4113,6 +4137,7 @@ async function initStreamtime(silent){
   _syncSidebarAvatar();
   try{if(!localStorage.getItem('cc_me')&&Object.keys(stUsersById).length)_askWhoAmI(false);}catch(e){}
   try{_applyAdminUi();}catch(e){} // hide admin-only actions for non-admins
+  try{_renderTimer();}catch(e){} // a running timer survives reloads
 }
 
 // Seed the global label list from any labels already on jobs
@@ -4994,7 +5019,7 @@ function navTo(v){
 }
 let _invMode='all'; // kept for compat
 function setInvMode(mode){_invMode=mode;renderInvoices();}
-const _JOBS_PRIMARY={quotes:['New quote','openNewQuoteModal'],expenses:['Add expense','openLogExpense'],clients:['Add client','openNewClientModal']};
+const _JOBS_PRIMARY={time:['Log time','openLogTimeModal'],quotes:['New quote','openNewQuoteModal'],expenses:['Add expense','openLogExpense'],clients:['Add client','openNewClientModal']};
 let _jobsTab='jobs';
 function _jobsPrimaryAction(){const a=_JOBS_PRIMARY[_jobsTab];if(a)window[a[1]]();else openCreateJob();}
 function switchJobsTab(tab){
@@ -10965,6 +10990,134 @@ function _parseGsCommand(raw){
   }
   return null;
 }
+// ── Log time + running timer (review C1) ───────────────────────────────────────
+// Time used to be loggable only by ticking a task done or via ⌘K, so meetings and quick
+// fixes went unrecorded. The form saves a native entry through dbCreateTimeEntry (same
+// shape as Streamtime's logged_times); once the matching entry arrives from Streamtime
+// (same person + job + date + minutes) the native copy is dropped on sync, so nothing
+// double-counts. The timer lives in localStorage so it survives reloads and tab switches.
+let _ltFromTimer=null;
+function _ltJobs(){return jobs.filter(j=>j.status==='inplay'||j.status==='new').sort((a,b)=>(Number(b.id)||0)-(Number(a.id)||0));}
+function _ltItemOptions(jobId,selKey){
+  const j=jobs.find(x=>x.id===jobId);
+  const items=[];(j?.phases||[]).forEach(ph=>(ph.items||[]).forEach(it=>items.push({key:it.id,name:it.name,ph:ph.name})));
+  return`<option value="">No item</option>`+items.map(i=>`<option value="${esc(i.key)}"${i.key===selKey?' selected':''}>${esc(i.name)}${i.ph?` — ${esc(i.ph)}`:''}</option>`).join('');
+}
+function openLogTimeModal(opts){
+  opts=opts||{};
+  document.getElementById('lt-modal')?.remove();
+  const jobId=opts.jobId||(typeof activeJobId!=='undefined'&&!document.getElementById('view-detail')?.classList.contains('hidden')?activeJobId:'')||'';
+  const personKey=opts.personKey||MY_PERSON;
+  const ppl=Object.keys(people).filter(k=>!people[k]._archived&&people[k]._stId);
+  const jl=_ltJobs();if(jobId&&!jl.some(j=>j.id===jobId)){const cj=jobs.find(j=>j.id===jobId);if(cj)jl.unshift(cj);}
+  const m=document.createElement('div');m.className='modal-bg on';m.id='lt-modal';
+  m.innerHTML=`<div class="modal" style="max-width:480px;">
+    <div class="modal-hd"><span class="modal-hd-title">${opts.fromTimer?'Log timed work':'Log time'}</span><button class="modal-x" onclick="closeLogTimeModal(true)"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd">
+      <div class="field"><label>Job</label><select id="lt-job" class="form-inp" style="width:100%;" onchange="document.getElementById('lt-item').innerHTML=_ltItemOptions(this.value,'')"><option value="">Choose a job…</option>${jl.map(j=>`<option value="${esc(j.id)}"${j.id===jobId?' selected':''}>${esc(j.id)} ${esc(j.name)}</option>`).join('')}</select></div>
+      <div class="field"><label>Item</label><select id="lt-item" class="form-inp" style="width:100%;">${_ltItemOptions(jobId,opts.itemKey||'')}</select></div>
+      <div class="field-row">
+        <div class="field"><label>Time</label><input id="lt-hours" class="form-inp" placeholder="e.g. 45m or 1h 30m" value="${opts.hours?formatHrs(opts.hours):''}" style="width:100%;" onkeydown="if(event.key==='Enter')saveLogTime()"></div>
+        <div class="field"><label>Date</label><input id="lt-date" type="date" class="form-inp" value="${opts.date||_localISO()}" max="${_localISO()}" style="width:100%;"></div>
+      </div>
+      <div class="field"><label>What did you work on?</label><input id="lt-note" class="form-inp" placeholder="Optional note" value="${esc(opts.note||'')}" style="width:100%;" onkeydown="if(event.key==='Enter')saveLogTime()"></div>
+      ${ppl.length>1?`<div class="field"><label>Person</label><select id="lt-person" class="form-inp" style="width:100%;">${ppl.map(k=>`<option value="${k}"${k===personKey?' selected':''}>${esc(people[k].name)}${k===MY_PERSON?' (you)':''}</option>`).join('')}</select></div>`:''}
+      <div class="lt-hint"><i class="ti ti-info-circle"></i> Until Streamtime is switched off, add this in Streamtime too (same date and time). The platform drops its own copy once Streamtime's arrives, so it never counts twice.</div>
+    </div>
+    <div class="modal-ft">
+      <button class="modal-cancel" onclick="closeLogTimeModal(true)">Cancel</button>
+      ${opts.fromTimer?'':`<button class="d-action" onclick="startTimerFromModal()" title="Start a running timer for this job instead"><i class="ti ti-player-play" style="font-size:12px;"></i> Start timer</button>`}
+      <button class="modal-save" onclick="saveLogTime()">Log time</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('mousedown',e=>{if(e.target===m)closeLogTimeModal(true);});
+  setTimeout(()=>document.getElementById(jobId?'lt-hours':'lt-job')?.focus(),50);
+}
+function closeLogTimeModal(cancelled){
+  document.getElementById('lt-modal')?.remove();
+  // Cancelling the "log timed work" form puts the timer back rather than losing the time
+  if(cancelled&&_ltFromTimer){_setTimer(_ltFromTimer);toast('Timer resumed','info');}
+  _ltFromTimer=null;
+}
+async function saveLogTime(){
+  const jobId=document.getElementById('lt-job')?.value;
+  const j=jobs.find(x=>x.id===jobId);
+  if(!j){toast('Choose a job','warn');document.getElementById('lt-job')?.focus();return;}
+  if(j.paused){toast('That job is paused — resume it first','warn');return;}
+  const hours=parseHrsInput(document.getElementById('lt-hours')?.value||'');
+  if(!(document.getElementById('lt-hours')?.value||'').trim()||!hours||hours<=0){toast('Enter how long, e.g. 45m or 1h 30m','warn');document.getElementById('lt-hours')?.focus();return;}
+  if(hours>16){toast('That\'s more than 16 hours — check the time','warn');return;}
+  const date=document.getElementById('lt-date')?.value||_localISO();
+  const personKey=document.getElementById('lt-person')?.value||MY_PERSON;
+  const userId=people[personKey]?._stId;
+  if(!userId){toast('This person isn\'t linked to Streamtime yet, so time can\'t be logged for them','warn');return;}
+  const itemKey=document.getElementById('lt-item')?.value||'';
+  let item=null;(j.phases||[]).forEach(ph=>(ph.items||[]).forEach(it=>{if(it.id===itemKey)item=it;}));
+  const note=(document.getElementById('lt-note')?.value||'').trim();
+  await dbCreateTimeEntry({
+    job:{id:j._stId||null,number:j.id,name:j.name,isBillable:j.billable!==false},
+    jobId:j._stId||null,userId,
+    itemId:item?._stId||item?.id||null,itemName:item?.name||'',
+    notes:note,hours,date,
+    jobItemUser:item?._stId?{jobItemId:item._stId}:null,
+  });
+  logActivity(j.id,personKey,'time_log',`Logged <strong>${formatHrs(hours)}</strong>${item?` on ${esc(item.name)}`:''}${note?` — ${esc(note)}`:''}`);
+  _ltFromTimer=null;
+  closeLogTimeModal(false);
+  _ltRefreshViews(j.id);
+  toast(`Logged ${formatHrs(hours)} on ${j.id} ${esc(j.name)}${personKey!==MY_PERSON?` for ${esc(people[personKey].name.split(' ')[0])}`:''}`,'success');
+}
+function _ltRefreshViews(jobId){
+  const vis=id=>!document.getElementById(id)?.classList.contains('hidden');
+  try{if(vis('view-todo'))renderTodo();}catch(e){}
+  try{if(vis('view-dashboard'))renderDashboard();}catch(e){}
+  try{if(document.getElementById('jt-time')?.style.display!=='none'&&vis('view-details'))renderTime();}catch(e){}
+  try{_refreshJobStats();}catch(e){}
+  try{if(jobId&&activeJobId===jobId&&vis('view-detail')&&typeof renderPhases==='function')renderPhases();}catch(e){}
+}
+// ── Timer ──
+let _timerTick=null;
+function _getTimer(){try{return JSON.parse(localStorage.getItem('cc_timer')||'null');}catch(e){return null;}}
+function _setTimer(t){try{t?localStorage.setItem('cc_timer',JSON.stringify(t)):localStorage.removeItem('cc_timer');}catch(e){}_renderTimer();}
+function startTimer(jobId,itemKey,note){
+  const j=jobs.find(x=>x.id===jobId);if(!j){toast('Choose a job to time','warn');return;}
+  if(_getTimer()&&!confirm('A timer is already running. Replace it? (Its time won\'t be logged.)'))return;
+  _setTimer({start:Date.now(),jobId,itemKey:itemKey||'',note:note||'',person:MY_PERSON});
+  toast(`Timer started on ${j.id} ${esc(j.name)}`,'success');
+}
+function startTimerFromModal(){
+  const jobId=document.getElementById('lt-job')?.value;
+  if(!jobId){toast('Choose a job to time','warn');document.getElementById('lt-job')?.focus();return;}
+  const itemKey=document.getElementById('lt-item')?.value||'';const note=(document.getElementById('lt-note')?.value||'').trim();
+  _ltFromTimer=null;closeLogTimeModal(false);startTimer(jobId,itemKey,note);
+}
+function stopTimer(){
+  const t=_getTimer();if(!t)return;
+  const mins=Math.max(5,Math.ceil((Date.now()-t.start)/60000/5)*5); // round up to 5 minutes
+  _setTimer(null);
+  _ltFromTimer=t;
+  openLogTimeModal({jobId:t.jobId,itemKey:t.itemKey,note:t.note,hours:mins/60,personKey:t.person,fromTimer:true});
+}
+function discardTimer(){
+  if(!_getTimer())return;
+  if(!confirm('Discard this timer? The time won\'t be logged.'))return;
+  _setTimer(null);toast('Timer discarded');
+}
+function _fmtElapsed(ms){const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return(h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0');}
+function _renderTimer(){
+  const t=_getTimer();
+  let pill=document.getElementById('timer-pill');
+  document.getElementById('snav-logtime')?.classList.toggle('timing',!!t);
+  if(!t){pill?.remove();clearInterval(_timerTick);_timerTick=null;return;}
+  if(!pill){pill=document.createElement('div');pill.id='timer-pill';document.body.appendChild(pill);}
+  const j=jobs.find(x=>x.id===t.jobId);
+  pill.innerHTML=`<span class="tp-dot"></span><span class="tp-job" title="${esc(j?j.id+' '+j.name:t.jobId)}">${esc(t.jobId)}${j?` <span>${esc(j.name)}</span>`:''}</span><span class="tp-time" id="tp-time">${_fmtElapsed(Date.now()-t.start)}</span><button class="tp-stop" onclick="stopTimer()" title="Stop and log"><i class="ti ti-player-stop-filled"></i> Stop</button><button class="tp-x" onclick="discardTimer()" title="Discard timer"><i class="ti ti-x"></i></button>`;
+  if(!_timerTick)_timerTick=setInterval(()=>{const tt=_getTimer();const el=document.getElementById('tp-time');if(!tt){_renderTimer();return;}if(el)el.textContent=_fmtElapsed(Date.now()-tt.start);},1000);
+}
+// Timer started or stopped in another tab
+window.addEventListener('storage',e=>{if(e.key==='cc_timer')_renderTimer();});
+
 function _cmdLogTime(jobNum,hours,note){
   const j=jobs.find(x=>x.id===jobNum);
   if(!j){toast(`Job ${jobNum} not found`,'warn');return;}
@@ -11161,6 +11314,7 @@ document.addEventListener('keydown',e=>{
     return;
   }
   if(e.key==='Escape'){
+    if(document.getElementById('lt-modal')){closeLogTimeModal(true);e.stopPropagation();return;}
     if(closeAnyOpenModal()){e.stopPropagation();return;}
     if(document.querySelector('.todo-view.focus-today'))toggleFocusToday();
     return;
@@ -11168,6 +11322,12 @@ document.addEventListener('keydown',e=>{
   const ae=document.activeElement;
   const typing=ae&&(/INPUT|TEXTAREA|SELECT/.test(ae.tagName)||ae.isContentEditable);
   if(typing||mod||e.altKey)return;
+  // L = log time (or stop the running timer) from anywhere
+  if((e.key==='l'||e.key==='L')&&!document.querySelector('.modal-bg.on')){
+    e.preventDefault();
+    if(_getTimer())stopTimer();else openLogTimeModal();
+    return;
+  }
   if(e.key==='n'||e.key==='N'){
     const todoVisible=!document.getElementById('view-todo').classList.contains('hidden');
     if(todoVisible){
