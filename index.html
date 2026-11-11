@@ -1808,7 +1808,8 @@ button,input,select,textarea{font-family:var(--font);}
 .d-action:not(.primary),.filter-btn,.p-btn,.modal-cancel,.tm-btn-cancel,.tm-btn-timer{background:var(--white);color:var(--ink);border:1px solid var(--border);}
 .d-action:not(.primary):hover,.filter-btn:hover,.p-btn:hover,.modal-cancel:hover,.tm-btn-cancel:hover,.tm-btn-timer:hover{border-color:var(--ink);}
 .d-action.primary,.tb-btn:not(.ghost),.modal-ok,.modal-save,.tm-btn-save,.save-b,.fup-y,.cal-today-btn,.r-export-btn{background:var(--ink)!important;color:var(--white)!important;border:1px solid var(--ink)!important;}
-.tm-btn-delete{background:transparent;color:var(--danger-ink);border:1px solid transparent;}
+.tm-btn-delete{background:var(--white)!important;color:var(--danger-ink)!important;border:1px solid var(--border)!important;text-decoration:none!important;}
+.tm-btn-delete:hover{border-color:var(--danger-ink)!important;}
 .tm-btn-delete:hover{background:var(--danger-bg);}
 /* Small controls share the same corners */
 .wbtn,.day-add-btn,.label-add-btn,.tvt-btn,.i-todo-btn,.sched-pick-btn,.rep-end-chip,.mini-cal-nav-btn{border-radius:8px!important;text-transform:none!important;letter-spacing:0!important;font-family:var(--font)!important;}
@@ -1919,6 +1920,19 @@ body.dark .s-tip{color:var(--ink);}
 body.dark .att-ico,body.dark .att-count,body.dark .att-val{color:color-mix(in srgb,var(--att) 55%,#fff)!important;}
 body.dark .att-ico,body.dark .att-count,body.dark .att-val{background:color-mix(in srgb,var(--att) 22%,var(--white))!important;}
 kbd.kb-key{font:600 11.5px var(--font);color:var(--ink);background:var(--off);border:1px solid var(--border);border-bottom-width:2px;border-radius:7px;padding:3px 8px;min-width:22px;text-align:center;white-space:nowrap;}
+.week-pick{gap:8px!important;padding:0 12px!important;font-weight:500;}
+.week-pick .wlabel{font-size:13px;color:var(--ink);font-variant-numeric:tabular-nums;margin:0!important;}
+.todo-view-toggle .tvt-btn{display:inline-flex;align-items:center;gap:6px;padding:0 10px!important;font-size:12.5px;font-weight:500;color:var(--muted);}
+.todo-view-toggle .tvt-btn.on{color:var(--ink);background:var(--off)!important;box-shadow:var(--shadow-s);}
+/* Split zones (drag a task between days to split it) */
+.split-zone{width:36px!important;border-radius:18px!important;background:var(--white)!important;border:1px solid var(--border)!important;box-shadow:var(--shadow-m);flex-direction:column;justify-content:center;gap:10px;transform:scale(.96);transition:opacity .15s,transform .15s,background .15s!important;}
+.split-zone.on{transform:none;}
+.split-zone .sz-ico{width:26px;height:26px;border-radius:50%;background:var(--off);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:14px;pointer-events:none;}
+.split-zone .sz-lbl{writing-mode:vertical-rl;font-size:11px!important;letter-spacing:.06em!important;text-transform:none!important;color:var(--ink)!important;font-weight:600;pointer-events:none;}
+.split-zone .sz-sub{writing-mode:vertical-rl;font-size:10px;color:var(--muted);pointer-events:none;white-space:nowrap;}
+.split-zone.drop-ok{background:var(--ink)!important;border-color:var(--ink)!important;}
+.split-zone.drop-ok .sz-lbl,.split-zone.drop-ok .sz-sub{color:var(--white)!important;}
+.split-zone.drop-ok .sz-ico{background:var(--red);color:#fff;}
 /* Table headers: one style in every list */
 .jobs-table thead th,.inv-th,.time-table thead th,#exp-list-wrap thead th,.exp-t thead th,.qinv-head-row,.prog-table thead th{background:var(--off)!important;color:var(--muted)!important;font-size:10.5px!important;font-weight:500!important;letter-spacing:.08em!important;text-transform:uppercase!important;border-bottom:1px solid var(--border)!important;}
 /* Needs attention (redesign) */
@@ -2044,22 +2058,23 @@ body{font-feature-settings:"cv11","ss01","ss03";}
               <div class="ps-menu" id="ps-menu"></div>
             </div>
             <div class="week-nav">
-              <button class="wbtn" id="wbtn-prev"><i class="ti ti-chevron-left" style="font-size:13px;"></i></button>
-              <span class="wlabel" id="week-label">Mon – Sun</span>
-              <button class="wbtn" id="wbtn-today" style="margin-left:4px;font-size:11px;padding:4px 8px;">Today</button>
-              <button class="wbtn" id="wbtn-cal" title="Pick a week" style="padding:5px 7px;" onclick="toggleCalPopup(event)">
-                <i class="ti ti-calendar" style="font-size:13px;pointer-events:none;"></i>
+              <button class="wbtn" id="wbtn-prev" style="display:none;" aria-hidden="true"></button>
+              <button class="wbtn week-pick" id="wbtn-cal" title="Pick a week (← → to step)" onclick="toggleCalPopup(event)">
+                <i class="ti ti-calendar" style="font-size:14px;pointer-events:none;"></i>
+                <span class="wlabel" id="week-label" style="pointer-events:none;">Mon – Sun</span>
+                <i class="ti ti-chevron-down" style="font-size:12px;color:var(--muted);pointer-events:none;"></i>
               </button>
-              <button class="wbtn" id="wbtn-next"><i class="ti ti-chevron-right" style="font-size:13px;"></i></button>
+              <button class="wbtn" id="wbtn-today" style="display:none;">This week</button>
+              <button class="wbtn" id="wbtn-next" style="display:none;" aria-hidden="true"></button>
             </div>
             <div class="tb-chip" id="todo-sum-chip" onmouseenter="showSumTip(this)" onmouseleave="hideSumTip(this)"><i class="ti ti-clock-hour-4"></i><span id="todo-sum-text"><b>0h</b><span class="tb-w"> to do</span> · <b>0h</b><span class="tb-w"> done</span></span><div class="tb-tip" id="todo-sum-tip"></div></div>
             <div class="tb-chip clickable" id="todo-data-fresh" onclick="toast('Fetching latest from Streamtime…','info');initStreamtime();" style="display:none;"></div>
             <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
               <!-- View toggle: List vs Calendar+Drawer -->
-              <button class="wbtn" id="focus-btn" title="Focus on today (F)" onclick="toggleFocusToday()"><i class="ti ti-focus-2" style="font-size:13px;pointer-events:none;"></i></button>
               <div class="todo-view-toggle" id="todo-view-toggle">
-                <button class="tvt-btn on" id="tvt-list" onclick="setTodoView('list')" title="List view"><i class="ti ti-layout-list" style="font-size:12px;"></i></button>
-                <button class="tvt-btn" id="tvt-cal" onclick="setTodoView('calendar')" title="Calendar view"><i class="ti ti-calendar-week" style="font-size:12px;"></i></button>
+                <button class="tvt-btn" id="focus-btn" onclick="if(!window._focusToday)toggleFocusToday()" title="Focus — today only (F)"><i class="ti ti-focus-2" style="font-size:13px;"></i><span>Today</span></button>
+                <button class="tvt-btn on" id="tvt-list" onclick="setTodoView('list')" title="Week list"><i class="ti ti-layout-list" style="font-size:13px;"></i><span>Week</span></button>
+                <button class="tvt-btn" id="tvt-cal" onclick="setTodoView('calendar')" title="Calendar"><i class="ti ti-calendar-week" style="font-size:13px;"></i><span>Calendar</span></button>
               </div>
               <button class="wbtn" id="vsp-btn" title="View settings" onclick="toggleVSP(event)" style="padding:5px 7px;"><i class="ti ti-adjustments-horizontal" style="font-size:13px;pointer-events:none;"></i></button>
               <button class="d-action primary todo-add-btn" onclick="openTodoModal(null,5)"><i class="ti ti-plus" style="font-size:12px;"></i> Add task</button>
@@ -5303,6 +5318,7 @@ let todoSplitPx=Math.round((window.innerHeight-120)*.72),isDivDrag=false,divDrag
 let _todoViewMode='list'; // 'list' | 'calendar'
 let _drawerOpen=false;
 function setTodoView(mode){
+  if(window._focusToday)toggleFocusToday(); // picking Week or Calendar leaves Focus
   _todoViewMode=mode;
   document.getElementById('tvt-list')?.classList.toggle('on',mode==='list');
   document.getElementById('tvt-cal')?.classList.toggle('on',mode==='calendar');
@@ -6798,7 +6814,7 @@ function deleteTodo(){
 function editTask(t,day){
   _resetTodoModal(day);
   editingTaskId=t.id;editingDay=day;_editOffset=weekOffset;
-  const _tddl=document.getElementById('td-done-lbl');if(_tddl)_tddl.style.display='none'; // done-ness is changed on the board
+  const _tddl=document.getElementById('td-done-lbl');if(_tddl)_tddl.style.display=t.done?'none':''; // Log as done available while the task is open
   const _ttb=document.getElementById('td-timer-btn');if(_ttb)_ttb.style.display=t.done?'none':'';
   document.getElementById('td-task').value=t.title||'';
   document.getElementById('td-hours').value=t.hours?formatHrs(t.hours):'';
@@ -6810,18 +6826,10 @@ function editTask(t,day){
   document.getElementById('td-item').value=t.item||'';
   _setItemPickerLabel(t.item||'',t.itemId||'');
   updateJobLabel();
-  // timestamps
-  const now=new Date();
-  const dateStr=`${now.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][now.getMonth()]} ${now.getFullYear()}`;
-  document.getElementById('td-ts-text').innerHTML=`Created by <strong>${people[currentPerson]?.name||'you'}</strong> · ${dateStr}<br>Last modified by <strong>${people[currentPerson]?.name||'you'}</strong> · just now`;
-  document.getElementById('td-timestamps').style.display='';
-  document.getElementById('td-modal-title').textContent=t._fromST?'Streamtime task':'Edit task';
+  document.getElementById('td-timestamps').style.display='none';
+  document.getElementById('td-modal-title').textContent='Edit task';
   document.getElementById('td-save-lbl').textContent='Save changes';
-  document.getElementById('edit-task-btn').style.display='inline-block';
-  if(t._fromST){
-    // ST tasks are editable in-memory; changes are local and revert on refresh until ST write-back exists
-    document.getElementById('td-ts-text').innerHTML=`From <strong>Streamtime</strong> · edits apply locally<br><span style="color:var(--muted);">Changes won't sync back to Streamtime yet — they revert on refresh.</span>`;
-  }
+  document.getElementById('edit-task-btn').style.display='inline-flex';
   document.getElementById('todo-modal').classList.add('on');
   setTimeout(()=>document.getElementById('td-task').focus(),50);
 }
@@ -6888,6 +6896,7 @@ function updateWeekLabel(){
     ?`${monday.getDate()}–${sunday.getDate()} ${months[sunday.getMonth()]}`
     :`${monday.getDate()} ${months[monday.getMonth()]} – ${sunday.getDate()} ${months[sunday.getMonth()]}`;
   document.getElementById('week-label').textContent=label;
+  const _tb=document.getElementById('wbtn-today');if(_tb)_tb.style.display=weekOffset===0?'none':'';
 }
 
 function addTeamMember(name){
@@ -7310,7 +7319,8 @@ function saveTodo(){
   const personal=document.getElementById('td-personal').checked;
   const targetPerson=_todoAssignTo||currentPerson;
   const _doneNow=!editingTaskId&&!!document.getElementById('td-done')?.checked;
-  if(_doneNow&&!(document.getElementById('td-hours').value||'').trim()){toast('Enter the time spent, e.g. 45m or 1h 30m','warn');document.getElementById('td-hours').focus();return;}
+  const _doneEdit=!!editingTaskId&&!!document.getElementById('td-done')?.checked;
+  if((_doneNow||_doneEdit)&&!(document.getElementById('td-hours').value||'').trim()){toast('Enter the time spent, e.g. 45m or 1h 30m','warn');document.getElementById('td-hours').focus();return;}
   const wd=getWeekData(targetPerson);
   if(editingTaskId){
     // Find the task in the week it was opened from — the mini calendar may have moved the
@@ -7337,6 +7347,7 @@ function saveTodo(){
         _spawnRepeatOccurrences(editedTask,targetPerson,dayNum);
       }
       if(_tdStartTimerAfterSave&&editedTask)_startTaskTimer(editedTask,targetPerson,weekOffset,dayNum);
+      if(_doneEdit&&editedTask&&!editedTask.done){editedTask.done=true;if(_logTaskTime(editedTask,targetPerson,_taskDateISO(weekOffset,dayNum)))toast(`Logged ${formatHrs(editedTask.hours)}`,'success');}
     }
   } else {
     // Paused guard
@@ -7358,12 +7369,14 @@ function saveTodo(){
   renderTodo();saveData();_refreshJobStats();
 }
 // Parse hours input like "2h", "1h30m", "1.5", "90m"
+// "$1,250.50" → 1250.5; "—", "" or junk → 0. Plan/invoice maths used parseInt on "—" → NaN.
+function _num(v){const n=parseFloat(String(v??'').replace(/[^0-9.\-]/g,''));return isFinite(n)?n:0;}
 function parseHrsInput(s){
-  s=s.trim().toLowerCase();
+  s=String(s??'').trim().toLowerCase();
   const hm=s.match(/^(\d+(?:\.\d+)?)\s*h(?:\s*(\d+)\s*m?)?$/);
   if(hm)return parseFloat(hm[1])+(hm[2]?parseInt(hm[2])/60:0);
   const m=s.match(/^(\d+)\s*m$/);if(m)return parseInt(m[1])/60;
-  const n=parseFloat(s);return isNaN(n)?1:n;
+  const n=parseFloat(s);return isNaN(n)?0:n; // '—' / blank = no hours (was 1h, inflating plans)
 }
 
 let _jobSearch='';
@@ -8008,8 +8021,8 @@ function computeJobStats(j){
     (ph.items||[]).forEach(item=>{
       const h=parseHrsInput(item.hours||'0h');
       plannedMins+=Math.round(h*60);
-      let itemSell=parseInt((item.total||'$0').replace(/[$,]/g,'')||0);
-      if(itemSell===0&&h>0){const r=parseInt((item.rate||'$150').replace(/[$,]/g,''))||_defCostRate();itemSell=Math.round(h*r);}
+      let itemSell=_num(item.total);
+      if(itemSell===0&&h>0&&item.rate!=='—'){const r=_num(item.rate||'$150')||_defCostRate();itemSell=Math.round(h*r);}
       plannedSell+=itemSell;
     });
   });
@@ -8544,12 +8557,13 @@ function _showSplitZones(t,day){
     const r=cols[i].getBoundingClientRect();
     const z=document.createElement('div');
     z.className='split-zone';
-    z.style.left=(r.right-11)+'px';
+    z.style.left=(r.right-18)+'px';
     z.style.top=(r.top+64)+'px';
     z.style.height=Math.max(120,r.height-72)+'px';
     z.dataset.left=i+1;z.dataset.right=i+2;
     z.dataset.taskId=t.id;z.dataset.fromDay=day;
-    z.innerHTML='<span class="sz-lbl">Split</span>';
+    const _h=formatHrs((t.hours||0)/2)||'';
+    z.innerHTML=`<span class="sz-ico"><i class="ti ti-arrows-split-2"></i></span><span class="sz-lbl">Split</span><span class="sz-sub">${_h} + ${_h}</span>`;
     z.addEventListener('dragover',e=>{e.preventDefault();z.classList.add('drop-ok');});
     z.addEventListener('dragleave',()=>z.classList.remove('drop-ok'));
     z.addEventListener('drop',e=>{e.preventDefault();e.stopPropagation();_splitTaskAcross(z);});
@@ -8580,11 +8594,11 @@ function _docLineItemsHTML(job){
   let rows='';
   phs.forEach(ph=>{
     const items=(ph.items||[]);if(!items.length)return;
-    const phSell=items.reduce((s,i)=>s+(parseInt((i.total||'0').replace(/[$,]/g,''))||0),0);
+    const phSell=items.reduce((s,i)=>s+(_num(i.total)),0);
     rows+=`<tr style="background:var(--off);border-top:2px solid var(--border);border-bottom:1px solid var(--border);"><td style="padding:9px 14px;font-size:13px;font-weight:600;">${ph.name}</td><td></td><td style="padding:9px 14px;text-align:right;font-size:13px;font-weight:600;">$${phSell.toLocaleString()}</td></tr>`;
     items.forEach(i=>{
       const hrsNum=parseHrsInput(i.hours||'0h');
-      const totalNum=parseInt((i.total||'0').replace(/[$,]/g,''))||0;
+      const totalNum=_num(i.total);
       rows+=`<tr style="border-bottom:1px solid var(--faint);"><td style="padding:7px 14px;font-size:12px;">${i.name}${i.note?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${i.note}</div>`:''}</td><td style="padding:7px 14px;font-size:12px;text-align:right;color:var(--muted);">${hrsNum>0?hrsNum+'h':'—'}</td><td style="padding:7px 14px;font-size:12px;text-align:right;">$${totalNum.toLocaleString()}</td></tr>`;
     });
   });
@@ -8845,14 +8859,14 @@ function renderQuoteTab(){
   // Compute totals
   let totalSell=0,totalHours=0;
   const phaseBlocks=phases.map(ph=>{
-    const phSell=ph.items.reduce((s,i)=>s+parseInt((i.total||'0').replace(/[$,]/g,'')||0),0);
+    const phSell=ph.items.reduce((s,i)=>s+_num(i.total),0);
     const phHrsMin=ph.items.reduce((s,i)=>s+_itemMins(i.hours),0);
     totalSell+=phSell;totalHours+=phHrsMin;
     const phHrsStr=phHrsMin>=60?`${Math.floor(phHrsMin/60)}h${phHrsMin%60?phHrsMin%60+'m':''}`:'0h';
     const itemRows=ph.items.map(i=>{
       const hrsNum=parseHrsInput(i.hours||'0h');
-      const rateNum=parseInt((i.rate||'$0').replace(/[$,]/g,'')||0);
-      const totalNum=parseInt((i.total||'0').replace(/[$,]/g,'')||0);
+      const rateNum=_num(i.rate);
+      const totalNum=_num(i.total);
       const cols=[];
       cols.push(`<td style="padding:8px 14px;font-size:12px;">${i.name}${opts.showDescriptions&&i.note?`<div style="font-size:11px;color:var(--muted);margin-top:2px;">${i.note}</div>`:''}</td>`);
       if(opts.showQty)cols.push(`<td style="padding:8px 14px;font-size:12px;text-align:right;color:var(--muted);">${hrsNum>0?hrsNum+'h':'—'}</td>`);
@@ -10230,9 +10244,9 @@ function renderInvoice(j){
   // Build phase sections from phases array
   let subtotal=0;
   const phSections=phases.map(ph=>{
-    const phTotal=ph.items.reduce((s,i)=>s+parseInt((i.total||'0').replace(/[$,]/g,'')||0),0);
+    const phTotal=ph.items.reduce((s,i)=>s+_num(i.total),0);
     subtotal+=phTotal;
-    const lines=ph.items.map(i=>`<div class="inv-line"><span class="inv-ln">${i.name}</span><span class="inv-lv">$${parseInt((i.total||'0').replace(/[$,]/g,'')||0).toLocaleString()}.00</span></div>`).join('');
+    const lines=ph.items.map(i=>`<div class="inv-line"><span class="inv-ln">${i.name}</span><span class="inv-lv">$${_num(i.total).toLocaleString()}.00</span></div>`).join('');
     return`<div class="inv-sec"><div class="inv-sec-h">${ph.name}</div>${lines}<div class="inv-sub"><span class="inv-sub-l">Subtotal</span><span>$${phTotal.toLocaleString()}.00</span></div></div>`;
   }).join('');
   const gst=Math.round(subtotal*0.15);
@@ -10269,7 +10283,7 @@ function copyInvoiceToXero(){
   const rows=['ContactName,InvoiceNumber,Description,Quantity,UnitAmount,TaxType,AccountCode'];
   phases.forEach(ph=>{
     ph.items.forEach(i=>{
-      const amt=parseInt((i.total||'0').replace(/[$,]/g,'')||0);
+      const amt=_num(i.total);
       rows.push(`"${j.company}","${j.invNum}","${ph.name} — ${i.name}",1,${amt},"OUTPUT2","200"`);
     });
   });
@@ -11634,6 +11648,8 @@ function toggleFocusToday(){
   window._focusToday=on;
   tv.classList.toggle('focus-today',on);
   document.getElementById('focus-btn')?.classList.toggle('on',on);
+  document.getElementById('tvt-list')?.classList.toggle('on',!on&&_todoViewMode==='list');
+  document.getElementById('tvt-cal')?.classList.toggle('on',!on&&_todoViewMode==='calendar');
   renderTodo();
   if(on)toast('Focus — today only · press F or Esc to exit','info');
 }
