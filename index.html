@@ -4562,8 +4562,8 @@ function renderDashboard(){
   // Billable target from each person's Streamtime weekly capacity (fallback 30h).
   // stUsersById is keyed by the numeric ST user id, held on people[k]._stId.
   const _personWeeklyCap=k=>{const sid=people[k]?._stId;const dailyH=(sid&&stUsersById[sid]?.capacityH)||0;const days=(people[k]?.days||[1,2,3,4,5]).length;return dailyH>0?Math.round(dailyH*days):30;};
-  const totalTarget=_personWeeklyCap(MY_PERSON);
-  const billPct=Math.min(100,Math.round(billH/totalTarget*100));
+  const totalTarget=personWeeklyCap(MY_PERSON,0); // feat-c: 2nd arg = week offset → net of leave
+  const billPct=Math.min(100,Math.round(billH/(totalTarget||1)*100));
   const nbillPct=Math.min(100,Math.round(nbillH/8*100));
   const _wkTrend=_myWeeklySplit(8); // 8-week sparkline data for the two hour KPIs
   // Today's task rows
@@ -11747,7 +11747,7 @@ function _getTimeEntries(){
         done:(lt.loggedTimeStatus?.name||'Logged')==='Logged',
         billable:lt.job?.isBillable!==false, // billability is on the nested job, not the logged-time top level
         sell:lt.totalExTax||0, // real ST sell value for this entry
-        note:'',
+        note:'',item:lt.itemName||'',notes:lt.notes||'', // item/notes: feat-c CSV export
       };
     });
   }
@@ -11818,6 +11818,7 @@ function renderTime(){
   });
   // Job filter
   if(jFilter!=='all')entries=entries.filter(e=>e.jobId===jFilter);
+  window._ccTimeFiltered=entries; // feat-c: Time "Group by" + Export CSV read the filtered list
 
   // Summary stats
   const totalH=entries.reduce((s,e)=>s+e.hours,0);
@@ -13117,7 +13118,7 @@ function _renderPeopleReport(){
       <div class="r-section-hd">Utilisation &amp; logged time <span style="text-transform:none;letter-spacing:0;color:var(--muted);">— billable hours vs capacity over the period</span></div>
       <div class="r-table-wrap"><table class="r-table"><thead><tr><th>Person</th><th>Total hours</th><th>Billable</th><th>Non-billable</th><th>Capacity</th><th>Utilisation</th><th>Jobs</th></tr></thead><tbody>
         ${entries.map(([k,v])=>{
-          const cap=Math.round(personWeeklyCap(k)*_periodWeeks);
+          const cap=Math.max(0,Math.round(personWeeklyCap(k)*_periodWeeks-(window._ccLeaveHoursInReportPeriod?_ccLeaveHoursInReportPeriod(k):0)));
           const util=cap>0?Math.round(v.billH/cap*100):0;
           const uCol=util>=75?'#4CAF50':util>=50?'#FF9800':'var(--red)';
           return`<tr><td style="font-weight:500;">${v.name}</td><td>${fmtHrs(v.hours)}</td><td style="color:var(--ok);">${fmtHrs(v.billH)}</td><td style="color:var(--muted);">${fmtHrs(v.hours-v.billH)}</td><td style="color:var(--muted);">${cap}h</td><td><span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:46px;height:6px;background:var(--faint);border-radius:6px;overflow:hidden;display:inline-block;"><span style="display:block;width:${Math.min(100,util)}%;height:100%;background:${uCol};"></span></span><span style="color:${uCol};font-weight:500;font-size:12px;">${util}%</span></span></td><td style="font-size:12px;color:var(--muted);">${v.jobs.size}</td></tr>`;
@@ -14002,5 +14003,726 @@ setTimeout(_renderIcons,50);
   <div class="vsp-list" id="vsp-list"></div>
 </div>
 
+<style id="feat-c-styles">
+/* ── Feature set C (C7 templates · C8 time grouping/CSV · C4 My items · C2 leave) ── */
+/* C7 — template picker in New job + manage list */
+.cc-tpl-row{display:flex;gap:8px;align-items:center;}
+.cc-tpl-row .cc-select{flex:1;min-width:0;}
+.cc-tpl-hint{font-size:11px;color:var(--muted);margin-top:4px;}
+.cc-tpl-list{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:var(--r-card);overflow:hidden;}
+.cc-tpl-li{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--faint);background:var(--white);}
+.cc-tpl-li:last-child{border-bottom:none;}
+.cc-tpl-li-main{flex:1;min-width:0;}
+.cc-tpl-li-name{font-size:13px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cc-tpl-li-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+.cc-icon-btn{background:none;border:1px solid transparent;border-radius:var(--r-ctl);color:var(--muted);cursor:pointer;padding:4px 6px;line-height:1;font-size:13px;}
+.cc-icon-btn:hover{border-color:var(--border);color:var(--ink);background:var(--off);}
+.cc-icon-btn.danger:hover{color:var(--red);}
+.cc-empty-note{font-size:12px;color:var(--muted);padding:14px 2px;}
+
+/* C8 — Time "Group by" + export */
+.cc-time-tools{display:flex;gap:8px;align-items:center;}
+.cc-time-tools .cc-gb-lbl{font-size:11px;color:var(--muted);white-space:nowrap;}
+.time-entry-row td.cc-te-person{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;}
+
+/* C4 — My items side panel on To Do */
+.todo-body.cc-mi-on .global-divider{right:320px;}
+#cc-mi-panel{flex:0 0 320px;width:320px;border-left:1px solid var(--border);background:var(--white);display:flex;flex-direction:column;min-height:0;position:relative;z-index:21;}
+.cc-mi-hd{padding:12px 14px 10px;border-bottom:1px solid var(--border);}
+.cc-mi-hd-row{display:flex;align-items:center;gap:8px;}
+.cc-mi-title{font-size:13px;font-weight:600;color:var(--ink);flex:1;}
+.cc-mi-sub{font-size:11px;color:var(--muted);margin-top:3px;}
+.cc-mi-search{margin-top:8px;width:100%;}
+.cc-mi-list{flex:1;overflow-y:auto;padding:6px 0 16px;}
+.cc-mi-job{padding:10px 14px 4px;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);display:flex;gap:6px;align-items:baseline;}
+.cc-mi-job-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink);font-weight:600;cursor:pointer;}
+.cc-mi-job-name:hover{text-decoration:underline;}
+.cc-mi-row{margin:3px 10px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r-ctl);background:var(--white);display:flex;align-items:center;gap:8px;cursor:grab;box-shadow:var(--shadow-s);}
+.cc-mi-row:hover{border-color:var(--muted);}
+.cc-mi-row.dragging{opacity:.5;}
+.cc-mi-row-main{flex:1;min-width:0;}
+.cc-mi-row-name{font-size:12px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cc-mi-row-meta{font-size:11px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums;}
+.cc-mi-row-meta .over{color:var(--red);}
+.cc-mi-bar{height:3px;background:var(--faint);border-radius:2px;overflow:hidden;margin-top:5px;}
+.cc-mi-bar>span{display:block;height:100%;background:var(--ok);}
+.cc-mi-bar>span.over{background:var(--red);}
+.cc-mi-empty{padding:28px 18px;font-size:12px;color:var(--muted);text-align:center;line-height:1.5;}
+.cc-mi-btn{white-space:nowrap;flex-shrink:0;}
+.cc-mi-btn.on{background:var(--ink);color:var(--white);border-color:var(--ink);}
+
+/* C2 — leave / away */
+.cc-away-banner{display:flex;align-items:center;gap:5px;margin-top:6px;padding:3px 8px;border-radius:var(--r-ctl);background:var(--warn-bg);color:var(--warn-ink);font-size:11px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.day-col.cc-away .day-todo,.day-col.cc-away .day-done{background-image:repeating-linear-gradient(135deg,transparent 0 8px,var(--faint) 8px 9px);}
+.sched-cell.cc-away{background-image:repeating-linear-gradient(135deg,transparent 0 8px,var(--faint) 8px 9px);}
+.cc-away-chip{display:inline-flex;align-items:center;gap:4px;margin-bottom:4px;padding:2px 7px;border-radius:var(--r-ctl);background:var(--warn-bg);color:var(--warn-ink);font-size:10px;font-weight:600;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.cc-leave-li{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--r-ctl);margin-bottom:6px;background:var(--white);}
+.cc-leave-li.past{opacity:.6;}
+.cc-leave-li-main{flex:1;min-width:0;font-size:12px;color:var(--ink);}
+.cc-leave-li-note{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cc-leave-hint{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;}
+</style>
+<script id="feat-c-script">
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Feature set C — job templates (C7), Time grouping + CSV (C8), My items (C4),
+//  leave / holiday blocks (C2).
+//  Self-contained: the existing renderers are wrapped here (original called first, then
+//  extra UI added), so the main script only carries a few one-line hooks:
+//    renderTime        → window._ccTimeFiltered=entries
+//    _getTimeEntries   → item/notes on Streamtime entries (CSV)
+//    renderDashboard   → personWeeklyCap(MY_PERSON,0) (billable target net of leave)
+//    _renderPeopleReport → capacity minus _ccLeaveHoursInReportPeriod(k)
+//  Wrapped here: openCreateJob, createJob, renderTime, renderTodo, renderSchedule,
+//  openTeamMember, personWeeklyCap, _dayCap.
+// ═══════════════════════════════════════════════════════════════════════════════
+function _ccLoad(key,fallback){try{const v=JSON.parse(localStorage.getItem(key)||'null');return v==null?fallback:v;}catch(e){return fallback;}}
+function _ccSave(key,val){
+  try{localStorage.setItem(key,JSON.stringify(val));return true;}
+  catch(e){console.error('feat-c save failed',key,e);toast('Couldn\'t save in this browser — storage is full or blocked','warn');return false;}
+}
+function _ccCsvCell(v){
+  let s=String(v??'');
+  if(/^[=+\-@\t\r]/.test(s)&&isNaN(+s))s="'"+s; // stop spreadsheets running cell text as a formula
+  return /[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;
+}
+function _ccDownload(name,text,type){
+  const blob=new Blob([text],{type:type||'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function _ccMonday(d){const m=new Date(d);m.setHours(0,0,0,0);m.setDate(m.getDate()-((m.getDay()+6)%7));return m;}
+
+// ───────────────────────────── C7 · Job templates ─────────────────────────────
+// Stored per browser in cc_job_templates: [{id,name,createdAt,billable,labels,notes,
+// phases:[{name,items:[{name,hours,rate,total,description,note,_planMins}]}]}].
+// Only the plan is kept — never activity, time, expenses, invoices or Streamtime ids.
+const CC_TPL_KEY='cc_job_templates';
+function _ccTemplates(){const t=_ccLoad(CC_TPL_KEY,[]);return Array.isArray(t)?t:[];}
+function _ccSaveTemplates(list){return _ccSave(CC_TPL_KEY,list);}
+function _ccTplItemCount(t){return (t.phases||[]).reduce((s,p)=>s+(p.items||[]).length,0);}
+function _ccTplHours(t){return (t.phases||[]).reduce((s,p)=>s+(p.items||[]).reduce((a,it)=>a+(/\d/.test(it.hours||'')?(parseHrsInput(it.hours)||0):0),0),0);}
+function _ccTplMeta(t){
+  const n=_ccTplItemCount(t),ph=(t.phases||[]).length,h=_ccTplHours(t);
+  return `${ph} phase${ph!==1?'s':''} · ${n} item${n!==1?'s':''}${h?` · ${formatHrs(h)}`:''}${t.billable===false?' · Non-billable':''}`;
+}
+function openSaveJobTemplate(jobId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  // The open job's live plan is in `phases`; fall back to the stored job copy.
+  const src=(jobId===activeJobId&&Array.isArray(phases)&&phases.length)?phases:(j.phases||[]);
+  if(!src.some(p=>(p.items||[]).length)){toast('This job has no plan items to save as a template','warn');return;}
+  document.getElementById('cc-tpl-save-modal')?.remove();
+  const m=document.createElement('div');m.className='modal-bg on';m.id='cc-tpl-save-modal';
+  const nItems=src.reduce((s,p)=>s+(p.items||[]).length,0);
+  m.innerHTML=`<div class="modal" style="max-width:420px;">
+    <div class="modal-hd"><span class="modal-hd-title">Save as template</span><button class="modal-x" onclick="document.getElementById('cc-tpl-save-modal').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd">
+      <div class="field"><label>Template name</label><input type="text" id="cc-tpl-name" class="form-inp" style="width:100%;" value="${esc(String(j.name||'').replace(/\s*\(Copy\)$/,''))}"></div>
+      <div class="cc-tpl-hint">Saves ${src.length} phase${src.length!==1?'s':''} and ${nItems} item${nItems!==1?'s':''} with hours and rates, plus labels, billing type and the job brief. Time, expenses and activity aren’t included. Templates are saved in this browser.</div>
+    </div>
+    <div class="modal-ft"><button class="modal-cancel" onclick="document.getElementById('cc-tpl-save-modal').remove()">Cancel</button><button class="modal-save" onclick="saveJobTemplate('${esc(jobId)}')">Save template</button></div>
+  </div>`;
+  m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+  document.body.appendChild(m);
+  setTimeout(()=>{const i=document.getElementById('cc-tpl-name');if(i){i.focus();i.select();}},50);
+}
+function saveJobTemplate(jobId){
+  const j=jobs.find(x=>x.id===jobId);if(!j)return;
+  const name=(document.getElementById('cc-tpl-name')?.value||'').trim();
+  if(!name){document.getElementById('cc-tpl-name')?.focus();return;}
+  const src=(jobId===activeJobId&&Array.isArray(phases)&&phases.length)?phases:(j.phases||[]);
+  const tpl={
+    id:uid('tpl'),name,createdAt:Date.now(),fromJob:j.id,
+    billable:j.billable!==false,
+    labels:[...(j.labels||[])],
+    notes:j.notes||'',
+    phases:src.map(p=>({name:p.name||'Phase',items:(p.items||[]).map(it=>({
+      name:it.name||'Item',hours:it.hours||'—',rate:it.rate||'—',total:it.total||'—',
+      description:it.description||'',note:it.note||'',
+      _planMins:it._planMins!=null?it._planMins:Math.round((parseHrsInput(it.hours||'')||0)*60),
+    }))})).filter(p=>p.items.length||p.name),
+  };
+  const list=_ccTemplates();
+  const same=list.findIndex(t=>t.name.toLowerCase()===name.toLowerCase());
+  const doSave=()=>{
+    if(same>-1)list.splice(same,1,{...tpl,id:list[same].id});else list.push(tpl);
+    if(!_ccSaveTemplates(list))return;
+    document.getElementById('cc-tpl-save-modal')?.remove();
+    toast(`Template “${esc(name)}” saved`,'success');
+  };
+  if(same>-1){ccConfirm(`A template called “${esc(name)}” already exists. Replace it?`,doSave,'Replace');return;}
+  doSave();
+}
+function deleteJobTemplate(id){
+  const list=_ccTemplates();const t=list.find(x=>x.id===id);if(!t)return;
+  ccConfirm(`Delete the template “${esc(t.name)}”? Jobs already created from it are not affected.`,()=>{
+    _ccSaveTemplates(list.filter(x=>x.id!==id));
+    toast('Template deleted','success');
+    if(document.getElementById('cc-tpl-manage-modal'))openManageTemplates();
+    _ccFillTplSelect();
+  },'Delete',true);
+}
+function openManageTemplates(){
+  document.getElementById('cc-tpl-manage-modal')?.remove();
+  const list=_ccTemplates().sort((a,b)=>a.name.localeCompare(b.name));
+  const m=document.createElement('div');m.className='modal-bg on';m.id='cc-tpl-manage-modal';
+  m.innerHTML=`<div class="modal" style="max-width:460px;">
+    <div class="modal-hd"><span class="modal-hd-title">Job templates</span><button class="modal-x" onclick="document.getElementById('cc-tpl-manage-modal').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd">
+      ${list.length?`<div class="cc-tpl-list">${list.map(t=>`<div class="cc-tpl-li">
+        <div class="cc-tpl-li-main"><div class="cc-tpl-li-name" title="${esc(t.name)}">${esc(t.name)}</div><div class="cc-tpl-li-meta">${esc(_ccTplMeta(t))}${t.createdAt?` · saved ${esc(fmtDate(_localISO(new Date(t.createdAt))))}`:''}</div></div>
+        <button class="cc-icon-btn danger" title="Delete template" onclick="deleteJobTemplate('${esc(t.id)}')"><i class="ti ti-trash"></i></button>
+      </div>`).join('')}</div>`:`<div class="cc-empty-note">No templates yet. Open a job, then choose <b>Save as template</b> from its <i class="ti ti-dots-vertical"></i> menu.</div>`}
+      <div class="cc-tpl-hint" style="margin-top:10px;">Templates are saved in this browser only.</div>
+    </div>
+    <div class="modal-ft"><button class="modal-save" onclick="document.getElementById('cc-tpl-manage-modal').remove()">Done</button></div>
+  </div>`;
+  m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+  document.body.appendChild(m);
+}
+// New job modal: "Start from template" select (injected once, refreshed on every open).
+function _ccEnsureTplField(){
+  const modal=document.getElementById('create-modal');if(!modal)return null;
+  let sel=document.getElementById('nj-tpl');
+  if(sel)return sel;
+  const bd=modal.querySelector('.modal-bd');if(!bd)return null;
+  const f=document.createElement('div');f.className='field';f.id='nj-tpl-field';
+  f.innerHTML=`<label>Start from template</label>
+    <div class="cc-tpl-row"><select class="cc-select" id="nj-tpl" onchange="_ccOnTplPick()"></select>
+    <button type="button" class="d-action" title="Manage templates" onclick="openManageTemplates()"><i class="ti ti-settings" style="font-size:12px;"></i> Manage</button></div>
+    <div class="cc-tpl-hint" id="nj-tpl-hint"></div>`;
+  bd.insertBefore(f,bd.firstChild);
+  return document.getElementById('nj-tpl');
+}
+function _ccFillTplSelect(){
+  const sel=document.getElementById('nj-tpl');if(!sel)return;
+  const cur=sel.value;
+  const list=_ccTemplates().sort((a,b)=>a.name.localeCompare(b.name));
+  sel.innerHTML=`<option value="">Blank job</option>`+list.map(t=>`<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');
+  sel.value=list.some(t=>t.id===cur)?cur:'';
+  const fld=document.getElementById('nj-tpl-field');
+  if(fld)fld.style.display=list.length?'':'none';
+  _ccOnTplPick(true);
+}
+function _ccOnTplPick(quiet){
+  const sel=document.getElementById('nj-tpl');const hint=document.getElementById('nj-tpl-hint');
+  const t=sel&&sel.value?_ccTemplates().find(x=>x.id===sel.value):null;
+  if(hint)hint.textContent=t?`Adds ${_ccTplMeta(t)}${(t.labels||[]).length?` · labels: ${t.labels.join(', ')}`:''}`:'';
+  if(t&&!quiet){
+    if(typeof selectBillChoice==='function')selectBillChoice(t.billable===false?'nonbillable':'billable');
+    const nm=document.getElementById('nj-name');
+    if(nm&&!nm.value.trim()){nm.value=t.name;nm.select();}
+  }
+}
+// Copy a template onto a freshly-created native job: phases/items become _local rows.
+function _ccApplyTemplate(j,t){
+  j.phases=(t.phases||[]).map(p=>({
+    id:uid('ph'),name:p.name||'Phase',status:'open',_local:true,
+    items:(p.items||[]).map(it=>({
+      id:uid('it'),name:it.name||'Item',hours:it.hours||'—',rate:it.rate||'—',total:it.total||'—',
+      used:'$0',status:'open',description:it.description||'',note:it.note||'',
+      _planMins:it._planMins||0,_local:true,
+    })),
+  }));
+  j.labels=[...new Set([...(j.labels||[]),...(t.labels||[])])];
+  if(t.notes&&!j.notes)j.notes=t.notes;
+  j._fromTemplate=t.name;
+}
+// Job ⋮ menu: "Save as template" + "Job templates…" after "Duplicate job".
+(function(){
+  const _origDot=showJobDotMenu;
+  showJobDotMenu=function(e){
+    const r=_origDot.apply(this,arguments);
+    const menu=document.querySelector('.job-dot-menu');
+    const j=jobs.find(x=>x.id===activeJobId);
+    if(menu&&j&&!menu.querySelector('.cc-tpl-mi')){
+      const first=menu.querySelector('.tcm-item');
+      const frag=document.createElement('div');
+      frag.innerHTML=`<div class="tcm-item cc-tpl-mi" onclick="closeJobDotMenu();openSaveJobTemplate('${esc(j.id)}')"><i class="ti ti-template tcm-icon"></i> Save as template</div>
+        <div class="tcm-item cc-tpl-mi" onclick="closeJobDotMenu();openManageTemplates()"><i class="ti ti-files tcm-icon"></i> Job templates…</div>`;
+      const after=first?first.nextSibling:null;
+      [...frag.children].forEach(c=>menu.insertBefore(c,after));
+    }
+    return r;
+  };
+})();
+(function(){
+  const _origOpen=openCreateJob;
+  openCreateJob=function(){
+    _origOpen.apply(this,arguments);
+    if(_ccEnsureTplField()){const s=document.getElementById('nj-tpl');if(s)s.value='';_ccFillTplSelect();}
+  };
+  const _origCreate=createJob;
+  createJob=function(){
+    const tplId=document.getElementById('nj-tpl')?.value||'';
+    const t=tplId?_ccTemplates().find(x=>x.id===tplId):null;
+    const before=new Set(jobs.map(j=>j.id));
+    const r=_origCreate.apply(this,arguments);
+    if(!t)return r;
+    const j=jobs.find(x=>!before.has(x.id));
+    if(!j)return r; // validation stopped the create (e.g. empty name)
+    _ccApplyTemplate(j,t);
+    // openJobDetail loads `phases` from the job; saveData() then mirrors that back, so the
+    // order matters — reopen first, then persist.
+    openJobDetail(j.id);
+    saveData();
+    try{logActivity(j.id,MY_PERSON,'job_create',`Created from template <strong>${esc(t.name)}</strong>`);}catch(e){}
+    toast(`Job created from “${esc(t.name)}”`,'success');
+    return r;
+  };
+})();
+
+// ───────────────────────── C8 · Time list grouping + CSV ─────────────────────────
+const CC_TIME_GB_KEY='cc_time_groupby';
+function _ccTimeGroupBy(){
+  const v=document.getElementById('tf-group')?.value||_ccLoad(CC_TIME_GB_KEY,'person');
+  return ['person','job','client','week','none'].includes(v)?v:'person';
+}
+function _ccEnsureTimeTools(){
+  if(document.getElementById('tf-group'))return;
+  const bill=document.getElementById('tf-bill');if(!bill||!bill.parentNode)return;
+  const wrap=document.createElement('div');wrap.className='cc-time-tools';
+  const gb=_ccLoad(CC_TIME_GB_KEY,'person');
+  wrap.innerHTML=`<select class="cc-select" id="tf-group" title="Group by" onchange="_ccSetTimeGroup(this.value)">
+      ${[['person','Group by person'],['job','Group by job'],['client','Group by client'],['week','Group by week'],['none','No grouping']].map(([v,l])=>`<option value="${v}"${v===gb?' selected':''}>${l}</option>`).join('')}
+    </select>
+    <button class="d-action" onclick="exportTimeCSV()" title="Export the filtered entries as CSV"><i class="ti ti-download" style="font-size:12px;"></i> Export CSV</button>`;
+  bill.parentNode.appendChild(wrap);
+}
+function _ccSetTimeGroup(v){_ccSave(CC_TIME_GB_KEY,v);renderTime();}
+let _ccTimeCollapsed={};
+function _ccToggleTimeGroup(k){_ccTimeCollapsed[k]=!_ccTimeCollapsed[k];renderTime();}
+function _ccTimeGroupKey(e,gb){
+  const j=e.jobId?jobs.find(x=>x.id===e.jobId):null;
+  if(gb==='job')return{k:'j:'+(e.jobId||'—'),label:j?`${j.id} · ${j.name}`:(e.jobId?'Job '+e.jobId:'No job'),sort:j?String(j.id).padStart(8,'0'):'~'};
+  if(gb==='client'){const c=j?.company||'No client';return{k:'c:'+c,label:c,sort:c.toLowerCase()};}
+  if(gb==='week'){const m=_ccMonday(e.date);const iso=_localISO(m);return{k:'w:'+iso,label:'Week of '+fmtDate(iso),sort:'~'+(99999999-+iso.replace(/-/g,''))};}
+  return{k:'all',label:'All entries',sort:''};
+}
+function _ccRenderTimeGrouped(entries,gb){
+  const tbody=document.getElementById('time-tbody');if(!tbody)return;
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const fd=d=>`${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  const groups={};
+  entries.forEach(e=>{const g=_ccTimeGroupKey(e,gb);(groups[g.k]=groups[g.k]||{...g,rows:[]}).rows.push(e);});
+  const ordered=Object.values(groups).sort((a,b)=>a.sort<b.sort?-1:a.sort>b.sort?1:0);
+  let rows='';
+  ordered.forEach((g,gi)=>{
+    g.rows.sort((a,b)=>b.date-a.date);
+    const tot=g.rows.reduce((s,e)=>s+e.hours,0);
+    const bill=g.rows.filter(e=>e.done&&e.billable).reduce((s,e)=>s+e.hours,0);
+    if(gb!=='none'){
+      if(!(g.k in _ccTimeCollapsed))_ccTimeCollapsed[g.k]=true;
+      const col=_ccTimeCollapsed[g.k];
+      rows+=`<tr class="time-group-row" style="cursor:pointer;" onclick="_ccToggleTimeGroup(${esc(JSON.stringify(g.k))})"><td colspan="7">
+        <strong>${esc(g.label)}</strong> &nbsp;<span style="color:var(--muted);font-weight:400;">${fmtH(tot)} total · ${fmtH(bill)} billable · ${g.rows.length} entr${g.rows.length!==1?'ies':'y'}</span>
+        <i class="ti ${col?'ti-chevron-right':'ti-chevron-down'}" style="float:right;font-size:11px;color:var(--muted);margin-top:2px;"></i>
+      </td></tr>`;
+      if(col)return;
+    }
+    g.rows.forEach(e=>{
+      const j=e.jobId?jobs.find(x=>x.id===e.jobId):null;
+      const jobStr=j?`<span style="color:var(--muted);font-size:11px;margin-right:4px;">${esc(j.id)}</span>${esc(j.name)}`:'<span style="color:var(--muted);">—</span>';
+      const statusStr=e.done?'<span style="color:var(--ok);font-size:11px;">Done</span>':'<span style="color:var(--muted);font-size:11px;">Planned</span>';
+      rows+=`<tr class="time-entry-row">
+        <td class="cc-te-person"><span class="time-av" style="background:${esc(e.personColor||'#999')};width:18px;height:18px;font-size:8px;">${esc(e.personInitials||'?')}</span>${esc(e.personName||'')}</td>
+        <td>${jobStr}</td>
+        <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.title?esc(e.title):'<span style="color:var(--muted);">Untitled</span>'}${e.note?`<span class="te-note-dot" title="${esc(e.note)}"></span>`:''}</td>
+        <td style="color:var(--muted);font-size:12px;white-space:nowrap;">${fd(e.date)}</td>
+        <td style="text-align:right;font-variant-numeric:tabular-nums;">${fmtH(e.hours)}</td>
+        <td>${e.billable?'<span class="t-bill">Billable</span>':'<span class="t-nobill">Non-billable</span>'}</td>
+        <td>${statusStr}</td>
+      </tr>`;
+    });
+  });
+  tbody.innerHTML=rows;
+}
+function exportTimeCSV(){
+  const entries=(window._ccTimeFiltered||[]).slice().sort((a,b)=>a.date-b.date||String(a.personName).localeCompare(String(b.personName)));
+  if(!entries.length){toast('No time entries match the current filters','warn');return;}
+  const head=['Date','Person','Client','Job number','Job name','Item','Hours','Billable','Note'];
+  const lines=[head.join(',')];
+  entries.forEach(e=>{
+    const j=e.jobId?jobs.find(x=>x.id===e.jobId):null;
+    const note=e.notes!=null?e.notes:(e.note||(e.item?'':e.title)||'');
+    lines.push([
+      _localISO(e.date),e.personName||people[e.personKey]?.name||e.personKey||'',
+      j?.company||'',e.jobId||'',j?.name||'',e.item||(e.notes!=null?'':e.title)||'',
+      (Math.round((e.hours||0)*100)/100).toFixed(2),e.billable?'Yes':'No',note,
+    ].map(_ccCsvCell).join(','));
+  });
+  _ccDownload(`time_${_localISO()}.csv`,'﻿'+lines.join('\r\n')+'\r\n');
+  toast(`Exported ${entries.length} entr${entries.length!==1?'ies':'y'}`,'success');
+}
+(function(){
+  const _orig=renderTime;
+  renderTime=function(){
+    _ccEnsureTimeTools();
+    const r=_orig.apply(this,arguments);
+    const gb=_ccTimeGroupBy();
+    const entries=window._ccTimeFiltered||[];
+    if(gb!=='person'&&entries.length)_ccRenderTimeGrouped(entries,gb);
+    return r;
+  };
+})();
+
+// ───────────────────────────── C4 · My items backlog ─────────────────────────────
+// Job-plan items assigned to the viewed person in Streamtime (job_assignments: userId ×
+// jobItemId) that aren't complete and have nothing on the board in the viewed week.
+const CC_MI_KEY='cc_myitems_open';
+let _ccMiOpen=!!_ccLoad(CC_MI_KEY,false);
+let _ccMiDrag=null;
+let _ccMiQuery='';
+function _ccMyItems(personKey){
+  const sid=people[personKey]?._stId;
+  const stU=sid?stUsersById[sid]:Object.values(stUsersById).find(u=>u.key===personKey);
+  if(!stU||!(stJobAssignments||[]).length)return[];
+  // jobItemId → {job, phase, item}
+  const idx={};
+  jobs.forEach(j=>{
+    if(j.status!=='inplay'||j.paused)return;
+    (j.phases||[]).forEach(p=>(p.items||[]).forEach(it=>{if(it._stId)idx[it._stId]={j,p,it};}));
+  });
+  // Already on the board this (viewed) week?
+  const onBoard=new Set();
+  const wd=getWeekData(personKey);
+  [1,2,3,4,5].forEach(d=>(wd[d]||[]).forEach(t=>{
+    if(t._stItemId)onBoard.add(String(t._stItemId));
+    if(t.itemId)onBoard.add(String(t.itemId).replace(/^st-it-/,''));
+  }));
+  const out=[];
+  stJobAssignments.forEach(a=>{
+    if(String(a.userId)!==String(stU.id))return;
+    if((a.jobItemUserStatus?.name||'')==='Complete')return;
+    const hit=idx[a.jobItemId];if(!hit)return;
+    if(hit.it.status==='complete')return;
+    if(onBoard.has(String(a.jobItemId)))return;
+    const plannedM=a.totalPlannedMinutes||hit.it._planMins||0;
+    const loggedM=a.totalLoggedMinutes||0;
+    out.push({job:hit.j,phase:hit.p,item:hit.it,plannedM,loggedM,start:a.earliestStartDate||null,end:a.latestEndDate||null});
+  });
+  return out;
+}
+function _ccEnsureMiButton(){
+  const bar=document.querySelector('#view-todo .todo-bar');if(!bar)return;
+  let btn=document.getElementById('cc-mi-btn');
+  if(!btn){
+    const add=bar.querySelector('.todo-add-btn');
+    btn=document.createElement('button');btn.id='cc-mi-btn';btn.className='d-action cc-mi-btn';
+    btn.title='Assigned job items not on the board this week';
+    btn.onclick=toggleMyItems;
+    btn.innerHTML='<i class="ti ti-list-check" style="font-size:12px;"></i> My items';
+    if(add&&add.parentNode)add.parentNode.insertBefore(btn,add);else bar.appendChild(btn);
+  }
+  btn.classList.toggle('on',_ccMiOpen);
+}
+function toggleMyItems(){
+  _ccMiOpen=!_ccMiOpen;_ccSave(CC_MI_KEY,_ccMiOpen);
+  _ccRenderMyItems();
+  document.getElementById('cc-mi-btn')?.classList.toggle('on',_ccMiOpen);
+}
+function _ccRenderMyItems(){
+  const body=document.querySelector('#view-todo .todo-body');if(!body)return;
+  let panel=document.getElementById('cc-mi-panel');
+  const show=_ccMiOpen&&!window._focusToday;
+  body.classList.toggle('cc-mi-on',show);
+  if(!show){panel?.remove();return;}
+  if(!panel){
+    panel=document.createElement('aside');panel.id='cc-mi-panel';
+    panel.innerHTML=`<div class="cc-mi-hd"><div class="cc-mi-hd-row"><span class="cc-mi-title">My items</span><button class="cc-icon-btn" title="Close" onclick="toggleMyItems()"><i class="ti ti-x"></i></button></div>
+      <div class="cc-mi-sub" id="cc-mi-sub"></div>
+      <input class="form-inp cc-mi-search" id="cc-mi-q" placeholder="Filter by job or item…" oninput="_ccMiQuery=this.value;_ccRenderMyItemsList()"></div>
+      <div class="cc-mi-list" id="cc-mi-list"></div>`;
+    body.appendChild(panel);
+    const q=document.getElementById('cc-mi-q');if(q)q.value=_ccMiQuery;
+  }else if(panel.parentNode!==body||panel.nextSibling)body.appendChild(panel);
+  _ccRenderMyItemsList();
+}
+function _ccRenderMyItemsList(){
+  const list=document.getElementById('cc-mi-list');if(!list)return;
+  const sub=document.getElementById('cc-mi-sub');
+  const pk=currentPerson;const first=(people[pk]?.name||'').split(' ')[0]||'You';
+  const q=(_ccMiQuery||'').trim().toLowerCase();
+  let items=_ccMyItems(pk);
+  if(q)items=items.filter(x=>`${x.job.id} ${x.job.name} ${x.job.company||''} ${x.item.name} ${x.phase.name||''}`.toLowerCase().includes(q));
+  if(sub)sub.textContent=`${pk===MY_PERSON?'Assigned to you':'Assigned to '+first} · not on this week’s board. Drag onto a day to schedule.`;
+  if(!items.length){
+    list.innerHTML=`<div class="cc-mi-empty">${q?'No items match that filter.':(stJobAssignments||[]).length?`Nothing waiting — every open item assigned to ${pk===MY_PERSON?'you':esc(first)} is already on this week’s board.`:'Item assignments haven’t loaded from Streamtime yet.'}</div>`;
+    return;
+  }
+  const byJob={};
+  items.forEach(x=>{(byJob[x.job.id]=byJob[x.job.id]||{job:x.job,rows:[]}).rows.push(x);});
+  // Client (billable) work first, then house/non-billable jobs; within each, earliest due first.
+  const groups=Object.values(byJob).sort((a,b)=>{
+    const ba=a.job.billable===false?1:0,bb=b.job.billable===false?1:0;if(ba!==bb)return ba-bb;
+    const da=a.rows.map(r=>r.end).filter(Boolean).sort()[0]||'9999',db=b.rows.map(r=>r.end).filter(Boolean).sort()[0]||'9999';
+    return da<db?-1:da>db?1:String(a.job.id).localeCompare(String(b.job.id),undefined,{numeric:true});
+  });
+  window._ccMiRows=[];
+  list.innerHTML=groups.map(g=>`<div class="cc-mi-job"><span>${esc(g.job.id)}</span><span class="cc-mi-job-name" title="${esc(g.job.name)} — open job" onclick="openJobDetail('${esc(g.job.id)}')">${esc(g.job.name)}</span></div>`+g.rows.map(x=>{
+    const i=window._ccMiRows.push(x)-1;
+    const over=x.plannedM>0&&x.loggedM>x.plannedM;
+    const pct=x.plannedM>0?Math.min(100,Math.round(x.loggedM/x.plannedM*100)):0;
+    const due=x.end?` · due ${esc(fmtDate(x.end))}`:'';
+    return`<div class="cc-mi-row" draggable="true" data-mi="${i}" ondragstart="_ccMiDragStart(event,${i})" ondragend="_ccMiDragEnd(event)" title="${esc(x.phase.name||'')} › ${esc(x.item.name)}">
+      <div class="cc-mi-row-main">
+        <div class="cc-mi-row-name">${esc(x.item.name)}</div>
+        <div class="cc-mi-row-meta"><span class="${over?'over':''}">${x.loggedM?_stFmtH(x.loggedM):'0h'} logged</span> / ${x.plannedM?_stFmtH(x.plannedM)+' planned':'no plan'}${due}</div>
+        ${x.plannedM>0?`<div class="cc-mi-bar"><span class="${over?'over':''}" style="width:${pct}%;"></span></div>`:''}
+      </div>
+      <button class="cc-icon-btn" title="Schedule…" onclick="event.stopPropagation();_ccMiSchedule(${i})"><i class="ti ti-calendar-plus"></i></button>
+    </div>`;
+  }).join('')).join('');
+}
+function _ccMiHours(x){
+  const left=x.plannedM>0?(x.plannedM-x.loggedM)/60:0;
+  return left>0?Math.max(.5,Math.min(_dayCap(currentPerson),Math.round(left*4)/4)):1;
+}
+function _ccMiDragStart(e,i){
+  _ccMiDrag=window._ccMiRows?.[i]||null;
+  try{e.dataTransfer.setData('text/plain','cc-myitem');e.dataTransfer.effectAllowed='copy';}catch(err){}
+  e.currentTarget.classList.add('dragging');
+}
+function _ccMiDragEnd(e){
+  e.currentTarget?.classList.remove('dragging');
+  setTimeout(()=>{_ccMiDrag=null;},0);
+  document.querySelectorAll('#day-cols .drop-hi').forEach(el=>el.classList.remove('drop-hi'));
+  try{_clearDropIndicators();}catch(err){}
+}
+function _ccMiAddToDay(x,day){
+  const j=x.job;
+  if(j.paused){toast('This job is paused — time cannot be scheduled against it','warn');return;}
+  const hours=_ccMiHours(x);
+  const wd=getWeekData(currentPerson);
+  (wd[day]=wd[day]||[]).push({id:uid('t'),title:x.item.name,job:`${j.id} ${j.name}`,jobId:j.id,item:x.item.name,itemId:x.item.id,hours,urgent:false,personal:false,person:currentPerson});
+  try{logActivity(j.id,MY_PERSON,'task_add',`Scheduled <strong>${esc(x.item.name)}</strong> for ${DAY_NAMES[day-1]} (${formatHrs(hours)})`);}catch(e){}
+  saveData();renderTodo();
+  toast(`Scheduled “${esc(x.item.name)}” — ${DAY_NAMES[day-1]}, ${formatHrs(hours)}`,'success');
+}
+// Fallback when dragging isn't handy (calendar view, touch): the task modal, prefilled.
+function _ccMiSchedule(i){
+  const x=window._ccMiRows?.[i];if(!x)return;
+  const dow=new Date().getDay();
+  const day=weekOffset===0&&dow>=1&&dow<=5?dow:1;
+  openTodoModal(x.job.id,day,currentPerson!==MY_PERSON?currentPerson:undefined);
+  setTimeout(()=>{
+    const t=document.getElementById('td-task');if(t&&!t.value)t.value=x.item.name;
+    try{selectItemFromPicker(x.item.name,x.item.id);}catch(e){}
+    const h=document.getElementById('td-hours');if(h)h.value=formatHrs(_ccMiHours(x));
+  },60);
+}
+// Drop onto a To Do day column: capture-phase so the board's own card-drop handler
+// (onDropToSection) never sees a My items drag.
+function _ccWireMiDrop(){
+  const wrap=document.getElementById('day-cols');if(!wrap||wrap._ccMiWired)return;
+  wrap._ccMiWired=true;
+  wrap.addEventListener('dragover',e=>{if(_ccMiDrag){const c=e.target.closest('.day-col.workday');if(c){e.preventDefault();try{e.dataTransfer.dropEffect='copy';}catch(err){}}}},true);
+  wrap.addEventListener('drop',e=>{
+    if(!_ccMiDrag)return;
+    e.preventDefault();e.stopPropagation();
+    const col=e.target.closest('.day-col');
+    const x=_ccMiDrag;_ccMiDrag=null;
+    document.querySelectorAll('#day-cols .drop-hi').forEach(el=>el.classList.remove('drop-hi'));
+    try{_clearDropIndicators();}catch(err){}
+    if(!col||!col.classList.contains('workday')){toast('Drop onto a working day','warn');return;}
+    _ccMiAddToDay(x,parseInt(col.dataset.day,10));
+  },true);
+}
+
+// ───────────────────────────── C2 · Leave / holiday ─────────────────────────────
+// cc_leave: [{id, person, from, to, note}] — full days, local YYYY-MM-DD, inclusive.
+// Per-browser only for now: shared leave (everyone seeing everyone's) needs Razor's
+// backend, and Google Calendar sync is planned there too.
+const CC_LEAVE_KEY='cc_leave';
+function _ccLeave(){const l=_ccLoad(CC_LEAVE_KEY,[]);return Array.isArray(l)?l:[];}
+function _ccSaveLeave(list){return _ccSave(CC_LEAVE_KEY,list);}
+function _ccAwayOn(person,iso){
+  if(!person||!iso)return null;
+  return _ccLeave().find(l=>l.person===person&&l.from<=iso&&iso<=l.to)||null;
+}
+function _ccWeekDates(offset){
+  const mon=_ccMonday(new Date());mon.setDate(mon.getDate()+(offset||0)*7);
+  return [0,1,2,3,4].map(i=>{const d=new Date(mon);d.setDate(mon.getDate()+i);return _localISO(d);});
+}
+// Hours of capacity a person loses to leave in a week (offset from this week).
+function _ccLeaveCapHours(person,offset){
+  const days=people[person]?.days||[1,2,3,4,5];
+  const cap=_ccOrigDayCap?_ccOrigDayCap(person):8;
+  return _ccWeekDates(offset).reduce((s,iso,i)=>s+(days.includes(i+1)&&_ccAwayOn(person,iso)?cap:0),0);
+}
+// Reporting → People: leave hours inside the selected period (cutoff..ceiling).
+function _ccLeaveHoursInReportPeriod(person){
+  const list=_ccLeave().filter(l=>l.person===person);if(!list.length)return 0;
+  let cut=0,ceil=Date.now();
+  try{cut=_getPeriodCutoff()||0;ceil=_getPeriodCeiling()||Date.now();}catch(e){}
+  const days=people[person]?.days||[1,2,3,4,5];
+  const cap=_ccOrigDayCap?_ccOrigDayCap(person):8;
+  const seen=new Set();let h=0;
+  list.forEach(l=>{
+    const d=_pDate(l.from),end=_pDate(l.to);if(!d||!end)return;
+    for(;d<=end;d.setDate(d.getDate()+1)){
+      const iso=_localISO(d),t=d.getTime()+12*3600000;
+      if(seen.has(iso)||t<cut||t>ceil)continue;
+      const dow=d.getDay();if(dow===0||dow===6||!days.includes(dow))continue;
+      seen.add(iso);h+=cap;
+    }
+  });
+  return h;
+}
+let _ccOrigDayCap=null;
+(function(){
+  // _dayCap(key, isoDate?) → 0 on a leave day. Without a date it behaves as before.
+  _ccOrigDayCap=_dayCap;
+  _dayCap=function(key,iso){return iso&&_ccAwayOn(key,iso)?0:_ccOrigDayCap(key);};
+  // personWeeklyCap(key, weekOffset?) → net of leave in that week. Without an offset it is
+  // the plain contracted week (Reports multiply it by the period and subtract leave there).
+  const _origWeekly=personWeeklyCap;
+  personWeeklyCap=function(key,offset){
+    const base=_origWeekly(key);
+    if(offset===undefined||offset===null)return base;
+    return Math.max(0,Math.round(base-_ccLeaveCapHours(key,offset)));
+  };
+})();
+function _ccLeaveRangeLabel(l){return l.from===l.to?fmtDate(l.from):`${fmtDate(l.from)} – ${fmtDate(l.to)}`;}
+function _ccLeaveDays(l){
+  let n=0;const d=_pDate(l.from),e=_pDate(l.to);if(!d||!e)return 0;
+  for(;d<=e;d.setDate(d.getDate()+1)){const w=d.getDay();if(w>0&&w<6)n++;}
+  return n;
+}
+function _ccLeaveSectionHTML(key){
+  const today=_localISO();
+  const list=_ccLeave().filter(l=>l.person===key).sort((a,b)=>a.from<b.from?1:-1);
+  const upcoming=list.filter(l=>l.to>=today).reverse(),past=list.filter(l=>l.to<today).slice(0,3);
+  const li=(l,isPast)=>`<div class="cc-leave-li${isPast?' past':''}">
+      <i class="ti ti-beach" style="font-size:14px;color:var(--muted);"></i>
+      <div class="cc-leave-li-main">${esc(_ccLeaveRangeLabel(l))} <span style="color:var(--muted);">· ${_ccLeaveDays(l)} day${_ccLeaveDays(l)!==1?'s':''}</span>${l.note?`<div class="cc-leave-li-note" title="${esc(l.note)}">${esc(l.note)}</div>`:''}</div>
+      <button class="cc-icon-btn danger" title="Remove leave" onclick="removeLeave('${esc(l.id)}','${esc(key)}')"><i class="ti ti-trash"></i></button>
+    </div>`;
+  return`<div class="tm-panel-section" id="cc-leave-section">
+    <div class="tm-panel-section-lbl">Leave</div>
+    ${upcoming.length?upcoming.map(l=>li(l,false)).join(''):'<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">No upcoming leave.</div>'}
+    ${past.length?past.map(l=>li(l,true)).join(''):''}
+    <button class="d-action" onclick="openAddLeave('${esc(key)}')"><i class="ti ti-plus" style="font-size:12px;"></i> Add leave</button>
+    <div class="cc-leave-hint">Away days show on To Do and Schedule and count as zero capacity. Leave is saved in this browser only.</div>
+  </div>`;
+}
+function openAddLeave(key){
+  const p=people[key];if(!p)return;
+  document.getElementById('cc-leave-modal')?.remove();
+  const m=document.createElement('div');m.className='modal-bg on';m.id='cc-leave-modal';
+  const t=_localISO();
+  m.innerHTML=`<div class="modal" style="max-width:420px;">
+    <div class="modal-hd"><span class="modal-hd-title">Add leave · ${esc(p.name)}</span><button class="modal-x" onclick="document.getElementById('cc-leave-modal').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd">
+      <div class="field-row">
+        <div class="field"><label>From</label><input type="date" id="cc-leave-from" class="form-inp" value="${t}" style="width:100%;" onchange="const to=document.getElementById('cc-leave-to');if(to.value<this.value)to.value=this.value;"></div>
+        <div class="field"><label>To (inclusive)</label><input type="date" id="cc-leave-to" class="form-inp" value="${t}" style="width:100%;"></div>
+      </div>
+      <div class="field"><label>Note (optional)</label><input type="text" id="cc-leave-note" class="form-inp" placeholder="e.g. Annual leave" style="width:100%;" maxlength="80"></div>
+    </div>
+    <div class="modal-ft"><button class="modal-cancel" onclick="document.getElementById('cc-leave-modal').remove()">Cancel</button><button class="modal-save" onclick="saveLeave('${esc(key)}')">Add leave</button></div>
+  </div>`;
+  m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+  document.body.appendChild(m);
+}
+function _ccLeaveChanged(key){
+  if(document.getElementById('tm-panel')?.classList.contains('open'))openTeamMember(key);
+  const vis=id=>{const v=document.getElementById(id);return v&&!v.classList.contains('hidden');};
+  try{if(vis('view-todo'))renderTodo();}catch(e){}
+  try{if(document.getElementById('schedule-scroll')?.offsetParent)renderSchedule();}catch(e){}
+  try{if(vis('view-dashboard'))renderDashboard();}catch(e){}
+}
+function saveLeave(key){
+  const from=document.getElementById('cc-leave-from')?.value||'';
+  let to=document.getElementById('cc-leave-to')?.value||from;
+  const note=(document.getElementById('cc-leave-note')?.value||'').trim();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(from)){toast('Pick a start date','warn');return;}
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(to)||to<from)to=from;
+  const list=_ccLeave();
+  list.push({id:uid('lv'),person:key,from,to,note});
+  if(!_ccSaveLeave(list))return;
+  document.getElementById('cc-leave-modal')?.remove();
+  toast(`Leave added for ${esc(people[key]?.name||key)}`,'success');
+  _ccLeaveChanged(key);
+}
+function removeLeave(id,key){
+  const list=_ccLeave();const l=list.find(x=>x.id===id);if(!l)return;
+  ccConfirm(`Remove leave ${esc(_ccLeaveRangeLabel(l))} for ${esc(people[l.person]?.name||l.person)}?`,()=>{
+    _ccSaveLeave(list.filter(x=>x.id!==id));
+    toast('Leave removed','success');
+    _ccLeaveChanged(key||l.person);
+  },'Remove',true);
+}
+(function(){
+  const _origTM=openTeamMember;
+  openTeamMember=function(key){
+    const r=_origTM.apply(this,arguments);
+    const body=document.getElementById('tm-panel-body');
+    if(body&&people[key]){
+      document.getElementById('cc-leave-section')?.remove();
+      const tmp=document.createElement('div');tmp.innerHTML=_ccLeaveSectionHTML(key);
+      const sec=tmp.firstElementChild;
+      const last=body.lastElementChild; // Account section stays last
+      if(last)body.insertBefore(sec,last);else body.appendChild(sec);
+    }
+    return r;
+  };
+})();
+// To Do: an "Away" banner on day headers; the My items panel + button.
+function _ccDecorateTodo(){
+  _ccEnsureMiButton();
+  _ccWireMiDrop();
+  const cols=document.querySelectorAll('#day-cols .day-col[data-day]');
+  if(cols.length){
+    const dates=_ccWeekDates(weekOffset);
+    cols.forEach(col=>{
+      const d=parseInt(col.dataset.day,10);if(!(d>=1&&d<=5))return;
+      const l=_ccAwayOn(currentPerson,dates[d-1]);
+      col.classList.toggle('cc-away',!!l);
+      col.querySelector('.cc-away-banner')?.remove();
+      if(!l)return;
+      const head=col.querySelector('.day-head');if(!head)return;
+      const b=document.createElement('div');b.className='cc-away-banner';
+      b.title=`Away${l.note?' — '+l.note:''} (${_ccLeaveRangeLabel(l)})`;
+      b.innerHTML=`<i class="ti ti-beach" style="font-size:12px;"></i> Away${l.note?' · '+esc(l.note):''}`;
+      const cap=head.querySelector('.day-cap');
+      if(cap)head.insertBefore(b,cap);else head.appendChild(b);
+    });
+  }
+  _ccRenderMyItems();
+}
+(function(){
+  const _origTodo=renderTodo;
+  renderTodo=function(){
+    const r=_origTodo.apply(this,arguments);
+    try{_ccDecorateTodo();}catch(e){console.error('feat-c todo decorate',e);}
+    return r;
+  };
+  // Schedule: "Away" chip + hatched cell. Rows follow the selected-people order and the
+  // five day cells follow Mon–Fri, exactly as renderSchedule builds them.
+  const _origSched=renderSchedule;
+  renderSchedule=function(){
+    const r=_origSched.apply(this,arguments);
+    try{
+      const el=document.getElementById('schedule-scroll');
+      const keys=(_getScheduleSelectedPeople()||[]).filter(k=>people[k]);
+      const dates=_ccWeekDates(weekOffset);
+      const rows=el?[...el.querySelectorAll('.sched-table tbody tr')]:[];
+      rows.forEach((tr,ri)=>{
+        const k=keys[ri];if(!k)return;
+        [...tr.querySelectorAll('td.sched-cell')].forEach((td,i)=>{
+          const l=_ccAwayOn(k,dates[i]);if(!l)return;
+          td.classList.add('cc-away');td.classList.remove('sched-over');
+          const chip=document.createElement('div');chip.className='cc-away-chip';
+          chip.title=`${people[k].name} is away${l.note?' — '+l.note:''} (${_ccLeaveRangeLabel(l)})`;
+          chip.innerHTML=`<i class="ti ti-beach" style="font-size:11px;"></i> Away${l.note?' · '+esc(l.note):''}`;
+          td.insertBefore(chip,td.firstChild);
+        });
+      });
+    }catch(e){console.error('feat-c schedule decorate',e);}
+    return r;
+  };
+})();
+</script>
 </body>
 </html>
