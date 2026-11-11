@@ -1924,6 +1924,8 @@ kbd.kb-key{font:600 11.5px var(--font);color:var(--ink);background:var(--off);bo
 .week-pick .wlabel{font-size:13px;color:var(--ink);font-variant-numeric:tabular-nums;margin:0!important;}
 .todo-view-toggle .tvt-btn{display:inline-flex;align-items:center;gap:6px;padding:0 10px!important;font-size:12.5px;font-weight:500;color:var(--muted);}
 .todo-view-toggle .tvt-btn.on{color:var(--ink);background:var(--off)!important;box-shadow:var(--shadow-s);}
+.todo-view-toggle .tvt-btn span{display:none;}.todo-view-toggle .tvt-btn.on span{display:inline;} /* label only on the selected view */
+.todo-view-toggle .tvt-btn:not(.on){padding:0 9px!important;}
 /* Split zones (drag a task between days to split it) */
 .split-zone{width:36px!important;border-radius:18px!important;background:var(--white)!important;border:1px solid var(--border)!important;box-shadow:var(--shadow-m);flex-direction:column;justify-content:center;gap:10px;transform:scale(.96);transition:opacity .15s,transform .15s,background .15s!important;}
 .split-zone.on{transform:none;}
@@ -1933,6 +1935,57 @@ kbd.kb-key{font:600 11.5px var(--font);color:var(--ink);background:var(--off);bo
 .split-zone.drop-ok{background:var(--ink)!important;border-color:var(--ink)!important;}
 .split-zone.drop-ok .sz-lbl,.split-zone.drop-ok .sz-sub{color:var(--white)!important;}
 .split-zone.drop-ok .sz-ico{background:var(--red);color:#fff;}
+.sched-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+.sched-toolbar .todo-view-toggle{height:var(--ctl-h);border-radius:var(--r-ctl);background:var(--white);border:1px solid var(--border);padding:3px;display:inline-flex;gap:2px;}
+.sched-range-seg .tvt-btn span{display:inline!important;}
+.sched-week{display:inline-flex;align-items:center;height:var(--ctl-h);border:1px solid var(--border);border-radius:var(--r-ctl);background:var(--white);overflow:hidden;}
+.sched-week button{border:none;background:none;width:32px;height:100%;cursor:pointer;color:var(--ink);font-size:14px;display:flex;align-items:center;justify-content:center;}
+.sched-week button:hover{background:var(--off);}
+.sched-range{display:inline-flex;align-items:center;gap:7px;padding:0 10px;font-size:13px;font-weight:500;color:var(--ink);border-left:1px solid var(--faint);border-right:1px solid var(--faint);height:100%;font-variant-numeric:tabular-nums;}
+.sched-who{position:relative;}
+.sched-who-btn{gap:8px!important;}
+.sw-stack{display:inline-flex;}
+.sw-av{width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:600;color:#fff;box-shadow:0 0 0 2px var(--white);flex-shrink:0;}
+.sw-stack .sw-av+.sw-av{margin-left:-6px;}
+.sw-av.sw-more{background:var(--faint);color:var(--muted);}
+.sched-who-pop{position:absolute;top:calc(100% + 6px);left:0;z-index:900;width:280px;max-height:420px;overflow-y:auto;background:var(--white);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-l);padding:6px;}
+.swp-sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:8px 8px 4px;}
+.swp-row,.swp-person{display:flex;align-items:center;gap:9px;width:100%;border:none;background:none;padding:7px 8px;border-radius:9px;cursor:pointer;font:500 13px var(--font);color:var(--ink);text-align:left;}
+.swp-row:hover,.swp-person:hover{background:var(--off);}
+.swp-row.on{background:var(--off);}
+.swp-row i{color:var(--muted);font-size:15px;}
+.swp-row span{margin-left:auto;font-size:11.5px;color:var(--muted);}
+.swp-person{font-weight:400;}
+.swp-person i{margin-left:auto;font-size:16px;color:var(--muted);}
+.swp-person.on i{color:var(--ink);}
+.r-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:16px 0 4px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.r-tabs{height:var(--ctl-h);border-radius:var(--r-ctl);background:var(--white);border:1px solid var(--border);padding:3px;display:inline-flex;gap:2px;}
+.r-tabs .r-subtab{border:none!important;margin:0!important;padding:0 11px!important;height:100%;border-radius:7px!important;display:inline-flex;align-items:center;gap:6px;font-size:12.5px!important;}
+.r-tabs .r-subtab.on{background:var(--off)!important;box-shadow:var(--shadow-s);border-bottom:none!important;}
+.r-filters{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.team-rep-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;align-items:start;}
+.team-rep{background:var(--white);border:1px solid var(--border);border-radius:var(--r-card);box-shadow:var(--shadow-s);padding:18px 18px 12px;}
+.tr-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.tr-name{font-family:var(--display);font-size:17px;font-weight:700;letter-spacing:-.02em;}
+.tr-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.tr-target{font-size:12px;color:var(--muted);white-space:nowrap;}
+.tr-target input{width:52px;height:28px;border:1px solid var(--border);border-radius:8px;background:var(--off);text-align:center;font:600 12.5px var(--font);color:var(--ink);margin:0 3px;}
+.tr-big{display:flex;align-items:baseline;gap:8px;margin:14px 0 8px;}
+.tr-util{font-family:var(--display);font-size:38px;font-weight:700;letter-spacing:-.04em;line-height:1;}
+.tr-util-lbl{font-size:12px;color:var(--muted);}
+.tr-meter{position:relative;height:8px;border-radius:99px;background:var(--faint);overflow:visible;}
+.tr-meter i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;}
+.tr-meter b{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink);border-radius:2px;transform:translateX(-1px);}
+.tr-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:16px 0 4px;}
+.tr-stats div{font-size:11px;color:var(--muted);}
+.tr-stats span{display:block;font-family:var(--display);font-size:16px;font-weight:700;color:var(--ink);letter-spacing:-.02em;margin-bottom:1px;}
+.tr-sec{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:14px 0 4px;}
+.tm-row{display:flex;align-items:center;gap:9px;padding:5px 0;font-size:12.5px;}
+.tm-n{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tm-bar{width:80px;height:5px;border-radius:99px;background:var(--faint);overflow:hidden;flex-shrink:0;}
+.tm-bar i{display:block;height:100%;background:var(--ink);border-radius:99px;}
+.tm-v{width:44px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;flex-shrink:0;}
+.tm-job .tm-v{width:auto;}
 /* Table headers: one style in every list */
 .jobs-table thead th,.inv-th,.time-table thead th,#exp-list-wrap thead th,.exp-t thead th,.qinv-head-row,.prog-table thead th{background:var(--off)!important;color:var(--muted)!important;font-size:10.5px!important;font-weight:500!important;letter-spacing:.08em!important;text-transform:uppercase!important;border-bottom:1px solid var(--border)!important;}
 /* Needs attention (redesign) */
@@ -2358,14 +2411,19 @@ body{font-feature-settings:"cv11","ss01","ss03";}
       <!-- REPORTING -->
       <div id="view-reporting" class="view hidden" style="display:flex;flex-direction:column;">
         <!-- Header + sub-tabs -->
-        <div style="padding:20px 28px 0;border-bottom:1px solid var(--border);flex-shrink:0;">
-          <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px;">
-            <div>
-              <div class="view-title">Reporting</div>
-              <div class="dash-date" id="r-sub" style="margin-top:2px;">Business overview</div>
+        <div style="padding:20px 28px 0;flex-shrink:0;">
+          <div class="view-title">Reporting</div>
+          <div class="view-sub" id="r-sub">Business overview</div>
+          <div class="r-toolbar">
+            <div class="todo-view-toggle r-tabs">
+              <button class="tvt-btn r-subtab on" id="rt-business" onclick="switchReportTab('business')"><i class="ti ti-chart-line" style="font-size:13px;"></i>Business</button>
+              <button class="tvt-btn r-subtab" id="rt-teams" onclick="switchReportTab('teams')"><i class="ti ti-users-group" style="font-size:13px;"></i>Teams</button>
+              <button class="tvt-btn r-subtab" id="rt-people" onclick="switchReportTab('people')"><i class="ti ti-user" style="font-size:13px;"></i>People</button>
+              <button class="tvt-btn r-subtab" id="rt-jobs" onclick="switchReportTab('jobs')"><i class="ti ti-briefcase" style="font-size:13px;"></i>Jobs</button>
+              <button class="tvt-btn r-subtab" id="rt-clients" onclick="switchReportTab('clients')"><i class="ti ti-building" style="font-size:13px;"></i>Clients</button>
             </div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <select class="filter-btn cc-select" id="r-period" style="min-width:130px;" onchange="document.getElementById('r-custom-range').style.display=this.value==='custom'?'flex':'none';renderReporting()">
+            <div class="r-filters">
+              <select class="cc-select" id="r-period" style="min-width:140px;" onchange="document.getElementById('r-custom-range').style.display=this.value==='custom'?'flex':'none';renderReporting()">
                 <option value="week">Last 7 days</option>
                 <option value="2weeks">Last 2 weeks</option>
                 <option value="month" selected>Last 30 days</option>
@@ -2375,24 +2433,19 @@ body{font-feature-settings:"cv11","ss01","ss03";}
                 <option value="custom">Custom range…</option>
               </select>
               <div id="r-custom-range" style="display:none;align-items:center;gap:6px;">
-                <input type="date" id="r-from" class="filter-btn" style="font-size:11px;padding:5px 8px;" onchange="renderReporting()">
-                <span style="font-size:11px;color:var(--muted);">→</span>
-                <input type="date" id="r-to" class="filter-btn" style="font-size:11px;padding:5px 8px;" onchange="renderReporting()">
+                <input type="date" id="r-from" class="form-inp" style="height:var(--ctl-h);padding:0 8px;" onchange="renderReporting()">
+                <span style="font-size:12px;color:var(--muted);">to</span>
+                <input type="date" id="r-to" class="form-inp" style="height:var(--ctl-h);padding:0 8px;" onchange="renderReporting()">
               </div>
               <div id="r-tab-filters" style="display:flex;gap:8px;"></div>
               <button class="d-action" onclick="exportReportTab()"><i class="ti ti-download" style="font-size:12px"></i> Export</button>
             </div>
           </div>
-          <div style="display:flex;gap:0;margin-bottom:-1px;">
-            <button class="r-subtab on" id="rt-business" onclick="switchReportTab('business')">Business</button>
-            <button class="r-subtab" id="rt-people" onclick="switchReportTab('people')">People</button>
-            <button class="r-subtab" id="rt-jobs" onclick="switchReportTab('jobs')">Jobs</button>
-            <button class="r-subtab" id="rt-clients" onclick="switchReportTab('clients')">Clients</button>
-          </div>
         </div>
         <!-- Tab panels -->
         <div style="flex:1;overflow-y:auto;padding:28px 28px 48px;" id="r-scroll">
           <div id="rp-business"></div>
+          <div id="rp-teams" style="display:none;"></div>
           <div id="rp-people" style="display:none;"></div>
           <div id="rp-jobs" style="display:none;"></div>
           <div id="rp-clients" style="display:none;"></div>
@@ -4887,6 +4940,7 @@ function toggleSchedulePerson(key){
   _setScheduleSelectedPeople(sel);
   renderSchedule();
 }
+document.addEventListener('click',e=>{if(window._schedWhoOpen&&!e.target.closest('.sched-who')){window._schedWhoOpen=false;try{renderSchedule();}catch(_){}}});
 function toggleScheduleAllPeople(){
   const all=Object.keys(people).filter(k=>!people[k]._archived);
   const sel=_getScheduleSelectedPeople();
@@ -4943,14 +4997,27 @@ function renderSchedule(){
   // People filter: one compact row of avatars (names on hover) plus team shortcuts — the old
   // first-name pills wrapped to two rows and repeated names like "Bianca" (review B7).
   const _teams=[...new Set(allPeople.map(k=>people[k].team).filter(Boolean))].sort();
-  const peoplePicker=`<div class="sched-pick">
-    <button class="sched-pick-btn${selected.length===allPeople.length?' on':''}" onclick="toggleScheduleAllPeople()">${selected.length===allPeople.length?'Everyone':'All'}</button>
-    ${_teams.map(t=>{const tk=allPeople.filter(k=>people[k].team===t);const on=tk.length&&tk.every(k=>selected.includes(k))&&selected.length===tk.length;return`<button class="sched-pick-btn${on?' on':''}" onclick="_setScheduleSelectedPeople(${esc(JSON.stringify(tk))});renderSchedule()">${esc(t)}</button>`;}).join('')}
-    <span class="sched-pick-sep"></span>
-    ${allPeople.map(k=>{
-      const p=people[k];const on=selected.includes(k);
-      return`<div class="sched-av${on?' on':''}" onclick="toggleSchedulePerson('${k}')" title="${esc(p.name)}${on?'':' (hidden)'}" style="background:${p.color||'#999'};">${esc(p.initials||'?')}</div>`;
-    }).join('')}
+  // Who's shown: one button with an avatar stack; teams + people live in a popover (review)
+  const _allSel=selected.length===allPeople.length;
+  const _teamOf=_teams.find(t=>{const tk=allPeople.filter(k=>people[k].team===t);return tk.length&&selected.length===tk.length&&tk.every(k=>selected.includes(k));});
+  const _whoLbl=_allSel?'Everyone':_teamOf?_teamOf:selected.length===0?'Nobody':selected.length===1?esc(people[selected[0]].name.split(' ')[0]):`${selected.length} people`;
+  const _stack=selected.slice(0,4).map(k=>`<span class="sw-av" style="background:${people[k].color||'#999'}">${esc(people[k].initials||'?')}</span>`).join('')+(selected.length>4?`<span class="sw-av sw-more">+${selected.length-4}</span>`:'');
+  const peoplePicker=`<div class="sched-who">
+    <button class="d-action sched-who-btn" onclick="event.stopPropagation();window._schedWhoOpen=!window._schedWhoOpen;renderSchedule()"><span class="sw-stack">${_stack}</span>${_whoLbl}<i class="ti ti-chevron-down" style="font-size:12px;color:var(--muted);"></i></button>
+    ${window._schedWhoOpen?`<div class="sched-who-pop" onclick="event.stopPropagation()">
+      <div class="swp-sec">Show</div>
+      <button class="swp-row${_allSel?' on':''}" onclick="_setScheduleSelectedPeople(${esc(JSON.stringify(allPeople))});renderSchedule()"><i class="ti ti-users"></i>Everyone<span>${allPeople.length}</span></button>
+      ${_teams.map(t=>{const tk=allPeople.filter(k=>people[k].team===t);return`<button class="swp-row${_teamOf===t?' on':''}" onclick="_setScheduleSelectedPeople(${esc(JSON.stringify(tk))});renderSchedule()"><i class="ti ti-users-group"></i>${esc(t)}<span>${tk.length}</span></button>`;}).join('')}
+      <div class="swp-sec">People</div>
+      <div class="swp-people">${allPeople.map(k=>{const p=people[k];const on=selected.includes(k);return`<button class="swp-person${on?' on':''}" onclick="toggleSchedulePerson('${k}')"><span class="sw-av" style="background:${p.color||'#999'}">${esc(p.initials||'?')}</span>${esc(p.name)}<i class="ti ti-${on?'square-check-filled':'square'}"></i></button>`;}).join('')}</div>
+    </div>`:''}
+  </div>`;
+  const _c2=typeof _c2Sched!=='undefined'?_c2Sched:{mode:'people',weeks:1};
+  const _seg=(k,v,l,ic)=>`<button class="tvt-btn${_c2[k]===v?' on':''}" onclick="c2SetSched('${k}','${v}')" title="${l}">${ic?`<i class="ti ${ic}" style="font-size:13px;"></i>`:''}<span>${l}</span></button>`;
+  const schedToolbar=`<div class="sched-toolbar" id="sched-toolbar">
+    <div class="todo-view-toggle">${_seg('mode','people','People','ti-users')}${_seg('mode','jobs','Jobs','ti-briefcase')}</div>
+    <div class="todo-view-toggle sched-range-seg">${_seg('weeks',1,'1 week')}${_seg('weeks',2,'2 weeks')}${_seg('weeks',4,'4 weeks')}</div>
+    ${peoplePicker}
   </div>`;
 
   const rows=selected.map(k=>{
@@ -4998,13 +5065,11 @@ function renderSchedule(){
     <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
       <div><div class="view-title">Schedule</div><div class="view-sub">Team week at a glance</div></div>
       <div style="display:flex;align-items:center;gap:8px;">
-        <button class="wbtn" onclick="weekOffset--;renderSchedule()"><i class="ti ti-chevron-left" style="font-size:13px;"></i></button>
-        <span style="font-size:13px;color:var(--muted);">${weekRange}</span>
-        <button class="wbtn" onclick="weekOffset=0;renderSchedule()" style="font-size:11px;padding:4px 8px;">Today</button>
-        <button class="wbtn" onclick="weekOffset++;renderSchedule()"><i class="ti ti-chevron-right" style="font-size:13px;"></i></button>
+        ${weekOffset!==0?`<button class="d-action" onclick="weekOffset=0;renderSchedule()">This week</button>`:''}
+        <div class="sched-week"><button onclick="weekOffset--;renderSchedule()" title="Previous week (←)"><i class="ti ti-chevron-left"></i></button><span class="sched-range"><i class="ti ti-calendar" style="font-size:14px;color:var(--muted);"></i>${weekRange}</span><button onclick="weekOffset++;renderSchedule()" title="Next week (→)"><i class="ti ti-chevron-right"></i></button></div>
       </div>
     </div>
-    <div style="margin-bottom:16px;">${peoplePicker}</div>
+    ${schedToolbar}
     <div style="overflow-x:auto;">
       <table class="sched-table" style="width:100%;table-layout:fixed;border-collapse:collapse;background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
         <thead>
@@ -11637,6 +11702,8 @@ document.addEventListener('keydown',e=>{
     }
   }
   const todoActive=!document.getElementById('view-todo').classList.contains('hidden');
+  const schedActive=!document.getElementById('view-schedule')?.classList.contains('hidden');
+  if(schedActive&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();weekOffset+=e.key==='ArrowLeft'?-1:1;renderSchedule();return;}
   if(todoActive&&e.key==='ArrowLeft'){e.preventDefault();toggleWeek(-1);}
   if(todoActive&&e.key==='ArrowRight'){e.preventDefault();toggleWeek(1);}
   if(todoActive&&(e.key==='f'||e.key==='F')){e.preventDefault();toggleFocusToday();}
@@ -12729,7 +12796,7 @@ function initReportingSelects(){/* filters now built per-tab */}
 function switchReportTab(tab){
   _reportTab=tab;
   document.querySelectorAll('.r-subtab').forEach(b=>b.classList.toggle('on',b.id==='rt-'+tab));
-  ['business','people','jobs','clients'].forEach(t=>{const el=document.getElementById('rp-'+t);if(el)el.style.display=t===tab?'':'none';});
+  ['business','teams','people','jobs','clients'].forEach(t=>{const el=document.getElementById('rp-'+t);if(el)el.style.display=t===tab?'':'none';});
   _buildTabFilters(tab);
   renderReporting();
 }
@@ -12910,11 +12977,76 @@ const _chartOpts=(axis='y')=>({responsive:true,maintainAspectRatio:false,plugins
 function renderReporting(){
   const period=document.getElementById('r-period')?.value||'month';
   const pLabel={'week':'Last 7 days','2weeks':'Last 2 weeks','month':'Last 30 days','quarter':'Last 90 days','year':'Last 12 months','all':'All time','custom':'Custom range'}[period]||''; // matches the picker (review A3)
-  document.getElementById('r-sub').textContent={'business':'Business overview','people':'People','jobs':'Jobs','clients':'Clients'}[_reportTab]+' · '+pLabel;
+  document.getElementById('r-sub').textContent={'business':'Business overview','teams':'Teams','people':'People','jobs':'Jobs','clients':'Clients'}[_reportTab]+' · '+pLabel;
   if(_reportTab==='business')_renderBusinessReport();
+  else if(_reportTab==='teams')_renderTeamsReport();
   else if(_reportTab==='people')_renderPeopleReport();
   else if(_reportTab==='jobs')_renderJobsReport();
   else if(_reportTab==='clients')_renderClientsReport();
+}
+
+// ── TEAMS (departments) ─────────────────────────────────────────────────────────────────
+// How each team is tracking for the period: billable utilisation against an admin-set target,
+// billable %, hours, revenue, people and top jobs. Targets are per browser (cc_team_targets)
+// until Razor's backend can share them; only admins can change them.
+function _getTeamTargets(){try{return JSON.parse(localStorage.getItem('cc_team_targets')||'{}');}catch(e){return{};}}
+function setTeamTarget(team,val){
+  if(!_needAdmin('set team targets'))return;
+  const t=_getTeamTargets();const n=Math.max(0,Math.min(150,parseInt(val)||0));
+  if(n)t[team]=n;else delete t[team];
+  try{localStorage.setItem('cc_team_targets',JSON.stringify(t));}catch(e){}
+  _renderTeamsReport();toast(`${team} target ${n?'set to '+n+'%':'cleared'}`,'success');
+}
+function _renderTeamsReport(){
+  const el=document.getElementById('rp-teams');if(!el)return;
+  const tasks=getFilteredTasks();
+  const W=7*86400000,cut=_getPeriodCutoff(),ceil=_getPeriodCeiling();
+  let weeks=4.3;
+  if(cut)weeks=Math.max(1,(ceil-cut)/W);
+  else{let first=Infinity;(stLoggedTimes||[]).forEach(l=>{const d=_pDate((l.date||'').slice(0,10));if(d&&d<first)first=+d;});if(first<Infinity)weeks=Math.max(1,(ceil-first)/W);}
+  const sellById={};(stLoggedTimes||[]).forEach(l=>{sellById['st-lt-'+l.id]=+l.totalExTax||0;});
+  const active=Object.keys(people).filter(k=>!people[k]._archived);
+  const teams={};
+  active.forEach(k=>{const t=people[k].team||'No team';(teams[t]=teams[t]||{name:t,members:[],h:0,bill:0,rev:0,cap:0,jobs:{},per:{}}).members.push(k);});
+  Object.values(teams).forEach(T=>T.members.forEach(k=>{
+    let cap=personWeeklyCap(k)*weeks;
+    try{if(typeof _ccLeaveHoursInReportPeriod==='function')cap=Math.max(0,cap-_ccLeaveHoursInReportPeriod(k));}catch(e){}
+    T.cap+=cap;T.per[k]={h:0,bill:0,cap};
+  }));
+  tasks.forEach(t=>{
+    const k=t.person;const T=Object.values(teams).find(x=>x.members.includes(k));if(!T)return;
+    const h=+t.hours||0;T.h+=h;T.per[k].h+=h;
+    if(t.billable!==false){T.bill+=h;T.per[k].bill+=h;}
+    T.rev+=sellById[t.id]||0;
+    const jn=(t.job||'').trim();if(jn)T.jobs[jn]=(T.jobs[jn]||0)+h;
+  });
+  const targets=_getTeamTargets();const admin=_isAdmin();
+  const list=Object.values(teams).filter(T=>T.members.length).sort((a,b)=>(a.name==='No team')-(b.name==='No team')||b.h-a.h);
+  if(!list.length){el.innerHTML=emptyStateHTML('ti-users-group','No teams yet','Give people a team in Settings → Team to see how each department is tracking.');return;}
+  const pct=(a,b)=>b>0?Math.round(a/b*100):0;
+  const cards=list.map(T=>{
+    const util=pct(T.bill,T.cap),billPct=pct(T.bill,T.h),tgt=targets[T.name]||0;
+    const state=!tgt?'':util>=tgt?'ok':util>=tgt*0.85?'near':'under';
+    const col=state==='ok'?'var(--ok)':state==='near'?'var(--warn)':state==='under'?'var(--red)':'var(--ink)';
+    const topJobs=Object.entries(T.jobs).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    const ppl=T.members.map(k=>{const P=T.per[k];const u=pct(P.bill,P.cap);return`<div class="tm-row"><span class="sw-av" style="background:${people[k].color||'#999'}">${esc(people[k].initials||'?')}</span><span class="tm-n">${esc(people[k].name)}</span><span class="tm-bar"><i style="width:${Math.min(100,u)}%;"></i></span><span class="tm-v">${u}%</span></div>`;}).join('');
+    return`<div class="team-rep">
+      <div class="tr-hd"><div><div class="tr-name">${esc(T.name)}</div><div class="tr-sub">${T.members.length} ${T.members.length===1?'person':'people'} · ${formatHrs(T.cap)||'0h'} capacity</div></div>
+        <div class="tr-target">${admin?`<label>Target <input type="number" min="0" max="150" value="${tgt||''}" placeholder="—" onchange="setTeamTarget('${esc(T.name).replace(/'/g,"\\'")}',this.value)">%</label>`:tgt?`<span>Target ${tgt}%</span>`:''}</div></div>
+      <div class="tr-big"><span class="tr-util" style="color:${col};">${util}%</span><span class="tr-util-lbl">billable utilisation${state==='ok'?' · on target':state==='near'?' · close to target':state==='under'?' · under target':''}</span></div>
+      <div class="tr-meter"><i style="width:${Math.min(100,util)}%;background:${col};"></i>${tgt?`<b style="left:${Math.min(100,tgt)}%;" title="Target ${tgt}%"></b>`:''}</div>
+      <div class="tr-stats">
+        <div><span>${formatHrs(T.bill)||'0h'}</span>Billable</div>
+        <div><span>${formatHrs(T.h)||'0h'}</span>Logged</div>
+        <div><span>${billPct}%</span>Billable share</div>
+        <div><span>${fmtDollar(T.rev)}</span>Revenue</div>
+      </div>
+      <div class="tr-sec">People</div>${ppl}
+      ${topJobs.length?`<div class="tr-sec">Top jobs</div>${topJobs.map(([j,h])=>`<div class="tm-row tm-job"><span class="tm-n">${esc(j)}</span><span class="tm-v">${formatHrs(h)}</span></div>`).join('')}`:''}
+    </div>`;
+  }).join('');
+  el.innerHTML=`<div class="team-rep-grid">${cards}</div>
+    <div class="c2-sched-note" style="margin-top:14px;">Utilisation = billable hours ÷ capacity (working hours less leave) for the period.${admin?' Targets are set per team by admins.':''}</div>`;
 }
 
 // ── BUSINESS ─────────────────────────────────────────────────────────────────
@@ -15624,7 +15756,7 @@ function _c2DecorateSchedule(){
   const seg=(k,v,l)=>`<button class="sched-pick-btn${_c2Sched[k]===v?' on':''}" onclick="c2SetSched('${k}','${v}')">${l}</button>`;
   bar.innerHTML=`<span class="c2-seg"><span class="c2-seg-lbl">View</span>${seg('mode','people','People')}${seg('mode','jobs','Jobs')}</span>
     <span class="c2-seg"><span class="c2-seg-lbl">Range</span>${seg('weeks',1,'1 week')}${seg('weeks',2,'2 weeks')}${seg('weeks',4,'4 weeks')}</span>`;
-  head.after(bar);
+  if(!document.getElementById('sched-toolbar'))head.after(bar);
   if(_c2Sched.mode==='people'&&_c2Sched.weeks===1)return; // the original view, untouched
   const tbl=el.querySelector('table.sched-table');const wrapDiv=tbl?.parentElement;if(!wrapDiv)return;
   const keys=(_getScheduleSelectedPeople()||[]).filter(k=>people[k]);
@@ -15634,7 +15766,7 @@ function _c2DecorateSchedule(){
   if(_c2Sched.weeks>1){
     const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const a=_pDate(days[0].iso),b=_pDate(days[days.length-1].iso);
-    const span=head.querySelector('span');if(span)span.textContent=`${a.getDate()} ${MON[a.getMonth()]} – ${b.getDate()} ${MON[b.getMonth()]}`;
+    const span=head.querySelector('.sched-range')||head.querySelector('span');if(span)span.innerHTML=`<i class="ti ti-calendar" style="font-size:14px;color:var(--muted);"></i>${a.getDate()} ${MON[a.getMonth()]} – ${b.getDate()} ${MON[b.getMonth()]}`;
   }
   const sub=head.querySelector('.view-sub');if(sub)sub.textContent=_c2Sched.mode==='jobs'?'Who is on each job':'Team load across weeks';
 }
