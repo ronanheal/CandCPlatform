@@ -2692,8 +2692,10 @@ function setBgImage(file){
       const cv=document.createElement('canvas');
       cv.width=Math.round(im.width*scale);cv.height=Math.round(im.height*scale);
       cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);
-      const url=cv.toDataURL('image/jpeg',.78);
-      if(url.length>2500000){toast('Image too large even after compression — try a smaller one','warn');return;}
+      // Keep the wallpaper well under the ~5M-char storage quota it shares with job data (M12)
+      let url=cv.toDataURL('image/jpeg',.72);
+      if(url.length>1200000)url=cv.toDataURL('image/jpeg',.55);
+      if(url.length>1200000){toast('Image too large even after compression — try a smaller one','warn');return;}
       try{localStorage.setItem('cc_bg_image',url);}catch(err){toast('Not enough local storage for this image','warn');return;}
       applyBgImage();
       toast('Wallpaper set — hello, glass','success');
@@ -2849,7 +2851,15 @@ function emptyStateHTML(icon,title,sub,ctaLabel,ctaOnclick){
   </div>`;
 }
 let jobs=[];
-let invCounter=1001;
+// Native invoice numbers: next = highest of 1001, the saved counter, and any job's invNum+1.
+// The counter used to live only in memory, so every page load restarted at #1001 (bug audit M10).
+function _nextInvNum(){
+  let n=1001;
+  try{n=Math.max(n,+localStorage.getItem('cc_inv_counter')||0);}catch(e){}
+  (typeof jobs!=='undefined'?jobs:[]).forEach(j=>{const v=parseInt(j.invNum);if(v)n=Math.max(n,v+1);});
+  try{localStorage.setItem('cc_inv_counter',String(n+1));}catch(e){}
+  return n;
+}
 const SFF_PHASES=[];
 let phases=[];
 const DEFAULT_PEOPLE={};
@@ -2911,6 +2921,15 @@ const CHANGELOG=[
     'Marking a task done: "No thanks" on the follow-up card no longer logs time behind your back, and logged time lands on today (it was landing on yesterday before 1pm).',
     'Faster loading: the job data the platform downloads is about 6× smaller.',
     'Dark mode fixes — selected buttons and chips were showing white text on white, toasts lost their colours, and the drag dock was hard to read. Shadows and highlights are warmed back to the C&C paper tones throughout.',
+    'To Do board: Reassign (right-click) and repeating tasks no longer wipe the other week — the person\'s Streamtime tasks stay put. Editing a task now actually moves it when you change the day or pick a date in another week, and changing its job sends logged time to the new job.',
+    'Job Plan: this week\'s Streamtime time was counted twice on items (showing "over plan" too early) — fixed. Phases now show Complete when all their items are.',
+    'Expenses with a quantity above 1 now show the right sell rate, total and margin, and the rows add up to the header total.',
+    'Reporting: Deadlines were a day off, CSV export dated every row two days early, and utilisation for This year / All time / Custom was ~12× too high — all fixed. Week labels now show the Monday.',
+    'Uninvoiced lists no longer fill up with hundreds of old archived jobs — only live, billable jobs with time logged.',
+    'Native invoice numbers carry on from the last one instead of restarting at #1001 on every load.',
+    'Your profile edits no longer get overwritten every 5 minutes by the shared team settings, and removing a Streamtime team member now archives them (restorable in Settings → Team) instead of them reappearing.',
+    'If browser storage fills up you now get a clear warning instead of changes silently not saving. Wallpaper and activity images are stored smaller.',
+    'Global search finds invoices by job number or job name. Moving Streamtime time from the Progress tab is switched off until it can write back to Streamtime (it looked like it worked but didn\'t).',
   ]},
   {version:'2.38.1',date:'3 Nov 2026',title:'Fixed: logged time missing since October',items:[
     'Since about 1 October only ~10% of logged time was reaching the platform, and by November none at all — so Done columns, billable hours, Progress, profitability and Reporting have all been badly under-counting for the last five weeks. Scheduled tasks, jobs and invoices were unaffected.',
@@ -3533,7 +3552,7 @@ let weekOffset=0;
 // nothing is persisted, so a refresh re-seeds from Streamtime and reverts any local edits.
 // Streamtime is the source of truth; write-back to ST is a future phase.
 let todoData={};
-let editingTaskId=null,editingDay=null;
+let editingTaskId=null,editingDay=null,_editOffset=null; // _editOffset: week the edited task was opened from (M3)
 function saveData(){
   // Todo edits are intentionally NOT persisted — ST is the source of truth and the board
   // re-seeds on refresh. We still mirror the active job's plan back into the in-memory
@@ -3589,7 +3608,17 @@ function persistNativeData(){
     localStorage.setItem('cc_native_jobs',JSON.stringify(nativeJobs));
     localStorage.setItem('cc_job_overlay',JSON.stringify(overlay));
     localStorage.setItem('cc_native_time',JSON.stringify((stLoggedTimes||[]).filter(t=>t._local)));
-  }catch(err){}
+  }catch(err){
+    // Browser storage (~5M chars per site) is full, or blocked. This used to be swallowed, so
+    // nothing saved and toasts still said "saved" (bug audit M12). Warn, at most once a minute.
+    console.error('persistNativeData failed:',err);
+    const now=Date.now();
+    if(!persistNativeData._warnedAt||now-persistNativeData._warnedAt>60000){
+      persistNativeData._warnedAt=now;
+      const full=err&&(err.name==='QuotaExceededError'||err.code===22||err.code===1014);
+      setTimeout(()=>toast(full?'Browser storage is full — recent changes are NOT saved. Removing the wallpaper frees the most space.':'Couldn\'t save changes in this browser — recent changes are NOT saved','error',9000),0);
+    }
+  }
 }
 // Re-apply the persisted native overlay onto the freshly-remapped ST jobs, then re-insert
 // fully-native jobs. Called inside initStreamtime() right after jobs=raw.map(_mapStJob).
@@ -3805,7 +3834,8 @@ function _mapStJob(j){
         const itemDues=mappedItems.map(it=>it.dueDate).filter(Boolean).sort();
         return{
           id:'st-ph-'+ph.id,name:ph.name||'Phase',
-          status:phStatusName==='Complete'?'complete':'open',
+          // jobs.json phases carry no status of their own — derive it from the items (bug audit M14)
+          status:(phStatusName==='Complete'||(mappedItems.length>0&&mappedItems.every(it=>it.status==='complete')))?'complete':'open',
           paused:phStatusName==='Paused'||allItemsPaused,
           startDate:itemStarts[0]||null,dueDate:itemDues[itemDues.length-1]||null,
           items:mappedItems,
@@ -3984,7 +4014,12 @@ async function initStreamtime(silent){
         const cfg=await cfgRes.json();
         // Always apply unless this is your own machine (don't overwrite what you just published)
         const isOwnPublish=cfg.published_by===people[MY_PERSON]?.name&&!!localStorage.getItem('cc_gh_token');
-        if(!isOwnPublish){
+        // Apply each published version once. Re-applying on every 5-minute poll overwrote
+        // people's own profile edits made since (bug audit M11).
+        const _cfgVer=cfg.published_at||JSON.stringify(cfg).length+':'+(cfg.published_by||'');
+        let _cfgSeen=null;try{_cfgSeen=localStorage.getItem('cc_config_applied_at');}catch(e){}
+        if(!isOwnPublish&&_cfgSeen!==_cfgVer){
+          try{localStorage.setItem('cc_config_applied_at',_cfgVer);}catch(e){}
           Object.entries(cfg.people||{}).forEach(([k,v])=>{people[k]={...(people[k]||{}),...v};});
           if(cfg.globalLabels?.length)globalLabels=cfg.globalLabels;
           if(cfg.LINE_ITEMS?.length)LINE_ITEMS=cfg.LINE_ITEMS;
@@ -4041,6 +4076,15 @@ function getWeekKey(offset){
   d.setDate(d.getDate()-dow+(offset*7));
   d.setHours(0,0,0,0);
   return d.toISOString().split('T')[0];
+}
+// getWeekKey() keys are local-Monday-midnight through toISOString(), so east of UTC (NZ) the
+// key string is Sunday's date. They stay that way (saved boards are keyed on them), but
+// anything that *shows* or *dates* a week must turn the key back into the real local Monday
+// (bug audit M5). Accepts a key or a real Monday; returns a local-midnight Date on Monday.
+function _weekKeyMonday(k){
+  const m=_pDate(String(k).slice(0,10));if(!m)return null;
+  const dow=(m.getDay()+6)%7;if(dow)m.setDate(m.getDate()+7-dow);
+  return m;
 }
 // Build a fresh week of tasks for a person straight from Streamtime:
 // scheduled blocks → to-dos (done:false), logged blocks → done (done:true).
@@ -4436,7 +4480,7 @@ function renderHappinessTrend(personKey){
   const FACE_EMOJI={1:'😞',2:'😕',3:'😐',4:'🙂',5:'😄'};
   const rows=weeks.map(wk=>{
     const e=log[wk];
-    const d=new Date(wk+'T12:00:00');
+    const d=_weekKeyMonday(wk);
     const lbl=`${d.getDate()}/${d.getMonth()+1}`;
     return`<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;">
       <div style="font-size:18px;opacity:${e?.score?1:.25};">${e?.score?FACE_EMOJI[e.score]:'·'}</div>
@@ -4612,7 +4656,7 @@ function renderExpensesList(){
     all.push({id:e.id,date:e.date||'',name:e.itemName||e.description||'Expense',cost:+e.totalCost||0,sell:+e.totalExTax||0,status:statusName.toLowerCase(),company:e.company||j?.company||'',jobId:jNum,jobName:j?.name||e.jobName||'',_st:true});
   });
   jobs.forEach(j=>(j.expenses||[]).forEach(e=>{
-    all.push({id:e.id,date:e.date||'',name:e.desc||e.name||'Expense',cost:e.cost||0,sell:e.sell||0,status:(e.status||'draft').toLowerCase(),company:j.company||'',jobId:j.id,jobName:j.name,_local:true});
+    all.push({id:e.id,date:e.date||'',name:e.desc||e.name||'Expense',cost:e.cost||0,sell:e.total!=null?+e.total:(e.sell||0),status:(e.status||'draft').toLowerCase(),company:j.company||'',jobId:j.id,jobName:j.name,_local:true});
   }));
   let filtered=all;
   if(q)filtered=filtered.filter(e=>(`${e.name} ${e.jobName} ${e.company}`).toLowerCase().includes(q));
@@ -4643,6 +4687,19 @@ function renderExpensesList(){
 // capability as the job-plan Expenses tab (local expenses are fully editable; ST-sourced
 // ones are read-only on the core fields since we have no write-back, but the itemised
 // sub-lines — _expSubs et al — work for either source). ──
+// Unit sell and line total for an expense row (bug audit M7). Streamtime rows carry the unit
+// price (sellRate) and the line total (totalExTax) — before, the line total was read as the
+// unit price and multiplied by quantity again, doubling qty-2 expenses.
+function _expMoney(e){
+  const cost=e.cost||0,markup=e.markup||0,qty=e.qty||1;
+  if(e._source==='st'||e.sellUnit!=null){
+    const unitSell=e.sellUnit!=null?e.sellUnit:(qty?e.total/qty:0);
+    const total=e.total!=null?e.total:unitSell*qty;
+    return{unitSell:Math.round(unitSell*100)/100,total:Math.round(total*100)/100};
+  }
+  const unitSell=markup?Math.round(cost*(1+markup/100)*100)/100:(e.sell||cost);
+  return{unitSell,total:Math.round(unitSell*qty*100)/100};
+}
 function openExpenseDetail(expId,source,jobId){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
   let e;
@@ -4652,15 +4709,14 @@ function openExpenseDetail(expId,source,jobId){
     const stRec=(stExpenses||[]).find(x=>String(x.id)===String(expId).replace('st-exp-',''));
     if(stRec){
       e={id:'st-exp-'+stRec.id,desc:stRec.description||stRec.itemName||'Expense',date:stRec.date,
-        qty:stRec.quantity||1,cost:+(stRec.costRate||0),markup:+(stRec.markup||0),sell:+(stRec.totalExTax||0),
+        qty:stRec.quantity||1,cost:+(stRec.costRate||0),markup:+(stRec.markup||0),sellUnit:+(stRec.sellRate||0),total:+(stRec.totalExTax||0),_source:'st',
         status:(stRec.loggedExpenseStatus||'draft').toLowerCase()};
     }
   }
   if(!e){toast('Expense not found','error');return;}
   const canEdit=source==='local';
   const cost=e.cost||0,markup=e.markup||0,qty=e.qty||1;
-  const unitSell=markup?Math.round(cost*(1+markup/100)*100)/100:(e.sell||cost);
-  const total=Math.round(unitSell*qty*100)/100;
+  const{unitSell,total}=_expMoney(e);
   const margin=unitSell>0?Math.round((1-cost/unitSell)*1000)/10:0;
   document.getElementById('exp-detail-modal')?.remove();
   const m=document.createElement('div');m.className='modal-bg on';m.id='exp-detail-modal';
@@ -5819,11 +5875,10 @@ function reassignTask(t,fromDay,toPersonKey){
   // Add to same week/day for the target person — must be the week currently being viewed,
   // not an arbitrary first key from todoData (which could be any week seeded earlier this
   // session if the user has navigated between weeks).
-  const twKey=getWeekKey(weekOffset);
-  if(!todoData[toPersonKey])todoData[toPersonKey]={};
-  if(!todoData[toPersonKey][twKey])todoData[toPersonKey][twKey]={};
-  if(!todoData[toPersonKey][twKey][fromDay])todoData[toPersonKey][twKey][fromDay]=[];
-  todoData[toPersonKey][twKey][fromDay].push(task);
+  // Go through getWeekData so the target week is seeded from Streamtime first — building
+  // the week by hand left it unseeded, hiding all their Streamtime tasks (bug audit M2).
+  const twd=getWeekData(toPersonKey,weekOffset);
+  (twd[fromDay]=twd[fromDay]||[]).push(task);
   saveData();renderTodo();toast(`Reassigned to ${people[toPersonKey]?.name||toPersonKey}`,'success');
 }
 
@@ -6362,7 +6417,7 @@ function deleteTodo(){
 
 function editTask(t,day){
   _resetTodoModal(day);
-  editingTaskId=t.id;editingDay=day;
+  editingTaskId=t.id;editingDay=day;_editOffset=weekOffset;
   document.getElementById('td-task').value=t.title||'';
   document.getElementById('td-hours').value=t.hours?formatHrs(t.hours):'';
   document.getElementById('td-urgent').checked=!!t.urgent;
@@ -6844,13 +6899,13 @@ function _spawnRepeatOccurrences(savedTask,targetPerson,dayNum){
     futureDate.setDate(base.getDate()+addDays);
     const futureDow=(futureDate.getDay()+6)%7;
     const futureMon=new Date(futureDate);futureMon.setDate(futureDate.getDate()-futureDow);futureMon.setHours(0,0,0,0);
-    const futureWk=futureMon.toISOString().split('T')[0];
     const futureDayN=futureDow+1;
     if(futureDayN<1||futureDayN>5)continue; // skip weekends
-    if(!todoData[targetPerson])todoData[targetPerson]={};
-    if(!todoData[targetPerson][futureWk])todoData[targetPerson][futureWk]={};
-    if(!todoData[targetPerson][futureWk][futureDayN])todoData[targetPerson][futureWk][futureDayN]=[];
-    todoData[targetPerson][futureWk][futureDayN].push({...savedTask,id:uid('t'),done:false,repeat:true,repeatGroup:savedTask.id});
+    // Seed the occurrence's week from Streamtime via getWeekData (bug audit M2) instead of
+    // creating an empty week by hand, which hid that week's scheduled and logged work.
+    const futureOff=weekOffset+Math.round((futureMon-base)/(7*86400000));
+    const fwd=getWeekData(targetPerson,futureOff);
+    (fwd[futureDayN]=fwd[futureDayN]||[]).push({...savedTask,id:uid('t'),done:false,repeat:true,repeatGroup:savedTask.id});
   }
 }
 function saveTodo(){
@@ -6867,17 +6922,20 @@ function saveTodo(){
   const targetPerson=_todoAssignTo||currentPerson;
   const wd=getWeekData(targetPerson);
   if(editingTaskId){
-    // If reassigned, move task
-    const oldWd=getWeekData(currentPerson);
+    // Find the task in the week it was opened from — the mini calendar may have moved the
+    // global weekOffset to another week since (bug audit M3). Then move it if the person,
+    // week or day changed; before, a day change did nothing and a week change lost the edit.
+    const oldWd=getWeekData(currentPerson,_editOffset??weekOffset);
     const arr=oldWd[editingDay]||[];
     const idx=arr.findIndex(t=>t.id===editingTaskId);
     if(idx!==-1){
-      if(targetPerson!==currentPerson){
+      const _f={title:name,hours,item,itemId:itemId||arr[idx].itemId,urgent,personal,job:job?`${job.id} ${job.name}`:'',jobId:jobId||null};
+      if(targetPerson!==currentPerson||wd!==oldWd||dayNum!==editingDay){
         const task=arr.splice(idx,1)[0];
-        Object.assign(task,{title:name,hours,item,itemId:itemId||task.itemId,urgent,personal,job:job?`${job.id} ${job.name}`:''});
+        Object.assign(task,_f);
         if(!wd[dayNum])wd[dayNum]=[];wd[dayNum].push(task);
       } else {
-        Object.assign(arr[idx],{title:name,hours,item,itemId:itemId||arr[idx].itemId,urgent,personal,job:job?`${job.id} ${job.name}`:''});
+        Object.assign(arr[idx],_f);
       }
       if(jobId)logActivity(jobId,MY_PERSON,'task_edit',`Updated task <strong>${esc(name)}</strong>`);
       // Repeat turned on while editing: spawn future occurrences (once)
@@ -6971,7 +7029,7 @@ function renderJobs(){
   const _jobNeedsAttention=j=>{
     if(j.status!=='inplay')return false;
     const overBudgetNoInv=(j._bPct||0)>=80&&!(j._stInvoiced>0);
-    const overdue=j.dueDate&&new Date(j.dueDate)<_todayJ;
+    const overdue=j.dueDate&&_pDate(j.dueDate)<_todayJ;
     return overBudgetNoInv||overdue;
   };
 
@@ -7012,7 +7070,7 @@ function renderJobs(){
       case 'start_after': filteredJobs=filteredJobs.filter(j=>j.startDate&&new Date(j.startDate)>=new Date(f.value+'T00:00:00'));break;
       case 'budget_min':filteredJobs=filteredJobs.filter(j=>(j._plannedSell||0)>=+f.value);break;
       case 'budget_max':filteredJobs=filteredJobs.filter(j=>(j._plannedSell||0)<=+f.value);break;
-      case 'uninvoiced':filteredJobs=filteredJobs.filter(j=>(j.workflowStatus==='completed'||j.status==='complete')&&!(j._stInvoiced>0));break;
+      case 'uninvoiced':filteredJobs=filteredJobs.filter(j=>(j.workflowStatus==='completed'||j.status==='complete')&&!(j._stInvoiced>0)&&_uninvEligible(j));break;
     }
   });
   const shown=filteredJobs.length;
@@ -7549,7 +7607,7 @@ function computeJobStats(j){
       });
     });
   });
-  const expUsed=(j.expenses||[]).reduce((a,e)=>a+(parseFloat(e.sell||e.total||0)||0),0);
+  const expUsed=(j.expenses||[]).reduce((a,e)=>a+(parseFloat(e.total!=null?e.total:(e.sell||0))||0),0); // line total, not unit sell (M7)
   const fmtH=m=>m>=60?`${Math.floor(m/60)}h${m%60?m%60+'m':''}`:(m>0?m+'m':'0h');
   const hPct=plannedMins>0?Math.round((loggedMins/plannedMins)*100):0;
   const bPct=plannedSell>0?Math.round((sellUsed/plannedSell)*100):0;
@@ -7803,7 +7861,7 @@ function renderProgressTab(){
         <td style="text-align:center;"><span class="prog-status-dot ${r.done?'done':'sched'}" title="${r.done?'Logged (done)':'Scheduled (not done yet)'}"></span></td>
         <td style="text-align:right;white-space:nowrap;">${formatHrs(r.hours)||'0h'}</td>
         <td style="text-align:right;white-space:nowrap;">$${r.sell.toLocaleString()}</td>
-        <td style="width:30px;text-align:center;"><i class="ti ti-dots-vertical prog-row-menu" onclick="openReallocate(event,'${r.person}','${r.wk}',${r.day},'${r.id}',${r.offset})" title="Reallocate this time"></i></td>
+        <td style="width:30px;text-align:center;">${String(r.id).startsWith('st-')?`<i class="ti ti-dots-vertical prog-row-menu" style="opacity:.35;" onclick="toast('Move Streamtime time in Streamtime — changes here can\\'t be written back yet','info')" title="Reallocate in Streamtime"></i>`:`<i class="ti ti-dots-vertical prog-row-menu" onclick="openReallocate(event,'${r.person}','${r.wk}',${r.day},'${r.id}',${r.offset})" title="Reallocate this time"></i>`}</td>
       </tr>`).join('');
     return`<tbody class="prog-group">
       <tr class="prog-group-hd" onclick="toggleProgGroup('${pKey}')">
@@ -8724,6 +8782,7 @@ function renderItems(phId,_readonly){
         const wd=pd[wk];if(!wd)return;
         [1,2,3,4,5].forEach(d=>{
           (wd[d]||[]).forEach(tt=>{
+            if(tt._fromST)return; // ST time is counted from stLoggedTimes below — counting the seeded card too doubled it (M1)
             const jmatch=tt.jobId===activeJobId||(!!activeJobId&&tt.job?.match(/^(\d+)/)?.[1]===String(activeJobId));
             if(jmatch&&_taskMatchesItem(tt,item,phases)&&tt.done)_loggedH+=tt.hours||0;
           });
@@ -9166,6 +9225,8 @@ function renderExpenses(){
     qty:e.quantity||1,
     cost:+(e.costRate||0),
     markup:+(e.markup||0),
+    sellUnit:+(e.sellRate||0),
+    total:+(e.totalExTax||0),
     sell:+(e.totalExTax||0),
     status:(e.loggedExpenseStatus||'draft').toLowerCase(),
     _source:'st',
@@ -9175,7 +9236,7 @@ function renderExpenses(){
   window.__lastStExps=stJobExps; // for the sub-line edit helper
   if(!exps.length){wrap.style.display='none';return;}
   wrap.style.display='';
-  const total=exps.reduce((a,e)=>a+(e.sell||0),0);
+  const total=Math.round(exps.reduce((a,e)=>a+_expMoney(e).total,0)*100)/100; // sum of row totals, so the rows add up (M7)
   const expHead=`<div class="exp-head" onclick="toggleExp()">
     <i class="ti ti-chevron-down ph-chv exp-chv" style="font-size:12px;color:var(--muted);"></i>
     <i class="ti ti-receipt" style="font-size:13px;color:var(--muted);"></i>
@@ -9188,8 +9249,7 @@ function renderExpenses(){
     const qty=e.qty||1;
     const cost=e.cost||0;
     const markup=e.markup||0;
-    const unitSell=markup?Math.round(cost*(1+markup/100)):e.sell||cost;
-    const sTotal=Math.round(unitSell*qty);
+    const{unitSell,total:sTotal}=_expMoney(e);
     const canEdit=e._source==='local';
     const subs=_expSubs(e);
     const hasSubs=subs.length>1;
@@ -9500,8 +9560,9 @@ function _activityFileDrop(ev,jobId){
       const cv=document.createElement('canvas');
       cv.width=Math.round(im.width*scale);cv.height=Math.round(im.height*scale);
       cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);
-      let url=cv.toDataURL('image/jpeg',.8);
-      if(url.length>500000){toast('Image too large to store locally — noted without preview','warn');url=null;}
+      let url=cv.toDataURL('image/jpeg',.75);
+      if(url.length>250000)url=cv.toDataURL('image/jpeg',.55); // activity images live in the job overlay — keep them small (M12)
+      if(url.length>250000){toast('Image too large to store locally — noted without preview','warn');url=null;}
       add(url);
     };
     im.onerror=()=>add(null);
@@ -9603,7 +9664,7 @@ function renderActivityTab(){
 // ---- INVOICE GENERATION ----
 function openInvoice(){
   const j=jobs.find(x=>x.id===activeJobId);if(!j)return;
-  if(!j.invNum){j.invNum=invCounter++;if(!j.invIssueDate)j.invIssueDate=new Date().toISOString().slice(0,10);if(!j.invDueDate){const _dd=new Date();_dd.setDate(_dd.getDate()+30);j.invDueDate=_dd.toISOString().slice(0,10);}saveData();}
+  if(!j.invNum){j.invNum=_nextInvNum();if(!j.invIssueDate)j.invIssueDate=new Date().toISOString().slice(0,10);if(!j.invDueDate){const _dd=new Date();_dd.setDate(_dd.getDate()+30);j.invDueDate=_dd.toISOString().slice(0,10);}_keepJobEdits(j,['invNum','invIssueDate','invDueDate']);}
   document.getElementById('inv-top-t').textContent=`Invoice #${j.invNum} — ${j.id} ${j.name}`;
   const statusEl=document.getElementById('inv-status');
   if(statusEl)statusEl.value=j.invStatus||'draft';
@@ -10700,6 +10761,15 @@ function deletePerson(key){
   if(key===MY_PERSON){toast('You can\'t remove yourself','warn');return;}
   if(Object.keys(people).length<=1){toast('At least one team member is required','warn');return;}
   if(!confirm(`Remove ${p.name} from the team? Their scheduled tasks will be kept but hidden.`))return;
+  // Streamtime users are recreated from the users sync if their entry is deleted, so they
+  // came back within 5 minutes (bug audit M11). Archive them instead — restorable in Team.
+  if(p._stId||String(key).startsWith('st_')){
+    p._archived=true;
+    if(currentPerson===key)currentPerson=MY_PERSON;
+    savePeople();populatePersonSwitcher();renderSettings();
+    toast(`${p.name} archived — Streamtime users can be restored from Settings → Team`);
+    return;
+  }
   delete people[key];
   delete personStatus[key];
   if(currentPerson===key)currentPerson=MY_PERSON;
@@ -10826,8 +10896,11 @@ function runGlobalSearch(q){
     stInvoices.forEach(inv=>{
       const co=inv.company?.name||'';
       const st=inv.invoiceStatus?.name||inv.status||'';
-      if((`${inv.number||inv.id} ${co} ${inv.jobNumber||''} ${inv.jobName||''} ${st}`).toLowerCase().includes(q))
-        out.push({cat:'Invoices',icon:'ti-file-invoice',title:`Invoice ${inv.number||inv.id}`,sub:`${co}${inv.jobNumber?' · #'+inv.jobNumber:''}${st?' · '+st:''}`,fn:()=>openInvoiceDetail(inv.id)});
+      // invoices.json has no jobNumber/jobName — resolve the job from its ST id (bug audit M13)
+      const ij=jobs.find(x=>x._stId===inv.jobId);
+      const ijNum=ij?.id||'';
+      if((`${inv.number||inv.id} ${co} ${ijNum} ${ij?.name||''} ${inv.reference||inv.name||''} ${st}`).toLowerCase().includes(q))
+        out.push({cat:'Invoices',icon:'ti-file-invoice',title:`Invoice ${inv.number||inv.id}`,sub:`${co}${ijNum?' · #'+ijNum:''}${st?' · '+st:''}`,fn:()=>openInvoiceDetail(inv.id)});
     });
     // Quotes (ST + native localQuotes) — name/number, company, job, status
     [...stQuotes,...localQuotes].forEach(qt=>{
@@ -11112,7 +11185,7 @@ function _getTimeEntries(){
     const p=people[personKey];if(!p)return;
     const personWeeks=todoData[personKey]||{};
     Object.keys(personWeeks).forEach(weekKey=>{
-      const weekMon=new Date(weekKey);
+      const weekMon=_weekKeyMonday(weekKey);
       [1,2,3,4,5].forEach(dayNum=>{
         const tasks=personWeeks[weekKey][dayNum]||[];
         const taskDate=new Date(weekMon);taskDate.setDate(weekMon.getDate()+(dayNum-1));
@@ -11344,6 +11417,9 @@ function _setTbiSort(col){
 // Uninvoiced jobs that have been dismissed from the "needs attention" list (e.g. stale/
 // won't-invoice jobs) — persisted so they don't reappear on the next Streamtime sync, since
 // the job objects themselves get rebuilt from ST data and don't carry local state.
+// Jobs that can count as "uninvoiced": live (not archived), billable, with sell value logged.
+// Without this the lists were flooded with ~465 archived templates/retainers (bug audit M9).
+function _uninvEligible(j){return j.status!=='archived'&&j.billable!==false&&(j._sellUsed||0)>0;}
 function _getHiddenUninvoiced(){return JSON.parse(localStorage.getItem('cc_hidden_uninvoiced')||'[]');}
 function _setHiddenUninvoiced(ids){localStorage.setItem('cc_hidden_uninvoiced',JSON.stringify(ids));}
 function hideUninvoicedJob(jobId){
@@ -11793,7 +11869,7 @@ function doInvCtx(a){
   document.getElementById('inv-ctx').classList.remove('on');
   const id=_invCtxJobId;if(!id)return;
   const j=jobs.find(x=>x.id===id);if(!j)return;
-  if(a==='view'){const prev=activeJobId;activeJobId=id;if(!j.invNum){j.invNum=invCounter++;saveData();}openInvoice();if(id!==prev)activeJobId=prev;}
+  if(a==='view'){const prev=activeJobId;activeJobId=id;if(!j.invNum){j.invNum=_nextInvNum();_keepJobEdits(j,['invNum']);}openInvoice();if(id!==prev)activeJobId=prev;}
   else if(a==='openjob'){openJobDetail(id);}
   else if(a==='draft'||a==='sent'||a==='paid'){saveInvStatusForJob(id,a);}
   else if(a==='delete'){
@@ -11919,7 +11995,7 @@ function renderInvoices(){
   let tbiHTML='';
   if(showTBI){
     const hidden=_getHiddenUninvoiced();
-    let tbiJobs=jobs.filter(j=>(j.workflowStatus==='completed'||j.status==='complete')&&!(j._stInvoiced>0)&&!hidden.includes(j.id));
+    let tbiJobs=jobs.filter(j=>(j.workflowStatus==='completed'||j.status==='complete')&&!(j._stInvoiced>0)&&_uninvEligible(j)&&!hidden.includes(j.id));
     const _tbiSortKey={
       company:j=>(j.company||'').toLowerCase(),job:j=>j.id,po:j=>(j.po||'').toLowerCase(),
       status:j=>'complete',amount:j=>j._sellUsed||0,
@@ -11982,7 +12058,7 @@ function openInvoiceForJob(id){
   const prev=activeJobId;
   activeJobId=id;
   const j=jobs.find(x=>x.id===id);if(!j)return;
-  if(!j.invNum){j.invNum=invCounter++;if(!j.invIssueDate)j.invIssueDate=new Date().toISOString().slice(0,10);if(!j.invDueDate){const _dd=new Date();_dd.setDate(_dd.getDate()+30);j.invDueDate=_dd.toISOString().slice(0,10);}saveData();}
+  if(!j.invNum){j.invNum=_nextInvNum();if(!j.invIssueDate)j.invIssueDate=new Date().toISOString().slice(0,10);if(!j.invDueDate){const _dd=new Date();_dd.setDate(_dd.getDate()+30);j.invDueDate=_dd.toISOString().slice(0,10);}_keepJobEdits(j,['invNum','invIssueDate','invDueDate']);}
   openInvoice();
   // restore activeJobId if we didn't open the job detail
   if(id!==prev)activeJobId=prev;
@@ -12147,7 +12223,8 @@ function getFilteredTasks(){
         done:true,urgent:false,
         billable:lt.job?.isBillable!==false, // billability is on the nested job, not the logged-time top level
         day:dayNum,
-        weekKey:weekMon.toISOString().split('T')[0],
+        weekKey:_localISO(weekMon), // real local Monday — toISOString() gave Sunday in NZ (M5)
+        date:(lt.date||'').slice(0,10),
         _fromST:true,
       });
     });
@@ -12168,9 +12245,9 @@ function getFilteredTasks(){
         const dayTasks=weekDays[d]||[];
         dayTasks.forEach(t=>{
           if(jobFilter!=='all'){const jn=t.jobId||t.job?.match(/^(\d+)/)?.[1];if(jn!==jobFilter)return;}
-          const weekMon=new Date(weekKey+'T00:00:00');const taskDate=new Date(weekMon);taskDate.setDate(weekMon.getDate()+(d-1));
+          const weekMon=_weekKeyMonday(weekKey);const taskDate=new Date(weekMon);taskDate.setDate(weekMon.getDate()+(d-1));
           if(cutoffMs&&taskDate.getTime()<cutoffMs)return;
-          tasks.push({...t,person:pKey,personName:people[pKey]?.name||pKey,day:d,weekKey});
+          tasks.push({...t,person:pKey,personName:people[pKey]?.name||pKey,day:d,weekKey:_localISO(weekMon),date:_localISO(taskDate)});
         });
       }
     });
@@ -12340,7 +12417,7 @@ function _renderBusinessReport(){
         }).join('')}</div>`;
     })()}
     ${(function(){
-      const uninvJobs=jobs.filter(j=>{const gap=(j._sellUsed||0)-(j._stInvoiced||0);return gap>=100;}).sort((a,b)=>((b._sellUsed||0)-(b._stInvoiced||0))-((a._sellUsed||0)-(a._stInvoiced||0)));
+      const uninvJobs=jobs.filter(j=>{if(!_uninvEligible(j)||(bizCo!=='all'&&j.company!==bizCo))return false;const gap=(j._sellUsed||0)-(j._stInvoiced||0);return gap>=100;}).sort((a,b)=>((b._sellUsed||0)-(b._stInvoiced||0))-((a._sellUsed||0)-(a._stInvoiced||0)));
       const totalUninv=uninvJobs.reduce((s,j)=>s+Math.max(0,(j._sellUsed||0)-(j._stInvoiced||0)),0);
       if(!uninvJobs.length)return'';
       return`<div class="r-section"><div class="r-section-hd">Uninvoiced work <span style="text-transform:none;letter-spacing:0;color:var(--muted);">— revenue logged but not yet invoiced · ${fmtDollar(totalUninv)} total</span></div>
@@ -12376,8 +12453,8 @@ function _renderBusinessReport(){
     </div>
     ${(()=>{
       const _dn=new Date();_dn.setHours(0,0,0,0);
-      const dueSoon=jobs.filter(j=>j.dueDate&&j.status==='inplay').map(j=>({j,d:new Date(j.dueDate)})).filter(({d})=>(d-_dn)/86400000<=7&&d>=_dn).sort((a,b)=>a.d-b.d);
-      const overdue=jobs.filter(j=>j.dueDate&&j.status==='inplay').map(j=>({j,d:new Date(j.dueDate)})).filter(({d})=>d<_dn).sort((a,b)=>a.d-b.d);
+      const dueSoon=jobs.filter(j=>j.dueDate&&j.status==='inplay').map(j=>({j,d:_pDate(j.dueDate)})).filter(({d})=>(d-_dn)/86400000<=7&&d>=_dn).sort((a,b)=>a.d-b.d);
+      const overdue=jobs.filter(j=>j.dueDate&&j.status==='inplay').map(j=>({j,d:_pDate(j.dueDate)})).filter(({d})=>d<_dn).sort((a,b)=>a.d-b.d);
       if(!dueSoon.length&&!overdue.length)return'';
       const rows=[...overdue,...dueSoon].slice(0,10).map(({j,d})=>{
         const daysLeft=Math.round((d-_dn)/86400000);
@@ -12403,7 +12480,14 @@ function _renderPeopleReport(){
   const el=document.getElementById('rp-people');if(!el)return;
   const personFilter=document.getElementById('r-person')?.value||'all';
   const _period=document.getElementById('r-period')?.value||'month';
-  const _periodWeeks={week:1,'2weeks':2,month:4.3,quarter:13}[_period]||4.3;
+  // Capacity weeks = the period's real span. The old lookup had no year/all/custom entries and
+  // fell back to ~1 month, so "This year" showed ~1,000% utilisation (bug audit M6).
+  const _periodWeeks=(()=>{
+    const W=7*86400000,cut=_getPeriodCutoff(),ceil=_getPeriodCeiling();
+    if(cut)return Math.max(1,(ceil-cut)/W);
+    let first=Infinity;(stLoggedTimes||[]).forEach(l=>{const d=_pDate((l.date||'').slice(0,10));if(d&&d<first)first=+d;});
+    return first===Infinity?4.3:Math.max(1,(ceil-first)/W);
+  })();
   const tasks=getFilteredTasks();
   const palette=['#ED1E24','#6B7FA3','#7B9E87','#C45D5D','#5D88C4','#C4A35D','#5DC48A','#8A5DC4'];
 
@@ -12622,8 +12706,10 @@ function exportReportTab(){
     const _tpk=t.personKey||t.person;
     const u=Object.values(stUsersById).find(x=>x.key===_tpk);
     const name=u?.name||people[_tpk]?.name||_tpk;
-    const date=t.weekKey?new Date(t.weekKey+'T00:00:00'):new Date();date.setDate(date.getDate()+(( t.day||1)-1));
-    csv+=`"${name}","${(t.title||'').replace(/"/g,'""')}","${(t.job||'').replace(/"/g,'""')}","${(t.item||'').replace(/"/g,'""')}",${(t.hours||0).toFixed(2)},${t.billable!==false?'Yes':'No'},${date.toISOString().slice(0,10)}\n`;
+    // The entry's real date (M5): before, two UTC round-trips put every row two days early.
+    let date=t.date;
+    if(!date){const m=t.weekKey?_weekKeyMonday(t.weekKey):new Date();if(t.weekKey)m.setDate(m.getDate()+((t.day||1)-1));date=_localISO(m);}
+    csv+=`"${name}","${(t.title||'').replace(/"/g,'""')}","${(t.job||'').replace(/"/g,'""')}","${(t.item||'').replace(/"/g,'""')}",${(t.hours||0).toFixed(2)},${t.billable!==false?'Yes':'No'},${date}\n`;
   });
   const blob=new Blob([csv],{type:'text/csv'});
   const url=URL.createObjectURL(blob);
