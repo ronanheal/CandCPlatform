@@ -1918,6 +1918,7 @@ body.dark .day-done-empty{color:var(--muted);}
 body.dark .s-tip{color:var(--ink);}
 body.dark .att-ico,body.dark .att-count,body.dark .att-val{color:color-mix(in srgb,var(--att) 55%,#fff)!important;}
 body.dark .att-ico,body.dark .att-count,body.dark .att-val{background:color-mix(in srgb,var(--att) 22%,var(--white))!important;}
+kbd.kb-key{font:600 11.5px var(--font);color:var(--ink);background:var(--off);border:1px solid var(--border);border-bottom-width:2px;border-radius:7px;padding:3px 8px;min-width:22px;text-align:center;white-space:nowrap;}
 /* Table headers: one style in every list */
 .jobs-table thead th,.inv-th,.time-table thead th,#exp-list-wrap thead th,.exp-t thead th,.qinv-head-row,.prog-table thead th{background:var(--off)!important;color:var(--muted)!important;font-size:10.5px!important;font-weight:500!important;letter-spacing:.08em!important;text-transform:uppercase!important;border-bottom:1px solid var(--border)!important;}
 /* Needs attention (redesign) */
@@ -11262,6 +11263,15 @@ function _parseGsCommand(raw){
 // Start timer creates/uses the task and, when stopped, marks it done and logs the time.
 // Native entries go through dbCreateTimeEntry and are dropped on sync once Streamtime's
 // matching entry (same person + job + date + minutes) arrives, so nothing double-counts.
+function _showShortcuts(){
+  document.getElementById('kb-modal')?.remove();
+  const rows=[['L','Add a task (or stop the running timer)'],['N','New task on the To Do board'],['J','New job'],['Q','New quote'],['E','Add an expense'],['F','Focus mode — today only (To Do)'],['← →','Previous / next week (To Do)'],['⌘K','Search and commands'],['Esc','Close'],['?','This list']];
+  const m=document.createElement('div');m.className='modal-bg on';m.id='kb-modal';
+  m.innerHTML=`<div class="modal" style="max-width:440px;"><div class="modal-hd"><span class="modal-hd-title">Keyboard shortcuts</span><button class="modal-x" onclick="this.closest('.modal-bg').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd" style="padding-top:10px;">${rows.map(([k,d])=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 0;border-bottom:1px solid var(--faint);font-size:13px;"><span>${d}</span><kbd class="kb-key">${k}</kbd></div>`).join('')}</div></div>`;
+  m.addEventListener('mousedown',ev=>{if(ev.target===m)m.remove();});
+  document.body.appendChild(m);
+}
 function _todayDayNum(){const d=new Date().getDay();return d>=1&&d<=5?d:5;}
 function _taskDateISO(offset,dayNum){const m=_weekKeyMonday(getWeekKey(offset));m.setDate(m.getDate()+(dayNum-1));return _localISO(m);}
 // Log a task's hours as a time entry. Returns true when an entry was created.
@@ -11574,6 +11584,14 @@ document.addEventListener('keydown',e=>{
   const ae=document.activeElement;
   const typing=ae&&(/INPUT|TEXTAREA|SELECT/.test(ae.tagName)||ae.isContentEditable);
   if(typing||mod||e.altKey)return;
+  // Create shortcuts (review C extras): J job · Q quote · E expense · ? list
+  if(!document.querySelector('.modal-bg.on')){
+    const k=e.key.toLowerCase();
+    if(k==='j'){e.preventDefault();openCreateJob();return;}
+    if(k==='q'){e.preventDefault();openNewQuoteModal();return;}
+    if(k==='e'){e.preventDefault();openLogExpense();return;}
+    if(e.key==='?'){e.preventDefault();_showShortcuts();return;}
+  }
   // L = log time (or stop the running timer) from anywhere
   if((e.key==='l'||e.key==='L')&&!document.querySelector('.modal-bg.on')){
     e.preventDefault();
