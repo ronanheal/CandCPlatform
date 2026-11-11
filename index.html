@@ -14807,12 +14807,15 @@ function _ccDecorateTodo(){
 .c2-sg td{vertical-align:top;padding:5px 5px;border-bottom:1px solid var(--faint);border-left:1px solid var(--faint);font-size:11px;}
 .c2-sg td.lbl{border-left:none;padding:8px 10px;}
 .c2-sg td.tot,.c2-sg th.tot{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap;}
-.c2-sg tfoot td{background:var(--off);font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;border-bottom:none;}
+.c2-sg tfoot td{background:var(--off);font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;border-bottom:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.c2-sg.multi tfoot td{font-size:10px;letter-spacing:-.01em;}
 .c2-sg td.today{background:var(--off);}
 .c2-sg td.away{background-image:repeating-linear-gradient(135deg,transparent 0 6px,var(--faint) 6px 7px);}
 .c2-pcell{cursor:pointer;}
 .c2-pcell:hover{background:var(--off);}
-.c2-ph{font-variant-numeric:tabular-nums;color:var(--muted);}
+.c2-ph{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.c2-sg.multi td{padding:4px 3px;}
+.c2-sg.multi .c2-ph{font-size:10px;letter-spacing:-.01em;}
 .c2-ph.has{color:var(--ink);}
 .c2-ph.over{color:var(--red);font-weight:600;}
 .c2-bar{height:3px;background:var(--faint);border-radius:2px;overflow:hidden;margin-top:4px;}
@@ -15550,7 +15553,7 @@ function _c2SchedPeopleGrid(keys,days){
     return`<tr><td class="lbl"><div style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="c2-av" style="background:${esc(p.color||'#999')};width:20px;height:20px;font-size:8px;">${esc(p.initials||'?')}</span><span style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.name)}</span></div></td>${cells}<td class="tot" title="Capacity ${esc(formatHrs(capTot)||'0h')}">${esc(formatHrs(tot)||'—')}<div class="c2-hint">of ${esc(formatHrs(capTot)||'0h')}</div></td></tr>`;
   }).join('');
   const foot=`<tfoot><tr><td class="lbl">Total</td>${days.map((d,i)=>`<td class="${d.first?'wk-start':''}">${esc(formatHrs(dayTot[i])||'—')}</td>`).join('')}<td class="tot" id="c2-sched-grand">${esc(formatHrs(grand)||'—')}</td></tr></tfoot>`;
-  return{html:`<table class="c2-sg" style="min-width:${180+days.length*(_c2Sched.weeks>2?40:64)+80}px;">${_c2SchedHead(days,180,80)}<tbody>${rows}</tbody>${foot}</table>`,grand};
+  return{html:`<table class="c2-sg${_c2Sched.weeks>1?' multi':''}" style="min-width:${180+days.length*(_c2Sched.weeks>2?44:64)+80}px;">${_c2SchedHead(days,180,80)}<tbody>${rows}</tbody>${foot}</table>`,grand};
 }
 function _c2SchedJobsGrid(keys,days){
   const jobById=new Map(jobs.map(j=>[String(j.id),j]));
@@ -15588,7 +15591,7 @@ function _c2SchedJobsGrid(keys,days){
   }).join('');
   const foot=`<tfoot><tr><td class="lbl">Total</td>${days.map((d,i)=>`<td class="${d.first?'wk-start':''}">${esc(formatHrs(dayTot[i])||'—')}</td>`).join('')}<td class="tot" id="c2-sched-grand">${esc(formatHrs(grand)||'—')}</td></tr></tfoot>`;
   const empty=`<tr><td colspan="${days.length+2}" style="padding:36px;text-align:center;color:var(--muted);">${keys.length?'Nothing scheduled or logged for these people in this range.':'No people selected — pick someone above.'}</td></tr>`;
-  return{html:`<table class="c2-sg" style="min-width:${220+days.length*(multi?44:96)+70}px;">${_c2SchedHead(days,220,70)}<tbody>${rows||empty}</tbody>${rows?foot:''}</table>
+  return{html:`<table class="c2-sg${multi?' multi':''}" style="min-width:${220+days.length*(multi?48:96)+70}px;">${_c2SchedHead(days,220,70)}<tbody>${rows||empty}</tbody>${rows?foot:''}</table>
     <div class="c2-sched-note">Scheduled and done (logged) time for the people selected above. Faded = done. Hover a cell for names.</div>`,grand};
 }
 function _c2DecorateSchedule(){
