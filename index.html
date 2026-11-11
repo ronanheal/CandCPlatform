@@ -28,7 +28,7 @@
   --danger-ink:#C62828;--danger-bg:#FFEBEE;
   --font:'Inter',-apple-system,sans-serif;--display:'Inter',-apple-system,sans-serif;
 }
-body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:13.5px;font-weight:400;overflow:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:13px;font-weight:400;overflow:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
 .app{display:flex;height:100vh;padding-left:72px;} /* fixed sidebar rail takes 72px of layout; it expands OVER content on hover */
 
 /* SIDEBAR */
@@ -43,7 +43,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:13
 .s-btn.on i{color:var(--red);}
 .s-btn.on:hover{background:rgba(255,255,255,.1);}
 /* Nav labels — hidden on the collapsed rail, fade in as the sidebar expands on hover */
-.s-tip{position:static;transform:translateX(-4px);background:none;border:none;padding:0;opacity:0;pointer-events:none;white-space:nowrap;font-size:13.5px;font-weight:400;letter-spacing:.01em;color:inherit;font-family:var(--font);transition:opacity .18s ease,transform .22s ease;}
+.s-tip{position:static;transform:translateX(-4px);background:none;border:none;padding:0;opacity:0;pointer-events:none;white-space:nowrap;font-size:13px;font-weight:400;letter-spacing:.01em;color:inherit;font-family:var(--font);transition:opacity .18s ease,transform .22s ease;}
 .sidebar:hover .s-tip{opacity:1;transform:none;transition-delay:.1s;}
 
 .s-avatar{height:46px;border-radius:9px;background:rgba(255,255,255,.05);color:#F2EFE9;display:flex;align-items:center;justify-content:flex-start;gap:11px;font-size:0;font-weight:600;cursor:pointer;margin-top:14px;position:relative;padding:0 7px;flex-shrink:0;}/* font-size:0 hides the raw initials text node — the ::before renders them as the avatar disc */
@@ -76,7 +76,25 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:13
 .view-title{font-family:var(--display);font-size:22px;font-weight:650;letter-spacing:-.02em;color:var(--ink);line-height:1.2;}
 .view-sub{font-size:12px;color:var(--muted);letter-spacing:.06em;margin-top:3px;}
 .dash-date{font-size:12px;color:var(--muted);letter-spacing:.06em;}
+.hp-card{display:flex;align-items:center;gap:18px;flex-wrap:wrap;background:var(--white);border:1px solid var(--border);border-radius:var(--r-card);padding:12px 16px;margin:-8px 0 22px;box-shadow:var(--shadow-s);}
+.hp-card-q{font-size:13px;font-weight:600;color:var(--ink);}
+.hp-card-faces{display:flex;gap:6px;}
+.hp-card-face{display:flex;flex-direction:column;align-items:center;gap:1px;border:1px solid var(--border);background:var(--off);border-radius:9px;padding:5px 9px;cursor:pointer;font-family:var(--font);transition:transform .12s,background .12s;}
+.hp-card-face span{font-size:18px;line-height:1.2;}.hp-card-face small{font-size:10px;color:var(--muted);}
+.hp-card-face:hover{background:var(--faint);transform:translateY(-1px);}
+.hp-card-links{margin-left:auto;display:flex;gap:14px;font-size:12px;}
+.hp-card-links a{color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+.i-badge{white-space:nowrap;}
+.ccf-meta{flex-wrap:wrap;row-gap:2px;}.ccf-meta>span{white-space:nowrap;}
+.sched-pick{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+.sched-pick-btn{font:500 11px var(--font);color:var(--muted);background:transparent;border:1px solid var(--border);border-radius:14px;padding:4px 10px;cursor:pointer;}
+.sched-pick-btn.on{color:var(--ink);background:var(--white);border-color:var(--ink);}
+.sched-pick-sep{width:1px;height:18px;background:var(--border);margin:0 4px;}
+.sched-av{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:600;color:#fff;cursor:pointer;opacity:.28;filter:saturate(.4);transition:opacity .12s,filter .12s,transform .12s;box-shadow:0 0 0 2px var(--off);}
+.sched-av.on{opacity:1;filter:none;box-shadow:0 0 0 2px var(--off),0 0 0 3.5px var(--ink);}
+.sched-av:hover{transform:translateY(-1px);opacity:1;}
 .dash-rule{width:56px;height:3px;background:var(--red);margin:18px 0 30px;}
+.att-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}
 .kpi-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:32px;}
 .kpi{background:var(--white);border:1px solid var(--border);border-radius:var(--r-card);padding:20px 22px;box-shadow:var(--shadow-s);transition:box-shadow .18s,transform .18s;}
 .kpi:hover{box-shadow:var(--shadow-m);}
@@ -160,8 +178,8 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:13
 .zone-bucket{display:flex;flex-direction:column;justify-content:center;gap:7px;min-height:86px;margin:8px 2px;padding:14px 14px;box-sizing:border-box;border-radius:6px;background:var(--white);border:1px solid var(--border);border-left:3px solid var(--ink);}
 .zone-bucket-today{background:#FFFDF2;border-color:#E8DEC8;border-left-color:var(--red);}
 .zone-bucket.todo-bucket{background:#FFFCF7;border-color:#E9DCC7;border-left-color:#7B9E87;}
-.zone-bucket.done-bucket{background:#F3FAF3;border-color:#C8E6C9;border-left-color:#4CAF50;}
-.zb-kind{font-size:9px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);font-weight:500;}
+.zone-bucket.done-bucket{background:#F3FAF3;border-color:#C8E6C9;border-left-color:var(--ok);}
+.zb-kind{font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);font-weight:500;}
 .zb-count{font-size:15px;font-weight:500;color:var(--ink);line-height:1.15;}
 .zb-hrs{font-size:12px;color:var(--muted);}
 .zb-view{border:1px solid var(--border);background:rgba(255,255,255,.72);font-size:11px;font-weight:500;color:var(--ink);cursor:pointer;padding:4px 9px;font-family:inherit;text-align:left;border-radius:4px;width:fit-content;}
@@ -172,14 +190,14 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:13
 /* Global done divider */
 .global-divider{position:absolute;left:0;right:0;height:22px;background:#E8E5E0;border-top:1px solid #CCC9C3;border-bottom:1px solid #CCC9C3;display:flex;align-items:center;padding:0 14px;cursor:ns-resize;user-select:none;z-index:20;}
 .global-divider.div-drop-hi{background:var(--done);border-color:#A5D6A7;}
-.gd-label{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
+.gd-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
 .gd-handle{margin-left:auto;font-size:11px;color:var(--border);line-height:1;}
 /* Day capacity */
 .day-cap{display:flex;align-items:center;gap:7px;margin-top:4px;}
 .day-cap-bar{flex:1;height:3px;background:var(--faint);border-radius:1px;display:flex;overflow:hidden;}
 .dcb-todo{height:100%;background:var(--ink);transition:width .2s;}
 .dcb-nbill-todo{height:100%;background:#CBD5E1;transition:width .2s;}
-.dcb-done{height:100%;background:#4CAF50;transition:width .2s;}
+.dcb-done{height:100%;background:var(--ok);transition:width .2s;}
 .dcb-nbill-done{height:100%;background:#A5D6A7;transition:width .2s;}
 .day-cap-info{font-size:10px;color:var(--muted);white-space:nowrap;}
 .day-cap-info.over{color:var(--red);font-weight:500;}
@@ -191,8 +209,8 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:13
 .task-card:hover{border-color:#aaa;}
 .task-card.done-c{background:var(--done);border-color:#b2dfb2;}
 /* Status conveyed only by the left border colour (matches the dashboard bars) */
-.task-card.tc-bill{border-left:3px solid #4CAF50;}
-.task-card.tc-nonbill{border-left:3px solid #FF9800;}
+.task-card.tc-bill{border-left:3px solid var(--ok);}
+.task-card.tc-nonbill{border-left:3px solid var(--warn);}
 .task-card.tc-urgent{border-left:3px solid var(--red);}
 .task-card.dragging-c{opacity:.2;}
 .task-card.drop-above{border-top:2px solid var(--red);margin-top:2px;}
@@ -234,7 +252,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:13
 .bbar-nums{display:flex;justify-content:space-between;font-size:12px;}
 .bbar-of{color:var(--muted);}
 .bbar-track{height:2px;background:var(--faint);}
-.bbar-fill{height:100%;}.bfok{background:#4CAF50;}.bfwarn{background:#FF9800;}.bfbad{background:var(--red);}
+.bbar-fill{height:100%;}.bfok{background:var(--ok);}.bfwarn{background:var(--warn);}.bfbad{background:var(--red);}
 .status-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;border-radius:20px;}
 .sp-ip{background:var(--ok-bg);color:var(--ok-ink);}.sp-new{background:var(--danger-bg);color:var(--danger-ink);}.sp-co{background:var(--faint);color:var(--muted);}
 
@@ -245,9 +263,9 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:13
 :is(button,[tabindex]):focus-visible{outline:2px solid var(--red);outline-offset:2px;}
 input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 .detail-back:hover{color:var(--ink);border-color:#aaa;background:#eeecea;}
-.detail-title-row{display:flex;align-items:flex-end;gap:16px;padding:10px 0 0;}
+.detail-title-row{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:10px 0 0;}
 .detail-title{font-family:var(--display);font-size:22px;font-weight:650;letter-spacing:-.02em;flex:1;line-height:1.25;}
-.detail-actions{display:flex;gap:8px;}
+.detail-actions{display:flex;gap:8px;margin-left:auto;flex-shrink:0;}
 .d-action{background:transparent;border:1px solid var(--border);padding:7px 13px;font-size:11px;letter-spacing:.04em;font-weight:500;text-transform:uppercase;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:5px;color:var(--ink);border-radius:2px;transition:all .15s;}
 .d-action:hover{border-color:var(--ink);}
 .d-action.primary{background:var(--black);color:var(--white);border-color:var(--black);}
@@ -281,7 +299,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 .ph-inf{display:flex;gap:12px;align-items:center;margin-left:auto;}
 .ph-meta{font-size:11px;color:#888;white-space:nowrap;}
 .ph-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
-.ph-dot.c{background:#4CAF50;}.ph-dot.p{background:var(--red);}
+.ph-dot.c{background:var(--ok);}.ph-dot.p{background:var(--red);}
 .ph-mb{font-size:14px;color:#555;cursor:pointer;padding:2px 4px;border-radius:2px;display:flex;}
 .ph-mb:hover{color:#fff;background:#333;}
 .phase.collapsed .ph-chv{transform:rotate(-90deg);}
@@ -300,7 +318,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 .i-rate{font-size:12px;color:var(--muted);text-align:right;}
 .i-sell{text-align:right;font-size:12px;}.i-sof{color:var(--muted);font-size:11px;}
 .i-badge{padding:2px 8px;border-radius:20px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;}
-.ib-c{background:#E8F5E9;color:#2E7D32;}.ib-p{background:#EEF2FF;color:#3730A3;}
+.ib-c{background:var(--ok-bg);color:var(--ok-ink);}.ib-p{background:var(--faint);color:var(--muted);}.ib-ip{background:var(--warn-bg);color:var(--warn-ink);}.ib-ps{background:var(--faint);color:var(--muted);font-style:italic;}
 .add-i-row{padding:8px 10px;font-size:12px;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-top:none;background:var(--white);}
 .add-i-row:hover{color:var(--red);}
 .add-form-row{background:var(--off);border-bottom:1px solid var(--border);}
@@ -321,8 +339,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 .exp-t tbody tr:last-child td{border-bottom:none;}
 .exp-t tbody tr:hover{background:var(--off);}
 .exp-badg{padding:2px 8px;font-size:10px;letter-spacing:.05em;text-transform:uppercase;border-radius:20px;font-weight:500;}
-.exp-badg.draft{background:#FFF3E0;color:#E65100;}
-.exp-badg.approved{background:#E8F5E9;color:#2E7D32;}
+.exp-badg.draft{background:var(--warn-bg);color:var(--warn-ink);}
+.exp-badg.approved{background:var(--ok-bg);color:var(--ok-ink);}
 .exp-badg.invoiced{background:#E3F2FD;color:#1565C0;}
 /* .add-e-row was declared twice with conflicting borders; consolidated below (transition kept). */
 .add-e-row:hover{background:var(--off);color:var(--ink);}
@@ -436,9 +454,9 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 .bc-name{font-size:13px;font-weight:500;margin-bottom:3px;line-height:1.3;word-break:break-word;}
 .bc-client{font-size:11px;color:var(--muted);}
 .bc-meta{display:flex;gap:6px;margin-top:8px;}
-.bc-tag{font-size:9px;padding:2px 6px;border-radius:2px;background:var(--off);color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+.bc-tag{font-size:10px;padding:2px 6px;border-radius:2px;background:var(--off);color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
 .bc-tag.budget-over{background:var(--red);color:white;}
-.bc-tag.urgent{background:#FF9800;color:white;}
+.bc-tag.urgent{background:var(--warn);color:white;}
 .bc-lead{font-size:10px;margin-top:6px;display:flex;align-items:center;gap:4px;}
 .bc-lead-avatar{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:8px;font-weight:500;}
 .board-col[data-status="complete"] .board-card{opacity:.6;}
@@ -589,8 +607,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 .tm-person-row{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
 .tm-pav{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:500;flex-shrink:0;}
 .tm-pname{font-size:13px;color:var(--ink);}
-.tm-lbl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
-.tm-field-sel{width:100%;border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-size:13.5px;font-family:var(--font);color:var(--ink);background:var(--off);outline:none;margin-bottom:4px;cursor:pointer;transition:border-color .15s;}
+.tm-lbl{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.tm-field-sel{width:100%;border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-size:13px;font-family:var(--font);color:var(--ink);background:var(--off);outline:none;margin-bottom:4px;cursor:pointer;transition:border-color .15s;}
 .tm-field-sel:focus{border-color:var(--ink);background:var(--white);}
 .tm-note-area{background:var(--off);border:1px solid var(--border);border-radius:3px;padding:10px 12px;font-size:13px;font-family:var(--font);color:var(--ink);width:100%;box-sizing:border-box;resize:vertical;min-height:60px;outline:none;margin-top:12px;line-height:1.55;}
 .tm-note-area:focus{border-color:var(--ink);}
@@ -600,7 +618,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 .tm-urgent-lbl.on{color:var(--red);}
 .tm-dash{border:none;border-top:1px dashed var(--border);margin:16px 0;}
 .tm-2col{display:flex;gap:28px;}
-.tm-col-lbl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:4px;}
+.tm-col-lbl{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:4px;}
 .tm-hours-inp{font-size:22px;font-weight:400;color:var(--ink);border:none;border-bottom:1px solid var(--border);width:110px;padding:2px 0;background:transparent;font-family:var(--font);outline:none;}
 .tm-hours-inp:focus{border-bottom-color:var(--ink);}
 .tm-day-sel{font-size:14px;font-family:var(--font);border:none;border-bottom:1px solid var(--border);padding:4px 0;background:transparent;outline:none;color:var(--ink);cursor:pointer;}
@@ -716,7 +734,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 .job-prog-fill{height:3px;border-radius:2px;}
 /* ── Time view ── */
 .time-wrap{flex:1;overflow-y:auto;}
-.time-head-bar{display:flex;align-items:flex-start;justify-content:space-between;padding:28px 32px 20px;flex-wrap:wrap;gap:14px;}
+.time-head-bar{display:flex;align-items:flex-start;justify-content:space-between;padding:20px 28px 16px;flex-wrap:wrap;gap:14px;}
 .time-stats-strip{display:flex;border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
 .time-stat{flex:1;padding:18px 24px;border-right:1px solid var(--border);}
 .time-stat:last-child{border-right:none;}
@@ -730,7 +748,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 .time-table tbody tr:hover td{background:var(--off);}
 .time-group-row td{padding:12px 20px 6px!important;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--off)!important;border-top:2px solid var(--border)!important;}
 .time-av{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:9px;color:#fff;font-weight:500;margin-right:7px;vertical-align:middle;flex-shrink:0;}
-.t-bill{display:inline-block;padding:2px 7px;font-size:10px;border-radius:2px;background:#E8F5E9;color:#2E7D32;}
+.t-bill{display:inline-block;padding:2px 7px;font-size:10px;border-radius:2px;background:var(--ok-bg);color:var(--ok-ink);}
 .t-nobill{display:inline-block;padding:2px 7px;font-size:10px;border-radius:2px;background:var(--off);color:var(--muted);border:1px solid var(--border);}
 /* ── Quotes & Invoices ── */
 .qinv-wrap{flex:1;overflow-y:auto;}
@@ -738,12 +756,16 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 .qinv-card{border-bottom:1px solid var(--border);background:var(--white);transition:background .1s;}
 .qinv-card:hover{background:var(--off);}
 .qinv-card-head{display:flex;align-items:center;gap:14px;padding:14px 20px;cursor:pointer;user-select:none;}
-.qinv-card-num{font-size:11px;color:var(--muted);flex-shrink:0;min-width:72px;font-variant-numeric:tabular-nums;}
+.qinv-card-num{font-size:12px;color:var(--muted);flex-shrink:0;width:64px;font-variant-numeric:tabular-nums;}
+.qinv-card-job{font-size:12px;color:var(--muted);flex-shrink:0;width:52px;font-variant-numeric:tabular-nums;}
+.qinv-head-row{display:flex;align-items:center;gap:14px;padding:9px 20px;background:var(--off);border-bottom:2px solid var(--border);position:sticky;top:0;z-index:2;}
+.qinv-head-row>span{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:400;font-family:var(--font);}
+.qinv-head-row .qinv-card-val{font-size:10px;font-weight:400;}
 .qinv-card-name{font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.qinv-card-co{font-size:12px;color:var(--muted);min-width:180px;}
-.qinv-card-val{font-size:14px;font-family:var(--display);font-weight:600;min-width:110px;text-align:right;font-variant-numeric:tabular-nums;}
-.qinv-card-status{min-width:80px;text-align:right;}
-.qinv-card-date{font-size:11px;color:var(--muted);min-width:90px;text-align:right;}
+.qinv-card-co{font-size:12px;color:var(--muted);width:190px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.qinv-card-val{font-size:14px;font-family:var(--display);font-weight:600;width:110px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums;}
+.qinv-card-status{width:90px;flex-shrink:0;text-align:right;}
+.qinv-card-date{font-size:12px;color:var(--muted);width:90px;flex-shrink:0;text-align:right;white-space:nowrap;}
 .qinv-detail{display:none;border-top:1px solid var(--border);background:var(--white);}
 .qinv-detail.open{display:block;}
 .qinv-detail-table{width:100%;border-collapse:collapse;font-size:12px;}
@@ -787,8 +809,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 .inv-pill{padding:2px 9px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;border-radius:20px;font-weight:400;}
 .inv-pill.draft{background:var(--off);color:var(--muted);border:1px solid var(--border);}
 .inv-pill.sent{background:var(--warn-bg);color:var(--warn-ink);border:1px solid #FFE082;}
-.inv-pill.paid{background:#E8F5E9;color:#2E7D32;border:1px solid #A5D6A7;}
-.inv-pill.approved{background:#E3F2FD;color:#1565C0;border:1px solid #90CAF9;}
+.inv-pill.paid{background:var(--ok-bg);color:var(--ok-ink);border:1px solid #A5D6A7;}
+.inv-pill.approved{background:var(--ok-bg);color:var(--ok-ink);border:none;}
 .qinv-total-row td{font-weight:500;background:var(--off)!important;border-top:2px solid var(--border)!important;}
 
 /* FOLLOW-UP */
@@ -873,8 +895,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 .ps-pname{font-size:13px;font-weight:400;}
 .ps-pstatus{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px;}
 .ps-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
-.ps-dot.available{background:#4CAF50;}
-.ps-dot.allocated{background:#FF9800;}
+.ps-dot.available{background:var(--ok);}
+.ps-dot.allocated{background:var(--warn);}
 .ps-dot.leave{background:#9E9E9E;}
 .ps-status-bar{height:2px;background:var(--faint);margin-top:4px;border-radius:1px;overflow:hidden;}
 .ps-status-fill{height:100%;border-radius:1px;}
@@ -908,8 +930,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 .cal-day-event.priority-low{background:#eef;border-color:#d0d7de;color:#0366d6;}
 .cal-day-event.person-a{background:#e3f2fd;border-color:#bbdefb;color:#1565c0;}
 .cal-day-event.person-b{background:#f3e5f5;border-color:#e1bee7;color:#7b1fa2;}
-.cal-day-event.person-c{background:#e8f5e9;border-color:#c8e6c9;color:#2e7d32;}
-.cal-day-event.person-d{background:#fff3e0;border-color:#ffe0b2;color:#e65100;}
+.cal-day-event.person-c{background:var(--ok-bg);border-color:#c8e6c9;color:var(--ok-ink);}
+.cal-day-event.person-d{background:var(--warn-bg);border-color:#ffe0b2;color:var(--warn-ink);}
 .cal-day-event.person-e{background:#fce4ec;border-color:#f8bbd0;color:#c2185b;}
 .cal-day-more{font-size:10px;color:var(--muted);cursor:pointer;padding:2px 0;}
 .cal-day-more:hover{color:var(--ink);}
@@ -923,8 +945,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 .cal-month-num{font-size:13px;font-weight:500;margin-bottom:4px;color:var(--ink);}
 .cal-month-num.today-num{color:var(--red);font-weight:600;}
 .cal-month-events{display:flex;flex-direction:column;gap:2px;}
-.cal-month-event{font-size:9px;padding:2px 4px;border-radius:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
-.cal-month-more{font-size:9px;color:var(--muted);cursor:pointer;}
+.cal-month-event{font-size:10px;padding:2px 4px;border-radius:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
+.cal-month-more{font-size:10px;color:var(--muted);cursor:pointer;}
 
 /* Allocation indicator in day header */
 .day-allocation{font-size:10px;color:var(--muted);margin-top:2px;}
@@ -932,8 +954,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 .day-allocation-fill{height:100%;border-radius:1px;}
 
 /* Task status badge */
-.task-status{font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:1px 5px;border-radius:2px;position:absolute;top:6px;right:8px;}
-.task-status.inprogress{background:#FFF3E0;color:#E65100;}
+.task-status{font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:1px 5px;border-radius:2px;position:absolute;top:6px;right:8px;}
+.task-status.inprogress{background:var(--warn-bg);color:var(--warn-ink);}
 .task-status.todo{background:var(--off);color:var(--muted);}
 .task-status.done-s{background:var(--done);color:var(--done-ink);}
 
@@ -982,8 +1004,9 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 select.filter-btn{appearance:none;-webkit-appearance:none;background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center;padding-right:28px;text-transform:none;letter-spacing:0;font-size:12px;color:var(--ink);}
 /* ── Workflow status badges ────────────────────────────────── */
 .wf-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500;letter-spacing:.05em;text-transform:uppercase;}
-.wf-quote{background:#F0F4FF;color:#4A6FA5;}
-.wf-live{background:#E8F5E9;color:#2E7D32;}
+.wf-quote{background:#F3EBDD;color:#8A6A2E;}
+.wf-live{background:var(--ok-bg);color:var(--ok-ink);}
+.wf-quiet{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}.wf-quiet i{width:6px;height:6px;border-radius:50%;background:var(--ok);display:inline-block;}
 .wf-completed{background:var(--warn-bg);color:var(--warn-ink);}
 .wf-invoiced{background:#F3E5F5;color:#6A1B9A;}
 .paused-badge{display:inline-block;padding:1px 8px;border-radius:20px;font-size:10px;background:#F5F5F5;color:#757575;font-weight:500;letter-spacing:.04em;border:1px solid #E0E0E0;transition:border-color .12s,color .12s;}
@@ -993,7 +1016,7 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:transparent
 .tm-job-brief-lbl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
 .tm-job-brief{background:var(--off);border:1px solid var(--border);border-radius:3px;padding:10px 12px;font-size:12px;color:var(--muted);line-height:1.5;}
 .tm-job-brief a{color:var(--red);text-decoration:underline;}
-.paused-warn{background:#FFF3E0;border:1px solid #FFE0B2;border-radius:3px;padding:9px 12px;font-size:12px;color:#E65100;margin-top:12px;display:none;}
+.paused-warn{background:var(--warn-bg);border:1px solid #FFE0B2;border-radius:3px;padding:9px 12px;font-size:12px;color:var(--warn-ink);margin-top:12px;display:none;}
 /* ── Invoice page redesign ────────────────────────────────── */
 .inv-mode-bar{display:flex;gap:0;border:1px solid var(--border);border-radius:4px;overflow:hidden;flex-shrink:0;}
 .inv-mode-btn{padding:5px 14px;font-size:12px;background:var(--white);border:none;cursor:pointer;color:var(--muted);font-family:var(--font);letter-spacing:.01em;}
@@ -1003,6 +1026,12 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:transparent
 .inv-tr{border-bottom:1px solid var(--border);transition:background .1s;}
 .inv-tr:hover{background:var(--off);}
 .inv-td{padding:11px 16px;font-size:13px;vertical-align:middle;}
+/* Tables never wrap ids, dates or money onto two lines; long names truncate with a tooltip (review B2) */
+.inv-td.ci-num,.inv-td.ci-sent,.inv-td.ci-due,.inv-td.ci-paid,.inv-td.ci-amount,.inv-td.ci-status,.inv-td.ci-po{white-space:nowrap;}
+.inv-td.ci-company{max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.jobs-table td.cj-company{max-width:210px;}
+.jobs-table td.cj-company .job-co{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.jobs-table td{padding:11px 18px;}
 .inv-pill.overdue{background:var(--danger-bg);color:var(--danger-ink);border:1px solid #EF9A9A;}
 .inv-pill.voided{background:#F5F5F5;color:#9E9E9E;border:1px solid #E0E0E0;text-decoration:line-through;}
 .inv-tbi-row{display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid var(--border);}
@@ -1015,7 +1044,7 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:transparent
 /* ── Undo toast ──────────────────────────────────────────── */
 .toast-undo{background:none;border:none;color:#fff;text-decoration:underline;cursor:pointer;font-size:12px;padding:0;margin-left:8px;font-family:var(--font);}
 /* ── Todo assign menu team headers ──────────────────────── */
-.tao-team-hdr{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:8px 14px 4px;font-weight:500;}
+.tao-team-hdr{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:8px 14px 4px;font-weight:500;}
 /* ── Clients panel ────────────────────────────────────────── */
 .clients-wrap{padding:28px 32px;overflow-y:auto;}
 .clients-toolbar{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
@@ -1060,18 +1089,18 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:transparent
 .bc-rich:hover{border-color:#bbb;box-shadow:0 3px 12px rgba(0,0,0,.08);}
 .bc-header-row{display:flex;align-items:center;gap:6px;margin-top:3px;margin-bottom:6px;}
 .bc-id{font-size:10px;color:var(--muted);}
-.bc-bill-dot{width:6px;height:6px;border-radius:50%;background:#4CAF50;display:inline-block;}
+.bc-bill-dot{width:6px;height:6px;border-radius:50%;background:var(--ok);display:inline-block;}
 .bc-labels{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px;}
-.bc-lbl{font-size:9px;padding:1px 6px;background:var(--off);border:1px solid var(--border);border-radius:10px;color:var(--muted);letter-spacing:.02em;}
+.bc-lbl{font-size:10px;padding:1px 6px;background:var(--off);border:1px solid var(--border);border-radius:10px;color:var(--muted);letter-spacing:.02em;}
 .bc-members-row{display:flex;gap:3px;margin-bottom:8px;}
 .bc-av{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:9px;color:#fff;font-weight:600;}
 .bc-av-sm{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;font-size:8px;color:#fff;font-weight:600;flex-shrink:0;}
 .bc-bars{display:flex;flex-direction:column;gap:4px;}
 .bc-bar-row{display:flex;align-items:center;gap:6px;}
-.bc-bar-lbl{font-size:9px;color:var(--muted);width:38px;flex-shrink:0;letter-spacing:.02em;text-transform:uppercase;}
+.bc-bar-lbl{font-size:10px;color:var(--muted);width:38px;flex-shrink:0;letter-spacing:.02em;text-transform:uppercase;}
 .bc-bar-track{flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
 .bc-bar-fill{height:100%;border-radius:2px;transition:width .3s;}
-.bc-bar-val{font-size:9px;color:var(--muted);width:28px;text-align:right;flex-shrink:0;}
+.bc-bar-val{font-size:10px;color:var(--muted);width:28px;text-align:right;flex-shrink:0;}
 .bc-expanded{border-top:1px solid var(--border);margin-top:10px;padding-top:8px;}
 .bc-section-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:5px;}
 .bc-task-row{display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--faint,#f4f3f1);}
@@ -1144,12 +1173,12 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:transparent
 .cal-filter-chip.on{background:var(--ink);border-color:var(--ink);color:#fff;}
 .todo-cal-body{flex:1;display:flex;overflow:hidden;min-height:0;}
 .cal-time-axis{width:48px;flex-shrink:0;padding-top:44px;border-right:1px solid var(--border);}
-.cal-time-slot{height:64px;display:flex;align-items:flex-start;justify-content:flex-end;padding-right:8px;font-size:9px;color:var(--muted);letter-spacing:.03em;}
+.cal-time-slot{height:64px;display:flex;align-items:flex-start;justify-content:flex-end;padding-right:8px;font-size:10px;color:var(--muted);letter-spacing:.03em;}
 .cal-day-cols{flex:1;display:flex;overflow-x:auto;}
 .cal-day-col{flex:1;min-width:130px;border-right:1px solid var(--border);display:flex;flex-direction:column;position:relative;}
 .cal-day-head{height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--white);}
 .cal-day-head.today{border-top:3px solid var(--red);}
-.cal-day-head-name{font-size:9px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;}
+.cal-day-head-name{font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;}
 .cal-day-head-num{font-size:18px;font-weight:400;line-height:1.1;}
 .cal-day-head-num.today-red{color:var(--red);font-weight:600;}
 .cal-slots{flex:1;position:relative;overflow-y:auto;overflow-x:hidden;}
@@ -1159,8 +1188,8 @@ select.filter-btn{appearance:none;-webkit-appearance:none;background:transparent
 .cal-task-block:hover{box-shadow:0 2px 8px rgba(0,0,0,.14);}
 .cal-task-block:active{cursor:grabbing;}
 .cal-task-block .ctb-title{font-size:11px;font-weight:500;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.cal-task-block .ctb-hrs{font-size:9px;opacity:.7;margin-top:1px;}
-.cal-task-block .ctb-job{font-size:9px;opacity:.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cal-task-block .ctb-hrs{font-size:10px;opacity:.7;margin-top:1px;}
+.cal-task-block .ctb-job{font-size:10px;opacity:.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 /* Item picker dropdown in task modal */
 .i-todo-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 4px;opacity:0;transition:opacity .1s;vertical-align:middle;margin-left:4px;border-radius:3px;}
 tr:hover .i-todo-btn{opacity:1;}
@@ -1190,15 +1219,15 @@ tr:hover .i-todo-btn{opacity:1;}
 .cal-task-block:active .ctb-resize{opacity:1;}
 /* Completed drawer */
 .todo-drawer{flex-shrink:0;border-top:3px solid var(--border);background:var(--white);transition:all .2s ease;}
-.todo-drawer.drag-over{border-top-color:#4CAF50;background:#f0faf0;}
+.todo-drawer.drag-over{border-top-color:var(--ok);background:#f0faf0;}
 .todo-drawer-handle{display:flex;align-items:center;gap:10px;padding:12px 20px;cursor:pointer;user-select:none;}
 .todo-drawer-label{font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);flex:1;}
 .todo-drawer-count{font-size:11px;background:var(--border);color:var(--ink);padding:2px 8px;border-radius:10px;font-weight:500;}
 .todo-drawer-hint{font-size:10px;color:var(--muted);font-style:italic;}
 .todo-drawer-body{overflow-y:auto;padding:10px 16px 20px;max-height:220px;}
 .drawer-task-chip{display:inline-flex;align-items:center;gap:6px;background:var(--off);border:1px solid var(--border);border-radius:4px;padding:5px 10px;margin:3px;font-size:11px;cursor:pointer;transition:all .12s;}
-.drawer-task-chip:hover{border-color:#4CAF50;background:#f4fff4;}
-.drawer-task-chip .dtc-done{color:#4CAF50;font-size:12px;}
+.drawer-task-chip:hover{border-color:var(--ok);background:#f4fff4;}
+.drawer-task-chip .dtc-done{color:var(--ok);font-size:12px;}
 /* Toggle view btn */
 .todo-view-toggle{display:flex;align-items:center;gap:2px;background:var(--off);border:1px solid var(--border);border-radius:3px;padding:2px;}
 .tvt-btn{background:none;border:none;padding:3px 8px;border-radius:2px;cursor:pointer;font-size:11px;font-family:var(--font);color:var(--muted);transition:all .12s;}
@@ -1223,9 +1252,9 @@ tr:hover .i-todo-btn{opacity:1;}
 /* Toast notifications */
 .cc-toast{position:fixed;bottom:28px;right:28px;background:var(--ink);color:#fff;padding:10px 18px;border-radius:4px;font-size:12px;font-family:var(--font);z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.22);transform:translateY(12px);opacity:0;transition:all .22s ease;pointer-events:none;max-width:320px;}
 .cc-toast.on{transform:translateY(0);opacity:1;}
-.cc-toast.toast-success{background:#2E7D32;}
+.cc-toast.toast-success{background:var(--ok-ink);}
 .cc-toast.toast-error{background:var(--red);}
-.cc-toast.toast-warn{background:#E65100;}
+.cc-toast.toast-warn{background:var(--warn-ink);}
 /* Task right-click context menu */
 .task-ctx-menu{position:fixed;background:var(--white);border:1px solid var(--border);border-radius:5px;box-shadow:0 6px 24px rgba(0,0,0,.16);z-index:9990;min-width:180px;padding:4px 0;font-family:var(--font);}
 .tcm-item{display:flex;align-items:center;gap:9px;padding:8px 14px;font-size:12px;cursor:pointer;color:var(--ink);transition:background .1s;white-space:nowrap;}
@@ -1263,7 +1292,7 @@ tr:hover .i-todo-btn{opacity:1;}
 .prog-row{margin-bottom:14px;}
 .prog-row:last-child{margin-bottom:2px;}
 .prog-row-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:5px;}
-.prog-lbl{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+.prog-lbl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
 .prog-val{font-size:14px;color:var(--ink);}
 .prog-val strong{font-weight:500;}
 .prog-of{color:var(--muted);font-size:12px;}
@@ -1283,7 +1312,7 @@ tr:hover .i-todo-btn{opacity:1;}
 .prog-dim{color:var(--muted);font-size:12px;}
 .prog-task-title{font-size:11px;color:var(--muted);margin-top:1px;}
 .prog-status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;}
-.prog-status-dot.done{background:#4CAF50;}
+.prog-status-dot.done{background:var(--ok);}
 .prog-status-dot.sched{background:#C4C0B8;}
 .prog-row-menu{font-size:14px;color:var(--muted);cursor:pointer;padding:4px;border-radius:4px;}
 .prog-row-menu:hover{color:var(--ink);background:var(--off);}
@@ -1302,7 +1331,7 @@ tr:hover .i-todo-btn{opacity:1;}
 .gs-item .gs-ico{width:26px;height:26px;border-radius:6px;background:var(--off);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .gs-item .gs-ico i{font-size:13px;color:var(--muted);}
 .gs-item .gs-t{color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.gs-item .gs-s{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.gs-item .gs-s{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .gs-empty{padding:28px 16px;text-align:center;font-size:13px;color:var(--muted);}
 /* ── EMPTY STATES ── */
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:64px 24px;gap:4px;}
@@ -1389,9 +1418,9 @@ input[type=text],input[type=number],input[type=date],textarea{font-family:var(--
 .gs-item.sel::before{content:'';position:absolute;left:0;top:6px;bottom:6px;width:3px;background:var(--red);border-radius:0 3px 3px 0;}
 .gs-ico{transition:transform .12s;}
 .gs-item.sel .gs-ico{transform:scale(1.06);}
-.gs-ico.gsc-jobs{background:#FDECEA;border-color:#F6C9C7;}.gs-ico.gsc-jobs i{color:#C62828;}
+.gs-ico.gsc-jobs{background:#FDECEA;border-color:#F6C9C7;}.gs-ico.gsc-jobs i{color:var(--danger-ink);}
 .gs-ico.gsc-clients{background:#EDF1F7;border-color:#D4DCE9;}.gs-ico.gsc-clients i{color:#4A6FA5;}
-.gs-ico.gsc-tasks{background:#EDF5EF;border-color:#CFE3D5;}.gs-ico.gsc-tasks i{color:#2E7D32;}
+.gs-ico.gsc-tasks{background:#EDF5EF;border-color:#CFE3D5;}.gs-ico.gsc-tasks i{color:var(--ok-ink);}
 .gs-ico.gsc-invoices{background:#F4EDF9;border-color:#E0CFF0;}.gs-ico.gsc-invoices i{color:#6A1B9A;}
 .gs-ico.gsc-quotes{background:#FFF6E8;border-color:#F3DFBE;}.gs-ico.gsc-quotes i{color:#B07A2A;}
 .gs-ico.gsc-items{background:var(--off);}.gs-ico.gsc-items i{color:var(--muted);}
@@ -1486,7 +1515,7 @@ body{background:#E9E9ED;}
 /* ══ v2.32 — Column picker: show/hide via container classes (no re-render needed) ══ */
 .jobs-table.hc-company .cj-company,.jobs-table.hc-budget .cj-budget,.jobs-table.hc-hours .cj-hours,.jobs-table.hc-labels .cj-labels,.jobs-table.hc-status .cj-status{display:none;}
 #invoices-list.hc-company .ci-company,#invoices-list.hc-num .ci-num,#invoices-list.hc-job .ci-job,#invoices-list.hc-po .ci-po,#invoices-list.hc-sent .ci-sent,#invoices-list.hc-due .ci-due,#invoices-list.hc-paid .ci-paid,#invoices-list.hc-status .ci-status{display:none;}
-#quotes-list.hc-co .qinv-card-co,#quotes-list.hc-val .qinv-card-val,#quotes-list.hc-status .qinv-card-status,#quotes-list.hc-date .qinv-card-date{display:none;}
+#quotes-list.hc-co .qinv-card-co,#quotes-list.hc-co .qinv-head-row .qinv-card-co,#quotes-list.hc-val .qinv-card-val,#quotes-list.hc-status .qinv-card-status,#quotes-list.hc-date .qinv-card-date{display:none;}
 .colpick{position:fixed;background:var(--white);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-m);z-index:1200;min-width:190px;padding:6px 0;}
 .colpick-title{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding:6px 14px 4px;}
 .colpick label{display:flex;align-items:center;gap:9px;padding:7px 14px;font-size:12.5px;cursor:pointer;}
@@ -1498,7 +1527,7 @@ body{background:#E9E9ED;}
 .sched-strip.on{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0);}
 .sched-strip .ss-lbl{font-size:11px;font-weight:600;color:var(--muted);margin-right:4px;letter-spacing:.05em;text-transform:uppercase;}
 .ss-day{width:74px;border:1.5px dashed var(--border);border-radius:11px;padding:9px 0 8px;text-align:center;transition:all .12s;background:var(--white);}
-.ss-day .ssd-name{font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);}
+.ss-day .ssd-name{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);}
 .ss-day .ssd-num{font-size:17px;font-weight:600;color:var(--ink);line-height:1.2;}
 .ss-day.ssd-today .ssd-num{color:var(--red);}
 .ss-day.drop-ok{border-color:var(--red);border-style:solid;background:#FFF5F5;transform:scale(1.06);}
@@ -1594,9 +1623,10 @@ body.dark .zone-bucket,body.dark .zone-bucket.todo-bucket{background:#202023;bor
 body.dark .zone-bucket.done-bucket{background:#1D2B1F;border-color:#2E4A33;}
 body.dark .zone-bucket-today{background:#26211C;border-color:#4A3E2E;}
 body.dark .gs-ico{background:rgba(255,255,255,.06)!important;border-color:rgba(255,255,255,.1)!important;}
-body.dark .inv-pill.paid,body.dark .wf-live,body.dark .t-bill,body.dark .ib-c,body.dark .exp-badg.approved{background:rgba(102,187,106,.16);color:#8FD79A;}
-body.dark .inv-pill.approved,body.dark .exp-badg.invoiced{background:rgba(33,150,243,.16);color:#64B5F6;}
-body.dark .wf-quote,body.dark .ib-p{background:rgba(100,140,220,.16);color:#8FB4F0;}
+body.dark .inv-pill.paid,body.dark .wf-live,body.dark .t-bill,body.dark .exp-badg.approved{background:rgba(102,187,106,.16);color:#8FD79A;}
+body.dark .exp-badg.invoiced{background:rgba(33,150,243,.16);color:#64B5F6;}
+body.dark .wf-quote{background:rgba(196,149,106,.18);color:#D9B48A;}
+body.dark .inv-pill.approved{background:var(--ok-bg);color:var(--ok-ink);}
 body.dark .wf-invoiced{background:rgba(171,71,188,.18);color:#CE93D8;}
 body.dark .inv-pill.voided,body.dark .paused-badge{background:rgba(255,255,255,.07);color:#9C9CA3;border-color:rgba(255,255,255,.12);}
 body.dark .day-todo.drop-hi{background:#1E2531;}
@@ -1609,7 +1639,7 @@ body.dark ::selection{background:rgba(237,30,36,.3);}
 @media print{body.dark{--ink:#191714;--muted:#8A857C;--white:#fff;--off:#F6F4EF;--border:#E3DFD6;--faint:#ECE9E2;}}
 /* KPI sparkline row */
 .kpi-spark{margin-top:12px;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;}
-.kpi-spark .ks-lbl{font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);}
+.kpi-spark .ks-lbl{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);}
 
 /* ══ v2.36 — DISPLAY TYPE. Inter Tight becomes the display face: every heading, title
    and big number tightens up while body text stays Inter. One token, whole-app shift. ══ */
@@ -1675,7 +1705,7 @@ body.has-bg #cc-splash{background:rgba(240,236,228,.4);backdrop-filter:blur(20px
 .tb-chip i{font-size:13px;}
 .tb-chip.clickable{cursor:pointer;}
 .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(76,175,80,.16);flex-shrink:0;}
-.tb-chip.is-stale .sync-dot{background:#E65100;box-shadow:0 0 0 3px rgba(230,81,0,.16);}
+.tb-chip.is-stale .sync-dot{background:var(--warn-ink);box-shadow:0 0 0 3px rgba(230,81,0,.16);}
 .tb-chip.is-stale{color:#B84A00;}
 .tb-tip{display:none;position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1D1C19;color:#E9E6DF;border-radius:10px;padding:12px 14px;font-size:12px;line-height:1.5;white-space:normal;width:max-content;max-width:300px;z-index:300;box-shadow:var(--shadow-l);pointer-events:none;}
 .tb-tip::before{content:'';position:absolute;top:-5px;left:50%;transform:translateX(-50%) rotate(45deg);width:10px;height:10px;background:#1D1C19;border-radius:2px;}
@@ -1709,8 +1739,8 @@ body.dark #bulk-bar{background:#3A3A40!important;}
 /* Drop dock targets: hardcoded pink made the label unreadable in dark mode */
 .ss-day.drop-ok,.ss-person.drop-ok{background:rgba(237,30,36,.10);}
 /* Dark toasts kept one grey for every status — success/error/warn colours win again */
-body.dark .cc-toast.toast-success{background:#2E7D32;}
-body.dark .cc-toast.toast-error{background:#C62828;}
+body.dark .cc-toast.toast-success{background:var(--ok-ink);}
+body.dark .cc-toast.toast-error{background:var(--danger-ink);}
 body.dark .cc-toast.toast-warn{background:#B84A00;}
 /* Status pills: v2.31 meant them borderless, but the coloured variants still drew outlines */
 .inv-pill.draft,.inv-pill.sent,.inv-pill.paid,.inv-pill.approved,.inv-pill.overdue,.inv-pill.voided{border:none;}
@@ -1828,7 +1858,7 @@ body.not-admin .admin-only{display:none!important;}
           <div class="jsn-tab" data-tab="invoices" onclick="switchJobsTab('invoices')">Invoices</div>
           <div class="jsn-tab" data-tab="clients" onclick="switchJobsTab('clients')">Clients</div>
           <div class="jsn-tab" data-tab="deadlines" onclick="switchJobsTab('deadlines')">Deadlines</div>
-          <button class="d-action primary" style="margin-left:auto;" onclick="openCreateJob()"><i class="ti ti-plus" style="font-size:13px"></i> New job</button>
+          <button class="d-action primary" id="jobs-primary-btn" style="margin-left:auto;" onclick="_jobsPrimaryAction()"><i class="ti ti-plus" style="font-size:13px"></i> <span id="jobs-primary-lbl">New job</span></button>
         </div>
         <!-- JOBS panel -->
         <div id="jt-jobs" class="jt-panel" style="display:flex;">
@@ -1892,7 +1922,6 @@ body.not-admin .admin-only{display:none!important;}
               </div>
             </div>
             <div class="time-stats-strip" id="time-stats-strip"></div>
-            <div class="dash-rule" style="margin:0 32px 0;"></div>
             <div class="time-table-wrap">
               <table class="time-table">
                 <thead><tr>
@@ -1918,7 +1947,7 @@ body.not-admin .admin-only{display:none!important;}
               <select class="cc-select" id="exp-client-filter" onchange="renderExpensesList()">
                 <option value="all">All clients</option>
               </select>
-              <button class="d-action primary" onclick="openLogExpense()" style="margin-left:auto;"><i class="ti ti-plus" style="font-size:11px;margin-right:4px;"></i>Add expense</button>
+              
             </div>
             <div id="exp-list-wrap" style="flex:1;overflow-y:auto;"></div>
           </div>
@@ -1939,7 +1968,7 @@ body.not-admin .admin-only{display:none!important;}
               <button class="d-action" onclick="saveFilterPreset('qt')" title="Save current filters as a preset"><i class="ti ti-bookmark" style="font-size:11px;"></i> Save</button>
               <button class="d-action" id="qt-clear-btn" onclick="_clearFilters('qt')" title="Clear all filters" style="display:none;"><i class="ti ti-x" style="font-size:11px;"></i> Clear</button>
               <button class="d-action" onclick="openColPicker(event,'qt')" title="Choose columns"><i class="ti ti-columns" style="font-size:11px;"></i> Columns</button>
-              <button class="d-action primary" onclick="openNewQuoteModal()" style="margin-left:auto;"><i class="ti ti-plus" style="font-size:11px;"></i> New quote</button>
+              
               <span class="jobs-count" id="quotes-count"></span>
             </div>
             <div id="qt-presets-bar" class="fpresets-bar" style="display:none;"></div>
@@ -1976,7 +2005,7 @@ body.not-admin .admin-only{display:none!important;}
         <!-- CLIENTS panel -->
         <div id="jt-clients" class="jt-panel" style="display:none;">
           <!-- Clients list view -->
-          <div id="clients-list-view" class="clients-wrap" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+          <div id="clients-list-view" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
             <div style="padding:20px 28px 0;flex-shrink:0;"><div class="view-title">Clients</div><div class="view-sub">Companies, contacts & their work</div></div>
             <div id="clients-wrap" style="flex:1;overflow-y:auto;padding:14px 28px 40px;"><!-- populated by renderClients() --></div>
           </div>
@@ -2015,7 +2044,7 @@ body.not-admin .admin-only{display:none!important;}
           </div>
           <div id="dcal-grid"></div>
           <div id="dcal-legend" style="display:flex;gap:16px;margin-top:16px;font-size:11px;color:var(--muted);">
-            <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#E65100;margin-right:4px;vertical-align:middle;"></span>Job due</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--warn-ink);margin-right:4px;vertical-align:middle;"></span>Job due</span>
             <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--red);margin-right:4px;vertical-align:middle;"></span>Invoice due</span>
           </div>
         </div>
@@ -2035,7 +2064,7 @@ body.not-admin .admin-only{display:none!important;}
                 <button class="d-action" onclick="openInvoice()"><i class="ti ti-file-invoice" style="font-size:13px"></i> Invoice</button>
                 <div class="create-item-wrap" style="position:relative;display:inline-block;">
                   <button class="d-action primary" onclick="toggleCreateItemMenu(event)"><i class="ti ti-plus" style="font-size:12px"></i> Create <i class="ti ti-chevron-down" style="font-size:10px;margin-left:2px;"></i></button>
-                  <div id="create-item-menu" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--border);border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.14);z-index:900;min-width:160px;padding:4px 0;">
+                  <div id="create-item-menu" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:var(--white);border:1px solid var(--border);border-radius:var(--r-ctl);box-shadow:var(--shadow-l);z-index:900;min-width:160px;padding:4px 0;">
                     <div class="tcm-item" onclick="closeCreateItemMenu();showAddItemForm(null)"><i class="ti ti-list-check" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Item</div>
                     <div class="tcm-item" onclick="closeCreateItemMenu();addPhase()"><i class="ti ti-layout-rows" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Phase</div>
                     <div class="tcm-item" onclick="closeCreateItemMenu();openTodoModal(activeJobId,5)"><i class="ti ti-checklist" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>To Do</div>
@@ -2055,7 +2084,7 @@ body.not-admin .admin-only{display:none!important;}
               <div class="label-add-btn" onclick="addLabel(event)"><i class="ti ti-plus" style="font-size:11px"></i> Add label</div>
             </div>
             <div id="job-notes-row" style="padding:0 0 10px;display:none;">
-              <textarea id="job-notes-inp" placeholder="Add a brief or notes for this job…" style="width:100%;border:1px solid transparent;border-radius:8px;background:var(--off);font-family:var(--font);font-size:12.5px;color:var(--ink);resize:none;outline:none;padding:10px 14px;line-height:1.55;box-sizing:border-box;transition:border-color .15s,background .15s;" onfocus="this.style.borderColor='var(--border)';this.style.background='var(--white)'" onblur="this.style.borderColor='transparent';this.style.background='var(--off)'" rows="2" oninput="updateJobNotes(this.value)"></textarea>
+              <textarea id="job-notes-inp" placeholder="Add a brief or notes for this job…" style="width:100%;border:1px solid transparent;border-radius:8px;background:var(--off);font-family:var(--font);font-size:12.5px;color:var(--ink);resize:none;outline:none;padding:10px 14px;line-height:1.55;box-sizing:border-box;transition:border-color .15s,background .15s;" onfocus="this.style.borderColor='var(--border)';this.style.background='var(--white)'" onblur="this.style.borderColor='transparent';this.style.background='var(--off)';_fitNotes(this)" rows="1" oninput="updateJobNotes(this.value);_fitNotes(this)"></textarea>
             </div>
             <div class="detail-tabs">
               <div class="d-tab on" onclick="switchDTab(this,'plan')">Job plan</div>
@@ -2084,7 +2113,7 @@ body.not-admin .admin-only{display:none!important;}
       </div>
       <!-- SCHEDULE -->
       <div id="view-schedule" class="view hidden" style="flex-direction:column;overflow:hidden;">
-        <div style="flex:1;overflow-y:auto;padding:24px 32px;" id="schedule-scroll"></div>
+        <div style="flex:1;overflow-y:auto;padding:20px 28px;" id="schedule-scroll"></div>
       </div>
       <!-- REPORTING -->
       <div id="view-reporting" class="view hidden" style="display:flex;flex-direction:column;">
@@ -2143,7 +2172,7 @@ body.not-admin .admin-only{display:none!important;}
             <div><div class="boards-head">Priority Boards</div><div class="boards-sub">Campaigns, clients &amp; team at a glance</div></div>
             <button class="d-action primary" onclick="openCreateBoard()"><i class="ti ti-plus" style="font-size:12px;"></i> New board</button>
           </div>
-          <div class="dash-rule" style="margin:14px 0 24px;"></div>
+          <div style="height:20px;"></div>
           <div style="margin-bottom:20px;display:flex;gap:10px;flex-wrap:wrap;">
             <button class="d-action" onclick="createStudioPreset()" title="Auto-board: all live jobs grouped by workflow stage"><i class="ti ti-layout-kanban" style="font-size:12px;"></i> Studio board (live jobs)</button>
           </div>
@@ -2555,7 +2584,7 @@ body.not-admin .admin-only{display:none!important;}
       <i class="ti ti-star" id="gs-star-btn" title="Show starred" style="cursor:pointer;color:#E6A700;" onclick="showStarredInSearch()"></i>
       <span class="gs-kbd">esc</span>
     </div>
-    <div id="gs-results"><div class="gs-empty">Type to search across everything, or click <i class="ti ti-star" style="color:#E6A700;vertical-align:-1px;"></i> for starred items.<div style="margin-top:10px;font-size:11.5px;color:var(--muted);">Or type a command — <strong style="color:var(--ink);">log 2h on 6928</strong> · <strong style="color:var(--ink);">pause 7023</strong> · <strong style="color:var(--ink);">todo Call printer 30m</strong></div></div></div>
+    <div id="gs-results"><div class="gs-empty">Type to search across everything, or click <i class="ti ti-star" style="color:#E6A700;vertical-align:-1px;"></i> for starred items.<div style="margin-top:10px;font-size:11px;color:var(--muted);">Or type a command — <strong style="color:var(--ink);">log 2h on 6928</strong> · <strong style="color:var(--ink);">pause 7023</strong> · <strong style="color:var(--ink);">todo Call printer 30m</strong></div></div></div>
     <div class="gs-foot"><span><kbd>↑↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span><kbd>esc</kbd> close</span><span class="gs-count" id="gs-foot-count"></span></div>
   </div>
 </div>
@@ -2764,6 +2793,8 @@ async function dbUpdateJob(id,patch){
 // dbUpdateJob writes), which applyNativeData re-applies after every Streamtime remap. Many
 // job-detail handlers wrote straight onto j.* and silently reverted on the next 5-minute
 // poll or reload — notes, labels, members, settings, workflow, quote/invoice status (audit H3).
+// Job brief grows with its text: one line when empty, never a big empty box (review B4)
+function _fitNotes(el){if(!el)return;el.style.height='auto';el.style.height=Math.min(el.scrollHeight+2,260)+'px';}
 function _keepJobEdits(j,keys){
   if(!j)return;
   j._native=j._native||{};
@@ -2912,8 +2943,18 @@ const MY_PERSON=(()=>{try{return localStorage.getItem('cc_me')||'st_114330';}cat
 let currentPerson=MY_PERSON;
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:MY_PERSON==='st_114330'?'Ronan Heal':'…',initials:MY_PERSON==='st_114330'?'RH':'?',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true,_stub:true};
-const APP_VERSION='2.39.1';
+const APP_VERSION='2.40.0';
 const CHANGELOG=[
+  {version:'2.40.0',date:'12 Nov 2026',title:'Design polish — calmer, tidier, more consistent',items:[
+    'Every page now has the same header: title and subtitle on the left, one main button top right. In the Jobs area that button follows the tab — New job, New quote, Add expense or Add client.',
+    'Quotes is now a proper table with column headers like Invoices, and the job number no longer appears twice.',
+    'Tables stop wrapping invoice numbers, dates and company names onto two lines; long names trim with the full name on hover.',
+    'Job page: the buttons sit neatly on the right, the brief box is one line until you write in it, and item status shows In progress / Not started / Paused / Complete. Item hours now match the sell figure beside them.',
+    'Dashboard: the weekly "How\'s your week?" check-in is a small card instead of a pop-up. Needs attention is a tidy grid — overdue invoices show their number and amount, and quotes show the quote name. Click an invoice or quote to open it.',
+    'Schedule: pick people from one row of avatars (names on hover), or a whole team at once.',
+    'Charts are warmer and easier to read, especially in dark mode. Reporting\'s subtitle now matches the period you picked.',
+    'Status colours moved onto the warm C&C palette, client totals read $1.5M instead of $1466k, and the smallest text is a little bigger.',
+  ]},
   {version:'2.39.1',date:'12 Nov 2026',title:'Admin-only archiving, plus small fixes ahead of team testing',items:[
     'New: admins. Tick "Admin" on a person in Settings → Team, then only admins see Archive and Delete on jobs (single and bulk) and can archive or remove team members. Until someone is made an admin, nothing changes. Publish the team config to share it with everyone. (There\'s no login yet, so this keeps things tidy rather than locked down.)',
     'To Do: the week label always matches the board; the day bar uses your own day length instead of 8h; right-click on an empty day opens one new-task box (not several); no stray follow-up card after adding a task; ⌘K "todo" at the weekend goes on next Monday.',
@@ -3836,7 +3877,7 @@ function _mapStJob(j){
         const rate=it.sellRate||0;
         const usedSell=Math.round(logM/60*rate);const planSell=Math.round(planM/60*rate);
         const stStatus=it.jobItemStatus?.name||'';
-        return{id:'st-it-'+it.id,name:it.name||'Item',hours:planM>0?_stFmtH(planM):'—',rate:rate?'$'+rate:'—',used:usedSell?'$'+usedSell.toLocaleString():'$0',total:planSell?'$'+planSell.toLocaleString():'—',status:stStatus==='Complete'?'complete':stStatus==='In Progress'?'inprogress':'open',description:it.description||'',_stId:it.id,_planMins:planM,_logMins:logM,startDate:it.estimatedStartDate||it.earliestStartDate||null,dueDate:it.estimatedEndDate||it.latestEndDate||null};
+        return{id:'st-it-'+it.id,name:it.name||'Item',hours:planM>0?_stFmtH(planM):'—',rate:rate?'$'+rate:'—',used:usedSell?'$'+usedSell.toLocaleString():'$0',total:planSell?'$'+planSell.toLocaleString():'—',status:stStatus==='Complete'?'complete':stStatus==='Paused'?'paused':(stStatus==='In Progress'||logM>0)?'inprogress':'open',description:it.description||'',_stId:it.id,_planMins:planM,_logMins:logM,startDate:it.estimatedStartDate||it.earliestStartDate||null,dueDate:it.estimatedEndDate||it.latestEndDate||null};
       };
       const mapped=(j.phases||[]).map(ph=>{
         const mappedItems=(ph.items||[]).map(_mapItem);
@@ -4284,7 +4325,7 @@ function renderDashboard(){
     const isDone=t.done;const isUrgent=t.urgent&&!isDone;
     const metaArr=[];if(t.job)metaArr.push(t.job);if(t.item)metaArr.push(t.item);if(t.hours)metaArr.push(formatHrs(t.hours));
     return`<div class="my-todo-item" onclick="navTo('todo')">
-      <div class="todo-check${isDone?' done-c':isUrgent?' urg-c':''}">${isDone?'<i class="ti ti-check" style="font-size:9px;color:var(--done-ink);"></i>':''}</div>
+      <div class="todo-check${isDone?' done-c':isUrgent?' urg-c':''}">${isDone?'<i class="ti ti-check" style="font-size:10px;color:var(--done-ink);"></i>':''}</div>
       <div style="flex:1;min-width:0;">
         <div style="${isDone?'text-decoration:line-through;opacity:.5;':''}font-size:13px;">${esc(t.title)}</div>
         ${metaArr.length?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${metaArr.join(' · ')}</div>`:''}
@@ -4337,7 +4378,7 @@ function renderDashboard(){
     <div class="section-label" style="margin-top:28px;margin-bottom:12px;">Business overview</div>
     <div class="kpi-row">
       <div class="kpi"><div class="kpi-label">Active jobs</div><div class="kpi-val">${liveJobs.length}</div><div class="kpi-sub">of ${jobs.length} total</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${Math.min(100,Math.round(liveJobs.length/jobs.length*100))}%;background:var(--red);"></div></div></div>
-      <div class="kpi"><div class="kpi-label">Invoiced</div><div class="kpi-val">${fmtDollar(totalInvoiced)}</div><div class="kpi-sub">${fmtDollar(totalPaid)} paid · ${fmtDollar(totalAwaiting)} awaiting</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${totalInvoiced>0?Math.min(100,Math.round(totalPaid/totalInvoiced*100)):0}%;background:#4CAF50;"></div></div></div>
+      <div class="kpi"><div class="kpi-label">Invoiced</div><div class="kpi-val">${fmtDollar(totalInvoiced)}</div><div class="kpi-sub">${fmtDollar(totalPaid)} paid · ${fmtDollar(totalAwaiting)} awaiting</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${totalInvoiced>0?Math.min(100,Math.round(totalPaid/totalInvoiced*100)):0}%;background:var(--ok);"></div></div></div>
       <div class="kpi"><div class="kpi-label">Revenue logged</div><div class="kpi-val">${fmtDollar(totalSell)}</div><div class="kpi-sub">billable time ex tax</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${totalSell>0?Math.min(100,Math.round(totalInvoiced/totalSell*100)):0}%;background:#3498DB;"></div></div></div>
     </div>`:'';
   // Over budget alerts
@@ -4391,28 +4432,28 @@ function renderDashboard(){
   }).filter(Boolean).sort((a,b)=>b._need-a._need).slice(0,10);
   // Quiet clients: had jobs before, but nothing in play now
   const _coAll={};jobs.forEach(j=>{if(!j.company)return;(_coAll[j.company]=_coAll[j.company]||{total:0,live:0}); _coAll[j.company].total++; if(j.status==='inplay')_coAll[j.company].live++;});
-  const quietClients=Object.entries(_coAll).filter(([,v])=>v.total>=2&&v.live===0).map(([co,v])=>({label:co,meta:`${v.total} past`,jid:null})).slice(0,10);
+  const quietClients=Object.entries(_coAll).filter(([co,v])=>v.total>=2&&v.live===0&&!/content\s*(&|and)\s*co/i.test(co)).map(([co,v])=>({label:co,meta:`${v.total} past`,jid:null})).slice(0,10);
   const _attCard=(title,items,color,icon,key)=>{
     if(!items.length)return'';
     const cap=6;
     const expanded=key&&_dashExpanded[key];
     const shown=expanded?items:items.slice(0,cap);
-    const moreLink=items.length>cap&&key?`<div class="att-row" style="font-size:11.5px;color:var(--muted);cursor:pointer;font-weight:500;" onclick="_dashExpanded['${key}']=${expanded?'false':'true'};renderDashboard()">${expanded?'Show fewer':'Show all '+items.length+' ↓'}</div>`:'';
-    return`<div style="flex:1;min-width:220px;background:var(--white);border:1px solid var(--border);border-left:3px solid ${color};border-radius:12px;padding:13px 15px;box-shadow:var(--shadow-s);">
+    const moreLink=items.length>cap&&key?`<div class="att-row" style="font-size:11px;color:var(--muted);cursor:pointer;font-weight:500;" onclick="_dashExpanded['${key}']=${expanded?'false':'true'};renderDashboard()">${expanded?'Show fewer':'Show all '+items.length+' ↓'}</div>`:'';
+    return`<div style="min-width:0;background:var(--white);border:1px solid var(--border);border-left:3px solid ${color};border-radius:12px;padding:13px 15px;box-shadow:var(--shadow-s);">
     <div style="display:flex;align-items:center;gap:7px;margin-bottom:9px;">
       ${icon?`<span style="width:22px;height:22px;border-radius:7px;background:color-mix(in srgb,${color} 13%,var(--white));display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="ti ${icon}" style="font-size:12px;color:${color};"></i></span>`:''}
-      <span style="font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink);">${title}</span>
+      <span style="font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink);">${title}</span>
       <span style="margin-left:auto;font-size:10px;font-weight:600;color:var(--muted);background:var(--off);border:1px solid var(--faint);border-radius:10px;padding:1px 8px;">${items.length}</span>
     </div>
-    ${shown.map(x=>`<div class="att-row" style="font-size:12px;display:flex;justify-content:space-between;gap:10px;cursor:${x.jid?'pointer':'default'};" ${x.jid?`onclick="openJobDetail('${x.jid}')"`:''}><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.label}</span><span style="color:${color};flex-shrink:0;font-variant-numeric:tabular-nums;">${x.meta}</span></div>`).join('')}
+    ${shown.map(x=>`<div class="att-row" style="font-size:12px;display:flex;justify-content:space-between;gap:10px;cursor:${x.jid||x.on?'pointer':'default'};" ${x.jid?`onclick="openJobDetail('${x.jid}')"`:x.on?`onclick="${x.on}"`:''} title="${x.tip||''}"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.label}</span><span style="color:${color};flex-shrink:0;font-variant-numeric:tabular-nums;">${x.meta}</span></div>`).join('')}
     ${moreLink}
   </div>`;};
   const dh=people[MY_PERSON].dashHide||[];const _show=k=>!dh.includes(k);
   const deadlinesHTML=_show('deadlines')?[
     _attCard('Jobs due / overdue',dueJobs.map(j=>({label:`${j.id} ${esc(j.name)}`,meta:_inDays(j.dueDate)<0?`${-_inDays(j.dueDate)}d over`:_inDays(j.dueDate)===0?'today':`${_inDays(j.dueDate)}d`,jid:j.id})),'#E65100','ti-flag','due'),
     _attCard('Deadline risk',riskJobs,'#D81B60','ti-alert-triangle','risk'),
-    _attCard('Overdue invoices',overdueInv.map(i=>({label:esc(i.company?.name||i.jobName||'—'),meta:`${-_inDays(i.dueDate)}d`,jid:null})),'#C62828','ti-file-invoice','odinv'),
-    _attCard('Quotes awaiting response',awaitingQuotes.map(q=>({label:esc(q.company||q.jobName||(q.jobNumber?'Job '+q.jobNumber:q.quoteName)||'—'),meta:`${-_inDays(q.sentDate)}d`,jid:null})),'#6B7FA3','ti-file-text','awq'),
+    _attCard('Overdue invoices',overdueInv.map(i=>({label:`${esc(i.number||'')} · ${esc(i.company?.name||i.jobName||'—')}`,meta:`${fmtDollar(i.totalAmountIncTax||i.totalAmountExTax||0)} · ${-_inDays(i.dueDate)}d`,jid:null,on:`openInvoiceDetail('${i.id}')`,tip:esc(i.company?.name||'')})),'#C62828','ti-file-invoice','odinv'),
+    _attCard('Quotes awaiting response',awaitingQuotes.map(q=>({label:esc(String(q.quoteName||q.jobName||(q.jobNumber?'Job '+q.jobNumber:'')||'—').replace(/^\[\d+\]\s*/,'')),meta:`${-_inDays(q.sentDate)}d`,jid:null,on:`openQuoteDetail('${q.id}')`,tip:esc(q.company||'')})),'#8A6A2E','ti-file-text','awq'),
     _attCard('Uninvoiced work',uninvoiced.map(j=>({label:`${j.id} ${esc(j.name)}`,meta:'$'+Math.round((j._sellUsed||0)-(j._stInvoiced||0)).toLocaleString(),jid:j.id})),'#9C6FD6','ti-coin','uninv'),
     _attCard('Quiet clients',quietClients.map(c=>({...c,label:esc(c.label)})),'#888888','ti-moon','quiet'),
   ].filter(Boolean).join(''):'';
@@ -4422,21 +4463,21 @@ function renderDashboard(){
       <div class="dash-date">${dateStr}</div>
       <div class="dash-rule"></div>
     </div>
+    ${_happinessCardHTML()}
     <div class="kpi-row">
-      <div class="kpi"><div class="kpi-label">Billable this week</div><div class="kpi-val">${formatHrs(billH)||'0h'}</div><div class="kpi-sub">${formatHrs(billDoneH)||'0h'} done · ${formatHrs(billTodoH)||'0h'} planned · of ${totalTarget}h</div>${_wkTrend.bill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('bill')">${_sparkSVG(_wkTrend.bill,'#4CAF50')}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${billPct}%;background:${billPct>=120?'var(--red)':'#4CAF50'};"></div></div></div>
-      <div class="kpi"><div class="kpi-label">Non-billable</div><div class="kpi-val">${formatHrs(nbillH)||'0h'}</div><div class="kpi-sub">internal & admin</div>${_wkTrend.nbill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('nbill')">${_sparkSVG(_wkTrend.nbill,'#FF9800')}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${nbillPct}%;background:#FF9800;"></div></div></div>
-      <div class="kpi"><div class="kpi-label">My tasks today</div><div class="kpi-val">${todayTodo.length}</div><div class="kpi-sub">${urgentCount?urgentCount+' urgent · ':''}${todayDone.length} done</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${todayTasks.length?Math.round(todayDone.length/todayTasks.length*100):0}%;background:${urgentCount?'var(--red)':'#4CAF50'};"></div></div></div>
+      <div class="kpi"><div class="kpi-label">Billable booked this week</div><div class="kpi-val">${formatHrs(billH)||'0h'}</div><div class="kpi-sub">${formatHrs(billDoneH)||'0h'} done · ${formatHrs(billTodoH)||'0h'} planned · of ${totalTarget}h</div>${_wkTrend.bill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('bill')">${_sparkSVG(_wkTrend.bill,'#4CAF50')}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${billPct}%;background:${billPct>=120?'var(--red)':'var(--ok)'};"></div></div></div>
+      <div class="kpi"><div class="kpi-label">Non-billable</div><div class="kpi-val">${formatHrs(nbillH)||'0h'}</div><div class="kpi-sub">internal & admin</div>${_wkTrend.nbill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('nbill')">${_sparkSVG(_wkTrend.nbill,'#FF9800')}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${nbillPct}%;background:var(--warn);"></div></div></div>
+      <div class="kpi"><div class="kpi-label">My tasks today</div><div class="kpi-val">${todayTodo.length}</div><div class="kpi-sub">${urgentCount?urgentCount+' urgent · ':''}${todayDone.length} done</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${todayTasks.length?Math.round(todayDone.length/todayTasks.length*100):0}%;background:${urgentCount?'var(--red)':'var(--ok)'};"></div></div></div>
     </div>
     <div class="section-label" style="margin-bottom:12px;">Your day <button onclick="openTodoModal(null,null,'${MY_PERSON}')" title="Add task" style="background:transparent;border:1px solid var(--border);border-radius:4px;padding:1px 8px;cursor:pointer;font-size:11px;color:var(--muted);font-family:var(--font);margin-left:8px;vertical-align:middle;">+ Add task</button></div>
     <div class="my-todos" style="margin-bottom:28px;">${todoRows||'<div class="my-todo-item" style="color:var(--muted);font-size:13px;"><i class="ti ti-sun" style="font-size:16px;margin-right:10px;"></i>No tasks scheduled today.</div>'}</div>
-    ${deadlinesHTML?`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Needs attention</div><div style="display:flex;flex-wrap:wrap;gap:14px;">${deadlinesHTML}</div>`:''}
+    ${deadlinesHTML?`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Needs attention</div><div class="att-grid">${deadlinesHTML}</div>`:''}
     ${_show('team')&&teamHTML?`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Team · today</div><div class="team-grid">${teamHTML}</div>`:''}
     ${_show('kpis')?stKPIs:''}
     ${_show('clients')&&_clientsHTML?`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Active clients</div><div class="team-grid">${_clientsHTML}</div>`:''}
     ${alerts?`<div style="margin-top:28px;"><div class="section-label" style="margin-bottom:14px;">Over budget</div><div class="alert-list">${alerts}</div></div>`:''}
   `;
   _renderIcons();
-  maybeShowHappinessPrompt();
 }
 
 // ── Weekly Happiness check-in ──────────────────────────────────────────────
@@ -4465,6 +4506,16 @@ function _buildHappinessModal(){
   </div>`;
   document.body.appendChild(m);
 }
+function _happinessAnswered(){return !!_getHappinessLog()[MY_PERSON]?.[getWeekKey(0)];}
+function _happinessCardHTML(){
+  if(_happinessAnswered())return'';
+  const FACES=[[1,'😞','Rough'],[2,'😕','Meh'],[3,'😐','OK'],[4,'🙂','Good'],[5,'😄','Great']];
+  return`<div class="hp-card"><div class="hp-card-q">How's your week going?</div>
+    <div class="hp-card-faces">${FACES.map(([v,e,l])=>`<button class="hp-card-face" title="${l}" onclick="_hpQuick(${v})"><span>${e}</span><small>${l}</small></button>`).join('')}</div>
+    <div class="hp-card-links"><a onclick="maybeShowHappinessPromptNow()">Add a note</a><a onclick="skipHappinessWeek('${MY_PERSON}')">Skip this week</a></div></div>`;
+}
+function _hpQuick(v){_hpSelectedFace=v;submitHappiness(MY_PERSON);}
+function _hpRefreshDash(){if(!document.getElementById('view-dashboard')?.classList.contains('hidden'))try{renderDashboard();}catch(e){}}
 function maybeShowHappinessPrompt(){
   const wk=getWeekKey(0);
   const log=_getHappinessLog();
@@ -4489,7 +4540,7 @@ function skipHappinessWeek(personKey){
   if(!log[personKey])log[personKey]={};
   log[personKey][wk]={score:null,skipped:true,ts:Date.now()};
   _setHappinessLog(log);
-  dismissHappinessPrompt();
+  dismissHappinessPrompt();_hpRefreshDash();
 }
 function submitHappiness(personKey){
   if(!_hpSelectedFace)return;
@@ -4498,7 +4549,7 @@ function submitHappiness(personKey){
   if(!log[personKey])log[personKey]={};
   log[personKey][wk]={score:_hpSelectedFace,note:(document.getElementById('hp-note')?.value||'').trim(),ts:Date.now()};
   _setHappinessLog(log);
-  dismissHappinessPrompt();
+  dismissHappinessPrompt();_hpRefreshDash();
   toast('Thanks — logged for this week','success');
 }
 // Personal trend — last 8 weeks, shown in Settings → My Profile
@@ -4513,7 +4564,7 @@ function renderHappinessTrend(personKey){
     const lbl=`${d.getDate()}/${d.getMonth()+1}`;
     return`<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;">
       <div style="font-size:18px;opacity:${e?.score?1:.25};">${e?.score?FACE_EMOJI[e.score]:'·'}</div>
-      <div style="font-size:9px;color:var(--muted);">${lbl}</div>
+      <div style="font-size:10px;color:var(--muted);">${lbl}</div>
     </div>`;
   }).join('');
   return`<div style="display:flex;gap:2px;padding:10px 0;">${rows}</div>`;
@@ -4591,15 +4642,17 @@ function renderSchedule(){
   const allPeople=Object.keys(people).filter(k=>!people[k]._archived);
   const selected=_getScheduleSelectedPeople();
 
-  const peoplePicker=`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+  // People filter: one compact row of avatars (names on hover) plus team shortcuts — the old
+  // first-name pills wrapped to two rows and repeated names like "Bianca" (review B7).
+  const _teams=[...new Set(allPeople.map(k=>people[k].team).filter(Boolean))].sort();
+  const peoplePicker=`<div class="sched-pick">
+    <button class="sched-pick-btn${selected.length===allPeople.length?' on':''}" onclick="toggleScheduleAllPeople()">${selected.length===allPeople.length?'Everyone':'All'}</button>
+    ${_teams.map(t=>{const tk=allPeople.filter(k=>people[k].team===t);const on=tk.length&&tk.every(k=>selected.includes(k))&&selected.length===tk.length;return`<button class="sched-pick-btn${on?' on':''}" onclick="_setScheduleSelectedPeople(${esc(JSON.stringify(tk))});renderSchedule()">${esc(t)}</button>`;}).join('')}
+    <span class="sched-pick-sep"></span>
     ${allPeople.map(k=>{
       const p=people[k];const on=selected.includes(k);
-      return`<div onclick="toggleSchedulePerson('${k}')" title="${p.name}" style="cursor:pointer;display:flex;align-items:center;gap:5px;padding:3px 9px 3px 4px;border-radius:14px;border:1px solid ${on?'var(--ink)':'var(--border)'};background:${on?'var(--white)':'transparent'};opacity:${on?1:.5};box-shadow:${on?'var(--shadow-s)':'none'};transition:opacity .12s,border-color .12s;">
-        <div style="width:18px;height:18px;border-radius:50%;background:${p.color||'#999'};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;color:#fff;flex-shrink:0;">${p.initials||'?'}</div>
-        <span style="font-size:11px;font-weight:${on?'500':'400'};">${p.name.split(' ')[0]}</span>
-      </div>`;
+      return`<div class="sched-av${on?' on':''}" onclick="toggleSchedulePerson('${k}')" title="${esc(p.name)}${on?'':' (hidden)'}" style="background:${p.color||'#999'};">${esc(p.initials||'?')}</div>`;
     }).join('')}
-    <button class="d-action" style="font-size:11px;" onclick="toggleScheduleAllPeople()">${selected.length===allPeople.length?'Deselect all':'Select all'}</button>
   </div>`;
 
   const rows=selected.map(k=>{
@@ -4698,7 +4751,7 @@ function renderExpensesList(){
   el.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:13px;">
     <thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:10px 14px;font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.06em;">Date</th><th style="text-align:left;padding:10px 14px;font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.06em;">Expense</th><th style="text-align:left;padding:10px 14px;font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.06em;">Job / Client</th><th style="text-align:right;padding:10px 14px;font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.06em;">Cost</th><th style="text-align:right;padding:10px 14px;font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.06em;">Sell</th><th style="text-align:center;padding:10px 14px;font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.06em;">Status</th></tr></thead>
     <tbody>${filtered.map(e=>{
-      const stBadge=e._st?`<span style="font-size:9px;background:#e8f4fd;color:#2980b9;border-radius:3px;padding:1px 4px;margin-left:4px;">ST</span>`:'';
+      const stBadge=e._st?`<span style="font-size:10px;background:#e8f4fd;color:#2980b9;border-radius:3px;padding:1px 4px;margin-left:4px;">ST</span>`:'';
       const statusCls=e.status.includes('approved')?'color:#2E7D32':'color:var(--muted)';
       return`<tr style="cursor:${e.jobId?'pointer':'default'};border-bottom:1px solid var(--faint);" ${e.jobId?`onclick="openExpenseDetail('${e.id}','${e._st?'st':'local'}','${e.jobId}')"`:''}>
         <td style="padding:10px 14px;color:var(--muted);">${e.date?.slice(0,10)||'—'}</td>
@@ -4941,7 +4994,12 @@ function navTo(v){
 }
 let _invMode='all'; // kept for compat
 function setInvMode(mode){_invMode=mode;renderInvoices();}
+const _JOBS_PRIMARY={quotes:['New quote','openNewQuoteModal'],expenses:['Add expense','openLogExpense'],clients:['Add client','openNewClientModal']};
+let _jobsTab='jobs';
+function _jobsPrimaryAction(){const a=_JOBS_PRIMARY[_jobsTab];if(a)window[a[1]]();else openCreateJob();}
 function switchJobsTab(tab){
+  _jobsTab=tab;
+  const _pl=document.getElementById('jobs-primary-lbl');if(_pl)_pl.textContent=(_JOBS_PRIMARY[tab]||['New job'])[0];
   document.querySelectorAll('.jsn-tab').forEach(el=>el.classList.toggle('on',el.dataset.tab===tab));
   document.querySelectorAll('.jt-panel').forEach(el=>el.style.display='none');
   const panel=document.getElementById('jt-'+tab);
@@ -5023,7 +5081,7 @@ function _buildCalDayBlocks(tasksForDay,d,showDone){
       ondragend="calDragEnd(event)"
       onclick="openEditTodoById('${t.id}',${d})"
       oncontextmenu="event.preventDefault();showTaskContextMenu(event,window._calTaskMap['${t.id}'],${d})">
-      <div class="ctb-title" style="${titleStyle}">${esc(t.title)}${(t.repeat||t.repeatGroup)?' <i class="ti ti-repeat" style="font-size:9px;opacity:.6;"></i>':''}</div>
+      <div class="ctb-title" style="${titleStyle}">${esc(t.title)}${(t.repeat||t.repeatGroup)?' <i class="ti ti-repeat" style="font-size:10px;opacity:.6;"></i>':''}</div>
       ${_calShowHours&&heightPx>36?`<div class="ctb-hrs">${t.hours?formatHrs(t.hours):''}</div>`:''}
       ${showJob?`<div class="ctb-job">${jobName}</div>`:''}
       ${isDone?'':'<div class="ctb-resize" onmousedown="calResizeStart(event,\''+t.id+'\','+d+')" onclick="event.stopPropagation()"></div>'}
@@ -5074,7 +5132,7 @@ function renderTodoCalendar(){
       <button class="cal-filter-chip${_calFilterPersonal?' on':''}" onclick="toggleCalFilter('personal')"><i class="ti ti-user" style="font-size:10px;"></i> Personal</button>
       <button class="cal-filter-chip${_calFilterJob?' on':''}" onclick="toggleCalFilter('job')"><i class="ti ti-briefcase" style="font-size:10px;"></i> Job tasks</button>
       <button class="cal-filter-chip${_calFilterUrgentOnly?' on':''}" onclick="toggleCalFilter('urgent')"><i class="ti ti-alert-circle" style="font-size:10px;color:var(--red);"></i> Urgent only</button>
-      <button class="cal-filter-chip${_calFilterShowDone?' on':''}" onclick="toggleCalFilter('done')"><i class="ti ti-circle-check" style="font-size:10px;color:#4CAF50;"></i> Completed</button>
+      <button class="cal-filter-chip${_calFilterShowDone?' on':''}" onclick="toggleCalFilter('done')"><i class="ti ti-circle-check" style="font-size:10px;color:var(--ok);"></i> Completed</button>
       <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
         <button class="cal-filter-chip${_calShowHours?' on':''}" onclick="toggleCalFilter('hours')" title="Toggle time labels"><i class="ti ti-clock" style="font-size:10px;"></i> Time</button>
       </div>
@@ -5118,7 +5176,7 @@ function renderTodoCalendar(){
     ondrop="calDropToDrawer(event)">
     <div class="todo-drawer-handle">
       <div style="display:flex;align-items:center;gap:10px;flex:1;cursor:pointer;" onclick="toggleDrawer()">
-        <i class="ti ti-circle-check" style="font-size:14px;color:#4CAF50;"></i>
+        <i class="ti ti-circle-check" style="font-size:14px;color:var(--ok);"></i>
         <span class="todo-drawer-label">Completed this week</span>
         <span class="todo-drawer-count">${doneCount}</span>
         <i class="ti ${_drawerOpen?'ti-chevron-down':'ti-chevron-up'}" id="drawer-icon" style="font-size:12px;color:var(--muted);"></i>
@@ -5536,10 +5594,10 @@ function renderTodo(){
     }
 
     col.innerHTML=`
-      <div class="day-head"${isWork&&isOver?' style="background:#FFF3E0;"':''}>
+      <div class="day-head"${isWork&&isOver?' style="background:var(--warn-bg);"':''}>
         <div class="day-head-row">
           <div><div class="day-name">${DAY_NAMES[i]}</div><div class="day-num ${isToday?'today-red':''}">${calDate}</div></div>
-          ${isWork?`<button class="day-add-btn" onclick="openTodoModal(null,${d})"><i class="ti ti-plus" style="font-size:9px"></i> Add New</button>`:''}
+          ${isWork?`<button class="day-add-btn" onclick="openTodoModal(null,${d})"><i class="ti ti-plus" style="font-size:10px"></i> Add New</button>`:''}
         </div>
         ${capHTML}
       </div>
@@ -5731,7 +5789,7 @@ function createTaskCard(t,day,isDone){
   card.innerHTML=`
     <div class="tc-top">
       <span class="tc-icon">${icon}</span>
-      <span class="tc-title">${esc(displayTitle)}${(t.repeat||t.repeatGroup)?' <i class="ti ti-repeat" title="Repeating task" style="font-size:10px;color:var(--muted);"></i>':''}${t._completedViaAssignment?' <i class="ti ti-check" title="Marked complete in Streamtime — no time was logged against it" style="font-size:10px;color:#4CAF50;"></i>':''}</span>
+      <span class="tc-title">${esc(displayTitle)}${(t.repeat||t.repeatGroup)?' <i class="ti ti-repeat" title="Repeating task" style="font-size:10px;color:var(--muted);"></i>':''}${t._completedViaAssignment?' <i class="ti ti-check" title="Marked complete in Streamtime — no time was logged against it" style="font-size:10px;color:var(--ok);"></i>':''}</span>
       ${(showHours&&hrsLabel)?`<span class="tc-hrs" id="hrs-${t.id}">${hrsLabel}</span>`:''}
     </div>
     ${(metaJob||metaItem)?`<div class="tc-meta">
@@ -7162,14 +7220,14 @@ function renderJobs(){
       const bPct=j._bPct||0;const hPct=j._hPct||0;
       const bCol=bPct>=100?'var(--red)':bPct>=80?'#FF9800':'#4CAF50';
       const hCol=hPct>=100?'var(--red)':hPct>=80?'#FF9800':'#4CAF50';
-      const billDot=j.billable===false?'<span style="width:6px;height:6px;border-radius:50%;background:#CBD5E1;display:inline-block;margin-right:5px;" title="Non-billable"></span>':'<span style="width:6px;height:6px;border-radius:50%;background:#4CAF50;display:inline-block;margin-right:5px;" title="Billable"></span>';
+      const billDot=j.billable===false?'<span style="width:6px;height:6px;border-radius:50%;background:#CBD5E1;display:inline-block;margin-right:5px;" title="Non-billable"></span>':'<span style="width:6px;height:6px;border-radius:50%;background:var(--ok);display:inline-block;margin-right:5px;" title="Billable"></span>';
       const labels=(j.labels||[]).slice(0,3).map(l=>{const c=labelColor(l);return`<span class="job-label-pip" style="background:${c}18;color:${c};border:1px solid ${c}44;">${l}</span>`;}).join('');
       const notePrev=j.notes?`<div class="job-notes-preview" title="${j.notes.replace(/"/g,'&quot;')}">${linkify(j.notes.replace(/</g,'&lt;'))}</div>`:'';
-      const pausedBadge=j.paused?`<span class="paused-badge" style="margin-left:6px;"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>`:'';
+      const pausedBadge=j.paused?`<span class="paused-badge" style="margin-left:6px;"><i class="ti ti-pause" style="font-size:10px;"></i> Paused</span>`:'';
       const jPhases=j.id===activeJobId?phases:[];
       const totalItems=jPhases.reduce((s,p)=>s+p.items.length,0);
       const doneItems=jPhases.reduce((s,p)=>s+p.items.filter(i=>i.status==='complete').length,0);
-      const progHTML=totalItems>0?`<div class="job-prog-row"><div class="job-prog-bar"><div class="job-prog-fill" style="width:${Math.round(doneItems/totalItems*100)}%;background:#4CAF50;"></div></div><span>${doneItems}/${totalItems}</span></div>`:'';
+      const progHTML=totalItems>0?`<div class="job-prog-row"><div class="job-prog-bar"><div class="job-prog-fill" style="width:${Math.round(doneItems/totalItems*100)}%;background:var(--ok);"></div></div><span>${doneItems}/${totalItems}</span></div>`:'';
       const wfLabel=jWf==='quote'?'Quote':jWf==='completed'?'Completed':jWf==='invoiced'?'Invoiced':'Live job';
       const wfCls=jWf==='quote'?'wf-quote':jWf==='completed'?'wf-completed':jWf==='invoiced'?'wf-invoiced':'wf-live';
       const tr=document.createElement('tr');tr.onclick=()=>openJobDetail(j.id);
@@ -7179,7 +7237,7 @@ function renderJobs(){
           <div class="job-num-name"><span class="job-num">${j.id}</span><span class="job-name">${esc(j.name)}</span>${pausedBadge}</div>
           ${notePrev}
         </td>
-        <td class="cj-company"><span class="job-co">${billDot}${esc(j.company)}</span></td>
+        <td class="cj-company"><span class="job-co" title="${esc(j.company)}">${billDot}${esc(j.company)}</span></td>
         <td class="cj-budget">
           <div class="bbar-wrap">
             <div class="bbar-nums"><span style="font-weight:400;color:${bPct>=100?'var(--red)':'inherit'}">$${(j._sellUsed||0).toLocaleString()}</span><span class="bbar-of">/ $${(j._plannedSell||0).toLocaleString()}</span></div>
@@ -7195,7 +7253,7 @@ function renderJobs(){
           </div>
         </td>
         <td class="cj-labels"><div class="job-labels-cell">${labels||'<span style="font-size:12px;color:var(--muted);">—</span>'}</div>${progHTML}</td>
-        <td class="cj-status"><span class="wf-badge ${wfCls}">${wfLabel}</span>${j.po?`<div style="font-size:10px;color:var(--muted);margin-top:3px;">PO ${j.po}</div>`:''}</td>`;
+        <td class="cj-status">${wfCls==='wf-live'?`<span class="wf-quiet"><i></i>Live</span>`:`<span class="wf-badge ${wfCls}">${wfLabel}</span>`}${j.po?`<div style="font-size:10px;color:var(--muted);margin-top:3px;">PO ${j.po}</div>`:''}</td>`;
       frag.appendChild(tr);
       _jobsRenderedCount=i+1;
     }
@@ -7322,27 +7380,27 @@ function openJobDetail(id){
   if(!j.lead){const cl=clientsData.find(c=>c.name===j.company);if(cl&&cl.lead)j.lead=cl.lead;}
   const leadPerson=j.lead&&people[j.lead]?people[j.lead]:null;
   const leadHtml=leadPerson?`<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;"><div style="width:16px;height:16px;border-radius:50%;background:${leadPerson.color};display:inline-flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:600;">${leadPerson.initials}</div> ${leadPerson.name}</span> · `:'';
-  const archivedBadge=j.status==='archived'?' &nbsp;<span class="paused-badge" style="background:#F5F5F5;color:#757575;border-color:#E0E0E0;"><i class="ti ti-archive" style="font-size:9px;"></i> Archived</span>':'';
+  const archivedBadge=j.status==='archived'?' &nbsp;<span class="paused-badge" style="background:#F5F5F5;color:#757575;border-color:#E0E0E0;"><i class="ti ti-archive" style="font-size:10px;"></i> Archived</span>':'';
   const _now=new Date();_now.setHours(0,0,0,0);
   const _due=j.dueDate?_pDate(j.dueDate):null;
   const _dueStr=_due?fmtDate(j.dueDate):'';
   const _dueSoon=_due&&(_due-_now)/(86400000)<=7&&_due>=_now&&j.status==='inplay';
   const _overdue=_due&&_due<_now&&j.status==='inplay';
   const _dueBadgeCls=_overdue?'background:#FFEBEE;color:#C62828;border-color:#EF9A9A;':_dueSoon?'background:#FFF9C4;color:#E65100;border-color:#FFE082;':'';
-  const _dueIcon=_overdue?'<i class="ti ti-alert-triangle" style="font-size:9px;"></i> ':_dueSoon?'<i class="ti ti-clock" style="font-size:9px;"></i> ':'';
+  const _dueIcon=_overdue?'<i class="ti ti-alert-triangle" style="font-size:10px;"></i> ':_dueSoon?'<i class="ti ti-clock" style="font-size:10px;"></i> ':'';
   const _startStr=j.startDate?fmtDate(j.startDate):'';
   // ONE dates control (was two separate Set start / Set due pills): shows the range when
   // set ("10 Mar → 8 Apr"), "Set dates" when empty. Click opens a two-field popover
   // (editJobDates). Overdue/due-soon colouring carries over from the old due pill.
-  const _dateTxt=(!_startStr&&!_dueStr)?'<i class="ti ti-calendar" style="font-size:9px;"></i> Set dates'
+  const _dateTxt=(!_startStr&&!_dueStr)?'<i class="ti ti-calendar" style="font-size:10px;"></i> Set dates'
     :`${_dueIcon}${_startStr||'…'} <span style="opacity:.55;">→</span> ${_dueStr?(_overdue?'Overdue · ':'')+_dueStr:'…'}`;
   const _datesBadge=` &nbsp;<span class="paused-badge" style="cursor:pointer;user-select:none;position:relative;${_dueBadgeCls}" title="Click to edit start & due dates" onclick="editJobDates(event,'${id}')">${_dateTxt}</span>`;
   // Single canonical status control — was previously TWO overlapping badges (the workflow
   // "LIVE JOB →" pill and a separate "In Play" status pill). Now one .wf-badge: click the
   // label to set status directly (editJobStatusField), click the → to advance the workflow
   // stage (advanceWorkflow). Both behaviours preserved, no duplication.
-  const _statusCtl=` &nbsp;<span class="wf-badge ${wfCls}" style="user-select:none;padding-right:3px;"><span style="cursor:pointer;" title="Click to set status" onclick="editJobStatusField('${id}')">${wfLabel}</span><i class="ti ti-arrow-right" title="Advance workflow stage" onclick="advanceWorkflow('${id}')" style="font-size:9px;vertical-align:middle;margin-left:5px;padding:1px 3px;cursor:pointer;"></i></span>`;
-  document.getElementById('d-meta-line').innerHTML=`${j.id} · ${esc(j.company)} · ${leadHtml}${j.billable?'Billable':'Non-billable'}${j.po?` · PO ${j.po}`:''}`+_statusCtl+(j.paused?' &nbsp;<span class="paused-badge"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>':'')+archivedBadge+_datesBadge;
+  const _statusCtl=` &nbsp;<span class="wf-badge ${wfCls}" style="user-select:none;padding-right:3px;"><span style="cursor:pointer;" title="Click to set status" onclick="editJobStatusField('${id}')">${wfLabel}</span><i class="ti ti-arrow-right" title="Advance workflow stage" onclick="advanceWorkflow('${id}')" style="font-size:10px;vertical-align:middle;margin-left:5px;padding:1px 3px;cursor:pointer;"></i></span>`;
+  document.getElementById('d-meta-line').innerHTML=`${j.id} · ${esc(j.company)} · ${leadHtml}${j.billable?'Billable':'Non-billable'}${j.po?` · PO ${j.po}`:''}`+_statusCtl+(j.paused?' &nbsp;<span class="paused-badge"><i class="ti ti-pause" style="font-size:10px;"></i> Paused</span>':'')+archivedBadge+_datesBadge;
   let _titleEl=document.getElementById('d-title-text');
   if(_titleEl.tagName!=='DIV'){
     const _div=document.createElement('div');
@@ -7370,7 +7428,7 @@ function openJobDetail(id){
   // Job notes field
   const notesRow=document.getElementById('job-notes-row');
   const notesInp=document.getElementById('job-notes-inp');
-  if(notesRow&&notesInp){notesRow.style.display='';notesInp.value=j.notes||'';}
+  if(notesRow&&notesInp){notesRow.style.display='';notesInp.value=j.notes||'';requestAnimationFrame(()=>_fitNotes(notesInp));}
   if(!j.activity)j.activity=[];
   if(!j.invNum)j.invNum=null;
   // Load phases from stored job, or use SFF_PHASES as default for new jobs
@@ -7526,9 +7584,9 @@ function openJobSettingsModal(){
         </label>
         <span style="font-size:11px;color:var(--muted);">Billable jobs track sell value against planned budget</span>
       </div>
-      <div style="padding:12px 16px;background:${j.paused?'#FFF3E0':'var(--off)'};border:1px solid ${j.paused?'#FFE0B2':'var(--border)'};border-radius:2px;display:flex;align-items:center;gap:10px;margin-top:8px;">
+      <div style="padding:12px 16px;background:${j.paused?'var(--warn-bg)':'var(--off)'};border:1px solid ${j.paused?'#FFE0B2':'var(--border)'};border-radius:2px;display:flex;align-items:center;gap:10px;margin-top:8px;">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:400;">
-          <input type="checkbox" id="jsett-paused" ${j.paused?'checked':''} style="cursor:pointer;accent-color:#E65100;width:15px;height:15px;">
+          <input type="checkbox" id="jsett-paused" ${j.paused?'checked':''} style="cursor:pointer;accent-color:var(--warn-ink);width:15px;height:15px;">
           Pause job
         </label>
         <span style="font-size:11px;color:var(--muted);">Paused jobs cannot have time logged against them</span>
@@ -7623,7 +7681,7 @@ function deleteJobConfirm(id){
 }
 
 function _statBlock(label,val,sub,pct,col){
-  const bar=pct!=null?`<div class="stat-bar" style="margin-top:8px;"><div class="stat-bar-fill" style="width:${Math.min(100,pct)}%;background:${col||'#4CAF50'};"></div></div>`:'';
+  const bar=pct!=null?`<div class="stat-bar" style="margin-top:8px;"><div class="stat-bar-fill" style="width:${Math.min(100,pct)}%;background:${col||'var(--ok)'};"></div></div>`:'';
   const subHtml=sub?`<div style="font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:.05em;">${sub}</div>`:'';
   return`<div class="stat-b"><div class="stat-label">${label}</div><div class="stat-val">${val}</div>${subHtml}${bar}</div>`;
 }
@@ -8253,7 +8311,7 @@ function _docModalShell(titleWord,statusPill,metaHTML,lineRows,totalsRows,extraH
             <div style="margin-top:10px;">${statusPill}</div>
           </div>
         </div>
-        <div style="width:52px;height:3px;background:#ED1E24;margin:28px 0 26px;"></div>
+        <div style="width:52px;height:3px;background:var(--red);margin:28px 0 26px;"></div>
         <div style="display:flex;gap:24px;margin-bottom:32px;font-size:12.5px;line-height:1.75;">${metaHTML}</div>
         ${lineRows?`<table style="width:100%;border-collapse:collapse;">
           <thead><tr>
@@ -8265,7 +8323,7 @@ function _docModalShell(titleWord,statusPill,metaHTML,lineRows,totalsRows,extraH
         :'<div style="font-size:12px;color:var(--muted);margin-bottom:22px;padding:14px 16px;background:var(--off);border-radius:10px;">No linked job plan to itemise — showing document totals only.</div>'}
         <div style="display:flex;justify-content:flex-end;"><div style="min-width:300px;background:var(--off);border-radius:12px;padding:14px 18px;"><table style="font-size:13px;width:100%;">${totalsRows}</table></div></div>
         ${extraHTML||''}
-        <div style="margin-top:46px;padding-top:16px;border-top:1px solid var(--faint);display:flex;justify-content:space-between;align-items:baseline;gap:14px;font-size:10.5px;color:var(--muted);flex-wrap:wrap;">
+        <div style="margin-top:46px;padding-top:16px;border-top:1px solid var(--faint);display:flex;justify-content:space-between;align-items:baseline;gap:14px;font-size:10px;color:var(--muted);flex-wrap:wrap;">
           <span style="font-weight:600;color:var(--ink);letter-spacing:.01em;">Content &amp; Co</span>
           <span>NZ Ltd · Level 1, 53 Fort Street, Auckland · GST 116710013</span>
           <span><a href="https://content-co.nz" target="_blank" style="color:var(--red);text-decoration:none;">content-co.nz</a></span>
@@ -8311,7 +8369,7 @@ function openInvoiceDocPreview(invId){
   const meta=`<div style="flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Billed to</div><div style="font-weight:500;font-size:13px;">${inv.company?.name||'—'}</div>${billContact?`<div style="color:var(--muted);margin-top:2px;">${billContact}</div>`:''}${job?`<div style="color:var(--muted);margin-top:2px;">Job #${job.id} · ${esc(job.name)}</div>`:''}${inv.purchaseOrderNumber?`<div style="color:var(--muted);">PO ${inv.purchaseOrderNumber}</div>`:''}</div>
     <div style="text-align:right;color:var(--muted);"><div><strong style="color:var(--ink);">Invoice #:</strong> ${inv.number||inv.id}</div><div><strong style="color:var(--ink);">Issued:</strong> ${_docFmtDate(inv.invoiceDate)}</div><div><strong style="color:var(--ink);">Due:</strong> ${_docFmtDate(inv.dueDate)}</div>${inv.paidDate?`<div><strong style="color:var(--ink);">Paid:</strong> ${_docFmtDate(inv.paidDate)}</div>`:''}</div>`;
   let totals=`<tr><td style="padding:5px 10px;color:var(--muted);">Subtotal (ex GST)</td><td style="padding:5px 10px;text-align:right;">$${Math.round(ex).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;color:var(--muted);">GST (15%)</td><td style="padding:5px 10px;text-align:right;">$${gst.toLocaleString()}</td></tr><tr style="border-top:1px solid var(--border);"><td style="padding:7px 10px;font-weight:600;">Total (inc GST)</td><td style="padding:7px 10px;text-align:right;font-weight:600;font-family:var(--display);font-size:15px;">$${Math.round(inc).toLocaleString()}</td></tr>`;
-  if(paid>0)totals+=`<tr><td style="padding:5px 10px;color:#2E7D32;">Paid</td><td style="padding:5px 10px;text-align:right;color:#2E7D32;">-$${Math.round(paid).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;font-weight:600;">Balance due</td><td style="padding:5px 10px;text-align:right;font-weight:600;">$${Math.round(bal).toLocaleString()}</td></tr>`;
+  if(paid>0)totals+=`<tr><td style="padding:5px 10px;color:var(--ok-ink);">Paid</td><td style="padding:5px 10px;text-align:right;color:var(--ok-ink);">-$${Math.round(paid).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;font-weight:600;">Balance due</td><td style="padding:5px 10px;text-align:right;font-weight:600;">$${Math.round(bal).toLocaleString()}</td></tr>`;
   _docModalShell('Tax Invoice',pill,meta,_docLineItemsHTML(job),totals,'');
 }
 // ── Job Timeline — lightweight Gantt-style view built from phase/item date ranges ──
@@ -8338,7 +8396,7 @@ function renderMilestonesSection(){
     const dateCell=canEdit
       ?`<span class="item-editable" title="Click to edit date" onclick="inlineEditMilestone(event,'${m.id}','date')">${dateLabel}</span>`
       :`<span style="color:var(--muted);">${dateLabel}</span>`;
-    const stTag=m._source==='st'?'<span style="font-size:9px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">ST</span>':'';
+    const stTag=m._source==='st'?'<span style="font-size:10px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">ST</span>':'';
     const delBtn=canEdit?`<i class="ti ti-x" title="Delete milestone" style="cursor:pointer;color:var(--muted);font-size:12px;" onclick="deleteMilestoneRow('${m.id}')"></i>`:'';
     return`<div class="ms-row" style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--faint);">
       <i class="ti ti-flag-3" style="font-size:13px;color:var(--muted);flex-shrink:0;"></i>
@@ -8475,7 +8533,7 @@ function renderTimelineTab(){
       </div>
     </div>
     <div style="display:flex;gap:16px;margin-top:12px;font-size:11px;color:var(--muted);">
-      <span><span style="display:inline-block;width:10px;height:10px;background:#ED1E24;border-radius:2px;vertical-align:-1px;"></span> Open</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--red);border-radius:2px;vertical-align:-1px;"></span> Open</span>
       <span><span style="display:inline-block;width:10px;height:10px;background:#C4956A;border-radius:2px;vertical-align:-1px;"></span> Paused</span>
       <span><span style="display:inline-block;width:10px;height:10px;background:#7B9E87;border-radius:2px;vertical-align:-1px;"></span> Complete</span>
     </div>`;
@@ -8567,7 +8625,7 @@ function renderQuoteTab(){
   ];
   const _qtStatusPillSm=s=>{
     if(s==='approved')return'<span class="inv-pill approved">Approved</span>';
-    if(s==='declined')return'<span class="inv-pill" style="background:#FFF3E0;color:#E65100;border:1px solid #FFCC80;">Declined</span>';
+    if(s==='declined')return'<span class="inv-pill" style="background:var(--warn-bg);color:var(--warn-ink);border:none;">Declined</span>';
     if(s==='sent')return'<span class="inv-pill sent">Sent</span>';
     return'<span class="inv-pill draft">Draft</span>';
   };
@@ -8582,7 +8640,7 @@ function renderQuoteTab(){
       const val=qt.totalAmountExTax!=null?`$${Math.round(qt.totalAmountExTax).toLocaleString()}`:'—';
       return`<div class="st-qt-row" onclick="openQuoteDocPreview('${qt.id}')">
         <div style="min-width:0;flex:1;">
-          <div style="font-size:13px;font-weight:400;">${esc(qt.quoteName||qt.quoteNumber||'Quote')}${qt._local?'<span style="font-size:9px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">Local</span>':''}</div>
+          <div style="font-size:13px;font-weight:400;">${esc(qt.quoteName||qt.quoteNumber||'Quote')}${qt._local?'<span style="font-size:10px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">Local</span>':''}</div>
           <div style="font-size:11px;color:var(--muted);margin-top:2px;">${qt.quoteNumber||qt.id} · ${qt.sentDate?'Sent '+_fmtQD(qt.sentDate):'Not sent'}</div>
         </div>
         <div style="font-size:13px;font-family:var(--display);flex-shrink:0;">${val}</div>
@@ -8803,8 +8861,8 @@ function renderPhases(){
   phases.forEach(ph=>{
     const el=document.createElement('div');el.className='phase';el.id='pw_'+ph.id;
     const sell=pSell(ph);const hrs=pHrs(ph);const cnt=ph.items.length;
-    const statusIcon=ph.status==='complete'?'<i class="ti ti-circle-check" style="color:#4CAF50;font-size:13px;"></i>':'<i class="ti ti-circle-dot" style="color:#ED1E24;font-size:13px;"></i>';
-    const pausedTag=ph.paused?`<span class="paused-badge" style="margin-right:4px;"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>`:'';
+    const statusIcon=ph.status==='complete'?'<i class="ti ti-circle-check" style="color:var(--ok);font-size:13px;"></i>':'<i class="ti ti-circle-dot" style="color:var(--red);font-size:13px;"></i>';
+    const pausedTag=ph.paused?`<span class="paused-badge" style="margin-right:4px;"><i class="ti ti-pause" style="font-size:10px;"></i> Paused</span>`:'';
     const addActions=_readonly?'':`<div class="plan-row-actions"><div class="add-i-row" onclick="showAddItemForm('${ph.id}')"><i class="ti ti-plus" style="font-size:11px"></i> Add item</div><div class="add-i-row" style="border-left:1px solid var(--border);" onclick="showAddExpenseInline('${ph.id}')"><i class="ti ti-receipt" style="font-size:11px"></i> Add expense</div></div>`;
     const phMenu=_readonly?'':`<i class="ti ti-dots ph-mb" onclick="showPctx(event,'${ph.id}')"></i>`;
     // Non-billable is a job-level setting (default billable), not inferred from $0 rates.
@@ -8842,8 +8900,8 @@ function renderItems(phId,_readonly){
   ph.items.forEach(item=>{
     const tr=document.createElement('tr');tr.id='item_'+item.id;tr.draggable=!_readonly;tr.dataset.itemId=item.id;tr.dataset.phId=phId;
     if(item.note)tr.classList.add('item-has-note');
-    const iCls=item.status==='complete'?'ib-c':'ib-p';
-    const iLbl=item.status==='complete'?'Complete':'Open';
+    const iCls={complete:'ib-c',inprogress:'ib-ip',paused:'ib-ps'}[item.status]||'ib-p';
+    const iLbl={complete:'Complete',inprogress:'In progress',paused:'Paused'}[item.status]||'Not started';
     const noteIcon=item.note?`<i class="ti ti-note" style="font-size:11px;color:var(--muted);margin-left:5px;" title="${item.note.replace(/"/g,'&quot;')}"></i>`:'';
     // Compute logged hours from todos for this item
     let _loggedH=0;
@@ -8871,6 +8929,12 @@ function renderItems(phId,_readonly){
         _personMins[lt.userId].mins+=(lt.minutes||0);
       });
     }
+    // Streamtime's own item total is authoritative. The logged-time file can lag behind it
+    // (e.g. during a backfill), which showed "— / 5h" hours beside a real sell figure (review A1).
+    if(item._stId&&item._logMins){
+      let _stFileH=0;(stLoggedTimes||[]).forEach(lt=>{if(lt.jobItemUser?.jobItemId===item._stId)_stFileH+=(lt.minutes||0)/60;});
+      if(item._logMins/60>_stFileH+0.01)_loggedH+=item._logMins/60-_stFileH;
+    }
     // Build avatar stack — active users shown as avatars, inactive included in +N tooltip only
     const _teamEntries=Object.values(_personMins).sort((a,b)=>b.mins-a.mins);
     const _activeEntries=_teamEntries.filter(({u})=>u.active!==false);
@@ -8879,7 +8943,7 @@ function renderItems(phId,_readonly){
     const _avHTML=_activeEntries.slice(0,MAX_AV).map(({u,mins})=>`<span class="item-av" style="background:${u.color};">${u.initials}<span class="item-av-tip">${u.name}<br><span style="color:#aaa;">${_stFmtH(mins)}</span></span></span>`).join('');
     const _moreActive=_activeEntries.length>MAX_AV?_activeEntries.slice(MAX_AV):[];
     const _moreAll=[..._moreActive,..._inactiveEntries];
-    const _moreList=_moreAll.map(({u,mins})=>`${u.name}${u.active===false?' <span style="color:#666;font-size:9px;">(inactive)</span>':''}: ${_stFmtH(mins)}`).join('<br>');
+    const _moreList=_moreAll.map(({u,mins})=>`${u.name}${u.active===false?' <span style="color:#666;font-size:10px;">(inactive)</span>':''}: ${_stFmtH(mins)}`).join('<br>');
     const _moreCount=(_activeEntries.length-Math.min(MAX_AV,_activeEntries.length))+_inactiveEntries.length;
     const _moreAv=_moreCount>0?`<span class="item-av-more" style="position:relative;cursor:default;">+${_moreCount}<span class="item-av-tip" style="min-width:160px;text-align:left;">${_moreList}</span></span>`:'';
     const teamCell=`<td><div class="item-av-stack">${_avHTML}${_moreAv}</div></td>`;
@@ -8896,7 +8960,7 @@ function renderItems(phId,_readonly){
     const hrsCell=`<td class="i-hrs ${_overLogged?'i-hrs-over':''}" style="text-align:right;white-space:nowrap;">
   <span style="font-weight:500;color:${_overLogged?'var(--red)':'inherit'}" title="Hours logged">${_loggedStr}</span>
   ${_showPlanned?`<span class="i-sof"> / </span>${_readonly?`<span>${item.hours}</span>`:`<span class="item-editable" title="Click to edit planned hours" onclick="inlineEditItem(event,'${item.id}','${phId}','hours')">${item.hours}</span>`}`:''}
-  ${_showPlanned?`<div class="item-prog"><div class="item-prog-fill" style="width:${Math.min(100,Math.round(_loggedH/_plannedH*100))}%;background:${_overLogged?'var(--red)':_loggedH/_plannedH>0.8?'#F57F17':'#4CAF50'};"></div></div>`:''}
+  ${_showPlanned?`<div class="item-prog"><div class="item-prog-fill" style="width:${Math.min(100,Math.round(_loggedH/_plannedH*100))}%;background:${_overLogged?'var(--red)':_loggedH/_plannedH>0.8?'#F57F17':'var(--ok)'};"></div></div>`:''}
 </td>`;
     const _hasRate=!(item.rate==='—'||item.rate==='$0');
     // Rate is always editable on a live job — even on a non-billable job you can add a rate
@@ -9326,10 +9390,10 @@ function renderExpenses(){
     const hasSubs=subs.length>1;
     const open=!!_expExpanded[e.id];
     const descCell=hasSubs
-      ? `<span style="cursor:pointer;" onclick="toggleExpSubs('${e.id}')"><i class="ti ti-chevron-${open?'down':'right'}" style="font-size:11px;color:var(--muted);margin-right:4px;"></i>${e.desc||'—'}</span><span style="font-size:9px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">${subs.length} lines</span>`
+      ? `<span style="cursor:pointer;" onclick="toggleExpSubs('${e.id}')"><i class="ti ti-chevron-${open?'down':'right'}" style="font-size:11px;color:var(--muted);margin-right:4px;"></i>${e.desc||'—'}</span><span style="font-size:10px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">${subs.length} lines</span>`
       : `${e.desc||e.description||'—'}`;
     let html=`<tr>
-      <td style="font-weight:500;">${descCell}${e._source==='st'?'<span style="font-size:9px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">ST</span>':''}</td>
+      <td style="font-weight:500;">${descCell}${e._source==='st'?'<span style="font-size:10px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">ST</span>':''}</td>
       <td style="color:var(--muted);">${e.date?new Date(e.date+'T00:00:00').toLocaleDateString('en-NZ',{day:'numeric',month:'short',year:'2-digit'}):'-'}</td>
       <td style="text-align:center;">${qty}</td>
       <td>$${cost.toLocaleString()}</td>
@@ -9352,7 +9416,7 @@ function renderExpenses(){
         ${subRows}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
           <span class="add-e-row" style="margin:0;" onclick="_addExpSub('${e.id}')"><i class="ti ti-plus" style="font-size:11px"></i> Add line</span>
-          <span style="font-size:12px;">Itemised total: <strong id="exp-subtotal-${e.id}">$${subSum.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>${Math.abs(diff)>=0.01?` <span style="color:${diff>0?'#FF9800':'var(--red)'};">(${diff>0?'$'+diff.toFixed(2)+' unallocated':'$'+Math.abs(diff).toFixed(2)+' over'})</span>`:' <span style="color:#4CAF50;">✓ matches</span>'}</span>
+          <span style="font-size:12px;">Itemised total: <strong id="exp-subtotal-${e.id}">$${subSum.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>${Math.abs(diff)>=0.01?` <span style="color:${diff>0?'var(--warn)':'var(--red)'};">(${diff>0?'$'+diff.toFixed(2)+' unallocated':'$'+Math.abs(diff).toFixed(2)+' over'})</span>`:' <span style="color:var(--ok);">✓ matches</span>'}</span>
         </div>
       </td></tr>`;
     }
@@ -9952,15 +10016,15 @@ function renderClients(){
       const cjobs=jobs.filter(j=>j.company===c.name);
       const totalInvoiced=cjobs.reduce((a,j)=>a+(j._stInvoiced||0),0);
       const totalPaid=cjobs.reduce((a,j)=>a+(j._stPaid||0),0);
-      const fmtDol=n=>n>=1000?`$${(n/1000).toFixed(0)}k`:(n?`$${n}`:'');
+      const fmtDol=n=>n?fmtDollar(n):''; // $1.5M not $1466k (review A5)
       return`<div class="client-card-full" onclick="openClientDetail('${c.id}')" draggable="true" ondragstart="_showClientDock('${esc(c.name).replace(/'/g,'&#39;')}')" ondragend="_hideTaskDock()">
-        <div class="ccf-name">${c.nickname?`<span style="font-weight:500;">${c.nickname}</span> <span style="font-size:12px;color:var(--muted);font-weight:400;">— ${c.name}</span>`:c.name}</div>
-        <div class="ccf-contact">${c.contact||'<span style="color:#bbb;">No contact added</span>'}</div>
+        <div class="ccf-name">${c.nickname?`<span style="font-weight:500;">${esc(c.nickname)}</span> <span style="font-size:12px;color:var(--muted);font-weight:400;">— ${esc(c.name)}</span>`:esc(c.name)}</div>
+        <div class="ccf-contact">${c.contact?esc(c.contact):'<span style="color:var(--muted);opacity:.7;">No contact added</span>'}</div>
         <div class="ccf-meta">
           <span><strong>${jobCount(c.name)}</strong> jobs</span>
           <span><strong>${activeJobCount(c.name)}</strong> active</span>
           ${totalInvoiced?`<span style="color:var(--ink);">${fmtDol(totalInvoiced)} invoiced</span>`:''}
-          ${totalPaid?`<span style="color:#4CAF50;">${fmtDol(totalPaid)} paid</span>`:''}
+          ${totalPaid?`<span style="color:var(--ok);">${fmtDol(totalPaid)} paid</span>`:''}
           ${c.lead&&people[c.lead]?`<span style="color:var(--muted);">Lead: ${people[c.lead].name}</span>`:''}
         </div>
       </div>`;
@@ -9995,15 +10059,15 @@ function renderClients(){
     const cjobs=jobs.filter(j=>j.company===c.name);
     const totalInvoiced=cjobs.reduce((a,j)=>a+(j._stInvoiced||0),0);
     const totalPaid=cjobs.reduce((a,j)=>a+(j._stPaid||0),0);
-    const fmtDol=n=>n>=1000?`$${(n/1000).toFixed(0)}k`:(n?`$${n}`:'');
+    const fmtDol=n=>n?fmtDollar(n):''; // $1.5M not $1466k (review A5)
     return`<div class="client-card-full" onclick="openClientDetail('${c.id}')" draggable="true" ondragstart="_showClientDock('${esc(c.name).replace(/'/g,'&#39;')}')" ondragend="_hideTaskDock()">
-      <div class="ccf-name" style="display:flex;align-items:center;gap:6px;justify-content:space-between;"><span>${c.nickname?`<span style="font-weight:500;">${c.nickname}</span> <span style="font-size:12px;color:var(--muted);font-weight:400;">— ${c.name}</span>`:c.name}</span>${starBtnHTML('client',c.id,c.nickname||c.name)}</div>
-      <div class="ccf-contact">${c.contact||'<span style="color:#bbb;">No contact added</span>'}</div>
+      <div class="ccf-name" style="display:flex;align-items:center;gap:6px;justify-content:space-between;"><span>${c.nickname?`<span style="font-weight:500;">${esc(c.nickname)}</span> <span style="font-size:12px;color:var(--muted);font-weight:400;">— ${esc(c.name)}</span>`:esc(c.name)}</span>${starBtnHTML('client',c.id,c.nickname||c.name)}</div>
+      <div class="ccf-contact">${c.contact?esc(c.contact):'<span style="color:var(--muted);opacity:.7;">No contact added</span>'}</div>
       <div class="ccf-meta">
         <span><strong>${jobCount(c.name)}</strong> jobs</span>
         <span><strong>${activeJobCount(c.name)}</strong> active</span>
         ${totalInvoiced?`<span style="color:var(--ink);">${fmtDol(totalInvoiced)} invoiced</span>`:''}
-        ${totalPaid?`<span style="color:#4CAF50;">${fmtDol(totalPaid)} paid</span>`:''}
+        ${totalPaid?`<span style="color:var(--ok);">${fmtDol(totalPaid)} paid</span>`:''}
         ${c.group?`<span style="font-size:10px;background:var(--off);border:1px solid var(--border);border-radius:3px;padding:1px 5px;color:var(--muted);">${c.group}</span>`:''}
         ${c.lead&&people[c.lead]?`<span style="color:var(--muted);">Lead: ${people[c.lead].name}</span>`:''}
       </div>
@@ -10045,7 +10109,7 @@ function renderClients(){
         <option value="revenue"${sortBy==='revenue'?' selected':''}>Sort: Revenue</option>
       </select>
       <label class="filter-btn" style="cursor:pointer;"><input type="checkbox" id="clients-active-only"${activeOnly?' checked':''} style="margin-right:5px;accent-color:var(--red)" onchange="renderClients()"/> Active only</label>
-      <button class="d-action primary" onclick="openNewClientModal()"><i class="ti ti-plus" style="font-size:12px;"></i> Add client</button>
+
     </div>
     ${clientsData.length===0?emptyStateHTML('ti-building','No clients yet','Clients are created automatically when you add a job, or add one here to get a head start.','Add client','openNewClientModal()'):''}
     ${clientsData.length>0&&filtered.length===0?emptyStateHTML('ti-filter-off','No clients match','Nothing matches that search.','',''):''}
@@ -10118,7 +10182,7 @@ function openClientDetail(id){
     <div style="min-width:200px;display:flex;gap:20px;">
       <div style="text-align:center;"><div class="micro-lbl">Revenue logged</div><div style="font-size:15px;font-weight:500;">${fmtD(totalSell)}</div></div>
       <div style="text-align:center;"><div class="micro-lbl">Invoiced</div><div style="font-size:15px;font-weight:500;">${fmtD(totalInvoiced)}</div></div>
-      <div style="text-align:center;"><div class="micro-lbl">Paid</div><div style="font-size:15px;font-weight:500;color:#4CAF50;">${fmtD(totalPaid)}</div></div>
+      <div style="text-align:center;"><div class="micro-lbl">Paid</div><div style="font-size:15px;font-weight:500;color:var(--ok);">${fmtD(totalPaid)}</div></div>
     </div>
   `;
   // Contacts section — ST contacts (read-only) + local contacts (editable)
@@ -10165,7 +10229,7 @@ function openClientDetail(id){
           <span class="job-num">${j.id}</span>
           <span style="flex:1;font-size:13px;font-weight:400;">${j.name}</span>
           <span class="wf-badge ${wfCls}">${wfLabel}</span>
-          ${j.billable?'<span style="font-size:10px;background:#E8F5E9;color:#2E7D32;padding:2px 6px;border-radius:10px;">Billable</span>':''}
+          ${j.billable?'<span style="font-size:10px;background:var(--ok-bg);color:var(--ok-ink);padding:2px 6px;border-radius:10px;">Billable</span>':''}
         </div>
         <div style="display:flex;align-items:center;gap:16px;">
           <div style="flex:1;background:var(--off);border-radius:2px;height:3px;overflow:hidden;">
@@ -10570,7 +10634,7 @@ function renderSettings(){
       <div style="display:flex;gap:12px;align-items:flex-start;flex:1;">
         <div style="width:36px;height:36px;border-radius:8px;background:var(--off);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;">${icon}</div>
         <div>
-          <div style="font-size:13px;font-weight:500;">${name} <span style="font-size:10px;padding:2px 7px;border-radius:3px;font-weight:500;margin-left:4px;${badge==='live'?'background:#E8F5E9;color:#2E7D32;':badge==='soon'?'background:#FFF8E1;color:#F57F17;':'background:var(--off);color:var(--muted);'}">${badge==='live'?'Live':badge==='soon'?'Coming soon':'Not connected'}</span></div>
+          <div style="font-size:13px;font-weight:500;">${name} <span style="font-size:10px;padding:2px 7px;border-radius:3px;font-weight:500;margin-left:4px;${badge==='live'?'background:var(--ok-bg);color:var(--ok-ink);':badge==='soon'?'background:#FFF8E1;color:#F57F17;':'background:var(--off);color:var(--muted);'}">${badge==='live'?'Live':badge==='soon'?'Coming soon':'Not connected'}</span></div>
           <div style="font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5;">${desc}</div>
         </div>
       </div>
@@ -11155,7 +11219,7 @@ function renderFocusToday(){
     const meta=[];const jm=t.job?t.job.match(/^(\d+)\s*(.*)$/):null;
     if(jm)meta.push(`${jm[1]} ${jm[2]}`.trim());if(t.item&&t.item!==t.title)meta.push(t.item);if(t.hours)meta.push(formatHrs(t.hours));
     return`<div class="my-todo-item focus-list-item" onclick="openEditTodo(getWeekData(currentPerson,0)[${day}].find(x=>x.id==='${t.id}'),${day})">
-      <div class="todo-check${isDone?' done-c':t.urgent?' urg-c':''}" onclick="event.stopPropagation();_focusToggleDone('${t.id}')" title="${isDone?'Mark as to do':'Mark done'}">${isDone?'<i class="ti ti-check" style="font-size:9px;color:var(--done-ink);"></i>':''}</div>
+      <div class="todo-check${isDone?' done-c':t.urgent?' urg-c':''}" onclick="event.stopPropagation();_focusToggleDone('${t.id}')" title="${isDone?'Mark as to do':'Mark done'}">${isDone?'<i class="ti ti-check" style="font-size:10px;color:var(--done-ink);"></i>':''}</div>
       <div style="flex:1;min-width:0;">
         <div class="fli-title" style="${isDone?'text-decoration:line-through;opacity:.5;':''}">${esc(t.title)}</div>
         ${meta.length?`<div style="font-size:12px;color:var(--muted);margin-top:2px;">${esc(meta.join(' · '))}</div>`:''}
@@ -11389,7 +11453,7 @@ function renderTime(){
       pEntries.forEach(e=>{
         const j=e.jobId?jobs.find(x=>x.id===e.jobId):null;
         const jobStr=j?`<span style="color:var(--muted);font-size:11px;margin-right:4px;">${j.id}</span>${esc(j.name)}`:'<span style="color:var(--muted);">—</span>';
-        const statusStr=e.done?'<span style="color:#4CAF50;font-size:11px;">Done</span>':'<span style="color:var(--muted);font-size:11px;">Planned</span>';
+        const statusStr=e.done?'<span style="color:var(--ok);font-size:11px;">Done</span>':'<span style="color:var(--muted);font-size:11px;">Planned</span>';
         rows+=`<tr class="time-entry-row tg-${pKey}">
           <td style="color:var(--muted);font-size:11px;"></td>
           <td>${jobStr}</td>
@@ -11885,7 +11949,7 @@ function renderQuotes(){
   const today=new Date();today.setHours(0,0,0,0);
   const _qtStatusPill=s=>{
     if(s==='approved')return'<span class="inv-pill approved">Approved</span>';
-    if(s==='declined')return'<span class="inv-pill" style="background:#FFF3E0;color:#E65100;border:1px solid #FFCC80;">Declined</span>';
+    if(s==='declined')return'<span class="inv-pill" style="background:var(--warn-bg);color:var(--warn-ink);border:none;">Declined</span>';
     if(s==='sent')return'<span class="inv-pill sent">Sent</span>';
     return'<span class="inv-pill draft">Draft</span>';
   };
@@ -11897,11 +11961,9 @@ function renderQuotes(){
     const jobNum=qt.jobNumber||job?.id||'';
     return`<div class="qinv-card" id="qcard-${qt.id}">
       <div class="qinv-card-head" onclick="openQuoteDocPreview('${qt.id}')">
-        <div style="display:flex;flex-direction:column;min-width:72px;flex-shrink:0;">
-          <span class="qinv-card-num">${qt.quoteNumber||qt.id}</span>
-          ${jobNum?`<span class="qjob-chip">${jobNum}</span>`:''}
-        </div>
-        <span class="qinv-card-name">${esc(qt.quoteName||qt.jobName||'—')}${qt._local?'<span style="font-size:9px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">Local</span>':''}</span>
+        <span class="qinv-card-num">${qt.quoteNumber||qt.id}</span>
+        <span class="qinv-card-job">${jobNum||'—'}</span>
+        <span class="qinv-card-name" title="${esc(qt.quoteName||qt.jobName||'')}">${esc(String(qt.quoteName||qt.jobName||'—').replace(/^\[\d+\]\s*/,''))}${qt._local?'<span style="font-size:10px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">Local</span>':''}</span>
         <span class="qinv-card-co">${esc(qt.company||'—')}</span>
         <span class="qinv-card-val">${qtValue!=null?'$'+Math.round(qtValue).toLocaleString():'—'}</span>
         <span class="qinv-card-status">${_qtStatusPill(status)}</span>
@@ -11927,7 +11989,8 @@ function renderQuotes(){
     </div>`;
   };
 
-  list.innerHTML=_groupAndRender(quotes,_qtGroupBy,renderCard);
+  const _qtHead=`<div class="qinv-head-row"><span class="qinv-card-num">Quote #</span><span class="qinv-card-job">Job</span><span class="qinv-card-name">Name</span><span class="qinv-card-co">Company</span><span class="qinv-card-val">Value ex GST</span><span class="qinv-card-status">Status</span><span class="qinv-card-date">Sent</span><span style="width:46px;flex-shrink:0;"></span></div>`;
+  list.innerHTML=_qtHead+_groupAndRender(quotes,_qtGroupBy,renderCard);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -12007,7 +12070,7 @@ function renderInvoices(){
   });
   document.getElementById('invoices-count').textContent=`${inv.length} invoice${inv.length!==1?'s':''}`;
   const totEl=document.getElementById('invoices-total');
-  if(totEl)totEl.innerHTML=`$${Math.round(totalIssuedInc).toLocaleString()} issued &nbsp;·&nbsp; <span style="color:#2E7D32;">$${Math.round(totalPaidInc).toLocaleString()} paid</span>`;
+  if(totEl)totEl.innerHTML=`$${Math.round(totalIssuedInc).toLocaleString()} issued &nbsp;·&nbsp; <span style="color:var(--ok-ink);">$${Math.round(totalPaidInc).toLocaleString()} paid</span>`;
 
   // DSO metric
   const paidInvs=inv.filter(i=>i.paidDate&&i.sentDate);
@@ -12026,7 +12089,7 @@ function renderInvoices(){
   };
 
   // Sortable column headers — shared sort state per table, click to toggle asc/desc
-  const _invSortArrow=col=>_invSortCol===col?(_invSortDir===1?' <i class="ti ti-chevron-up" style="font-size:9px;"></i>':' <i class="ti ti-chevron-down" style="font-size:9px;"></i>'):'';
+  const _invSortArrow=col=>_invSortCol===col?(_invSortDir===1?' <i class="ti ti-chevron-up" style="font-size:10px;"></i>':' <i class="ti ti-chevron-down" style="font-size:10px;"></i>'):'';
   const _invTh=(col,label,alignRight)=>`<th class="inv-th ci-${col}" style="cursor:pointer;user-select:none;${alignRight?'text-align:right;':''}" onclick="_setInvSort('${col}')">${label}${_invSortArrow(col)}</th>`;
   const tableHeader=`<table class="inv-table"><thead><tr>
     ${_invTh('company','Company')}
@@ -12046,13 +12109,13 @@ function renderInvoices(){
     const amt=i.totalAmountIncTax!=null?Math.round(i.totalAmountIncTax):(i.totalAmountExTax!=null?Math.round(i.totalAmountExTax*1.15):(job?Math.round((job._stInvoiced||0)*1.15):null));
     const isOverdue=_getInvStatus(i)==='overdue';
     return`<tr class="inv-tr" style="cursor:pointer;${isOverdue?'background:#fff8f8;':''}" onclick="openInvoiceDocPreview('${i.id}')">
-      <td class="inv-td ci-company" style="color:var(--muted);font-size:12px;">${i.company?.name||'—'}</td>
+      <td class="inv-td ci-company" style="color:var(--muted);font-size:12px;" title="${esc(i.company?.name||'')}">${esc(i.company?.name||'—')}</td>
       <td class="inv-td ci-num" style="font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;">${i.number||i.id}</td>
       <td class="inv-td ci-job"><span style="font-size:11px;color:var(--muted);margin-right:4px;">${job?job.id:''}</span>${job?esc(job.name):'—'}</td>
       <td class="inv-td ci-po" style="font-size:12px;color:var(--muted);">${po||'—'}</td>
       <td class="inv-td ci-sent" style="font-size:12px;color:var(--muted);">${fmtDate(i.sentDate)}</td>
       <td class="inv-td ci-due" style="font-size:12px;color:${isOverdue?'var(--red)':'var(--muted)'};">${i.dueDate?fmtDate(i.dueDate):'—'}</td>
-      <td class="inv-td ci-paid" style="font-size:12px;color:${i.paidDate?'#2E7D32':'var(--muted)'};">${i.paidDate?fmtDate(i.paidDate):'—'}</td>
+      <td class="inv-td ci-paid" style="font-size:12px;color:${i.paidDate?'var(--ok-ink)':'var(--muted)'};">${i.paidDate?fmtDate(i.paidDate):'—'}</td>
       <td class="inv-td ci-status">${_invStatusPill(i)}</td>
       <td class="inv-td" style="text-align:right;font-family:var(--display);font-size:14px;font-variant-numeric:tabular-nums;">${amt!=null?'$'+amt.toLocaleString():'—'}</td>
     </tr>`;
@@ -12082,7 +12145,7 @@ function renderInvoices(){
       const keyFn=_tbiSortKey[_tbiSortCol];
       tbiJobs=[...tbiJobs].sort((a,b)=>{const av=keyFn(a),bv=keyFn(b);if(av<bv)return-1*_tbiSortDir;if(av>bv)return 1*_tbiSortDir;return 0;});
     }
-    const _tbiArrow=col=>_tbiSortCol===col?(_tbiSortDir===1?' <i class="ti ti-chevron-up" style="font-size:9px;"></i>':' <i class="ti ti-chevron-down" style="font-size:9px;"></i>'):'';
+    const _tbiArrow=col=>_tbiSortCol===col?(_tbiSortDir===1?' <i class="ti ti-chevron-up" style="font-size:10px;"></i>':' <i class="ti ti-chevron-down" style="font-size:10px;"></i>'):'';
     const _tbiTh=(col,label,alignRight)=>`<th class="inv-th ci-${col}" style="cursor:pointer;user-select:none;${alignRight?'text-align:right;':''}" onclick="_setTbiSort('${col}')">${label}${_tbiArrow(col)}</th>`;
     if(tbiJobs.length||hidden.length){
       tbiHTML=`<div class="grp-hd" style="background:#fffbea;border-left:3px solid #F39C12;">
@@ -12334,12 +12397,15 @@ function getFilteredTasks(){
 }
 
 function fmtHrs(h){if(!h||h===0)return'0h';const m=Math.round(h*60);const hh=Math.floor(m/60);const mm=m%60;return hh&&mm?`${hh}h ${mm}m`:hh?`${hh}h`:`${mm}m`;}
-function fmtDollar(n){if(!n)return'$0';return n>=1000000?`$${(n/1000000).toFixed(1)}m`:n>=1000?`$${(n/1000).toFixed(0)}k`:`$${Math.round(n).toLocaleString()}`;}
+function fmtDollar(n){if(!n)return'$0';return n>=1000000?`$${(n/1000000).toFixed(n>=10000000?0:1)}M`:n>=1000?`$${(n/1000).toFixed(0)}k`:`$${Math.round(n).toLocaleString()}`;}
 function destroyChart(c){if(c&&typeof c.destroy==='function'){try{c.destroy();}catch(e){}}return null;}
 let _rCharts={};
 // One chart theme for every Reporting chart — Inter labels, warm-grey faint grid, no axis
 // borders, dark rounded tooltips, rounded bars, ring doughnuts. Applied once, lazily, so a
 // blocked CDN (typeof Chart undefined) degrades silently like before.
+// Warm chart palette (review B8): red first, then tan, sage, bronze, stone… — no cool slate/blue
+const CHART_PALETTE=['#ED1E24','#C4956A','#7B9E87','#8A6A2E','#B9AFA2','#C45D5D','#5D7A6A','#D9B48A','#9B7B6B','#6F6A62'];
+const CHART_NONBILL='#B9AFA2',CHART_ONE='#C4956A';
 let _chartThemeMode=null; // 'light' | 'dark' — re-applied when the app theme flips
 function _applyChartTheme(){
   if(typeof Chart==='undefined')return;
@@ -12347,10 +12413,10 @@ function _applyChartTheme(){
   if(_chartThemeMode===mode)return;_chartThemeMode=mode;
   const dark=mode==='dark';
   Chart.defaults.font.family="'Inter',-apple-system,sans-serif";
-  Chart.defaults.font.size=11;
-  Chart.defaults.color=dark?'#9C9CA3':'#86868B';
+  Chart.defaults.font.size=12;
+  Chart.defaults.color=dark?'#B8B2A8':'#7A746B';
   const tt=Chart.defaults.plugins.tooltip;
-  tt.backgroundColor=dark?'rgba(50,50,54,.96)':'rgba(29,29,31,.94)';tt.titleColor='#fff';tt.bodyColor='#E5E5EA';
+  tt.backgroundColor=dark?'rgba(58,54,50,.97)':'rgba(25,23,20,.94)';tt.titleColor='#fff';tt.bodyColor='#E5E5EA';
   tt.padding=10;tt.cornerRadius=9;tt.displayColors=false;
   tt.titleFont={size:12,weight:'600'};tt.bodyFont={size:11.5};
   Chart.defaults.datasets.bar.borderRadius=6;
@@ -12360,9 +12426,10 @@ function _applyChartTheme(){
   Chart.defaults.datasets.doughnut.borderWidth=2;
   Chart.defaults.datasets.doughnut.borderColor=dark?'#242427':'#FFFFFF';
   Chart.defaults.plugins.legend.labels.usePointStyle=true;
-  Chart.defaults.plugins.legend.labels.boxWidth=6;
-  Chart.defaults.plugins.legend.labels.boxHeight=6;
-  Chart.defaults.scale.grid.color=dark?'rgba(255,255,255,.06)':'rgba(0,0,0,.05)';
+  Chart.defaults.plugins.legend.labels.boxWidth=8;
+  Chart.defaults.plugins.legend.labels.boxHeight=8;
+  Chart.defaults.plugins.legend.labels.font={size:12};
+  Chart.defaults.scale.grid.color=dark?'rgba(255,255,255,.07)':'rgba(35,28,18,.07)';
   Chart.defaults.scale.ticks.padding=6;
   if(Chart.defaults.scale.border)Chart.defaults.scale.border.display=false;
 }
@@ -12376,7 +12443,7 @@ const _chartOpts=(axis='y')=>({responsive:true,maintainAspectRatio:false,plugins
 
 function renderReporting(){
   const period=document.getElementById('r-period')?.value||'month';
-  const pLabel={'week':'This Week','2weeks':'Last 2 Weeks','month':'This Month','quarter':'This Quarter','year':'This Year','all':'All Time'}[period]||'';
+  const pLabel={'week':'Last 7 days','2weeks':'Last 2 weeks','month':'Last 30 days','quarter':'Last 90 days','year':'Last 12 months','all':'All time','custom':'Custom range'}[period]||''; // matches the picker (review A3)
   document.getElementById('r-sub').textContent={'business':'Business overview','people':'People','jobs':'Jobs','clients':'Clients'}[_reportTab]+' · '+pLabel;
   if(_reportTab==='business')_renderBusinessReport();
   else if(_reportTab==='people')_renderPeopleReport();
@@ -12438,7 +12505,7 @@ function _renderBusinessReport(){
             <td style="padding:7px 0;font-weight:500;">${yr}</td>
             <td style="padding:7px 10px;color:var(--muted);">${row.count}</td>
             <td style="text-align:right;padding:7px 0;font-variant-numeric:tabular-nums;">${fmtDollar(row.inv)}</td>
-            <td style="text-align:right;padding:7px 0 7px 12px;color:#2E7D32;font-variant-numeric:tabular-nums;">${fmtDollar(row.paid)}</td>
+            <td style="text-align:right;padding:7px 0 7px 12px;color:var(--ok-ink);font-variant-numeric:tabular-nums;">${fmtDollar(row.paid)}</td>
             <td style="padding:7px 0 7px 16px;"><div style="height:14px;background:var(--faint);border-radius:3px;overflow:hidden;"><div style="width:${pct}%;height:100%;background:var(--red);border-radius:3px;min-width:2px;"></div></div></td>
           </tr>`;
         }).join('')}
@@ -12457,13 +12524,13 @@ function _renderBusinessReport(){
   const wData=wKeys.map(k=>weekBuckets[k]);
 
   // Billable split for doughnut
-  const splitPalette=['#ED1E24','#6B7FA3'];
+  const splitPalette=['#ED1E24',CHART_NONBILL];
 
   el.innerHTML=`
     <div class="r-kpi-grid">
       <div class="r-kpi"><div class="r-kpi-lbl">Total hours</div><div class="r-kpi-val">${fmtHrs(totalH)}</div><div class="r-kpi-sub">${billPct}% billable</div><div class="r-kpi-bar"><div class="r-kpi-fill" style="width:${billPct}%;background:var(--red);"></div></div></div>
-      <div class="r-kpi"><div class="r-kpi-lbl">Billable hours</div><div class="r-kpi-val">${fmtHrs(billH)}</div><div class="r-kpi-sub">${fmtHrs(nbillH)} non-billable</div><div class="r-kpi-bar"><div class="r-kpi-fill" style="width:${billPct}%;background:#4CAF50;"></div></div></div>
-      <div class="r-kpi"><div class="r-kpi-lbl">Revenue invoiced</div><div class="r-kpi-val">${fmtDollar(totalInvoiced)}</div><div class="r-kpi-sub">${fmtDollar(totalPaid)} paid</div><div class="r-kpi-bar"><div class="r-kpi-fill" style="width:${totalInvoiced>0?Math.min(100,Math.round(totalPaid/totalInvoiced*100)):0}%;background:#4CAF50;"></div></div></div>
+      <div class="r-kpi"><div class="r-kpi-lbl">Billable hours</div><div class="r-kpi-val">${fmtHrs(billH)}</div><div class="r-kpi-sub">${fmtHrs(nbillH)} non-billable</div><div class="r-kpi-bar"><div class="r-kpi-fill" style="width:${billPct}%;background:var(--ok);"></div></div></div>
+      <div class="r-kpi"><div class="r-kpi-lbl">Revenue invoiced</div><div class="r-kpi-val">${fmtDollar(totalInvoiced)}</div><div class="r-kpi-sub">${fmtDollar(totalPaid)} paid</div><div class="r-kpi-bar"><div class="r-kpi-fill" style="width:${totalInvoiced>0?Math.min(100,Math.round(totalPaid/totalInvoiced*100)):0}%;background:var(--ok);"></div></div></div>
       <div class="r-kpi"><div class="r-kpi-lbl">Active jobs</div><div class="r-kpi-val">${liveJobs.length}</div><div class="r-kpi-sub">of ${jobs.length} total</div><div class="r-kpi-bar"><div class="r-kpi-fill" style="width:${Math.min(100,Math.round(liveJobs.length/Math.max(1,jobs.length)*100))}%;background:#3498DB;"></div></div></div>
     </div>
     <div class="r-charts-2">
@@ -12480,7 +12547,7 @@ function _renderBusinessReport(){
       const invoiced=(stInvoices||[]).filter(i=>{const s=(i.invoiceStatus?.name||'').toLowerCase();return s&&s!=='draft'&&s!=='voided';});
       const paid=(stInvoices||[]).filter(i=>(i.invoiceStatus?.name||'').toLowerCase()==='paid');
       // [label, count, colour, conversionBaseIndex] — conv only shown where the ratio is meaningful
-      const stages=[['Quotes sent',quotesSent.length,'#6B7FA3',null],['Approved',quotesApproved.length,'#7B9E87',0],['Jobs live',jobsLive.length,'#3498DB',null],['Completed',jobsComplete.length,'#C4956A',null],['Invoiced',invoiced.length,'#9C6FD6',null],['Paid',paid.length,'#4CAF50',4]];
+      const stages=[['Quotes sent',quotesSent.length,'#B9AFA2',null],['Approved',quotesApproved.length,'#7B9E87',0],['Jobs live',jobsLive.length,'#8A6A2E',null],['Completed',jobsComplete.length,'#C4956A',null],['Invoiced',invoiced.length,'#9B7B6B',null],['Paid',paid.length,'#4CAF50',4]];
       const max=Math.max(...stages.map(s=>s[1]),1);
       return `<div class="r-section"><div class="r-section-hd">Pipeline funnel <span style="text-transform:none;letter-spacing:0;color:var(--muted);">— volume by stage (all time)</span></div>
         ${stages.map((s)=>{
@@ -12567,7 +12634,7 @@ function _renderPeopleReport(){
     return first===Infinity?4.3:Math.max(1,(ceil-first)/W);
   })();
   const tasks=getFilteredTasks();
-  const palette=['#ED1E24','#6B7FA3','#7B9E87','#C45D5D','#5D88C4','#C4A35D','#5DC48A','#8A5DC4'];
+  const palette=CHART_PALETTE;
 
   // Group by person
   const byPerson={};
@@ -12620,13 +12687,13 @@ function _renderPeopleReport(){
           const cap=Math.round(personWeeklyCap(k)*_periodWeeks);
           const util=cap>0?Math.round(v.billH/cap*100):0;
           const uCol=util>=75?'#4CAF50':util>=50?'#FF9800':'var(--red)';
-          return`<tr><td style="font-weight:500;">${v.name}</td><td>${fmtHrs(v.hours)}</td><td style="color:#4CAF50;">${fmtHrs(v.billH)}</td><td style="color:var(--muted);">${fmtHrs(v.hours-v.billH)}</td><td style="color:var(--muted);">${cap}h</td><td><span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:46px;height:6px;background:var(--faint);border-radius:3px;overflow:hidden;display:inline-block;"><span style="display:block;width:${Math.min(100,util)}%;height:100%;background:${uCol};"></span></span><span style="color:${uCol};font-weight:500;font-size:12px;">${util}%</span></span></td><td style="font-size:12px;color:var(--muted);">${v.jobs.size}</td></tr>`;
+          return`<tr><td style="font-weight:500;">${v.name}</td><td>${fmtHrs(v.hours)}</td><td style="color:var(--ok);">${fmtHrs(v.billH)}</td><td style="color:var(--muted);">${fmtHrs(v.hours-v.billH)}</td><td style="color:var(--muted);">${cap}h</td><td><span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:46px;height:6px;background:var(--faint);border-radius:3px;overflow:hidden;display:inline-block;"><span style="display:block;width:${Math.min(100,util)}%;height:100%;background:${uCol};"></span></span><span style="color:${uCol};font-weight:500;font-size:12px;">${util}%</span></span></td><td style="font-size:12px;color:var(--muted);">${v.jobs.size}</td></tr>`;
         }).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;">No data.</td></tr>'}
       </tbody></table></div>
     </div>`;
 
   _makeChart('rc-people-bar',{type:'bar',data:{labels:pLabels,datasets:[{data:pHours,backgroundColor:pColors}]},options:_chartOpts()});
-  _makeChart('rc-people-day',{type:'bar',data:{labels:['Mon','Tue','Wed','Thu','Fri'],datasets:[{data:dayTotals,backgroundColor:'#6B7FA3'}]},options:_chartOpts()});
+  _makeChart('rc-people-day',{type:'bar',data:{labels:['Mon','Tue','Wed','Thu','Fri'],datasets:[{data:dayTotals,backgroundColor:CHART_ONE}]},options:_chartOpts()});
 }
 
 // ── JOBS ──────────────────────────────────────────────────────────────────────
@@ -12680,13 +12747,13 @@ function _renderJobsReport(){
           <span style="cursor:pointer;" onclick="openJobDetail('${j.id}')"><span style="font-size:11px;color:var(--muted);margin-right:6px;">${j.id}</span><span style="font-size:13px;">${j.name}</span></span>
           <span style="font-size:12px;color:var(--muted);">${j.company||'—'}</span>
           <span style="font-size:13px;font-weight:500;">${h>0?fmtHrs(h):'—'}</span>
-          <div style="display:flex;align-items:center;gap:6px;"><div style="width:60px;height:5px;background:var(--faint);border-radius:3px;overflow:hidden;"><div style="width:${Math.min(100,bPct)}%;height:100%;background:${bPct>=100?'var(--red)':bPct>=80?'#F57F17':'#4CAF50'};"></div></div><span style="font-size:11px;color:var(--muted);">${bPct}%</span></div>
+          <div style="display:flex;align-items:center;gap:6px;"><div style="width:60px;height:5px;background:var(--faint);border-radius:3px;overflow:hidden;"><div style="width:${Math.min(100,bPct)}%;height:100%;background:${bPct>=100?'var(--red)':bPct>=80?'#F57F17':'var(--ok)'};"></div></div><span style="font-size:11px;color:var(--muted);">${bPct}%</span></div>
           <span class="${statusCls}" style="font-size:10px;">${statusLbl}</span>
         </div>`;
       }).join('')}
     </div>`;
 
-  _makeChart('rc-jobs-hrs',{type:'bar',data:{labels:topHoursJobs.map(j=>j.name.slice(0,20)),datasets:[{data:topHoursJobs.map(j=>hoursPerJob[j.id]||0),backgroundColor:'#6B7FA3'}]},options:{...(_chartOpts()),indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{callback:v=>fmtHrs(v)}},y:{grid:{display:false}}}}});
+  _makeChart('rc-jobs-hrs',{type:'bar',data:{labels:topHoursJobs.map(j=>j.name.slice(0,20)),datasets:[{data:topHoursJobs.map(j=>hoursPerJob[j.id]||0),backgroundColor:CHART_ONE}]},options:{...(_chartOpts()),indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{callback:v=>fmtHrs(v)}},y:{grid:{display:false}}}}});
   _makeChart('rc-jobs-budget',{type:'bar',data:{labels:budgetJobs.map(j=>j.name.slice(0,20)),datasets:[{data:budgetJobs.map(j=>j._bPct||0),backgroundColor:budgetJobs.map(j=>(j._bPct||0)>=100?'#ED1E24':'#4CAF50')}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:120,ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}});
 }
 
@@ -12695,7 +12762,7 @@ function _renderClientsReport(){
   const el=document.getElementById('rp-clients');if(!el)return;
   const clientFilter=document.getElementById('r-client-sel')?.value||'all';
   const tasks=getFilteredTasks();
-  const palette=['#6B7FA3','#7B9E87','#C4956A','#9B59B6','#E67E22','#1ABC9C','#3498DB','#E74C3C','#F39C12','#888888'];
+  const palette=CHART_PALETTE.slice(1).concat(['#ED1E24']);
 
   // Seed every client up front (not just ones with logged time in the period) so a client
   // with invoices but no time logged this period still shows up with $0/0h, rather than
@@ -12854,7 +12921,7 @@ function renderBoardsList(){
   if(!grid)return;
   const stripeColor={client:'var(--red)',people:'#6B7FA3',custom:'#7B9E87'};
   if(boardsList.length===0){
-    grid.innerHTML=`<div style="grid-column:1/-1;">${emptyStateHTML('ti-layout-kanban','No boards yet','Boards give you a priority view across clients, people or any custom grouping you like.','New board','openCreateBoard()')}</div>`;
+    grid.innerHTML=`<div style="grid-column:1/-1;">${emptyStateHTML('ti-layout-kanban','No boards yet','Boards give you a priority view across clients, people or any custom grouping you like. Start one with New board, or try the Studio board.')}</div>`;
     return;
   }
   grid.className='boards-list-grid';
@@ -12917,7 +12984,7 @@ function _richJobCard(j,expanded){
     <div class="bc-name">${j.name}</div>
     <div class="bc-header-row">
       <span class="bc-id">${j.id}</span>
-      <span class="wf-badge ${wfCls}" style="font-size:9px;">${wfLabel}</span>
+      <span class="wf-badge ${wfCls}" style="font-size:10px;">${wfLabel}</span>
       ${j.billable?'<span class="bc-bill-dot" title="Billable"></span>':''}
     </div>
     ${labels?`<div class="bc-labels">${labels}</div>`:''}
@@ -12930,7 +12997,7 @@ function _richJobCard(j,expanded){
       </div>
       <div class="bc-bar-row">
         <span class="bc-bar-lbl">Budget</span>
-        <div class="bc-bar-track"><div class="bc-bar-fill" style="width:${Math.min(pct,100)}%;background:${over?'var(--red)':'#4CAF50'}"></div></div>
+        <div class="bc-bar-track"><div class="bc-bar-fill" style="width:${Math.min(pct,100)}%;background:${over?'var(--red)':'var(--ok)'}"></div></div>
         <span class="bc-bar-val" style="color:${over?'var(--red)':'var(--muted)'}">${pct}%</span>
       </div>
     </div>
@@ -13077,11 +13144,11 @@ function buildCustomCard(b,col,card){
     }
     return`<div class="bdet-card bc-rich${expanded?' bc-expanded-card':''}" id="bc-${card.id}" data-card-id="${card.id}" ${dragAttrs} style="${over?'border-left:3px solid var(--red);':''}" onclick="toggleCustomBoardCard('${b.id}','${col.id}','${card.id}')">${del}
       <div class="bc-name">${j.name}</div>
-      <div class="bc-header-row"><span class="bc-id">${j.id}</span><span class="wf-badge ${wfCls}" style="font-size:9px;">${wfLabel}</span></div>
+      <div class="bc-header-row"><span class="bc-id">${j.id}</span><span class="wf-badge ${wfCls}" style="font-size:10px;">${wfLabel}</span></div>
       <div class="bc-members-row">${memberAvatars}</div>
       <div class="bc-bars">
         <div class="bc-bar-row"><span class="bc-bar-lbl">Hours</span><div class="bc-bar-track"><div class="bc-bar-fill" style="width:${Math.min(hPct,100)}%;background:${hOver?'var(--red)':'var(--ink)'}"></div></div><span class="bc-bar-val">${j._loggedH||'0h'}</span></div>
-        <div class="bc-bar-row"><span class="bc-bar-lbl">Budget</span><div class="bc-bar-track"><div class="bc-bar-fill" style="width:${Math.min(pct,100)}%;background:${over?'var(--red)':'#4CAF50'}"></div></div><span class="bc-bar-val">${pct}%</span></div>
+        <div class="bc-bar-row"><span class="bc-bar-lbl">Budget</span><div class="bc-bar-track"><div class="bc-bar-fill" style="width:${Math.min(pct,100)}%;background:${over?'var(--red)':'var(--ok)'}"></div></div><span class="bc-bar-val">${pct}%</span></div>
       </div>
       ${expandedHTML}
     </div>`;
@@ -13109,7 +13176,7 @@ function buildCustomCard(b,col,card){
         <span style="font-weight:500;color:var(--ink);">${wHours?formatHrs(wHours):'0h'} this week</span>
       </div>
       <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden;">
-        <div style="height:100%;width:${utilPct}%;background:${utilPct>90?'var(--red)':utilPct>70?'#FF9800':p.color};border-radius:3px;transition:width .3s;"></div>
+        <div style="height:100%;width:${utilPct}%;background:${utilPct>90?'var(--red)':utilPct>70?'var(--warn)':p.color};border-radius:3px;transition:width .3s;"></div>
       </div>
       <div style="font-size:10px;color:var(--muted);margin-top:3px;">${utilPct}% capacity</div>
     </div>`;
@@ -13123,11 +13190,11 @@ function buildCustomCard(b,col,card){
       const memberAvatars=(j.members||['ro']).map(k=>{const p=people[k];return p?`<span class="bc-av" style="background:${p.color};">${p.initials}</span>`:''}).join('');
       return`<div class="bdet-card bc-rich" style="margin:0 0 8px;${over?'border-left:3px solid var(--red);':''}" onclick="openJobDetail('${j.id}')">
         <div class="bc-name">${j.name}</div>
-        <div class="bc-header-row"><span class="bc-id">${j.id}</span><span class="wf-badge ${wfCls}" style="font-size:9px;">${wfLabel}</span></div>
+        <div class="bc-header-row"><span class="bc-id">${j.id}</span><span class="wf-badge ${wfCls}" style="font-size:10px;">${wfLabel}</span></div>
         <div class="bc-members-row">${memberAvatars}</div>
         <div class="bc-bars">
           <div class="bc-bar-row"><span class="bc-bar-lbl">Hours</span><div class="bc-bar-track"><div class="bc-bar-fill" style="width:${Math.min(hPct,100)}%;background:${hPct>100?'var(--red)':'var(--ink)'}"></div></div><span class="bc-bar-val">${j._loggedH||'0h'}</span></div>
-          <div class="bc-bar-row"><span class="bc-bar-lbl">Budget</span><div class="bc-bar-track"><div class="bc-bar-fill" style="width:${Math.min(pct,100)}%;background:${over?'var(--red)':'#4CAF50'}"></div></div><span class="bc-bar-val">${pct}%</span></div>
+          <div class="bc-bar-row"><span class="bc-bar-lbl">Budget</span><div class="bc-bar-track"><div class="bc-bar-fill" style="width:${Math.min(pct,100)}%;background:${over?'var(--red)':'var(--ok)'}"></div></div><span class="bc-bar-val">${pct}%</span></div>
         </div>
       </div>`;
     }).join('')||`<div style="padding:4px 0 8px;font-size:11px;color:var(--muted);">No active jobs</div>`;
