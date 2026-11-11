@@ -2901,8 +2901,17 @@ const MY_PERSON=(()=>{try{return localStorage.getItem('cc_me')||'st_114330';}cat
 let currentPerson=MY_PERSON;
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:MY_PERSON==='st_114330'?'Ronan Heal':'…',initials:MY_PERSON==='st_114330'?'RH':'?',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true,_stub:true};
-const APP_VERSION='2.38.1';
+const APP_VERSION='2.39.0';
 const CHANGELOG=[
+  {version:'2.39.0',date:'12 Nov 2026',title:'Ready for team testing — your own login, edits that stick, faster loading',items:[
+    'Pick who you are: the first time you open the platform it asks "Who are you?" — your dashboard, To Do board and logged time are then yours. Switch any time from your avatar at the bottom of the sidebar. (Before, everyone was Ronan.)',
+    'Edits now stick: job notes, labels, team members, job settings, workflow stage and quote/invoice status no longer quietly undo themselves after a few minutes or a reload. Bulk archive, bulk delete, bulk label and Duplicate job stick too.',
+    'To Do board: tasks you add, move, tick or resize no longer vanish when the background sync runs every 5 minutes.',
+    'To Do board toolbar redesigned — hours and sync status are tidy chips with the detail on hover, a proper Add task button, and nothing wraps on smaller screens. The Done divider can no longer disappear, and the week reads "9–15 Nov".',
+    'Marking a task done: "No thanks" on the follow-up card no longer logs time behind your back, and logged time lands on today (it was landing on yesterday before 1pm).',
+    'Faster loading: the job data the platform downloads is about 6× smaller.',
+    'Dark mode fixes — selected buttons and chips were showing white text on white, toasts lost their colours, and the drag dock was hard to read. Shadows and highlights are warmed back to the C&C paper tones throughout.',
+  ]},
   {version:'2.38.1',date:'3 Nov 2026',title:'Fixed: logged time missing since October',items:[
     'Since about 1 October only ~10% of logged time was reaching the platform, and by November none at all — so Done columns, billable hours, Progress, profitability and Reporting have all been badly under-counting for the last five weeks. Scheduled tasks, jobs and invoices were unaffected.',
     'Cause: Streamtime changed the order its export returns logged time in (newest-first → grouped by job). Our sync only ever read the first few pages before hitting Streamtime\'s rate limit, which was harmless while those pages held the newest entries — after the change it kept re-reading old jobs instead.',
