@@ -47,7 +47,7 @@ body{background:var(--off);font-family:var(--font);color:var(--ink);font-size:13
 .sidebar:hover .s-tip{opacity:1;transform:none;transition-delay:.1s;}
 
 .s-avatar{height:46px;border-radius:9px;background:rgba(255,255,255,.05);color:#F2EFE9;display:flex;align-items:center;justify-content:flex-start;gap:11px;font-size:0;font-weight:600;cursor:pointer;margin-top:14px;position:relative;padding:0 7px;flex-shrink:0;}/* font-size:0 hides the raw initials text node — the ::before renders them as the avatar disc */
-.s-avatar::before{content:'RO';display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:var(--red);flex-shrink:0;font-size:11px;font-weight:600;}
+.s-avatar::before{content:attr(data-initials);background:var(--av-bg,var(--red))!important;display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:var(--red);flex-shrink:0;font-size:11px;font-weight:600;}
 .s-avatar .s-tip{font-size:13px;font-weight:400;}
 .s-avatar:hover{background:rgba(255,255,255,.09);}
 
@@ -1756,7 +1756,7 @@ body.dark #create-item-menu{background:var(--white)!important;}
       <div class="s-btn" id="snav-theme" style="margin-top:auto;" onclick="toggleTheme()" title="Light / dark appearance"><i class="ti ti-moon" id="theme-icon"></i><span class="s-tip">Appearance</span></div>
       <div class="s-btn" id="snav-settings" onclick="navTo('settings')"><i class="ti ti-settings"></i><span class="s-tip">Settings</span></div>
     </div>
-    <div class="s-avatar">RO<span class="s-tip">Ronan</span></div>
+    <div class="s-avatar" id="s-avatar" data-initials="RO" onclick="_askWhoAmI(true)" title="Switch user"><span class="s-tip" id="s-avatar-name">Ronan</span></div>
   </div>
 
   <div class="main">
@@ -2673,6 +2673,7 @@ function toggleTheme(){
   toast(dark?'Dark mode on':'Light mode on','info');
 }
 document.addEventListener('DOMContentLoaded',_syncThemeIcon);
+document.addEventListener('DOMContentLoaded',()=>_syncSidebarAvatar());
 // ── Wallpaper: a background image behind the floating window turns the whole frame
 // into frosted glass (see body.has-bg CSS). Stored per device in cc_bg_image.
 function applyBgImage(){
@@ -2702,6 +2703,42 @@ function setBgImage(file){
   rd.readAsDataURL(file);
 }
 function clearBgImage(){try{localStorage.removeItem('cc_bg_image');}catch(e){}applyBgImage();toast('Wallpaper removed','info');}
+// ── Who's using this browser ────────────────────────────────────────────────
+// No login exists yet (that's the Razor backend), so each browser picks its person once.
+// Everything "mine" — dashboard, To Do default, time logging, activity credit, My Profile —
+// keys off MY_PERSON, which is read from cc_me at load; switching reloads the app.
+function _syncSidebarAvatar(){
+  const el=document.getElementById('s-avatar');const me=people[MY_PERSON];if(!el||!me)return;
+  el.dataset.initials=me.initials||'?';
+  el.style.setProperty('--av-bg',me.color||'var(--red)');
+  const nm=document.getElementById('s-avatar-name');if(nm)nm.textContent=(me.name||'').split(' ')[0]||'Me';
+}
+function _askWhoAmI(cancelable){
+  document.getElementById('whoami-modal')?.remove();
+  const list=Object.entries(people)
+    .filter(([k,p])=>!p._archived&&!p._stub&&p._stId&&stUsersById[p._stId]?.active!==false)
+    .sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||''));
+  if(!list.length){if(cancelable)toast('Team list still loading — try again in a moment','info');return;}
+  const m=document.createElement('div');m.className='modal-bg on';m.id='whoami-modal';
+  if(cancelable)m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+  m.innerHTML=`<div class="modal" style="max-width:520px;">
+    <div class="modal-hd"><span class="modal-hd-title">${cancelable?'Switch user':'Who are you?'}</span>${cancelable?`<button class="modal-x" onclick="document.getElementById('whoami-modal').remove()"><i class="ti ti-x"></i></button>`:''}</div>
+    <div class="modal-bd">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Pick yourself so your dashboard, To Do board and logged time are yours. This is remembered on this browser — change it any time from your avatar at the bottom of the sidebar.</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;max-height:52vh;overflow-y:auto;">
+        ${list.map(([k,p])=>`<button onclick="_setWhoAmI('${k}')" style="display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid ${k===MY_PERSON&&cancelable?'var(--ink)':'var(--border)'};border-radius:10px;background:var(--white);cursor:pointer;font-family:var(--font);font-size:13px;color:var(--ink);text-align:left;">
+          <span style="width:28px;height:28px;border-radius:50%;background:${p.color||'#999'};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;">${esc(p.initials||'?')}</span>
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.name)}</span></button>`).join('')}
+      </div>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+function _setWhoAmI(key){
+  try{localStorage.setItem('cc_me',key);}catch(e){}
+  if(key===MY_PERSON){document.getElementById('whoami-modal')?.remove();return;}
+  location.reload();
+}
 // Collision-proof id minting (Date.now() alone collides within one ms)
 let _uidN=0;
 function uid(prefix){return (prefix||'')+Date.now().toString(36)+(_uidN++).toString(36)+Math.random().toString(36).slice(2,6);}
@@ -2720,9 +2757,21 @@ async function dbUpdateJob(id,patch){
   jobs[i]={...jobs[i],...patch,_updatedAt:Date.now()};
   saveData();return jobs[i];
 }
+// Persist direct field edits on a job: copies the named fields into j._native (the store
+// dbUpdateJob writes), which applyNativeData re-applies after every Streamtime remap. Many
+// job-detail handlers wrote straight onto j.* and silently reverted on the next 5-minute
+// poll or reload — notes, labels, members, settings, workflow, quote/invoice status (audit H3).
+function _keepJobEdits(j,keys){
+  if(!j)return;
+  j._native=j._native||{};
+  keys.forEach(k=>{j._native[k]=Array.isArray(j[k])?[...j[k]]:j[k];});
+  saveData();
+}
+// Today as a LOCAL "YYYY-MM-DD" (toISOString gives the UTC date — yesterday before 1pm in NZ).
+function _localISO(d){d=d||new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 async function dbCreateTimeEntry(data){
   const e={...data,id:data.id||uid('lt'),_local:true,date:data.date||new Date().toISOString().slice(0,10),minutes:Math.round((data.hours||0)*60)};
-  stLoggedTimes.push(e);persistNativeData();resetTodoStore();return e;
+  stLoggedTimes.push(e);persistNativeData();resetTodoStore(true);return e;
 }
 async function dbCreatePhase(jobId,data){
   const j=jobs.find(x=>x.id===jobId);if(!j)return null;
@@ -2845,10 +2894,13 @@ function importWorkspace(file){
   };
   reader.readAsText(file);
 }
-let currentPerson='st_114330';
-const MY_PERSON='st_114330'; // Ronan Heal (Streamtime ID 114330)
+// Current user, chosen once per browser via the "Who are you?" picker (_askWhoAmI) and kept in
+// cc_me. Was hard-coded to Ronan, so every tester saw Ronan's dashboard, logged time as Ronan
+// and edited Ronan's profile (bug audit H5, Nov 2026). Ronan stays the fallback until chosen.
+const MY_PERSON=(()=>{try{return localStorage.getItem('cc_me')||'st_114330';}catch(e){return 'st_114330';}})();
+let currentPerson=MY_PERSON;
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
-if(!people[MY_PERSON])people[MY_PERSON]={name:'Ronan Heal',initials:'RH',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true};
+if(!people[MY_PERSON])people[MY_PERSON]={name:MY_PERSON==='st_114330'?'Ronan Heal':'…',initials:MY_PERSON==='st_114330'?'RH':'?',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true,_stub:true};
 const APP_VERSION='2.38.1';
 const CHANGELOG=[
   {version:'2.38.1',date:'3 Nov 2026',title:'Fixed: logged time missing since October',items:[
@@ -3820,7 +3872,7 @@ async function initStreamtime(silent){
         // downstream is dead code because the fallback already happened here.
         stUsersById[u.id]={id:u.id,name,initials,color,key,email:u.email||'',active:userStatus==='Active',capacityH,billableRate,costRate:u.costRate||_defCostRate(),costRateIsDefault:!u.costRate};
         // Merge into platform people map if not already present
-        if(!people[key]){
+        if(!people[key]||people[key]._stub){
           people[key]={
             name,initials,color,
             role:u.roles?.[0]?.name||u.role?.name||'',
@@ -3933,9 +3985,9 @@ async function initStreamtime(silent){
       }
     }catch(e){console.warn('platform_config fetch failed:',e);}
   }catch(e){console.warn('Streamtime fetch failed:',e);}
-  // ST data is now loaded — drop any weeks seeded before it arrived so the Todo board
-  // re-seeds fresh from Streamtime.
-  resetTodoStore();
+  // ST data is now loaded — re-seed the To Do board from it. Background polls keep any
+  // week the user has edited (see resetTodoStore).
+  resetTodoStore(!!silent);
   // Re-render open views
   if(typeof renderDashboard==='function'&&!document.getElementById('view-dashboard')?.classList.contains('hidden'))renderDashboard();
   if(typeof renderJobs==='function')renderJobs();
@@ -3945,6 +3997,8 @@ async function initStreamtime(silent){
   if(typeof renderClients==='function'&&!document.getElementById('view-jobs')?.classList.contains('hidden'))renderClients();
   if(typeof renderTodo==='function'&&!document.getElementById('view-todo')?.classList.contains('hidden'))renderTodo();
   if(typeof renderReporting==='function'&&document.getElementById('view-reporting')&&!document.getElementById('view-reporting').classList.contains('hidden'))renderReporting();
+  _syncSidebarAvatar();
+  try{if(!localStorage.getItem('cc_me')&&Object.keys(stUsersById).length)_askWhoAmI(false);}catch(e){}
 }
 
 // Seed the global label list from any labels already on jobs
@@ -4013,12 +4067,27 @@ function getWeekData(person,offset){
   if(!todoData[person])todoData[person]={};
   // Lazily seed this (person, week) from Streamtime on first access, then cache the
   // (possibly edited) result in memory for the rest of the session.
-  if(!todoData[person][k])todoData[person][k]=seedWeekFromST(person,offset);
+  if(!todoData[person][k]){
+    todoData[person][k]=seedWeekFromST(person,offset);
+    _todoSeedSig[person+'|'+k]=JSON.stringify(todoData[person][k]); // fingerprint, see resetTodoStore
+  }
   return todoData[person][k];
 }
-// Drop all cached/edited weeks so the next render re-seeds fresh from Streamtime.
-// Called after ST data finishes loading (and on demand) so the board reflects ST truth.
-function resetTodoStore(){todoData={};}
+// Drop cached weeks so the next render re-seeds fresh from Streamtime.
+// keepEdited (background polls, time logging): only drop weeks still identical to how they
+// were seeded — any week the user has touched (added/moved/ticked/resized/reassigned/split…)
+// is kept. Before, every 5-minute poll wiped all board edits mid-session (bug audit H2).
+// Edited weeks still pick up Streamtime changes on the next full reload.
+let _todoSeedSig={};
+function resetTodoStore(keepEdited){
+  if(!keepEdited){todoData={};_todoSeedSig={};return;}
+  Object.keys(todoData).forEach(p=>{
+    Object.keys(todoData[p]).forEach(k=>{
+      const sig=_todoSeedSig[p+'|'+k];
+      if(sig!==undefined&&JSON.stringify(todoData[p][k])===sig){delete todoData[p][k];delete _todoSeedSig[p+'|'+k];}
+    });
+  });
+}
 // A person's weekly capacity in hours from their Streamtime working hours (fallback 30h).
 function personWeeklyCap(key){
   const sid=people[key]?._stId;
@@ -7081,25 +7150,30 @@ function toggleAllJobCbs(on){document.querySelectorAll('.job-cb').forEach(cb=>cb
 function clearJobSelection(){toggleAllJobCbs(false);}
 function bulkArchiveJobs(){
   const ids=getSelectedJobIds();if(!ids.length)return;
-  ids.forEach(id=>{const j=jobs.find(x=>x.id===id);if(j)j.status='archived';});
-  saveData();renderJobs();
+  // Through dbUpdateJob (j._native), like single archiveJob — direct writes reverted on refetch
+  ids.forEach(id=>dbUpdateJob(id,{status:'archived'}));
+  renderJobs();
   toast(`${ids.length} job${ids.length!==1?'s':''} archived`);
 }
 function bulkDeleteJobs(){
   const ids=getSelectedJobIds();if(!ids.length)return;
-  if(!confirm(`Delete ${ids.length} job${ids.length!==1?'s':''}? This can't be undone.`))return;
-  jobs=jobs.filter(j=>!ids.includes(j.id));
-  if(ids.includes(activeJobId))activeJobId=null;
-  saveData();renderJobs();
-  toast(`${ids.length} job${ids.length!==1?'s':''} deleted`,'warn');
+  ccConfirm(`Delete ${ids.length} job${ids.length!==1?'s':''}? This can't be undone.`,()=>{
+    // Tombstone ST-backed jobs (same as deleteJobConfirm) or they return on the next remap
+    const st=jobs.filter(j=>ids.includes(j.id)&&j._stId).map(j=>j.id);
+    if(st.length){try{const d=JSON.parse(localStorage.getItem('cc_deleted_jobs')||'[]');st.forEach(id=>{if(!d.includes(id))d.push(id);});localStorage.setItem('cc_deleted_jobs',JSON.stringify(d));}catch(e){}}
+    jobs=jobs.filter(j=>!ids.includes(j.id));
+    if(ids.includes(activeJobId))activeJobId=null;
+    saveData();renderJobs();
+    toast(`${ids.length} job${ids.length!==1?'s':''} deleted`,'warn');
+  },'Delete',true);
 }
 function bulkLabelJobs(){
   const ids=getSelectedJobIds();if(!ids.length)return;
   const lbl=(prompt('Label to add to the selected jobs:')||'').trim();
   if(!lbl)return;
   addGlobalLabel(lbl);
-  ids.forEach(id=>{const j=jobs.find(x=>x.id===id);if(j){if(!j.labels)j.labels=[];if(!j.labels.includes(lbl))j.labels.push(lbl);}});
-  saveData();renderJobs();
+  ids.forEach(id=>{const j=jobs.find(x=>x.id===id);if(j&&!(j.labels||[]).includes(lbl))dbUpdateJob(id,{labels:[...(j.labels||[]),lbl]});});
+  renderJobs();
   toast(`Label “${lbl}” added to ${ids.length} job${ids.length!==1?'s':''}`,'success');
 }
 
@@ -7215,7 +7289,7 @@ function toggleJobMember(jobId,personKey,rowEl){
   if(idx===-1){j.members.push(personKey);rowEl.style.background='var(--off)';rowEl.insertAdjacentHTML('beforeend','<i class="ti ti-check" style="color:var(--red);font-size:12px;"></i>');}
   else{j.members.splice(idx,1);rowEl.style.background='#fff';rowEl.querySelector('.ti-check')?.remove();}
   logActivity(jobId,MY_PERSON,'member_change',`<strong>${people[personKey]?.name||personKey}</strong> ${idx===-1?'added to':'removed from'} the job`);
-  saveData();
+  _keepJobEdits(j,['members']);
   // Refresh the avatars row
   const membersRow=document.getElementById('d-members-row');
   if(membersRow){
@@ -7238,7 +7312,7 @@ function updateJobNotes(val){
 }
 function _updateJobNotesNow(val){
   const j=jobs.find(x=>x.id===activeJobId);
-  if(j){j.notes=val;saveData();}
+  if(j){j.notes=val;_keepJobEdits(j,['notes']);}
 }
 
 // Create Item dropdown
@@ -7344,7 +7418,7 @@ function saveJobSettings(){
   j._manualPaused=j.paused;
   j.workflowStatus=document.getElementById('jsett-wf')?.value||j.workflowStatus;
   j.lead=document.getElementById('jsett-lead')?.value||null;
-  saveData();
+  _keepJobEdits(j,['name','company','contact','billable','workflowStatus','lead']);
   document.getElementById('job-sett-modal')?.remove();
   openJobDetail(activeJobId);
   toast('Job settings saved','success');
@@ -7373,7 +7447,11 @@ function duplicateJob(id){
   const j=jobs.find(x=>x.id===id);if(!j)return;
   const newId=nextJobNumber();
   const copy=JSON.parse(JSON.stringify(j));
-  copy.id=newId;copy.name=j.name+' (Copy)';copy.activity=[];copy.invNum=null;
+  // A copy is a brand-new native job: drop every Streamtime link and pre-computed ST stat,
+  // or it shows the original's time/invoices and is never persisted (bug audit H4).
+  Object.keys(copy).filter(k=>k.startsWith('_')).forEach(k=>delete copy[k]);
+  (copy.phases||[]).forEach(ph=>{ph.id=uid('ph');ph._local=true;(ph.items||[]).forEach(it=>{it.id=uid('it');it._local=true;delete it._stId;delete it._logMins;it.used='$0';});});
+  Object.assign(copy,{id:newId,name:j.name+' (Copy)',activity:[],invNum:null,status:'inplay',workflowStatus:'quote',milestones:[],expenses:[],splitInvoices:[],_local:true,_createdAt:Date.now()});
   jobs.push(copy);saveData();
   toast('Job duplicated','success');
   openJobDetail(newId);
@@ -8472,14 +8550,14 @@ function renderQuoteTab(){
 
 function updateQuoteField(jobId,field,val){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
-  j[field]=val;saveData();
+  j[field]=val;_keepJobEdits(j,[field]);
 }
 function cycleQuoteStatus(jobId){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
   const states=['draft','sent','approved','declined'];
   const cur=states.indexOf(j.quoteStatus||'draft');
   j.quoteStatus=states[(cur+1)%states.length];
-  saveData();renderQuoteTab();
+  _keepJobEdits(j,['quoteStatus']);renderQuoteTab();
 }
 function setQuoteStatus(jobId,status){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
@@ -8492,12 +8570,12 @@ function setQuoteStatus(jobId,status){
     toast(status==='approved'?'Quote approved 🎉':'Quote declined',status==='approved'?'success':'warn');
   }
   logActivity(jobId,MY_PERSON,'quote_status',`Quote marked <strong>${status}</strong>`);
-  saveData();renderQuoteTab();
+  _keepJobEdits(j,['quoteStatus','workflowStatus']);renderQuoteTab();
   if(status==='approved')openJobDetail(jobId);
 }
 function sendQuote(jobId){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
-  if((j.quoteStatus||'draft')==='draft'){j.quoteStatus='sent';saveData();renderQuoteTab();}
+  if((j.quoteStatus||'draft')==='draft'){j.quoteStatus='sent';_keepJobEdits(j,['quoteStatus']);renderQuoteTab();}
   logActivity(jobId,MY_PERSON,'quote_sent',`Quote <strong>sent</strong> to ${j.company}`);
   printQuote(jobId);
   toast('Quote marked as sent — save the PDF to attach to your email','success');
@@ -8517,7 +8595,7 @@ function renderLabels(){
 }
 function _persistActiveLabels(){
   const j=jobs.find(x=>x.id===activeJobId);
-  if(j){j.labels=[...activeLabels];saveData();}
+  if(j){j.labels=[...activeLabels];_keepJobEdits(j,['labels']);}
 }
 function addLabel(ev){openLabelPicker(ev);}
 function removeLabel(l){activeLabels=activeLabels.filter(x=>x!==l);renderLabels();_persistActiveLabels();}
@@ -9254,7 +9332,7 @@ function confirmAdvanceWorkflow(jobId,next){
   j.workflowStatus=next;
   const labels={quote:'Quote',live:'Live job',completed:'Completed',invoiced:'Invoiced'};
   logActivity(jobId,MY_PERSON,'workflow_change',`Moved to <strong>${labels[next]}</strong>`);
-  saveData();
+  _keepJobEdits(j,['workflowStatus']);
   document.getElementById('wf-confirm-modal')?.remove();
   openJobDetail(jobId);
   toast(`Moved to ${labels[next]}`,'success');
@@ -9557,7 +9635,7 @@ function saveInvStatus(){
   const j=jobs.find(x=>x.id===activeJobId);if(!j)return;
   j.invStatus=document.getElementById('inv-status').value;
   if((j.invStatus==='sent'||j.invStatus==='paid')&&!j.invTotal){computeJobStats(j);j.invTotal=j._plannedSell||0;}
-  saveData();
+  _keepJobEdits(j,['invStatus','invTotal']);
   logActivity(activeJobId,MY_PERSON,`Invoice status → ${j.invStatus}`,`Invoice marked as <strong>${j.invStatus}</strong>`);
   renderStats(j);
 }
@@ -11903,10 +11981,10 @@ function openInvoiceForJob(id){
 function saveInvStatusForJob(jobId,val){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
   j.invStatus=val;
-  if(!j.invIssueDate)j.invIssueDate=new Date().toISOString().slice(0,10);
-  if(!j.invDueDate){const d=new Date();d.setDate(d.getDate()+30);j.invDueDate=d.toISOString().slice(0,10);}
+  if(!j.invIssueDate)j.invIssueDate=_localISO();
+  if(!j.invDueDate){const d=new Date();d.setDate(d.getDate()+30);j.invDueDate=_localISO(d);}
   if((val==='sent'||val==='paid')&&!j.invTotal){computeJobStats(j);j.invTotal=j._plannedSell||0;}
-  saveData();renderInvoices();
+  _keepJobEdits(j,['invStatus','invTotal','invIssueDate','invDueDate']);renderInvoices();
   toast(`Invoice marked as ${val}`,'success');
 }
 function toggleQinvDetail(cardId){
