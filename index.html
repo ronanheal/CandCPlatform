@@ -1738,6 +1738,7 @@ body.dark .paused-warn{background:var(--warn-bg);border-color:rgba(255,152,0,.3)
 body.dark #create-item-menu{background:var(--white)!important;}
 /* Print always uses the current light palette (the old print reset still had the v1 colours) */
 @media print{body.dark{--ink:#1D1C19;--muted:#8D887C;--white:#FFFFFF;--off:#F4F2EC;--border:#E2DDD2;--faint:#EBE7DE;--on-ink:#FFFFFF;}}
+body.not-admin .admin-only{display:none!important;}
 </style>
 </head>
 <body>
@@ -1859,8 +1860,8 @@ body.dark #create-item-menu{background:var(--white)!important;}
           <div id="bulk-bar" style="display:none;position:sticky;bottom:16px;margin:0 auto;width:fit-content;background:var(--ink);color:#fff;border-radius:6px;padding:8px 14px;box-shadow:0 4px 16px rgba(0,0,0,.25);align-items:center;gap:10px;z-index:50;">
             <span id="bulk-count" style="font-size:12px;font-weight:500;margin-right:4px;">0 selected</span>
             <button class="bulk-btn" onclick="bulkLabelJobs()"><i class="ti ti-tag" style="font-size:12px;"></i> Label</button>
-            <button class="bulk-btn" onclick="bulkArchiveJobs()"><i class="ti ti-archive" style="font-size:12px;"></i> Archive</button>
-            <button class="bulk-btn" onclick="bulkDeleteJobs()" style="color:#FF8A8A;"><i class="ti ti-trash" style="font-size:12px;"></i> Delete</button>
+            <button class="bulk-btn admin-only" onclick="bulkArchiveJobs()"><i class="ti ti-archive" style="font-size:12px;"></i> Archive</button>
+            <button class="bulk-btn admin-only" onclick="bulkDeleteJobs()" style="color:#FF8A8A;"><i class="ti ti-trash" style="font-size:12px;"></i> Delete</button>
             <button class="bulk-btn" onclick="clearJobSelection()" style="opacity:.7;">Clear</button>
           </div>
         </div>
@@ -2913,7 +2914,8 @@ let currentPerson=MY_PERSON;
 if(!people[MY_PERSON])people[MY_PERSON]={name:MY_PERSON==='st_114330'?'Ronan Heal':'…',initials:MY_PERSON==='st_114330'?'RH':'?',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true,_stub:true};
 const APP_VERSION='2.39.1';
 const CHANGELOG=[
-  {version:'2.39.1',date:'12 Nov 2026',title:'Small fixes ahead of team testing',items:[
+  {version:'2.39.1',date:'12 Nov 2026',title:'Admin-only archiving, plus small fixes ahead of team testing',items:[
+    'New: admins. Tick "Admin" on a person in Settings → Team, then only admins see Archive and Delete on jobs (single and bulk) and can archive or remove team members. Until someone is made an admin, nothing changes. Publish the team config to share it with everyone. (There\'s no login yet, so this keeps things tidy rather than locked down.)',
     'To Do: the week label always matches the board; the day bar uses your own day length instead of 8h; right-click on an empty day opens one new-task box (not several); no stray follow-up card after adding a task; ⌘K "todo" at the weekend goes on next Monday.',
     'Dates: new quotes, expenses, invoices and the Deadlines "today" outline now use today\'s NZ date — before 1pm they were using yesterday.',
     'Names with quotes or symbols display properly everywhere, and the Job Settings box no longer cuts off (and saves) names like 99% Sugar Free Cappuccino "Strong".',
@@ -4069,6 +4071,7 @@ async function initStreamtime(silent){
   if(typeof renderReporting==='function'&&document.getElementById('view-reporting')&&!document.getElementById('view-reporting').classList.contains('hidden'))renderReporting();
   _syncSidebarAvatar();
   try{if(!localStorage.getItem('cc_me')&&Object.keys(stUsersById).length)_askWhoAmI(false);}catch(e){}
+  try{_applyAdminUi();}catch(e){} // hide admin-only actions for non-admins
 }
 
 // Seed the global label list from any labels already on jobs
@@ -7256,8 +7259,31 @@ function updateBulkBar(){
 }
 function toggleAllJobCbs(on){document.querySelectorAll('.job-cb').forEach(cb=>cb.checked=on);updateBulkBar();}
 function clearJobSelection(){toggleAllJobCbs(false);}
+// ── Admin-only actions (team request: "Archiving not an option for those other than Admin")
+// Soft permission: there's no login yet, so this guards the UI, not the data. Until anyone is
+// marked Admin (Settings → Team → person → Admin), everyone can do everything — no change
+// for teams that haven't set it up. Admin flags travel with the published team config.
+function _hasAdmins(){return Object.values(people).some(p=>p&&p.admin&&!p._archived);}
+function _isAdmin(k){k=k||MY_PERSON;return !_hasAdmins()||!!people[k]?.admin;}
+function _needAdmin(what){
+  if(_isAdmin())return true;
+  const names=Object.values(people).filter(p=>p.admin&&!p._archived).map(p=>p.name.split(' ')[0]);
+  toast(`Only admins can ${what}${names.length?` — ask ${names.slice(0,3).join(', ')}`:''}`,'warn');
+  return false;
+}
+function toggleAdmin(key){
+  const p=people[key];if(!p)return;
+  if(!_isAdmin()){toast('Only admins can change who is an admin','warn');return;}
+  if(p.admin&&key===MY_PERSON&&Object.values(people).filter(x=>x.admin&&!x._archived).length===1&&Object.values(people).length>1){
+    if(!confirm('You are the only admin. Removing yourself turns admin-only actions back on for everyone. Continue?'))return;
+  }
+  p.admin=!p.admin;savePeople();renderSettings();_applyAdminUi();
+  toast(`${p.name} ${p.admin?'is now an admin':'is no longer an admin'} — publish the team config to share this`,'success');
+}
+function _applyAdminUi(){document.body.classList.toggle('not-admin',!_isAdmin());}
 function bulkArchiveJobs(){
   const ids=getSelectedJobIds();if(!ids.length)return;
+  if(!_needAdmin('archive jobs'))return;
   // Through dbUpdateJob (j._native), like single archiveJob — direct writes reverted on refetch
   ids.forEach(id=>dbUpdateJob(id,{status:'archived'}));
   renderJobs();
@@ -7265,6 +7291,7 @@ function bulkArchiveJobs(){
 }
 function bulkDeleteJobs(){
   const ids=getSelectedJobIds();if(!ids.length)return;
+  if(!_needAdmin('delete jobs'))return;
   ccConfirm(`Delete ${ids.length} job${ids.length!==1?'s':''}? This can't be undone.`,()=>{
     // Tombstone ST-backed jobs (same as deleteJobConfirm) or they return on the next remap
     const st=jobs.filter(j=>ids.includes(j.id)&&j._stId).map(j=>j.id);
@@ -7544,9 +7571,9 @@ function showJobDotMenu(e){
   menu.innerHTML=`
     <div class="tcm-item" onclick="closeJobDotMenu();duplicateJob('${j.id}')"><i class="ti ti-copy tcm-icon"></i> Duplicate job</div>
     <div class="tcm-item" onclick="closeJobDotMenu();toggleStarJob('${j.id}')"><i class="ti ti-star tcm-icon" style="${starred?'color:#F59E0B;':''}" ></i> ${starred?'Unstar job':'Star job'}</div>
-    <div class="tcm-item" onclick="closeJobDotMenu();archiveJob('${j.id}')"><i class="ti ti-archive tcm-icon"></i> Archive job</div>
+    <div class="tcm-item admin-only" onclick="closeJobDotMenu();archiveJob('${j.id}')"><i class="ti ti-archive tcm-icon"></i> Archive job</div>
     <div style="border-top:1px solid var(--border);margin:3px 0;"></div>
-    <div class="tcm-item danger" onclick="closeJobDotMenu();deleteJobConfirm('${j.id}')"><i class="ti ti-trash tcm-icon"></i> Delete job</div>`;
+    <div class="tcm-item danger admin-only" onclick="closeJobDotMenu();deleteJobConfirm('${j.id}')"><i class="ti ti-trash tcm-icon"></i> Delete job</div>`;
   document.body.appendChild(menu);
   setTimeout(()=>document.addEventListener('click',closeJobDotMenu,{once:true}),10);
 }
@@ -7575,6 +7602,7 @@ function toggleStarJob(id){
 }
 function archiveJob(id){
   const j=jobs.find(x=>x.id===id);if(!j)return;
+  if(!_needAdmin('archive jobs'))return;
   dbUpdateJob(id,{status:'archived'}).then(()=>{ // durable — was a direct write that reverted on refetch
     navTo('jobs');
     toast('Job archived');
@@ -7582,6 +7610,7 @@ function archiveJob(id){
 }
 function deleteJobConfirm(id){
   const j=jobs.find(x=>x.id===id);if(!j)return;
+  if(!_needAdmin('delete jobs'))return;
   ccConfirm(`Delete “${esc(j.name)}”? This cannot be undone.`,()=>{
     const idx=jobs.findIndex(x=>x.id===id);
     if(idx>-1)jobs.splice(idx,1);
@@ -9501,7 +9530,7 @@ async function saveJobDates(jobId){
 function editJobStatusField(jobId){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
   const el=document.querySelector(`#d-meta-line [onclick="editJobStatusField('${jobId}')"]`);if(!el)return;
-  const opts=[['inplay','In Play'],['complete','Complete'],['archived','Archived']];
+  const opts=[['inplay','In Play'],['complete','Complete'],['archived','Archived']].filter(([v])=>v!=='archived'||_isAdmin()||j.status==='archived');
   const sel=document.createElement('select');
   sel.className='filter-btn';sel.style.cssText='font-size:11px;padding:1px 4px;';
   sel.innerHTML=opts.map(([v,l])=>`<option value="${v}" ${v===j.status?'selected':''}>${l}</option>`).join('');
@@ -10655,6 +10684,10 @@ function openTeamMember(key){
     </div>
     <div class="tm-panel-section" style="border-bottom:none;">
       <div class="tm-panel-section-lbl">Account</div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px;${_isAdmin()?'cursor:pointer;':'opacity:.55;'}" title="${_isAdmin()?'Admins can archive and delete jobs and manage the team':'Only admins can change this'}">
+        <input type="checkbox" ${p.admin?'checked':''} ${_isAdmin()?'':'disabled'} onchange="toggleAdmin('${key}');openTeamMember('${key}')" style="accent-color:var(--red)"> Admin
+        <span style="font-size:11px;color:var(--muted);">${_hasAdmins()?'can archive &amp; delete jobs, manage the team':'no admins yet — everyone can archive &amp; delete'}</span>
+      </label>
       ${key!==MY_PERSON?`<button class="d-action${p._archived?' primary':''}" onclick="toggleArchivePerson('${key}');closeTeamPanel();renderSettings();">
         <i class="ti ti-${p._archived?'rotate':'archive'}" style="font-size:12px"></i> ${p._archived?'Restore':'Archive'} ${p.name}
       </button>`:`<div style="font-size:12px;color:var(--muted);">This is your account — switch users from the person switcher.</div>`}
@@ -10794,6 +10827,7 @@ function saveNewPerson(){
 }
 function toggleArchivePerson(key){
   const p=people[key];if(!p||key===MY_PERSON)return;
+  if(!_needAdmin('archive team members'))return;
   p._archived=!p._archived;
   if(p._archived)delete p._keepActive;else p._keepActive=true; // keep a manual restore over ST's Hibernated status (L9)
   savePeople();populatePersonSwitcher();renderSettings();
@@ -10802,6 +10836,7 @@ function toggleArchivePerson(key){
 function deletePerson(key){
   const p=people[key];if(!p)return;
   if(key===MY_PERSON){toast('You can\'t remove yourself','warn');return;}
+  if(!_needAdmin('remove team members'))return;
   if(Object.keys(people).length<=1){toast('At least one team member is required','warn');return;}
   if(!confirm(`Remove ${p.name} from the team? Their scheduled tasks will be kept but hidden.`))return;
   // Streamtime users are recreated from the users sync if their entry is deleted, so they
