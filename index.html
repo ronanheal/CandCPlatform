@@ -2096,11 +2096,11 @@ body.dark #create-item-menu{background:var(--white)!important;}
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
               <select class="filter-btn cc-select" id="r-period" style="min-width:130px;" onchange="document.getElementById('r-custom-range').style.display=this.value==='custom'?'flex':'none';renderReporting()">
-                <option value="week">This week</option>
+                <option value="week">Last 7 days</option>
                 <option value="2weeks">Last 2 weeks</option>
-                <option value="month" selected>This month</option>
-                <option value="quarter">This quarter</option>
-                <option value="year">This year</option>
+                <option value="month" selected>Last 30 days</option>
+                <option value="quarter">Last 90 days</option>
+                <option value="year">Last 12 months</option>
                 <option value="all">All time</option>
                 <option value="custom">Custom range…</option>
               </select>
@@ -2772,7 +2772,7 @@ function _keepJobEdits(j,keys){
 // Today as a LOCAL "YYYY-MM-DD" (toISOString gives the UTC date — yesterday before 1pm in NZ).
 function _localISO(d){d=d||new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 async function dbCreateTimeEntry(data){
-  const e={...data,id:data.id||uid('lt'),_local:true,date:data.date||new Date().toISOString().slice(0,10),minutes:Math.round((data.hours||0)*60)};
+  const e={...data,id:data.id||uid('lt'),_local:true,date:data.date||_localISO(),minutes:Math.round((data.hours||0)*60)};
   stLoggedTimes.push(e);persistNativeData();resetTodoStore(true);return e;
 }
 async function dbCreatePhase(jobId,data){
@@ -2790,7 +2790,7 @@ async function dbCreateItem(jobId,phaseId,data){
 async function dbCreateExpense(jobId,data){
   const j=jobs.find(x=>x.id===jobId);if(!j)return null;
   if(!j.expenses)j.expenses=[];
-  const e={...data,id:uid('exp'),_local:true,status:'draft',date:data.date||new Date().toISOString().slice(0,10)};
+  const e={...data,id:uid('exp'),_local:true,status:'draft',date:data.date||_localISO()};
   j.expenses.push(e);saveData();return e;
 }
 // Milestones — native create/edit/delete. Field shape (name/date) matches ST's milestones.json
@@ -2884,7 +2884,7 @@ function exportWorkspace(){
   WORKSPACE_KEYS.forEach(k=>{const v=localStorage.getItem(k);if(v!=null)blob.data[k]=v;});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([JSON.stringify(blob,null,2)],{type:'application/json'}));
-  a.download=`cc-workspace-${new Date().toISOString().slice(0,10)}.json`;
+  a.download=`cc-workspace-${_localISO()}.json`;
   document.body.appendChild(a);a.click();a.remove();
   toast('Workspace exported','success');
 }
@@ -2911,8 +2911,18 @@ const MY_PERSON=(()=>{try{return localStorage.getItem('cc_me')||'st_114330';}cat
 let currentPerson=MY_PERSON;
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:MY_PERSON==='st_114330'?'Ronan Heal':'…',initials:MY_PERSON==='st_114330'?'RH':'?',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true,_stub:true};
-const APP_VERSION='2.39.0';
+const APP_VERSION='2.39.1';
 const CHANGELOG=[
+  {version:'2.39.1',date:'12 Nov 2026',title:'Small fixes ahead of team testing',items:[
+    'To Do: the week label always matches the board; the day bar uses your own day length instead of 8h; right-click on an empty day opens one new-task box (not several); no stray follow-up card after adding a task; ⌘K "todo" at the weekend goes on next Monday.',
+    'Dates: new quotes, expenses, invoices and the Deadlines "today" outline now use today\'s NZ date — before 1pm they were using yesterday.',
+    'Names with quotes or symbols display properly everywhere, and the Job Settings box no longer cuts off (and saves) names like 99% Sugar Free Cappuccino "Strong".',
+    'Reporting: weekend time is now included, the period names say what they mean ("Last 30 days"), and "Budget used % (top 10)" really is the top 10.',
+    'Time tab: "Last month" and "Last week" include their last day.',
+    'Jobs: jobs created in the platform sort to the top; job number filters in Quotes and Invoices match exactly; phase hour totals include items under an hour; the three duplicate 2023 job numbers can all be opened.',
+    'Team: people hibernated in Streamtime are archived here (restore them in Settings → Team). Settings → Data shows when Streamtime last synced.',
+    'Clients: addresses include the country, and "Prepared for" prefers an active, named contact over archived ones or "Accounts".',
+  ]},
   {version:'2.39.0',date:'12 Nov 2026',title:'Ready for team testing — your own login, edits that stick, faster loading',items:[
     'Pick who you are: the first time you open the platform it asks "Who are you?" — your dashboard, To Do board and logged time are then yours. Switch any time from your avatar at the bottom of the sidebar. (Before, everyone was Ronan.)',
     'Edits now stick: job notes, labels, team members, job settings, workflow stage and quote/invoice status no longer quietly undo themselves after a few minutes or a reload. Bulk archive, bulk delete, bulk label and Duplicate job stick too.',
@@ -3859,10 +3869,14 @@ function _mapStJob(j){
 function _mapStCompany(c,contacts){
   // All contacts for this company (for the read/edit list)
   const coContacts=(contacts||[]).filter(x=>x.companyId===c.id||x.company?.id===c.id||x.company?.name===c.name);
-  const co=coContacts[0]||null;
+  // Primary contact (shown under "Prepared for"): an active, named person before an archived
+  // one or a role mailbox like "Accounts" — it used to be whichever came first (L14).
+  const _isRole=x=>/^(accounts?|admin|info|billing|finance|payables)$/i.test([x.firstName,x.lastName].filter(Boolean).join(' ').trim());
+  const _rank=x=>(x.contactStatus?.name==='Archived'||x.active===false?2:0)+(_isRole(x)?1:0);
+  const co=[...coContacts].sort((a,b)=>_rank(a)-_rank(b))[0]||null;
   const name=co?[co.firstName,co.lastName].filter(Boolean).join(' '):'';
   const addr=c.physicalAddress||c.postalAddress;
-  const addrStr=addr?[addr.line1,addr.line2,addr.city,addr.country].filter(Boolean).join(', '):'';
+  const addrStr=addr?[addr.line1,addr.line2,addr.line3,addr.city,addr.region,addr.postCode,addr.countryName||addr.country].filter(Boolean).join(', '):'';
   return{id:'st-'+c.id,_stId:c.id,name:c.name,nickname:'',contact:name,contactTitle:co?.position||co?.jobTitle||'',
     email:co?.email||'',phone:co?.phone||co?.phoneNumber||co?.mobile||'',
     website:c.websiteAddress||c.website||'',companyPhone:c.phone1||c.phone2||'',
@@ -3920,6 +3934,9 @@ async function initStreamtime(silent){
             _fromStreamtime:true,
           };
         }
+        // Hibernated/Deleted in Streamtime → archived here, so they leave the Dashboard,
+        // Schedule, reassign menus and switcher (L9). Restoring in Settings → Team sticks.
+        if(userStatus!=='Active'&&people[key]&&!people[key]._keepActive&&key!==MY_PERSON)people[key]._archived=true;
       });
       savePeople();
     }
@@ -3940,6 +3957,9 @@ async function initStreamtime(silent){
     if(jobsRes.ok){
       const raw=await jobsRes.json();
       jobs=raw.map(_mapStJob);
+      // Streamtime has a few duplicate job numbers (archived 2023 retainers 4474/4483/4438).
+      // id = number, so the second of each pair couldn't be opened — give it a suffixed id (L14).
+      {const _seen=new Set();jobs.forEach(j=>{if(_seen.has(j.id)){let n=2;while(_seen.has(j.id+'-'+n))n++;j.id=j.id+'-'+n;}_seen.add(j.id);});}
       // Re-apply native overrides/creations from the durable store (paused, field edits,
       // milestones, expenses, native phases/items, split-invoices, activity, and fully-native
       // jobs). See persistNativeData()/applyNativeData() — survives both reload and refetch.
@@ -4007,6 +4027,12 @@ async function initStreamtime(silent){
       const swRes=await fetch(`${ST_BASE}/logged_times_sweep.json${_v}`);
       stSweepState=swRes.ok?await swRes.json():null;
     }catch(e){stSweepState=null;}
+    // When the GitHub sync last wrote the data branch — shown in Settings → Data (L10)
+    try{
+      const mRes=await fetch(`${ST_BASE}/sync_meta.json${_v}`);
+      const meta=mRes.ok?await mRes.json():null;
+      if(meta?.last_synced)localStorage.setItem('cc_last_sync',String(Date.parse(meta.last_synced)));
+    }catch(e){}
     // Platform config (people, labels, item types) published by admin
     try{
       const cfgRes=await fetch(`${ST_BASE}/platform_config.json${_v}`);
@@ -4330,7 +4356,7 @@ function renderDashboard(){
     }).join('');
     const moreCount=cjobs.length>4?`<span style="font-size:11px;color:var(--muted);margin-top:4px;display:block;">+${cjobs.length-4} more</span>`:'';
     return`<div class="team-card" onclick="navTo('clients')">
-      <div class="tc-head"><div class="tc-av" style="background:${clColor};">${initials}</div><div><div class="tc-name">${cl?.nickname?`${cl.nickname} <span style='font-size:11px;color:var(--muted);font-weight:400;'>${co}</span>`:co}</div></div><div class="tc-meta">${cjobs.length} job${cjobs.length!==1?'s':''}</div></div>
+      <div class="tc-head"><div class="tc-av" style="background:${clColor};">${initials}</div><div><div class="tc-name">${cl?.nickname?`${esc(cl.nickname)} <span style='font-size:11px;color:var(--muted);font-weight:400;'>${esc(co)}</span>`:esc(co)}</div></div><div class="tc-meta">${cjobs.length} job${cjobs.length!==1?'s':''}</div></div>
       <div class="tc-timeline">${jobPills}${moreCount}</div>
     </div>`;
   }).filter(Boolean);
@@ -4529,7 +4555,7 @@ function moveScheduleTask(fromPerson,fromDay,toPerson,toDay,taskId){
   if(!todoData[toPerson][wk])todoData[toPerson][wk]={};
   if(!todoData[toPerson][wk][toDay])todoData[toPerson][wk][toDay]=[];
   todoData[toPerson][wk][toDay].push(task);
-  if(fromPerson!==toPerson&&task.jobId)logActivity(task.jobId,MY_PERSON,'task_reassign',`<strong>${task.title}</strong> moved from ${people[fromPerson]?.name||fromPerson} to ${people[toPerson]?.name||toPerson}`);
+  if(fromPerson!==toPerson&&task.jobId)logActivity(task.jobId,MY_PERSON,'task_reassign',`<strong>${esc(task.title)}</strong> moved from ${people[fromPerson]?.name||fromPerson} to ${people[toPerson]?.name||toPerson}`);
   renderSchedule();
   toast(fromPerson!==toPerson?`Moved to ${people[toPerson]?.name||toPerson}`:'Rescheduled','success');
 }
@@ -4820,7 +4846,7 @@ function openLogExpense(prefillJobId){
     <div class="modal-bd" style="padding:20px;display:flex;flex-direction:column;gap:14px;">
       <div class="field"><label>Job</label><select id="le-job" class="tm-field-sel" style="width:100%;"><option value="">— Select job —</option>${jobOpts}</select></div>
       <div class="field"><label>Description</label><input id="le-desc" class="form-inp" placeholder="e.g. Stock photography" style="width:100%;"></div>
-      <div class="field"><label>Date</label><input type="date" id="le-date" class="form-inp" value="${new Date().toISOString().slice(0,10)}" style="width:100%;"></div>
+      <div class="field"><label>Date</label><input type="date" id="le-date" class="form-inp" value="${_localISO()}" style="width:100%;"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div class="field"><label>Cost (ex GST)</label><input type="number" id="le-cost" class="form-inp" min="0" step="1" placeholder="0" style="width:100%;"></div>
         <div class="field"><label>Sell (ex GST)</label><input type="number" id="le-sell" class="form-inp" min="0" step="1" placeholder="0" style="width:100%;"></div>
@@ -5388,7 +5414,13 @@ function _clampSplit(px,min=80){
   return Math.max(min,Math.round(px));
 }
 
+// A person's day capacity in hours (their setting, else Streamtime working hours, else 8). (L8)
+function _dayCap(key){
+  const sid=people[key]?._stId;
+  return people[key]?.hoursPerDay||((sid&&stUsersById[sid]?.capacityH)||8);
+}
 function renderTodo(){
+  try{updateWeekLabel();}catch(e){} // weekOffset is also changed by Schedule, mini-cal, search, Focus (L1)
   if(window._focusToday){renderFocusToday();return;}
   if(_todoViewMode==='calendar'){renderTodoCalendar();return;}
   const p=people[currentPerson];
@@ -5407,14 +5439,18 @@ function renderTodo(){
   }
   todoSplitPx=_clampSplit(todoSplitPx); // never build the columns from a bad split
   const wrap=document.getElementById('day-cols');wrap.innerHTML='';
-  wrap.oncontextmenu=null; // re-wire each render
-  wrap.addEventListener('contextmenu',ev=>{
-    if(ev.target.closest('.task-card')){return;} // let card's own handler take over
-    ev.preventDefault();
-    const col=ev.target.closest('[data-day]');
-    const day=col?parseInt(col.dataset.day):null;
-    openTodoModal(null,day);
-  },true);
+  // Wire once: addEventListener on every render stacked listeners, so one right-click
+  // opened the new-task modal N times (L14).
+  if(!wrap._ctxWired){
+    wrap._ctxWired=true;
+    wrap.addEventListener('contextmenu',ev=>{
+      if(ev.target.closest('.task-card')){return;} // let card's own handler take over
+      ev.preventDefault();
+      const col=ev.target.closest('[data-day]');
+      const day=col?parseInt(col.dataset.day):null;
+      openTodoModal(null,day);
+    },true);
+  }
   const data=getWeekData(currentPerson);
 
   // Week totals for summary bar (all tasks come from the ST-seeded store)
@@ -5441,7 +5477,7 @@ function renderTodo(){
     stLoggedTimes.forEach(lt=>{const d=(lt.date||'').slice(0,10);if(d>maxD)maxD=d;});
     if(maxD){
       const md=new Date(maxD+'T12:00:00');
-      const stale=maxD<new Date().toISOString().slice(0,10);
+      const stale=maxD<_localISO();
       const lbl=`${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][md.getDay()]} ${md.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][md.getMonth()]}`;
       _fresh={stale,short:`Data to ${lbl}`,long:`Streamtime data runs through ${lbl}.${stale?' Today’s logged time hasn’t synced yet.':''}`};
     }
@@ -5456,8 +5492,7 @@ function renderTodo(){
 
   const _dow=new Date().getDay();
   const todayDayNum=_dow===0?0:_dow;
-  const _stCapId=people[currentPerson]?._stId;
-  const DAY_CAP=people[currentPerson]?.hoursPerDay||((_stCapId&&stUsersById[_stCapId]?.capacityH)||8);
+  const DAY_CAP=_dayCap(currentPerson);
 
   // Build week date numbers for header display
   const weekMon=new Date();const _wd=(weekMon.getDay()+6)%7;
@@ -5493,7 +5528,7 @@ function renderTodo(){
 
     let capHTML='';
     if(isWork){
-      const label=dayTotalH>0?(isOver?`<span class="day-cap-info over">${formatHrs(dayTotalH)} / 8h · OVER</span>`:`<span class="day-cap-info">${formatHrs(dayTodoH)||'0h'} to do · ${formatHrs(dayDoneH)||'0h'} done</span>`):'<span class="day-cap-info">No tasks</span>';
+      const label=dayTotalH>0?(isOver?`<span class="day-cap-info over">${formatHrs(dayTotalH)} / ${formatHrs(DAY_CAP)} · OVER</span>`:`<span class="day-cap-info">${formatHrs(dayTodoH)||'0h'} to do · ${formatHrs(dayDoneH)||'0h'} done</span>`):'<span class="day-cap-info">No tasks</span>';
       capHTML=`<div class="day-cap">${label}<div class="day-cap-bar"><div class="dcb-done" style="width:${bDoneW}%;"></div><div class="dcb-nbill-done" style="width:${nDoneW}%;"></div><div class="dcb-todo" style="width:${bTodoW}%;${isOver?'background:var(--red);':''}"></div><div class="dcb-nbill-todo" style="width:${nTodoW}%;${isOver?'background:var(--red);opacity:.6':''}"></div></div></div>`;
     }
 
@@ -5891,18 +5926,19 @@ function renderTodoHeader(day){
   const todoH=todoTasks.reduce((s,t)=>s+(t.hours||0),0);
   const doneH=doneTasks.reduce((s,t)=>s+(t.hours||0),0);
   const total=todoH+doneH;
-  const isOver=total>8;
+  const DAY_CAP=_dayCap(currentPerson);
+  const isOver=total>DAY_CAP;
   const billTodo=todoTasks.filter(taskIsBillable).reduce((s,t)=>s+(t.hours||0),0);
   const nbillTodo=Math.max(0,todoH-billTodo);
   const billDone=doneTasks.filter(taskIsBillable).reduce((s,t)=>s+(t.hours||0),0);
   const nbillDone=Math.max(0,doneH-billDone);
-  const bTW=Math.min(100,Math.round((billTodo/8)*100));const nTW=Math.min(100-bTW,Math.round((nbillTodo/8)*100));
-  const bDW=Math.min(100,Math.round((billDone/8)*100));const nDW=Math.min(100-bDW,Math.round((nbillDone/8)*100));
+  const bTW=Math.min(100,Math.round((billTodo/DAY_CAP)*100));const nTW=Math.min(100-bTW,Math.round((nbillTodo/DAY_CAP)*100));
+  const bDW=Math.min(100,Math.round((billDone/DAY_CAP)*100));const nDW=Math.min(100-bDW,Math.round((nbillDone/DAY_CAP)*100));
   const col=document.querySelector(`.day-col[data-day="${day}"]`);
   if(!col)return;
   const cap=col.querySelector('.day-cap');
   if(!cap)return;
-  const label=total>0?(isOver?`<span class="day-cap-info over">${formatHrs(total)} / 8h · OVER</span>`:`<span class="day-cap-info">${formatHrs(todoH)||'0h'} to do · ${formatHrs(doneH)||'0h'} done</span>`):'<span class="day-cap-info">No tasks</span>';
+  const label=total>0?(isOver?`<span class="day-cap-info over">${formatHrs(total)} / ${formatHrs(DAY_CAP)} · OVER</span>`:`<span class="day-cap-info">${formatHrs(todoH)||'0h'} to do · ${formatHrs(doneH)||'0h'} done</span>`):'<span class="day-cap-info">No tasks</span>';
   cap.innerHTML=`${label}<div class="day-cap-bar"><div class="dcb-done" style="width:${bDW}%;"></div><div class="dcb-nbill-done" style="width:${nDW}%;"></div><div class="dcb-todo" style="width:${bTW}%;${isOver?'background:var(--red);':''}"></div><div class="dcb-nbill-todo" style="width:${nTW}%;${isOver?'background:var(--red);opacity:.6':''}"></div></div>`;
 }
 
@@ -6751,7 +6787,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   // Rollover prompt: show once per Monday after ST data loads
   const _now=new Date();
   if(_now.getDay()===1){
-    const monKey=_now.toISOString().slice(0,10);
+    const monKey=_localISO(_now);
     if(localStorage.getItem('cc_rollover_seen')!==monKey){
       setTimeout(()=>checkRolloverPrompt(monKey),3000);
     }
@@ -6954,8 +6990,7 @@ function saveTodo(){
     if(!wd[dayNum])wd[dayNum]=[];
     wd[dayNum].push(task);
     if(jobId)logActivity(jobId,targetPerson,'task_add',`Added task <strong>${esc(name)}</strong>${item?` (${esc(item)})`:''} — ${DAY_NAMES[dayNum-1]}`);
-    _fupTask=null;
-    setTimeout(()=>document.getElementById('fup').classList.add('on'),800);
+    _fupTask=null; // no follow-up card on *adding* a task — it showed the last completed task's text (L11)
     // Handle repeat: create copies for future occurrences
     if(document.getElementById('td-repeat-config')?.classList.contains('on')){
       _spawnRepeatOccurrences(task,targetPerson,dayNum);
@@ -7039,7 +7074,13 @@ function renderJobs(){
   _renderPresetsBar('jobs');
 
   // Newest first by job number
-  const sorted=[...jobs].sort((a,b)=>{const na=Number(a._stId||a.id)||0,nb=Number(b._stId||b.id)||0;return nb-na;});
+  // Platform-created jobs (no _stId) first, newest first — sorting them by Number(id) beside
+// Streamtime ids (~2,000,000) sank them to the bottom of the list (L7).
+  const sorted=[...jobs].sort((a,b)=>{
+    const la=!a._stId,lb=!b._stId;if(la!==lb)return la?-1:1;
+    if(la)return (b._createdAt||0)-(a._createdAt||0)||(Number(b.id)||0)-(Number(a.id)||0);
+    return (Number(b._stId)||0)-(Number(a._stId)||0);
+  });
   // Apply chip filters
   let filteredJobs=sorted.filter(j=>{
     if(j.status==='archived'&&!_jobsFilters.some(f=>f.type==='status'&&f.value==='Archived'))return false;
@@ -7105,7 +7146,7 @@ function renderJobs(){
       const item=renderList[i];
       if(item._isGroupHd){
         const hdr=document.createElement('tr');
-        hdr.innerHTML=`<td colspan="7" style="padding:8px 20px 4px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:var(--off);border-top:2px solid var(--border);border-bottom:1px solid var(--border);">${item._groupKey} <span style="font-weight:400;opacity:.7;">(${item._groupCount})</span></td>`;
+        hdr.innerHTML=`<td colspan="7" style="padding:8px 20px 4px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:var(--off);border-top:2px solid var(--border);border-bottom:1px solid var(--border);">${esc(item._groupKey)} <span style="font-weight:400;opacity:.7;">(${item._groupCount})</span></td>`;
         frag.appendChild(hdr);
         _jobsRenderedCount=i+1;
         continue;
@@ -7135,7 +7176,7 @@ function renderJobs(){
           <div class="job-num-name"><span class="job-num">${j.id}</span><span class="job-name">${esc(j.name)}</span>${pausedBadge}</div>
           ${notePrev}
         </td>
-        <td class="cj-company"><span class="job-co">${billDot}${j.company}</span></td>
+        <td class="cj-company"><span class="job-co">${billDot}${esc(j.company)}</span></td>
         <td class="cj-budget">
           <div class="bbar-wrap">
             <div class="bbar-nums"><span style="font-weight:400;color:${bPct>=100?'var(--red)':'inherit'}">$${(j._sellUsed||0).toLocaleString()}</span><span class="bbar-of">/ $${(j._plannedSell||0).toLocaleString()}</span></div>
@@ -7160,7 +7201,7 @@ function renderJobs(){
     let sentinel=document.getElementById('jobs-load-sentinel');
     if(_jobsRenderedCount<renderList.length){
       if(!sentinel){sentinel=document.createElement('tr');sentinel.id='jobs-load-sentinel';}
-      sentinel.innerHTML=`<td colspan="8" style="text-align:center;padding:16px;color:var(--muted);font-size:12px;">Showing ${shown} of ${filteredJobs.length} jobs — scroll for more</td>`;
+      sentinel.innerHTML=`<td colspan="8" style="text-align:center;padding:16px;color:var(--muted);font-size:12px;">Showing ${_jobsRenderedCount} of ${renderList.length} jobs — scroll for more</td>`;
       tbody.appendChild(sentinel);
       if(window._jobsObserver)window._jobsObserver.disconnect();
       window._jobsObserver=new IntersectionObserver(entries=>{
@@ -7274,7 +7315,7 @@ function openJobDetail(id){
   // label to set status directly (editJobStatusField), click the → to advance the workflow
   // stage (advanceWorkflow). Both behaviours preserved, no duplication.
   const _statusCtl=` &nbsp;<span class="wf-badge ${wfCls}" style="user-select:none;padding-right:3px;"><span style="cursor:pointer;" title="Click to set status" onclick="editJobStatusField('${id}')">${wfLabel}</span><i class="ti ti-arrow-right" title="Advance workflow stage" onclick="advanceWorkflow('${id}')" style="font-size:9px;vertical-align:middle;margin-left:5px;padding:1px 3px;cursor:pointer;"></i></span>`;
-  document.getElementById('d-meta-line').innerHTML=`${j.id} · ${j.company} · ${leadHtml}${j.billable?'Billable':'Non-billable'}${j.po?` · PO ${j.po}`:''}`+_statusCtl+(j.paused?' &nbsp;<span class="paused-badge"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>':'')+archivedBadge+_datesBadge;
+  document.getElementById('d-meta-line').innerHTML=`${j.id} · ${esc(j.company)} · ${leadHtml}${j.billable?'Billable':'Non-billable'}${j.po?` · PO ${j.po}`:''}`+_statusCtl+(j.paused?' &nbsp;<span class="paused-badge"><i class="ti ti-pause" style="font-size:9px;"></i> Paused</span>':'')+archivedBadge+_datesBadge;
   let _titleEl=document.getElementById('d-title-text');
   if(_titleEl.tagName!=='DIV'){
     const _div=document.createElement('div');
@@ -7416,7 +7457,7 @@ function openJobSettingsModal(){
       <div class="field-row">
         <div class="field" style="flex:2;">
           <label>Job Name</label>
-          <input id="jsett-name" value="${j.name||''}" placeholder="e.g. Brand Guidelines 2025">
+          <input id="jsett-name" value="${esc(j.name||'')}" placeholder="e.g. Brand Guidelines 2025">
         </div>
         <div class="field" style="flex:1;">
           <label>Job ID</label>
@@ -7426,11 +7467,11 @@ function openJobSettingsModal(){
       <div class="field-row">
         <div class="field">
           <label>Company</label>
-          <input id="jsett-company" value="${j.company||''}" placeholder="Client company">
+          <input id="jsett-company" value="${esc(j.company||'')}" placeholder="Client company">
         </div>
         <div class="field">
           <label>Contact</label>
-          <input id="jsett-contact" value="${j.contact||''}" placeholder="Contact person">
+          <input id="jsett-contact" value="${esc(j.contact||'')}" placeholder="Contact person">
         </div>
       </div>
       <div class="field-row">
@@ -7857,7 +7898,7 @@ function renderProgressTab(){
         <td><span class="prog-date-chip"><i class="ti ti-calendar" style="font-size:10px;"></i> ${fmtD(r.date)}</span></td>
         <td><span class="prog-av" style="background:${p.color};">${p.initials}</span> ${p.name}</td>
         <td class="prog-dim">${r.phase||''}</td>
-        <td>${r.item}${r.title&&r.title!==r.item?`<div class="prog-task-title">${r.title}</div>`:''}</td>
+        <td>${esc(r.item)}${r.title&&r.title!==r.item?`<div class="prog-task-title">${esc(r.title)}</div>`:''}</td>
         <td style="text-align:center;"><span class="prog-status-dot ${r.done?'done':'sched'}" title="${r.done?'Logged (done)':'Scheduled (not done yet)'}"></span></td>
         <td style="text-align:right;white-space:nowrap;">${formatHrs(r.hours)||'0h'}</td>
         <td style="text-align:right;white-space:nowrap;">$${r.sell.toLocaleString()}</td>
@@ -7955,8 +7996,8 @@ function applyReallocate(){
   t.itemId=newItemId;
   t.item=newItemName;
   saveData();
-  if(oldJobId&&oldJobId!==newJobId)logActivity(oldJobId,MY_PERSON,'time_realloc',`Moved <strong>${t.title}</strong> (${formatHrs(t.hours)||'0h'}) to <strong>${newJob?newJob.name:'no job'}</strong>`);
-  if(newJobId)logActivity(newJobId,MY_PERSON,'time_realloc',`<strong>${t.title}</strong> (${formatHrs(t.hours)||'0h'}) moved onto this job${newItemName?` — ${newItemName}`:''}`);
+  if(oldJobId&&oldJobId!==newJobId)logActivity(oldJobId,MY_PERSON,'time_realloc',`Moved <strong>${esc(t.title)}</strong> (${formatHrs(t.hours)||'0h'}) to <strong>${newJob?esc(newJob.name):'no job'}</strong>`);
+  if(newJobId)logActivity(newJobId,MY_PERSON,'time_realloc',`<strong>${esc(t.title)}</strong> (${formatHrs(t.hours)||'0h'}) moved onto this job${newItemName?` — ${esc(newItemName)}`:''}`);
   document.getElementById('realloc-modal')?.remove();
   renderProgressTab();
   _refreshJobStats();
@@ -8218,7 +8259,7 @@ function openQuoteDocPreview(qtId){
   const pill=`<span style="display:inline-block;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:500;background:${sc}22;color:${sc};border:1px solid ${sc}44;">${status}</span>`;
   const prepCl=clientsData.find(c=>c.name===qt.company);
   const prepContact=prepCl&&prepCl.contact?`${prepCl.contact}${prepCl.contactTitle?` — ${prepCl.contactTitle}`:''}`:'';
-  const meta=`<div style="flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Prepared for</div><div style="font-weight:500;font-size:13px;">${qt.company||'—'}</div>${prepContact?`<div style="color:var(--muted);margin-top:2px;">${prepContact}</div>`:''}${job?`<div style="color:var(--muted);margin-top:2px;">Job #${job.id} · ${job.name}</div>`:''}</div>
+  const meta=`<div style="flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Prepared for</div><div style="font-weight:500;font-size:13px;">${esc(qt.company||'—')}</div>${prepContact?`<div style="color:var(--muted);margin-top:2px;">${esc(prepContact)}</div>`:''}${job?`<div style="color:var(--muted);margin-top:2px;">Job #${job.id} · ${esc(job.name)}</div>`:''}</div>
     <div style="text-align:right;color:var(--muted);"><div><strong style="color:var(--ink);">Quote #:</strong> ${qt.quoteNumber||qt.id}</div><div><strong style="color:var(--ink);">Issued:</strong> ${_docFmtDate(qt.quoteDate)}</div><div><strong style="color:var(--ink);">Sent:</strong> ${_docFmtDate(qt.sentDate)}</div>${qt.approvedDate?`<div><strong style="color:var(--ink);">Approved:</strong> ${_docFmtDate(qt.approvedDate)}</div>`:''}</div>`;
   const totals=`<tr><td style="padding:5px 10px;color:var(--muted);">Subtotal (ex GST)</td><td style="padding:5px 10px;text-align:right;">$${Math.round(ex).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;color:var(--muted);">GST (15%)</td><td style="padding:5px 10px;text-align:right;">$${gst.toLocaleString()}</td></tr><tr style="border-top:1px solid var(--border);"><td style="padding:7px 10px;font-weight:600;">Total (inc GST)</td><td style="padding:7px 10px;text-align:right;font-weight:600;font-family:var(--display);font-size:15px;">$${Math.round(inc).toLocaleString()}</td></tr>`;
   const terms=`<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--faint);font-size:11px;color:var(--muted);line-height:1.6;">Valid for 30 days from issue. Full terms: <a href="https://content-co.nz/terms/" target="_blank" style="color:var(--red);">content-co.nz/terms</a></div>`;
@@ -8238,7 +8279,7 @@ function openInvoiceDocPreview(invId){
   const pill=`<span style="display:inline-block;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:500;background:${sc}22;color:${sc};border:1px solid ${sc}44;">${status}</span>`;
   const billCl=clientsData.find(c=>c.name===inv.company?.name);
   const billContact=billCl&&billCl.contact?`${billCl.contact}${billCl.contactTitle?` — ${billCl.contactTitle}`:''}`:'';
-  const meta=`<div style="flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Billed to</div><div style="font-weight:500;font-size:13px;">${inv.company?.name||'—'}</div>${billContact?`<div style="color:var(--muted);margin-top:2px;">${billContact}</div>`:''}${job?`<div style="color:var(--muted);margin-top:2px;">Job #${job.id} · ${job.name}</div>`:''}${inv.purchaseOrderNumber?`<div style="color:var(--muted);">PO ${inv.purchaseOrderNumber}</div>`:''}</div>
+  const meta=`<div style="flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Billed to</div><div style="font-weight:500;font-size:13px;">${inv.company?.name||'—'}</div>${billContact?`<div style="color:var(--muted);margin-top:2px;">${billContact}</div>`:''}${job?`<div style="color:var(--muted);margin-top:2px;">Job #${job.id} · ${esc(job.name)}</div>`:''}${inv.purchaseOrderNumber?`<div style="color:var(--muted);">PO ${inv.purchaseOrderNumber}</div>`:''}</div>
     <div style="text-align:right;color:var(--muted);"><div><strong style="color:var(--ink);">Invoice #:</strong> ${inv.number||inv.id}</div><div><strong style="color:var(--ink);">Issued:</strong> ${_docFmtDate(inv.invoiceDate)}</div><div><strong style="color:var(--ink);">Due:</strong> ${_docFmtDate(inv.dueDate)}</div>${inv.paidDate?`<div><strong style="color:var(--ink);">Paid:</strong> ${_docFmtDate(inv.paidDate)}</div>`:''}</div>`;
   let totals=`<tr><td style="padding:5px 10px;color:var(--muted);">Subtotal (ex GST)</td><td style="padding:5px 10px;text-align:right;">$${Math.round(ex).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;color:var(--muted);">GST (15%)</td><td style="padding:5px 10px;text-align:right;">$${gst.toLocaleString()}</td></tr><tr style="border-top:1px solid var(--border);"><td style="padding:7px 10px;font-weight:600;">Total (inc GST)</td><td style="padding:7px 10px;text-align:right;font-weight:600;font-family:var(--display);font-size:15px;">$${Math.round(inc).toLocaleString()}</td></tr>`;
   if(paid>0)totals+=`<tr><td style="padding:5px 10px;color:#2E7D32;">Paid</td><td style="padding:5px 10px;text-align:right;color:#2E7D32;">-$${Math.round(paid).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;font-weight:600;">Balance due</td><td style="padding:5px 10px;text-align:right;font-weight:600;">$${Math.round(bal).toLocaleString()}</td></tr>`;
@@ -8415,13 +8456,13 @@ function renderQuoteTab(){
   const wrap=document.getElementById('dtab-quote');
   const opts=_getQuoteOpts(j.id);
   if(!j.quoteNum)j.quoteNum='Q-'+j.id;
-  if(!j.issueDate)j.issueDate=new Date().toISOString().slice(0,10);
+  if(!j.issueDate)j.issueDate=_localISO();
 
   // Compute totals
   let totalSell=0,totalHours=0;
   const phaseBlocks=phases.map(ph=>{
     const phSell=ph.items.reduce((s,i)=>s+parseInt((i.total||'0').replace(/[$,]/g,'')||0),0);
-    const phHrsMin=ph.items.reduce((s,i)=>{const x=(i.hours||'0h').match(/(\d+)h(?:(\d+)m)?/);return s+(x?parseInt(x[1])*60+(parseInt(x[2])||0):0);},0);
+    const phHrsMin=ph.items.reduce((s,i)=>s+_itemMins(i.hours),0);
     totalSell+=phSell;totalHours+=phHrsMin;
     const phHrsStr=phHrsMin>=60?`${Math.floor(phHrsMin/60)}h${phHrsMin%60?phHrsMin%60+'m':''}`:'0h';
     const itemRows=ph.items.map(i=>{
@@ -8512,7 +8553,7 @@ function renderQuoteTab(){
       const val=qt.totalAmountExTax!=null?`$${Math.round(qt.totalAmountExTax).toLocaleString()}`:'—';
       return`<div class="st-qt-row" onclick="openQuoteDocPreview('${qt.id}')">
         <div style="min-width:0;flex:1;">
-          <div style="font-size:13px;font-weight:400;">${qt.quoteName||qt.quoteNumber||'Quote'}${qt._local?'<span style="font-size:9px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">Local</span>':''}</div>
+          <div style="font-size:13px;font-weight:400;">${esc(qt.quoteName||qt.quoteNumber||'Quote')}${qt._local?'<span style="font-size:9px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">Local</span>':''}</div>
           <div style="font-size:11px;color:var(--muted);margin-top:2px;">${qt.quoteNumber||qt.id} · ${qt.sentDate?'Sent '+_fmtQD(qt.sentDate):'Not sent'}</div>
         </div>
         <div style="font-size:13px;font-family:var(--display);flex-shrink:0;">${val}</div>
@@ -8554,8 +8595,8 @@ function renderQuoteTab(){
       <div style="display:flex;gap:24px;margin-bottom:28px;">
         <div style="flex:1;">
           <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;">Prepared for</div>
-          <div style="font-size:14px;font-weight:500;">${j.company}</div>
-          ${clientInfo&&clientInfo.contact?`<div style="font-size:12px;color:var(--muted);">${clientInfo.contact}</div>`:''}
+          <div style="font-size:14px;font-weight:500;">${esc(j.company)}</div>
+          ${clientInfo&&clientInfo.contact?`<div style="font-size:12px;color:var(--muted);">${esc(clientInfo.contact)}</div>`:''}
           ${clientInfo&&clientInfo.email?`<div style="font-size:12px;color:var(--muted);">${clientInfo.email}</div>`:''}
         </div>
         <div style="text-align:right;min-width:180px;">
@@ -8753,7 +8794,8 @@ function _phDateRangeStr(ph){
   if(ph.startDate&&ph.dueDate)return ph.startDate===ph.dueDate?fmt(ph.startDate):`${fmt(ph.startDate)} – ${fmt(ph.dueDate)}`;
   return fmt(ph.startDate||ph.dueDate);
 }
-function pHrs(ph){let m=0;ph.items.forEach(i=>{const x=i.hours.match(/(\d+)h(?:(\d+)m)?/);if(x)m+=parseInt(x[1])*60+(parseInt(x[2])||0);});return m>=60?`${Math.floor(m/60)}h${m%60?m%60+'m':''}`:(m||0)+'m';}
+function _itemMins(h){if(!h||h==='—')return 0;return Math.round(parseHrsInput(String(h))*60)||0;} // handles "45m" too (L12)
+function pHrs(ph){let m=0;ph.items.forEach(i=>{m+=_itemMins(i.hours);});return m>=60?`${Math.floor(m/60)}h${m%60?m%60+'m':''}`:(m||0)+'m';}
 function pSell(ph){
   const _parse=s=>{const n=parseInt((s||'0').replace(/[^0-9]/g,''));return isNaN(n)?0:n;};
   const u=ph.items.reduce((a,i)=>a+_parse(i.used),0);
@@ -9030,7 +9072,7 @@ function saveExpenseInline(){
   const j=jobs.find(x=>x.id===activeJobId);if(!j)return;
   if(!j.expenses)j.expenses=[];
   const sell=cost*(1+markup/100);
-  j.expenses.push({id:'e'+Date.now(),desc,cost,markup,qty,date:new Date().toISOString().split('T')[0],sell,total:sell*qty,status:'draft'});
+  j.expenses.push({id:'e'+Date.now(),desc,cost,markup,qty,date:_localISO(),sell,total:sell*qty,status:'draft'});
   logActivity(activeJobId,MY_PERSON,'expense_add',`Added expense <strong>${desc}</strong>`);
   saveData();
   document.querySelector('.add-exp-form-row')?.remove();
@@ -9116,7 +9158,7 @@ function showAddExpenseForm(){
         </div>
       </div>
       <div class="field-row">
-        <div class="field" style="flex:1;"><label>Date</label><input id="exp-date" class="form-inp" type="date" value="${new Date().toISOString().split('T')[0]}" style="width:100%;"></div>
+        <div class="field" style="flex:1;"><label>Date</label><input id="exp-date" class="form-inp" type="date" value="${_localISO()}" style="width:100%;"></div>
         <div class="field" style="flex:1;"><label>Supplier (optional)</label><input id="exp-supplier" class="form-inp" placeholder="e.g. Adobe, Getty Images" style="width:100%;"></div>
       </div>
       <div id="exp-sell-preview" style="background:var(--off);border:1px solid var(--border);border-radius:3px;padding:10px 14px;margin-top:4px;font-size:12px;color:var(--muted);">
@@ -9162,7 +9204,7 @@ function saveExpense(jid){
   const j=jobs.find(x=>x.id===_jid);
   if(!j){toast('Job not found','error');return;}
   if(!j.expenses)j.expenses=[];
-  j.expenses.push({id:'e'+Date.now(),desc,cost,markup,qty,date:date||new Date().toISOString().split('T')[0],sell,total:sell*qty,supplier,status:'draft'});
+  j.expenses.push({id:'e'+Date.now(),desc,cost,markup,qty,date:date||_localISO(),sell,total:sell*qty,supplier,status:'draft'});
   logActivity(_jid,MY_PERSON,'expense_add',`Added expense <strong>${desc}</strong> — $${(sell*qty).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} sell`);
   saveData();
   document.getElementById('exp-modal')?.remove();
@@ -9317,7 +9359,7 @@ function openNewQuoteModal(presetJobId){
   document.getElementById('nq-name').value='';
   document.getElementById('nq-value').value='';
   document.getElementById('nq-notes').value='';
-  document.getElementById('nq-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('nq-date').value=_localISO();
   const co=document.getElementById('nq-co');co.value='';attachCombo(co,clientNameOptions);
   const jb=document.getElementById('nq-job');jb.value='';attachCombo(jb,jobOptionsForCombo);
   if(presetJobId){
@@ -9333,7 +9375,7 @@ function saveNewQuote(){
   const company=(document.getElementById('nq-co').value||'').trim();
   const jobInput=(document.getElementById('nq-job').value||'').trim();
   const value=parseFloat(document.getElementById('nq-value').value)||0;
-  const date=document.getElementById('nq-date').value||new Date().toISOString().slice(0,10);
+  const date=document.getElementById('nq-date').value||_localISO();
   const notes=(document.getElementById('nq-notes').value||'').trim();
   if(!name){toast('Please enter a quote name','error');return;}
   if(!company){toast('Please enter a company','error');return;}
@@ -9664,7 +9706,7 @@ function renderActivityTab(){
 // ---- INVOICE GENERATION ----
 function openInvoice(){
   const j=jobs.find(x=>x.id===activeJobId);if(!j)return;
-  if(!j.invNum){j.invNum=_nextInvNum();if(!j.invIssueDate)j.invIssueDate=new Date().toISOString().slice(0,10);if(!j.invDueDate){const _dd=new Date();_dd.setDate(_dd.getDate()+30);j.invDueDate=_dd.toISOString().slice(0,10);}_keepJobEdits(j,['invNum','invIssueDate','invDueDate']);}
+  if(!j.invNum){j.invNum=_nextInvNum();if(!j.invIssueDate)j.invIssueDate=_localISO();if(!j.invDueDate){const _dd=new Date();_dd.setDate(_dd.getDate()+30);j.invDueDate=_localISO(_dd);}_keepJobEdits(j,['invNum','invIssueDate','invDueDate']);}
   document.getElementById('inv-top-t').textContent=`Invoice #${j.invNum} — ${j.id} ${j.name}`;
   const statusEl=document.getElementById('inv-status');
   if(statusEl)statusEl.value=j.invStatus||'draft';
@@ -9760,7 +9802,7 @@ function saveSplitInvoice(jobId){
   if(!label){toast('Please enter a label','error');return;}
   if(amount<=0){toast('Please enter an amount or %','error');return;}
   if(!j.splitInvoices)j.splitInvoices=[];
-  j.splitInvoices.push({id:uid('si'),label,pct,amount,status:'draft',date:new Date().toISOString().slice(0,10)});
+  j.splitInvoices.push({id:uid('si'),label,pct,amount,status:'draft',date:_localISO()});
   saveData();
   logActivity(jobId,MY_PERSON,'split_invoice_add',`Added split invoice <strong>${label}</strong> ($${Math.round(amount).toLocaleString()})`);
   renderInvoice(j);
@@ -9822,7 +9864,7 @@ function renderInvoice(j){
       <div><div class="inv-ml">Invoice #</div><div class="inv-mv inv-editable" contenteditable="true">${j.invNum}</div></div>
       <div><div class="inv-ml">Issued</div><div class="inv-mv">${fmt(now)}</div></div>
       <div><div class="inv-ml">Due</div><div class="inv-mv">${fmt(due)} · 20 days</div></div>
-      <div><div class="inv-ml">Client</div><div class="inv-mv">${j.company}</div></div>
+      <div><div class="inv-ml">Client</div><div class="inv-mv">${esc(j.company)}</div></div>
       <div><div class="inv-ml">Reference</div><div class="inv-mv inv-editable" contenteditable="true" id="inv-ref">${j.id} ${j.company.split(' ')[0]} ${now.getFullYear()}</div></div>
     </div>
     <div class="inv-job-title">${j.id} ${esc(j.name)}</div>
@@ -10198,14 +10240,14 @@ function renderDeadlinesCal(){
   (stInvoices||[]).filter(i=>i.dueDate).forEach(i=>{
     const s=(i.invoiceStatus?.name||'').toLowerCase();
     if(s==='paid'||s==='voided')return;
-    addEv(i.dueDate,{label:i.company?.name||i.jobName||'Invoice',color:'var(--red)',jid:null,type:'inv'});
+    addEv(i.dueDate,{label:esc(i.company?.name||i.jobName||'Invoice'),color:'var(--red)',jid:null,type:'inv'});
   });
   // Calendar grid
   const firstDay=new Date(yr,mo,1);
   // Monday=0 offset
   let startDow=(firstDay.getDay()+6)%7; // 0=Mon
   const daysInMonth=new Date(yr,mo+1,0).getDate();
-  const todayStr=new Date().toISOString().slice(0,10);
+  const todayStr=_localISO();
   let html=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);">`;
   DAYS.forEach(d=>{html+=`<div style="background:var(--off);padding:10px 8px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:center;">${d}</div>`;});
   // empty cells before 1st
@@ -10753,6 +10795,7 @@ function saveNewPerson(){
 function toggleArchivePerson(key){
   const p=people[key];if(!p||key===MY_PERSON)return;
   p._archived=!p._archived;
+  if(p._archived)delete p._keepActive;else p._keepActive=true; // keep a manual restore over ST's Hibernated status (L9)
   savePeople();populatePersonSwitcher();renderSettings();
   toast(`${p.name} ${p._archived?'archived':'restored'}`,'success');
 }
@@ -10847,10 +10890,10 @@ function _cmdPauseJob(jobNum,on){
 function _cmdQuickTodo(title,hours){
   const now=new Date();const dow=(now.getDay()+6)%7;
   const day=dow<5?dow+1:1;
-  const wd=getWeekData(MY_PERSON,0);
+  const wd=getWeekData(MY_PERSON,dow<5?0:1); // at the weekend, next Monday — not the past one (L14)
   (wd[day]=wd[day]||[]).push({id:uid('t'),title,job:'',jobId:null,item:'',hours:hours||1,urgent:false,personal:true});
   if(!document.getElementById('view-todo')?.classList.contains('hidden'))renderTodo();
-  toast(`Task added — ${DAY_NAMES[day-1]}, ${formatHrs(hours||1)}`,'success');
+  toast(`Task added — ${dow<5?'':'next '}${DAY_NAMES[day-1]}, ${formatHrs(hours||1)}`,'success');
 }
 function runGlobalSearch(q){
   const raw=(q||'').trim();
@@ -10958,7 +11001,7 @@ function renderStarredPanel(){
   el.innerHTML=all.map(s=>`
     <div class="gs-item" onclick="openStarredItem('${s.type}','${s.id}')">
       <div class="gs-ico"><i class="ti ${ICONS[s.type]||'ti-star'}"></i></div>
-      <div style="flex:1;min-width:0;"><div class="gs-t">${s.name}</div><div class="gs-s">${s.sub||''}</div></div>
+      <div style="flex:1;min-width:0;"><div class="gs-t">${esc(s.name)}</div><div class="gs-s">${esc(s.sub||'')}</div></div>
       <i class="ti ti-x" style="font-size:13px;color:var(--muted);cursor:pointer;" title="Remove from starred" onclick="event.stopPropagation();${s.type==='job'?`unstarJobFromPanel('${s.id}')`:`toggleStarItem('${s.type}','${s.id}','')`};renderStarredPanel();"></i>
     </div>`).join('');
 }
@@ -11156,7 +11199,7 @@ function initTimeFilters(){
   }
   const jSel=document.getElementById('tf-job');
   if(jSel){
-    jSel.innerHTML='<option value="all">All jobs</option>'+jobs.map(j=>`<option value="${j.id}">[${j.id}] ${j.name}</option>`).join('');
+    jSel.innerHTML='<option value="all">All jobs</option>'+jobs.map(j=>`<option value="${j.id}">[${j.id}] ${esc(j.name)}</option>`).join('');
   }
 }
 
@@ -11215,9 +11258,9 @@ function _filterByRange(entries,range){
   return entries.filter(e=>{
     const d=e.date;
     if(range==='thisweek')return d>=weekMon;
-    if(range==='lastweek'){const lm=new Date(weekMon);lm.setDate(lm.getDate()-7);const ls=new Date(weekMon);ls.setDate(ls.getDate()-1);return d>=lm&&d<=ls;}
+    if(range==='lastweek'){const lm=new Date(weekMon);lm.setDate(lm.getDate()-7);return d>=lm&&d<weekMon;} // half-open: entries are dated at 12:00, so <=Sun 00:00 dropped Sunday (L6)
     if(range==='thismonth')return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
-    if(range==='lastmonth'){const lm=new Date(now.getFullYear(),now.getMonth()-1,1);const le=new Date(now.getFullYear(),now.getMonth(),0);return d>=lm&&d<=le;}
+    if(range==='lastmonth'){const lm=new Date(now.getFullYear(),now.getMonth()-1,1);return d>=lm&&d<new Date(now.getFullYear(),now.getMonth(),1);} // half-open, keeps the last day (L6)
     if(range==='thisquarter'){const q=Math.floor(now.getMonth()/3);const qStart=new Date(now.getFullYear(),q*3,1);return d>=qStart;}
     if(range==='thisyear')return d.getFullYear()===now.getFullYear();
     return true;
@@ -11315,14 +11358,14 @@ function renderTime(){
         rows+=`<tr class="time-entry-row tg-${pKey}">
           <td style="color:var(--muted);font-size:11px;"></td>
           <td>${jobStr}</td>
-          <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.title||'<span style="color:var(--muted);">Untitled</span>'}${e.note?`<span class="te-note-dot" title="${e.note.replace(/"/g,'&quot;')}"></span>`:''}</td>
+          <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.title?esc(e.title):'<span style="color:var(--muted);">Untitled</span>'}${e.note?`<span class="te-note-dot" title="${esc(e.note)}"></span>`:''}</td>
           <td style="color:var(--muted);font-size:12px;white-space:nowrap;">${fmtDate(e.date)}</td>
           <td style="text-align:right;font-variant-numeric:tabular-nums;">${fmtH(e.hours)}</td>
           <td>${e.billable?'<span class="t-bill">Billable</span>':'<span class="t-nobill">Non-billable</span>'}</td>
           <td>${statusStr}</td>
         </tr>`;
         if(e.note){
-          rows+=`<tr class="tg-${pKey}"><td colspan="7"><div class="te-note-row"><i class="ti ti-note" style="font-size:11px;"></i> ${e.note}</div></td></tr>`;
+          rows+=`<tr class="tg-${pKey}"><td colspan="7"><div class="te-note-row"><i class="ti ti-note" style="font-size:11px;"></i> ${esc(e.note)}</div></td></tr>`;
         }
       });
     }
@@ -11580,7 +11623,7 @@ function _applyQtFilters(quotes,jobByStId,qtRealStatus){
     switch(f.type){
       case 'status':    quotes=quotes.filter(qt=>qtRealStatus(qt)===f.value.toLowerCase());break;
       case 'company':   quotes=quotes.filter(qt=>(qt.company||'')===f.value);break;
-      case 'job_number':quotes=quotes.filter(qt=>String(qt.jobNumber||'').includes(f.value));break;
+      case 'job_number':quotes=quotes.filter(qt=>String(qt.jobNumber||job(qt)?.id||'')===String(f.value).trim());break; // exact match (L3)
       case 'job_name':  quotes=quotes.filter(qt=>(qt.jobName||'').toLowerCase().includes(f.value.toLowerCase()));break;
       case 'quote_name':quotes=quotes.filter(qt=>(qt.quoteName||'').toLowerCase().includes(f.value.toLowerCase()));break;
       case 'po':        quotes=quotes.filter(qt=>(job(qt)?.po||'').toLowerCase().includes(f.value.toLowerCase()));break;
@@ -11603,7 +11646,7 @@ function _applyInvFilters(inv,jobByStId,_getInvStatus){
     switch(f.type){
       case 'status':    inv=inv.filter(i=>_getInvStatus(i)===f.value.toLowerCase());break;
       case 'company':   inv=inv.filter(i=>(i.company?.name||'')===f.value);break;
-      case 'job_number':inv=inv.filter(i=>String(job(i)?.id||'').includes(f.value));break;
+      case 'job_number':inv=inv.filter(i=>String(job(i)?.id||'')===String(f.value).trim());break; // exact match (L3)
       case 'job_name':  inv=inv.filter(i=>(job(i)?.name||'').toLowerCase().includes(f.value.toLowerCase()));break;
       case 'po':        inv=inv.filter(i=>(job(i)?.po||'').toLowerCase().includes(f.value.toLowerCase()));break;
       case 'lead':      inv=inv.filter(i=>job(i)?.lead===f.value);break;
@@ -11720,7 +11763,7 @@ function saveQtVersion(qtId){
   if(!val||val<=0){toast('Enter a value for the new version','error');return;}
   const note=(document.getElementById('qtrev-note')?.value||'').trim();
   const revs=_getQtVersions(qtId);
-  revs.push({date:new Date().toISOString().slice(0,10),valueExTax:val,note});
+  revs.push({date:_localISO(),valueExTax:val,note});
   _saveQtVersions(qtId,revs);
   toast(`Quote revised — v${revs.length+1} saved`,'success');
   openQuoteDetail(qtId);
@@ -11823,8 +11866,8 @@ function renderQuotes(){
           <span class="qinv-card-num">${qt.quoteNumber||qt.id}</span>
           ${jobNum?`<span class="qjob-chip">${jobNum}</span>`:''}
         </div>
-        <span class="qinv-card-name">${qt.quoteName||qt.jobName||'—'}${qt._local?'<span style="font-size:9px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">Local</span>':''}</span>
-        <span class="qinv-card-co">${qt.company||'—'}</span>
+        <span class="qinv-card-name">${esc(qt.quoteName||qt.jobName||'—')}${qt._local?'<span style="font-size:9px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:2px;">Local</span>':''}</span>
+        <span class="qinv-card-co">${esc(qt.company||'—')}</span>
         <span class="qinv-card-val">${qtValue!=null?'$'+Math.round(qtValue).toLocaleString():'—'}</span>
         <span class="qinv-card-status">${_qtStatusPill(status)}</span>
         <span class="qinv-card-date">${fmtDate(qt.sentDate)}</span>
@@ -11833,7 +11876,7 @@ function renderQuotes(){
       <div class="qinv-detail" id="qdet-${qt.id}">
         <div style="padding:14px 20px;font-size:12px;color:var(--muted);display:flex;gap:24px;flex-wrap:wrap;">
           <span><strong>Quote #:</strong> ${qt.quoteNumber||qt.id}</span>
-          <span><strong>Job:</strong> ${jobNum?`#${jobNum} `:''} ${qt.jobName||'—'}</span>
+          <span><strong>Job:</strong> ${jobNum?`#${jobNum} `:''} ${esc(qt.jobName||'—')}</span>
           <span><strong>Sent by:</strong> ${qt.sentByUser||'—'}</span>
           <span><strong>Sent:</strong> ${fmtDate(qt.sentDate)}</span>
           ${qt.approvedDate?`<span><strong>Approved:</strong> ${fmtDate(qt.approvedDate)}</span>`:''}
@@ -12014,7 +12057,7 @@ function renderInvoices(){
       ${tbiJobs.length?`<table class="inv-table"><thead><tr>
         ${_tbiTh('company','Company')}${_tbiTh('job','Job')}${_tbiTh('po','PO')}${_tbiTh('status','Status')}${_tbiTh('amount','Amount ex GST',true)}<th class="inv-th" style="width:30px;"></th>
       </tr></thead><tbody>${tbiJobs.map(j=>`<tr class="inv-tr" style="cursor:pointer;" onclick="openJobDetail('${j.id}')" draggable="true" ondragstart="_showInvDock('${j.id}')" ondragend="_hideTaskDock()">
-        <td class="inv-td ci-company" style="color:var(--muted);font-size:12px;">${j.company}</td>
+        <td class="inv-td ci-company" style="color:var(--muted);font-size:12px;">${esc(j.company)}</td>
         <td class="inv-td ci-job"><span style="font-size:11px;color:var(--muted);margin-right:6px;">${j.id}</span>${esc(j.name)}</td>
         <td class="inv-td ci-po" style="font-size:12px;color:var(--muted);">${j.po||'—'}</td>
         <td class="inv-td ci-status"><span class="wf-badge wf-completed">Complete</span></td>
@@ -12058,7 +12101,7 @@ function openInvoiceForJob(id){
   const prev=activeJobId;
   activeJobId=id;
   const j=jobs.find(x=>x.id===id);if(!j)return;
-  if(!j.invNum){j.invNum=_nextInvNum();if(!j.invIssueDate)j.invIssueDate=new Date().toISOString().slice(0,10);if(!j.invDueDate){const _dd=new Date();_dd.setDate(_dd.getDate()+30);j.invDueDate=_dd.toISOString().slice(0,10);}_keepJobEdits(j,['invNum','invIssueDate','invDueDate']);}
+  if(!j.invNum){j.invNum=_nextInvNum();if(!j.invIssueDate)j.invIssueDate=_localISO();if(!j.invDueDate){const _dd=new Date();_dd.setDate(_dd.getDate()+30);j.invDueDate=_localISO(_dd);}_keepJobEdits(j,['invNum','invIssueDate','invDueDate']);}
   openInvoice();
   // restore activeJobId if we didn't open the job detail
   if(id!==prev)activeJobId=prev;
@@ -12211,7 +12254,7 @@ function getFilteredTasks(){
       if(cutoffMs&&d.getTime()<cutoffMs)return;
       if(period==='custom'&&d.getTime()>ceilingMs)return;
       const dayNum=((d.getDay()+6)%7)+1;
-      if(dayNum<1||dayNum>5)return;
+      // Weekend time is kept (it was dropped from every report); the Mon–Fri day chart skips it (L13)
       const weekMon=new Date(d);weekMon.setDate(d.getDate()-((d.getDay()+6)%7));weekMon.setHours(0,0,0,0);
       tasks.push({
         id:'st-lt-'+lt.id,
@@ -12431,7 +12474,7 @@ function _renderBusinessReport(){
           </tr></thead><tbody>
           ${uninvJobs.slice(0,15).map(j=>{const gap=(j._sellUsed||0)-(j._stInvoiced||0);return`<tr style="border-bottom:1px solid var(--faint);cursor:pointer;" onclick="openJobDetail('${j.id}')">
             <td style="padding:7px 10px 7px 0;"><span class="job-num" style="font-size:10px;">${j.id}</span> ${j.name}</td>
-            <td style="padding:7px 10px;color:var(--muted);">${j.company}</td>
+            <td style="padding:7px 10px;color:var(--muted);">${esc(j.company)}</td>
             <td style="padding:7px 0 7px 10px;text-align:right;">$${(j._sellUsed||0).toLocaleString()}</td>
             <td style="padding:7px 0 7px 10px;text-align:right;color:var(--muted);">$${(j._stInvoiced||0).toLocaleString()}</td>
             <td style="padding:7px 0 7px 10px;text-align:right;font-weight:500;color:#9C6FD6;">$${Math.round(gap).toLocaleString()}</td>
@@ -12576,7 +12619,7 @@ function _renderJobsReport(){
   const activeInPeriod=filteredJobs.filter(j=>hoursPerJob[j.id]>0);
 
   // Budget chart: top 10 by budget usage
-  const budgetJobs=filteredJobs.filter(j=>j._bPct>0).sort((a,b)=>(b.bPct||0)-(a.bPct||0)).slice(0,10);
+  const budgetJobs=filteredJobs.filter(j=>j._bPct>0).sort((a,b)=>(b._bPct||0)-(a._bPct||0)).slice(0,10); // _bPct is the real field (L2)
   // Hours chart: top 10 by hours
   const topHoursJobs=filteredJobs.filter(j=>hoursPerJob[j.id]).slice(0,10);
 
@@ -12713,7 +12756,7 @@ function exportReportTab(){
   });
   const blob=new Blob([csv],{type:'text/csv'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`report_${_reportTab}_${new Date().toISOString().slice(0,10)}.csv`;
+  const a=document.createElement('a');a.href=url;a.download=`report_${_reportTab}_${_localISO()}.csv`;
   a.click();URL.revokeObjectURL(url);
 }
 
@@ -12831,7 +12874,7 @@ function _richJobCard(j,expanded){
     [1,2,3,4,5].forEach(d=>{(wd[d]||[]).forEach(t=>{if((t.jobId===j.id||t.job===j.id)&&!t.done)activeTasks.push({...t,person:pKey});});});
   });
   const expandedHTML=expanded?`<div class="bc-expanded">
-    ${activeTasks.length?`<div class="bc-section-lbl">This week (${activeTasks.length})</div>`+activeTasks.slice(0,5).map(t=>{const p=people[t.person];return`<div class="bc-task-row"><span class="bc-av-sm" style="background:${p?.color||'#999'}">${p?.initials||'?'}</span><span class="bc-task-title">${t.title||'Task'}</span><span class="bc-task-hrs">${t.hours||''}</span></div>`;}).join('')+'':'<div class="bc-no-tasks">No open tasks this week</div>'}
+    ${activeTasks.length?`<div class="bc-section-lbl">This week (${activeTasks.length})</div>`+activeTasks.slice(0,5).map(t=>{const p=people[t.person];return`<div class="bc-task-row"><span class="bc-av-sm" style="background:${p?.color||'#999'}">${p?.initials||'?'}</span><span class="bc-task-title">${esc(t.title||'Task')}</span><span class="bc-task-hrs">${t.hours||''}</span></div>`;}).join('')+'':'<div class="bc-no-tasks">No open tasks this week</div>'}
     <button class="bc-open-btn" onclick="event.stopPropagation();openJobDetail('${j.id}')"><i class="ti ti-arrow-up-right" style="font-size:11px;"></i> Open job plan</button>
   </div>`:'';
   return`<div class="bdet-card bc-rich${expanded?' bc-expanded-card':''}" id="bc-${j.id}" style="${over?'border-left:3px solid var(--red);':''}" onclick="toggleBoardCard('${j.id}')">
@@ -12993,7 +13036,7 @@ function buildCustomCard(b,col,card){
         [1,2,3,4,5].forEach(d=>{(wd[d]||[]).forEach(t=>{if((t.jobId===j.id||t.job===j.id)&&!t.done)activeTasks.push({...t,person:pKey});});});
       });
       expandedHTML=`<div class="bc-expanded">
-        ${activeTasks.length?`<div class="bc-section-lbl">This week (${activeTasks.length})</div>`+activeTasks.slice(0,5).map(t=>{const p=people[t.person];return`<div class="bc-task-row"><span class="bc-av-sm" style="background:${p?.color||'#999'}">${p?.initials||'?'}</span><span class="bc-task-title">${t.title||'Task'}</span><span class="bc-task-hrs">${t.hours||''}</span></div>`;}).join(''):'<div class="bc-no-tasks">No open tasks this week</div>'}
+        ${activeTasks.length?`<div class="bc-section-lbl">This week (${activeTasks.length})</div>`+activeTasks.slice(0,5).map(t=>{const p=people[t.person];return`<div class="bc-task-row"><span class="bc-av-sm" style="background:${p?.color||'#999'}">${p?.initials||'?'}</span><span class="bc-task-title">${esc(t.title||'Task')}</span><span class="bc-task-hrs">${t.hours||''}</span></div>`;}).join(''):'<div class="bc-no-tasks">No open tasks this week</div>'}
         <button class="bc-open-btn" onclick="event.stopPropagation();openJobDetail('${j.id}')"><i class="ti ti-arrow-up-right" style="font-size:11px;"></i> Open job plan</button>
       </div>`;
     }

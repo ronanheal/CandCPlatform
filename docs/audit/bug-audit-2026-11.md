@@ -9,7 +9,7 @@ Audited ahead of internal user testing (Dec 2026) and the handover to Razor.
 
 **Counts:** 5 High · 14 Medium · 14 Low · 4 Unverified
 
-**Status (12 Nov 2026):** all High (H1–H5) and Medium (M1–M14) findings are fixed in v2.39.0. Low and Unverified are still open.
+**Status (12 Nov 2026):** all High (H1–H5) and Medium (M1–M14) findings are fixed in v2.39.0, and all Low (L1–L14) in v2.39.1. The four Unverified items are still open.
 
 ---
 
