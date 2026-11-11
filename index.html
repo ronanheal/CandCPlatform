@@ -1784,6 +1784,95 @@ body.dark #create-item-menu{background:var(--white)!important;}
 /* Print always uses the current light palette (the old print reset still had the v1 colours) */
 @media print{body.dark{--ink:#1D1C19;--muted:#8D887C;--white:#FFFFFF;--off:#F4F2EC;--border:#E2DDD2;--faint:#EBE7DE;--on-ink:#FFFFFF;}}
 body.not-admin .admin-only{display:none!important;}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════
+   Consistency layer (v2.42) — loaded last, so it settles the many older per-screen rules.
+   Rules: one page surface (paper) with content in white rounded cards; anything clickable
+   (buttons, tabs, selects) is sentence-case 12.5–13px/500 with one control radius; small
+   uppercase is for passive labels only; no blur behind modals.
+   ═══════════════════════════════════════════════════════════════════════════════════════ */
+:root{--r-ctl:10px;--ctl-h:32px;}
+button,input,select,textarea{font-family:var(--font);}
+
+/* Surfaces: headers sit on the paper, lists live in cards */
+.todo-bar,.detail-head,.jobs-subnav{background:transparent!important;}
+.jobs-subnav{border-bottom:1px solid var(--border)!important;}
+.jobs-table-wrap,#invoices-list,#quotes-list,#exp-list-wrap,.time-table-wrap{margin:0 28px 20px;background:var(--white);border:1px solid var(--border);border-radius:var(--r-card);box-shadow:var(--shadow-s);}
+.time-table-wrap{padding-bottom:0!important;}
+#jobs-footer-bar{margin:0 28px 16px;border:1px solid var(--border)!important;border-radius:var(--r-card);box-shadow:var(--shadow-s);}
+.jobs-table thead th:first-child,.inv-table thead th:first-child{border-top-left-radius:var(--r-card);}
+
+/* Buttons: one shape, one type style */
+.d-action,.filter-btn,.p-btn,.tb-btn,.save-b,.fup-y,.cal-today-btn,.r-export-btn,.inv-act,.tm-btn-save,.tm-btn-cancel,.tm-btn-delete,.tm-btn-timer,.modal-cancel,.modal-ok,.modal-save,.cb-create-btn{border-radius:var(--r-ctl)!important;text-transform:none!important;letter-spacing:-.005em!important;font-size:12.5px!important;font-weight:500!important;font-family:var(--font)!important;}
+.d-action,.filter-btn,.p-btn,.tb-btn,.save-b,.fup-y,.cal-today-btn,.r-export-btn,.inv-act,.tm-btn-save,.tm-btn-cancel,.tm-btn-delete,.tm-btn-timer,.modal-cancel,.modal-ok,.modal-save{min-height:var(--ctl-h);padding:0 14px!important;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-sizing:border-box;line-height:1;}
+.d-action:not(.primary),.filter-btn,.p-btn,.modal-cancel,.tm-btn-cancel,.tm-btn-timer{background:var(--white);color:var(--ink);border:1px solid var(--border);}
+.d-action:not(.primary):hover,.filter-btn:hover,.p-btn:hover,.modal-cancel:hover,.tm-btn-cancel:hover,.tm-btn-timer:hover{border-color:var(--ink);}
+.d-action.primary,.tb-btn:not(.ghost),.modal-ok,.modal-save,.tm-btn-save,.save-b,.fup-y,.cal-today-btn,.r-export-btn{background:var(--ink)!important;color:var(--white)!important;border:1px solid var(--ink)!important;}
+.tm-btn-delete{background:transparent;color:var(--danger-ink);border:1px solid transparent;}
+.tm-btn-delete:hover{background:var(--danger-bg);}
+/* Small controls share the same corners */
+.wbtn,.day-add-btn,.label-add-btn,.tvt-btn,.i-todo-btn,.sched-pick-btn,.rep-end-chip,.mini-cal-nav-btn{border-radius:8px!important;text-transform:none!important;letter-spacing:0!important;font-family:var(--font)!important;}
+.day-add-btn{font-size:11px!important;}
+/* Selects and inputs */
+.cc-select,select.filter-btn,.form-inp,.field input,.field select,.field textarea,.jobs-search,.tm-field-sel{border-radius:var(--r-ctl)!important;}
+.cc-select,select.filter-btn{min-height:var(--ctl-h);font-size:12.5px!important;text-transform:none!important;letter-spacing:0!important;}
+
+/* Tabs: sentence case everywhere */
+.jsn-tab,.d-tab,.r-subtab{text-transform:none!important;letter-spacing:-.005em!important;font-size:13px!important;}
+.jsn-tab.on,.d-tab.on,.r-subtab.on{font-weight:600!important;}
+
+/* Modals: crisp, no blur */
+.modal-bg,.gs-bg,.cb-overlay,.inv-bg{background:rgba(25,23,20,.32)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
+body.dark .modal-bg,body.dark .gs-bg,body.dark .cb-overlay,body.dark .inv-bg{background:rgba(0,0,0,.55)!important;}
+.modal,.tm-modal,.cl-modal{border-radius:16px!important;}
+
+/* Task form = the Log time look (white header, boxed fields, actions bottom-right) */
+.tm-modal{background:var(--white)!important;width:540px!important;box-shadow:var(--shadow-l)!important;}
+.tm-hd{background:var(--white)!important;padding:18px 24px 14px!important;border-bottom:1px solid var(--faint)!important;}
+.tm-hd-title{order:0;flex:1;text-align:left!important;font-family:var(--display);font-size:15px!important;font-weight:600!important;}
+.tm-hd-personal{order:1;margin-right:10px;font-size:12px;color:var(--muted);}
+.tm-x{order:2;}
+.tm-bd{padding:20px 24px 8px!important;}
+.tm-title-inp{background:var(--off)!important;border:1px solid var(--border)!important;border-radius:var(--r-ctl)!important;padding:11px 13px!important;font-size:15px!important;margin-bottom:16px!important;}
+.tm-title-inp:focus{background:var(--white)!important;border-color:var(--ink)!important;}
+.tm-lbl,.tm-col-lbl{font-size:10px!important;letter-spacing:.1em!important;color:var(--muted)!important;margin-bottom:5px!important;}
+.tm-field-sel{background:var(--off)!important;padding:9px 11px!important;}
+.tm-hours-inp,.tm-day-sel{background:var(--off)!important;border:1px solid var(--border)!important;border-radius:var(--r-ctl)!important;padding:8px 11px!important;font-size:14px!important;width:100%!important;box-sizing:border-box;}
+.tm-hours-inp:focus,.tm-day-sel:focus{background:var(--white)!important;border-color:var(--ink)!important;}
+.tm-2col{gap:12px!important;}.tm-2col>div{flex:1;}
+.tm-dash{border-top:1px solid var(--faint)!important;}
+.tm-urgent-row{display:flex;gap:8px;flex-wrap:wrap;}
+.tm-urgent-lbl{border-radius:999px!important;}
+.tm-urgent-lbl{border:1px solid var(--border);padding:6px 12px 6px 10px;background:var(--white);color:var(--muted);font-weight:500;transition:background .12s,color .12s,border-color .12s;}
+.tm-urgent-lbl:hover{border-color:var(--ink);color:var(--ink);}
+.tm-urgent-lbl input{position:absolute;opacity:0;pointer-events:none;width:0;height:0;}
+.tm-urgent-lbl.on{background:var(--danger-bg)!important;color:var(--danger-ink)!important;border-color:transparent!important;}
+.tm-done-lbl.on{background:var(--ok-bg)!important;color:var(--ok-ink)!important;border-color:transparent!important;}
+.tm-ft{justify-content:flex-end;gap:8px;padding:14px 24px!important;border-top:1px solid var(--faint)!important;}
+.tm-ft .tm-btn-cancel{margin-right:auto;}
+.tm-ft .tm-btn-delete{margin-right:auto;}
+.tm-ft .tm-btn-cancel+.tm-btn-delete{margin-left:-4px;}
+
+/* Weekly check-in card */
+.hp-card{display:flex;align-items:center;gap:22px;flex-wrap:wrap;background:linear-gradient(100deg,#FBF1E1 0%,var(--white) 62%);border:1px solid #EEDFC6;border-radius:var(--r-card);padding:16px 20px;margin:-6px 0 24px;box-shadow:var(--shadow-s);}
+body.dark .hp-card{background:linear-gradient(100deg,rgba(196,149,106,.14) 0%,var(--white) 62%);border-color:rgba(196,149,106,.25);}
+.hp-card-txt{min-width:180px;}
+.hp-card-eyebrow{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#A07B45;font-weight:600;margin-bottom:3px;}
+body.dark .hp-card-eyebrow{color:#D9B48A;}
+.hp-card-q{font-family:var(--display);font-size:16px;font-weight:600;color:var(--ink);letter-spacing:-.01em;}
+.hp-card-faces{display:flex;gap:10px;}
+.hp-card-face{display:flex;flex-direction:column;align-items:center;gap:4px;border:none!important;background:none!important;padding:0!important;cursor:pointer;}
+.hp-card-face span{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--white);border:1px solid var(--border);box-shadow:var(--shadow-s);transition:transform .14s,border-color .14s,box-shadow .14s;}
+.hp-card-face small{font-size:10.5px;color:var(--muted);font-weight:500;}
+.hp-card-face:hover span{transform:translateY(-2px) scale(1.06);border-color:var(--ink);box-shadow:var(--shadow-m);}
+.hp-card-face:hover small{color:var(--ink);}
+.hp-card-links{margin-left:auto;display:flex;gap:6px;}
+.hp-card-links a{font-size:12px;color:var(--muted);cursor:pointer;padding:6px 10px;border-radius:8px;text-decoration:none!important;}
+.hp-card-links a:hover{background:var(--faint);color:var(--ink);}
+.hp-done{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);background:var(--white);border:1px solid var(--border);border-radius:999px;padding:5px 12px 5px 6px;margin:-6px 0 24px;}
+.hp-done b{font-size:15px;}
+#job-notes-inp{overflow:hidden;}
+.hp-done a{color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
 </style>
 </head>
 <body>
@@ -1793,7 +1882,7 @@ body.not-admin .admin-only{display:none!important;}
     <svg class="s-logo" viewBox="0 0 621.5 266.3" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M546.7,26.9c14.2,0,24.7,10,28.4,37.9c0.5,9.5,5.3,16.9,14.2,16.9c13.2,0,32.1-12.6,32.1-29.5c0-25.3-25.3-44.8-63.7-44.8c-59,0-104.6,43.4-127.1,95c-12.6,28.9-20,62.7-16.6,94.2c2.1,19.5,9.9,39.1,24.9,51.7c-19.3,2.3-53.8-15.3-81.8-42.5c23.2-21.6,41.8-48,54.4-77c3.7-8.6,8.7-21.6,3.4-30.6c-4.2-7.2-14.6-6.8-21.4-4.2c-16,6.2-14.5,22.1-17.5,36.2c-4.8,23.3-13.2,46.3-29.7,63.9c-25.3-26.5-45.7-55.3-58.5-78.6c43.3-17.2,72.8-28.1,72.8-67c0-31.3-27.9-48.5-58-48.5c-35.7,0-67.3,26-67.3,70.2c0,15.5,4.3,30.7,11.9,44.1c-15.8,4.9-31.1,11.9-43.7,22.8c-13.9,12.1-24,28.8-35.2,43.3c-18,23.3-45.6,57.7-79.3,53.3c-31-4-35.8-37-35.8-62.8c0-64.2,35.8-145.3,80-145.3c14.2,0,24.7,10,28.4,37.9c0.5,9.5,5.3,16.8,14.2,16.8c13.2,0,32.1-12.6,32.1-29.5c0-25.3-25.2-44.8-63.7-44.8C54.2,6.2,0,102,0,181.5c0,59,34.7,80.6,71.6,80.6c37.2,0,76.4-13.5,108.2-56.8c4.6,29.1,28.5,55.4,72.6,55.4c29.7,0,51.3-8.4,77.4-30.5c0,0,11.3,8.7,12.4,9.5c19.4,12.8,42.6,19.4,65.3,22.9c25.4,3.9,51.4,5,77,2.5c0.3,0,0.5-0.1,0.8-0.1c23.3-2.4,46.9-7.5,67.2-20c19.5-12,35.3-29.2,47.6-48.4c3.3-5.1,2.4-11.9-2.1-16.1c-2.9-2.7-7.5-2.2-9.9,1c-11.6,15.7-27.3,32.4-44.7,43c-10.9,6.7-22.5,10.9-34.2,10.9c-35.3,0-42.7-29.5-42.7-63.2C466.7,108,502.5,26.9,546.7,26.9z M299.7,15.6c18.9,0,26.9,13.2,26.9,28.1c0,29.3-21.6,49.3-45.7,60.1c-8-12.4-13.2-30.9-13.2-45.3C267.7,32.9,283.3,15.6,299.7,15.6z M269.7,238.6c-31.7,0-52.1-23.7-52.1-50.5c0-38.5,30.9-57.3,37.7-58.1c18,30.9,38.1,62.1,63.7,89.8C305.3,231,290.5,238.6,269.7,238.6z"/></svg>
     <div class="s-nav">
       <div class="s-btn" onclick="openGlobalSearch()"><i class="ti ti-search"></i><span class="s-tip">Search (⌘K)</span></div>
-      <div class="s-btn" id="snav-logtime" onclick="_getTimer()?stopTimer():openLogTimeModal()"><i class="ti ti-clock-plus"></i><span class="s-tip">Log time (L)</span></div>
+      <div class="s-btn" id="snav-logtime" onclick="_getTimer()?stopTimer():openLogTimeModal()"><i class="ti ti-clock-plus"></i><span class="s-tip">Log time (L) · click again to stop a timer</span></div>
       <div class="s-btn on" id="snav-dashboard" onclick="navTo('dashboard')"><i class="ti ti-grid-dots"></i><span class="s-tip">Dashboard</span></div>
       <div class="s-btn" id="snav-todo" onclick="navTo('todo')"><i class="ti ti-checklist"></i><span class="s-tip">To Do</span></div>
       <div class="s-btn" id="snav-jobs" onclick="navTo('jobs')"><i class="ti ti-briefcase"></i><span class="s-tip">Jobs</span></div>
@@ -2450,17 +2539,22 @@ body.not-admin .admin-only{display:none!important;}
       <!-- Urgent toggle -->
       <div class="tm-urgent-row">
         <label class="tm-urgent-lbl" id="td-urgent-lbl">
-          <input type="checkbox" id="td-urgent">
+          <input type="checkbox" id="td-urgent" onchange="document.getElementById('td-urgent-lbl').classList.toggle('on',this.checked)">
           <i class="ti ti-alert-circle" style="font-size:13px;"></i>
           Mark as urgent
+        </label>
+        <label class="tm-urgent-lbl tm-done-lbl" id="td-done-lbl">
+          <input type="checkbox" id="td-done" onchange="_tdDoneChanged()">
+          <i class="ti ti-circle-check" style="font-size:13px;"></i>
+          Already done — log the time
         </label>
       </div>
       <hr class="tm-dash">
       <!-- Hours + Scheduled -->
       <div class="tm-2col" style="margin-bottom:16px;">
         <div>
-          <div class="tm-col-lbl">Scheduled</div>
-          <input class="tm-hours-inp" type="text" id="td-hours" placeholder="e.g. 2h">
+          <div class="tm-col-lbl" id="td-hours-lbl">Scheduled</div>
+          <input class="tm-hours-inp" type="text" id="td-hours" placeholder="e.g. 2h or 45m">
         </div>
         <div style="flex:1;">
           <div class="tm-col-lbl">Day</div>
@@ -2473,6 +2567,7 @@ body.not-admin .admin-only{display:none!important;}
           </select>
         </div>
       </div>
+      <div class="lt-hint" id="td-done-hint" style="display:none;margin:-4px 0 14px;"><i class="ti ti-info-circle"></i> Until Streamtime is switched off, add this in Streamtime too (same date and time). The platform drops its own copy once Streamtime's arrives, so it never counts twice.</div>
       <!-- Date display + Repeat row -->
       <div class="tm-date-repeat-row">
         <button class="tm-date-btn" onclick="toggleMiniCal()" id="td-date-display">
@@ -2534,6 +2629,7 @@ body.not-admin .admin-only{display:none!important;}
     <div class="tm-ft">
       <button class="tm-btn-cancel" onclick="closeTodoModal()">Cancel</button>
       <button class="tm-btn-delete" id="edit-task-btn" onclick="deleteTodo()">Delete</button>
+      <button class="tm-btn-timer" id="td-timer-btn" onclick="startTimerFromTask()" title="Save the task and start timing it"><i class="ti ti-player-play" style="font-size:12px;"></i> Start timer</button>
       <button class="tm-btn-save" id="td-save-btn" onclick="saveTodo()">
         <span id="td-save-lbl">Create To Do</span>
         <i class="ti ti-chevron-down" style="font-size:11px;"></i>
@@ -2963,11 +3059,15 @@ let currentPerson=MY_PERSON;
 if(!people[MY_PERSON])people[MY_PERSON]={name:MY_PERSON==='st_114330'?'Ronan Heal':'…',initials:MY_PERSON==='st_114330'?'RH':'?',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true,_stub:true};
 const APP_VERSION='2.41.0';
 const CHANGELOG=[
-  {version:'2.41.0',date:'12 Nov 2026',title:'Log time anywhere, plus a timer',items:[
-    'New: Log time. Press L anywhere, click the clock in the sidebar, use the Log time button on the Time tab, or Create → Time entry on a job. Pick the job and item, type 45m or 1h 30m, add a note, done. Meetings and quick fixes no longer need a task first.',
-    'New: a running timer. Start one from the Log time box or Create → Start timer on a job. A pill at the bottom of the screen shows the clock, and it keeps going across pages and reloads. Stop it and the time is filled in for you (rounded up to 5 minutes). Cancel puts the timer back.',
-    'Producers can log time for someone else by picking the person.',
+  {version:'2.41.0',date:'12 Nov 2026',title:'Log time from the task box, a timer, and a consistent look everywhere',items:[
+    'Log time and Add task are now one box. Tick "Already done — log the time" to record work you\'ve finished, or press L anywhere / click the clock in the sidebar / use Log time on the Time tab, which opens it ready to log. Pick the job and item, type 45m or 1h 30m, done.',
+    'New: Start timer. Add a task and hit Start timer, or use Create → Start timer on a job. A pill at the bottom of the screen shows the clock and keeps going across pages and reloads. Stop it and the task is marked done with the time logged (rounded up to 5 minutes).',
     'Until Streamtime is switched off, add the same time in Streamtime too — the platform drops its own copy once Streamtime\'s arrives, so nothing counts twice.',
+    'One look everywhere: every page sits on the same paper background with its lists in rounded white cards; headers no longer sit in white bands.',
+    'Buttons, tabs and dropdowns now share one shape and one type style (no more mixed capitals, pills and square corners). Small capitals are kept for labels only.',
+    'Pop-ups open over a soft tint instead of a blur, so the page behind stays crisp.',
+    'The task box has the cleaner look of the old Log time box, with Urgent and Already done as proper toggles.',
+    'The weekly check-in is redesigned — bigger faces, your name, and once you\'ve answered a small "This week: Good — thanks" line you can change.',
   ]},
   {version:'2.40.0',date:'12 Nov 2026',title:'Design polish — calmer, tidier, more consistent',items:[
     'Every page now has the same header: title and subtitle on the left, one main button top right. In the Jobs area that button follows the tab — New job, New quote, Add expense or Add client.',
@@ -4533,12 +4633,19 @@ function _buildHappinessModal(){
 }
 function _happinessAnswered(){return !!_getHappinessLog()[MY_PERSON]?.[getWeekKey(0)];}
 function _happinessCardHTML(){
-  if(_happinessAnswered())return'';
+  const e=_getHappinessLog()[MY_PERSON]?.[getWeekKey(0)];
   const FACES=[[1,'😞','Rough'],[2,'😕','Meh'],[3,'😐','OK'],[4,'🙂','Good'],[5,'😄','Great']];
-  return`<div class="hp-card"><div class="hp-card-q">How's your week going?</div>
+  if(e){
+    if(!e.score)return'';
+    const f=FACES.find(x=>x[0]===e.score);
+    return`<div class="hp-done"><b>${f[1]}</b> This week: ${f[2]} — thanks. <a onclick="_hpUndo()">Change</a></div>`;
+  }
+  const first=(people[MY_PERSON]?.name||'').split(' ')[0];
+  return`<div class="hp-card"><div class="hp-card-txt"><div class="hp-card-eyebrow">Weekly check-in</div><div class="hp-card-q">How's your week going${first?', '+esc(first):''}?</div></div>
     <div class="hp-card-faces">${FACES.map(([v,e,l])=>`<button class="hp-card-face" title="${l}" onclick="_hpQuick(${v})"><span>${e}</span><small>${l}</small></button>`).join('')}</div>
     <div class="hp-card-links"><a onclick="maybeShowHappinessPromptNow()">Add a note</a><a onclick="skipHappinessWeek('${MY_PERSON}')">Skip this week</a></div></div>`;
 }
+function _hpUndo(){const log=_getHappinessLog();if(log[MY_PERSON])delete log[MY_PERSON][getWeekKey(0)];_setHappinessLog(log);_hpRefreshDash();}
 function _hpQuick(v){_hpSelectedFace=v;submitHappiness(MY_PERSON);}
 function _hpRefreshDash(){if(!document.getElementById('view-dashboard')?.classList.contains('hidden'))try{renderDashboard();}catch(e){}}
 function maybeShowHappinessPrompt(){
@@ -6424,6 +6531,11 @@ function _resetTodoModal(day){
   document.getElementById('td-urgent-lbl').classList.remove('on');
   document.getElementById('td-modal-title').textContent='Add a task';
   document.getElementById('td-save-lbl').textContent='Add task';
+  const _tdd=document.getElementById('td-done');if(_tdd)_tdd.checked=false;
+  const _tddl=document.getElementById('td-done-lbl');if(_tddl){_tddl.style.display='';_tddl.classList.remove('on');}
+  const _tdh=document.getElementById('td-done-hint');if(_tdh)_tdh.style.display='none';
+  const _thl=document.getElementById('td-hours-lbl');if(_thl)_thl.textContent='Scheduled';
+  const _ttb=document.getElementById('td-timer-btn');if(_ttb)_ttb.style.display='';
   document.getElementById('edit-task-btn').style.display='none';
   document.getElementById('td-timestamps').style.display='none';
   document.getElementById('td-pav').textContent=p.initials;
@@ -6445,6 +6557,7 @@ function _resetTodoModal(day){
   if(lbl)lbl.textContent='Repeat';
   _repeatEndMode='never';
   setRepeatEnd('never');
+  if(lbl)lbl.textContent='Repeat'; // setRepeatEnd rewrites it to "Every 1 week" even when repeat is off
   const repN=document.getElementById('td-rep-n');if(repN)repN.value='1';
   const repUnit=document.getElementById('td-rep-unit');if(repUnit)repUnit.value='week';
   const repCount=document.getElementById('td-rep-count');if(repCount)repCount.value='4';
@@ -6540,6 +6653,8 @@ function deleteTodo(){
 function editTask(t,day){
   _resetTodoModal(day);
   editingTaskId=t.id;editingDay=day;_editOffset=weekOffset;
+  const _tddl=document.getElementById('td-done-lbl');if(_tddl)_tddl.style.display='none'; // done-ness is changed on the board
+  const _ttb=document.getElementById('td-timer-btn');if(_ttb)_ttb.style.display=t.done?'none':'';
   document.getElementById('td-task').value=t.title||'';
   document.getElementById('td-hours').value=t.hours?formatHrs(t.hours):'';
   document.getElementById('td-urgent').checked=!!t.urgent;
@@ -7042,6 +7157,8 @@ function saveTodo(){
   const urgent=document.getElementById('td-urgent').checked;
   const personal=document.getElementById('td-personal').checked;
   const targetPerson=_todoAssignTo||currentPerson;
+  const _doneNow=!editingTaskId&&!!document.getElementById('td-done')?.checked;
+  if(_doneNow&&!(document.getElementById('td-hours').value||'').trim()){toast('Enter the time spent, e.g. 45m or 1h 30m','warn');document.getElementById('td-hours').focus();return;}
   const wd=getWeekData(targetPerson);
   if(editingTaskId){
     // Find the task in the week it was opened from — the mini calendar may have moved the
@@ -7067,6 +7184,7 @@ function saveTodo(){
         editedTask.repeat=true;
         _spawnRepeatOccurrences(editedTask,targetPerson,dayNum);
       }
+      if(_tdStartTimerAfterSave&&editedTask)_startTaskTimer(editedTask,targetPerson,weekOffset,dayNum);
     }
   } else {
     // Paused guard
@@ -7077,6 +7195,8 @@ function saveTodo(){
     wd[dayNum].push(task);
     if(jobId)logActivity(jobId,targetPerson,'task_add',`Added task <strong>${esc(name)}</strong>${item?` (${esc(item)})`:''} — ${DAY_NAMES[dayNum-1]}`);
     _fupTask=null; // no follow-up card on *adding* a task — it showed the last completed task's text (L11)
+    if(_doneNow){task.done=true;if(_logTaskTime(task,targetPerson,_taskDateISO(weekOffset,dayNum)))toast(`Logged ${formatHrs(hours)}${job?` on ${job.id}`:''}`,'success');else toast('Added as done','success');}
+    else if(_tdStartTimerAfterSave)_startTaskTimer(task,targetPerson,weekOffset,dayNum);
     // Handle repeat: create copies for future occurrences
     if(document.getElementById('td-repeat-config')?.classList.contains('on')){
       _spawnRepeatOccurrences(task,targetPerson,dayNum);
@@ -8936,7 +9056,7 @@ function renderItems(phId,_readonly){
         const wd=pd[wk];if(!wd)return;
         [1,2,3,4,5].forEach(d=>{
           (wd[d]||[]).forEach(tt=>{
-            if(tt._fromST)return; // ST time is counted from stLoggedTimes below — counting the seeded card too doubled it (M1)
+            if(tt._fromST||tt._loggedEntry)return; // ST time / logged-entry time is counted from stLoggedTimes below — counting the seeded card too doubled it (M1)
             const jmatch=tt.jobId===activeJobId||(!!activeJobId&&tt.job?.match(/^(\d+)/)?.[1]===String(activeJobId));
             if(jmatch&&_taskMatchesItem(tt,item,phases)&&tt.done)_loggedH+=tt.hours||0;
           });
@@ -10996,77 +11116,61 @@ function _parseGsCommand(raw){
 // shape as Streamtime's logged_times); once the matching entry arrives from Streamtime
 // (same person + job + date + minutes) the native copy is dropped on sync, so nothing
 // double-counts. The timer lives in localStorage so it survives reloads and tab switches.
-let _ltFromTimer=null;
-function _ltJobs(){return jobs.filter(j=>j.status==='inplay'||j.status==='new').sort((a,b)=>(Number(b.id)||0)-(Number(a.id)||0));}
-function _ltItemOptions(jobId,selKey){
-  const j=jobs.find(x=>x.id===jobId);
-  const items=[];(j?.phases||[]).forEach(ph=>(ph.items||[]).forEach(it=>items.push({key:it.id,name:it.name,ph:ph.name})));
-  return`<option value="">No item</option>`+items.map(i=>`<option value="${esc(i.key)}"${i.key===selKey?' selected':''}>${esc(i.name)}${i.ph?` — ${esc(i.ph)}`:''}</option>`).join('');
-}
-function openLogTimeModal(opts){
-  opts=opts||{};
-  document.getElementById('lt-modal')?.remove();
-  const jobId=opts.jobId||(typeof activeJobId!=='undefined'&&!document.getElementById('view-detail')?.classList.contains('hidden')?activeJobId:'')||'';
-  const personKey=opts.personKey||MY_PERSON;
-  const ppl=Object.keys(people).filter(k=>!people[k]._archived&&people[k]._stId);
-  const jl=_ltJobs();if(jobId&&!jl.some(j=>j.id===jobId)){const cj=jobs.find(j=>j.id===jobId);if(cj)jl.unshift(cj);}
-  const m=document.createElement('div');m.className='modal-bg on';m.id='lt-modal';
-  m.innerHTML=`<div class="modal" style="max-width:480px;">
-    <div class="modal-hd"><span class="modal-hd-title">${opts.fromTimer?'Log timed work':'Log time'}</span><button class="modal-x" onclick="closeLogTimeModal(true)"><i class="ti ti-x"></i></button></div>
-    <div class="modal-bd">
-      <div class="field"><label>Job</label><select id="lt-job" class="form-inp" style="width:100%;" onchange="document.getElementById('lt-item').innerHTML=_ltItemOptions(this.value,'')"><option value="">Choose a job…</option>${jl.map(j=>`<option value="${esc(j.id)}"${j.id===jobId?' selected':''}>${esc(j.id)} ${esc(j.name)}</option>`).join('')}</select></div>
-      <div class="field"><label>Item</label><select id="lt-item" class="form-inp" style="width:100%;">${_ltItemOptions(jobId,opts.itemKey||'')}</select></div>
-      <div class="field-row">
-        <div class="field"><label>Time</label><input id="lt-hours" class="form-inp" placeholder="e.g. 45m or 1h 30m" value="${opts.hours?formatHrs(opts.hours):''}" style="width:100%;" onkeydown="if(event.key==='Enter')saveLogTime()"></div>
-        <div class="field"><label>Date</label><input id="lt-date" type="date" class="form-inp" value="${opts.date||_localISO()}" max="${_localISO()}" style="width:100%;"></div>
-      </div>
-      <div class="field"><label>What did you work on?</label><input id="lt-note" class="form-inp" placeholder="Optional note" value="${esc(opts.note||'')}" style="width:100%;" onkeydown="if(event.key==='Enter')saveLogTime()"></div>
-      ${ppl.length>1?`<div class="field"><label>Person</label><select id="lt-person" class="form-inp" style="width:100%;">${ppl.map(k=>`<option value="${k}"${k===personKey?' selected':''}>${esc(people[k].name)}${k===MY_PERSON?' (you)':''}</option>`).join('')}</select></div>`:''}
-      <div class="lt-hint"><i class="ti ti-info-circle"></i> Until Streamtime is switched off, add this in Streamtime too (same date and time). The platform drops its own copy once Streamtime's arrives, so it never counts twice.</div>
-    </div>
-    <div class="modal-ft">
-      <button class="modal-cancel" onclick="closeLogTimeModal(true)">Cancel</button>
-      ${opts.fromTimer?'':`<button class="d-action" onclick="startTimerFromModal()" title="Start a running timer for this job instead"><i class="ti ti-player-play" style="font-size:12px;"></i> Start timer</button>`}
-      <button class="modal-save" onclick="saveLogTime()">Log time</button>
-    </div>
-  </div>`;
-  document.body.appendChild(m);
-  m.addEventListener('mousedown',e=>{if(e.target===m)closeLogTimeModal(true);});
-  setTimeout(()=>document.getElementById(jobId?'lt-hours':'lt-job')?.focus(),50);
-}
-function closeLogTimeModal(cancelled){
-  document.getElementById('lt-modal')?.remove();
-  // Cancelling the "log timed work" form puts the timer back rather than losing the time
-  if(cancelled&&_ltFromTimer){_setTimer(_ltFromTimer);toast('Timer resumed','info');}
-  _ltFromTimer=null;
-}
-async function saveLogTime(){
-  const jobId=document.getElementById('lt-job')?.value;
-  const j=jobs.find(x=>x.id===jobId);
-  if(!j){toast('Choose a job','warn');document.getElementById('lt-job')?.focus();return;}
-  if(j.paused){toast('That job is paused — resume it first','warn');return;}
-  const hours=parseHrsInput(document.getElementById('lt-hours')?.value||'');
-  if(!(document.getElementById('lt-hours')?.value||'').trim()||!hours||hours<=0){toast('Enter how long, e.g. 45m or 1h 30m','warn');document.getElementById('lt-hours')?.focus();return;}
-  if(hours>16){toast('That\'s more than 16 hours — check the time','warn');return;}
-  const date=document.getElementById('lt-date')?.value||_localISO();
-  const personKey=document.getElementById('lt-person')?.value||MY_PERSON;
+// ── Log time = a task that's already done (review C1, merged into the task form) ──────────
+// One form for both: "Add a task" plans work; ticking "Already done — log the time" logs it.
+// Start timer creates/uses the task and, when stopped, marks it done and logs the time.
+// Native entries go through dbCreateTimeEntry and are dropped on sync once Streamtime's
+// matching entry (same person + job + date + minutes) arrives, so nothing double-counts.
+function _todayDayNum(){const d=new Date().getDay();return d>=1&&d<=5?d:5;}
+function _taskDateISO(offset,dayNum){const m=_weekKeyMonday(getWeekKey(offset));m.setDate(m.getDate()+(dayNum-1));return _localISO(m);}
+// Log a task's hours as a time entry. Returns true when an entry was created.
+function _logTaskTime(task,personKey,dateISO){
+  const job=jobs.find(j=>j.id===_taskJobId(task));
+  const hours=+task.hours||0;
+  if(!job||hours<=0)return false;
   const userId=people[personKey]?._stId;
-  if(!userId){toast('This person isn\'t linked to Streamtime yet, so time can\'t be logged for them','warn');return;}
-  const itemKey=document.getElementById('lt-item')?.value||'';
-  let item=null;(j.phases||[]).forEach(ph=>(ph.items||[]).forEach(it=>{if(it.id===itemKey)item=it;}));
-  const note=(document.getElementById('lt-note')?.value||'').trim();
-  await dbCreateTimeEntry({
-    job:{id:j._stId||null,number:j.id,name:j.name,isBillable:j.billable!==false},
-    jobId:j._stId||null,userId,
-    itemId:item?._stId||item?.id||null,itemName:item?.name||'',
-    notes:note,hours,date,
+  if(!userId){toast(`${people[personKey]?.name||'This person'} isn't linked to Streamtime, so the time wasn't logged`,'warn');return false;}
+  let item=null;(job.phases||[]).forEach(ph=>(ph.items||[]).forEach(it=>{if((task.itemId&&it.id===task.itemId)||(!task.itemId&&task.item&&it.name===task.item))item=it;}));
+  dbCreateTimeEntry({
+    job:{id:job._stId||null,number:job.id,name:job.name,isBillable:job.billable!==false},
+    jobId:job._stId||null,userId,
+    itemId:item?._stId||task.itemId||null,itemName:item?.name||task.item||'',
+    notes:task.title||'',hours,date:dateISO||_localISO(),
     jobItemUser:item?._stId?{jobItemId:item._stId}:null,
   });
-  logActivity(j.id,personKey,'time_log',`Logged <strong>${formatHrs(hours)}</strong>${item?` on ${esc(item.name)}`:''}${note?` — ${esc(note)}`:''}`);
-  _ltFromTimer=null;
-  closeLogTimeModal(false);
-  _ltRefreshViews(j.id);
-  toast(`Logged ${formatHrs(hours)} on ${j.id} ${esc(j.name)}${personKey!==MY_PERSON?` for ${esc(people[personKey].name.split(' ')[0])}`:''}`,'success');
+  task._loggedEntry=true; // the entry now carries this time — Job Plan must not count the card too
+  logActivity(job.id,personKey,'time_log',`Logged <strong>${formatHrs(hours)}</strong>${item?` on ${esc(item.name)}`:''}${task.title?` — ${esc(task.title)}`:''}`);
+  return true;
+}
+// Entry points that say "log time" open the task form with "Already done" ticked
+function openLogTimeModal(opts){
+  opts=opts||{};
+  weekOffset=0;
+  openTodoModal(opts.jobId||null,_todayDayNum());
+  const cb=document.getElementById('td-done');if(cb){cb.checked=true;_tdDoneChanged();}
+}
+function _tdDoneChanged(){
+  const on=!!document.getElementById('td-done')?.checked;
+  document.getElementById('td-done-lbl')?.classList.toggle('on',on);
+  const h=document.getElementById('td-done-hint');if(h)h.style.display=on?'':'none';
+  const hl=document.getElementById('td-hours-lbl');if(hl)hl.textContent=on?'Time spent':'Scheduled';
+  const sl=document.getElementById('td-save-lbl');if(sl&&!editingTaskId)sl.textContent=on?'Log time':'Add task';
+  const mt=document.getElementById('td-modal-title');if(mt&&!editingTaskId)mt.textContent=on?'Log time':'Add a task';
+  const tb=document.getElementById('td-timer-btn');if(tb)tb.style.display=on?'none':'';
+  if(on)setTimeout(()=>{const hi=document.getElementById('td-hours');if(hi&&!hi.value)hi.focus();},30);
+}
+let _tdStartTimerAfterSave=false;
+function startTimerFromTask(){
+  if(!document.getElementById('td-task').value.trim()){toast('Give the task a name first','warn');document.getElementById('td-task').focus();return;}
+  const cb=document.getElementById('td-done');if(cb)cb.checked=false;
+  _tdStartTimerAfterSave=true;
+  saveTodo();
+  _tdStartTimerAfterSave=false;
+}
+function _startTaskTimer(task,personKey,offset,dayNum){
+  if(_getTimer()&&!confirm('A timer is already running. Replace it? (Its time won\'t be logged.)'))return;
+  _setTimer({start:Date.now(),jobId:_taskJobId(task)||'',itemKey:task.itemId||'',itemName:task.item||'',note:task.title||'',taskId:task.id,person:personKey,offset,day:dayNum});
+  toast(`Timer started — ${esc(task.title||'task')}`,'success');
 }
 function _ltRefreshViews(jobId){
   const vis=id=>!document.getElementById(id)?.classList.contains('hidden');
@@ -11086,18 +11190,29 @@ function startTimer(jobId,itemKey,note){
   _setTimer({start:Date.now(),jobId,itemKey:itemKey||'',note:note||'',person:MY_PERSON});
   toast(`Timer started on ${j.id} ${esc(j.name)}`,'success');
 }
-function startTimerFromModal(){
-  const jobId=document.getElementById('lt-job')?.value;
-  if(!jobId){toast('Choose a job to time','warn');document.getElementById('lt-job')?.focus();return;}
-  const itemKey=document.getElementById('lt-item')?.value||'';const note=(document.getElementById('lt-note')?.value||'').trim();
-  _ltFromTimer=null;closeLogTimeModal(false);startTimer(jobId,itemKey,note);
-}
+// Stop: the timed task is marked done with the elapsed time (rounded up to 5 minutes) and
+// that time is logged. A job-only timer becomes a new done task for today.
 function stopTimer(){
   const t=_getTimer();if(!t)return;
-  const mins=Math.max(5,Math.ceil((Date.now()-t.start)/60000/5)*5); // round up to 5 minutes
+  const mins=Math.max(5,Math.ceil((Date.now()-t.start)/60000/5)*5);
   _setTimer(null);
-  _ltFromTimer=t;
-  openLogTimeModal({jobId:t.jobId,itemKey:t.itemKey,note:t.note,hours:mins/60,personKey:t.person,fromTimer:true});
+  const person=t.person||MY_PERSON;
+  let task=null,dayNum=t.day||_todayDayNum();
+  if(t.taskId){
+    const pd=todoData[person]||{};
+    Object.keys(pd).forEach(wk=>[1,2,3,4,5].forEach(d=>{const f=(pd[wk][d]||[]).find(x=>x.id===t.taskId);if(f){task=f;dayNum=d;}}));
+  }
+  if(!task){
+    const j=jobs.find(x=>x.id===t.jobId);
+    const wd=getWeekData(person,0);dayNum=_todayDayNum();
+    task={id:uid('t'),title:t.note||'Timed work',job:j?`${j.id} ${j.name}`:'',jobId:j?j.id:null,item:t.itemName||'',itemId:t.itemKey||null,hours:0,urgent:false,personal:!j};
+    (wd[dayNum]=wd[dayNum]||[]).push(task);
+  }
+  task.hours=mins/60;task.done=true;
+  const logged=_logTaskTime(task,person,_localISO());
+  saveData();
+  _ltRefreshViews(_taskJobId(task));
+  toast(`${formatHrs(mins/60)} ${logged?'logged':'recorded'} — ${esc(task.title||'task')} marked done`,'success');
 }
 function discardTimer(){
   if(!_getTimer())return;
@@ -11314,7 +11429,6 @@ document.addEventListener('keydown',e=>{
     return;
   }
   if(e.key==='Escape'){
-    if(document.getElementById('lt-modal')){closeLogTimeModal(true);e.stopPropagation();return;}
     if(closeAnyOpenModal()){e.stopPropagation();return;}
     if(document.querySelector('.todo-view.focus-today'))toggleFocusToday();
     return;
