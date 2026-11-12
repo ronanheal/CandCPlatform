@@ -5336,7 +5336,7 @@ function navTo(v){
 }
 let _invMode='all'; // kept for compat
 function setInvMode(mode){_invMode=mode;renderInvoices();}
-const _JOBS_PRIMARY={time:['Add task','openLogTimeModal'],quotes:['New quote','openNewQuoteModal'],expenses:['Add expense','openLogExpense'],clients:['Add client','openNewClientModal']};
+const _JOBS_PRIMARY={time:['Log time','openLogTimeModal'],quotes:['New quote','openNewQuoteModal'],expenses:['Add expense','openLogExpense'],clients:['Add client','openNewClientModal']};
 let _jobsTab='jobs';
 function _jobsPrimaryAction(){const a=_JOBS_PRIMARY[_jobsTab];if(a)window[a[1]]();else openCreateJob();}
 function switchJobsTab(tab){
@@ -11557,8 +11557,8 @@ function renderGsResults(q){
   }
   let html='',lastCat='';
   _gsResults.forEach((r,i)=>{
-    if(r.cat!==lastCat){html+=`<div class="gs-cat">${r.cat}</div>`;lastCat=r.cat;}
-    html+=`<div class="gs-item${i===_gsSel?' sel':''}" onclick="gsGo(${i})" onmousemove="_gsSel=${i};renderGsResults(document.getElementById('gs-inp').value)">
+    if(r.cat!==lastCat){html+=`<div class="gs-cat">${esc(r.cat)}</div>`;lastCat=r.cat;}
+    html+=`<div class="gs-item${i===_gsSel?' sel':''}" onclick="gsGo(${i})" onmousemove="if(_gsSel!==${i}){_gsSel=${i};this.parentNode.querySelectorAll('.gs-item.sel').forEach(x=>x.classList.remove('sel'));this.classList.add('sel');}">
       <div class="gs-ico ${_GS_CAT_CLS[r.cat]||''}"><i class="ti ${r.icon}"></i></div>
       <div style="flex:1;min-width:0;"><div class="gs-t">${esc(r.title)}</div><div class="gs-s">${esc(r.sub)}</div></div>
     </div>`;
@@ -18402,6 +18402,86 @@ function _rfMovePerson(k,team){
     }catch(e){console.warn('teams card',e);}
   };
 })();
+
+/* ── ⌘K: useful before you type (recent jobs, starred, quick actions), and while typing it also
+   matches actions ("new quote", "schedule", "dark") and people. ─────────────────────────── */
+function _rfRecentJobs(){try{const r=JSON.parse(localStorage.getItem('cc_rf_recent_jobs')||'[]');return Array.isArray(r)?r:[];}catch(e){return[];}}
+(function(){
+  const _o=openJobDetail;
+  openJobDetail=function(id){
+    try{if(id!=null){const k=String(id);const r=_rfRecentJobs().filter(x=>x!==k);r.unshift(k);localStorage.setItem('cc_rf_recent_jobs',JSON.stringify(r.slice(0,8)));}}catch(e){}
+    return _o.apply(this,arguments);
+  };
+})();
+function _rfJobsTab(tab){return()=>{navTo('jobs');setTimeout(()=>switchJobsTab(tab),0);};}
+function _rfGsActions(){
+  const dark=document.body.classList.contains('dark');
+  return [
+    {t:'Log time',k:'log time timesheet hours',icon:'ti-clock-plus',fn:()=>openLogTimeModal()},
+    {t:'Add task',k:'add task todo to do new task',icon:'ti-square-plus',fn:()=>{weekOffset=0;openTodoModal(null);}},
+    {t:'New job',k:'new job create job',icon:'ti-briefcase',fn:()=>openCreateJob()},
+    {t:'New quote',k:'new quote create quote estimate',icon:'ti-file-text',fn:()=>openNewQuoteModal()},
+    {t:'Add expense',k:'add expense new expense cost',icon:'ti-receipt',fn:()=>openLogExpense()},
+    {t:'Add client',k:'add client new client company',icon:'ti-building',fn:()=>{_rfJobsTab('clients')();setTimeout(()=>openNewClientModal(),30);}},
+    {t:'Dashboard',k:'go dashboard home',icon:'ti-layout-dashboard',fn:()=>navTo('dashboard')},
+    {t:'To Do',k:'go to do todo week board my week',icon:'ti-checklist',fn:()=>navTo('todo')},
+    {t:'Jobs',k:'go jobs list',icon:'ti-briefcase',fn:_rfJobsTab('jobs')},
+    {t:'Items',k:'go items job items',icon:'ti-list-details',fn:_rfJobsTab('items')},
+    {t:'Time',k:'go time logged timesheets',icon:'ti-clock',fn:_rfJobsTab('time')},
+    {t:'Expenses and purchase orders',k:'go expenses purchase orders po',icon:'ti-receipt',fn:_rfJobsTab('expenses')},
+    {t:'Quotes',k:'go quotes',icon:'ti-file-text',fn:_rfJobsTab('quotes')},
+    {t:'Invoices',k:'go invoices billing owing overdue',icon:'ti-file-invoice',fn:_rfJobsTab('invoices')},
+    {t:'Clients',k:'go clients companies contacts',icon:'ti-building',fn:_rfJobsTab('clients')},
+    {t:'Deadlines',k:'go deadlines calendar due',icon:'ti-calendar-due',fn:_rfJobsTab('deadlines')},
+    {t:'Schedule',k:'go schedule capacity resourcing',icon:'ti-calendar',fn:()=>navTo('schedule')},
+    {t:'Reporting',k:'go reporting reports',icon:'ti-chart-bar',fn:()=>navTo('reporting')},
+    {t:'Boards',k:'go boards',icon:'ti-layout-kanban',fn:()=>navTo('boards')},
+    {t:'Settings',k:'go settings preferences profile',icon:'ti-settings',fn:()=>navTo('settings')},
+    {t:'Manage teams',k:'manage teams departments rename team settings',icon:'ti-users-group',fn:()=>{navTo('settings');setTimeout(()=>{switchSettTab('team');openManageTeams();},30);}},
+    {t:dark?'Switch to light mode':'Switch to dark mode',k:'theme dark light mode appearance',icon:dark?'ti-sun':'ti-moon',fn:()=>toggleTheme()},
+    {t:'Keyboard shortcuts',k:'keyboard shortcuts help keys',icon:'ti-keyboard',fn:()=>_showShortcuts()},
+  ];
+}
+(function(){
+  const _o=runGlobalSearch;
+  runGlobalSearch=function(q){
+    const raw=String(q||'').trim();const s=raw.toLowerCase();
+    const r=_o.apply(this,arguments);
+    try{
+      if(!s){
+        const out=[];
+        _rfRecentJobs().forEach(id=>{const j=jobs.find(x=>String(x.id)===id);if(j&&out.length<5)out.push({cat:'Recent',icon:'ti-history',title:`${j.id} — ${j.name}`,sub:j.company||'',fn:()=>openJobDetail(j.id)});});
+        try{_getStarred().slice(0,4).forEach(x=>{out.push({cat:'Starred',icon:'ti-star',title:x.name||x.id,sub:x.type||'',fn:()=>openStarredItem(x.type,x.id)});});}catch(e){}
+        _rfGsActions().slice(0,6).forEach(a=>out.push({cat:'Actions',icon:a.icon,title:a.t,sub:'',fn:a.fn}));
+        _gsResults=out;_gsSel=0;renderGsResults('');
+        const el=document.getElementById('gs-results');
+        if(el)el.insertAdjacentHTML('beforeend',`<div class="gs-empty" style="padding:10px 16px 14px;text-align:left;">Try a job number, client, person or command, e.g. <strong>log 2h on 6928</strong>, <strong>new quote</strong>, <strong>schedule</strong>.</div>`);
+        return r;
+      }
+      const words=s.split(/\s+/);
+      const acts=_rfGsActions().filter(a=>{const hay=(a.t+' '+a.k).toLowerCase();return words.every(w=>hay.includes(w));}).slice(0,4)
+        .map(a=>({cat:'Actions',icon:a.icon,title:a.t,sub:'',fn:a.fn}));
+      const ppl=s.length>=2?_rfActiveKeys().filter(k=>`${people[k].name} ${people[k].role||''} ${people[k].team||''}`.toLowerCase().includes(s)).slice(0,4)
+        .map(k=>({cat:'People',icon:'ti-user',title:people[k].name,sub:[people[k].role,people[k].team].filter(Boolean).join(' · ')+' · open their week',fn:()=>{currentPerson=k;weekOffset=0;navTo('todo');try{renderTodo();}catch(e){}}})):[];
+      if(acts.length||ppl.length){
+        // Command verbs ("log 2h on 6928") stay first, then matching actions and people, then the rest.
+        const cmd=_gsResults.filter(x=>x.cat==='Actions');
+        const rest=_gsResults.filter(x=>x.cat!=='Actions');
+        _gsResults=[...cmd,...acts,...ppl,...rest].slice(0,30);
+        _gsSel=0;renderGsResults(s);
+      }
+    }catch(e){console.warn('gs extras',e);}
+    return r;
+  };
+})();
+if(typeof _GS_CAT_CLS!=='undefined'){_GS_CAT_CLS['People']='gsc-clients';_GS_CAT_CLS['Recent']='gsc-jobs';}
+
+/* ── Task modal: ⌘/Ctrl+Enter saves ───────────────────────────────────────────── */
+document.addEventListener('keydown',e=>{
+  if(!(e.metaKey||e.ctrlKey)||e.key!=='Enter')return;
+  if(document.getElementById('todo-modal')?.classList.contains('on')){e.preventDefault();saveTodo();return;}
+  if(document.getElementById('create-modal')?.classList.contains('on')&&typeof createJob==='function'){e.preventDefault();createJob();}
+});
 </script>
 
 </body>
