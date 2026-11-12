@@ -2976,7 +2976,7 @@ function setBgImage(file){
       if(url.length>1200000){toast('Image too large even after compression — try a smaller one','warn');return;}
       try{localStorage.setItem('cc_bg_image',url);}catch(err){toast('Not enough local storage for this image','warn');return;}
       applyBgImage();
-      toast('Wallpaper set — hello, glass','success');
+      toast('Wallpaper set','success');
     };
     im.src=e.target.result;
   };
@@ -10788,7 +10788,7 @@ function renderSettings(){
             <div class="sett-row-val"><button class="d-action" onclick="toggleTheme()"><i class="ti ${document.body.classList.contains('dark')?'ti-sun':'ti-moon'}" style="font-size:12px;"></i> Switch to ${document.body.classList.contains('dark')?'light':'dark'}</button></div>
           </div>
           <div class="sett-row">
-            <div><div class="sett-row-lbl">Wallpaper</div><div class="sett-row-sub">Set a background image and the whole window becomes frosted glass over it</div></div>
+            <div><div class="sett-row-lbl">Wallpaper</div><div class="sett-row-sub">Set a background image to show around the window</div></div>
             <div class="sett-row-val" style="display:flex;gap:8px;">
               <label class="d-action" style="cursor:pointer;"><i class="ti ti-photo" style="font-size:12px;"></i> Choose image<input type="file" accept="image/*" style="display:none;" onchange="setBgImage(this.files[0]);this.value='';"></label>
               ${localStorage.getItem('cc_bg_image')?`<button class="d-action" onclick="clearBgImage();renderSettings()"><i class="ti ti-x" style="font-size:12px;"></i> Remove</button>`:''}
