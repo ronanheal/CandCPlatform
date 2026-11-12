@@ -3176,8 +3176,12 @@ const MY_PERSON=(()=>{try{return localStorage.getItem('cc_me')||'st_114330';}cat
 let currentPerson=MY_PERSON;
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:MY_PERSON==='st_114330'?'Ronan Heal':'…',initials:MY_PERSON==='st_114330'?'RH':'?',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true,_stub:true};
-const APP_VERSION='2.42.0';
+const APP_VERSION='2.42.1';
 const CHANGELOG=[
+  {version:'2.42.1',date:'12 Nov 2026',title:'Platform invoices in the Invoices list',items:[
+    'Invoices raised in the platform now appear in Jobs → Invoices alongside Streamtime\'s, tagged "Platform" — with their status (Draft, Sent, Overdue, Paid), dates and amount, and they count in the issued and paid totals and DSO. Click one to open it.',
+    'A job invoiced in the platform no longer shows up under Uninvoiced work.',
+  ]},
   {version:'2.42.0',date:'12 Nov 2026',title:'A new look, job templates, My items and leave',items:[
     'A fresh design language: sharper headings, softer cards, one header layout on every page, warm focus rings and gentle hover feedback. Dark mode was gone through screen by screen so every icon and label follows the theme.',
     'Needs attention on the Dashboard is redesigned — each item shows what it is and who it\'s for, with a coloured pill for how urgent it is.',
@@ -12023,7 +12027,7 @@ function _setTbiSort(col){
 // the job objects themselves get rebuilt from ST data and don't carry local state.
 // Jobs that can count as "uninvoiced": live (not archived), billable, with sell value logged.
 // Without this the lists were flooded with ~465 archived templates/retainers (bug audit M9).
-function _uninvEligible(j){return j.status!=='archived'&&j.billable!==false&&(j._sellUsed||0)>0;}
+function _uninvEligible(j){return j.status!=='archived'&&j.billable!==false&&(j._sellUsed||0)>0&&!(j.invNum&&(j.invStatus==='sent'||j.invStatus==='paid'));} // a platform invoice counts as invoiced too
 function _getHiddenUninvoiced(){return JSON.parse(localStorage.getItem('cc_hidden_uninvoiced')||'[]');}
 function _setHiddenUninvoiced(ids){localStorage.setItem('cc_hidden_uninvoiced',JSON.stringify(ids));}
 function hideUninvoicedJob(jobId){
@@ -12495,6 +12499,28 @@ function _invStatusPill(j){
   if(s==='sent')return `<span class="inv-pill sent">Sent</span>`;
   return `<span class="inv-pill draft">Draft</span>`;
 }
+function _nativeInvoiceRows(jobByStId){
+  const out=[];
+  (jobs||[]).forEach(j=>{
+    if(!j.invNum)return;
+    const hasLines=Array.isArray(j.invLines)&&j.invLines.length,hasPay=Array.isArray(j.invPayments)&&j.invPayments.length;
+    if(!j.invStatus&&!hasLines&&!hasPay)return;
+    let ex=0,inc=0;
+    try{if(typeof _c2InvTotals==='function'){const t=_c2InvTotals(j);ex=+t.ex||0;inc=+t.inc||0;}}catch(e){}
+    if(!inc){computeJobStats(j);ex=+(j.invTotal||j._plannedSell||0);inc=Math.round(ex*1.15*100)/100;}
+    let paid=0;try{if(typeof _c2Paid==='function')paid=_c2Paid(j);}catch(e){}
+    const st=j.invStatus||'draft';
+    if(st==='paid'&&!paid)paid=inc;
+    const key=j._stId||('nat-job-'+j.id);if(!j._stId)jobByStId[key]=j;
+    const issued=st!=='draft';
+    out.push({id:'nat-'+j.id,_native:true,_jobId:j.id,_issue:j.invIssueDate||'',number:j.invNum,jobId:key,jobNumber:j.id,
+      company:{name:j.company||''},purchaseOrderNumber:j.po||'',
+      sentDate:issued?(j.invIssueDate||''):'',dueDate:issued&&st!=='paid'?(j.invDueDate||''):(st==='paid'?(j.invDueDate||''):''),paidDate:st==='paid'?(j.invPaidDate||j.invDueDate||''):'',
+      invoiceStatus:{name:st==='paid'?'Paid':st==='voided'?'Voided':st==='sent'?'Awaiting Payment':'Draft'},
+      totalAmountExTax:ex,totalAmountIncTax:inc,amountPaidIncTax:paid});
+  });
+  return out;
+}
 function renderInvoices(){
   const list=document.getElementById('invoices-list');if(!list)return;
   const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -12510,10 +12536,15 @@ function renderInvoices(){
   const _invNow=new Date();_invNow.setHours(0,0,0,0);
   const _getInvStatus=i=>{const s=(i.invoiceStatus?.name||i.status||'').toLowerCase();if(s==='paid')return'paid';if(s==='voided')return'voided';const due=i.dueDate?_pDate(i.dueDate):null;if(due&&due<_invNow)return'overdue';if(s.includes('awaiting'))return'awaiting';if(i.sentDate)return'sent';return'draft';};
 
-  let inv=stInvoices.length?[...stInvoices]:[];
+  // Invoices raised in the platform live on their job (invNum, invStatus, invLines, invPayments).
+  // Shape them like Streamtime invoices so search, filters, sorting, totals and DSO all just work.
+  // A job only counts once it has a status, its own lines or a payment — opening the preview
+  // alone assigns a number but isn't an invoice yet.
+  const _natInv=_nativeInvoiceRows(jobByStId);
+  let inv=[...(stInvoices||[]),..._natInv];
   if(search)inv=inv.filter(i=>{const j=jobByStId[i.jobId];return(`${i.id} ${i.number||''} ${j?.id||''} ${j?.name||''} ${i.company?.name||''}`).toLowerCase().includes(search);});
   inv=_applyInvFilters(inv,jobByStId,_getInvStatus);
-  inv.sort((a,b)=>b.id-a.id);
+  inv.sort((a,b)=>{if(!!a._native!==!!b._native)return a._native?-1:1;if(a._native)return(b.sentDate||b._issue||'').localeCompare(a.sentDate||a._issue||'');return b.id-a.id;});
   inv.forEach(i=>{i._groupStatus=_getInvStatus(i);});
 
   // Sync group-by selector
@@ -12525,7 +12556,7 @@ function renderInvoices(){
   // Totals inc GST — read the real inc-tax fields from the invoices rather than grossing up
   // ex-tax by a flat 1.15 (which ignores discounts / mixed tax).
   let totalIssuedInc=0,totalPaidInc=0;
-  (stInvoices||[]).forEach(i=>{
+  [...(stInvoices||[]),..._natInv].forEach(i=>{
     const s=_getInvStatus(i);
     if(s!=='draft'&&s!=='voided')totalIssuedInc+=(i.totalAmountIncTax||0);
     totalPaidInc+=(i.amountPaidIncTax||0);
@@ -12570,9 +12601,9 @@ function renderInvoices(){
     const po=i.purchaseOrderNumber||job?.po||'';
     const amt=i.totalAmountIncTax!=null?Math.round(i.totalAmountIncTax):(i.totalAmountExTax!=null?Math.round(i.totalAmountExTax*1.15):(job?Math.round((job._stInvoiced||0)*1.15):null));
     const isOverdue=_getInvStatus(i)==='overdue';
-    return`<tr class="inv-tr" style="cursor:pointer;${isOverdue?'background:#fff8f8;':''}" onclick="openInvoiceDocPreview('${i.id}')">
+    return`<tr class="inv-tr" style="cursor:pointer;${isOverdue?'background:color-mix(in srgb,var(--danger-bg) 55%,transparent);':''}" onclick="${i._native?`openInvoiceForJob('${i._jobId}')`:`openInvoiceDocPreview('${i.id}')`}">
       <td class="inv-td ci-company" style="color:var(--muted);font-size:12px;" title="${esc(i.company?.name||'')}">${esc(i.company?.name||'—')}</td>
-      <td class="inv-td ci-num" style="font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;">${i.number||i.id}</td>
+      <td class="inv-td ci-num" style="font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;">${esc(String(i.number||i.id))}${i._native?'<span class="st-tag" title="Raised in the platform">Platform</span>':''}</td>
       <td class="inv-td ci-job"><span style="font-size:11px;color:var(--muted);margin-right:4px;">${job?job.id:''}</span>${job?esc(job.name):'—'}</td>
       <td class="inv-td ci-po" style="font-size:12px;color:var(--muted);">${po||'—'}</td>
       <td class="inv-td ci-sent" style="font-size:12px;color:var(--muted);">${fmtDate(i.sentDate)}</td>

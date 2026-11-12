@@ -2,7 +2,7 @@
 
 12 Nov 2026 · v2.39.1 live. This is a list for you to review. Tick or strike items, add notes, then I'll build what you pick.
 
-> **Status (12 Nov, v2.40.0):** A1–A6 and B1–B9, B11 and B12 are built. Still open: merging duplicate clients (rest of A4), B10 phone layout, B13 inline-style cleanup, and the rest of B11 (a few hundred less-common hex colours). In section C, C1 (log time + timer) is built in v2.41.0; C2 (leave), C4 (My items), C7 (job templates), C8 (time grouping + CSV) and the create shortcuts in v2.42.0. C3 (schedule by job, multi-week), C5 (quote line items + discount), C6 (invoice from quote/time + part payments) and C10 (rate cards) are also built in v2.42.0. Still open in C: C9 purchase orders; native invoices don't yet show in the Invoices list.
+> **Status (12 Nov, v2.40.0):** A1–A6 and B1–B9, B11 and B12 are built. Still open: merging duplicate clients (rest of A4), B10 phone layout, B13 inline-style cleanup, and the rest of B11 (a few hundred less-common hex colours). In section C, C1 (log time + timer) is built in v2.41.0; C2 (leave), C4 (My items), C7 (job templates), C8 (time grouping + CSV) and the create shortcuts in v2.42.0. C3 (schedule by job, multi-week), C5 (quote line items + discount), C6 (invoice from quote/time + part payments) and C10 (rate cards) are also built in v2.42.0. Still open in C: C9 purchase orders. Native invoices show in the Invoices list from v2.42.1.
 
 - **Effort:** S = under half a day, M = 1–2 days, L = bigger.
 - **Bucket:** *Now* = we can build it in the current front end. *Razor* = it needs the shared backend, logins or Streamtime/Xero write-back, so it becomes part of their spec.
