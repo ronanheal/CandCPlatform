@@ -19279,7 +19279,7 @@ const CV=(function(){
   function keyKind(ch,ds){const ty=ds.type||ch.config.type;return ds.cvKey||(ds.cvRef?'ref':ty==='line'?'ln':'dot');}
   function dsColor(ds){if(ds.cvColor)return ds.cvColor;const c=ds.borderColor&&ds.type==='line'?ds.borderColor:ds.backgroundColor;return Array.isArray(c)?c[0]:typeof c==='string'?c:'#999';}
   function external(context){
-    const{chart:ch,tooltip:tt}=context;const el=tipNode();
+    const{chart:ch,tooltip:tt}=context;const el=tipNode();el._cv=ch.canvas;
     if(!tt||tt.opacity===0||!tt.dataPoints||!tt.dataPoints.length){el.classList.remove('on');return;}
     const cfg=tipCfgs.get(ch.canvas)||{};const i=tt.dataPoints[0].dataIndex;
     const fmt=cfg.fmt||hFull;
@@ -19307,7 +19307,8 @@ const CV=(function(){
     let y=cy-h/2;y=Math.max(8,Math.min(vh-h-8,y));
     el.style.left=Math.round(x)+'px';el.style.top=Math.round(y)+'px';
   }
-  document.addEventListener('scroll',hideTip,true);
+  // only a scroll that moves the hovered chart hides its tooltip
+  document.addEventListener('scroll',e=>{const cv=tipEl&&tipEl._cv;if(!cv)return;const t=e.target;if(t===document||t===document.documentElement||(t.contains&&t.contains(cv)))hideTip();},true);
   // a click (navigating away, opening a row) or a hidden page never leaves a tooltip behind
   document.addEventListener('pointerdown',hideTip,true);
   document.addEventListener('visibilitychange',hideTip);
@@ -19333,7 +19334,9 @@ const CV=(function(){
     if(typeof Chart==='undefined')return;
     const tk=t(),D=Chart.defaults;
     D.font.family="'Inter',-apple-system,BlinkMacSystemFont,sans-serif";D.font.size=11.5;D.color=tk.muted;
-    D.animation=reduced()?false:{duration:650,easing:'easeOutCubic'};
+    // mutate, never replace: Chart.js reads Object.keys(defaults.animation) (type, fn…) to
+    // configure every property animation — a replaced object breaks colour transitions
+    D.animation.duration=reduced()?0:650;D.animation.easing='easeOutCubic';
     D.transitions.active.animation.duration=reduced()?0:140;
     D.plugins.legend.display=false;
     Object.assign(D.plugins.tooltip,{enabled:false,external,mode:'index',intersect:false});
