@@ -4566,25 +4566,23 @@ function _myWeeklySplit(nWeeks){
   });
   return{bill,nbill};
 }
-// Tiny inline SVG sparkline — line + soft area + end dot. No chart library needed.
+// Tiny inline SVG sparkline — muted wash + line, accent end-dot on the current week (CV.spark).
 function _sparkSVG(vals,color){
-  const w=104,h=26,n=vals.length;
-  if(!n||vals.every(v=>!v))return'';
-  const max=Math.max(...vals,1);
-  const pts=vals.map((v,i)=>[(i/(n-1))*w,h-2-(v/max)*(h-7)]);
-  const line=pts.map(p=>`${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
-  const last=pts[n-1];
-  return`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block;overflow:visible;" aria-hidden="true"><path d="M0,${h} L${line.split(' ').join(' L')} L${w},${h} Z" fill="${color}" opacity=".09"/><polyline points="${line}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/><circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.6" fill="${color}"/></svg>`;
+  if(typeof CV!=='undefined')return CV.spark(vals,color);
+  return'';
 }
+// KPI sparkline colours: billable = brand red, non-billable = warm graphite (chart system)
+function _sparkCol(kind){if(typeof CV==='undefined')return kind==='bill'?'#ED1E24':'#7D7468';return kind==='bill'?CV.slot(0):CV.t().graphite;}
 // Expanded trend: click a KPI sparkline → 26-week Chart.js view with real numbers.
 function openTrendModal(kind){
   const n=26;
   const t=_myWeeklySplit(n);
   const vals=kind==='bill'?t.bill:t.nbill;
-  const color=kind==='bill'?'#4CAF50':'#FF9800';
+  const color=_sparkCol(kind);
   const label=kind==='bill'?'Billable hours':'Non-billable hours';
   const mon=new Date();const dow=(mon.getDay()+6)%7;mon.setDate(mon.getDate()-dow-7*(n-1));
-  const labels=Array.from({length:n},(_,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i*7);return`${d.getDate()}/${d.getMonth()+1}`;});
+  const wkDates=Array.from({length:n},(_,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i*7);return d;});
+  const labels=wkDates.map(d=>`${d.getDate()} ${_FMT_MONTHS[d.getMonth()]}`);
   const total=vals.reduce((s,v)=>s+v,0);
   const avg=total/n;
   const best=Math.max(...vals);
@@ -4603,7 +4601,17 @@ function openTrendModal(kind){
     </div>
   </div>`;
   document.body.appendChild(m);
-  _makeChart('trend-big',{type:'bar',data:{labels,datasets:[{data:vals.map(v=>Math.round(v*100)/100),backgroundColor:color+'CC',hoverBackgroundColor:color}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmtHrs(c.parsed.y)}}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{callback:v=>fmtHrs(v)}}}}});
+  // Bars in the series colour; the current week is still filling, so it's drawn faded and
+  // labelled; dashed line = the 26-week average.
+  const today=new Date();today.setHours(0,0,0,0);const daysIn=((today.getDay()+6)%7)+1;const cur=n-1;
+  const fill=vals.map((v,i)=>i===cur&&daysIn<7?CV.alpha(color,.42):color);
+  _makeChart('trend-big',{type:'bar',cvEmpty:'No time logged in the last 26 weeks.',data:{labels,datasets:[{label,data:vals.map(v=>Math.round(v*100)/100),backgroundColor:fill,hoverBackgroundColor:fill,cvColor:color}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{cvRefs:avg>0?[{v:avg,label:`Avg ${fmtHrs(avg)}`}]:[],
+        cvTip:{single:true,singleLabel:label,fmt:v=>fmtHrs(v),title:i=>`Week of ${labels[i]}`,
+          extra:i=>avg>0?[['vs average',(vals[i]>=avg?'+':'−')+fmtHrs(Math.abs(vals[i]-avg))]]:[],
+          note:i=>i===cur&&daysIn<7?`Week in progress — ${daysIn} of 7 days so far.`:''}},
+      scales:{x:CV.catAxis(),y:CV.valueAxis()}}});
 }
 function renderDashboard(){
   const wrap=document.getElementById('dash-scroll');if(!wrap)return;
@@ -4784,8 +4792,8 @@ function renderDashboard(){
     </div>
     ${_happinessCardHTML()}
     <div class="kpi-row">
-      <div class="kpi"><div class="kpi-label">Billable booked this week</div><div class="kpi-val">${formatHrs(billH)||'0h'}</div><div class="kpi-sub">${formatHrs(billDoneH)||'0h'} done · ${formatHrs(billTodoH)||'0h'} planned · of ${totalTarget}h</div>${_wkTrend.bill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('bill')">${_sparkSVG(_wkTrend.bill,'#4CAF50')}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${billPct}%;background:${billH>=(totalTarget||1)*1.2?'var(--red)':'var(--ok)'};"></div></div></div>
-      <div class="kpi"><div class="kpi-label">Non-billable</div><div class="kpi-val">${formatHrs(nbillH)||'0h'}</div><div class="kpi-sub">internal & admin</div>${_wkTrend.nbill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('nbill')">${_sparkSVG(_wkTrend.nbill,'#FF9800')}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${nbillPct}%;background:var(--warn);"></div></div></div>
+      <div class="kpi"><div class="kpi-label">Billable booked this week</div><div class="kpi-val">${formatHrs(billH)||'0h'}</div><div class="kpi-sub">${formatHrs(billDoneH)||'0h'} done · ${formatHrs(billTodoH)||'0h'} planned · of ${totalTarget}h</div>${_wkTrend.bill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('bill')">${_sparkSVG(_wkTrend.bill,_sparkCol('bill'))}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${billPct}%;background:${billH>=(totalTarget||1)*1.2?'var(--red)':'var(--ok)'};"></div></div></div>
+      <div class="kpi"><div class="kpi-label">Non-billable</div><div class="kpi-val">${formatHrs(nbillH)||'0h'}</div><div class="kpi-sub">internal & admin</div>${_wkTrend.nbill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('nbill')">${_sparkSVG(_wkTrend.nbill,_sparkCol('nbill'))}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${nbillPct}%;background:var(--cv-graphite);"></div></div></div>
       <div class="kpi"><div class="kpi-label">My tasks today</div><div class="kpi-val">${todayTodo.length}</div><div class="kpi-sub">${urgentCount?urgentCount+' urgent · ':''}${todayDone.length} done</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${todayTasks.length?Math.round(todayDone.length/todayTasks.length*100):0}%;background:${urgentCount?'var(--red)':'var(--ok)'};"></div></div></div>
     </div>
     <div class="section-label" style="margin-bottom:12px;">Your day <button onclick="weekOffset=0;openTodoModal(null,null,'${MY_PERSON}')" title="Add task" style="background:transparent;border:1px solid var(--border);border-radius:8px;padding:1px 8px;cursor:pointer;font-size:11px;color:var(--muted);font-family:var(--font);margin-left:8px;vertical-align:middle;">+ Add task</button></div>
@@ -12965,43 +12973,25 @@ function _bigH(h){return h>=100?Math.round(h).toLocaleString()+'h':formatHrs(h)|
 function fmtDollar(n){if(!n)return'$0';return n>=1000000?`$${(n/1000000).toFixed(n>=10000000?0:1)}M`:n>=1000?`$${(n/1000).toFixed(0)}k`:`$${Math.round(n).toLocaleString()}`;}
 function destroyChart(c){if(c&&typeof c.destroy==='function'){try{c.destroy();}catch(e){}}return null;}
 let _rCharts={};
-// One chart theme for every Reporting chart — Inter labels, warm-grey faint grid, no axis
-// borders, dark rounded tooltips, rounded bars, ring doughnuts. Applied once, lazily, so a
-// blocked CDN (typeof Chart undefined) degrades silently like before.
-// Warm chart palette (review B8): red first, then tan, sage, bronze, stone… — no cool slate/blue
-const CHART_PALETTE=['#ED1E24','#C4956A','#7B9E87','#8A6A2E','#B9AFA2','#C45D5D','#5D7A6A','#D9B48A','#9B7B6B','#6F6A62'];
-const CHART_NONBILL='#B9AFA2',CHART_ONE='#C4956A';
+// One chart system for every chart (charts-v3-script holds the helpers: CV.*). Palette validated
+// with the dataviz validator (adjacent CVD ΔE ≥ 9.7, normal-vision ≥ 21, light and dark):
+// red (hero: billable time, revenue) · sage · plum · ochre · dusk · bronze. Never cycled — a
+// 7th series folds into "Other". Non-billable / "the rest" is a warm stone neutral; unsplit
+// hours use warm graphite. Dark mode uses its own steps (CV.slot reads the theme at render).
+const CHART_PALETTE=['#ED1E24','#2E8F6E','#8B4F8A','#B0781A','#5B6BAF','#9A5F1C'];
+const CHART_NONBILL='#D3CABB',CHART_ONE='#7D7468';
 let _chartThemeMode=null; // 'light' | 'dark' — re-applied when the app theme flips
 function _applyChartTheme(){
   if(typeof Chart==='undefined')return;
   const mode=document.body.classList.contains('dark')?'dark':'light';
   if(_chartThemeMode===mode)return;_chartThemeMode=mode;
-  const dark=mode==='dark';
-  Chart.defaults.font.family="'Inter',-apple-system,sans-serif";
-  Chart.defaults.font.size=12;
-  Chart.defaults.color=dark?'#B8B2A8':'#7A746B';
-  const tt=Chart.defaults.plugins.tooltip;
-  tt.backgroundColor=dark?'rgba(58,54,50,.97)':'rgba(25,23,20,.94)';tt.titleColor='#fff';tt.bodyColor='#E5E5EA';
-  tt.padding=10;tt.cornerRadius=9;tt.displayColors=false;
-  tt.titleFont={size:12,weight:'600'};tt.bodyFont={size:11.5};
-  Chart.defaults.datasets.bar.borderRadius=6;
-  Chart.defaults.datasets.bar.borderSkipped=false;
-  Chart.defaults.datasets.bar.maxBarThickness=34;
-  Chart.defaults.datasets.doughnut.cutout='68%';
-  Chart.defaults.datasets.doughnut.borderWidth=2;
-  Chart.defaults.datasets.doughnut.borderColor=dark?'#242427':'#FFFFFF';
-  Chart.defaults.plugins.legend.labels.usePointStyle=true;
-  Chart.defaults.plugins.legend.labels.boxWidth=8;
-  Chart.defaults.plugins.legend.labels.boxHeight=8;
-  Chart.defaults.plugins.legend.labels.font={size:12};
-  Chart.defaults.scale.grid.color=dark?'rgba(255,255,255,.07)':'rgba(35,28,18,.07)';
-  Chart.defaults.scale.ticks.padding=6;
-  if(Chart.defaults.scale.border)Chart.defaults.scale.border.display=false;
+  if(typeof CV!=='undefined')CV.applyTheme();
 }
 function _makeChart(id,cfg){
   _applyChartTheme();
   _rCharts[id]=destroyChart(_rCharts[id]);
-  const el=document.getElementById(id);if(!el)return;
+  const el=document.getElementById(id);if(!el||typeof Chart==='undefined')return;
+  if(typeof CV!=='undefined'){CV.hideTip();cfg=CV.prepare(id,el,cfg);if(!cfg)return;}
   _rCharts[id]=new Chart(el,cfg);
 }
 const _chartOpts=(axis='y')=>({responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{callback:v=>typeof v==='number'?fmtHrs(v):v}}}});
@@ -18055,14 +18045,19 @@ function _rvCsv(id){
   _ccDownload(`${t.file}_${_localISO()}.csv`,lines.join('\n'));
   toast(`Exported ${t.rows.length} row${t.rows.length!==1?'s':''}`,'success');
 }
-// Chart options shared by every Reporting chart.
+// Chart options shared by every Reporting chart (chart system: CV in charts-v3-script).
+// Axis ticks are round ("1,200h", "$12k", "75%"); the tooltip shows exact values ("12h 30m",
+// "$12,404.99"). o: stacked, horizontal, legend, money, pct, max, refs (target lines/bands),
+// title(i), note(i), extra(i) → [[label,value]], total (label for a stacked total), single.
 function _rvBarOpts(o){
-  o=o||{};const fmt=o.money?_rvK:o.pct?(v=>Math.round(v)+'%'):_rvH;const tip=o.money?_rvMoney:o.pct?(v=>Math.round(v)+'%'):_rvH;
-  const val={beginAtZero:true,stacked:!!o.stacked,ticks:{callback:v=>typeof v==='number'?fmt(v):v}};
-  if(o.max)val.suggestedMax=o.max;
-  const cat={stacked:!!o.stacked,grid:{display:false},ticks:{autoSkip:true,maxRotation:0}};
-  return{responsive:true,maintainAspectRatio:false,indexAxis:o.horizontal?'y':'x',interaction:{mode:'index',intersect:false},
-    plugins:{legend:{display:!!o.legend,position:'bottom',align:'start'},tooltip:{displayColors:!!o.legend,callbacks:{label:c=>`${c.dataset.label?c.dataset.label+': ':''}${tip(o.horizontal?c.parsed.x:c.parsed.y)}`}}},
+  o=o||{};
+  const tick=o.money?CV.kTick:o.pct?CV.pTick:CV.hTick;
+  const tip=o.money?_rvMoney:o.pct?(v=>Math.round(v)+'%'):_rvH;
+  const val=CV.valueAxis({stacked:o.stacked,fmt:tick,max:o.max});
+  const cat=CV.catAxis({stacked:o.stacked,horizontal:o.horizontal});
+  return{responsive:true,maintainAspectRatio:false,indexAxis:o.horizontal?'y':'x',
+    plugins:{cvLegend:!!o.legend,cvGaps:!!o.stacked,cvRefs:o.refs||[],
+      cvTip:{fmt:tip,title:o.title,total:o.total,note:o.note,extra:o.extra,single:o.single,singleLabel:o.singleLabel,sortDesc:o.sortDesc}},
     scales:o.horizontal?{x:val,y:cat}:{x:cat,y:val}};
 }
 function _rvDoughnutOpts(fmt){
@@ -18101,9 +18096,26 @@ function _rvBusiness(el){
     ${_rvKpi('Active jobs',_rvN(live.length),`in play · ${_rvN(jobs.length)} jobs in total`)}
   </div>`;
 
-  // Hours per week, billable vs non-billable
+  // Hours per week, billable vs non-billable — every Monday week in the period, empty weeks
+  // included so the time axis is honest. Edge weeks the period only partly covers are kept (the
+  // bars still add up to the KPIs) but drawn faded and labelled as partial.
   const wk={};tasks.forEach(t=>{if(!t.weekKey)return;const w=wk[t.weekKey]||(wk[t.weekKey]={b:0,n:0});if(t.billable!==false&&t.job)w.b+=t.hours||0;else w.n+=t.hours||0;});
-  const wKeys=Object.keys(wk).sort();
+  const wl=_rvWeekList(R);const wSeen=new Set(wl.map(w=>w.wk));
+  Object.keys(wk).forEach(k=>{if(wSeen.has(k))return;const d0=_pDate(k);const days=[];
+    for(let i=0;i<7;i++){const x=new Date(d0);x.setDate(d0.getDate()+i);const iso=_localISO(x);if((!R.from||iso>=R.from)&&iso<=R.to)days.push(iso);}
+    wl.push({wk:k,days});});
+  wl.sort((a,b)=>a.wk<b.wk?-1:a.wk>b.wk?1:0);
+  // weeks before logged time was first synced aren't "zero" weeks — leave them off
+  const t0=_rvDataStart('time');const preSync=!!t0&&wl.length&&wl[0].days[wl[0].days.length-1]<t0;
+  if(t0)for(let i=wl.length-1;i>=0;i--){const d=wl[i].days;if(d.length&&d[d.length-1]<t0&&!wk[wl[i].wk])wl.splice(i,1);}
+  const wkInfo=wl.map(w=>{const wd=w.days.filter(iso=>{const g=_pDate(iso).getDay();return g>0&&g<6;}).length;
+    return{...w,wd,partial:wd<5,live:wd<5&&w.days.includes(R.to)&&R.to===today};});
+  // Capacity reference (contracted hours less leave, same as Teams/People) — only when the
+  // chart shows everyone's time, i.e. no client or job filter.
+  const pf=document.getElementById('r-person')?.value||'all',jf=document.getElementById('r-job')?.value||'all';
+  const capPeople=co==='all'&&jf==='all'?Object.keys(people).filter(k=>!people[k]._archived&&(pf==='all'||(pf.startsWith('team:')?(people[k].team||'')===pf.slice(5):k===pf))):[];
+  const capW=wkInfo.map(w=>capPeople.reduce((s,k)=>s+_rvDaysCap(k,w.days),0));
+  const showCap=capW.some(v=>v>0);
 
   // Revenue by month — 12 months to the end of the period, by invoice date
   const months=_rvMonths(R.to,12);const mInv={},mPaid={};
@@ -18212,12 +18224,31 @@ function _rvBusiness(el){
     ${_rvSec('Budget watch',`Jobs in play that have used 90% or more of their budget${coTxt}`,budgetTbl,_rvCsvBtn('biz-budget'))}
     ${_rvSec('Deadlines',`Jobs in play that are overdue or due in the next 7 days${coTxt}`,dlTbl)}`;
 
-  _makeChart('rc-trend',{type:'bar',data:{labels:wKeys.map(k=>{const d=_pDate(k);return`${d.getDate()}/${d.getMonth()+1}`;}),datasets:[
-    {label:'Billable',data:wKeys.map(k=>wk[k].b),backgroundColor:CHART_PALETTE[0]},
-    {label:'Non-billable',data:wKeys.map(k=>wk[k].n),backgroundColor:CHART_NONBILL}]},options:_rvBarOpts({stacked:true,legend:true})});
-  _makeChart('rc-month',{type:'bar',data:{labels:months.map(m=>m.label),datasets:[
-    {label:'Invoiced',data:months.map(m=>mInv[m.key]||0),backgroundColor:CHART_PALETTE[1]},
-    {label:'Paid',data:months.map(m=>mPaid[m.key]||0),backgroundColor:CHART_PALETTE[2]}]},options:_rvBarOpts({money:true,legend:true})});
+  const tk=CV.t(),red=CV.slot(0);
+  const bA=wkInfo.map(w=>wk[w.wk]?.b||0),nA=wkInfo.map(w=>wk[w.wk]?.n||0);
+  const fade=(c,i)=>wkInfo[i].partial?CV.alpha(c,.42):c;
+  const anyPartial=wkInfo.some(w=>w.partial);
+  _makeChart('rc-trend',{type:'bar',cvEmpty:'No time logged in this period.',
+    cvCaption:[anyPartial?'Faded bars are weeks the period only partly covers.':'',showCap?'Grey rule: capacity (contracted hours less leave).':'',preSync?`Logged time starts ${fmtDate(t0)}.`:''].filter(Boolean).join(' '),
+    data:{labels:wkInfo.map(w=>CV.dShort(w.wk)),datasets:[
+      {label:'Billable',data:bA,backgroundColor:bA.map((v,i)=>fade(red,i)),hoverBackgroundColor:bA.map((v,i)=>fade(red,i)),cvColor:red,cvTotal:_rvH(_rvSum(bA,x=>x))},
+      {label:'Non-billable',data:nA,backgroundColor:nA.map((v,i)=>fade(tk.stone,i)),hoverBackgroundColor:nA.map((v,i)=>fade(tk.stone,i)),cvColor:tk.stone,cvTotal:_rvH(_rvSum(nA,x=>x))},
+      // capacity: a short rule over each week's column (handles partial weeks without a staircase)
+      ...(showCap?[{type:'line',label:'Capacity',stack:'cap',data:capW.map(v=>Math.round(v*100)/100),cvRef:true,cvKey:'ln',cvNoTip:true,cvColor:tk.ink2,showLine:false,
+        pointStyle:'line',pointRadius:CV.colRadius,pointHoverRadius:CV.colRadius,pointBorderWidth:2,pointHoverBorderWidth:2,pointBorderColor:tk.ink2,pointHoverBorderColor:tk.ink2,pointBackgroundColor:tk.ink2,order:-1}]:[])]},
+    options:_rvBarOpts({stacked:true,legend:true,total:'Total logged',
+      title:i=>`Week of ${CV.dShort(wkInfo[i].wk)}`,
+      extra:i=>{const t=bA[i]+nA[i];const x=[['Billable share',_rvP(t>0?bA[i]/t*100:0)]];if(showCap)x.push(['Capacity',_rvH(capW[i])]);return x;},
+      note:i=>{const w=wkInfo[i];if(!w.partial)return'';const a=w.days[0],b=w.days[w.days.length-1];
+        return w.live?`Week in progress — ${CV.dDay(a)} to ${CV.dDay(b)} so far.`:`Partial week — only ${CV.dDay(a)} to ${CV.dDay(b)} is in ${R.label.toLowerCase()} (${w.wd} of 5 working days).`;}})});
+  // Revenue by month — paid drawn inside invoiced: the wash above the solid bar is what's unpaid.
+  const invA=months.map(m=>mInv[m.key]||0),paidA=months.map(m=>mPaid[m.key]||0);const curMo=today.slice(0,7);
+  _makeChart('rc-month',{type:'bar',cvEmpty:'No issued invoices in these 12 months.',data:{labels:months.map(m=>m.label),datasets:[
+    {label:'Invoiced',data:invA,backgroundColor:CV.alpha(red,tk.wash),hoverBackgroundColor:CV.alpha(red,tk.wash+.08),cvColor:CV.alpha(red,tk.wash+.12),cvWash:true,cvTotal:_rvK(_rvSum(invA,x=>x)),grouped:false,barPercentage:1,maxBarThickness:28,order:2},
+    {label:'Paid',data:paidA,backgroundColor:red,hoverBackgroundColor:red,grouped:false,barPercentage:.5,maxBarThickness:12,cvTotal:_rvK(_rvSum(paidA,x=>x)),order:1}]},
+    options:_rvBarOpts({money:true,legend:true,
+      title:i=>CV.monthLong(months[i].key)+(months[i].key===curMo?' (so far)':''),
+      extra:i=>invA[i]>0?[['Unpaid',_rvMoney(invA[i]-paidA[i])],['Paid share',_rvP(paidA[i]/invA[i]*100)]]:[]})});
 }
 
 // ═════════════════════════════ TEAMS ═════════════════════════════
@@ -18280,18 +18311,29 @@ function _rvTeams(el){
 
   // Weekly utilisation per team
   const wl=_rvWeekList(R,26);const wkIdx={};wl.forEach((w,i)=>wkIdx[w.wk]=i);
+  // Colour follows the team (alphabetical slot), never its rank by hours — so a period change
+  // doesn't repaint a team. Red stays reserved for billable/revenue, so teams start at slot 2;
+  // teams past the 6th slot share graphite.
+  const tk=CV.t();const tNames=[...new Set(list.map(T=>T.name))].filter(n=>n!=='No team').sort((a,b)=>a.localeCompare(b));
+  const tCol=n=>{const i=tNames.indexOf(n)+1;return i>0&&i<tk.pal.length?CV.slot(i):tk.graphite;};
   const series=list.filter(T=>T.name!=='No team'||list.length===1).map((T,ti)=>{
     const bill=wl.map(()=>0);
     tasks.forEach(t=>{if(teamOf[t.person]!==T||t.billable===false)return;const i=wkIdx[t.weekKey];if(i!=null)bill[i]+=t.hours||0;});
     const cap=wl.map(w=>T.members.reduce((s,k)=>s+_rvDaysCap(k,w.days),0));
-    return{label:T.name,data:wl.map((w,i)=>cap[i]>0?Math.round(bill[i]/cap[i]*100):null),borderColor:CHART_PALETTE[ti%CHART_PALETTE.length],backgroundColor:CHART_PALETTE[ti%CHART_PALETTE.length],tension:.3,spanGaps:true,pointRadius:wl.length>14?0:3,borderWidth:2};
+    const c=tCol(T.name);
+    return{label:T.name,data:wl.map((w,i)=>cap[i]>0?Math.round(bill[i]/cap[i]*100):null),borderColor:c,backgroundColor:c,pointBackgroundColor:c,pointHoverBackgroundColor:c,pointBorderColor:tk.surface,pointHoverBorderColor:tk.surface,
+      spanGaps:true,pointRadius:wl.length<=2?4:0,cvTotal:`${pct(T.bill,T.cap)}%`};
   });
 
   el.innerHTML=`
     ${_rvSec('Teams at a glance',`Utilisation = billable hours ÷ capacity (working hours less leave) · ${esc(R.label.toLowerCase())}${admin?'. Admins set each team’s target on its card.':''}`,sumTbl,_rvCsvBtn('teams-sum'))}
     ${_rvChartSec('rc-team-trend','Utilisation by week',`Billable hours ÷ capacity for each team, week by week${wl.length===26?' (latest 26 weeks)':''}`)}
     <div class="team-rep-grid">${cards}</div>`;
-  _makeChart('rc-team-trend',{type:'line',data:{labels:wl.map(w=>w.label),datasets:series},options:_rvBarOpts({pct:true,legend:true})});
+  const tgs=series.map(x=>targets[x.label]).filter(Boolean);const tMin=Math.min(...tgs),tMax=Math.max(...tgs);
+  _makeChart('rc-team-trend',{type:'line',cvEmpty:'No capacity or billable time in this period.',cvCaption:tgs.length?'Dashed: team utilisation targets. The number beside each team is its utilisation for the whole period.':'The number beside each team is its utilisation for the whole period.',
+    data:{labels:wl.map(w=>CV.dShort(w.wk)),datasets:series},
+    options:_rvBarOpts({pct:true,legend:true,max:100,sortDesc:true,refs:tgs.length?[{v:tMin,v2:tMax,label:tMin===tMax?`Target ${tMin}%`:`Targets ${tMin}–${tMax}%`}]:[],
+      title:i=>`Week of ${CV.dShort(wl[i].wk)}`+(wl[i].days.length<7&&wl[i].days.filter(iso=>{const g=_pDate(iso).getDay();return g>0&&g<6;}).length<5?' (partial)':'')})});
 }
 
 // ═════════════════════════════ PEOPLE ═════════════════════════════
@@ -18335,13 +18377,12 @@ function _rvPeople(el){
   const heatRows=rows.map(P=>({...P,w:wl.map((w,i)=>{const cap=_rvDaysCap(P.k,w.days);const b=(hb[P.k]||{})[i]||0;return{b,cap,u:cap>0?b/cap*100:null};})}));
   const heatCell=c=>{
     if(c.u==null)return c.b>0?`<span class="rv-heat" title="${esc(_rvH(c.b)+' billable, no capacity')}">${_rvH(c.b)}</span>`:'<span class="rv-heat z">—</span>';
-    const u=Math.round(c.u);const mix=Math.min(100,Math.max(6,u));
-    const bg=u>110?`color-mix(in srgb, var(--warn) 45%, var(--white))`:`color-mix(in srgb, var(--ok) ${Math.round(mix*0.6)}%, var(--white))`;
-    return`<span class="rv-heat${u===0?' z':''}" style="background:${bg};" title="${esc(_rvH(c.b)+' billable of '+_rvH(c.cap)+' capacity')}">${u}%</span>`;
+    const u=Math.round(c.u);const H=CV.heat(u); // one red ramp, light → dark (chart system)
+    return`<span class="rv-heat${u===0?' z':''}${H.cls?' '+H.cls:''}" style="background:${H.bg};color:${H.fg};" title="${esc(_rvH(c.b)+' billable of '+_rvH(c.cap)+' capacity · '+u+'%')}">${u}%</span>`;
   };
   const heatTbl=_rvTable('people-heat',{file:'people_weekly_utilisation',sort:'name',dir:1,total:false,rows:heatRows,empty:'No time logged in this period.',onRow:P=>people[P.k]?_rvCall('openTeamMember',P.k):'',cols:[
     {k:'name',l:'Person',v:P=>P.name,cls:'tx'},
-    ...wl.map((w,i)=>({k:'w'+i,l:w.label,cl:'Week of '+w.wk,num:1,cls:'hc',v:P=>P.w[i].u,h:P=>heatCell(P.w[i])})),
+    ...wl.map((w,i)=>({k:'w'+i,l:CV.dShort(w.wk),cl:'Week of '+w.wk,tip:'Week of '+CV.dShort(w.wk),num:1,cls:'hc',v:P=>P.w[i].u,h:P=>heatCell(P.w[i])})),
   ]});
 
   const dayTotals=[0,0,0,0,0,0,0];tasks.forEach(t=>{if(t.day>=1&&t.day<=7)dayTotals[t.day-1]+=t.hours||0;});
@@ -18349,15 +18390,21 @@ function _rvPeople(el){
 
   el.innerHTML=`${kpis}
     ${_rvSec('Utilisation and logged time',`Billable hours against capacity (contracted hours less leave) · ${esc(R.label.toLowerCase())}. Click a person to open them.`,tbl,_rvCsvBtn('people-util'))}
-    ${_rvSec('Weekly utilisation',`Billable hours ÷ capacity each week${wl.length===26?' (latest 26 weeks)':''}. Darker = busier; amber = over 110%.`,heatTbl,_rvCsvBtn('people-heat'))}
+    ${_rvSec('Weekly utilisation',`Billable hours ÷ capacity each week${wl.length===26?' (latest 26 weeks)':''}. Darker = busier; amber = over 110%.`,heatTbl+(heatRows.length?CV.heatLegend():''),_rvCsvBtn('people-heat'))}
     <div class="rv-grid2">
       ${_rvChartSec('rc-people-bar','Hours by person','Billable and non-billable time')}
       ${_rvChartSec('rc-people-day','Hours by day of week','All logged time in the period')}
     </div>`;
-  _makeChart('rc-people-bar',{type:'bar',data:{labels:top.map(P=>P.name),datasets:[
-    {label:'Billable',data:top.map(P=>P.b),backgroundColor:CHART_PALETTE[0]},
-    {label:'Non-billable',data:top.map(P=>P.h-P.b),backgroundColor:CHART_NONBILL}]},options:_rvBarOpts({stacked:true,legend:true,horizontal:top.length>8})});
-  _makeChart('rc-people-day',{type:'bar',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{label:'Hours',data:dayTotals,backgroundColor:CHART_ONE}]},options:_rvBarOpts()});
+  // Ranked horizontal bars (names never fit under columns); the card grows with the list.
+  const tk=CV.t();
+  _makeChart('rc-people-bar',{type:'bar',cvEmpty:'No time logged in this period.',cvHeight:Math.max(260,top.length*30+24),data:{labels:top.map(P=>_rvTrunc(P.name,22)),datasets:[
+    {label:'Billable',data:top.map(P=>P.b),backgroundColor:CV.slot(0),cvTotal:_rvH(B)},
+    {label:'Non-billable',data:top.map(P=>P.h-P.b),backgroundColor:tk.stone,cvTotal:_rvH(H-B)}]},
+    options:_rvBarOpts({stacked:true,legend:true,horizontal:true,total:'Total logged',title:i=>top[i].name+(top[i].team?' · '+top[i].team:''),
+      extra:i=>{const P=top[i];const x=[['Billable share',_rvP(P.h>0?P.b/P.h*100:0)]];if(P.cap>0)x.push(['Utilisation',_rvP(P.u)]);return x;}})});
+  const dayAll=_rvSum(dayTotals,x=>x);const dayNames=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  _makeChart('rc-people-day',{type:'bar',cvEmpty:'No time logged in this period.',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{label:'Hours',data:dayTotals,backgroundColor:tk.graphite}]},
+    options:_rvBarOpts({single:true,singleLabel:'Logged',title:i=>dayNames[i]+'s',extra:i=>[['Share of all time',_rvP(dayAll>0?dayTotals[i]/dayAll*100:0)]]})});
 }
 
 // ═════════════════════════════ JOBS ═════════════════════════════
@@ -18440,9 +18487,14 @@ function _rvJobs(el){
       ${_rvSec('By job type','Where the period’s hours went',typeTbl,_rvCsvBtn('jobs-type'))}
       ${_rvSec('By activity','Hours per job item, with the billable share',actTbl,_rvCsvBtn('jobs-activity'))}
     </div>`;
-  _makeChart('rc-jobs-hrs',{type:'bar',data:{labels:top.map(r=>_rvTrunc(r.id+' '+r.name,28)),datasets:[{label:'Hours',data:top.map(r=>r.h),backgroundColor:CHART_ONE}]},options:_rvBarOpts({horizontal:true})});
+  const tk=CV.t();
+  _makeChart('rc-jobs-hrs',{type:'bar',cvEmpty:'No time logged on jobs matching these filters.',cvHeight:Math.max(260,top.length*30+24),data:{labels:top.map(r=>_rvTrunc(r.id+' '+r.name,28)),datasets:[{label:'Hours',data:top.map(r=>r.h),backgroundColor:tk.graphite}]},
+    options:_rvBarOpts({horizontal:true,single:true,singleLabel:'Logged',title:i=>`${top[i].id} ${top[i].name}`,
+      extra:i=>{const r=top[i];const x=[];if(r.client)x.push(['Client',r.client]);x.push(['Time value',_rvMoney(r.sell)]);return x;}})});
+  // Work mix: part-to-whole of three types → a tall segmented bar with a row per type (was a doughnut).
   const order=['Project','Retainer','Internal'];const tr=order.filter(t=>types[t]);
-  _makeChart('rc-jobs-mix',{type:'doughnut',data:{labels:tr,datasets:[{data:tr.map(t=>types[t].h),backgroundColor:tr.map(t=>t==='Project'?CHART_PALETTE[0]:t==='Retainer'?CHART_PALETTE[1]:CHART_NONBILL),hoverOffset:6}]},options:_rvDoughnutOpts()});
+  CV.segBar('rc-jobs-mix',tr.map(t=>({label:t,v:types[t].h,color:t==='Project'?CV.slot(0):t==='Retainer'?CV.slot(1):tk.stone,
+    sub:`${_rvN(types[t].jobs.size)} job${types[t].jobs.size===1?'':'s'} · ${_rvK(types[t].sell)} time value`})),{aria:'Hours by job type',empty:'No time logged on jobs matching these filters.'});
 }
 
 // ═════════════════════════════ CLIENTS ═════════════════════════════
@@ -18498,10 +18550,15 @@ function _rvClients(el){
       ${_rvChartSec('rc-client-hrs','Hours by client','Top 10 clients in the period')}
       ${_rvChartSec('rc-client-trend','Invoiced by month',`Issued invoices, ex GST · 12 months to ${esc(fmtDate(R.to))}${clientSel!=='all'?' · '+esc(clientSel):''}`)}
     </div>`;
-  _makeChart('rc-client-hrs',{type:'bar',data:{labels:top.map(r=>_rvTrunc(r.co,26)),datasets:[
-    {label:'Billable',data:top.map(r=>r.b),backgroundColor:CHART_PALETTE[0]},
-    {label:'Non-billable',data:top.map(r=>r.h-r.b),backgroundColor:CHART_NONBILL}]},options:_rvBarOpts({horizontal:true,stacked:true,legend:internal})});
-  _makeChart('rc-client-trend',{type:'bar',data:{labels:months.map(m=>m.label),datasets:[{label:'Invoiced',data:months.map(m=>mInv[m.key]||0),backgroundColor:CHART_PALETTE[2]}]},options:_rvBarOpts({money:true})});
+  const tk=CV.t();const curMo=_localISO().slice(0,7);
+  _makeChart('rc-client-hrs',{type:'bar',cvEmpty:'No client time in this period.',cvHeight:Math.max(260,top.length*30+24),data:{labels:top.map(r=>_rvTrunc(r.co,26)),datasets:[
+    {label:'Billable',data:top.map(r=>r.b),backgroundColor:CV.slot(0),cvTotal:_rvH(_rvSum(top,r=>r.b))},
+    ...(internal?[{label:'Non-billable',data:top.map(r=>r.h-r.b),backgroundColor:tk.stone,cvTotal:_rvH(_rvSum(top,r=>r.h-r.b))}]:[])]},
+    options:_rvBarOpts({horizontal:true,stacked:true,legend:internal,total:'Total logged',single:!internal,singleLabel:'Logged',title:i=>top[i].co,
+      extra:i=>{const r=top[i];return[['Time value',_rvMoney(r.sell)],['Jobs',_rvN(r.jobs.size)]];}})});
+  const cInv=months.map(m=>mInv[m.key]||0);
+  _makeChart('rc-client-trend',{type:'bar',cvEmpty:'No issued invoices in these 12 months.',data:{labels:months.map(m=>m.label),datasets:[{label:'Invoiced',data:cInv,backgroundColor:CV.slot(0)}]},
+    options:_rvBarOpts({money:true,single:true,singleLabel:'Invoiced, ex GST',title:i=>CV.monthLong(months[i].key)+(months[i].key===curMo?' (so far)':'')})});
 }
 function _rvSetClientsInternal(on){RV.state.clientsInternal=!!on;_rvSaveState();_rvRerender();}
 
@@ -18996,6 +19053,413 @@ document.addEventListener('keydown',e=>{
   if(document.getElementById('todo-modal')?.classList.contains('on')){e.preventDefault();saveTodo();return;}
   if(document.getElementById('create-modal')?.classList.contains('on')&&typeof createJob==='function'){e.preventDefault();createJob();}
 });
+</script>
+
+<style id="charts-v3">
+/* ══ Charts v3 — one chart system for every chart, meter and heat-map ═════════════════════
+   Palette (validated with the dataviz validator, adjacent pairs, light on #FFFFFF / dark on #242427):
+     light  #ED1E24 red · #2E8F6E sage · #8B4F8A plum · #B0781A ochre · #5B6BAF dusk · #9A5F1C bronze
+     dark   #F2464B red · #2A9670 sage · #B97AB7 plum · #B88428 ochre · #7383CC dusk · #B0733A bronze
+   Red is the hero: billable time and revenue. Non-billable / "the rest" is a warm stone neutral.
+   Unsplit hours use warm graphite. Heat-maps use one red-clay ramp, light → dark (dark mode: dark → bright),
+   with status amber reserved for over-capacity (>110%). */
+:root{
+  --cv-ink:#1D1C19;--cv-ink2:#5F5A51;--cv-muted:#8D887C;
+  --cv-grid:#EFECE6;--cv-base:#D9D3C7;
+  --cv-tip-bg:#FFFFFF;--cv-tip-bd:rgba(29,28,25,.08);--cv-tip-sh:0 1px 2px rgba(35,28,18,.06),0 10px 30px rgba(35,28,18,.14);
+  --cv-red:#ED1E24;--cv-stone:#D3CABB;--cv-graphite:#7D7468;
+  --cv-h0:#FBF1EE;--cv-h1:#F7E0DA;--cv-h2:#F0C7BD;--cv-h3:#E7A797;--cv-h4:#DB8471;--cv-h5:#C9614E;--cv-h6:#A8432F;--cv-over:#F3B04A;
+}
+body.dark{
+  --cv-ink:#F2F2F4;--cv-ink2:#C6C3BD;--cv-muted:#9C9CA3;
+  --cv-grid:rgba(255,255,255,.06);--cv-base:rgba(255,255,255,.16);
+  --cv-tip-bg:#2E2E33;--cv-tip-bd:rgba(255,255,255,.08);--cv-tip-sh:0 2px 6px rgba(0,0,0,.35),0 14px 36px rgba(0,0,0,.45);
+  --cv-red:#F2464B;--cv-stone:#69635A;--cv-graphite:#B3AB9F;
+  --cv-h0:#2F2826;--cv-h1:#3A2B28;--cv-h2:#583832;--cv-h3:#744238;--cv-h4:#934F40;--cv-h5:#B5604D;--cv-h6:#D77B63;--cv-over:#C98A2A;
+}
+/* Tooltip — roomy, rounded, dot keys, values right-aligned and strong */
+.cv-tip{position:fixed;z-index:2147483000;pointer-events:none;min-width:172px;max-width:300px;padding:11px 13px 10px;border-radius:12px;background:var(--cv-tip-bg);border:1px solid var(--cv-tip-bd);box-shadow:var(--cv-tip-sh);color:var(--cv-ink);font:12.5px/1.35 'Inter',-apple-system,sans-serif;opacity:0;transform:translateY(3px);transition:opacity .12s ease,transform .12s ease;}
+.cv-tip.on{opacity:1;transform:none;}
+.cv-tip-t{font-weight:600;font-size:12.5px;letter-spacing:-.003em;color:var(--cv-ink);margin-bottom:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cv-tip-r{display:flex;align-items:center;gap:8px;padding:2.5px 0;}
+.cv-tip-k{flex:0 0 auto;width:8px;height:8px;border-radius:50%;}
+.cv-tip-k.ln{width:12px;height:2.5px;border-radius:2px;}
+.cv-tip-k.ref{width:12px;height:0;border-top:2px dashed currentColor;border-radius:0;background:none!important;}
+.cv-tip-l{color:var(--cv-ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.cv-tip-v{margin-left:auto;padding-left:14px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--cv-ink);}
+.cv-tip-tot{border-top:1px solid var(--cv-tip-bd);margin-top:6px;padding-top:7px;}
+.cv-tip-tot .cv-tip-l{color:var(--cv-ink);font-weight:500;}
+.cv-tip-n{margin-top:7px;font-size:11.5px;color:var(--cv-muted);line-height:1.4;white-space:normal;}
+/* Legend — above the plot, swatch mirrors the mark, total beside the name */
+.cv-lg{display:flex;flex-wrap:wrap;gap:6px 16px;margin:-4px 0 12px;font-size:12px;color:var(--cv-ink2);}
+.cv-lg-i{display:inline-flex;align-items:center;gap:7px;cursor:pointer;user-select:none;padding:2px 0;border:0;background:none;font:inherit;color:inherit;transition:opacity .15s;}
+.cv-lg-i:hover{color:var(--cv-ink);}
+.cv-lg-i.off{opacity:.38;}
+.cv-lg-i.static{cursor:default;}
+.cv-lg-k{width:10px;height:10px;border-radius:3px;flex:0 0 auto;}
+.cv-lg-k.ln{width:14px;height:2.5px;border-radius:2px;}
+.cv-lg-k.ref{width:14px;height:0;border-top:2px dashed var(--cv-muted);border-radius:0;background:none!important;}
+.cv-lg-k.wash{box-shadow:inset 0 0 0 1px rgba(0,0,0,.04);}
+.cv-lg-v{color:var(--cv-ink);font-weight:600;font-variant-numeric:tabular-nums;}
+.cv-cap{font-size:11.5px;color:var(--cv-muted);margin-top:10px;line-height:1.45;}
+/* Empty / insufficient-data state, sized like the plot so nothing jumps */
+.cv-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--cv-muted);font-size:12.5px;text-align:center;border-radius:10px;background:repeating-linear-gradient(0deg,transparent 0 51px,var(--cv-grid) 51px 52px);}
+.cv-empty i{font-size:20px;opacity:.7;}
+.rv-chart.cv-auto{height:auto;}
+/* Work mix — tall segmented bar + rows (replaces the doughnut) */
+.cv-seg{display:flex;gap:2px;height:28px;margin:6px 0 18px;}
+.cv-seg>div{position:relative;border-radius:4px;min-width:3px;display:flex;align-items:center;padding:0 9px;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;transition:filter .15s;transform-origin:left;}
+.cv-seg>div:hover{filter:brightness(1.06);}
+.cv-seg-rows{display:flex;flex-direction:column;}
+.cv-seg-row{display:grid;grid-template-columns:12px minmax(0,1fr) auto auto;gap:4px 12px;align-items:center;padding:9px 2px;border-top:1px solid var(--faint);font-size:12.5px;}
+.cv-seg-row:first-child{border-top:0;}
+.cv-seg-row .k{width:10px;height:10px;border-radius:3px;}
+.cv-seg-row .n{color:var(--cv-ink);font-weight:500;}
+.cv-seg-row .n small{display:block;color:var(--cv-muted);font-weight:400;font-size:11.5px;margin-top:1px;}
+.cv-seg-row .v{font-weight:600;font-variant-numeric:tabular-nums;color:var(--cv-ink);text-align:right;}
+.cv-seg-row .p{color:var(--cv-muted);font-variant-numeric:tabular-nums;min-width:38px;text-align:right;}
+/* Heat-map cells — one red ramp, legend under the table */
+.rv-heat{transition:box-shadow .12s;}
+.rv-table td.hc .rv-heat:hover{box-shadow:0 0 0 2px var(--cv-ink) inset;}
+.rv-heat.cv-z{background:transparent;color:var(--cv-muted);}
+.rv-heat.cv-over{box-shadow:0 0 0 1.5px rgba(0,0,0,.08) inset;}
+.cv-hl{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;margin-top:12px;font-size:11.5px;color:var(--cv-muted);}
+.cv-hl-ramp{display:inline-flex;align-items:center;gap:6px;}
+.cv-hl-ramp b{display:inline-flex;gap:2px;}
+.cv-hl-ramp b i{display:block;width:22px;height:10px;border-radius:3px;}
+.cv-hl-ramp b i:first-child{border-radius:3px 1px 1px 3px;}
+.cv-hl-sw{display:inline-flex;align-items:center;gap:6px;}
+.cv-hl-sw i{display:block;width:12px;height:10px;border-radius:3px;}
+/* Meters — one family: rounded track, rounded fill, consistent weights */
+.rv-meter b{height:6px;}
+.rv-meter b i,.tr-meter i,.tm-bar i,.kpi-bar-fill,.bbar-fill,.stat-bar-fill,.job-prog-fill,.r-kpi-fill{border-radius:99px;}
+.tr-meter{height:8px;}
+.tr-meter b{width:2px;top:-4px;bottom:-4px;background:var(--cv-ink);border-radius:2px;box-shadow:0 0 0 2px var(--white);}
+.tm-bar{height:6px;}
+.tm-bar i{background:var(--cv-graphite);}
+.day-cap-bar{height:4px;border-radius:99px;gap:0;}
+.day-cap-bar>div{border-radius:0;}
+.day-cap-bar>div+div{box-shadow:-1px 0 0 0 var(--white);}
+/* Dashboard sparkline */
+.kpi-spark svg{overflow:visible;}
+.kpi-spark:hover .cv-sp-line{stroke-width:2;}
+@media (prefers-reduced-motion:reduce){.cv-tip{transition:none;}.cv-seg>div{animation:none!important;}}
+@keyframes cvGrowX{from{transform:scaleX(0);}to{transform:scaleX(1);}}
+.cv-seg>div{animation:cvGrowX .6s cubic-bezier(.22,1,.36,1) both;}
+</style>
+<script id="charts-v3-script">
+// ═══════════════════════════════════════════════════════════════════════════════
+// Charts v3 — the chart system. Everything a chart needs beyond its own data:
+//   CV.t()        current tokens (light/dark), read at render time so a theme flip re-themes
+//   CV.slot(i)    categorical colour i (fixed order, never cycled past 6 — fold into "Other")
+//   plugins       cvGaps (2px surface gap between stacked segments), cvHover (column band /
+//                 crosshair), cvRefs (target lines & bands), external HTML tooltip, HTML legend
+//   CV.prepare()  called by _makeChart: empty state, legend, tooltip, animate-once
+//   CV.heat()     sequential ramp for the utilisation heat-map; CV.heatLegend()
+//   CV.segBar()   tall segmented bar for part-to-whole (Work mix)
+// Numbers: axis ticks round ("1,200h", "$12k", "75%"); tooltips exact ("12h 30m", "$12,404.99").
+// ═══════════════════════════════════════════════════════════════════════════════
+const CV=(function(){
+  const PAL={
+    light:['#ED1E24','#2E8F6E','#8B4F8A','#B0781A','#5B6BAF','#9A5F1C'],
+    dark:['#F2464B','#2A9670','#B97AB7','#B88428','#7383CC','#B0733A'],
+  };
+  const TOK={
+    light:{ink:'#1D1C19',ink2:'#5F5A51',muted:'#8D887C',grid:'#EFECE6',base:'#D9D3C7',band:'rgba(29,28,25,.045)',stone:'#D3CABB',graphite:'#7D7468',surface:'#FFFFFF',wash:.2,
+      heat:['#FBF1EE','#F7E0DA','#F0C7BD','#E7A797','#DB8471','#C9614E','#A8432F'],over:'#F3B04A'},
+    dark:{ink:'#F2F2F4',ink2:'#C6C3BD',muted:'#9C9CA3',grid:'rgba(255,255,255,.06)',base:'rgba(255,255,255,.16)',band:'rgba(255,255,255,.05)',stone:'#69635A',graphite:'#B3AB9F',surface:'#242427',wash:.3,
+      heat:['#2F2826','#3A2B28','#583832','#744238','#934F40','#B5604D','#D77B63'],over:'#C98A2A'},
+  };
+  const mode=()=>document.body.classList.contains('dark')?'dark':'light';
+  const t=()=>Object.assign({mode:mode(),pal:PAL[mode()]},TOK[mode()]);
+  const slot=i=>PAL[mode()][Math.max(0,i)%PAL.light.length];
+  const reduced=()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}};
+  function alpha(hex,a){const h=String(hex).replace('#','');if(h.length!==6)return hex;const n=parseInt(h,16);return`rgba(${n>>16&255},${n>>8&255},${n&255},${a})`;}
+  function lum(hex){const h=String(hex).replace('#','');if(h.length!==6)return 1;const c=[0,2,4].map(i=>{const v=parseInt(h.slice(i,i+2),16)/255;return v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4);});return .2126*c[0]+.7152*c[1]+.0722*c[2];}
+  const fgOn=hex=>lum(hex)>.36?'#1D1C19':'#FFFFFF';
+  // The colour actually behind a chart (its card), so the 2px gaps and point rings match.
+  function surfaceOf(el){
+    for(let n=el;n&&n!==document.documentElement;n=n.parentElement){
+      const bg=getComputedStyle(n).backgroundColor;
+      if(bg&&bg!=='transparent'&&!/rgba\(\s*0,\s*0,\s*0,\s*0\s*\)/.test(bg)&&!/,\s*0(\.0+)?\)$/.test(bg))return bg;
+    }
+    return t().surface;
+  }
+  // ── number formats ──
+  const hTick=v=>{v=+v||0;return Math.round(v).toLocaleString('en-NZ')+'h';};
+  const hFull=v=>typeof _rvH==='function'?_rvH(v):fmtHrs(v);
+  const kTick=v=>typeof _rvK==='function'?_rvK(v):fmtDollar(v);
+  const mFull=v=>typeof _rvMoney==='function'?_rvMoney(v):_money(v);
+  const pTick=v=>Math.round(v)+'%';
+  const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const MONL=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const pd=iso=>{const[y,m,d]=String(iso).slice(0,10).split('-').map(Number);return new Date(y,m-1,d);};
+  const dShort=iso=>{const d=pd(iso);return`${d.getDate()} ${MON[d.getMonth()]}`;};
+  const dDay=iso=>{const d=pd(iso);return`${DOW[d.getDay()]} ${d.getDate()} ${MON[d.getMonth()]}`;};
+  const monthLong=key=>{const[y,m]=String(key).split('-').map(Number);return`${MONL[m-1]} ${y}`;};
+
+  // ── bar geometry: square at the baseline, 4px round on the data end of the TOP segment only ──
+  function topRadius(r){
+    r=r==null?4:r;
+    return ctx=>{
+      // always the same shape (an object) so Chart.js can animate between hover states
+      const R=v=>({topLeft:v,topRight:v,bottomLeft:v,bottomRight:v});
+      if(ctx.type!=='data')return R(0);
+      const ch=ctx.chart,i=ctx.dataIndex,di=ctx.datasetIndex,ds=ch.data.datasets;
+      const val=ch.options.indexAxis==='y'?'x':'y';
+      if(!ch.options.scales?.[val]?.stacked)return R(r);
+      for(let k=ds.length-1;k>=0;k--){
+        if((ds[k].type||ch.config.type)!=='bar'||!ch.isDatasetVisible(k))continue;
+        if((+ds[k].data[i]||0)!==0)return R(k===di?r:0);
+      }
+      return R(0);
+    };
+  }
+
+  // ── plugins ──
+  const gaps={id:'cvGaps',afterDatasetsDraw(ch){
+    if(!ch.options.plugins?.cvGaps)return;
+    const hz=ch.options.indexAxis==='y';const ctx=ch.ctx;const metas=ch.getSortedVisibleDatasetMetas().filter(m=>m.type==='bar').sort((a,b)=>a.index-b.index);
+    if(metas.length<2)return;
+    ctx.save();ctx.fillStyle=ch.$cvSurface||t().surface;
+    const n=ch.data.labels.length;
+    for(let i=0;i<n;i++){
+      let below=false;
+      metas.forEach(m=>{const el=m.data[i];if(!el)return;const v=+ch.data.datasets[m.index].data[i]||0;if(!v)return;
+        if(below){const p=el.getProps(["x","y","base","width","height"]);
+          if(hz)ctx.fillRect(p.base-1,p.y-p.height/2-1,2,p.height+2);else ctx.fillRect(p.x-p.width/2-1,p.base-1,p.width+2,2);}
+        below=true;});
+    }
+    ctx.restore();
+  }};
+  const hover={id:'cvHover',beforeDatasetsDraw(ch){
+    const act=ch.getActiveElements();if(!act.length||ch.options.plugins?.cvHover===false)return;
+    const ca=ch.chartArea,ctx=ch.ctx,tk=t();const hz=ch.options.indexAxis==='y';
+    const isLine=ch.config.type==='line';
+    const el=act[0].element;ctx.save();
+    if(isLine){ctx.strokeStyle=tk.base;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(Math.round(el.x)+.5,ca.top);ctx.lineTo(Math.round(el.x)+.5,ca.bottom);ctx.stroke();}
+    else{
+      const sc=ch.scales[hz?'y':'x'];const n=ch.data.labels.length||1;
+      const step=(hz?ca.bottom-ca.top:ca.right-ca.left)/n;const c=sc.getPixelForValue(act[0].index);
+      const w=Math.min(step*.86,56);
+      ctx.fillStyle=tk.band;ctx.beginPath();
+      if(hz)ctx.roundRect?ctx.roundRect(ca.left-4,c-w/2,ca.right-ca.left+8,w,6):ctx.rect(ca.left-4,c-w/2,ca.right-ca.left+8,w);
+      else ctx.roundRect?ctx.roundRect(c-w/2,ca.top-6,w,ca.bottom-ca.top+6,6):ctx.rect(c-w/2,ca.top-6,w,ca.bottom-ca.top+6);
+      ctx.fill();
+    }
+    ctx.restore();
+  }};
+  // Reference lines / bands on the value axis: [{v, v2?, label}] — dashed muted hairline, label
+  // at the right end. Bands draw under the data, lines over it.
+  function drawRefs(ch,bands){
+    const refs=ch.options.plugins?.cvRefs;if(!refs||!refs.length)return;
+    const hz=ch.options.indexAxis==='y';if(hz)return;
+    const ys=ch.scales.y,ca=ch.chartArea,ctx=ch.ctx,tk=t();ctx.save();
+    refs.forEach(r=>{
+      if(bands&&r.v2!=null&&r.v2!==r.v){const a=ys.getPixelForValue(Math.max(r.v,r.v2)),b=ys.getPixelForValue(Math.min(r.v,r.v2));ctx.fillStyle=alpha(r.color||tk.pal[1],.10);ctx.fillRect(ca.left,a,ca.right-ca.left,b-a);}
+      if(!bands){
+        const vals=r.v2!=null&&r.v2!==r.v?[r.v,r.v2]:[r.v];
+        vals.forEach(v=>{const y=Math.round(ys.getPixelForValue(v))+.5;if(y<ca.top-1||y>ca.bottom+1)return;
+          ctx.strokeStyle=r.color||tk.muted;ctx.lineWidth=1.25;ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(ca.left,y);ctx.lineTo(ca.right,y);ctx.stroke();});
+        if(r.label){ctx.setLineDash([]);const y=ys.getPixelForValue(Math.max(...vals));ctx.font="500 11px 'Inter',-apple-system,sans-serif";ctx.textAlign='right';ctx.textBaseline='bottom';
+          const w=ctx.measureText(r.label).width;ctx.fillStyle=ch.$cvSurface||tk.surface;ctx.globalAlpha=.85;ctx.fillRect(ca.right-w-6,y-16,w+6,14);ctx.globalAlpha=1;ctx.fillStyle=tk.ink2;ctx.fillText(r.label,ca.right-2,y-3);}
+      }
+    });
+    ctx.restore();
+  }
+  const refs={id:'cvRefs',beforeDatasetsDraw(ch){drawRefs(ch,true);},afterDatasetsDraw(ch){drawRefs(ch,false);}};
+
+  // ── tooltip (external HTML) ──
+  let tipEl=null;
+  // Tooltip configs live outside Chart.js options: Chart treats functions there as scriptable.
+  const tipCfgs=new WeakMap();
+  function tipNode(){if(!tipEl||!tipEl.isConnected){tipEl=document.createElement('div');tipEl.className='cv-tip';tipEl.setAttribute('role','status');document.body.appendChild(tipEl);}return tipEl;}
+  function hideTip(){if(tipEl)tipEl.classList.remove('on');}
+  function keyKind(ch,ds){const ty=ds.type||ch.config.type;return ds.cvKey||(ds.cvRef?'ref':ty==='line'?'ln':'dot');}
+  function dsColor(ds){if(ds.cvColor)return ds.cvColor;const c=ds.borderColor&&ds.type==='line'?ds.borderColor:ds.backgroundColor;return Array.isArray(c)?c[0]:typeof c==='string'?c:'#999';}
+  function external(context){
+    const{chart:ch,tooltip:tt}=context;const el=tipNode();el._cv=ch.canvas;
+    if(!tt||tt.opacity===0||!tt.dataPoints||!tt.dataPoints.length){el.classList.remove('on');return;}
+    const cfg=tipCfgs.get(ch.canvas)||{};const i=tt.dataPoints[0].dataIndex;
+    const fmt=cfg.fmt||hFull;
+    el.textContent='';
+    const title=document.createElement('div');title.className='cv-tip-t';title.textContent=cfg.title?cfg.title(i):String(ch.data.labels[i]??'');el.appendChild(title);
+    const row=(kind,color,label,value,cls)=>{const r=document.createElement('div');r.className='cv-tip-r'+(cls?' '+cls:'');
+      if(kind){const k=document.createElement('span');k.className='cv-tip-k'+(kind==='ln'?' ln':kind==='ref'?' ref':'');if(kind==='ref')k.style.color=color;else k.style.background=color;r.appendChild(k);}
+      const l=document.createElement('span');l.className='cv-tip-l';l.textContent=label;r.appendChild(l);
+      const v=document.createElement('span');v.className='cv-tip-v';v.textContent=value;r.appendChild(v);el.appendChild(r);};
+    const pts=[...tt.dataPoints].sort((a,b)=>cfg.sortDesc?(b.raw??-1)-(a.raw??-1):a.datasetIndex-b.datasetIndex);
+    let tot=0,nTot=0;
+    pts.forEach(p=>{const ds=ch.data.datasets[p.datasetIndex];if(ds.cvNoTip)return;if(p.raw==null&&!cfg.showNull)return;
+      const v=p.raw;const c=Array.isArray(ds.backgroundColor)&&!ds.cvColor?ds.backgroundColor[p.dataIndex]:dsColor(ds);
+      row(cfg.single?null:keyKind(ch,ds),c,ds.label||'',v==null?'—':(ds.cvFmt||fmt)(v));
+      if(!ds.cvRef&&v!=null){tot+=+v||0;nTot++;}});
+    if(cfg.single&&el.children.length===2){el.children[1].querySelector('.cv-tip-l').textContent=cfg.singleLabel||el.children[1].querySelector('.cv-tip-l').textContent;}
+    if(cfg.total&&nTot>1)row(null,null,typeof cfg.total==='string'?cfg.total:'Total',fmt(tot),'cv-tip-tot');
+    (cfg.extra?cfg.extra(i)||[]:[]).forEach(x=>row(null,null,x[0],x[1],x[2]));
+    const note=cfg.note?cfg.note(i):'';if(note){const n=document.createElement('div');n.className='cv-tip-n';n.textContent=note;el.appendChild(n);}
+    // place beside the caret, flipping at the viewport edge
+    const r=ch.canvas.getBoundingClientRect();const cx=r.left+tt.caretX,cy=r.top+tt.caretY;
+    el.classList.add('on');
+    const w=el.offsetWidth,h=el.offsetHeight,vw=innerWidth,vh=innerHeight;
+    let x=cx+16;if(x+w>vw-8)x=cx-16-w;if(x<8)x=8;
+    let y=cy-h/2;y=Math.max(8,Math.min(vh-h-8,y));
+    el.style.left=Math.round(x)+'px';el.style.top=Math.round(y)+'px';
+  }
+  // only a scroll that moves the hovered chart hides its tooltip
+  document.addEventListener('scroll',e=>{const cv=tipEl&&tipEl._cv;if(!cv)return;const t=e.target;if(t===document||t===document.documentElement||(t.contains&&t.contains(cv)))hideTip();},true);
+  // a click (navigating away, opening a row) or a hidden page never leaves a tooltip behind
+  document.addEventListener('pointerdown',hideTip,true);
+  document.addEventListener('visibilitychange',hideTip);
+
+  // ── legend (HTML, above the plot; click toggles a series) ──
+  function legend(ch,host){
+    host.textContent='';
+    ch.data.datasets.forEach((ds,di)=>{
+      if(ds.cvNoLegend)return;
+      const b=document.createElement('button');b.type='button';b.className='cv-lg-i'+(ch.isDatasetVisible(di)?'':' off')+(ds.cvRef?' static':'');
+      const k=document.createElement('span');const kind=keyKind(ch,ds);k.className='cv-lg-k'+(kind==='ln'?' ln':kind==='ref'?' ref':'')+(ds.cvWash?' wash':'');
+      if(kind!=='ref')k.style.background=ds.cvLegendColor||dsColor(ds);
+      b.appendChild(k);
+      const l=document.createElement('span');l.textContent=ds.label||'';b.appendChild(l);
+      if(ds.cvTotal){const v=document.createElement('span');v.className='cv-lg-v';v.textContent=ds.cvTotal;b.appendChild(v);}
+      if(!ds.cvRef)b.addEventListener('click',()=>{ch.setDatasetVisibility(di,!ch.isDatasetVisible(di));ch.update();b.classList.toggle('off',!ch.isDatasetVisible(di));});
+      host.appendChild(b);
+    });
+  }
+
+  // ── theme: Chart.js defaults for the current mode ──
+  function applyTheme(){
+    if(typeof Chart==='undefined')return;
+    const tk=t(),D=Chart.defaults;
+    D.font.family="'Inter',-apple-system,BlinkMacSystemFont,sans-serif";D.font.size=11.5;D.color=tk.muted;
+    // mutate, never replace: Chart.js reads Object.keys(defaults.animation) (type, fn…) to
+    // configure every property animation — a replaced object breaks colour transitions
+    D.animation.duration=reduced()?0:650;D.animation.easing='easeOutCubic';
+    D.transitions.active.animation.duration=reduced()?0:140;
+    D.plugins.legend.display=false;
+    Object.assign(D.plugins.tooltip,{enabled:false,external,mode:'index',intersect:false});
+    D.interaction.mode='index';D.interaction.intersect=false;
+    D.datasets.bar.borderRadius=topRadius(4);D.datasets.bar.borderSkipped='start';D.datasets.bar.maxBarThickness=24;
+    D.datasets.bar.categoryPercentage=.72;D.datasets.bar.barPercentage=.86;D.datasets.bar.borderWidth=0;
+    Object.assign(D.datasets.line,{borderWidth:2,tension:.32,cubicInterpolationMode:'monotone',pointRadius:0,pointHoverRadius:5,pointHoverBorderWidth:2,pointBorderWidth:2,borderCapStyle:'round',borderJoinStyle:'round'});
+    D.elements.point.hitRadius=10;
+    D.scale.grid.color=tk.grid;D.scale.grid.tickLength=0;D.scale.grid.drawTicks=false;
+    D.scale.ticks.padding=8;D.scale.ticks.color=tk.muted;D.scale.ticks.font={size:11.5};
+    if(D.scale.border){D.scale.border.display=false;}
+    D.layout.padding={top:6,right:4,left:0,bottom:0};
+  }
+  try{if(typeof Chart!=='undefined')Chart.register(gaps,hover,refs);}catch(e){}
+
+  // ── axis option builders ──
+  // valueAxis(fmt) → hairline grid, darker zero baseline, 5 round ticks, no axis border.
+  function valueAxis(o){
+    o=o||{};const tk=t();
+    return{beginAtZero:true,stacked:!!o.stacked,suggestedMax:o.max,grace:o.max?0:(o.grace||'4%'),border:{display:false},
+      grid:{color:c=>c.tick&&c.tick.value===0?tk.base:tk.grid,lineWidth:1,drawTicks:false},
+      ticks:{maxTicksLimit:o.ticks||5,precision:o.precision==null?0:o.precision,padding:8,callback:v=>typeof v==='number'?(o.fmt||hTick)(v):v}};
+  }
+  function catAxis(o){
+    o=o||{};
+    const ticks={autoSkip:true,autoSkipPadding:o.horizontal?4:14,maxRotation:0,padding:8};
+    if(o.horizontal)ticks.crossAlign='far';
+    if(o.tick)ticks.callback=function(v){return o.tick(v);};
+    return{stacked:!!o.stacked,offset:true,border:{display:false},grid:{display:false,drawTicks:false},ticks};
+  }
+
+  // ── _makeChart hook: empty state, legend, sizing, animate-once ──
+  const sigs={};
+  function prepare(id,el,cfg){
+    const wrap=el.parentElement;
+    wrap.querySelectorAll(':scope>.cv-empty').forEach(n=>n.remove());
+    el.style.display='';
+    const sets=(cfg.data?.datasets||[]).filter(d=>!d.cvRef);
+    const any=sets.some(d=>(d.data||[]).some(v=>v!=null&&+v!==0));
+    const card=wrap.closest('.rv-card')||wrap.parentElement;
+    let lg=card&&card.querySelector(`:scope .cv-lg[data-for="${id}"]`);
+    let cap=card&&card.querySelector(`:scope .cv-cap[data-for="${id}"]`);
+    if(!any||!(cfg.data?.labels||[]).length){
+      el.style.display='none';
+      const e=document.createElement('div');e.className='cv-empty';
+      const msg=cfg.cvEmpty||'Nothing to chart in this period.';
+      e.innerHTML='<i class="ti ti-chart-bar-off"></i>';const s=document.createElement('span');s.textContent=msg;e.appendChild(s);
+      wrap.appendChild(e);if(lg)lg.remove();if(cap)cap.remove();
+      return null;
+    }
+    // animate on first draw only — a re-render with the same data (table sort, filter
+    // round-trip) shouldn't replay the entrance
+    let sig='';try{sig=JSON.stringify([cfg.type,cfg.data.labels,sets.map(d=>d.data)]);}catch(e){}
+    cfg.options=cfg.options||{};
+    if(cfg.options.plugins&&cfg.options.plugins.cvTip){tipCfgs.set(el,cfg.options.plugins.cvTip);delete cfg.options.plugins.cvTip;}else tipCfgs.delete(el);
+    if(sigs[id]===sig||reduced())cfg.options.animation=false;
+    sigs[id]=sig;
+    if(cfg.cvHeight){wrap.style.height=cfg.cvHeight+'px';wrap.dataset.cvH='1';}else if(wrap.dataset.cvH){wrap.style.height='';delete wrap.dataset.cvH;}
+    // legend
+    const wantLg=cfg.options.plugins?.cvLegend;
+    if(wantLg&&card){
+      if(!lg){lg=document.createElement('div');lg.className='cv-lg';lg.dataset.for=id;wrap.parentElement.insertBefore(lg,wrap);}
+    }else if(lg){lg.remove();lg=null;}
+    // caption under the plot
+    if(cfg.cvCaption&&card){
+      if(!cap){cap=document.createElement('div');cap.className='cv-cap';cap.dataset.for=id;wrap.after(cap);}
+      cap.textContent=cfg.cvCaption;
+    }else if(cap)cap.remove();
+    cfg.plugins=(cfg.plugins||[]).concat([{id:'cvLegendHost',afterInit(ch){ch.$cvSurface=surfaceOf(ch.canvas);if(lg)legend(ch,lg);}}]);
+    return cfg;
+  }
+
+  // ── heat-map: utilisation % → ramp step (0 = no fill) ──
+  const HEAT_STOPS=[20,40,60,80,95,110]; // upper bounds of steps 1..6; > 110 = over (status amber)
+  function heat(u){
+    const tk=t();
+    if(u==null)return null;
+    if(u<=0)return{cls:'cv-z',bg:'transparent',fg:tk.muted};
+    if(u>110)return{cls:'cv-over',bg:tk.over,fg:fgOn(tk.over)};
+    let s=HEAT_STOPS.findIndex(b=>u<b);if(s<0)s=HEAT_STOPS.length-1;
+    const bg=tk.heat[s+1]||tk.heat[6];return{cls:'',bg,fg:fgOn(bg)};
+  }
+  function heatLegend(){
+    const tk=t();
+    const steps=tk.heat.slice(1).map((c,i)=>`<i style="background:${c}" title="${i?HEAT_STOPS[i-1]:1}–${HEAT_STOPS[i]}%"></i>`).join('');
+    return`<div class="cv-hl"><span class="cv-hl-ramp">0%<b>${steps}</b>110%</span><span class="cv-hl-sw"><i style="background:${tk.over}"></i>Over 110%</span><span class="cv-hl-sw"><span style="color:var(--cv-muted)">—</span>&nbsp;No capacity or time</span></div>`;
+  }
+
+  // ── tall segmented bar (part-to-whole, ≤ 6 parts) ──
+  function segBar(id,items,o){
+    o=o||{};
+    if(typeof _rCharts!=='undefined'&&_rCharts[id]){_rCharts[id]=destroyChart(_rCharts[id]);}
+    const el=document.getElementById(id);if(!el)return;
+    const wrap=el.closest('.rv-chart')||el.parentElement;wrap.classList.add('cv-auto');
+    const tot=items.reduce((s,x)=>s+(+x.v||0),0);
+    if(!(tot>0)){wrap.innerHTML=`<div style="position:relative;height:200px;"><div class="cv-empty"><i class="ti ti-chart-bar-off"></i><span>${esc(o.empty||'Nothing to chart in this period.')}</span></div></div>`;return;}
+    const fmt=o.fmt||hFull;
+    const segs=items.filter(x=>x.v>0).map((x,i)=>{const sh=x.v/tot*100;const fg=fgOn(x.color);
+      const lbl=sh>=9?`${Math.round(sh)}%`:'';
+      return`<div style="flex:${x.v} 1 0;background:${x.color};color:${fg};animation-delay:${i*60}ms" title="${esc(x.label+' · '+fmt(x.v)+' · '+Math.round(sh)+'%')}" aria-label="${esc(x.label+' '+fmt(x.v)+', '+Math.round(sh)+' percent')}">${lbl}</div>`;}).join('');
+    const rows=items.map(x=>{const sh=tot>0?x.v/tot*100:0;
+      return`<div class="cv-seg-row"><span class="k" style="background:${x.color}"></span><span class="n">${esc(x.label)}${x.sub?`<small>${esc(x.sub)}</small>`:''}</span><span class="v">${fmt(x.v)}</span><span class="p">${Math.round(sh)}%</span></div>`;}).join('');
+    wrap.innerHTML=`<div class="cv-seg" role="img" aria-label="${esc(o.aria||'Share of hours')}">${segs}</div><div class="cv-seg-rows">${rows}</div>`;
+  }
+
+  // ── sparkline: muted line + wash, accent end-dot (current period) ──
+  function spark(vals,accent){
+    const w=104,h=28,n=vals.length;
+    if(!n||vals.every(v=>!v))return'';
+    const max=Math.max(...vals,1),tk=t();
+    const pts=vals.map((v,i)=>[n>1?(i/(n-1))*w:w/2,h-3-(v/max)*(h-8)]);
+    // monotone-ish smoothing via midpoints
+    let d=`M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+    for(let i=1;i<n;i++){const[x0,y0]=pts[i-1],[x1,y1]=pts[i];const mx=(x0+x1)/2;d+=` C${mx.toFixed(1)},${y0.toFixed(1)} ${mx.toFixed(1)},${y1.toFixed(1)} ${x1.toFixed(1)},${y1.toFixed(1)}`;}
+    const last=pts[n-1];const gid='cvsp'+Math.random().toString(36).slice(2,8);
+    return`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block;overflow:visible;" aria-hidden="true"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${accent}" stop-opacity=".16"/><stop offset="1" stop-color="${accent}" stop-opacity="0"/></linearGradient></defs><path d="${d} L${w},${h} L0,${h} Z" fill="url(#${gid})"/><path class="cv-sp-line" d="${d}" fill="none" stroke="${accent}" stroke-opacity=".8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3.2" fill="${accent}" stroke="var(--white)" stroke-width="1.6"/></svg>`;
+  }
+
+  // half-width of a column rule (capacity marks): ~42% of the category slot, 3–15px
+  const colRadius=ctx=>{const ch=ctx.chart,ca=ch.chartArea,n=(ch.data.labels||[]).length||1;if(!ca)return 10;return Math.max(3,Math.min(15,(ca.right-ca.left)/n*.42));};
+  return{colRadius,t,slot,alpha,fgOn,surfaceOf,reduced,topRadius,valueAxis,catAxis,applyTheme,prepare,heat,heatLegend,segBar,spark,hideTip,
+    hTick,hFull,kTick,mFull,pTick,dShort,dDay,monthLong,pd,MON};
+})();
 </script>
 
 <style id="ds-v3">
