@@ -10823,7 +10823,7 @@ function renderSettings(){
         <div class="sett-card-hd">Dashboard — visible blocks</div>
         <div class="sett-card-body">
           <div style="display:flex;flex-direction:column;gap:8px;">
-            ${[['deadlines','Needs attention','Urgent items and quote expiry'],['team','Team · today','Scheduled hours per person'],['kpis','Business KPIs','Revenue, costs and pipeline'],['clients','Active clients','Recent job activity per client']].map(([k,lbl,desc])=>{
+            ${[['deadlines','Needs attention','Urgent items and quote expiry'],['team','Team · today','Scheduled hours per person'],['kpis','Business KPIs','Revenue, costs and pipeline'],['clients','Active clients','Recent job activity per client'],['timesheets','Timesheets','Who is behind on logging time this week (admins)']].map(([k,lbl,desc])=>{
               const on=!dh.includes(k);
               return`<div class="sett-row">
                 <div><div class="sett-row-lbl">${lbl}</div><div class="sett-row-sub">${desc}</div></div>
@@ -18238,7 +18238,21 @@ body.dark{--star:#F2C14E;}
 .rf-ft-note{margin-right:auto;font-size:11.5px;color:var(--muted);align-self:center;}
 @media (max-width:720px){.rf-people{grid-template-columns:1fr;}}
 .rf-te-del{width:22px;height:22px;font-size:12px;vertical-align:middle;margin-left:4px;opacity:0;}
-tr:hover .rf-te-del,.rf-te-del:focus{opacity:1;}</style>
+tr:hover .rf-te-del,.rf-te-del:focus{opacity:1;}
+/* Dashboard timesheets card */
+.rf-ts-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-card);box-shadow:var(--shadow-s);padding:4px 0 6px;margin-bottom:8px;}
+.rf-ts-hd{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding:12px 16px 8px;font-size:13px;color:var(--ink);}
+.rf-ts-sub{font-size:11.5px;color:var(--muted);}
+.rf-ts-row{display:flex;align-items:center;gap:10px;padding:7px 16px;cursor:pointer;border-top:1px solid var(--faint);}
+.rf-ts-row:hover,.rf-ts-row:focus{background:var(--off);outline:none;}
+.rf-ts-name{flex:0 0 180px;min-width:0;font-size:13px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rf-ts-bar{flex:1;height:5px;border-radius:3px;background:var(--faint);overflow:hidden;max-width:280px;}
+.rf-ts-bar span{display:block;height:100%;background:var(--warn);border-radius:3px;}
+.rf-ts-num{font-size:12px;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;margin-left:auto;}
+.rf-ts-num span{color:var(--muted);}
+.rf-ts-ok{padding:8px 16px 10px;font-size:13px;color:var(--ok-ink);display:flex;align-items:center;gap:8px;border-top:1px solid var(--faint);}
+.rf-ts-more{padding:6px 16px 4px;font-size:11.5px;color:var(--muted);}
+@media (max-width:720px){.rf-ts-name{flex-basis:120px;}}</style>
 <script id="review-fix-script">
 /* Review fixes and additions (Nov 2026 platform review). New helpers live here; small
    in-place fixes are made where the original code is. */
@@ -18571,6 +18585,76 @@ let _rfAllMatching=false;
   toggleTheme=function(){
     const r=_tt.apply(this,arguments);
     try{if(!document.getElementById('view-settings')?.classList.contains('hidden')&&(_settActiveTab||'profile')==='profile')renderSettings();}catch(e){}
+    return r;
+  };
+})();
+
+/* ── Dashboard: Timesheets card (admins) ───────────────────────────────────────────
+   Who is behind on logging time this week, Monday to yesterday (on a Monday: last week).
+   Expected = their working days × daily capacity, less leave. Logged = Streamtime logged
+   time plus time logged in the platform. Hidden from non-admins once admins exist, and can be
+   turned off in Settings → My profile like the other dashboard blocks. */
+function _rfTimesheetRows(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const dow=(today.getDay()+6)%7; // 0=Mon
+  const mon=new Date(today);mon.setDate(today.getDate()-dow-(dow===0?7:0));
+  const end=new Date(today);end.setDate(today.getDate()-1); // up to yesterday
+  if(dow===0){end.setTime(mon.getTime());end.setDate(mon.getDate()+4);}
+  const days=[];for(let d=new Date(mon);d<=end;d.setDate(d.getDate()+1)){const wd=(d.getDay()+6)%7;if(wd<5)days.push({iso:_localISO(d),wd:wd+1});}
+  if(!days.length)return{rows:[],from:mon,to:end,lastWeek:dow===0};
+  const fromIso=days[0].iso,toIso=days[days.length-1].iso;
+  const byUser={},recent={};
+  const r28=new Date(mon);r28.setDate(mon.getDate()-28);const r28Iso=_localISO(r28);
+  (stLoggedTimes||[]).forEach(lt=>{const d=String(lt.date||'').slice(0,10);
+    if(d>=r28Iso&&d<fromIso)recent[lt.userId]=1;
+    if(d<fromIso||d>toIso)return;byUser[lt.userId]=(byUser[lt.userId]||0)+(lt.minutes||0)/60;});
+  const rows=[];
+  _rfActiveKeys().forEach(k=>{
+    const p=people[k];if(!p._stId)return;
+    const u=stUsersById[p._stId];if(u&&u.active===false)return;
+    const cap=(typeof _c2PersonCap==='function'?_c2PersonCap(k):(p.hoursPerDay||8));
+    const wdays=Array.isArray(p.days)&&p.days.length?p.days:[1,2,3,4,5];
+    let exp=0;days.forEach(d=>{if(!wdays.includes(d.wd))return;if(typeof _ccAwayOn==='function'&&_ccAwayOn(k,d.iso))return;exp+=cap;});
+    if(exp<=0)return;
+    const got=byUser[p._stId]||0;
+    if(!got&&!recent[p._stId])return; // placeholder / freelance seats that never log time
+    rows.push({k,p,exp,got,pct:got/exp});
+  });
+  rows.sort((a,b)=>a.pct-b.pct);
+  return{rows,from:mon,to:end,lastWeek:dow===0};
+}
+function _rfTimesheetCardHTML(){
+  const {rows,lastWeek}=_rfTimesheetRows();
+  if(!rows.length)return'';
+  const behind=rows.filter(r=>r.pct<0.8);
+  const list=(behind.length?behind:[]).slice(0,8).map(r=>{
+    const w=Math.min(100,Math.round(r.pct*100));
+    return`<div class="rf-ts-row" role="button" tabindex="0" data-k="${esc(r.k)}" onclick="rfOpenPersonWeek(this.dataset.k,${lastWeek?-1:0})" onkeydown="if(event.key==='Enter')this.click()" title="Open ${esc(r.p.name)}'s week">
+      ${_rfAvs([r.k],1)}<span class="rf-ts-name">${esc(r.p.name)}</span>
+      <span class="rf-ts-bar"><span style="width:${w}%"></span></span>
+      <span class="rf-ts-num">${esc(formatHrs(r.got)||'0h')} <span>of ${esc(formatHrs(r.exp))}</span></span>
+    </div>`;}).join('');
+  const done=rows.length-behind.length;
+  return`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Timesheets · ${lastWeek?'last week':'this week so far'}</div>
+    <div class="rf-ts-card">
+      <div class="rf-ts-hd"><span><strong>${done}</strong> of ${rows.length} people up to date</span><span class="rf-ts-sub">Logged time against working hours${lastWeek?'':' to yesterday'}, less leave · under 80% listed</span></div>
+      ${list||`<div class="rf-ts-ok"><i class="ti ti-circle-check"></i> Everyone has logged their time.</div>`}
+      ${behind.length>8?`<div class="rf-ts-more">+${behind.length-8} more</div>`:''}
+    </div>`;
+}
+function rfOpenPersonWeek(k,off){if(!people[k])return;currentPerson=k;weekOffset=off||0;navTo('todo');try{renderTodo();}catch(e){}}
+(function(){
+  const _rd=renderDashboard;
+  renderDashboard=function(){
+    const r=_rd.apply(this,arguments);
+    try{
+      const dh=people[MY_PERSON]?.dashHide||[];
+      if(dh.includes('timesheets')||!_isAdmin())return r;
+      const anchor=document.querySelector('#dash-scroll .my-todos');if(!anchor)return r;
+      const html=_rfTimesheetCardHTML();if(!html)return r;
+      const box=document.createElement('div');box.id='rf-ts-block';box.innerHTML=html;
+      anchor.insertAdjacentElement('afterend',box);
+    }catch(e){console.warn('timesheets card',e);}
     return r;
   };
 })();
