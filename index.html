@@ -2164,84 +2164,13 @@ body.not-admin .admin-only{display:none!important;}
         <canvas id="chart-by-budget" style="display:none;"></canvas>
         <tbody id="r-tbody" style="display:none;"></tbody>
       </div>
-      <!-- BOARDS -->
+      <!-- BOARDS (rendered by #boards-v2-script) -->
       <div id="view-boards" class="view hidden">
-        <!-- BOARDS LANDING -->
-        <div id="boards-landing" class="boards-scroll">
-          <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:4px;">
-            <div><div class="boards-head">Priority Boards</div><div class="boards-sub">Campaigns, clients &amp; team at a glance</div></div>
-            <button class="d-action primary" onclick="openCreateBoard()"><i class="ti ti-plus" style="font-size:12px;"></i> New board</button>
-          </div>
-          <div style="height:20px;"></div>
-          <div style="margin-bottom:20px;display:flex;gap:10px;flex-wrap:wrap;">
-            <button class="d-action" onclick="createStudioPreset()" title="Auto-board: all live jobs grouped by workflow stage"><i class="ti ti-layout-kanban" style="font-size:12px;"></i> Studio board (live jobs)</button>
-          </div>
-          <div id="boards-list-grid"></div>
-        </div>
-        <!-- BOARD DETAIL -->
-        <div id="board-detail" style="display:none;flex-direction:column;height:100%;overflow:hidden;">
-          <div class="r-filter-row" style="padding:14px 28px;border-bottom:1px solid var(--border);flex-shrink:0;gap:10px;">
-            <button class="detail-back" onclick="closeBoardDetail()" style="margin-right:8px;"><i class="ti ti-arrow-left" style="font-size:12px;"></i> Boards</button>
-            <span id="bd-title" style="font-family:var(--display);font-size:18px;font-weight:400;flex:1;"></span>
-            <span id="bd-type-badge" style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:var(--ink);color:var(--on-ink);padding:3px 8px;border-radius:2px;"></span>
-          </div>
-          <div id="board-detail-body" style="flex:1;overflow:auto;padding:24px 28px;"></div>
-        </div>
-      </div>
-      <!-- CREATE BOARD MODAL -->
-      <!-- CREATE BOARD MODAL -->
-      <div class="cb-overlay" id="create-board-modal" onclick="if(event.target===this)closeCreateBoard()">
-        <div class="cb-modal">
-          <div class="cb-modal-left">
-            <div class="cb-modal-eyebrow">New board</div>
-            <div class="cb-modal-heading">What kind<br>of board?</div>
-            <div class="cb-type-list" id="cb-type-list">
-              <div class="cb-type-item on" onclick="selectBoardType('client',this)" data-type="client">
-                <div class="cb-type-icon"><i class="ti ti-building"></i></div>
-                <div class="cb-type-text"><div class="cb-type-name">Client board</div><div class="cb-type-desc">Auto-pulls all active jobs for a company. Updates as jobs are added.</div></div>
-              </div>
-              <div class="cb-type-item" onclick="selectBoardType('people',this)" data-type="people">
-                <div class="cb-type-icon"><i class="ti ti-users"></i></div>
-                <div class="cb-type-text"><div class="cb-type-name">People board</div><div class="cb-type-desc">One lane per team member with this-week stats and custom notes.</div></div>
-              </div>
-              <div class="cb-type-item" onclick="selectBoardType('custom',this)" data-type="custom">
-                <div class="cb-type-icon"><i class="ti ti-layout-kanban"></i></div>
-                <div class="cb-type-text"><div class="cb-type-name">Custom board</div><div class="cb-type-desc">Freeform kanban. Add note cards, jobs, clients, or people to any column.</div></div>
-              </div>
-            </div>
-          </div>
-          <div class="cb-modal-right">
-            <button class="cb-close" onclick="closeCreateBoard()"><i class="ti ti-x"></i></button>
-            <div class="cb-form">
-              <label class="form-label">Board name</label>
-              <input id="nb-name" class="form-inp cb-name-inp" placeholder="e.g. Silver Fern Farms" style="width:100%;margin-bottom:20px;">
-              <div id="nb-client-row">
-                <label class="form-label">Client / Company</label>
-                <select id="nb-client" class="form-inp" style="width:100%;margin-bottom:20px;"></select>
-              </div>
-              <div id="nb-custom-desc" style="display:none;padding:12px;background:var(--off);border:1px solid var(--border);margin-bottom:20px;font-size:12px;color:var(--muted);line-height:1.6;">
-                You'll get 3 starter columns: <strong>To Do</strong>, <strong>In Progress</strong>, <strong>Done</strong>. You can rename, add, and remove columns after creating.
-              </div>
-              <button class="cb-create-btn" onclick="saveNewBoard()">
-                <i class="ti ti-plus" style="font-size:13px;"></i> Create board
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- ADD CARD PICKER (positioned by JS) -->
-      <div class="add-card-menu" id="add-card-menu">
-        <div class="add-card-opt" onclick="addCardFromMenu('note')"><i class="ti ti-note"></i> Note</div>
-        <div class="add-card-opt" onclick="addCardFromMenu('job')"><i class="ti ti-briefcase"></i> Job</div>
-        <div class="add-card-opt" onclick="addCardFromMenu('client')"><i class="ti ti-building"></i> Client</div>
-        <div class="add-card-opt" onclick="addCardFromMenu('person')"><i class="ti ti-user"></i> Person</div>
-      </div>
-      <!-- CARD PICKER MODALS (shared) -->
-      <div class="cb-overlay" id="card-picker-modal" onclick="if(event.target===this)closeCardPicker()" style="z-index:1100;">
-        <div class="modal-box" style="width:340px;">
-          <div class="modal-head"><span id="card-picker-title">Pick a job</span><button class="modal-x" onclick="closeCardPicker()"><i class="ti ti-x"></i></button></div>
-          <div style="padding:12px 16px 4px;"><input id="card-picker-search" class="form-inp" placeholder="Search…" style="width:100%;" oninput="filterCardPicker(this.value)"></div>
-          <div id="card-picker-list" style="max-height:300px;overflow-y:auto;padding:8px 0;"></div>
+        <div id="boards-landing" class="boards-scroll"></div>
+        <div id="board-detail" style="display:none;">
+          <div class="bv-head" id="bv-head"></div>
+          <div class="bv-subbar" id="bv-subbar"></div>
+          <div id="board-detail-body"></div>
         </div>
       </div>
 
@@ -12869,660 +12798,9 @@ function wireReportingFilters(){
   const el=document.getElementById('r-period');
   if(el&&!el.dataset.wired){el.addEventListener('change',renderReporting);el.dataset.wired='1';}
 }
-// ============ BOARDS ENGINE (redesigned) ============
-let boardsData={briefed:[],inprogress:[],review:[],approved:[],complete:[]};
-let boardsList=JSON.parse(localStorage.getItem('cc_boards')||'[]');
-let activeBoardId=null;
-let newBoardType='custom';
-// One-time migration: older versions minted column/card ids from Date.now()
-// alone, so boards created close together could share ids — which made
-// drag/drop and column edits bleed across boards. Reassign duplicates.
-(function dedupeBoardIds(){
-  const seen=new Set();let changed=false;
-  boardsList.forEach(b=>{
-    if(seen.has(b.id)){b.id=uid('b');changed=true;}
-    seen.add(b.id);
-    (b.columns||[]).forEach(col=>{
-      if(seen.has(col.id)){col.id=uid('c');changed=true;}
-      seen.add(col.id);
-      (col.cards||[]).forEach(card=>{
-        if(seen.has(card.id)){card.id=uid('card');changed=true;}
-        seen.add(card.id);
-      });
-    });
-  });
-  // Cards written into more than one board by the old collision bug:
-  // keep the first occurrence, strip the copies
-  const cardSeen=new Set();
-  boardsList.forEach(b=>(b.columns||[]).forEach(col=>{
-    if(!col.cards)return;
-    const before=col.cards.length;
-    col.cards=col.cards.filter(card=>{
-      const key=card.id;
-      if(cardSeen.has(key))return false;
-      cardSeen.add(key);return true;
-    });
-    if(col.cards.length!==before)changed=true;
-  }));
-  if(changed)try{localStorage.setItem('cc_boards',JSON.stringify(boardsList));}catch(e){}
-})();
-
-function saveBoardsData(){localStorage.setItem('cc_boards',JSON.stringify(boardsList));}
-function initBoardsData(){boardsData={briefed:[],inprogress:[],review:[],approved:[],complete:[]};}
-function renderBoards(){renderBoardsList();}
-
-// ── Board list ──────────────────────────────────────────────────────────────
-function renderBoardsList(){
-  const landing=document.getElementById('boards-landing');
-  const det=document.getElementById('board-detail');
-  if(landing)landing.style.display='';
-  if(det)det.style.display='none';
-  const grid=document.getElementById('boards-list-grid');
-  if(!grid)return;
-  const stripeColor={client:'var(--red)',people:'#6B7FA3',custom:'#7B9E87'};
-  if(boardsList.length===0){
-    grid.innerHTML=`<div style="grid-column:1/-1;">${emptyStateHTML('ti-layout-kanban','No boards yet','Boards give you a priority view across clients, people or any custom grouping you like. Start one with New board, or try the Studio board.')}</div>`;
-    return;
-  }
-  grid.className='boards-list-grid';
-  grid.innerHTML=boardsList.map(b=>{
-    const typeIcons={client:'ti-building',people:'ti-users',custom:'ti-layout-kanban'};
-    const typeLabels={client:'Client board · live view',people:'People board · live view',custom:'Custom board'};
-    let count='';
-    if(b.type==='client'){const n=jobs.filter(j=>j.company===b.clientFilter&&j.status!=='complete').length;count=`${n} active job${n!==1?'s':''}`;}
-    else if(b.type==='people'){const n=Object.keys(people).length;count=`${n} team member${n!==1?'s':''}`;}
-    else{const n=(b.columns||[]).reduce((s,c)=>s+(c.cards||[]).length,0);count=`${n} card${n!==1?'s':''}`;}
-    const stripe=stripeColor[b.type]||'var(--muted)';
-    return`<div class="board-list-card" onclick="openBoard('${b.id}')">
-      <button class="blc-del" onclick="event.stopPropagation();deleteBoard('${b.id}')"><i class="ti ti-trash"></i></button>
-      <div class="blc-stripe" style="background:${stripe};"></div>
-      <div class="blc-body">
-        <div class="blc-type"><i class="ti ${typeIcons[b.type]||'ti-layout-kanban'}"></i>${typeLabels[b.type]||b.type}</div>
-        <div class="blc-name">${b.name}</div>
-        <div class="blc-count">${count}</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function openBoard(id){
-  activeBoardId=id;
-  const b=boardsList.find(x=>x.id===id);if(!b)return;
-  document.getElementById('boards-landing').style.display='none';
-  const det=document.getElementById('board-detail');det.style.display='flex';
-  document.getElementById('bd-title').textContent=b.name;
-  const typeLabels={client:'Client',people:'People',custom:'Custom'};
-  document.getElementById('bd-type-badge').textContent=typeLabels[b.type]||b.type;
-  const body=document.getElementById('board-detail-body');
-  if(b.type==='client')renderClientBoard(b,body);
-  else if(b.type==='people')renderPeopleBoard(b,body);
-  else renderCustomBoard(b,body);
-}
-function closeBoardDetail(){activeBoardId=null;renderBoardsList();}
-
-// ── Client board ────────────────────────────────────────────────────────────
-function _richJobCard(j,expanded){
-  computeJobStats(j);
-  const pct=j._bPct||0;const over=pct>100;
-  const hPct=j._hPct||0;const hOver=hPct>100;
-  const wfLabel=j.workflowStatus==='quote'?'Quote':j.workflowStatus==='completed'?'Completed':j.workflowStatus==='invoiced'?'Invoiced':'Live';
-  const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='completed'?'wf-completed':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
-  const memberAvatars=(j.members||['ro']).map(k=>{const p=people[k];return p?`<span class="bc-av" style="background:${p.color};">${p.initials}</span>`:''}).join('');
-  const labels=(j.labels||[]).slice(0,3).map(l=>`<span class="bc-lbl">${l}</span>`).join('');
-  // Active tasks this week across all people
-  const activeTasks=[];
-  Object.keys(todoData).forEach(pKey=>{
-    const wd=getWeekData(pKey,0);
-    [1,2,3,4,5].forEach(d=>{(wd[d]||[]).forEach(t=>{if((t.jobId===j.id||t.job===j.id)&&!t.done)activeTasks.push({...t,person:pKey});});});
-  });
-  const expandedHTML=expanded?`<div class="bc-expanded">
-    ${activeTasks.length?`<div class="bc-section-lbl">This week (${activeTasks.length})</div>`+activeTasks.slice(0,5).map(t=>{const p=people[t.person];return`<div class="bc-task-row"><span class="bc-av-sm" style="background:${p?.color||'#999'}">${p?.initials||'?'}</span><span class="bc-task-title">${esc(t.title||'Task')}</span><span class="bc-task-hrs">${t.hours||''}</span></div>`;}).join('')+'':'<div class="bc-no-tasks">No open tasks this week</div>'}
-    <button class="bc-open-btn" onclick="event.stopPropagation();openJobDetail('${j.id}')"><i class="ti ti-arrow-up-right" style="font-size:11px;"></i> Open job plan</button>
-  </div>`:'';
-  return`<div class="bdet-card bc-rich${expanded?' bc-expanded-card':''}" id="bc-${j.id}" style="${over?'border-left:3px solid var(--red);':''}" onclick="toggleBoardCard('${j.id}')">
-    <button class="bdet-card-del" onclick="event.stopPropagation();" title="Options"><i class="ti ti-dots"></i></button>
-    <div class="bc-name">${j.name}</div>
-    <div class="bc-header-row">
-      <span class="bc-id">${j.id}</span>
-      <span class="wf-badge ${wfCls}" style="font-size:10px;">${wfLabel}</span>
-      ${j.billable?'<span class="bc-bill-dot" title="Billable"></span>':''}
-    </div>
-    ${labels?`<div class="bc-labels">${labels}</div>`:''}
-    <div class="bc-members-row">${memberAvatars}</div>
-    <div class="bc-bars">
-      <div class="bc-bar-row">
-        <span class="bc-bar-lbl">Hours</span>
-        <div class="bc-bar-track"><div class="bc-bar-fill" style="width:${Math.min(hPct,100)}%;background:${hOver?'var(--red)':'var(--ink)'}"></div></div>
-        <span class="bc-bar-val" style="color:${hOver?'var(--red)':'var(--muted)'}">${j._loggedH||'0h'}</span>
-      </div>
-      <div class="bc-bar-row">
-        <span class="bc-bar-lbl">Budget</span>
-        <div class="bc-bar-track"><div class="bc-bar-fill" style="width:${Math.min(pct,100)}%;background:${over?'var(--red)':'var(--ok)'}"></div></div>
-        <span class="bc-bar-val" style="color:${over?'var(--red)':'var(--muted)'}">${pct}%</span>
-      </div>
-    </div>
-    ${expandedHTML}
-  </div>`;
-}
-if(!window._expandedBoardCards)window._expandedBoardCards={};
-// Used by the Client board (_richJobCard cards, keyed by job id — one card per job, no
-// drag/delete chrome to preserve).
-function toggleBoardCard(cardId,jobId){
-  if(!window._expandedBoardCards)window._expandedBoardCards={};
-  // Support old calls with just jobId
-  const cid=cardId;const jid=jobId||cardId;
-  window._expandedBoardCards[cid]=!window._expandedBoardCards[cid];
-  const el=document.getElementById('bc-'+cid);
-  if(el){const j=jobs.find(x=>x.id===jid);if(j){const newCard=document.createElement('div');newCard.innerHTML=_richJobCard(j,window._expandedBoardCards[cid]);el.replaceWith(newCard.firstChild);}}
-}
-// Used by Custom board job cards — rebuilds via buildCustomCard (not _richJobCard) so the
-// card keeps its drag attributes and delete button after expanding. Previously these cards
-// called toggleBoardCard, which always rebuilt with the Client board's bare template and
-// silently dropped draggable/data-card-id/the delete button after the first click.
-function toggleCustomBoardCard(boardId,colId,cardId){
-  if(!window._expandedBoardCards)window._expandedBoardCards={};
-  window._expandedBoardCards[cardId]=!window._expandedBoardCards[cardId];
-  const b=boardsList.find(x=>x.id===boardId);if(!b)return;
-  const col=b.columns?.find(x=>x.id===colId);if(!col)return;
-  const card=(col.cards||[]).find(x=>x.id===cardId);if(!card)return;
-  const el=document.getElementById('bc-'+cardId);
-  if(el){const tmp=document.createElement('div');tmp.innerHTML=buildCustomCard(b,col,card);el.replaceWith(tmp.firstElementChild);}
-}
-function renderClientBoard(b,body){
-  const boardJobs=jobs.filter(j=>j.company===b.clientFilter);
-  const COLS={briefed:'Briefed',inprogress:'In Progress',review:'In Review',approved:'Approved',complete:'Complete'};
-  const colKeys=Object.keys(COLS);
-  const buckets={};colKeys.forEach(k=>buckets[k]=[]);
-  boardJobs.forEach(j=>{
-    let k='inprogress';
-    if(j.workflowStatus==='quote')k='briefed';
-    else if(j.workflowStatus==='completed'||j.workflowStatus==='invoiced')k='complete';
-    else if(j.status==='complete')k='complete';
-    buckets[k].push(j);
-  });
-  const colsHTML=colKeys.map(k=>{
-    const cards=buckets[k].map(j=>_richJobCard(j,window._expandedBoardCards?.[j.id])).join('');
-    return`<div class="bdet-col">
-      <div class="bdet-col-h"><span class="bdet-col-name" style="cursor:default;">${COLS[k]}</span><span class="bdet-col-count">${buckets[k].length}</span></div>
-      <div class="bdet-col-cards">${cards||'<div style="font-size:11px;color:var(--muted);padding:8px 2px;">No jobs here</div>'}</div>
-    </div>`;
-  }).join('');
-  body.innerHTML=`<div class="bdet-cols">${colsHTML}</div>`;
-}
-
-// ── People board ────────────────────────────────────────────────────────────
-function renderPeopleBoard(b,body){
-  if(!b.notes)b.notes={};
-  const lanes=Object.keys(people).map(key=>{
-    const p=people[key];
-    const wd=getWeekData(key,0);
-    let totalH=0,doneH=0,todoLeft=0;
-    [1,2,3,4,5].forEach(d=>(wd[d]||[]).forEach(t=>{
-      const h=parseHrsInput(t.hours||'0')||0;totalH+=h;
-      if(t.done)doneH+=h;else todoLeft++;
-    }));
-    const allDone=[1,2,3,4,5].flatMap(d=>(wd[d]||[]).filter(t=>t.done));
-    const billH=allDone.filter(t=>taskIsBillable(t)).reduce((s,t)=>s+(parseHrsInput(t.hours||'0')||0),0);
-    const billPct=doneH>0?Math.round(billH/doneH*100):0;
-    const note=b.notes[key]||'';
-    return`<div class="pboard-lane">
-      <div class="pboard-head">
-        <div style="width:44px;height:44px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:#fff;flex-shrink:0;">${p.initials}</div>
-        <div style="flex:1;min-width:0;"><div style="font-size:15px;line-height:1.3;">${p.name}</div><div style="font-size:11px;color:var(--muted);">${p.role||'Team member'}</div></div>
-        <button class="d-action" style="flex-shrink:0;" onclick="event.stopPropagation();currentPerson='${key}';navTo('todo')"><i class="ti ti-checklist" style="font-size:12px;"></i> Week view</button>
-      </div>
-      <div class="pboard-stats">
-        <div class="pboard-stat"><div class="ps-val">${totalH}h</div><div class="ps-lbl">Planned</div></div>
-        <div class="pboard-stat"><div class="ps-val">${doneH}h</div><div class="ps-lbl">Done</div></div>
-        <div class="pboard-stat"><div class="ps-val">${todoLeft}</div><div class="ps-lbl">Remaining</div></div>
-        <div class="pboard-stat"><div class="ps-val">${billPct}%</div><div class="ps-lbl">Billable</div></div>
-      </div>
-      <textarea class="pboard-note" rows="2" placeholder="Notes about ${p.name}..." onchange="savePboardNote('${b.id}','${key}',this.value)">${note}</textarea>
-    </div>`;
-  }).join('');
-  body.innerHTML=`<div class="pboard-grid">${lanes}</div>`;
-}
-function savePboardNote(boardId,personKey,val){
-  const b=boardsList.find(x=>x.id===boardId);if(!b)return;
-  if(!b.notes)b.notes={};
-  b.notes[personKey]=val;saveBoardsData();
-}
-
-// ── Custom board ────────────────────────────────────────────────────────────
-function renderCustomBoard(b,body){
-  if(!b.columns||b.columns.length===0){b.columns=[{id:uid('c'),name:'To Do',cards:[]},{id:uid('c'),name:'In Progress',cards:[]},{id:uid('c'),name:'Done',cards:[]}];saveBoardsData();}
-  const colsHTML=b.columns.map(col=>buildCustomCol(b,col)).join('');
-  body.innerHTML=`<div class="bdet-cols" id="bdet-cols-${b.id}">${colsHTML}<button class="bdet-add-col-btn" onclick="addColumn('${b.id}')"><i class="ti ti-plus" style="font-size:12px;"></i> Add column</button></div>`;
-}
-
-function buildCustomCol(b,col){
-  const cardsHTML=(col.cards||[]).map(card=>buildCustomCard(b,col,card)).join('');
-  return`<div class="bdet-col" id="col-${col.id}" draggable="true"
-    ondragstart="colDragStart(event,'${b.id}','${col.id}')"
-    ondragover="colDragOver(event,'${b.id}','${col.id}')"
-    ondrop="colDrop(event,'${b.id}','${col.id}')"
-    ondragend="colDragEnd(event)">
-    <div class="bdet-col-h" style="cursor:grab;">
-      <i class="ti ti-grip-vertical" style="font-size:12px;color:var(--border);margin-right:4px;flex-shrink:0;"></i>
-      <input class="bdet-col-name" value="${col.name}" onchange="renameCol('${b.id}','${col.id}',this.value)" title="Click to rename" ondragstart="event.stopPropagation()">
-      <span class="bdet-col-count">${(col.cards||[]).length}</span>
-      <button class="bdet-col-del" title="Delete column" onclick="deleteCol('${b.id}','${col.id}')"><i class="ti ti-trash"></i></button>
-    </div>
-    <div class="bdet-col-cards" id="cards-${col.id}"
-      ondragover="cardColDragOver(event,'${col.id}')"
-      ondrop="cardColDrop(event,'${b.id}','${col.id}')"
-      ondragleave="cardColDragLeave(event,'${col.id}')">${cardsHTML}</div>
-    <div class="bdet-col-footer">
-      <button class="bdet-add-btn" onclick="showAddCardMenu('${b.id}','${col.id}',this)"><i class="ti ti-plus" style="font-size:11px;"></i> Add card</button>
-    </div>
-  </div>`;
-}
-
-function buildCustomCard(b,col,card){
-  const dragAttrs=`draggable="true" ondragstart="cardDragStart(event,'${b.id}','${col.id}','${card.id}')" ondragend="cardDragEnd(event)"`;
-  const del=`<button class="bdet-card-del" draggable="false" title="Remove" onclick="event.stopPropagation();deleteCard('${b.id}','${col.id}','${card.id}')"><i class="ti ti-x"></i></button>`;
-  if(card.type==='job'){
-    const j=jobs.find(x=>x.id===card.jobRef);if(!j)return'';
-    computeJobStats(j);
-    const pct=j._bPct||0;const over=pct>100;const hPct=j._hPct||0;const hOver=hPct>100;
-    const wfLabel=j.workflowStatus==='quote'?'Quote':j.workflowStatus==='completed'?'Completed':j.workflowStatus==='invoiced'?'Invoiced':'Live';
-    const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='completed'?'wf-completed':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
-    const memberAvatars=(j.members||['ro']).map(k=>{const p=people[k];return p?`<span class="bc-av" style="background:${p.color};">${p.initials}</span>`:''}).join('');
-    if(!window._expandedBoardCards)window._expandedBoardCards={};
-    const expanded=!!window._expandedBoardCards[card.id];
-    let expandedHTML='';
-    if(expanded){
-      const activeTasks=[];
-      Object.keys(todoData).forEach(pKey=>{
-        const wd=getWeekData(pKey,0);
-        [1,2,3,4,5].forEach(d=>{(wd[d]||[]).forEach(t=>{if((t.jobId===j.id||t.job===j.id)&&!t.done)activeTasks.push({...t,person:pKey});});});
-      });
-      expandedHTML=`<div class="bc-expanded">
-        ${activeTasks.length?`<div class="bc-section-lbl">This week (${activeTasks.length})</div>`+activeTasks.slice(0,5).map(t=>{const p=people[t.person];return`<div class="bc-task-row"><span class="bc-av-sm" style="background:${p?.color||'#999'}">${p?.initials||'?'}</span><span class="bc-task-title">${esc(t.title||'Task')}</span><span class="bc-task-hrs">${t.hours||''}</span></div>`;}).join(''):'<div class="bc-no-tasks">No open tasks this week</div>'}
-        <button class="bc-open-btn" onclick="event.stopPropagation();openJobDetail('${j.id}')"><i class="ti ti-arrow-up-right" style="font-size:11px;"></i> Open job plan</button>
-      </div>`;
-    }
-    return`<div class="bdet-card bc-rich${expanded?' bc-expanded-card':''}" id="bc-${card.id}" data-card-id="${card.id}" ${dragAttrs} style="${over?'border-left:3px solid var(--red);':''}" onclick="toggleCustomBoardCard('${b.id}','${col.id}','${card.id}')">${del}
-      <div class="bc-name">${j.name}</div>
-      <div class="bc-header-row"><span class="bc-id">${j.id}</span><span class="wf-badge ${wfCls}" style="font-size:10px;">${wfLabel}</span></div>
-      <div class="bc-members-row">${memberAvatars}</div>
-      <div class="bc-bars">
-        <div class="bc-bar-row"><span class="bc-bar-lbl">Hours</span><div class="bc-bar-track"><div class="bc-bar-fill" style="width:${Math.min(hPct,100)}%;background:${hOver?'var(--red)':'var(--ink)'}"></div></div><span class="bc-bar-val">${j._loggedH||'0h'}</span></div>
-        <div class="bc-bar-row"><span class="bc-bar-lbl">Budget</span><div class="bc-bar-track"><div class="bc-bar-fill" style="width:${Math.min(pct,100)}%;background:${over?'var(--red)':'var(--ok)'}"></div></div><span class="bc-bar-val">${pct}%</span></div>
-      </div>
-      ${expandedHTML}
-    </div>`;
-  }
-  if(card.type==='person'){
-    const p=people[card.personRef];if(!p)return'';
-    // Compute this-week stats — force offset 0 regardless of whatever week the Todo/
-    // Schedule board was last left on, since this card is always labelled "this week"
-    const wd=getWeekData(card.personRef,0);
-    let wHours=0,wTasks=0,wDone=0,wUrgent=0;
-    [1,2,3,4,5].forEach(d=>{(wd[d]||[]).forEach(tt=>{wTasks++;if(tt.done)wDone++;if(tt.urgent&&!tt.done)wUrgent++;wHours+=tt.hours||0;});});
-    const utilPct=Math.min(100,Math.round((wHours/40)*100));
-    const activeTasks=wTasks-wDone;
-    return`<div class="bdet-card bc-person-card" data-card-id="${card.id}" ${dragAttrs} style="cursor:pointer;" onclick="currentPerson='${card.personRef}';navTo('todo')" title="Open ${p.name}'s todo">${del}
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-        <div style="width:40px;height:40px;border-radius:50%;background:${p.color};display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;flex-shrink:0;font-weight:500;">${p.initials}</div>
-        <div>
-          <div class="bc-name" style="font-size:13px;">${p.name}</div>
-          <div style="font-size:11px;color:var(--muted);">${p.role||'Team'}</div>
-        </div>
-        ${wUrgent>0?`<span style="margin-left:auto;font-size:10px;background:#FDECEA;color:var(--red);padding:2px 7px;border-radius:10px;font-weight:500;">${wUrgent} urgent</span>`:''}
-      </div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;display:flex;justify-content:space-between;">
-        <span>${activeTasks} active · ${wDone} done</span>
-        <span style="font-weight:500;color:var(--ink);">${wHours?formatHrs(wHours):'0h'} this week</span>
-      </div>
-      <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden;">
-        <div style="height:100%;width:${utilPct}%;background:${utilPct>90?'var(--red)':utilPct>70?'var(--warn)':p.color};border-radius:3px;transition:width .3s;"></div>
-      </div>
-      <div style="font-size:10px;color:var(--muted);margin-top:3px;">${utilPct}% capacity</div>
-    </div>`;
-  }
-  if(card.type==='client'){
-    const clientJobs=jobs.filter(j=>j.company===card.clientRef&&j.status!=='complete').map(j=>{computeJobStats(j);return j;});
-    const jobRows=clientJobs.map(j=>{
-      const pct=j._bPct||0;const over=pct>100;const hPct=j._hPct||0;
-      const wfLabel=j.workflowStatus==='quote'?'QUOTE':j.workflowStatus==='completed'?'COMPLETED':j.workflowStatus==='invoiced'?'INVOICED':'LIVE';
-      const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='completed'?'wf-completed':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
-      const memberAvatars=(j.members||['ro']).map(k=>{const p=people[k];return p?`<span class="bc-av" style="background:${p.color};">${p.initials}</span>`:''}).join('');
-      return`<div class="bdet-card bc-rich" style="margin:0 0 8px;${over?'border-left:3px solid var(--red);':''}" onclick="openJobDetail('${j.id}')">
-        <div class="bc-name">${j.name}</div>
-        <div class="bc-header-row"><span class="bc-id">${j.id}</span><span class="wf-badge ${wfCls}" style="font-size:10px;">${wfLabel}</span></div>
-        <div class="bc-members-row">${memberAvatars}</div>
-        <div class="bc-bars">
-          <div class="bc-bar-row"><span class="bc-bar-lbl">Hours</span><div class="bc-bar-track"><div class="bc-bar-fill" style="width:${Math.min(hPct,100)}%;background:${hPct>100?'var(--red)':'var(--ink)'}"></div></div><span class="bc-bar-val">${j._loggedH||'0h'}</span></div>
-          <div class="bc-bar-row"><span class="bc-bar-lbl">Budget</span><div class="bc-bar-track"><div class="bc-bar-fill" style="width:${Math.min(pct,100)}%;background:${over?'var(--red)':'var(--ok)'}"></div></div><span class="bc-bar-val">${pct}%</span></div>
-        </div>
-      </div>`;
-    }).join('')||`<div style="padding:4px 0 8px;font-size:11px;color:var(--muted);">No active jobs</div>`;
-    return`<div class="client-card" id="ccard-${card.id}" data-card-id="${card.id}" ${dragAttrs}>
-      <button class="client-card-del bdet-card-del" draggable="false" style="opacity:0;" onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0" title="Remove" onclick="event.stopPropagation();deleteCard('${b.id}','${col.id}','${card.id}')"><i class="ti ti-x"></i></button>
-      <div class="client-card-head"><i class="ti ti-building" style="font-size:13px;color:var(--muted);"></i><span class="client-card-name">${card.clientRef}</span><span class="client-card-count">${clientJobs.length} active</span></div>
-      <div style="padding:8px 10px 2px;">${jobRows}</div>
-    </div>`;
-  }
-  // note card (default)
-  return`<div class="bdet-card" style="padding:10px 12px;" id="ncard-${card.id}" data-card-id="${card.id}" ${dragAttrs}>${del}
-    <textarea class="note-card-inp" placeholder="Write a note..." ondragstart="event.stopPropagation()" onchange="saveCustomCardNote('${b.id}','${col.id}','${card.id}',this.value)">${card.note||''}</textarea>
-  </div>`;
-}
-
-// ── Add card actions ────────────────────────────────────────────────────────
-let _addCardBoard=null,_addCardCol=null;
-
-function showAddCardMenu(boardId,colId,btn){
-  _addCardBoard=boardId;_addCardCol=colId;
-  const menu=document.getElementById('add-card-menu');
-  const rect=btn.getBoundingClientRect();
-  menu.style.top=(rect.bottom+4)+'px';
-  menu.style.left=rect.left+'px';
-  menu.classList.add('on');
-  setTimeout(()=>document.addEventListener('click',_closeCardMenuOnce,{once:true}),10);
-}
-function _closeCardMenuOnce(){document.getElementById('add-card-menu').classList.remove('on');}
-
-function addCardFromMenu(type){
-  document.getElementById('add-card-menu').classList.remove('on');
-  if(!_addCardBoard||!_addCardCol)return;
-  if(type==='note'){
-    _doAddCard({id:'nc'+Date.now(),type:'note',note:''});
-  }else if(type==='job'){
-    _openCardPicker('job','Pick a job',jobs.map(j=>({id:j.id,label:j.name,sub:j.company,data:j.id})));
-  }else if(type==='client'){
-    const clients=[...new Set(jobs.map(j=>j.company))];
-    _openCardPicker('client','Pick a client',clients.map(c=>({id:c,label:c,sub:jobs.filter(j=>j.company===c&&j.status!=='complete').length+' active jobs',data:c})));
-  }else if(type==='person'){
-    _openCardPicker('person','Pick a person',Object.keys(people).map(k=>({id:k,label:people[k].name,sub:people[k].role||'Team',data:k,color:people[k].color,initials:people[k].initials})));
-  }
-}
-
-let _pickerType=null,_pickerItems=[];
-function _openCardPicker(type,title,items){
-  _pickerType=type;_pickerItems=items;
-  document.getElementById('card-picker-title').textContent=title;
-  document.getElementById('card-picker-search').value='';
-  _renderPickerItems('');
-  document.getElementById('card-picker-modal').classList.add('on');
-  setTimeout(()=>document.getElementById('card-picker-search').focus(),50);
-}
-function closeCardPicker(){document.getElementById('card-picker-modal').classList.remove('on');}
-function filterCardPicker(q){_renderPickerItems(q);}
-function _renderPickerItems(q){
-  const list=document.getElementById('card-picker-list');
-  const filtered=_pickerItems.filter(i=>!q||i.label.toLowerCase().includes(q.toLowerCase())||(i.sub||'').toLowerCase().includes(q.toLowerCase()));
-  list.innerHTML=filtered.map(i=>{
-    const av=i.color?`<div style="width:28px;height:28px;border-radius:50%;background:${i.color};display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;flex-shrink:0;">${i.initials||''}</div>`:'';
-    const safeData=i.data.replace(/'/g,"\\'");
-    return`<div class="card-picker-item" onclick="selectPickerItem('${safeData}')">
-      ${av}<div><div style="font-size:13px;">${i.label}</div><div style="font-size:11px;color:var(--muted);">${i.sub||''}</div></div>
-    </div>`;
-  }).join('')||'<div style="padding:12px 16px;font-size:12px;color:var(--muted);">No results</div>';
-}
-function selectPickerItem(data){
-  closeCardPicker();
-  const cardMap={job:{type:'job',jobRef:data},client:{type:'client',clientRef:data},person:{type:'person',personRef:data}};
-  const card={id:uid('card'),...(cardMap[_pickerType]||{type:'note',note:''})};
-  _doAddCard(card);
-}
-function _doAddCard(card){
-  const b=boardsList.find(x=>x.id===_addCardBoard);if(!b)return;
-  const col=b.columns.find(c=>c.id===_addCardCol);if(!col)return;
-  if(!col.cards)col.cards=[];
-  col.cards.push(card);saveBoardsData();
-  const cardsEl=document.getElementById('cards-'+_addCardCol);
-  if(cardsEl){cardsEl.insertAdjacentHTML('beforeend',buildCustomCard(b,col,card));}
-  const colEl=document.getElementById('col-'+_addCardCol);
-  if(colEl){const badge=colEl.querySelector('.bdet-col-count');if(badge)badge.textContent=col.cards.length;}
-}
-
-function renameCol(boardId,colId,name){
-  const b=boardsList.find(x=>x.id===boardId);if(!b)return;
-  const col=b.columns.find(c=>c.id===colId);if(col){col.name=name;saveBoardsData();}
-}
-function deleteCol(boardId,colId){
-  const b=boardsList.find(x=>x.id===boardId);if(!b)return;
-  const _doDelete=()=>{b.columns=b.columns.filter(c=>c.id!==colId);saveBoardsData();const el=document.getElementById('col-'+colId);if(el)el.remove();};
-  if((b.columns.find(c=>c.id===colId)?.cards||[]).length>0){ccConfirm('Delete this column and all its cards?',_doDelete,'Delete',true);return;}
-  _doDelete();
-}
-function addColumn(boardId){
-  // Show column type picker
-  const b=boardsList.find(x=>x.id===boardId);if(!b)return;
-  document.getElementById('add-col-modal')?.remove();
-  const modal=document.createElement('div');
-  modal.className='modal-bg on';modal.id='add-col-modal';
-  const clients=[...new Set(jobs.map(j=>j.company))].filter(Boolean);
-  const clientOpts=clients.map(c=>`<option value="${c}">${c}</option>`).join('');
-  const personOpts=Object.keys(people).map(k=>`<option value="${k}">${people[k].name}</option>`).join('');
-  modal.innerHTML=`<div class="modal" style="max-width:440px;">
-    <div class="modal-hd"><span class="modal-hd-title">Add column</span><button class="modal-x" onclick="document.getElementById('add-col-modal').remove()"><i class="ti ti-x"></i></button></div>
-    <div class="modal-bd">
-      <div class="field"><label>Column name</label><input id="acol-name" class="form-inp" placeholder="e.g. In Progress" style="width:100%;"></div>
-      <div class="field"><label>Column type</label>
-        <div style="display:flex;gap:8px;margin-top:4px;">
-          <div class="bill-choice on" id="acol-t-generic" onclick="selectAcolType('generic')" style="flex:1;padding:10px 12px;">
-            <i class="ti ti-layout-columns" style="font-size:15px;"></i>
-            <div><div class="bc-choice-title">Generic</div><div class="bc-choice-sub">Add any cards manually</div></div>
-          </div>
-          <div class="bill-choice" id="acol-t-client" onclick="selectAcolType('client')" style="flex:1;padding:10px 12px;">
-            <i class="ti ti-building" style="font-size:15px;"></i>
-            <div><div class="bc-choice-title">Client</div><div class="bc-choice-sub">Auto-fills with client jobs</div></div>
-          </div>
-          <div class="bill-choice" id="acol-t-person" onclick="selectAcolType('person')" style="flex:1;padding:10px 12px;">
-            <i class="ti ti-user" style="font-size:15px;"></i>
-            <div><div class="bc-choice-title">Person</div><div class="bc-choice-sub">Team member view</div></div>
-          </div>
-        </div>
-        <input type="hidden" id="acol-type" value="generic">
-      </div>
-      <div id="acol-client-row" class="field" style="display:none;"><label>Client</label><select id="acol-client" class="cc-select" style="width:100%;"><option value="">Select client…</option>${clientOpts}</select></div>
-      <div id="acol-person-row" class="field" style="display:none;"><label>Person</label><select id="acol-person" class="cc-select" style="width:100%;"><option value="">Select person…</option>${personOpts}</select></div>
-    </div>
-    <div class="modal-ft">
-      <button class="modal-cancel" onclick="document.getElementById('add-col-modal').remove()">Cancel</button>
-      <button class="modal-save" onclick="confirmAddColumn('${boardId}')">Add column</button>
-    </div>
-  </div>`;
-  document.body.appendChild(modal);
-  setTimeout(()=>document.getElementById('acol-name')?.focus(),50);
-}
-function selectAcolType(type){
-  document.getElementById('acol-type').value=type;
-  ['generic','client','person'].forEach(t=>{document.getElementById('acol-t-'+t)?.classList.toggle('on',t===type);});
-  document.getElementById('acol-client-row').style.display=type==='client'?'':'none';
-  document.getElementById('acol-person-row').style.display=type==='person'?'':'none';
-}
-function confirmAddColumn(boardId){
-  const b=boardsList.find(x=>x.id===boardId);if(!b)return;
-  const name=(document.getElementById('acol-name')?.value.trim())||'New column';
-  const type=document.getElementById('acol-type')?.value||'generic';
-  const col={id:uid('c'),name,type,cards:[]};
-  if(type==='client'){
-    const cv=document.getElementById('acol-client')?.value;
-    if(!cv){toast('Please select a client','error');return;}
-    col.clientFilter=cv;
-    // Auto-fill column name with client name if not customised
-    if(!name||name==='New column')col.name=cv;
-    // Auto-add client card
-    col.cards.push({id:'cc'+Date.now(),type:'client',clientRef:cv});
-  }
-  if(type==='person'){
-    const pv=document.getElementById('acol-person')?.value;
-    if(!pv){toast('Please select a person','error');return;}
-    col.personFilter=pv;
-    col.name=col.name||people[pv]?.name||pv;
-    col.cards.push({id:'pc'+Date.now(),type:'person',personRef:pv});
-  }
-  b.columns.push(col);saveBoardsData();
-  document.getElementById('add-col-modal')?.remove();
-  const wrap=document.getElementById('bdet-cols-'+boardId);
-  if(wrap){
-    const addBtn=wrap.querySelector('.bdet-add-col-btn');
-    const tmp=document.createElement('div');tmp.innerHTML=buildCustomCol(b,col);
-    wrap.insertBefore(tmp.firstElementChild,addBtn);
-  }
-}
-function deleteCard(boardId,colId,cardId){
-  const b=boardsList.find(x=>x.id===boardId);if(!b)return;
-  const col=b.columns.find(c=>c.id===colId);if(!col)return;
-  col.cards=col.cards.filter(c=>c.id!==cardId);saveBoardsData();
-  // Re-render the column cards area
-  const cardsEl=document.getElementById('cards-'+colId);
-  if(cardsEl){
-    cardsEl.innerHTML=(col.cards||[]).map(card=>buildCustomCard(b,col,card)).join('');
-  }
-  const colEl=document.getElementById('col-'+colId);
-  if(colEl){const badge=colEl.querySelector('.bdet-col-count');if(badge)badge.textContent=col.cards.length;}
-}
-function saveCustomCardNote(boardId,colId,cardId,val){
-  const b=boardsList.find(x=>x.id===boardId);if(!b)return;
-  const col=b.columns.find(c=>c.id===colId);if(!col)return;
-  const card=(col.cards||[]).find(c=>c.id===cardId);if(!card)return;
-  card.note=val;saveBoardsData();
-}
-
-// ── Board column drag-reorder ───────────────────────────────────────────────
-let _colDragBoardId=null,_colDragColId=null;
-function colDragStart(e,boardId,colId){
-  _colDragBoardId=boardId;_colDragColId=colId;
-  e.dataTransfer.effectAllowed='move';
-  e.dataTransfer.setData('text/plain',colId);
-  setTimeout(()=>{const el=document.getElementById('col-'+colId);if(el)el.style.opacity='0.45';},0);
-}
-function colDragEnd(e){
-  if(_colDragColId){const el=document.getElementById('col-'+_colDragColId);if(el)el.style.opacity='';}
-  document.querySelectorAll('.bdet-col.col-drag-over').forEach(el=>el.classList.remove('col-drag-over'));
-  _colDragBoardId=null;_colDragColId=null;
-}
-function colDragOver(e,boardId,colId){
-  if(!_colDragColId||_colDragColId===colId){return;}
-  e.preventDefault();e.stopPropagation();e.dataTransfer.dropEffect='move';
-  document.querySelectorAll('.bdet-col.col-drag-over').forEach(el=>el.classList.remove('col-drag-over'));
-  const el=document.getElementById('col-'+colId);if(el)el.classList.add('col-drag-over');
-}
-function colDrop(e,boardId,colId){
-  e.preventDefault();e.stopPropagation();
-  document.querySelectorAll('.bdet-col.col-drag-over').forEach(el=>el.classList.remove('col-drag-over'));
-  if(!_colDragBoardId||!_colDragColId||_colDragColId===colId)return;
-  const b=boardsList.find(x=>x.id===boardId);if(!b||!b.columns)return;
-  const fromIdx=b.columns.findIndex(c=>c.id===_colDragColId);
-  const toIdx=b.columns.findIndex(c=>c.id===colId);
-  if(fromIdx===-1||toIdx===-1)return;
-  const[col]=b.columns.splice(fromIdx,1);b.columns.splice(toIdx,0,col);
-  saveBoardsData();
-  const body=document.getElementById('board-detail-body');if(body)renderCustomBoard(b,body);
-}
-
-// ── Board card drag-reorder ─────────────────────────────────────────────────
-let _cardDragBoardId=null,_cardDragColId=null,_cardDragCardId=null;
-function cardDragStart(e,boardId,colId,cardId){
-  _cardDragBoardId=boardId;_cardDragColId=colId;_cardDragCardId=cardId;
-  e.dataTransfer.effectAllowed='move';
-  e.dataTransfer.setData('text/plain',cardId);
-  e.stopPropagation();// don't trigger column drag
-  setTimeout(()=>{const el=e.target.closest('[data-card-id]');if(el)el.classList.add('card-dragging');},0);
-}
-function cardDragEnd(e){
-  document.querySelectorAll('.card-dragging,.card-drop-above').forEach(el=>{el.classList.remove('card-dragging','card-drop-above');});
-  _cardDragBoardId=null;_cardDragColId=null;_cardDragCardId=null;
-}
-function cardColDragOver(e,colId){
-  if(!_cardDragCardId)return;
-  e.preventDefault();e.stopPropagation();
-  e.dataTransfer.dropEffect='move';
-  // Highlight drop target card
-  document.querySelectorAll('.card-drop-above').forEach(el=>el.classList.remove('card-drop-above'));
-  const cardsEl=document.getElementById('cards-'+colId);if(!cardsEl)return;
-  const cards=[...cardsEl.querySelectorAll('[data-card-id]:not(.card-dragging)')];
-  for(const card of cards){
-    const rect=card.getBoundingClientRect();
-    if(e.clientY<rect.top+rect.height/2){card.classList.add('card-drop-above');break;}
-  }
-}
-function cardColDragLeave(e,colId){
-  if(!e.currentTarget.contains(e.relatedTarget)){
-    document.querySelectorAll('.card-drop-above').forEach(el=>el.classList.remove('card-drop-above'));
-  }
-}
-function cardColDrop(e,boardId,toColId){
-  e.preventDefault();e.stopPropagation();
-  if(!_cardDragCardId)return;
-  const b=boardsList.find(x=>x.id===boardId);if(!b)return;
-  const fromCol=b.columns.find(c=>c.id===_cardDragColId);
-  const toCol=b.columns.find(c=>c.id===toColId);
-  if(!fromCol||!toCol)return;
-  const fromIdx=(fromCol.cards||[]).findIndex(c=>c.id===_cardDragCardId);
-  if(fromIdx===-1)return;
-  const[card]=fromCol.cards.splice(fromIdx,1);
-  // Find insert position from drop-above indicator
-  const cardsEl=document.getElementById('cards-'+toColId);
-  const aboveEl=cardsEl?.querySelector('.card-drop-above');
-  const aboveId=aboveEl?.dataset.cardId;
-  if(!toCol.cards)toCol.cards=[];
-  if(aboveId){const toIdx=toCol.cards.findIndex(c=>c.id===aboveId);toCol.cards.splice(toIdx>=0?toIdx:toCol.cards.length,0,card);}
-  else{toCol.cards.push(card);}
-  saveBoardsData();
-  // Re-render both columns
-  const body=document.getElementById('board-detail-body');if(body)renderCustomBoard(b,body);
-}
-
-// ── Create board modal ──────────────────────────────────────────────────────
-function openCreateBoard(){
-  const sel=document.getElementById('nb-client');
-  const clients=[...new Set(jobs.map(j=>j.company))];
-  sel.innerHTML=clients.map(c=>`<option value="${c}">${c}</option>`).join('');
-  document.getElementById('nb-name').value='';
-  newBoardType='custom';
-  document.querySelectorAll('.cb-type-item').forEach(el=>el.classList.toggle('on',el.dataset.type==='custom'));
-  document.getElementById('nb-client-row').style.display='none';
-  if(document.getElementById('nb-custom-desc'))document.getElementById('nb-custom-desc').style.display='';
-  document.getElementById('create-board-modal').classList.add('on');
-  setTimeout(()=>document.getElementById('nb-name').focus(),50);
-}
-function closeCreateBoard(){document.getElementById('create-board-modal').classList.remove('on');}
-function selectBoardType(type,el){
-  newBoardType=type;
-  document.querySelectorAll('.cb-type-item').forEach(x=>x.classList.remove('on'));
-  el.classList.add('on');
-  document.getElementById('nb-client-row').style.display=type==='client'?'':'none';
-  if(document.getElementById('nb-custom-desc'))document.getElementById('nb-custom-desc').style.display=type==='custom'?'':'none';
-}
-function saveNewBoard(){
-  const name=document.getElementById('nb-name').value.trim();if(!name)return;
-  const b={id:uid('b'),name,type:newBoardType};
-  if(newBoardType==='client')b.clientFilter=document.getElementById('nb-client').value;
-  if(newBoardType==='custom'){b.columns=[{id:uid('c'),name:'To Do',cards:[]},{id:uid('c'),name:'In Progress',cards:[]},{id:uid('c'),name:'Done',cards:[]}];}
-  if(newBoardType==='people')b.notes={};
-  boardsList.push(b);saveBoardsData();closeCreateBoard();renderBoardsList();
-  setTimeout(()=>openBoard(b.id),100);
-}
-function deleteBoard(id){
-  ccConfirm('Delete this board?',()=>{boardsList=boardsList.filter(b=>b.id!==id);saveBoardsData();renderBoardsList();},'Delete',true);
-}
-function createStudioPreset(){
-  const stages=[
-    {key:'quote',label:'Quote'},
-    {key:'live',label:'Live'},
-    {key:'completed',label:'Completed'},
-    {key:'invoiced',label:'Invoiced'},
-  ];
-  const liveJobs=jobs.filter(j=>j.status!=='archived');
-  const cols=stages.map(s=>{
-    const stageJobs=liveJobs.filter(j=>{
-      const wf=j.workflowStatus||'live';
-      if(s.key==='live')return wf==='live';
-      return wf===s.key;
-    });
-    return{id:uid('c'),name:s.label,cards:stageJobs.map(j=>({id:uid('k'),type:'job',jobRef:j.id}))};
-  });
-  const b={id:uid('b'),name:'Studio · '+new Date().toLocaleDateString('en-NZ',{day:'numeric',month:'short'}),type:'custom',columns:cols};
-  boardsList.push(b);saveBoardsData();closeCreateBoard();renderBoardsList();
-  setTimeout(()=>openBoard(b.id),100);
-}
-function showAddBoardItem(){openCreateBoard();}
+// ============ BOARDS ENGINE ============
+// Boards v2 lives in the boards-v2-script block at the end of the page (state, migration,
+// landing, kanban, card drawer, live views). Nothing board-related is defined here any more.
 
 
 // navTo is fully defined above — no override needed here
@@ -13569,5 +12847,1510 @@ setTimeout(_renderIcons,50);
   <div class="vsp-list" id="vsp-list"></div>
 </div>
 
+<style id="boards-v2-styles">
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOARDS v2 — calm, premium kanban on C&C paper. Everything is scoped to
+   #view-boards or bv-* classes; the older .bdet-/.blc- rules above are unused
+   by the v2 engine (kept only so nothing else that shares them shifts).
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --bv-grey:#A39D90;--bv-blue:#5B7DB1;--bv-amber:#D48F2C;--bv-purple:#8E6BB8;
+  --bv-green:#4E9A62;--bv-red:#E0453F;--bv-teal:#3A9692;--bv-pink:#C8638E;
+  --bv-well:rgba(120,108,88,.075);--bv-well-hi:rgba(120,108,88,.13);
+}
+body.dark{
+  --bv-grey:#8E8E95;--bv-blue:#7B9CD6;--bv-amber:#E6A54B;--bv-purple:#B293DB;
+  --bv-green:#6DBB82;--bv-red:#FF6B63;--bv-teal:#5CBDB8;--bv-pink:#E58AB1;
+  --bv-well:rgba(255,255,255,.035);--bv-well-hi:rgba(255,255,255,.07);
+}
+#view-boards .d-action,.bv-drawer .d-action,.bv-modal .d-action{text-transform:none;letter-spacing:0;font-size:12px;font-weight:500;padding:6px 12px;height:32px;white-space:nowrap;}
+#view-boards .d-action i,.bv-drawer .d-action i,.bv-modal .d-action i{font-size:14px;}
+#view-boards .d-action.sm,.bv-drawer .d-action.sm,.bv-modal .d-action.sm,.bv-qa .d-action{height:28px;padding:4px 11px;font-size:12px;text-transform:none;letter-spacing:0;}
+.bv-sp{flex:1;}
+.bv-muted{color:var(--muted);font-size:12px;}
+.bv-txt-danger{color:var(--danger-ink);}
+.bv-ibtn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:var(--r-ctl);border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:16px;flex-shrink:0;transition:background .12s,color .12s;}
+.bv-ibtn:hover{background:var(--faint);color:var(--ink);}
+.bv-ibtn.sm{width:24px;height:24px;font-size:14px;border-radius:6px;}
+.bv-ibtn.on{color:var(--ink);background:var(--faint);}
+.bv-tag{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:999px;background:var(--faint);color:var(--muted);font-size:11px;font-weight:500;white-space:nowrap;}
+.bv-tag i{font-size:12px;}
+.bv-dot{width:8px;height:8px;border-radius:50%;background:var(--col,var(--bv-grey));flex-shrink:0;}
+.bv-av{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;color:#fff;font-size:9px;font-weight:600;flex-shrink:0;box-shadow:0 0 0 2px var(--white);}
+.bv-av.lg{width:34px;height:34px;font-size:12px;box-shadow:none;}
+.bv-av.more{background:var(--faint);color:var(--muted);}
+.bv-avs{display:inline-flex;}
+.bv-avs .bv-av+.bv-av{margin-left:-6px;}
+.bv-search{display:flex;align-items:center;gap:6px;height:32px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r-ctl);background:var(--white);color:var(--muted);min-width:200px;transition:border-color .12s,box-shadow .12s;}
+.bv-search:focus-within{border-color:var(--ink);box-shadow:0 0 0 3px rgba(25,23,20,.06);}
+.bv-search input{border:none;outline:none;background:transparent;font:inherit;font-size:12.5px;color:var(--ink);flex:1;min-width:0;box-shadow:none!important;}
+.bv-search kbd{font-family:var(--font);font-size:10px;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:0 5px;line-height:16px;}
+.bv-count-pill{display:inline-flex;align-items:center;justify-content:center;min-width:17px;height:17px;padding:0 5px;border-radius:999px;background:var(--ink);color:var(--on-ink);font-size:10px;font-weight:600;}
+
+/* ── Landing ── */
+#boards-landing.boards-scroll{padding:30px 34px 70px;}
+.bv-land-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:26px;}
+.bv-land-head .boards-sub{margin:0;font-size:12.5px;}
+.bv-land-actions{display:flex;gap:10px;align-items:center;}
+.bv-sec-lbl{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--ink);margin:0 0 12px;}
+.bv-sec-lbl .bv-muted{font-weight:400;}
+.bv-tpl-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-bottom:34px;}
+.bv-tpl{display:flex;align-items:flex-start;gap:12px;text-align:left;padding:14px;border-radius:var(--r-card);border:1px dashed var(--border);background:transparent;cursor:pointer;font-family:var(--font);color:var(--ink);transition:background .15s,border-color .15s,box-shadow .15s,transform .15s;}
+.bv-tpl:hover{background:var(--white);border-style:solid;border-color:transparent;box-shadow:var(--shadow-m);transform:translateY(-1px);}
+.bv-tpl-ico{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:color-mix(in srgb,var(--col) 15%,transparent);color:var(--col);font-size:17px;}
+.bv-tpl-name{display:block;font-size:13px;font-weight:600;margin-bottom:3px;}
+.bv-tpl-desc{display:block;font-size:11.5px;color:var(--muted);line-height:1.45;}
+.bv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px;}
+.bv-tile{background:var(--white);border-radius:var(--r-card);box-shadow:var(--shadow-s);border:1px solid color-mix(in srgb,var(--border) 60%,transparent);padding:14px 16px 13px;cursor:pointer;display:flex;flex-direction:column;gap:10px;transition:box-shadow .18s,transform .18s;outline:none;min-width:0;}
+.bv-tile:hover,.bv-tile:focus-visible{box-shadow:var(--shadow-m);transform:translateY(-2px);}
+.bv-tile-top{display:flex;align-items:center;justify-content:space-between;margin:-4px -8px -4px 0;}
+.bv-tile-top .bv-ibtn{opacity:0;}
+.bv-tile:hover .bv-tile-top .bv-ibtn,.bv-tile:focus-within .bv-tile-top .bv-ibtn{opacity:1;}
+.bv-tile-name{font-family:var(--display);font-size:17px;font-weight:600;letter-spacing:-.015em;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bv-mini{display:flex;gap:5px;height:72px;padding:7px;border-radius:9px;background:var(--off);overflow:hidden;}
+.bv-mini-col{flex:1;min-width:0;max-width:56px;display:flex;flex-direction:column;gap:3px;padding:4px;border-radius:6px;background:var(--bv-well);}
+.bv-mini-dot{width:5px;height:5px;border-radius:50%;background:var(--col);margin:0 0 1px 1px;flex-shrink:0;}
+.bv-mini-card{height:7px;border-radius:2.5px;background:var(--white);box-shadow:0 0 0 .5px color-mix(in srgb,var(--border) 80%,transparent);flex-shrink:0;}
+.bv-mini-n{font-size:9px;color:var(--muted);margin-top:auto;line-height:1;}
+.bv-mini-more{align-self:center;font-size:10px;color:var(--muted);padding:0 2px;}
+.bv-mini-people{display:flex;align-items:center;padding-left:4px;}
+.bv-mini-people .bv-av{width:26px;height:26px;margin-left:-6px;box-shadow:0 0 0 2px var(--off);}
+.bv-tile-foot{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--muted);}
+.bv-empty{display:flex;flex-direction:column;align-items:center;text-align:center;padding:46px 20px;border-radius:var(--r-card);border:1px dashed var(--border);}
+.bv-empty-art{display:flex;gap:6px;margin-bottom:18px;}
+.bv-empty-art span{width:34px;border-radius:7px;background:var(--bv-well);display:flex;flex-direction:column;gap:4px;padding:5px;}
+.bv-empty-art i{display:block;height:9px;border-radius:3px;background:var(--white);box-shadow:var(--shadow-s);}
+.bv-empty-t{font-family:var(--display);font-size:17px;font-weight:600;margin-bottom:6px;}
+.bv-empty-s{font-size:12.5px;color:var(--muted);max-width:380px;line-height:1.55;margin-bottom:16px;}
+.bv-archived{margin-top:34px;}
+.bv-archived summary{cursor:pointer;font-size:12px;color:var(--muted);list-style:none;display:inline-flex;align-items:center;gap:6px;}
+.bv-archived summary::-webkit-details-marker{display:none;}
+.bv-archived[open] summary i{transform:rotate(90deg);}
+.bv-archived summary i{transition:transform .15s;}
+.bv-arch-list{margin-top:10px;background:var(--white);border-radius:var(--r-card);box-shadow:var(--shadow-s);overflow:hidden;}
+.bv-arch-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--faint);font-size:13px;}
+.bv-arch-row:first-child{border-top:none;}
+.bv-arch-row .bv-arch-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* ── Board header ── */
+#board-detail{flex-direction:column;height:100%;overflow:hidden;}
+.bv-head{display:flex;align-items:center;gap:8px;padding:16px 28px 12px;flex-shrink:0;flex-wrap:wrap;row-gap:10px;}
+.bv-title{font-family:var(--display);font-size:20px;font-weight:600;letter-spacing:-.02em;color:var(--ink);border:1px solid transparent;background:transparent;border-radius:var(--r-ctl);padding:3px 8px;margin-left:-2px;outline:none;min-width:80px;max-width:420px;field-sizing:content;box-shadow:none!important;}
+.bv-title:hover{background:var(--faint);}
+.bv-title:focus{background:var(--white);border-color:var(--border);}
+.bv-head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.bv-subbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:0 28px 10px;flex-shrink:0;min-height:0;}
+.bv-subbar:empty{display:none;}
+.bv-note{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);}
+.bv-note i{font-size:13px;color:var(--bv-green);}
+.bv-fchip{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 4px 0 10px;border-radius:999px;background:var(--white);box-shadow:var(--shadow-s);font-size:11.5px;color:var(--ink);}
+.bv-fchip button{border:none;background:transparent;color:var(--muted);cursor:pointer;width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;}
+.bv-fchip button:hover{background:var(--faint);color:var(--ink);}
+.bv-linkbtn{border:none;background:none;color:var(--muted);font:inherit;font-size:11.5px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+.bv-linkbtn:hover{color:var(--ink);}
+#board-detail-body{flex:1;overflow:hidden;padding:0;display:flex;min-height:0;}
+
+/* ── Columns ── */
+.bv-cols{display:flex;align-items:flex-start;gap:12px;overflow-x:auto;overflow-y:hidden;padding:4px 28px 22px;height:100%;width:100%;}
+.bv-col{width:288px;flex-shrink:0;max-height:100%;display:flex;flex-direction:column;border-radius:16px;background:var(--bv-well);position:relative;transition:background .15s,box-shadow .15s;}
+.bv-col.drop-hi{background:var(--bv-well-hi);}
+.bv-col.is-dragging{opacity:.4;}
+.bv-col.drop-before::before,.bv-col.drop-after::after{content:'';position:absolute;top:6px;bottom:6px;width:3px;border-radius:2px;background:var(--ink);}
+.bv-col.drop-before::before{left:-8px;}
+.bv-col.drop-after::after{right:-8px;}
+.bv-col-h{display:flex;align-items:center;gap:7px;padding:10px 8px 8px 13px;cursor:grab;user-select:none;flex-shrink:0;}
+.bv-col-h:active{cursor:grabbing;}
+.bv-col-name{font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.bv-col-name-inp{font:inherit;font-size:13px;font-weight:600;color:var(--ink);border:1px solid var(--border);background:var(--white);border-radius:6px;padding:2px 6px;outline:none;min-width:0;flex:1;}
+.bv-col-count{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;flex-shrink:0;}
+.bv-col-count .bv-of{opacity:.7;}
+.bv-col-count.warn{color:var(--warn-ink);background:var(--warn-bg);padding:1px 7px;border-radius:999px;font-weight:600;}
+.bv-col.is-over{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--warn) 45%,transparent);}
+.bv-col-sync{font-size:12px;color:var(--muted);}
+.bv-col-h .bv-ibtn{opacity:0;}
+.bv-col:hover .bv-col-h .bv-ibtn,.bv-col-h .bv-ibtn:focus-visible{opacity:1;}
+.bv-col-list{flex:1 1 auto;overflow-y:auto;padding:2px 8px 4px;min-height:12px;display:flex;flex-direction:column;gap:8px;}
+.bv-col-empty{font-size:11.5px;color:var(--muted);text-align:center;padding:16px 8px;border-radius:12px;border:1.5px dashed color-mix(in srgb,var(--border) 90%,transparent);}
+.bv-col-list:has(.bv-ph) .bv-col-empty{display:none;}
+.bv-col-ft{display:flex;align-items:center;gap:2px;padding:2px 8px 8px;flex-shrink:0;}
+.bv-col-ft:empty{display:none;}
+.bv-add-card{flex:1;display:flex;align-items:center;gap:6px;height:32px;padding:0 8px;border:none;border-radius:9px;background:transparent;color:var(--muted);font:inherit;font-size:12.5px;cursor:pointer;text-align:left;transition:background .12s,color .12s;}
+.bv-add-card:hover{background:var(--bv-well);color:var(--ink);}
+.bv-add-card i{font-size:14px;}
+.bv-more{border:none;background:transparent;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;padding:6px;border-radius:8px;}
+.bv-more:hover{background:var(--bv-well);color:var(--ink);}
+.bv-add-col{flex-shrink:0;display:flex;align-items:center;gap:6px;height:40px;padding:0 16px;border-radius:14px;border:1.5px dashed var(--border);background:transparent;color:var(--muted);font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap;transition:all .15s;}
+.bv-add-col:hover{background:var(--white);border-color:transparent;box-shadow:var(--shadow-s);color:var(--ink);}
+.bv-col.is-collapsed{width:44px;}
+.bv-col-collapsed{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;padding:13px 0 14px;border:none;background:transparent;cursor:pointer;color:var(--ink);font:inherit;border-radius:16px;}
+.bv-col-collapsed:hover{background:var(--bv-well);}
+.bv-col-vname{writing-mode:vertical-rl;font-size:12.5px;font-weight:600;max-height:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* ── Cards ── */
+.bv-card{position:relative;background:var(--white);border-radius:12px;padding:10px 12px 10px;box-shadow:var(--shadow-s);border:1px solid color-mix(in srgb,var(--border) 55%,transparent);cursor:pointer;display:flex;flex-direction:column;gap:6px;outline:none;transition:box-shadow .15s,transform .15s,border-color .15s;flex-shrink:0;}
+.bv-card:hover{box-shadow:var(--shadow-m);}
+.bv-card:focus-visible{border-color:var(--ink);}
+.bv-card.is-open{border-color:var(--ink);}
+.bv-card.is-dragging{opacity:.35;transform:rotate(1deg);}
+.bv-card.is-done .bv-card-title{color:var(--muted);}
+.bv-card-title{font-size:13px;line-height:1.4;color:var(--ink);word-break:break-word;font-weight:500;}
+.bv-card-lbls{display:flex;flex-wrap:wrap;gap:4px;}
+.bv-lbl{display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 7px;border-radius:999px;font-size:10.5px;font-weight:500;color:var(--ink);background:color-mix(in srgb,var(--lc,#999) 16%,transparent);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bv-lbl::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--lc,#999);flex-shrink:0;}
+.bv-lbl.more::before{display:none;}
+.bv-lbl.more{background:var(--faint);color:var(--muted);}
+.bv-card-job{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);min-width:0;white-space:nowrap;overflow:hidden;}
+.bv-card-job.missing{color:var(--warn-ink);}
+.bv-jid{font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink);opacity:.75;font-size:11px;}
+.bv-sep{opacity:.6;}
+.bv-card-job .bv-co{overflow:hidden;text-overflow:ellipsis;}
+.bv-stage{display:inline-flex;align-items:center;height:17px;padding:0 7px;border-radius:999px;font-size:10px;font-weight:500;flex-shrink:0;background:var(--faint);color:var(--muted);}
+.bv-stage.s-live{background:var(--ok-bg);color:var(--ok-ink);}
+.bv-stage.s-quote{background:color-mix(in srgb,var(--bv-amber) 16%,transparent);color:var(--warn-ink);}
+.bv-stage.s-completed{background:color-mix(in srgb,var(--bv-blue) 15%,transparent);color:var(--bv-blue);}
+.bv-stage.s-invoiced{background:color-mix(in srgb,var(--bv-purple) 15%,transparent);color:var(--bv-purple);}
+.bv-prog-row{display:flex;align-items:center;gap:8px;}
+.bv-prog{flex:1;height:4px;border-radius:3px;background:var(--faint);overflow:hidden;}
+.bv-prog i{display:block;height:100%;border-radius:3px;background:var(--ink);opacity:.75;transition:width .3s;}
+.bv-prog.warn i{background:var(--warn);opacity:1;}
+.bv-prog.over i{background:var(--red);opacity:1;}
+.bv-prog.ok i{background:var(--ok);opacity:1;}
+.bv-prog-val{font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.bv-prog-val.over{color:var(--danger-ink);}
+.bv-card-foot{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:1px;}
+.bv-chip{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 6px;border-radius:6px;font-size:11px;color:var(--muted);background:var(--off);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.bv-chip i{font-size:12px;}
+.bv-chip.ico{padding:0 4px;background:transparent;}
+.bv-chip.ok{color:var(--ok-ink);background:var(--ok-bg);}
+.bv-chip.due.soon{color:var(--warn-ink);background:var(--warn-bg);}
+.bv-chip.due.over{color:var(--danger-ink);background:var(--danger-bg);}
+.bv-chip.due.done{text-decoration:line-through;opacity:.7;}
+.bv-card-x{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:6px;border:none;background:var(--white);color:var(--muted);cursor:pointer;display:none;align-items:center;justify-content:center;font-size:13px;}
+.bv-card:hover .bv-card-x{display:inline-flex;}
+.bv-card-x:hover{background:var(--faint);color:var(--ink);}
+.bv-person-row{display:flex;align-items:center;gap:10px;}
+.bv-client-jobs{display:flex;flex-direction:column;gap:2px;margin:0 -6px;}
+.bv-mini-job{display:flex;align-items:center;gap:7px;padding:5px 6px;border:none;background:transparent;border-radius:7px;font:inherit;font-size:12px;color:var(--ink);text-align:left;cursor:pointer;min-width:0;}
+.bv-mini-job:hover{background:var(--off);}
+.bv-mini-job .bv-mj-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bv-card-head{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;}
+.bv-card-head i{color:var(--muted);font-size:15px;}
+.bv-ph{flex-shrink:0;border-radius:12px;background:color-mix(in srgb,var(--ink) 6%,transparent);border:1.5px dashed color-mix(in srgb,var(--ink) 22%,transparent);}
+
+/* Quick add */
+.bv-qa{background:var(--white);border-radius:12px;box-shadow:var(--shadow-m);padding:8px;flex-shrink:0;border:1px solid var(--border);}
+.bv-qa textarea{width:100%;border:none;outline:none;resize:none;font:inherit;font-size:13px;color:var(--ink);background:transparent;line-height:1.4;padding:2px 4px;box-shadow:none!important;}
+.bv-qa-ft{display:flex;align-items:center;gap:6px;margin-top:6px;}
+.bv-qa-hint{margin-left:auto;font-size:10.5px;color:var(--muted);}
+
+/* ── Popovers ── */
+.bv-pop{position:fixed;z-index:1300;background:var(--white);border-radius:12px;box-shadow:var(--shadow-l);border:1px solid var(--border);padding:6px;min-width:210px;max-width:320px;max-height:min(480px,80vh);overflow-y:auto;animation:bvPopIn .14s cubic-bezier(.16,1,.3,1);}
+@keyframes bvPopIn{from{opacity:0;transform:translateY(-4px) scale(.98);}to{opacity:1;transform:none;}}
+.bv-mi{display:flex;align-items:center;gap:9px;width:100%;padding:7px 9px;border:none;background:transparent;border-radius:7px;font:inherit;font-size:12.5px;color:var(--ink);cursor:pointer;text-align:left;}
+.bv-mi:hover,.bv-mi.kb{background:var(--off);}
+.bv-mi i{font-size:15px;color:var(--muted);width:16px;text-align:center;flex-shrink:0;}
+.bv-mi .bv-mi-r{margin-left:auto;color:var(--muted);font-size:11px;}
+.bv-mi .bv-mi-ck{margin-left:auto;color:var(--ink);visibility:hidden;}
+.bv-mi.on .bv-mi-ck{visibility:visible;}
+.bv-mi.danger,.bv-mi.danger i{color:var(--danger-ink);}
+.bv-mi.danger:hover{background:var(--danger-bg);}
+.bv-mi-sep{height:1px;background:var(--faint);margin:5px 4px;}
+.bv-pop-sec{font-size:10.5px;font-weight:600;color:var(--muted);padding:8px 9px 4px;letter-spacing:.02em;}
+.bv-pop-row{display:flex;align-items:center;gap:8px;padding:5px 9px;font-size:12.5px;}
+.bv-pop-row .form-inp{height:28px;padding:3px 8px;font-size:12px;width:76px;}
+.bv-pop-inp{width:100%;margin:2px 0 4px;height:32px;font-size:12.5px;}
+.bv-swatches{display:flex;gap:6px;padding:4px 9px 8px;flex-wrap:wrap;}
+.bv-sw{width:20px;height:20px;border-radius:50%;border:none;cursor:pointer;background:var(--col);box-shadow:0 0 0 2px var(--white),0 0 0 3px transparent;}
+.bv-sw.on{box-shadow:0 0 0 2px var(--white),0 0 0 3.5px var(--ink);}
+.bv-pop-list{max-height:280px;overflow-y:auto;}
+.bv-pop-empty{padding:10px 9px;font-size:12px;color:var(--muted);}
+
+/* ── Card drawer ── */
+.modal-bg.bv-drawer-bg{justify-content:flex-end;align-items:stretch;background:rgba(35,28,18,.16);backdrop-filter:none;-webkit-backdrop-filter:none;}
+body.dark .modal-bg.bv-drawer-bg{background:rgba(0,0,0,.35);}
+.bv-drawer{width:560px;max-width:100vw;height:calc(100% - 20px);margin:10px;background:var(--white);border-radius:18px;box-shadow:var(--shadow-l);display:flex;flex-direction:column;overflow:hidden;animation:bvDrIn .26s cubic-bezier(.16,1,.3,1);}
+@keyframes bvDrIn{from{opacity:0;transform:translateX(28px);}to{opacity:1;transform:none;}}
+.bv-dr-top{display:flex;align-items:center;gap:4px;padding:12px 14px 10px 18px;border-bottom:1px solid var(--faint);flex-shrink:0;}
+.bv-dr-col{display:inline-flex;align-items:center;gap:7px;}
+.bv-dr-col .cc-select{height:30px;font-size:12.5px;border-radius:var(--r-ctl);}
+.bv-dr-scroll{flex:1;overflow-y:auto;padding:18px 24px 30px;}
+.bv-dr-title{width:100%;border:1px solid transparent;border-radius:var(--r-ctl);background:transparent;font-family:var(--display);font-size:21px;font-weight:600;letter-spacing:-.02em;line-height:1.3;color:var(--ink);resize:none;outline:none;padding:4px 8px;margin:0 -8px 12px;width:calc(100% + 16px);overflow:hidden;box-shadow:none!important;}
+.bv-dr-title:hover{background:var(--off);}
+.bv-dr-title:focus{background:var(--white);border-color:var(--border);}
+.bv-props{display:grid;grid-template-columns:118px 1fr;row-gap:6px;column-gap:10px;align-items:start;margin-bottom:22px;}
+.bv-prop-k{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);min-height:32px;}
+.bv-prop-k i{font-size:15px;}
+.bv-prop-v{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-height:32px;min-width:0;}
+.bv-pchip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 4px 0 3px;border-radius:999px;background:var(--off);font-size:12px;color:var(--ink);}
+.bv-pchip .bv-av{width:22px;height:22px;box-shadow:none;}
+.bv-pchip button{border:none;background:transparent;color:var(--muted);cursor:pointer;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;}
+.bv-pchip button:hover{background:var(--faint);color:var(--ink);}
+.bv-prop-v .bv-lbl{height:24px;font-size:11.5px;padding:0 4px 0 9px;max-width:none;}
+.bv-prop-v .bv-lbl button{border:none;background:transparent;color:var(--muted);cursor:pointer;width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;}
+.bv-addchip{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;border-radius:999px;border:1px dashed var(--border);background:transparent;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;}
+.bv-addchip:hover{border-style:solid;color:var(--ink);background:var(--off);}
+.bv-date{height:30px;padding:3px 8px;font-size:12.5px;width:150px;}
+.bv-due-note{font-size:11.5px;color:var(--muted);}
+.bv-due-note.over{color:var(--danger-ink);}
+.bv-due-note.soon{color:var(--warn-ink);}
+.bv-jobpanel{width:100%;border-radius:12px;border:1px solid var(--border);padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--off);}
+.bv-jp-top{display:flex;align-items:center;gap:6px;}
+.bv-jp-name{font-size:14px;font-weight:600;line-height:1.35;}
+.bv-jp-stats{display:grid;grid-template-columns:52px 1fr auto;gap:6px 10px;align-items:center;font-size:11.5px;color:var(--muted);}
+.bv-jp-stats .bv-prog{height:5px;}
+.bv-jp-actions{display:flex;gap:8px;}
+.bv-sec{margin-bottom:24px;}
+.bv-sec-h{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;margin-bottom:9px;}
+.bv-sec-h .bv-muted{font-weight:400;font-size:11.5px;}
+.bv-desc{width:100%;min-height:84px;resize:vertical;line-height:1.55;font-size:13px;}
+.bv-ck-list{display:flex;flex-direction:column;gap:2px;margin:8px 0 6px;}
+.bv-ck{display:flex;align-items:center;gap:8px;padding:3px 6px;border-radius:8px;margin:0 -6px;}
+.bv-ck:hover{background:var(--off);}
+.bv-ck input[type=checkbox]{width:15px;height:15px;accent-color:var(--ink);cursor:pointer;flex-shrink:0;}
+.bv-ck-txt{flex:1;border:none;background:transparent;font:inherit;font-size:13px;color:var(--ink);outline:none;padding:4px 2px;border-radius:5px;min-width:0;box-shadow:none!important;}
+.bv-ck-txt:focus{background:var(--white);}
+.bv-ck.done .bv-ck-txt{color:var(--muted);text-decoration:line-through;}
+.bv-ck .bv-ibtn{opacity:0;}
+.bv-ck:hover .bv-ibtn{opacity:1;}
+.bv-ck-add{width:100%;height:32px;font-size:12.5px;}
+.bv-comment-box{display:flex;gap:10px;align-items:flex-start;margin-bottom:14px;}
+.bv-comment-box .bv-cb-in{flex:1;display:flex;flex-direction:column;gap:6px;align-items:flex-end;}
+.bv-comment-box textarea{width:100%;min-height:38px;resize:vertical;font-size:13px;line-height:1.45;}
+.bv-feed{display:flex;flex-direction:column;gap:12px;}
+.bv-cm{display:flex;gap:10px;}
+.bv-cm-b{flex:1;min-width:0;}
+.bv-cm-h{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center;}
+.bv-cm-h b{color:var(--ink);font-weight:600;}
+.bv-cm-t{font-size:13px;line-height:1.5;margin-top:3px;padding:8px 11px;border-radius:4px 12px 12px 12px;background:var(--off);white-space:pre-wrap;word-break:break-word;}
+.bv-cm-h .bv-linkbtn{margin-left:auto;font-size:11px;}
+.bv-act{display:flex;gap:8px;align-items:center;font-size:11.5px;color:var(--muted);padding-left:6px;}
+.bv-act i{font-size:12px;}
+
+/* ── Modals (create / bulk add / archived) ── */
+.bv-kinds{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;}
+.bv-kind{display:flex;gap:10px;align-items:flex-start;text-align:left;padding:11px 12px;border-radius:12px;border:1px solid var(--border);background:var(--white);cursor:pointer;font-family:var(--font);color:var(--ink);transition:border-color .12s,box-shadow .12s;}
+.bv-kind:hover{border-color:color-mix(in srgb,var(--ink) 35%,var(--border));}
+.bv-kind.on{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink);}
+.bv-kind .bv-tpl-ico{width:30px;height:30px;font-size:15px;border-radius:9px;}
+.bv-kinds-lbl{grid-column:1/-1;font-size:11px;color:var(--muted);font-weight:600;margin:6px 0 -2px;}
+.bv-modal .modal-bd{max-height:70vh;overflow-y:auto;}
+.bv-modal .field label{text-transform:none;letter-spacing:0;font-size:11.5px;font-weight:500;}
+.bv-bulk-tools{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.bv-bulk-tools .cc-select{height:32px;}
+.bv-bulk-tools .bv-search{flex:1;min-width:160px;}
+.bv-bulk-list{border:1px solid var(--border);border-radius:12px;max-height:44vh;overflow-y:auto;}
+.bv-bulk-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-top:1px solid var(--faint);font-size:12.5px;cursor:pointer;}
+.bv-bulk-row:first-child{border-top:none;}
+.bv-bulk-row:hover{background:var(--off);}
+.bv-bulk-row.is-on{opacity:.55;cursor:default;}
+.bv-bulk-row input{accent-color:var(--ink);width:15px;height:15px;flex-shrink:0;}
+.bv-bulk-row .bv-bn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bv-bulk-row .bv-bc{color:var(--muted);font-size:11.5px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bv-bulk-head{display:flex;align-items:center;gap:10px;padding:8px 12px;font-size:11.5px;color:var(--muted);background:var(--off);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:1;}
+.bv-modal .modal-ft{align-items:center;}
+.bv-modal .modal-ft .bv-ft-left{margin-right:auto;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);}
+.bv-modal .modal-save:disabled{opacity:.4;cursor:default;}
+
+/* People live view on the v2 surface */
+.bv-people{flex:1;overflow-y:auto;padding:4px 28px 40px;}
+.bv-people .pboard-lane{background:var(--white);}
+.bv-people .pboard-head{padding:14px 16px 12px;gap:12px;}
+.bv-people .pboard-stat{padding:12px 14px;}
+.bv-people .ps-val{font-size:17px;white-space:nowrap;}
+.bv-people .ps-lbl{text-transform:none;letter-spacing:0;font-size:11px;}
+.bv-people .pboard-note{padding:12px 16px;}
+
+@media (max-width:900px){
+  .bv-head,.bv-subbar{padding-left:16px;padding-right:16px;}
+  .bv-cols{padding-left:16px;padding-right:16px;}
+  #boards-landing.boards-scroll{padding:22px 16px 60px;}
+  .bv-search{min-width:0;}
+  .bv-props{grid-template-columns:1fr;}
+  .bv-kinds{grid-template-columns:1fr;}
+}
+</style>
+<script id="boards-v2-script">
+// ═══════════════════════════════════════════════════════════════════════════
+// BOARDS v2 — the whole Boards engine (landing, custom kanban, client/people live views).
+//
+// Storage: per-browser, localStorage 'cc_boards' (also included in Workspace backup and the
+// cross-tab reload). NOTE: sharing boards across the team needs Razor's backend (a boards
+// table + /api/boards) — until that exists every browser keeps its own boards.
+//
+// Shapes (v:2)
+//  board  {id,v:2,name,type:'custom'|'client'|'people',template?,studio?,client?,sort,
+//          archived?,ignoreJobs?[],createdAt,updatedAt,openedAt,columns[],
+//          clientFilter? (client live view), notes? (people live view)}
+//  column {id,name,color,wip?,done?,collapsed?,stage? (studio only),cards[]}
+//  card   {id,type:'card'|'client'|'person',title,desc,jobRef?,assignees[],due?,labels[],
+//          checklist[{id,text,done}],comments[{id,by,text,ts}],activity[{ts,by,text}],
+//          archived?,archivedAt?,createdAt,updatedAt, clientRef?/personRef? (summary cards)}
+// Older shapes (note/job cards, "To Do" defaults, no colours, the old Studio preset) are
+// migrated in place by _bvMigrateAll() — ids, cards and columns are all kept.
+// ═══════════════════════════════════════════════════════════════════════════
+let boardsList=(()=>{try{const v=JSON.parse(localStorage.getItem('cc_boards')||'[]');return Array.isArray(v)?v:[];}catch(e){return [];}})();
+let activeBoardId=null;
+let boardsData={};               // legacy global (navTo calls initBoardsData)
+function initBoardsData(){}
+function renderBoards(){renderBoardsList();}
+function saveBoardsData(){
+  try{localStorage.setItem('cc_boards',JSON.stringify(boardsList));}
+  catch(e){toast('Couldn’t save boards — this browser’s storage is full','warn');}
+}
+
+const BV_COLORS=['grey','blue','amber','purple','green','red','teal','pink'];
+const BV_STAGES=[{key:'quote',label:'Quote',color:'amber'},{key:'live',label:'Live',color:'green'},{key:'completed',label:'Completed',color:'blue'},{key:'invoiced',label:'Invoiced',color:'purple'}];
+const BV_TEMPLATES={
+  studio:{name:'Studio pipeline',icon:'ti-briefcase',color:'green',desc:'Every live job by workflow stage. Moving a card updates the job’s stage.'},
+  campaign:{name:'Client campaign',icon:'ti-speakerphone',color:'amber',desc:'Brief to delivery for one client, pre-filled with their active jobs.'},
+  week:{name:'Team week',icon:'ti-calendar-week',color:'blue',desc:'Up next, doing, waiting, done — with a WIP limit on Doing.'},
+  blank:{name:'Blank board',icon:'ti-layout-kanban',color:'grey',desc:'To do, In progress, Done. Make it your own.'},
+};
+const BV_COL_PAGE=60;
+const _bvMonths=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const _bvA=s=>esc(JSON.stringify(String(s??'')));   // safe JS string literal inside an HTML attribute
+const _bvStageLabel=k=>(BV_STAGES.find(s=>s.key===k)||{}).label||k||'Live';
+let _bvFilters={},_bvShowAll={},_bvFocusCol=null,_bvOpenCardId=null,_bvDrag=null,_bvJM=null,_bvStats=new Map();
+
+// ── Migration ────────────────────────────────────────────────────────────────
+function _bvNewCard(x){const t=Date.now();return{id:uid('k'),type:'card',title:'',desc:'',assignees:[],labels:[],checklist:[],comments:[],activity:[],createdAt:t,updatedAt:t,...x};}
+function _bvNewCol(name,color,x){return{id:uid('c'),name,color:color||'grey',cards:[],...x};}
+function _bvMigrateCard(c){
+  if(!c||typeof c!=='object')return null;
+  if(c.type==='note'||!c.type){
+    const txt=String(c.note||'');const lines=txt.split('\n');const fi=lines.findIndex(l=>l.trim());
+    const first=fi>=0?lines[fi].trim():'';
+    if(!c.title)c.title=first.length>140?first.slice(0,140)+'…':(first||'Untitled note');
+    if(c.desc==null)c.desc=first.length>140?txt:(fi>=0?lines.slice(fi+1).join('\n').trim():'');
+    c.type='card';                       // original c.note is left untouched
+  }else if(c.type==='job'){c.type='card';if(c.title==null)c.title='';}
+  if(c.jobRef!=null)c.jobRef=String(c.jobRef);
+  ['assignees','labels','checklist','comments','activity'].forEach(k=>{if(!Array.isArray(c[k]))c[k]=[];});
+  if(c.title==null)c.title='';if(c.desc==null)c.desc='';
+  c.createdAt=c.createdAt||Date.now();c.updatedAt=c.updatedAt||c.createdAt;
+  return c;
+}
+function _bvMigrate(b,i){
+  if(b.v===2)return false;
+  b.name=String(b.name||'Untitled board');b.type=b.type||'custom';
+  const t=Date.now()-i*1000;b.createdAt=b.createdAt||t;b.updatedAt=b.updatedAt||b.createdAt;b.sort=b.sort||'manual';
+  if(b.type==='custom'){
+    b.columns=Array.isArray(b.columns)?b.columns.filter(c=>c&&typeof c==='object'):[];
+    const stageOf=n=>({quote:'quote',live:'live',completed:'completed',invoiced:'invoiced'})[String(n||'').trim().toLowerCase()];
+    const isStudio=/^Studio · /.test(b.name)&&b.columns.length>0&&b.columns.every(c=>stageOf(c.name));
+    if(isStudio){b.studio=true;b.template='studio';}
+    b.columns.forEach((col,ci)=>{
+      col.name=String(col.name??'Untitled');
+      if(col.name==='To Do')col.name='To do';
+      if(col.name==='In Progress')col.name='In progress';
+      if(isStudio)col.stage=stageOf(col.name);
+      if(!col.color)col.color=isStudio?(BV_STAGES.find(s=>s.key===col.stage)||{}).color||'grey':(/done|complete|deliver|approved/i.test(col.name)?'green':/progress|doing/i.test(col.name)?'blue':BV_COLORS[ci%BV_COLORS.length]);
+      if(col.done==null)col.done=/^(done|complete|completed|delivered|approved|invoiced|shipped)$/i.test(col.name.trim());
+      col.cards=(Array.isArray(col.cards)?col.cards:[]).map(_bvMigrateCard).filter(Boolean);
+    });
+  }
+  b.v=2;return true;
+}
+function _bvMigrateAll(){
+  let changed=false;
+  const n0=boardsList.length;boardsList=boardsList.filter(b=>b&&typeof b==='object');if(boardsList.length!==n0)changed=true;
+  // Ids must be unique across boards (an old Date.now() id bug made boards share columns/cards)
+  const seen=new Set();
+  boardsList.forEach(b=>{
+    if(!b.id||seen.has(b.id)){b.id=uid('b');changed=true;}seen.add(b.id);
+    (b.columns||[]).forEach(col=>{
+      if(!col||typeof col!=='object')return;
+      if(!col.id||seen.has(col.id)){col.id=uid('c');changed=true;}seen.add(col.id);
+      (col.cards||[]).forEach(card=>{if(card&&typeof card==='object'){if(!card.id||seen.has(card.id)){card.id=uid('k');changed=true;}seen.add(card.id);}});
+    });
+  });
+  boardsList.forEach((b,i)=>{if(_bvMigrate(b,i))changed=true;});
+  if(changed)saveBoardsData();
+}
+_bvMigrateAll();
+
+// ── Small helpers ────────────────────────────────────────────────────────────
+function _bvBoard(id){return boardsList.find(b=>b.id===id);}
+function _bvCur(){return _bvBoard(activeBoardId);}
+function _bvLoc(b,cardId){if(!b)return null;for(const col of b.columns||[]){const i=(col.cards||[]).findIndex(c=>c.id===cardId);if(i>=0)return{col,card:col.cards[i],idx:i};}return null;}
+function _bvColOf(b,id){return(b?.columns||[]).find(c=>c.id===id);}
+function _bvTouch(b,card){const t=Date.now();if(card)card.updatedAt=t;if(b)b.updatedAt=t;saveBoardsData();}
+function _bvLog(card,text){(card.activity=card.activity||[]).push({ts:Date.now(),by:MY_PERSON,text});if(card.activity.length>60)card.activity.splice(0,card.activity.length-60);}
+function _bvJob(id){if(id==null||id==='')return null;id=String(id);if(_bvJM)return _bvJM.get(id)||null;return jobs.find(j=>String(j.id)===id)||null;}
+function _bvPeopleKeys(){return Object.keys(people).filter(k=>!people[k]._archived).sort((a,b)=>(people[a].name||'').localeCompare(people[b].name||''));}
+function _bvAv(k,cls){const p=people[k];if(!p)return'';return`<span class="bv-av ${cls||''}" style="background:${esc(p.color||'#999')}" title="${esc(p.name||'')}">${esc(p.initials||'?')}</span>`;}
+function _bvFmtD(iso){const d=_pDate(iso);if(!d||isNaN(d))return'';return d.getDate()+' '+_bvMonths[d.getMonth()]+(d.getFullYear()!==new Date().getFullYear()?' '+d.getFullYear():'');}
+function _bvAgo(ts){if(!ts)return'';const s=(Date.now()-ts)/1000;if(s<60)return'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';const d=Math.floor(s/86400);if(d<7)return d+'d ago';return _bvFmtD(_localISO(new Date(ts)));}
+function _bvWeekEnd(){const d=new Date();d.setDate(d.getDate()+(d.getDay()===0?0:7-d.getDay()));return _localISO(d);}
+function _bvAddDays(n){const d=new Date();d.setDate(d.getDate()+n);return _localISO(d);}
+function _bvDue(card){if(card.due)return card.due;const j=_bvJob(card.jobRef);return j&&j.dueDate?String(j.dueDate).slice(0,10):null;}
+function _bvDueState(due,col){if(!due||col?.done)return'';const t=_localISO();if(due<t)return'over';if(due<=_bvAddDays(3))return'soon';return'';}
+function _bvAssignees(card){if((card.assignees||[]).length)return card.assignees;const j=_bvJob(card.jobRef);return j?(j.members||[]):[];}
+function _bvTitle(card){
+  if(card.title)return card.title;const j=_bvJob(card.jobRef);if(j)return j.name||('Job '+j.id);
+  if(card.type==='client')return card.clientRef||'Client';if(card.type==='person')return people[card.personRef]?.name||'Person';
+  return'Untitled card';
+}
+function _bvClients(){return[...new Set(jobs.filter(j=>j.status!=='archived').map(j=>j.company).filter(Boolean))].sort((a,b)=>a.localeCompare(b));}
+function _bvStat(j){
+  if(_bvStats.has(j.id))return _bvStats.get(j.id);
+  let s;try{s=computeJobStats(j)||{};}catch(e){s={};}
+  const o={lm:s.loggedMins||0,pm:s.plannedMins||0,bPct:s.bPct||0};_bvStats.set(j.id,o);return o;
+}
+function _bvH(mins){return formatHrs((mins||0)/60)||'0h';}
+function _bvProgHTML(st){
+  if(!st.pm&&!st.lm)return'';
+  const pct=st.pm?Math.min(100,Math.round(st.lm/st.pm*100)):0;
+  const cls=st.pm&&st.lm>st.pm?'over':pct>=85?'warn':'';
+  return`<div class="bv-prog-row" title="Hours logged${st.pm?' of planned':''}"><div class="bv-prog ${cls}"><i style="width:${pct}%"></i></div><span class="bv-prog-val ${cls}">${_bvH(st.lm)}${st.pm?' / '+_bvH(st.pm):''}</span></div>`;
+}
+function _bvTypeMeta(b){
+  if(b.type==='client')return{icon:'ti-building',label:'Client · live view'};
+  if(b.type==='people')return{icon:'ti-users',label:'People · live view'};
+  if(b.studio)return{icon:'ti-refresh',label:'Studio pipeline'};
+  const t=BV_TEMPLATES[b.template];return{icon:t?t.icon:'ti-layout-kanban',label:t&&b.template!=='blank'?t.name:'Board'};
+}
+function _bvSec(colId){return document.querySelector(`#board-detail .bv-col[data-col="${CSS.escape(colId)}"]`);}
+
+// ── Filters & sorting (filters are per board, per session) ──────────────────
+function _bvF(){const id=activeBoardId;return _bvFilters[id]||(_bvFilters[id]={q:'',people:[],labels:[],due:''});}
+function _bvFActive(f){return!!(f.q||f.people.length||f.labels.length||f.due);}
+function _bvMatch(card,col,f){
+  if(card.archived)return false;
+  if(f.people.length){const as=_bvAssignees(card);if(!f.people.some(p=>as.includes(p)))return false;}
+  if(f.labels.length&&!f.labels.some(l=>(card.labels||[]).includes(l)))return false;
+  if(f.due){
+    const d=_bvDue(card),t=_localISO();
+    if(f.due==='over'&&!(d&&d<t&&!col.done))return false;
+    if(f.due==='week'&&!(d&&d>=t&&d<=_bvWeekEnd()))return false;
+    if(f.due==='none'&&d)return false;
+  }
+  if(f.q){
+    const j=_bvJob(card.jobRef);
+    const hay=[_bvTitle(card),card.desc,j&&j.id,j&&j.name,j&&j.company,card.clientRef,...(card.labels||[]),..._bvAssignees(card).map(k=>people[k]?.name)].filter(Boolean).join(' ').toLowerCase();
+    if(!hay.includes(f.q.toLowerCase()))return false;
+  }
+  return true;
+}
+const BV_SORTS={manual:'Manual',due:'Due date',updated:'Recently updated',title:'Title A–Z'};
+function _bvSorted(b,cards){
+  const s=b.sort||'manual';if(s==='manual')return cards;const a=[...cards];
+  if(s==='due')a.sort((x,y)=>(_bvDue(x)||'9999').localeCompare(_bvDue(y)||'9999'));
+  if(s==='updated')a.sort((x,y)=>(y.updatedAt||0)-(x.updatedAt||0));
+  if(s==='title')a.sort((x,y)=>_bvTitle(x).localeCompare(_bvTitle(y)));
+  return a;
+}
+
+// ── Landing ──────────────────────────────────────────────────────────────────
+function renderBoardsList(){
+  _bvMigrateAll();_bvClosePop();bvCloseCard();
+  activeBoardId=null;
+  const landing=document.getElementById('boards-landing'),det=document.getElementById('board-detail');
+  if(!landing)return;landing.style.display='';if(det)det.style.display='none';
+  _bvJM=new Map(jobs.map(j=>[String(j.id),j]));
+  const live=boardsList.filter(b=>!b.archived),arch=boardsList.filter(b=>b.archived);
+  const recent=[...live].sort((a,b)=>Math.max(b.openedAt||0,b.updatedAt||0)-Math.max(a.openedAt||0,a.updatedAt||0));
+  const tpls=Object.entries(BV_TEMPLATES).map(([k,t])=>`<button class="bv-tpl" onclick="bvOpenCreate('${k}')"><span class="bv-tpl-ico" style="--col:var(--bv-${t.color})"><i class="ti ${t.icon}"></i></span><span><span class="bv-tpl-name">${esc(t.name)}</span><span class="bv-tpl-desc">${esc(t.desc)}</span></span></button>`).join('');
+  const boardsHTML=live.length
+    ?`<div class="bv-sec-lbl">Your boards <span class="bv-muted">${live.length}</span></div><div class="bv-grid" id="bv-grid">${recent.map(_bvTileHTML).join('')}</div><div class="bv-pop-empty" id="bv-grid-none" style="display:none;">No boards match that search.</div>`
+    :`<div class="bv-empty"><div class="bv-empty-art"><span><i></i><i></i><i></i></span><span><i></i><i></i></span><span><i></i></span></div><div class="bv-empty-t">No boards yet</div><div class="bv-empty-s">Boards are a flexible kanban for anything the job list doesn’t cover — a client campaign, the studio pipeline, this week’s priorities. Start from a template above, or a blank board.</div><button class="d-action primary" onclick="bvOpenCreate('blank')"><i class="ti ti-plus"></i> New board</button></div>`;
+  const archHTML=arch.length?`<details class="bv-archived"><summary><i class="ti ti-chevron-right"></i> Archived boards (${arch.length})</summary><div class="bv-arch-list">${arch.map(b=>`<div class="bv-arch-row"><i class="ti ${_bvTypeMeta(b).icon} bv-muted"></i><span class="bv-arch-name">${esc(b.name)}</span><span class="bv-muted">${_bvAgo(b.updatedAt)}</span><button class="d-action sm" onclick="bvArchiveBoard(${_bvA(b.id)},false)">Restore</button><button class="bv-ibtn sm" title="Delete board" onclick="bvDeleteBoard(${_bvA(b.id)})"><i class="ti ti-trash"></i></button></div>`).join('')}</div></details>`:'';
+  landing.innerHTML=`<div class="bv-land-head">
+      <div><div class="boards-head">Boards</div><div class="boards-sub">Plan campaigns, pipelines and team weeks — linked to live jobs.</div></div>
+      <div class="bv-land-actions">${live.length>3?`<label class="bv-search"><i class="ti ti-search"></i><input placeholder="Search boards" oninput="bvLandSearch(this.value)"></label>`:''}<button class="d-action primary" onclick="bvOpenCreate()"><i class="ti ti-plus"></i> New board</button></div>
+    </div>
+    <div class="bv-sec-lbl">Start from a template</div>
+    <div class="bv-tpl-row">${tpls}</div>
+    ${boardsHTML}${archHTML}`;
+}
+function bvLandSearch(q){
+  q=(q||'').trim().toLowerCase();let n=0;
+  document.querySelectorAll('#bv-grid .bv-tile').forEach(el=>{const on=!q||el.dataset.name.includes(q);el.style.display=on?'':'none';if(on)n++;});
+  const none=document.getElementById('bv-grid-none');if(none)none.style.display=n?'none':'';
+}
+function _bvTileHTML(b){
+  const meta=_bvTypeMeta(b);let mini='',stats='';
+  const miniCol=(color,n,label)=>`<div class="bv-mini-col" style="--col:var(--bv-${esc(color||'grey')})" title="${esc(label)}: ${n}"><span class="bv-mini-dot"></span>${'<span class="bv-mini-card"></span>'.repeat(Math.min(n,3))}${n>3?`<span class="bv-mini-n">${n}</span>`:''}</div>`;
+  if(b.type==='client'){
+    const js=jobs.filter(j=>j.company===b.clientFilter&&j.status!=='archived');
+    mini=BV_STAGES.map(s=>miniCol(s.color,js.filter(j=>(j.workflowStatus||'live')===s.key).length,s.label)).join('');
+    const n=js.filter(j=>j.status==='inplay').length;stats=`${n} active job${n!==1?'s':''}`;
+  }else if(b.type==='people'){
+    const ks=_bvPeopleKeys();mini=`<div class="bv-mini-people">${ks.slice(0,9).map(k=>_bvAv(k)).join('')}</div>`;stats=`${ks.length} team members`;
+  }else{
+    const cols=b.columns||[],t=_localISO();let total=0,over=0;
+    mini=cols.slice(0,6).map(c=>{const live=(c.cards||[]).filter(x=>!x.archived);total+=live.length;if(!c.done)live.forEach(x=>{const d=_bvDue(x);if(d&&d<t)over++;});return miniCol(c.color,live.length,c.name);}).join('')+(cols.length>6?`<span class="bv-mini-more">+${cols.length-6}</span>`:'');
+    cols.slice(6).forEach(c=>total+=(c.cards||[]).filter(x=>!x.archived).length);
+    stats=`${total} card${total!==1?'s':''}${over?` · <span class="bv-txt-danger">${over} overdue</span>`:''}`;
+  }
+  return`<div class="bv-tile" data-name="${esc(b.name.toLowerCase())}" tabindex="0" onclick="openBoard(${_bvA(b.id)})" onkeydown="if(event.key==='Enter'&&event.target===this)openBoard(${_bvA(b.id)})">
+    <div class="bv-tile-top"><span class="bv-tag"><i class="ti ${meta.icon}"></i>${esc(meta.label)}</span><button class="bv-ibtn sm" title="Board options" onclick="event.stopPropagation();bvBoardMenu(this,${_bvA(b.id)},true)"><i class="ti ti-dots"></i></button></div>
+    <div class="bv-tile-name" title="${esc(b.name)}">${esc(b.name)}</div>
+    <div class="bv-mini">${mini}</div>
+    <div class="bv-tile-foot"><span>${stats}</span><span>${_bvAgo(Math.max(b.updatedAt||0,b.openedAt||0))}</span></div>
+  </div>`;
+}
+
+// ── Create board ─────────────────────────────────────────────────────────────
+let _bvCreateKind='blank',_bvCreateNameTouched=false;
+const BV_LIVE_KINDS={clientview:{name:'Client live view',icon:'ti-building',color:'grey',desc:'Read-only: one client’s jobs by stage, always current.'},people:{name:'People live view',icon:'ti-users',color:'grey',desc:'One lane per person with this week’s hours and notes.'}};
+function openCreateBoard(){bvOpenCreate();}
+function bvOpenCreate(kind){
+  _bvClosePop();
+  _bvCreateKind=kind||'blank';_bvCreateNameTouched=false;
+  document.getElementById('bv-create')?.remove();
+  const kindBtn=(k,t)=>`<button type="button" class="bv-kind${k===_bvCreateKind?' on':''}" data-kind="${k}" onclick="bvSelectKind('${k}')"><span class="bv-tpl-ico" style="--col:var(--bv-${t.color})"><i class="ti ${t.icon}"></i></span><span><span class="bv-tpl-name">${esc(t.name)}</span><span class="bv-tpl-desc">${esc(t.desc)}</span></span></button>`;
+  const m=document.createElement('div');m.className='modal-bg on';m.id='bv-create';
+  m.innerHTML=`<div class="modal bv-modal" style="max-width:620px;">
+    <div class="modal-hd"><span class="modal-hd-title">New board</span><button class="modal-x" onclick="document.getElementById('bv-create').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd">
+      <div class="bv-kinds"><div class="bv-kinds-lbl">Templates</div>${Object.entries(BV_TEMPLATES).map(([k,t])=>kindBtn(k,t)).join('')}<div class="bv-kinds-lbl">Live views</div>${Object.entries(BV_LIVE_KINDS).map(([k,t])=>kindBtn(k,t)).join('')}</div>
+      <div class="field-row">
+        <div class="field"><label>Board name</label><input id="bv-nb-name" class="form-inp" oninput="_bvCreateNameTouched=true" onkeydown="if(event.key==='Enter')bvCreateBoard()"></div>
+        <div class="field" id="bv-nb-client-f"><label id="bv-nb-client-l">Client</label><select id="bv-nb-client" class="cc-select" style="width:100%;" onchange="_bvSyncCreateName()"><option value="">No client</option>${_bvClients().map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')}</select></div>
+      </div>
+      <div class="bv-muted" id="bv-nb-hint"></div>
+    </div>
+    <div class="modal-ft"><button class="modal-cancel" onclick="document.getElementById('bv-create').remove()">Cancel</button><button class="modal-save" onclick="bvCreateBoard()">Create board</button></div>
+  </div>`;
+  m.addEventListener('mousedown',e=>{if(e.target===m)m.remove();});
+  document.body.appendChild(m);
+  bvSelectKind(_bvCreateKind);
+  setTimeout(()=>{const i=document.getElementById('bv-nb-name');if(i){i.focus();i.select();}},60);
+}
+function _bvSyncCreateName(){
+  const inp=document.getElementById('bv-nb-name');if(!inp||_bvCreateNameTouched)return;
+  const k=_bvCreateKind,cl=document.getElementById('bv-nb-client')?.value||'';
+  inp.value=k==='clientview'?(cl||''):k==='campaign'?(cl?cl+' campaign':'Client campaign'):k==='people'?'Team':BV_TEMPLATES[k]?.name==='Blank board'?'Untitled board':(BV_TEMPLATES[k]?.name||'');
+}
+function bvSelectKind(k){
+  _bvCreateKind=k;
+  document.querySelectorAll('#bv-create .bv-kind').forEach(el=>el.classList.toggle('on',el.dataset.kind===k));
+  const cf=document.getElementById('bv-nb-client-f');if(cf)cf.style.display=(k==='campaign'||k==='clientview')?'':'none';
+  const first=document.querySelector('#bv-nb-client option[value=""]');if(first)first.textContent=k==='clientview'?'Choose a client…':'No client';
+  const hints={studio:'Adds every non-archived job, grouped into Quote, Live, Completed and Invoiced. Moving a card to another stage updates that job’s workflow stage in C&C.',campaign:'Columns: Briefed, In progress, In review, Approved, Delivered. Picking a client adds their active jobs and makes them the default in “Add jobs”.',week:'Columns: Up next, Doing (WIP limit 6), Waiting on client, Done.',blank:'Three starter columns you can rename, recolour and reorder.',clientview:'Shows the client’s non-archived jobs by stage. Nothing to maintain — it mirrors the job list.',people:'One lane per active team member with this week’s planned, done and billable hours.'};
+  const h=document.getElementById('bv-nb-hint');if(h)h.textContent=hints[k]||'';
+  _bvSyncCreateName();
+}
+function bvCreateBoard(){
+  const k=_bvCreateKind,name=(document.getElementById('bv-nb-name')?.value||'').trim(),client=document.getElementById('bv-nb-client')?.value||'';
+  if(k==='clientview'){
+    if(!client){toast('Choose a client for this view','warn');return;}
+    const ex=boardsList.find(b=>b.type==='client'&&b.clientFilter===client&&!b.archived);
+    if(ex){document.getElementById('bv-create')?.remove();openBoard(ex.id);toast(`${esc(client)} already has a live view — opening it`,'info');return;}
+  }
+  const b=_bvBuild(k,name,client);
+  boardsList.push(b);saveBoardsData();
+  document.getElementById('bv-create')?.remove();
+  openBoard(b.id);
+  const n=(b.columns||[]).reduce((s,c)=>s+c.cards.length,0);
+  toast(`Board created${n?` with ${n} job${n!==1?'s':''}`:''}`,'success');
+}
+function _bvBuild(k,name,client){
+  const t=Date.now();const base={id:uid('b'),v:2,createdAt:t,updatedAt:t,openedAt:t,sort:'manual'};
+  if(k==='clientview')return{...base,type:'client',name:name||client,clientFilter:client};
+  if(k==='people')return{...base,type:'people',name:name||'Team',notes:{}};
+  const tpl=BV_TEMPLATES[k]?k:'blank';
+  const b={...base,type:'custom',template:tpl,name:name||(tpl==='blank'?'Untitled board':BV_TEMPLATES[tpl].name)};
+  if(tpl==='studio'){
+    b.studio=true;
+    b.columns=BV_STAGES.map(s=>_bvNewCol(s.label,s.color,{stage:s.key,done:s.key==='completed'||s.key==='invoiced'}));
+    _bvJM=null;_bvStudioSync(b,true);
+  }else if(tpl==='campaign'){
+    b.columns=[_bvNewCol('Briefed','grey'),_bvNewCol('In progress','blue'),_bvNewCol('In review','amber'),_bvNewCol('Approved','purple'),_bvNewCol('Delivered','green',{done:true})];
+    if(client){
+      b.client=client;
+      jobs.filter(j=>j.company===client&&j.status==='inplay').forEach(j=>{
+        b.columns[(j.workflowStatus==='quote')?0:1].cards.push(_bvNewCard({jobRef:String(j.id)}));
+      });
+    }
+  }else if(tpl==='week'){
+    b.columns=[_bvNewCol('Up next','grey'),_bvNewCol('Doing','blue',{wip:6}),_bvNewCol('Waiting on client','amber'),_bvNewCol('Done','green',{done:true})];
+  }else{
+    b.columns=[_bvNewCol('To do','grey'),_bvNewCol('In progress','blue'),_bvNewCol('Done','green',{done:true})];
+  }
+  return b;
+}
+// Studio boards mirror job workflow stages. On open: cards in stage columns follow their
+// job's current stage, and new Quote/Live jobs are added (unless removed from this board).
+function _bvStudioSync(b,addAll){
+  if(!b.studio)return 0;let changes=0;
+  const byStage={};(b.columns||[]).forEach(c=>{if(c.stage&&!byStage[c.stage])byStage[c.stage]=c;});
+  const onBoard=new Set((b.ignoreJobs||[]).map(String));
+  (b.columns||[]).forEach(col=>{
+    col.cards=col.cards.filter(card=>{
+      if(!card.jobRef)return true;onBoard.add(String(card.jobRef));
+      if(!col.stage)return true;
+      const j=_bvJob(card.jobRef);if(!j)return true;
+      const target=byStage[j.workflowStatus||'live'];
+      if(target&&target!==col){target.cards.push(card);_bvLog(card,`Moved to ${target.name} — job stage changed`);changes++;return false;}
+      return true;
+    });
+  });
+  jobs.forEach(j=>{
+    if(j.status==='archived'||onBoard.has(String(j.id)))return;
+    const wf=j.workflowStatus||'live';if(!addAll&&wf!=='quote'&&wf!=='live')return;
+    const col=byStage[wf];if(!col)return;
+    col.cards.push(_bvNewCard({jobRef:String(j.id)}));onBoard.add(String(j.id));changes++;
+  });
+  return changes;
+}
+
+// ── Open / close a board ─────────────────────────────────────────────────────
+function openBoard(id){
+  _bvMigrateAll();
+  const b=_bvBoard(id);if(!b)return;
+  _bvClosePop();
+  activeBoardId=id;b.openedAt=Date.now();_bvShowAll={};
+  if(b.studio){_bvJM=null;const n=_bvStudioSync(b,false);if(n)toast(`Synced with jobs — ${n} change${n!==1?'s':''}`,'info');}
+  saveBoardsData();
+  document.getElementById('boards-landing').style.display='none';
+  document.getElementById('board-detail').style.display='flex';
+  _bvRenderBoard();
+}
+function closeBoardDetail(){bvCloseCard();activeBoardId=null;renderBoardsList();}
+function _bvRenderBoard(){
+  const b=_bvCur();if(!b)return;
+  const head=document.getElementById('bv-head');if(!head)return;
+  const meta=_bvTypeMeta(b),custom=b.type==='custom',f=_bvF();
+  head.innerHTML=`<button class="bv-ibtn" title="All boards" onclick="closeBoardDetail()"><i class="ti ti-chevron-left"></i></button>
+    <input class="bv-title" id="bv-title" value="${esc(b.name)}" size="${Math.max(6,Math.min(40,b.name.length+1))}" title="Rename board" onchange="bvRenameBoard(this.value)" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.value=${_bvA(b.name)};this.blur();}">
+    <span class="bv-tag" title="${b.studio?'Moving a card to a stage column updates the job’s workflow stage':''}"><i class="ti ${meta.icon}"></i>${esc(meta.label)}</span>
+    <span class="bv-sp"></span>
+    <div class="bv-head-actions">${custom?`
+      <label class="bv-search" title="Search cards (/)"><i class="ti ti-search"></i><input id="bv-q" placeholder="Search cards" value="${esc(f.q)}" oninput="bvSearch(this.value)" onkeydown="if(event.key==='Escape'){this.value='';bvSearch('');this.blur();event.stopPropagation();}"><kbd>/</kbd></label>
+      <button class="d-action" id="bv-filter-btn" onclick="bvFilterMenu(this)"></button>
+      <button class="d-action" id="bv-sort-btn" onclick="bvSortMenu(this)"></button>
+      <button class="d-action" onclick="bvBulkAddJobs()"><i class="ti ti-briefcase"></i> Add jobs</button>
+      <button class="d-action" onclick="bvAddColumn()"><i class="ti ti-layout-columns"></i> Add column</button>`:''}
+      <button class="bv-ibtn" title="Board options" onclick="bvBoardMenu(this,${_bvA(b.id)})"><i class="ti ti-dots"></i></button>
+    </div>`;
+  _bvRenderBody();
+}
+function _bvUpdateHeadBtns(){
+  const b=_bvCur();if(!b)return;const f=_bvF();
+  const n=f.people.length+f.labels.length+(f.due?1:0);
+  const fb=document.getElementById('bv-filter-btn');if(fb)fb.innerHTML=`<i class="ti ti-filter"></i> Filter${n?` <span class="bv-count-pill">${n}</span>`:''}`;
+  const sb=document.getElementById('bv-sort-btn');if(sb)sb.innerHTML=`<i class="ti ti-arrows-sort"></i> ${b.sort&&b.sort!=='manual'?esc(BV_SORTS[b.sort]):'Sort'}`;
+}
+function _bvRenderSubbar(){
+  const b=_bvCur();const bar=document.getElementById('bv-subbar');if(!b||!bar)return;
+  const f=_bvF();const chips=[];
+  if(b.studio)chips.push(`<span class="bv-note"><i class="ti ti-refresh"></i>Synced with job stages — moving a card to Quote, Live, Completed or Invoiced updates the job in C&amp;C.</span>`);
+  if(b.type==='client')chips.push(`<span class="bv-note"><i class="ti ti-eye"></i>Live view of ${esc(b.clientFilter)}’s non-archived jobs. Click a card to open the job.</span>`);
+  if(b.type==='custom'&&b.sort&&b.sort!=='manual')chips.push(`<span class="bv-note"><i class="ti ti-arrows-sort" style="color:var(--muted)"></i>Sorted by ${esc(BV_SORTS[b.sort].toLowerCase())} — drag still moves cards between columns.</span>`);
+  if(b.type==='custom'){
+    const fc=(label,clear)=>`<span class="bv-fchip">${label}<button title="Remove filter" onclick="${clear}"><i class="ti ti-x"></i></button></span>`;
+    if(f.q)chips.push(fc(`Search: “${esc(f.q)}”`,`bvSearch('');const i=document.getElementById('bv-q');if(i)i.value='';`));
+    f.people.forEach(k=>chips.push(fc(esc(people[k]?.name||k),`bvFToggle('people',${_bvA(k)})`)));
+    f.labels.forEach(l=>chips.push(fc(`<span class="bv-dot" style="--col:${esc(labelColor(l))}"></span>${esc(l)}`,`bvFToggle('labels',${_bvA(l)})`)));
+    if(f.due)chips.push(fc({over:'Overdue',week:'Due this week',none:'No due date'}[f.due],`bvFToggle('due','')`));
+    if(_bvFActive(f))chips.push(`<button class="bv-linkbtn" onclick="bvClearFilters()">Clear all</button>`);
+  }
+  bar.innerHTML=chips.join('');
+}
+function _bvRenderBody(){
+  const b=_bvCur();const body=document.getElementById('board-detail-body');if(!b||!body)return;
+  _bvJM=new Map(jobs.map(j=>[String(j.id),j]));_bvStats=new Map();
+  _bvUpdateHeadBtns();_bvRenderSubbar();
+  if(b.type==='client')return _bvRenderClientView(b,body);
+  if(b.type==='people')return renderPeopleBoard(b,body);
+  const old=body.querySelector('.bv-cols');const sx=old?old.scrollLeft:0;const sy={};
+  body.querySelectorAll('.bv-col-list').forEach(el=>{sy[el.dataset.col]=el.scrollTop;});
+  const f=_bvF(),fa=_bvFActive(f);
+  if(!Array.isArray(b.columns))b.columns=[];
+  body.innerHTML=`<div class="bv-cols" id="bv-cols">${b.columns.map(col=>_bvColHTML(b,col,f,fa)).join('')}<button class="bv-add-col" onclick="bvAddColumn()"><i class="ti ti-plus"></i> Add column</button></div>`;
+  const nc=body.querySelector('.bv-cols');if(nc)nc.scrollLeft=sx;
+  body.querySelectorAll('.bv-col-list').forEach(el=>{if(sy[el.dataset.col])el.scrollTop=sy[el.dataset.col];});
+  if(_bvOpenCardId)body.querySelector(`.bv-card[data-card="${CSS.escape(_bvOpenCardId)}"]`)?.classList.add('is-open');
+}
+function _bvColHTML(b,col,f,fa){
+  const all=(col.cards||[]).filter(c=>!c.archived);
+  const vis=_bvSorted(b,all.filter(c=>_bvMatch(c,col,f)));
+  const n=all.length,over=col.wip>0&&n>col.wip;
+  const countTxt=fa?`${vis.length}<span class="bv-of">/${n}</span>`:col.wip>0?`${n}<span class="bv-of">/${col.wip}</span>`:`${n}`;
+  const dnd=` ondragover="bvDragOver(event,${_bvA(col.id)})" ondrop="bvDrop(event,${_bvA(col.id)})" ondragleave="bvDragLeave(event)"`;
+  const style=`style="--col:var(--bv-${esc(col.color||'grey')})"`;
+  if(col.collapsed)return`<section class="bv-col is-collapsed${over?' is-over':''}" data-col="${esc(col.id)}" ${style}${dnd}><button class="bv-col-collapsed" onclick="bvColSet(${_bvA(col.id)},'collapsed',false)" title="Expand ${esc(col.name)}"><span class="bv-dot"></span><span class="bv-col-count${over?' warn':''}">${n}</span><span class="bv-col-vname">${esc(col.name)}</span></button></section>`;
+  const limit=_bvShowAll[col.id]?Infinity:BV_COL_PAGE;
+  const cards=vis.slice(0,limit).map(c=>_bvCardHTML(b,col,c)).join('');
+  const more=vis.length>limit?`<button class="bv-more" onclick="_bvShowAll[${_bvA(col.id)}]=true;_bvRenderBody()">Show ${vis.length-limit} more</button>`:'';
+  const empty=vis.length?'':`<div class="bv-col-empty">${fa&&n?'No cards match the filters':'No cards yet'}</div>`;
+  return`<section class="bv-col${over?' is-over':''}" data-col="${esc(col.id)}" ${style} onmouseenter="_bvFocusCol=${_bvA(col.id)}"${dnd}>
+    <header class="bv-col-h" draggable="true" ondragstart="bvColDragStart(event,${_bvA(col.id)})" ondragend="bvDragEnd()">
+      <span class="bv-dot"></span>
+      <span class="bv-col-name" title="Double-click to rename" ondblclick="bvRenameColInline(${_bvA(col.id)})">${esc(col.name)}</span>
+      ${col.stage?`<i class="ti ti-refresh bv-col-sync" title="Linked to job stage: ${esc(_bvStageLabel(col.stage))}"></i>`:''}
+      <span class="bv-col-count${over?' warn':''}" title="${col.wip>0?`WIP limit ${col.wip}${over?' — over limit':''}`:fa?'Matching / total':'Cards'}">${countTxt}</span>
+      <span class="bv-sp"></span>
+      <button class="bv-ibtn sm" title="Add card to top" draggable="false" onclick="bvQuickAdd(${_bvA(col.id)},'top')"><i class="ti ti-plus"></i></button>
+      <button class="bv-ibtn sm" title="Column options" draggable="false" onclick="bvColMenu(this,${_bvA(col.id)})"><i class="ti ti-dots"></i></button>
+    </header>
+    <div class="bv-col-list" data-col="${esc(col.id)}">${cards}${empty}${more}</div>
+    <div class="bv-col-ft"><button class="bv-add-card" onclick="bvQuickAdd(${_bvA(col.id)},'bottom')"><i class="ti ti-plus"></i> Add card</button><button class="bv-ibtn sm" title="Add jobs, a client or a person" onclick="bvAddMenu(this,${_bvA(col.id)})"><i class="ti ti-briefcase"></i></button></div>
+  </section>`;
+}
+function _bvCardHTML(b,col,c){
+  const drag=`draggable="true" ondragstart="bvCardDragStart(event,${_bvA(c.id)})" ondragend="bvDragEnd()"`;
+  const x=`<button class="bv-card-x" title="Remove from board" draggable="false" onclick="event.stopPropagation();bvArchiveCard(${_bvA(c.id)})"><i class="ti ti-x"></i></button>`;
+  if(c.type==='person'){
+    const p=people[c.personRef];
+    if(!p)return`<article class="bv-card" data-card="${esc(c.id)}" ${drag}>${x}<div class="bv-muted">Team member no longer available</div></article>`;
+    const wd=getWeekData(c.personRef,0);let h=0,open=0,urg=0;
+    [1,2,3,4,5].forEach(d=>(wd[d]||[]).forEach(t=>{h+=_bvTaskH(t);if(!t.done)open++;if(t.urgent&&!t.done)urg++;}));
+    const cap=Math.min(100,Math.round(h/40*100));
+    return`<article class="bv-card" data-card="${esc(c.id)}" tabindex="0" ${drag} onclick="currentPerson=${_bvA(c.personRef)};navTo('todo')" title="Open ${esc(p.name)}’s week">${x}
+      <div class="bv-person-row">${_bvAv(c.personRef,'lg')}<div style="min-width:0"><div class="bv-card-title">${esc(p.name)}</div><div class="bv-muted">${esc(p.role||'Team member')}</div></div></div>
+      <div class="bv-prog-row"><div class="bv-prog ${cap>90?'over':cap>70?'warn':''}"><i style="width:${cap}%"></i></div><span class="bv-prog-val">${_bvH(h*60)} this week</span></div>
+      <div class="bv-card-foot"><span class="bv-chip">${open} open</span>${urg?`<span class="bv-chip due over">${urg} urgent</span>`:''}</div></article>`;
+  }
+  if(c.type==='client'){
+    const cj=jobs.filter(j=>j.company===c.clientRef&&j.status==='inplay');
+    const rows=cj.slice(0,4).map(j=>`<button class="bv-mini-job" draggable="false" onclick="event.stopPropagation();bvOpenJob(${_bvA(j.id)})"><span class="bv-jid">${esc(j.id)}</span><span class="bv-mj-name">${esc(j.name)}</span></button>`).join('');
+    return`<article class="bv-card" data-card="${esc(c.id)}" ${drag}>${x}
+      <div class="bv-card-head"><i class="ti ti-building"></i><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.clientRef)}</span><span class="bv-muted" style="font-weight:400">${cj.length} active</span></div>
+      ${rows?`<div class="bv-client-jobs">${rows}</div>`:'<div class="bv-muted">No active jobs</div>'}${cj.length>4?`<div class="bv-muted">+${cj.length-4} more</div>`:''}</article>`;
+  }
+  const j=_bvJob(c.jobRef);
+  const L=c.labels||[];
+  const lbls=L.slice(0,4).map(l=>`<span class="bv-lbl" style="--lc:${esc(labelColor(l))}">${esc(l)}</span>`).join('')+(L.length>4?`<span class="bv-lbl more">+${L.length-4}</span>`:'');
+  let jobLine='',prog='';
+  if(c.jobRef){
+    if(j){
+      const wf=j.workflowStatus||'live';
+      jobLine=`<div class="bv-card-job"><span class="bv-jid">${esc(j.id)}</span>${j.company?`<span class="bv-sep">·</span><span class="bv-co">${esc(j.company)}</span>`:''}${b.studio&&col.stage?'':`<span class="bv-sp"></span><span class="bv-stage s-${esc(wf)}">${esc(_bvStageLabel(wf))}</span>`}</div>`;
+      prog=_bvProgHTML(_bvStat(j));
+    }else jobLine=`<div class="bv-card-job missing"><i class="ti ti-link-off"></i> Job ${esc(c.jobRef)} isn’t loaded</div>`;
+  }
+  const due=_bvDue(c),ds=_bvDueState(due,col);
+  const dueChip=due?`<span class="bv-chip due ${ds}${col.done?' done':''}" title="${c.due?'Due':'Job due'} ${esc(fmtDate(due))}${ds==='over'?' — overdue':''}"><i class="ti ti-calendar-event"></i>${esc(_bvFmtD(due))}</span>`:'';
+  const ck=c.checklist||[],ckd=ck.filter(i=>i.done).length;
+  const ckChip=ck.length?`<span class="bv-chip${ckd===ck.length?' ok':''}" title="Checklist"><i class="ti ti-square-check"></i>${ckd}/${ck.length}</span>`:'';
+  const cm=(c.comments||[]).length;
+  const cmChip=cm?`<span class="bv-chip" title="Comments"><i class="ti ti-message-circle"></i>${cm}</span>`:'';
+  const dsc=c.desc&&c.desc.trim()?`<span class="bv-chip ico" title="Has notes"><i class="ti ti-align-left"></i></span>`:'';
+  const as=_bvAssignees(c);
+  const avs=as.slice(0,3).map(k=>_bvAv(k)).join('')+(as.length>3?`<span class="bv-av more">+${as.length-3}</span>`:'');
+  const foot=(dueChip||ckChip||cmChip||dsc||avs)?`<div class="bv-card-foot">${dueChip}${ckChip}${cmChip}${dsc}<span class="bv-sp"></span><span class="bv-avs">${avs}</span></div>`:'';
+  return`<article class="bv-card${col.done?' is-done':''}" data-card="${esc(c.id)}" tabindex="0" ${drag} onclick="bvOpenCard(${_bvA(c.id)})" onkeydown="if(event.key==='Enter'&&event.target===this)bvOpenCard(${_bvA(c.id)})">
+    ${lbls?`<div class="bv-card-lbls">${lbls}</div>`:''}${jobLine}
+    <div class="bv-card-title">${esc(_bvTitle(c))}</div>${prog}${foot}</article>`;
+}
+
+// ── Client live view (read-only, by workflow stage) ─────────────────────────
+function _bvRenderClientView(b,body){
+  const js=jobs.filter(j=>j.company===b.clientFilter&&j.status!=='archived');
+  const t=_localISO();
+  const cols=BV_STAGES.map(s=>{
+    const list=js.filter(j=>(j.workflowStatus||'live')===s.key);
+    const done=s.key==='completed'||s.key==='invoiced';
+    const cards=list.map(j=>{
+      const due=j.dueDate?String(j.dueDate).slice(0,10):'';const ds=due&&!done?(due<t?'over':due<=_bvAddDays(3)?'soon':''):'';
+      const L=(j.labels||[]).slice(0,3).map(l=>`<span class="bv-lbl" style="--lc:${esc(labelColor(l))}">${esc(l)}</span>`).join('');
+      const m=(j.members||[]).slice(0,3).map(k=>_bvAv(k)).join('');
+      return`<article class="bv-card${done?' is-done':''}" tabindex="0" onclick="bvOpenJob(${_bvA(j.id)})" onkeydown="if(event.key==='Enter')bvOpenJob(${_bvA(j.id)})">
+        ${L?`<div class="bv-card-lbls">${L}</div>`:''}<div class="bv-card-job"><span class="bv-jid">${esc(j.id)}</span></div>
+        <div class="bv-card-title">${esc(j.name)}</div>${_bvProgHTML(_bvStat(j))}
+        ${due||m?`<div class="bv-card-foot">${due?`<span class="bv-chip due ${ds}"><i class="ti ti-calendar-event"></i>${esc(_bvFmtD(due))}</span>`:''}<span class="bv-sp"></span><span class="bv-avs">${m}</span></div>`:''}</article>`;
+    }).join('');
+    return`<section class="bv-col" style="--col:var(--bv-${s.color})"><header class="bv-col-h" style="cursor:default"><span class="bv-dot"></span><span class="bv-col-name">${s.label}</span><span class="bv-col-count">${list.length}</span></header><div class="bv-col-list">${cards||'<div class="bv-col-empty">No jobs</div>'}</div><div style="height:8px"></div></section>`;
+  }).join('');
+  body.innerHTML=`<div class="bv-cols">${cols}</div>`;
+}
+
+// ── People live view ─────────────────────────────────────────────────────────
+// Task hours are numbers on the To Do store but strings ("2h") on some older tasks
+function _bvTaskH(t){const h=t&&t.hours;if(typeof h==='number')return h;try{return parseHrsInput(String(h||'0'))||0;}catch(e){return 0;}}
+function renderPeopleBoard(b,body){
+  if(!b.notes)b.notes={};
+  const lanes=_bvPeopleKeys().map(key=>{
+    const p=people[key];const wd=getWeekData(key,0);
+    let totalH=0,doneH=0,todoLeft=0;
+    [1,2,3,4,5].forEach(d=>(wd[d]||[]).forEach(t=>{const h=_bvTaskH(t);totalH+=h;if(t.done)doneH+=h;else todoLeft++;}));
+    const allDone=[1,2,3,4,5].flatMap(d=>(wd[d]||[]).filter(t=>t.done));
+    const billH=allDone.filter(t=>taskIsBillable(t)).reduce((s,t)=>s+_bvTaskH(t),0);
+    const billPct=doneH>0?Math.round(billH/doneH*100):0;
+    return`<div class="pboard-lane">
+      <div class="pboard-head">${_bvAv(key,'lg')}
+        <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:600;line-height:1.3;">${esc(p.name)}</div><div style="font-size:11.5px;color:var(--muted);">${esc(p.role||'Team member')}</div></div>
+        <button class="d-action sm" onclick="currentPerson=${_bvA(key)};navTo('todo')"><i class="ti ti-checklist"></i> Week view</button>
+      </div>
+      <div class="pboard-stats">
+        <div class="pboard-stat"><div class="ps-val">${formatHrs(totalH)||'0h'}</div><div class="ps-lbl">Planned</div></div>
+        <div class="pboard-stat"><div class="ps-val">${formatHrs(doneH)||'0h'}</div><div class="ps-lbl">Done</div></div>
+        <div class="pboard-stat"><div class="ps-val">${todoLeft}</div><div class="ps-lbl">Remaining</div></div>
+        <div class="pboard-stat"><div class="ps-val">${billPct}%</div><div class="ps-lbl">Billable</div></div>
+      </div>
+      <textarea class="pboard-note" rows="2" placeholder="Notes about ${esc(p.name)}…" onchange="savePboardNote(${_bvA(b.id)},${_bvA(key)},this.value)">${esc(b.notes[key]||'')}</textarea>
+    </div>`;
+  }).join('');
+  body.innerHTML=`<div class="bv-people"><div class="pboard-grid">${lanes}</div></div>`;
+}
+function savePboardNote(boardId,personKey,val){const b=_bvBoard(boardId);if(!b)return;if(!b.notes)b.notes={};b.notes[personKey]=val;_bvTouch(b);}
+
+// ── Board actions ────────────────────────────────────────────────────────────
+function bvRenameBoard(v){const b=_bvCur();if(!b)return;v=(v||'').trim();if(!v||v===b.name){const i=document.getElementById('bv-title');if(i)i.value=b.name;return;}b.name=v;_bvTouch(b);}
+function _bvCloneBoard(src){
+  const b=JSON.parse(JSON.stringify(src));const t=Date.now();
+  b.id=uid('b');b.name=src.name+' copy';b.archived=false;b.createdAt=t;b.updatedAt=t;b.openedAt=t;
+  (b.columns||[]).forEach(col=>{col.id=uid('c');(col.cards||[]).forEach(c=>{c.id=uid('k');(c.checklist||[]).forEach(i=>i.id=uid('ck'));(c.comments||[]).forEach(m=>m.id=uid('cm'));});});
+  return b;
+}
+function bvDuplicateBoard(id){
+  const src=_bvBoard(id);if(!src)return;const b=_bvCloneBoard(src);
+  boardsList.splice(boardsList.indexOf(src)+1,0,b);saveBoardsData();
+  toast(`Duplicated as “${esc(b.name)}”`,'success');
+  if(activeBoardId)openBoard(b.id);else renderBoardsList();
+}
+function bvArchiveBoard(id,flag){
+  const b=_bvBoard(id);if(!b)return;b.archived=flag!==false;_bvTouch(b);
+  if(b.archived){
+    if(activeBoardId===id)closeBoardDetail();else if(!activeBoardId)renderBoardsList();
+    toast(`Board archived · <a href="#" onclick="event.preventDefault();bvArchiveBoard(${_bvA(id)},false)" style="color:inherit;font-weight:600;">Undo</a>`,'info',5000);
+  }else{if(!activeBoardId)renderBoardsList();toast('Board restored','success');}
+}
+function deleteBoard(id){bvDeleteBoard(id);}
+function bvDeleteBoard(id){
+  const b=_bvBoard(id);if(!b)return;
+  ccConfirm(`Delete “${esc(b.name)}”? Its columns and cards are removed for good — archive it instead if you might want it back.`,()=>{
+    boardsList=boardsList.filter(x=>x.id!==id);saveBoardsData();
+    if(activeBoardId===id)closeBoardDetail();else renderBoardsList();
+    toast('Board deleted','info');
+  },'Delete board',true);
+}
+function bvBoardMenu(anchor,id,fromTile){
+  if(_bvPopToggle(anchor))return;
+  const b=_bvBoard(id);if(!b)return;
+  const nArch=(b.columns||[]).reduce((s,c)=>s+(c.cards||[]).filter(x=>x.archived).length,0);
+  const A=_bvA(id);
+  _bvPop(anchor,`${fromTile?_bvMI('ti-arrow-up-right','Open board',`openBoard(${A})`):_bvMI('ti-pencil','Rename board',`const i=document.getElementById('bv-title');if(i){i.focus();i.select();}`)}
+    ${_bvMI('ti-copy','Duplicate board',`bvDuplicateBoard(${A})`)}
+    ${!fromTile&&b.type==='custom'?_bvMI('ti-archive','Archived cards',`bvArchivedCards()`,'',nArch?String(nArch):''):''}
+    ${!fromTile&&b.studio?_bvMI('ti-refresh','Sync with jobs now',`bvStudioSyncNow()`):''}
+    <div class="bv-mi-sep"></div>
+    ${_bvMI('ti-archive','Archive board',`bvArchiveBoard(${A},true)`)}
+    ${_bvMI('ti-trash','Delete board',`bvDeleteBoard(${A})`,'danger')}`,fromTile?'':'right');
+}
+function bvStudioSyncNow(){const b=_bvCur();if(!b)return;_bvJM=null;const n=_bvStudioSync(b,false);_bvTouch(b);_bvRenderBody();toast(n?`Synced — ${n} change${n!==1?'s':''}`:'Already in sync with jobs','success');}
+
+// ── Columns ──────────────────────────────────────────────────────────────────
+function bvAddColumn(){
+  const b=_bvCur();if(!b||b.type!=='custom')return;
+  const used=new Set(b.columns.map(c=>c.color));
+  const col=_bvNewCol('New column',BV_COLORS.find(c=>!used.has(c))||'grey');
+  b.columns.push(col);_bvTouch(b);_bvRenderBody();
+  const wrap=document.getElementById('bv-cols');if(wrap)wrap.scrollLeft=wrap.scrollWidth;
+  bvRenameColInline(col.id,true);
+}
+function bvRenameColInline(colId,isNew){
+  const b=_bvCur();const col=_bvColOf(b,colId);const sec=_bvSec(colId);if(!col||!sec)return;
+  const span=sec.querySelector('.bv-col-name');const head=sec.querySelector('.bv-col-h');if(!span)return;
+  head.draggable=false;
+  const inp=document.createElement('input');inp.className='bv-col-name-inp';inp.value=col.name;inp.maxLength=60;
+  span.replaceWith(inp);inp.focus();inp.select();
+  let done=false;
+  const finish=save=>{if(done)return;done=true;const v=inp.value.trim();
+    if(save&&v&&v!==col.name){col.name=v;_bvTouch(b);}
+    _bvRenderBody();};
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();finish(true);}else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();finish(false);}});
+  inp.addEventListener('blur',()=>finish(true));
+}
+function bvColSet(colId,key,val){
+  const b=_bvCur();const col=_bvColOf(b,colId);if(!col)return;
+  if(key==='wip'){val=parseInt(val)||0;if(val>0)col.wip=val;else delete col.wip;}
+  else col[key]=val;
+  _bvTouch(b);_bvRenderBody();
+}
+function bvColMenu(anchor,colId){
+  if(_bvPopToggle(anchor))return;
+  const b=_bvCur();const col=_bvColOf(b,colId);if(!col)return;const A=_bvA(colId);
+  const n=(col.cards||[]).filter(c=>!c.archived).length;
+  _bvPop(anchor,`${_bvMI('ti-pencil','Rename',`bvRenameColInline(${A})`)}
+    ${_bvMI('ti-plus','Add card',`bvQuickAdd(${A},'top')`)}
+    ${_bvMI('ti-briefcase','Add jobs…',`bvBulkAddJobs(${A})`)}
+    <div class="bv-mi-sep"></div>
+    <div class="bv-pop-sec">Colour</div>
+    <div class="bv-swatches">${BV_COLORS.map(c=>`<button class="bv-sw${col.color===c?' on':''}" style="--col:var(--bv-${c})" title="${c}" onclick="bvColSet(${A},'color','${c}');_bvClosePop();"></button>`).join('')}</div>
+    <div class="bv-pop-row"><span style="flex:1">WIP limit</span><input type="number" min="0" class="form-inp" placeholder="None" value="${col.wip||''}" onchange="bvColSet(${A},'wip',this.value)" onkeydown="if(event.key==='Enter'){this.blur();_bvClosePop();}"></div>
+    <button class="bv-mi${col.done?' on':''}" onclick="bvColSet(${A},'done',${!col.done});_bvClosePop();"><i class="ti ti-circle-check"></i><span>Done column</span><i class="ti ti-check bv-mi-ck"></i></button>
+    ${col.stage?`<div class="bv-pop-empty"><i class="ti ti-refresh"></i> Linked to job stage “${esc(_bvStageLabel(col.stage))}”</div>`:''}
+    ${_bvMI('ti-layout-sidebar-left-collapse','Collapse column',`bvColSet(${A},'collapsed',true)`)}
+    <div class="bv-mi-sep"></div>
+    ${n?_bvMI('ti-archive',`Archive ${n} card${n!==1?'s':''}`,`bvArchiveColCards(${A})`):''}
+    ${_bvMI('ti-trash','Delete column',`bvDeleteCol(${A})`,'danger')}`);
+}
+function bvArchiveColCards(colId){
+  const b=_bvCur();const col=_bvColOf(b,colId);if(!col)return;
+  const live=col.cards.filter(c=>!c.archived);
+  ccConfirm(`Archive all ${live.length} card${live.length!==1?'s':''} in “${esc(col.name)}”? You can restore them from Archived cards.`,()=>{
+    const t=Date.now();live.forEach(c=>{c.archived=true;c.archivedAt=t;_bvLog(c,'Archived');});
+    _bvTouch(b);_bvRenderBody();toast(`${live.length} card${live.length!==1?'s':''} archived`,'info');
+  },'Archive');
+}
+function deleteCol(boardId,colId){bvDeleteCol(colId);}
+function bvDeleteCol(colId){
+  const b=_bvCur();const col=_bvColOf(b,colId);if(!col)return;
+  const go=()=>{
+    if(b.studio)(col.cards||[]).forEach(c=>{if(c.jobRef)(b.ignoreJobs=b.ignoreJobs||[]).push(String(c.jobRef));});
+    b.columns=b.columns.filter(c=>c.id!==colId);_bvTouch(b);_bvRenderBody();
+  };
+  const n=(col.cards||[]).length;
+  if(n)ccConfirm(`Delete “${esc(col.name)}” and its ${n} card${n!==1?'s':''}? This can’t be undone.`,go,'Delete column',true);else go();
+}
+
+// ── Cards: quick add, move, archive ─────────────────────────────────────────
+function bvQuickAdd(colId,pos){
+  _bvClosePop();
+  const b=_bvCur();if(!b||b.type!=='custom')return;
+  const col=_bvColOf(b,colId)||(b.columns.find(c=>!c.collapsed))||b.columns[0];if(!col)return;
+  colId=col.id;
+  if(col.collapsed){col.collapsed=false;_bvTouch(b);_bvRenderBody();}
+  document.querySelectorAll('#board-detail .bv-qa').forEach(el=>el._close?.());
+  const sec=_bvSec(colId);if(!sec)return;
+  const list=sec.querySelector('.bv-col-list');const ft=sec.querySelector('.bv-col-ft');
+  const form=document.createElement('div');form.className='bv-qa';
+  form.innerHTML=`<textarea rows="2" placeholder="Card title"></textarea><div class="bv-qa-ft"><button class="d-action primary sm">Add card</button><button class="d-action sm">Cancel</button><span class="bv-qa-hint">Enter to add · Esc to cancel</span></div>`;
+  sec.querySelector('.bv-col-empty')?.remove();
+  if(pos==='top'){list.prepend(form);list.scrollTop=0;}else{list.append(form);if(ft)ft.style.display='none';list.scrollTop=list.scrollHeight;}
+  const ta=form.querySelector('textarea');ta.focus();
+  let closed=false;
+  const close=()=>{if(closed)return;closed=true;form.remove();if(ft)ft.style.display='';if(!list.querySelector('.bv-card'))_bvRenderBody();};
+  form._close=close;
+  const commit=again=>{
+    const v=ta.value.replace(/\s+/g,' ').trim();if(!v){close();return;}
+    closed=true;_bvAddCard(colId,v,pos);
+    if(again)bvQuickAdd(colId,pos);
+  };
+  ta.addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();commit(true);}
+    else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}
+  });
+  ta.addEventListener('blur',()=>setTimeout(()=>{if(closed||!form.isConnected)return;if(ta.value.trim())commit(false);else close();},150));
+  const [addBtn,cancelBtn]=form.querySelectorAll('button');
+  addBtn.addEventListener('mousedown',e=>e.preventDefault());cancelBtn.addEventListener('mousedown',e=>e.preventDefault());
+  addBtn.addEventListener('click',()=>commit(true));cancelBtn.addEventListener('click',close);
+}
+function _bvAddCard(colId,title,pos,extra){
+  const b=_bvCur();const col=_bvColOf(b,colId);if(!col)return null;
+  const card=_bvNewCard({title,...(extra||{})});_bvLog(card,`Created in ${col.name}`);
+  if(pos==='top')col.cards.unshift(card);else col.cards.push(card);
+  _bvTouch(b,card);_bvRenderBody();
+  if(!_bvMatch(card,col,_bvF()))toast('Card added — it’s hidden by the current filters','info');
+  if(col.wip>0){const n=col.cards.filter(c=>!c.archived).length;if(n>col.wip)toast(`${esc(col.name)} is over its WIP limit (${n}/${col.wip})`,'warn');}
+  return card;
+}
+function _bvMoveCard(b,cardId,toColId,ref){
+  const loc=_bvLoc(b,cardId);const to=_bvColOf(b,toColId);if(!loc||!to)return false;
+  if(ref&&(ref.before===cardId||ref.after===cardId))return false;
+  const from=loc.col;from.cards.splice(loc.idx,1);
+  let idx=to.cards.length;
+  if(ref?.top)idx=0;
+  else if(ref?.before){const i=to.cards.findIndex(c=>c.id===ref.before);if(i>=0)idx=i;}
+  else if(ref?.after){const i=to.cards.findIndex(c=>c.id===ref.after);if(i>=0)idx=i+1;}
+  to.cards.splice(idx,0,loc.card);
+  if(from!==to){_bvLog(loc.card,`Moved from ${from.name} to ${to.name}`);_bvAfterMove(b,loc.card,to);}
+  _bvTouch(b,from!==to?loc.card:null);
+  return true;
+}
+function _bvAfterMove(b,card,to){
+  const n=to.cards.filter(c=>!c.archived).length;
+  if(to.wip>0&&n>to.wip)toast(`${esc(to.name)} is over its WIP limit (${n}/${to.wip})`,'warn');
+  // Studio pipeline only: a stage column move writes the job's workflow stage (local overlay via dbUpdateJob)
+  if(b.studio&&to.stage&&card.jobRef){
+    const j=jobs.find(x=>String(x.id)===String(card.jobRef));
+    if(j&&(j.workflowStatus||'live')!==to.stage){
+      dbUpdateJob(j.id,{workflowStatus:to.stage});
+      try{logActivity(j.id,MY_PERSON,'workflow_change',`Moved to <strong>${esc(_bvStageLabel(to.stage))}</strong> from board “${esc(b.name)}”`);}catch(e){}
+      _bvLog(card,`Job stage set to ${_bvStageLabel(to.stage)}`);
+      toast(`Job ${esc(j.id)} is now ${esc(_bvStageLabel(to.stage))}`,'success');
+    }
+  }
+}
+function bvArchiveCard(cardId){
+  const b=_bvCur();const loc=_bvLoc(b,cardId);if(!loc)return;
+  loc.card.archived=true;loc.card.archivedAt=Date.now();_bvLog(loc.card,'Archived');
+  _bvTouch(b,loc.card);if(_bvOpenCardId===cardId)bvCloseCard();_bvRenderBody();
+  toast(`Card archived · <a href="#" onclick="event.preventDefault();bvRestoreCard(${_bvA(cardId)})" style="color:inherit;font-weight:600;">Undo</a>`,'info',5000);
+}
+function bvRestoreCard(cardId){
+  const b=_bvCur();const loc=_bvLoc(b,cardId);if(!loc)return;
+  loc.card.archived=false;delete loc.card.archivedAt;_bvLog(loc.card,'Restored');
+  _bvTouch(b,loc.card);_bvRenderBody();
+  if(document.getElementById('bv-arch-modal'))bvArchivedCards();
+}
+function bvDeleteCard(cardId){
+  const b=_bvCur();const loc=_bvLoc(b,cardId);if(!loc)return;
+  ccConfirm(`Delete “${esc(_bvTitle(loc.card))}”? This can’t be undone.`,()=>{
+    const l=_bvLoc(b,cardId);if(!l)return;
+    if(b.studio&&l.card.jobRef)(b.ignoreJobs=b.ignoreJobs||[]).push(String(l.card.jobRef));
+    l.col.cards.splice(l.idx,1);_bvTouch(b);
+    if(_bvOpenCardId===cardId)bvCloseCard();_bvRenderBody();
+    if(document.getElementById('bv-arch-modal'))bvArchivedCards();
+  },'Delete card',true);
+}
+function bvDuplicateCard(cardId){
+  const b=_bvCur();const loc=_bvLoc(b,cardId);if(!loc)return;
+  const c=JSON.parse(JSON.stringify(loc.card));const t=Date.now();
+  c.id=uid('k');c.title=(_bvTitle(loc.card))+' (copy)';c.comments=[];c.activity=[];c.createdAt=t;c.updatedAt=t;
+  (c.checklist||[]).forEach(i=>i.id=uid('ck'));_bvLog(c,'Duplicated');
+  loc.col.cards.splice(loc.idx+1,0,c);_bvTouch(b,c);_bvRenderBody();bvOpenCard(c.id);
+}
+function bvArchivedCards(){
+  const b=_bvCur();if(!b)return;_bvClosePop();
+  document.getElementById('bv-arch-modal')?.remove();
+  const rows=[];(b.columns||[]).forEach(col=>(col.cards||[]).forEach(c=>{if(c.archived)rows.push({col,c});}));
+  rows.sort((x,y)=>(y.c.archivedAt||0)-(x.c.archivedAt||0));
+  const m=document.createElement('div');m.className='modal-bg on';m.id='bv-arch-modal';
+  m.innerHTML=`<div class="modal bv-modal" style="max-width:560px;">
+    <div class="modal-hd"><span class="modal-hd-title">Archived cards</span><button class="modal-x" onclick="document.getElementById('bv-arch-modal').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd">${rows.length?`<div class="bv-bulk-list">${rows.map(({col,c})=>`<div class="bv-bulk-row" style="cursor:default"><span class="bv-dot" style="--col:var(--bv-${esc(col.color||'grey')})"></span><span class="bv-bn">${esc(_bvTitle(c))}</span><span class="bv-bc">${esc(col.name)} · ${_bvAgo(c.archivedAt)}</span><button class="d-action sm" onclick="bvRestoreCard(${_bvA(c.id)})">Restore</button><button class="bv-ibtn sm" title="Delete for good" onclick="bvDeleteCard(${_bvA(c.id)})"><i class="ti ti-trash"></i></button></div>`).join('')}</div>`:'<div class="bv-pop-empty" style="text-align:center;padding:24px;">No archived cards on this board.</div>'}</div>
+    <div class="modal-ft"><button class="modal-cancel" onclick="document.getElementById('bv-arch-modal').remove()">Close</button></div></div>`;
+  m.addEventListener('mousedown',e=>{if(e.target===m)m.remove();});
+  document.body.appendChild(m);
+}
+function bvAddMenu(anchor,colId){
+  if(_bvPopToggle(anchor))return;const A=_bvA(colId);
+  _bvPop(anchor,`${_bvMI('ti-briefcase','Add jobs…',`bvBulkAddJobs(${A})`)}${_bvMI('ti-building','Client summary card',`bvPickClientCard(${A})`)}${_bvMI('ti-user','Person card',`bvPickPersonCard(${A})`)}`);
+}
+function bvPickClientCard(colId){
+  const sec=_bvSec(colId);const anchor=sec?.querySelector('.bv-col-ft .bv-ibtn');if(!anchor)return;
+  _bvPickerPop(anchor,'Search clients',q=>_bvClients().filter(c=>!q||c.toLowerCase().includes(q)).slice(0,60).map(c=>({html:`<i class="ti ti-building"></i><span>${esc(c)}</span>`,act:`_bvAddSummaryCard(${_bvA(colId)},'client',${_bvA(c)})`})));
+}
+function bvPickPersonCard(colId){
+  const sec=_bvSec(colId);const anchor=sec?.querySelector('.bv-col-ft .bv-ibtn');if(!anchor)return;
+  _bvPickerPop(anchor,'Search people',q=>_bvPeopleKeys().filter(k=>!q||(people[k].name||'').toLowerCase().includes(q)).map(k=>({html:`${_bvAv(k)}<span>${esc(people[k].name)}</span>`,act:`_bvAddSummaryCard(${_bvA(colId)},'person',${_bvA(k)})`})));
+}
+function _bvAddSummaryCard(colId,type,ref){
+  const b=_bvCur();const col=_bvColOf(b,colId);if(!col)return;
+  const card=_bvNewCard(type==='client'?{type:'client',clientRef:ref}:{type:'person',personRef:ref});
+  col.cards.push(card);_bvTouch(b,card);_bvClosePop();_bvRenderBody();
+}
+
+// ── Drag and drop (cards between/within columns; columns reorder) ───────────
+function bvCardDragStart(e,cardId){
+  const b=_bvCur();const loc=_bvLoc(b,cardId);if(!loc)return;
+  e.stopPropagation();_bvClosePop();
+  const el=e.currentTarget;
+  _bvDrag={kind:'card',id:cardId,h:el.offsetHeight};
+  e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',cardId);
+  setTimeout(()=>el.classList.add('is-dragging'),0);
+}
+function bvColDragStart(e,colId){
+  if(e.target.closest&&e.target.closest('button,input'))return;
+  _bvClosePop();_bvDrag={kind:'col',id:colId};
+  e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',colId);
+  const sec=_bvSec(colId);setTimeout(()=>sec?.classList.add('is-dragging'),0);
+}
+function bvDragOver(e,colId){
+  if(!_bvDrag)return;
+  e.preventDefault();e.dataTransfer.dropEffect='move';
+  const sec=e.currentTarget;
+  if(_bvDrag.kind==='col'){
+    document.querySelectorAll('#board-detail .bv-col.drop-before,#board-detail .bv-col.drop-after').forEach(el=>{if(el!==sec)el.classList.remove('drop-before','drop-after');});
+    if(colId===_bvDrag.id)return;
+    const r=sec.getBoundingClientRect();const after=e.clientX>r.left+r.width/2;
+    sec.classList.toggle('drop-after',after);sec.classList.toggle('drop-before',!after);
+    return;
+  }
+  document.querySelectorAll('#board-detail .bv-col.drop-hi').forEach(el=>{if(el!==sec)el.classList.remove('drop-hi');});
+  sec.classList.add('drop-hi');
+  const list=sec.querySelector('.bv-col-list');
+  let ph=document.getElementById('bv-ph');
+  if(!list){ph?.remove();return;}   // collapsed column: just append on drop
+  if(!ph){ph=document.createElement('div');ph.id='bv-ph';ph.className='bv-ph';}
+  ph.style.height=Math.min(_bvDrag.h||48,120)+'px';
+  let before=null;
+  for(const c of list.querySelectorAll('.bv-card:not(.is-dragging)')){const r=c.getBoundingClientRect();if(e.clientY<r.top+r.height/2){before=c;break;}}
+  if(before){if(ph.nextElementSibling!==before||ph.parentNode!==list)list.insertBefore(ph,before);}
+  else{const tail=list.querySelector('.bv-more,.bv-qa');if(ph.parentNode!==list||ph.nextElementSibling!==tail)list.insertBefore(ph,tail);}
+}
+function bvDragLeave(e){
+  const sec=e.currentTarget;if(e.relatedTarget&&sec.contains(e.relatedTarget))return;
+  sec.classList.remove('drop-hi','drop-before','drop-after');
+}
+function bvDrop(e,colId){
+  if(!_bvDrag)return;e.preventDefault();e.stopPropagation();
+  const b=_bvCur();if(!b){bvDragEnd();return;}
+  const d=_bvDrag;
+  if(d.kind==='col'){
+    const sec=e.currentTarget;const after=sec.classList.contains('drop-after');
+    if(d.id!==colId){
+      const from=b.columns.findIndex(c=>c.id===d.id);
+      if(from>=0){const[col]=b.columns.splice(from,1);let to=b.columns.findIndex(c=>c.id===colId);to=to<0?b.columns.length:to+(after?1:0);b.columns.splice(to,0,col);_bvTouch(b);}
+    }
+    bvDragEnd();_bvRenderBody();return;
+  }
+  let ref=null;
+  const ph=document.getElementById('bv-ph');
+  if(ph&&ph.parentNode&&ph.closest('.bv-col')?.dataset.col===colId){
+    let n=ph.nextElementSibling;while(n&&!n.classList.contains('bv-card'))n=n.nextElementSibling;
+    if(n)ref={before:n.dataset.card};
+    else{let p=ph.previousElementSibling;while(p&&!(p.classList.contains('bv-card')&&!p.classList.contains('is-dragging')))p=p.previousElementSibling;
+      ref=p?{after:p.dataset.card}:{top:true};
+      if(!p&&!ph.parentNode.querySelector('.bv-card:not(.is-dragging)'))ref=null;}
+  }
+  _bvMoveCard(b,d.id,colId,ref);
+  bvDragEnd();_bvRenderBody();
+}
+function bvDragEnd(){
+  document.getElementById('bv-ph')?.remove();
+  document.querySelectorAll('#board-detail .is-dragging,#board-detail .drop-hi,#board-detail .drop-before,#board-detail .drop-after').forEach(el=>el.classList.remove('is-dragging','drop-hi','drop-before','drop-after'));
+  setTimeout(()=>{_bvDrag=null;},0);
+}
+
+// ── Filters / sort UI ────────────────────────────────────────────────────────
+function bvSearch(v){_bvF().q=(v||'').trim();_bvRenderBody();}
+function bvClearFilters(){const f=_bvF();f.q='';f.people=[];f.labels=[];f.due='';const i=document.getElementById('bv-q');if(i)i.value='';_bvRenderBody();const p=document.getElementById('bv-pop');if(p&&p.dataset.kind==='filter')p.innerHTML=_bvFilterPopHTML();}
+function bvFToggle(kind,val){
+  const f=_bvF();
+  if(kind==='due')f.due=f.due===val?'':val;
+  else{const a=f[kind];const i=a.indexOf(val);if(i>=0)a.splice(i,1);else a.push(val);}
+  _bvRenderBody();
+  const p=document.getElementById('bv-pop');if(p&&p.dataset.kind==='filter'){const st=p.scrollTop;p.innerHTML=_bvFilterPopHTML();p.scrollTop=st;}
+}
+function _bvFilterPopHTML(){
+  const b=_bvCur();const f=_bvF();
+  const used=new Set();const usedP=new Set();
+  (b.columns||[]).forEach(col=>(col.cards||[]).forEach(c=>{if(c.archived)return;(c.labels||[]).forEach(l=>used.add(l));_bvAssignees(c).forEach(k=>usedP.add(k));}));
+  const ppl=[MY_PERSON,..._bvPeopleKeys().filter(k=>k!==MY_PERSON&&(usedP.has(k)||f.people.includes(k)))].filter(k=>people[k]);
+  const row=(on,inner,act)=>`<button class="bv-mi${on?' on':''}" onclick="${act}">${inner}<i class="ti ti-check bv-mi-ck"></i></button>`;
+  return`<div class="bv-pop-sec">Assignee</div>
+    ${ppl.map(k=>row(f.people.includes(k),`${_bvAv(k)}<span>${esc(k===MY_PERSON?'Me':people[k].name)}</span>`,`bvFToggle('people',${_bvA(k)})`)).join('')}
+    ${ppl.length<2?'<div class="bv-pop-empty">Assign cards to filter by teammates.</div>':''}
+    <div class="bv-mi-sep"></div><div class="bv-pop-sec">Label</div>
+    ${used.size?[...used].sort().map(l=>row(f.labels.includes(l),`<span class="bv-dot" style="--col:${esc(labelColor(l))}"></span><span>${esc(l)}</span>`,`bvFToggle('labels',${_bvA(l)})`)).join(''):'<div class="bv-pop-empty">No labels on this board yet.</div>'}
+    <div class="bv-mi-sep"></div><div class="bv-pop-sec">Due</div>
+    ${[['over','Overdue','ti-alert-circle'],['week','Due this week','ti-calendar-week'],['none','No due date','ti-calendar-off']].map(([k,l,i])=>row(f.due===k,`<i class="ti ${i}"></i><span>${l}</span>`,`bvFToggle('due','${k}')`)).join('')}
+    ${_bvFActive(f)?`<div class="bv-mi-sep"></div>${_bvMI('ti-filter-off','Clear filters','bvClearFilters()')}`:''}`;
+}
+function bvFilterMenu(anchor){if(_bvPopToggle(anchor))return;const p=_bvPop(anchor,_bvFilterPopHTML(),'right');p.dataset.kind='filter';}
+function bvSortMenu(anchor){
+  if(_bvPopToggle(anchor))return;const b=_bvCur();
+  _bvPop(anchor,`<div class="bv-pop-sec">Sort cards by</div>${Object.entries(BV_SORTS).map(([k,l])=>`<button class="bv-mi${(b.sort||'manual')===k?' on':''}" onclick="_bvClosePop();bvSetSort('${k}')"><span>${l}</span><i class="ti ti-check bv-mi-ck"></i></button>`).join('')}`,'right');
+}
+function bvSetSort(k){const b=_bvCur();if(!b)return;b.sort=k;_bvTouch(b);_bvRenderBody();}
+
+// ── Popover primitives ───────────────────────────────────────────────────────
+function _bvMI(icon,label,act,cls,right){return`<button class="bv-mi ${cls||''}" onclick="_bvClosePop();${act}"><i class="ti ${icon}"></i><span>${esc(label)}</span>${right?`<span class="bv-mi-r">${esc(right)}</span>`:''}</button>`;}
+function _bvPop(anchor,html,align){
+  _bvClosePop();
+  const p=document.createElement('div');p.className='bv-pop';p.id='bv-pop';p.innerHTML=html;
+  document.body.appendChild(p);p._anchor=anchor;
+  const r=anchor.getBoundingClientRect();const pw=p.offsetWidth,ph=p.offsetHeight;
+  let left=align==='right'?r.right-pw:r.left;left=Math.max(12,Math.min(left,window.innerWidth-pw-12));
+  let top=r.bottom+6;if(top+ph>window.innerHeight-12)top=Math.max(12,r.top-ph-6);
+  p.style.left=left+'px';p.style.top=top+'px';
+  setTimeout(()=>document.addEventListener('mousedown',_bvPopOutside,true),0);
+  return p;
+}
+function _bvPopOutside(e){
+  const p=document.getElementById('bv-pop');
+  if(!p){document.removeEventListener('mousedown',_bvPopOutside,true);return;}
+  if(p.contains(e.target)||(p._anchor&&p._anchor.contains(e.target)))return;
+  _bvClosePop();
+}
+function _bvClosePop(){document.getElementById('bv-pop')?.remove();document.removeEventListener('mousedown',_bvPopOutside,true);}
+function _bvPopToggle(anchor){const p=document.getElementById('bv-pop');if(p&&p._anchor===anchor){_bvClosePop();return true;}return false;}
+// Searchable picker: itemsFn(query) -> [{html,act,on?}]; keepOpen leaves it up after a pick
+function _bvPickerPop(anchor,placeholder,itemsFn,keepOpen){
+  const p=_bvPop(anchor,`<input class="form-inp bv-pop-inp" placeholder="${esc(placeholder)}"><div class="bv-pop-list"></div>`);
+  const inp=p.querySelector('input'),list=p.querySelector('.bv-pop-list');
+  const draw=()=>{const items=itemsFn(inp.value.trim().toLowerCase(),inp.value.trim());
+    list.innerHTML=items.length?items.map((it,i)=>`<button class="bv-mi${it.on?' on':''}${i===0&&inp.value?' kb':''}" onclick="${keepOpen?'':'_bvClosePop();'}${it.act}">${it.html}<i class="ti ti-check bv-mi-ck"></i></button>`).join(''):'<div class="bv-pop-empty">No matches</div>';};
+  p._redraw=draw;draw();
+  inp.addEventListener('input',draw);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();list.querySelector('.bv-mi')?.click();if(keepOpen){inp.select();}}if(e.key==='Escape'){e.preventDefault();e.stopPropagation();_bvClosePop();}});
+  setTimeout(()=>inp.focus(),20);
+  return p;
+}
+
+// ── Card drawer ──────────────────────────────────────────────────────────────
+function bvOpenCard(id){
+  if(_bvDrag)return;
+  const b=_bvCur();const loc=_bvLoc(b,id);if(!loc||loc.card.type!=='card')return;
+  _bvClosePop();_bvOpenCardId=id;
+  let bg=document.getElementById('bv-drawer');
+  if(!bg){
+    bg=document.createElement('div');bg.id='bv-drawer';bg.className='modal-bg bv-drawer-bg';bg.innerHTML='<aside class="bv-drawer"></aside>';
+    bg.addEventListener('mousedown',e=>{if(e.target===bg)bvCloseCard();});
+    document.body.appendChild(bg);
+  }
+  bg.classList.add('on');
+  _bvRenderDrawer(true);
+  document.querySelectorAll('#board-detail .bv-card.is-open').forEach(el=>el.classList.remove('is-open'));
+  document.querySelector(`#board-detail .bv-card[data-card="${CSS.escape(id)}"]`)?.classList.add('is-open');
+}
+function bvCloseCard(){
+  const bg=document.getElementById('bv-drawer');
+  if(bg){document.activeElement?.blur?.();bg.remove();}
+  _bvOpenCardId=null;
+  document.querySelectorAll('#board-detail .bv-card.is-open').forEach(el=>el.classList.remove('is-open'));
+}
+function _bvCtx(){const b=_bvCur();const loc=_bvLoc(b,_bvOpenCardId);return loc?{b,...loc}:null;}
+function _bvRenderDrawer(fresh){
+  const ctx=_bvCtx();const bg=document.getElementById('bv-drawer');
+  if(!ctx||!bg){bvCloseCard();return;}
+  _bvJM=new Map(jobs.map(j=>[String(j.id),j]));
+  const sc=bg.querySelector('.bv-dr-scroll');const st=sc?sc.scrollTop:0;
+  bg.querySelector('.bv-drawer').innerHTML=_bvDrawerHTML(ctx);
+  const ns=bg.querySelector('.bv-dr-scroll');if(ns&&!fresh)ns.scrollTop=st;
+  bg.querySelectorAll('textarea[data-grow]').forEach(_bvGrow);
+  if(fresh&&!ctx.card.title&&!ctx.card.jobRef)setTimeout(()=>bg.querySelector('.bv-dr-title')?.focus(),40);
+}
+function _bvGrow(el){el.style.height='auto';el.style.height=(el.scrollHeight+2)+'px';}
+function _bvDrawerHTML({b,col,card:c}){
+  const j=_bvJob(c.jobRef);const t=_localISO();
+  const colOpts=b.columns.map(x=>`<option value="${esc(x.id)}"${x===col?' selected':''}>${esc(x.name)}</option>`).join('');
+  // Assignees
+  const as=c.assignees||[];
+  const asHTML=as.map(k=>`<span class="bv-pchip">${_bvAv(k)}${esc(people[k]?.name||'Former member')}<button title="Remove" onclick="bvToggleAssignee(${_bvA(k)})"><i class="ti ti-x"></i></button></span>`).join('')
+    +`<button class="bv-addchip" onclick="bvAssigneeMenu(this)"><i class="ti ti-plus"></i>${as.length?'':' Assign'}</button>`
+    +(!as.length&&j&&(j.members||[]).length?`<span class="bv-muted">Job team: <span class="bv-avs">${j.members.slice(0,5).map(k=>_bvAv(k)).join('')}</span></span>`:'');
+  // Due
+  const due=c.due||'';const ds=_bvDueState(due,col);
+  let dueNote='';
+  if(due){const days=Math.round((_pDate(due)-_pDate(t))/864e5);dueNote=col.done?'Done':days<0?`${-days} day${days!==-1?'s':''} overdue`:days===0?'Due today':days===1?'Due tomorrow':`In ${days} days`;}
+  else if(j&&j.dueDate)dueNote=`Job due ${esc(_bvFmtD(String(j.dueDate).slice(0,10)))}`;
+  const dueHTML=`<input type="date" class="form-inp bv-date" value="${esc(due)}" onchange="bvSetDue(this.value)">${due?`<span class="bv-due-note ${ds}">${dueNote}</span><button class="bv-ibtn sm" title="Clear due date" onclick="bvSetDue('')"><i class="ti ti-x"></i></button>`:dueNote?`<span class="bv-due-note">${dueNote}</span>`:''}`;
+  // Labels
+  const lbHTML=(c.labels||[]).map(l=>`<span class="bv-lbl" style="--lc:${esc(labelColor(l))}">${esc(l)}<button title="Remove label" onclick="bvToggleLabel(${_bvA(l)})"><i class="ti ti-x"></i></button></span>`).join('')+`<button class="bv-addchip" onclick="bvLabelMenu(this)"><i class="ti ti-plus"></i>${(c.labels||[]).length?'':' Add label'}</button>`;
+  // Job
+  let jobHTML;
+  if(j){
+    const st=_bvStat(j);const wf=j.workflowStatus||'live';
+    const hp=st.pm?Math.min(100,Math.round(st.lm/st.pm*100)):0;const hcls=st.pm&&st.lm>st.pm?'over':hp>=85?'warn':'';
+    const bcls=st.bPct>100?'over':st.bPct>=85?'warn':'ok';
+    jobHTML=`<div class="bv-jobpanel">
+      <div class="bv-jp-top"><span class="bv-jid">${esc(j.id)}</span><span class="bv-stage s-${esc(wf)}">${esc(_bvStageLabel(wf))}</span><span class="bv-sp"></span><button class="bv-ibtn sm" title="Link a different job" onclick="bvJobMenu(this)"><i class="ti ti-switch-horizontal"></i></button><button class="bv-ibtn sm" title="Unlink job" onclick="bvLinkJob('')"><i class="ti ti-unlink"></i></button></div>
+      <div class="bv-jp-name">${esc(j.name)}</div>
+      <div class="bv-muted">${esc(j.company||'No client')}${j.dueDate?` · Due ${esc(_bvFmtD(String(j.dueDate).slice(0,10)))}`:''}</div>
+      <div class="bv-jp-stats"><span>Hours</span><div class="bv-prog ${hcls}"><i style="width:${hp}%"></i></div><span>${_bvH(st.lm)}${st.pm?' / '+_bvH(st.pm):''}</span>
+        <span>Budget</span><div class="bv-prog ${bcls}"><i style="width:${Math.min(100,st.bPct)}%"></i></div><span>${st.bPct}% used</span></div>
+      <div class="bv-jp-actions"><button class="d-action sm" onclick="bvOpenJob(${_bvA(j.id)})"><i class="ti ti-arrow-up-right"></i> Open job</button></div>
+    </div>`;
+  }else if(c.jobRef)jobHTML=`<span class="bv-muted">Job ${esc(c.jobRef)} isn’t loaded</span><button class="bv-addchip" onclick="bvLinkJob('')"><i class="ti ti-unlink"></i> Unlink</button>`;
+  else jobHTML=`<button class="bv-addchip" onclick="bvJobMenu(this)"><i class="ti ti-link"></i> Link a job</button>`;
+  // Checklist
+  const ck=c.checklist||[];const ckd=ck.filter(i=>i.done).length;const ckp=ck.length?Math.round(ckd/ck.length*100):0;
+  const ckHTML=`<div class="bv-sec"><div class="bv-sec-h">Checklist ${ck.length?`<span class="bv-muted">${ckd}/${ck.length}</span>`:''}</div>
+    ${ck.length?`<div class="bv-prog ${ckp===100?'ok':''}" style="height:5px"><i style="width:${ckp}%"></i></div>`:''}
+    <div class="bv-ck-list">${ck.map(i=>`<div class="bv-ck${i.done?' done':''}"><input type="checkbox"${i.done?' checked':''} onchange="bvCkToggle(${_bvA(i.id)})"><input class="bv-ck-txt" value="${esc(i.text)}" onchange="bvCkEdit(${_bvA(i.id)},this.value)" onkeydown="if(event.key==='Enter')this.blur()"><button class="bv-ibtn sm" title="Remove item" onclick="bvCkDel(${_bvA(i.id)})"><i class="ti ti-x"></i></button></div>`).join('')}</div>
+    <input class="form-inp bv-ck-add" id="bv-ck-add" placeholder="Add an item — Enter to add" onkeydown="if(event.key==='Enter'){event.preventDefault();bvCkAdd(this.value);}"></div>`;
+  // Activity + comments
+  const feed=[...(c.comments||[]).map(m=>({ts:m.ts,m})),...(c.activity||[]).map(a=>({ts:a.ts,a}))].sort((x,y)=>y.ts-x.ts);
+  const feedHTML=feed.map(x=>x.m
+    ?`<div class="bv-cm">${_bvAv(x.m.by,'')||'<span class="bv-av more">?</span>'}<div class="bv-cm-b"><div class="bv-cm-h"><b>${esc(people[x.m.by]?.name||'Someone')}</b><span>${_bvAgo(x.m.ts)}</span>${x.m.by===MY_PERSON?`<button class="bv-linkbtn" onclick="bvDelComment(${_bvA(x.m.id)})">Delete</button>`:''}</div><div class="bv-cm-t">${linkify(esc(x.m.text))}</div></div></div>`
+    :`<div class="bv-act"><i class="ti ti-point"></i><span>${esc(people[x.a.by]?.name?.split(' ')[0]||'Someone')} · ${esc(x.a.text)} · ${_bvAgo(x.a.ts)}</span></div>`).join('');
+  return`<div class="bv-dr-top">
+      <span class="bv-dr-col" style="--col:var(--bv-${esc(col.color||'grey')})"><span class="bv-dot"></span><select class="cc-select" title="Move to column" onchange="bvMoveOpenCard(this.value)">${colOpts}</select></span>
+      <span class="bv-sp"></span>
+      <button class="bv-ibtn" title="Duplicate card" onclick="bvDuplicateCard(${_bvA(c.id)})"><i class="ti ti-copy"></i></button>
+      <button class="bv-ibtn" title="Archive card" onclick="bvArchiveCard(${_bvA(c.id)})"><i class="ti ti-archive"></i></button>
+      <button class="bv-ibtn" title="Delete card" onclick="bvDeleteCard(${_bvA(c.id)})"><i class="ti ti-trash"></i></button>
+      <button class="bv-ibtn" title="Close (Esc)" onclick="bvCloseCard()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="bv-dr-scroll">
+      <textarea class="bv-dr-title" rows="1" data-grow placeholder="${esc(j?j.name:'Card title')}" oninput="_bvGrow(this)" onchange="bvSetField('title',this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">${esc(c.title||'')}</textarea>
+      <div class="bv-props">
+        <div class="bv-prop-k"><i class="ti ti-users"></i> Assignees</div><div class="bv-prop-v">${asHTML}</div>
+        <div class="bv-prop-k"><i class="ti ti-calendar-event"></i> Due date</div><div class="bv-prop-v">${dueHTML}</div>
+        <div class="bv-prop-k"><i class="ti ti-tag"></i> Labels</div><div class="bv-prop-v">${lbHTML}</div>
+        <div class="bv-prop-k"><i class="ti ti-briefcase"></i> Job</div><div class="bv-prop-v">${jobHTML}</div>
+      </div>
+      <div class="bv-sec"><div class="bv-sec-h">Description</div><textarea class="form-inp bv-desc" data-grow placeholder="Add notes, links, the brief…" oninput="_bvGrow(this)" onchange="bvSetField('desc',this.value)">${esc(c.desc||'')}</textarea></div>
+      ${ckHTML}
+      <div class="bv-sec"><div class="bv-sec-h">Activity</div>
+        <div class="bv-comment-box">${_bvAv(MY_PERSON)}<div class="bv-cb-in"><textarea class="form-inp" id="bv-cm-inp" rows="2" placeholder="Write a comment…" onkeydown="if(event.key==='Enter'&&(event.metaKey||event.ctrlKey)){event.preventDefault();bvAddComment();}"></textarea><button class="d-action primary sm" onclick="bvAddComment()">Comment</button></div></div>
+        <div class="bv-feed">${feedHTML||'<div class="bv-muted">No activity yet.</div>'}</div>
+        <div class="bv-muted" style="margin-top:14px;font-size:11px;">Created ${_bvAgo(c.createdAt)} · comments are saved in this browser only</div>
+      </div>
+    </div>`;
+}
+function _bvCardChanged(ctx,redrawDrawer){_bvTouch(ctx.b,ctx.card);_bvRenderBody();if(redrawDrawer)_bvRenderDrawer();}
+function bvSetField(k,v){
+  const ctx=_bvCtx();if(!ctx)return;
+  v=k==='title'?String(v||'').replace(/\s+/g,' ').trim():String(v||'');
+  if((ctx.card[k]||'')===v)return;
+  ctx.card[k]=v;if(k==='title')_bvLog(ctx.card,'Renamed');
+  _bvCardChanged(ctx,false);
+}
+function bvSetDue(v){
+  const ctx=_bvCtx();if(!ctx)return;
+  if(v)ctx.card.due=v;else delete ctx.card.due;
+  _bvLog(ctx.card,v?`Due date set to ${_bvFmtD(v)}`:'Due date cleared');
+  _bvCardChanged(ctx,true);
+}
+function bvMoveOpenCard(colId){
+  const ctx=_bvCtx();if(!ctx||ctx.col.id===colId)return;
+  _bvMoveCard(ctx.b,ctx.card.id,colId,{top:true});_bvRenderBody();_bvRenderDrawer();
+}
+function bvToggleAssignee(k){
+  const ctx=_bvCtx();if(!ctx)return;const a=ctx.card.assignees=ctx.card.assignees||[];
+  const i=a.indexOf(k);if(i>=0){a.splice(i,1);_bvLog(ctx.card,`Unassigned ${people[k]?.name||k}`);}else{a.push(k);_bvLog(ctx.card,`Assigned ${people[k]?.name||k}`);}
+  _bvCardChanged(ctx,true);
+}
+function bvAssigneeMenu(anchor){
+  if(_bvPopToggle(anchor))return;
+  _bvPickerPop(anchor,'Search people',q=>{const ctx=_bvCtx();const a=ctx?.card.assignees||[];
+    return _bvPeopleKeys().filter(k=>!q||(people[k].name||'').toLowerCase().includes(q)).sort((x,y)=>(a.includes(y)?1:0)-(a.includes(x)?1:0)).map(k=>({on:a.includes(k),html:`${_bvAv(k)}<span>${esc(people[k].name)}${k===MY_PERSON?' <span class="bv-muted">(me)</span>':''}</span>`,act:`bvToggleAssignee(${_bvA(k)});_bvRepop()`}));},true);
+}
+function _bvRepop(){
+  // The drawer re-rendered under an open picker: re-anchor it to the matching new button
+  const p=document.getElementById('bv-pop');if(!p)return;p._redraw?.();
+  const inp=p.querySelector('input');if(inp)inp.focus();
+}
+function bvToggleLabel(l){
+  const ctx=_bvCtx();if(!ctx)return;const a=ctx.card.labels=ctx.card.labels||[];
+  const i=a.indexOf(l);if(i>=0)a.splice(i,1);else{a.push(l);_bvLog(ctx.card,`Label “${l}” added`);}
+  _bvCardChanged(ctx,true);
+}
+function bvLabelMenu(anchor){
+  if(_bvPopToggle(anchor))return;
+  _bvPickerPop(anchor,'Find or create a label',(q,raw)=>{
+    const ctx=_bvCtx();const a=ctx?.card.labels||[];
+    const names=globalLabels.map(l=>l.name);
+    const list=names.filter(n=>!q||n.toLowerCase().includes(q)).sort((x,y)=>(a.includes(y)?1:0)-(a.includes(x)?1:0)||x.localeCompare(y)).slice(0,40)
+      .map(n=>({on:a.includes(n),html:`<span class="bv-dot" style="--col:${esc(labelColor(n))}"></span><span>${esc(n)}</span>`,act:`bvToggleLabel(${_bvA(n)});_bvRepop()`}));
+    if(q&&!names.some(n=>n.toLowerCase()===q))list.push({html:`<i class="ti ti-plus"></i><span>Create “${esc(raw)}”</span>`,act:`bvCreateLabel(${_bvA(raw)})`});
+    return list;
+  },true);
+}
+function bvCreateLabel(name){
+  const p=document.getElementById('bv-pop');const raw=p?.querySelector('input')?.value.trim()||name;
+  const l=addGlobalLabel(raw);if(!l)return;
+  const ctx=_bvCtx();if(ctx&&!(ctx.card.labels||[]).includes(l.name))bvToggleLabel(l.name);
+  if(p){const i=p.querySelector('input');if(i)i.value='';_bvRepop();}
+}
+function bvJobMenu(anchor){
+  if(_bvPopToggle(anchor))return;
+  const b=_bvCur();
+  _bvPickerPop(anchor,'Search jobs by name, number or client',q=>{
+    let pool=jobs.filter(j=>j.status!=='archived');
+    if(q)pool=jobs.filter(j=>`${j.id} ${j.name} ${j.company}`.toLowerCase().includes(q));
+    if(b?.client)pool=[...pool].sort((x,y)=>(y.company===b.client?1:0)-(x.company===b.client?1:0));
+    return pool.slice(0,50).map(j=>({html:`<span class="bv-jid">${esc(j.id)}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(j.name)}<br><span class="bv-muted" style="font-size:11px">${esc(j.company||'')}</span></span>`,act:`bvLinkJob(${_bvA(j.id)})`}));
+  });
+}
+function bvLinkJob(jobId){
+  const ctx=_bvCtx();if(!ctx)return;
+  if(jobId){ctx.card.jobRef=String(jobId);_bvLog(ctx.card,`Linked job ${jobId}`);}
+  else{
+    if(ctx.card.jobRef&&!ctx.card.title){const j=_bvJob(ctx.card.jobRef);if(j)ctx.card.title=j.name;}
+    if(ctx.b.studio&&ctx.card.jobRef)(ctx.b.ignoreJobs=ctx.b.ignoreJobs||[]).push(String(ctx.card.jobRef));
+    _bvLog(ctx.card,`Unlinked job ${ctx.card.jobRef}`);delete ctx.card.jobRef;
+  }
+  _bvCardChanged(ctx,true);
+}
+function bvOpenJob(id){bvCloseCard();_bvClosePop();openJobDetail(String(id));}
+function bvCkAdd(text){
+  const ctx=_bvCtx();if(!ctx)return;text=String(text||'').trim();if(!text)return;
+  (ctx.card.checklist=ctx.card.checklist||[]).push({id:uid('ck'),text,done:false});
+  _bvCardChanged(ctx,true);
+  setTimeout(()=>document.getElementById('bv-ck-add')?.focus(),0);
+}
+function bvCkToggle(id){
+  const ctx=_bvCtx();if(!ctx)return;const it=(ctx.card.checklist||[]).find(i=>i.id===id);if(!it)return;
+  it.done=!it.done;if(it.done)_bvLog(ctx.card,`Checked “${it.text}”`);
+  _bvCardChanged(ctx,true);
+}
+function bvCkEdit(id,v){const ctx=_bvCtx();if(!ctx)return;const it=(ctx.card.checklist||[]).find(i=>i.id===id);if(!it)return;v=String(v||'').trim();if(!v)return bvCkDel(id);it.text=v;_bvCardChanged(ctx,false);}
+function bvCkDel(id){const ctx=_bvCtx();if(!ctx)return;ctx.card.checklist=(ctx.card.checklist||[]).filter(i=>i.id!==id);_bvCardChanged(ctx,true);}
+function bvAddComment(){
+  const ctx=_bvCtx();const inp=document.getElementById('bv-cm-inp');if(!ctx||!inp)return;
+  const text=inp.value.trim();if(!text)return;
+  (ctx.card.comments=ctx.card.comments||[]).push({id:uid('cm'),by:MY_PERSON,text,ts:Date.now()});
+  _bvCardChanged(ctx,true);
+}
+function bvDelComment(id){const ctx=_bvCtx();if(!ctx)return;ctx.card.comments=(ctx.card.comments||[]).filter(m=>m.id!==id);_bvCardChanged(ctx,true);}
+
+// ── Bulk add jobs ────────────────────────────────────────────────────────────
+let _bvBulk=null;
+function bvBulkAddJobs(colId){
+  _bvClosePop();
+  const b=_bvCur();if(!b||b.type!=='custom'||!b.columns.length){toast('Add a column first','warn');return;}
+  _bvBulk={col:colId||(b.studio?'__stage':b.columns[0].id),client:b.client||'',stage:'active',q:'',sel:new Set()};
+  document.getElementById('bv-bulk')?.remove();
+  const clients=_bvClients();
+  const m=document.createElement('div');m.className='modal-bg on';m.id='bv-bulk';
+  m.innerHTML=`<div class="modal bv-modal" style="max-width:680px;">
+    <div class="modal-hd"><span class="modal-hd-title">Add jobs to “${esc(b.name)}”</span><button class="modal-x" onclick="document.getElementById('bv-bulk').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd">
+      <div class="bv-bulk-tools">
+        <select class="cc-select" onchange="_bvBulk.client=this.value;_bvBulkDraw()"><option value="">All clients</option>${clients.map(c=>`<option value="${esc(c)}"${c===_bvBulk.client?' selected':''}>${esc(c)}</option>`).join('')}</select>
+        <select class="cc-select" onchange="_bvBulk.stage=this.value;_bvBulkDraw()"><option value="active">Active jobs</option><option value="quote">Quotes</option><option value="live">Live</option><option value="completed">Completed</option><option value="invoiced">Invoiced</option><option value="all">All, incl. archived</option></select>
+        <label class="bv-search"><i class="ti ti-search"></i><input placeholder="Search jobs" oninput="_bvBulk.q=this.value.trim().toLowerCase();_bvBulkDraw()"></label>
+      </div>
+      <div class="bv-bulk-list" id="bv-bulk-list"></div>
+    </div>
+    <div class="modal-ft"><span class="bv-ft-left">Add to <select class="cc-select" onchange="_bvBulk.col=this.value">${b.studio?`<option value="__stage"${_bvBulk.col==='__stage'?' selected':''}>Matching stage column</option>`:''}${b.columns.map(c=>`<option value="${esc(c.id)}"${c.id===_bvBulk.col?' selected':''}>${esc(c.name)}</option>`).join('')}</select></span>
+      <button class="modal-cancel" onclick="document.getElementById('bv-bulk').remove()">Cancel</button><button class="modal-save" id="bv-bulk-go" onclick="bvBulkCommit()" disabled>Add jobs</button></div>
+  </div>`;
+  m.addEventListener('mousedown',e=>{if(e.target===m)m.remove();});
+  document.body.appendChild(m);_bvBulkDraw();
+  setTimeout(()=>m.querySelector('.bv-search input')?.focus(),60);
+}
+function _bvBulkPool(){
+  const s=_bvBulk;
+  return jobs.filter(j=>{
+    if(s.client&&j.company!==s.client)return false;
+    const wf=j.workflowStatus||'live';
+    if(s.stage==='active'&&j.status!=='inplay')return false;
+    if(s.stage!=='all'&&s.stage!=='active'&&(wf!==s.stage||j.status==='archived'))return false;
+    if(s.q&&!`${j.id} ${j.name} ${j.company}`.toLowerCase().includes(s.q))return false;
+    return true;
+  }).sort((a,b)=>(parseInt(b.id)||0)-(parseInt(a.id)||0));
+}
+function _bvBulkDraw(){
+  const b=_bvCur();const list=document.getElementById('bv-bulk-list');if(!b||!list)return;
+  const on=new Set();b.columns.forEach(c=>c.cards.forEach(x=>{if(x.jobRef&&!x.archived)on.add(String(x.jobRef));}));
+  const pool=_bvBulkPool();const shown=pool.slice(0,300);
+  const avail=shown.filter(j=>!on.has(String(j.id)));
+  const allOn=avail.length>0&&avail.every(j=>_bvBulk.sel.has(String(j.id)));
+  list.innerHTML=shown.length?`<label class="bv-bulk-head"><input type="checkbox"${allOn?' checked':''} onchange="_bvBulkAll(this.checked)"><span>${pool.length} job${pool.length!==1?'s':''}${pool.length>300?' — showing the newest 300, search to narrow':''}</span><span class="bv-sp"></span><span>${_bvBulk.sel.size} selected</span></label>`+shown.map(j=>{
+    const id=String(j.id),is=on.has(id),wf=j.workflowStatus||'live';
+    return`<label class="bv-bulk-row${is?' is-on':''}"><input type="checkbox"${is?' checked disabled':_bvBulk.sel.has(id)?' checked':''} onchange="_bvBulkPick(${_bvA(id)},this.checked)"><span class="bv-jid">${esc(id)}</span><span class="bv-bn">${esc(j.name)}</span><span class="bv-bc">${esc(j.company||'')}</span>${is?'<span class="bv-tag">On board</span>':`<span class="bv-stage s-${esc(wf)}">${esc(_bvStageLabel(wf))}</span>`}</label>`;
+  }).join(''):'<div class="bv-pop-empty" style="text-align:center;padding:26px;">No jobs match.</div>';
+  const go=document.getElementById('bv-bulk-go');if(go){const n=_bvBulk.sel.size;go.disabled=!n;go.textContent=n?`Add ${n} job${n!==1?'s':''}`:'Add jobs';}
+}
+function _bvBulkPick(id,on){if(on)_bvBulk.sel.add(id);else _bvBulk.sel.delete(id);_bvBulkDraw();}
+function _bvBulkAll(on){
+  const b=_bvCur();const onB=new Set();b.columns.forEach(c=>c.cards.forEach(x=>{if(x.jobRef&&!x.archived)onB.add(String(x.jobRef));}));
+  _bvBulkPool().slice(0,300).forEach(j=>{const id=String(j.id);if(onB.has(id))return;if(on)_bvBulk.sel.add(id);else _bvBulk.sel.delete(id);});_bvBulkDraw();
+}
+function bvBulkCommit(){
+  const b=_bvCur();if(!b||!_bvBulk||!_bvBulk.sel.size)return;
+  const byStage={};b.columns.forEach(c=>{if(c.stage&&!byStage[c.stage])byStage[c.stage]=c;});
+  let n=0;
+  _bvBulk.sel.forEach(id=>{
+    const j=jobs.find(x=>String(x.id)===id);if(!j)return;
+    const col=_bvBulk.col==='__stage'?(byStage[j.workflowStatus||'live']||b.columns[0]):(_bvColOf(b,_bvBulk.col)||b.columns[0]);
+    const card=_bvNewCard({jobRef:id});_bvLog(card,`Added from job ${id}`);col.cards.push(card);n++;
+    if(b.ignoreJobs)b.ignoreJobs=b.ignoreJobs.filter(x=>x!==id);
+  });
+  _bvTouch(b);document.getElementById('bv-bulk')?.remove();_bvRenderBody();
+  toast(`Added ${n} job${n!==1?'s':''}`,'success');
+}
+
+// ── Keyboard: N new card in the hovered column, / search, Esc closes popovers/drawer ──
+window.addEventListener('keydown',e=>{
+  const view=document.getElementById('view-boards');if(!view||view.classList.contains('hidden'))return;
+  if(e.key==='Escape'){
+    if(document.getElementById('bv-pop')){_bvClosePop();e.stopPropagation();return;}
+    const dr=document.getElementById('bv-drawer');
+    if(dr&&!document.querySelector('.modal-bg.on:not(#bv-drawer)')){bvCloseCard();e.stopPropagation();}
+    return;
+  }
+  const b=_bvCur();if(!b||b.type!=='custom')return;
+  const ae=document.activeElement;
+  if(ae&&(/INPUT|TEXTAREA|SELECT/.test(ae.tagName)||ae.isContentEditable))return;
+  if(e.metaKey||e.ctrlKey||e.altKey||document.querySelector('.modal-bg.on'))return;
+  if(e.key==='/'){e.preventDefault();e.stopPropagation();const q=document.getElementById('bv-q');if(q){q.focus();q.select();}}
+  else if(e.key==='n'||e.key==='N'){
+    e.preventDefault();e.stopPropagation();
+    const col=_bvColOf(b,_bvFocusCol)||b.columns.find(c=>!c.collapsed)||b.columns[0];
+    if(col)bvQuickAdd(col.id,'bottom');
+  }
+},true);
+</script>
 </body>
 </html>
