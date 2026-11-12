@@ -2058,6 +2058,21 @@ body{font-feature-settings:"cv11","ss01","ss03";}
 /* Modals: roomier header, softer entrance */
 .modal-hd,.tm-hd{padding:20px 24px 14px!important;}
 .modal-hd-title,.tm-hd-title{font-family:var(--display)!important;font-size:17px!important;font-weight:700!important;letter-spacing:-.02em!important;}
+
+/* ── Fixes (v2.42.2) ── */
+/* Task cards: long titles stop at two lines (full text is in the hover card) */
+.task-card .tc-title{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}
+/* Done/To Do summary boxes line up with the cards above the divider */
+.zone-bucket{margin:0!important;border-radius:8px!important;}
+/* No glass anywhere: one solid paper surface for sidebar and window, crisp edges */
+.sidebar,body.has-bg .sidebar,body.has-bg .sidebar:hover{background:var(--off)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border:1px solid var(--border)!important;}
+body.dark .sidebar,body.dark.has-bg .sidebar{background:var(--off)!important;}
+body.has-bg .main,body.dark.has-bg .main{background:var(--off)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
+body.has-bg #cc-splash{backdrop-filter:none!important;background:var(--off)!important;}
+.sched-strip{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:var(--white)!important;}
+/* Focus ('Today') selected state matches the other view options */
+.todo-view-toggle #focus-btn.on,.todo-view-toggle .tvt-btn.on{background:var(--off)!important;color:var(--ink)!important;border:none!important;}
+body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.on{background:var(--faint)!important;}
 </style>
 </head>
 <body>
@@ -3176,8 +3191,14 @@ const MY_PERSON=(()=>{try{return localStorage.getItem('cc_me')||'st_114330';}cat
 let currentPerson=MY_PERSON;
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:MY_PERSON==='st_114330'?'Ronan Heal':'…',initials:MY_PERSON==='st_114330'?'RH':'?',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true,_stub:true};
-const APP_VERSION='2.42.1';
+const APP_VERSION='2.42.2';
 const CHANGELOG=[
+  {version:'2.42.2',date:'12 Nov 2026',title:'Crisper and tidier',items:[
+    'No more frosted glass: the sidebar and window are solid and match each other, so everything looks crisp (a wallpaper still shows around the edges).',
+    'To Do cards cut long titles to two lines — hover for the full text. Done and To Do summary boxes line up with the cards above them.',
+    'Boards stay in the order you made them — opening one no longer moves it to the front.',
+    'The selected "Today" view now looks like the other view options.',
+  ]},
   {version:'2.42.1',date:'12 Nov 2026',title:'Platform invoices in the Invoices list',items:[
     'Invoices raised in the platform now appear in Jobs → Invoices alongside Streamtime\'s, tagged "Platform" — with their status (Draft, Sent, Overdue, Paid), dates and amount, and they count in the issued and paid totals and DSO. Click one to open it.',
     'A job invoiced in the platform no longer shows up under Uninvoiced work.',
@@ -15770,7 +15791,7 @@ function renderBoardsList(){
   if(!landing)return;landing.style.display='';if(det)det.style.display='none';
   _bvJM=new Map(jobs.map(j=>[String(j.id),j]));
   const live=boardsList.filter(b=>!b.archived),arch=boardsList.filter(b=>b.archived);
-  const recent=[...live].sort((a,b)=>Math.max(b.openedAt||0,b.updatedAt||0)-Math.max(a.openedAt||0,a.updatedAt||0));
+  const recent=[...live].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); // stable: opening a board doesn't move it
   const tpls=Object.entries(BV_TEMPLATES).map(([k,t])=>`<button class="bv-tpl" onclick="bvOpenCreate('${k}')"><span class="bv-tpl-ico" style="--col:var(--bv-${t.color})"><i class="ti ${t.icon}"></i></span><span><span class="bv-tpl-name">${esc(t.name)}</span><span class="bv-tpl-desc">${esc(t.desc)}</span></span></button>`).join('');
   const boardsHTML=live.length
     ?`<div class="bv-sec-lbl">Your boards <span class="bv-muted">${live.length}</span></div><div class="bv-grid" id="bv-grid">${recent.map(_bvTileHTML).join('')}</div><div class="bv-pop-empty" id="bv-grid-none" style="display:none;">No boards match that search.</div>`
