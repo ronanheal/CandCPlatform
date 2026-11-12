@@ -16794,5 +16794,617 @@ window.addEventListener('keydown',e=>{
   }
 },true);
 </script>
+<style id="feat-e-styles">
+/* ── feat-e: Items list, WIP report, contact import, soft bookings ── */
+.fe-wrap{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;}
+.fe-list{flex:1;overflow:auto;padding:0 28px 28px;}
+.fe-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-card);overflow:auto;margin-top:16px;}
+.fe-card .inv-table{min-width:980px;}
+#rp-wip .inv-td,#rp-wip .inv-th,#jt-items .inv-td,#jt-items .inv-th{padding-left:10px;padding-right:10px;}
+#rp-wip .inv-td,#jt-items .inv-td{font-size:12.5px;}
+#rp-wip .inv-td:first-child,#rp-wip .inv-th:first-child,#jt-items .inv-td:first-child,#jt-items .inv-th:first-child{padding-left:16px;}
+.fe-num{text-align:right!important;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.fe-muted{color:var(--muted);font-size:12px;}
+.fe-tr-click{cursor:pointer;}
+.fe-tfoot td{font-weight:600;background:var(--off);border-top:2px solid var(--border);position:sticky;bottom:0;}
+.fe-pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:var(--r-ctl);background:var(--faint);color:var(--muted);white-space:nowrap;}
+.fe-pill.ok{background:var(--ok-bg);color:var(--ok-ink);}
+.fe-pill.warn{background:var(--warn-bg);color:var(--warn-ink);}
+.fe-pill.danger{background:var(--danger-bg);color:var(--danger-ink);}
+.fe-bar{display:inline-block;width:34px;height:5px;border-radius:3px;background:var(--faint);vertical-align:middle;margin-left:6px;overflow:hidden;}
+.fe-bar>i{display:block;height:100%;background:var(--ok);}
+.fe-bar>i.warn{background:var(--warn);}
+.fe-bar>i.over{background:var(--red);}
+.fe-neg{color:var(--danger-ink);}
+.fe-note{font-size:12px;color:var(--muted);margin-top:12px;line-height:1.55;}
+.fe-check{display:inline-flex;align-items:center;gap:6px;cursor:pointer;}
+.fe-check input{accent-color:var(--red);}
+.fe-more{padding:12px 16px;font-size:12px;color:var(--muted);}
+/* contact import modal */
+.fe-imp-modal{width:min(860px,94vw)!important;max-width:none!important;}
+.fe-imp-drop{border:1.5px dashed var(--border);border-radius:var(--r-card);padding:18px;text-align:center;color:var(--muted);font-size:13px;}
+.fe-imp-drop.on{border-color:var(--ink);color:var(--ink);}
+.fe-imp-map{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin:6px 0 12px;}
+.fe-imp-map label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px;}
+.fe-imp-map select{width:100%;}
+.fe-imp-prev{max-height:280px;overflow:auto;border:1px solid var(--border);border-radius:var(--r-ctl);}
+.fe-imp-prev .inv-td{padding:7px 10px;font-size:12px;}
+.fe-imp-prev .inv-th{padding:7px 10px;}
+.fe-imp-sum{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px;font-size:12px;}
+/* soft bookings (tentative To Dos) */
+.task-card.fe-soft{border:1.5px dashed var(--muted)!important;background:repeating-linear-gradient(135deg,transparent 0 7px,color-mix(in srgb,var(--faint) 70%,transparent) 7px 14px),var(--white)!important;box-shadow:none!important;}
+.task-card.fe-soft .tc-title{opacity:.85;}
+.fe-soft-tag{display:inline-block;font-size:9.5px;font-weight:600;letter-spacing:.03em;padding:0 5px;border-radius:4px;border:1px dashed var(--muted);color:var(--muted);margin-right:3px;vertical-align:1px;line-height:14px;}
+@media (max-width:700px){.fe-list{padding:0 12px 20px;}}
+</style>
+<script id="feat-e-script">
+// ═══════════════════════════════════════════════════════════════════════════════
+// feat-e — Streamtime gap builds (see docs/review/2026-11-streamtime-gaps-v2.md §5)
+//   1. Jobs → Items: every job item across live jobs, filter/sort, totals, CSV
+//   2. Reporting → WIP: WIP vs invoiced, projected revenue/cost/margin per live job
+//   3. Clients → Import CSV: column mapping, preview, dedupe, into clientsData
+//   4. Soft bookings: To Do cards marked "tentative" (right-click), dashed card
+// Everything is added by wrapping existing functions; no markup above is edited.
+// ═══════════════════════════════════════════════════════════════════════════════
+(function(){
+const FE={};window._fe=FE;
+const _h=m=>{m=Math.round(m||0);if(!m)return'0h';const h=Math.floor(m/60),r=m%60;return h&&r?`${h}h ${r}m`:h?`${h}h`:`${r}m`;};
+const _$=n=>{n=Math.round(+n||0);return(n<0?'-$':'$')+Math.abs(n).toLocaleString();};
+const _csvCell=v=>typeof _ccCsvCell==='function'?_ccCsvCell(v):(/[",\n\r]/.test(String(v??''))?'"'+String(v??'').replace(/"/g,'""')+'"':String(v??''));
+const _dl=(name,text)=>{if(typeof _ccDownload==='function')return _ccDownload(name,text);const b=new Blob([text],{type:'text/csv;charset=utf-8'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);};
+const _load=(k,f)=>{try{const v=JSON.parse(localStorage.getItem(k)||'null');return v==null?f:v;}catch(e){return f;}};
+const _save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){toast('Couldn\'t save in this browser — storage is full or blocked','warn');return false;}};
+const _personName=k=>people?.[k]?.name||k;
+const _today=()=>_localISO();
+const _jsq=s=>String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+
+// ─────────────────────────────── 1 · Items list ───────────────────────────────
+const ITEMS_ST_KEY='cc_fe_items_state';
+FE.items=Object.assign({q:'',scope:'live',status:'open',person:'all',client:'all',over:false,overdue:false,sort:'due',dir:1},_load(ITEMS_ST_KEY,{}));
+FE.items.q='';
+function _itemsSaveState(){const s={...FE.items};delete s.q;_save(ITEMS_ST_KEY,s);}
+
+// Native items: logged minutes come from done To Do tasks (same rule computeJobStats uses),
+// keyed by itemId, falling back to job + item name. Also collects who worked on what.
+function _nativeItemLog(){
+  const byId={},byName={},whoId={},whoName={};
+  Object.keys(todoData||{}).forEach(pk=>{
+    const pd=todoData[pk];if(!pd)return;
+    Object.keys(pd).forEach(wk=>{const wd=pd[wk];if(!wd)return;
+      [1,2,3,4,5].forEach(d=>(wd[d]||[]).forEach(t=>{
+        const jid=t.jobId||(t.job||'').match(/^(\d+)/)?.[1];if(!jid)return;
+        const nk=jid+'|'+(t.item||'').trim().toLowerCase();
+        if(t.itemId){(whoId[t.itemId]=whoId[t.itemId]||new Set()).add(pk);}
+        (whoName[nk]=whoName[nk]||new Set()).add(pk);
+        if(!t.done)return;
+        const m=Math.round((t.hours||0)*60);
+        if(t.itemId)byId[t.itemId]=(byId[t.itemId]||0)+m;
+        else byName[nk]=(byName[nk]||0)+m;
+      }));
+    });
+  });
+  return{byId,byName,whoId,whoName};
+}
+function _itemsScopeJobs(scope){
+  return (jobs||[]).filter(j=>{
+    if(scope==='all')return j.status!=='archived';
+    if(j.status!=='inplay')return false;
+    return scope==='paused'?true:!j.paused;
+  });
+}
+FE.itemRows=function(scope){
+  const asg={};
+  (stJobAssignments||[]).forEach(a=>{if(a.jobItemId&&a.userId)(asg[a.jobItemId]=asg[a.jobItemId]||[]).push(a);});
+  const nat=_nativeItemLog();
+  const today=_today();
+  const rows=[];
+  _itemsScopeJobs(scope||FE.items.scope).forEach(j=>{
+    (j.phases||[]).forEach(ph=>(ph.items||[]).forEach(it=>{
+      let planM,logM,planSell,usedSell,who=[];
+      const rate=_num(it.rate);
+      if(it._stId!=null&&j._streamtime){
+        planM=it._planMins||0;logM=it._logMins||0;
+        planSell=_num(it.total)||Math.round(planM/60*rate);
+        usedSell=_num(it.used)||Math.round(logM/60*rate);
+        who=(asg[it._stId]||[]).map(a=>{const u=stUsersById[a.userId];return u?{key:u.key,name:u.name}:null;}).filter(Boolean);
+      }else{
+        const hrs=parseHrsInput(it.hours||'0h')||0;planM=Math.round(hrs*60);
+        const nk=j.id+'|'+(it.name||'').trim().toLowerCase();
+        logM=(nat.byId[it.id]||0)+(nat.byName[nk]||0);
+        const r=rate||_defCostRate();
+        planSell=_num(it.total)||(hrs>0&&it.rate!=='—'?Math.round(hrs*r):0);
+        usedSell=Math.round(logM/60*r);
+        const ks=new Set([...(nat.whoId[it.id]||[]),...(nat.whoName[nk]||[])]);
+        who=[...ks].map(k=>({key:k,name:_personName(k)}));
+      }
+      const status=it.status||'open';
+      const due=it.dueDate||ph.dueDate||null;
+      rows.push({job:j,phase:ph,item:it,jobId:j.id,jobName:j.name||'',client:j.company||'',phaseName:ph.name||'',itemName:it.name||'Item',
+        who,whoTxt:who.map(w=>w.name).join(', '),planM,logM,planSell,usedSell,pct:planM>0?Math.round(logM/planM*100):(logM>0?999:0),
+        status,due,overdue:!!(due&&due<today&&status!=='complete'),over:planM>0?logM>planM:logM>0&&planSell>0&&usedSell>planSell});
+    }));
+  });
+  return rows;
+};
+const _ITEM_STATUS={open:['Not started',''],inprogress:['In progress','warn'],paused:['Paused',''],complete:['Complete','ok']};
+function _itemsFiltered(){
+  const s=FE.items;const q=s.q.trim().toLowerCase();
+  let rows=FE.itemRows(s.scope);
+  if(s.status==='open')rows=rows.filter(r=>r.status!=='complete');
+  else if(s.status!=='all')rows=rows.filter(r=>r.status===s.status);
+  if(s.client!=='all')rows=rows.filter(r=>r.client===s.client);
+  if(s.person!=='all')rows=rows.filter(r=>r.who.some(w=>w.key===s.person));
+  if(s.over)rows=rows.filter(r=>r.over);
+  if(s.overdue)rows=rows.filter(r=>r.overdue);
+  if(q)rows=rows.filter(r=>[r.jobId,r.jobName,r.client,r.phaseName,r.itemName,r.whoTxt].join(' ').toLowerCase().includes(q));
+  const key={job:r=>r.jobId.padStart(8,'0')+r.phaseName+r.itemName,client:r=>r.client.toLowerCase(),item:r=>r.itemName.toLowerCase(),phase:r=>r.phaseName.toLowerCase(),
+    who:r=>r.whoTxt.toLowerCase()||'~',plan:r=>r.planM,log:r=>r.logM,planSell:r=>r.planSell,usedSell:r=>r.usedSell,pct:r=>r.pct,status:r=>r.status,due:r=>r.due||'9999'}[s.sort]||(r=>r.due||'9999');
+  rows.sort((a,b)=>{const av=key(a),bv=key(b);return av<bv?-s.dir:av>bv?s.dir:0;});
+  return rows;
+}
+FE.itemsSort=function(col){const s=FE.items;if(s.sort===col)s.dir=-s.dir;else{s.sort=col;s.dir=['plan','log','planSell','usedSell','pct'].includes(col)?-1:1;}_itemsSaveState();FE.renderItems();};
+FE.itemsSet=function(k,v){FE.items[k]=v;if(k!=='q')_itemsSaveState();FE.renderItems(k==='q');};
+FE.renderItems=function(keepFocus){
+  const panel=document.getElementById('jt-items');if(!panel)return;
+  const s=FE.items;
+  // Toolbar is built once, then only the list re-renders (keeps search focus while typing).
+  if(!panel.dataset.built){
+    panel.innerHTML=`<div class="fe-wrap">
+      <div style="padding:20px 28px 4px;"><div class="view-title">Items</div><div class="view-sub">Every job item across live jobs — planned vs logged</div></div>
+      <div class="qinv-toolbar">
+        <div class="jobs-search"><i class="ti ti-search"></i><input id="fe-items-q" placeholder="Search job, item, client, person…" oninput="_fe.itemsSet('q',this.value)"/></div>
+        <select class="cc-select" id="fe-items-scope" onchange="_fe.itemsSet('scope',this.value)"><option value="live">Live jobs</option><option value="paused">Live + paused jobs</option><option value="all">All non-archived jobs</option></select>
+        <select class="cc-select" id="fe-items-status" onchange="_fe.itemsSet('status',this.value)"><option value="open">Not complete</option><option value="all">All statuses</option><option value="inprogress">In progress</option><option value="paused">Paused</option><option value="complete">Complete</option></select>
+        <select class="cc-select" id="fe-items-client" onchange="_fe.itemsSet('client',this.value)"></select>
+        <select class="cc-select" id="fe-items-person" onchange="_fe.itemsSet('person',this.value)"></select>
+        <label class="filter-btn fe-check"><input type="checkbox" id="fe-items-over" onchange="_fe.itemsSet('over',this.checked)"> Over plan</label>
+        <label class="filter-btn fe-check"><input type="checkbox" id="fe-items-overdue" onchange="_fe.itemsSet('overdue',this.checked)"> Overdue</label>
+        <button class="d-action" onclick="_fe.itemsCSV()"><i class="ti ti-download" style="font-size:12px"></i> Export CSV</button>
+        <span class="jobs-count" id="fe-items-count"></span>
+      </div>
+      <div class="fe-list" id="fe-items-list"></div>
+    </div>`;
+    panel.dataset.built='1';
+  }
+  // Refresh option lists (jobs/people can change after a sync)
+  const scopeJobs=_itemsScopeJobs(s.scope);
+  const cSel=document.getElementById('fe-items-client');
+  const clients=[...new Set(scopeJobs.map(j=>j.company).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  if(s.client!=='all'&&!clients.includes(s.client))s.client='all';
+  cSel.innerHTML='<option value="all">All clients</option>'+clients.map(c=>`<option value="${esc(c)}"${c===s.client?' selected':''}>${esc(c)}</option>`).join('');
+  const pSel=document.getElementById('fe-items-person');
+  const pk=Object.keys(people||{}).filter(k=>!people[k]._archived).sort((a,b)=>_personName(a).localeCompare(_personName(b)));
+  pSel.innerHTML='<option value="all">All people</option>'+pk.map(k=>`<option value="${esc(k)}"${k===s.person?' selected':''}>${esc(_personName(k))}</option>`).join('');
+  document.getElementById('fe-items-scope').value=s.scope;
+  document.getElementById('fe-items-status').value=s.status;
+  document.getElementById('fe-items-over').checked=!!s.over;
+  document.getElementById('fe-items-overdue').checked=!!s.overdue;
+  const qi=document.getElementById('fe-items-q');if(!keepFocus&&qi.value!==s.q)qi.value=s.q;
+
+  const rows=_itemsFiltered();
+  const list=document.getElementById('fe-items-list');
+  const nJobs=new Set(rows.map(r=>r.jobId)).size;
+  document.getElementById('fe-items-count').textContent=`${rows.length.toLocaleString()} item${rows.length!==1?'s':''} · ${nJobs} job${nJobs!==1?'s':''}`;
+  if(!rows.length){
+    list.innerHTML=emptyStateHTML('ti-list-details',(jobs||[]).length?'No items match':'No jobs loaded yet',(jobs||[]).length?'Try another filter or include paused jobs.':'Items appear once Streamtime data has loaded.','','');
+    return;
+  }
+  const tot=rows.reduce((a,r)=>{a.planM+=r.planM;a.logM+=r.logM;a.planSell+=r.planSell;a.usedSell+=r.usedSell;return a;},{planM:0,logM:0,planSell:0,usedSell:0});
+  const arrow=c=>s.sort===c?` <i class="ti ti-chevron-${s.dir===1?'up':'down'}" style="font-size:10px;"></i>`:'';
+  const th=(c,l,num)=>`<th class="inv-th${num?' fe-num':''}" style="cursor:pointer;user-select:none;" onclick="_fe.itemsSort('${c}')">${l}${arrow(c)}</th>`;
+  const CAP=600;
+  const shown=rows.slice(0,CAP);
+  const bar=r=>{if(!r.planM)return'';const p=Math.min(100,r.pct);return`<span class="fe-bar"><i class="${r.pct>100?'over':r.pct>=80?'warn':''}" style="width:${p}%"></i></span>`;};
+  list.innerHTML=`<div class="fe-card"><table class="inv-table"><thead><tr>
+      ${th('job','Job')}${th('client','Client')}${th('phase','Phase')}${th('item','Item')}${th('who','Assigned')}
+      ${th('plan','Planned',1)}${th('log','Logged',1)}${th('pct','Used',1)}${th('planSell','Planned sell',1)}${th('usedSell','Used sell',1)}${th('status','Status')}${th('due','Due')}
+    </tr></thead><tbody>${shown.map(r=>{
+      const st=_ITEM_STATUS[r.status]||[r.status,''];
+      return`<tr class="inv-tr fe-tr-click" onclick="openJobDetail('${_jsq(r.jobId)}')">
+        <td class="inv-td" style="white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis;" title="${esc(r.jobName)}"><span class="fe-muted" style="margin-right:5px;">${esc(r.jobId)}</span>${esc(r.jobName)}</td>
+        <td class="inv-td fe-muted" style="max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(r.client)}">${esc(r.client||'—')}</td>
+        <td class="inv-td fe-muted" style="max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(r.phaseName)}</td>
+        <td class="inv-td" style="font-weight:500;">${esc(r.itemName)}</td>
+        <td class="inv-td fe-muted" style="max-width:140px;font-size:11.5px;">${r.who.length?esc(r.whoTxt):'—'}</td>
+        <td class="inv-td fe-num">${r.planM?_h(r.planM):'—'}</td>
+        <td class="inv-td fe-num${r.over?' fe-neg':''}">${_h(r.logM)}</td>
+        <td class="inv-td fe-num">${r.planM?(r.pct+'%'):'—'}${bar(r)}</td>
+        <td class="inv-td fe-num">${r.planSell?_$(r.planSell):'—'}</td>
+        <td class="inv-td fe-num">${_$(r.usedSell)}</td>
+        <td class="inv-td"><span class="fe-pill ${st[1]}">${esc(st[0])}</span></td>
+        <td class="inv-td" style="white-space:nowrap;font-size:12px;${r.overdue?'color:var(--danger-ink);font-weight:500;':'color:var(--muted);'}">${r.due?fmtDate(r.due):'—'}</td>
+      </tr>`;}).join('')}</tbody>
+      <tfoot><tr class="fe-tfoot"><td class="inv-td" colspan="5">Total · ${rows.length.toLocaleString()} items</td>
+        <td class="inv-td fe-num">${_h(tot.planM)}</td><td class="inv-td fe-num">${_h(tot.logM)}</td>
+        <td class="inv-td fe-num">${tot.planM?Math.round(tot.logM/tot.planM*100)+'%':'—'}</td>
+        <td class="inv-td fe-num">${_$(tot.planSell)}</td><td class="inv-td fe-num">${_$(tot.usedSell)}</td><td class="inv-td" colspan="2"></td></tr></tfoot>
+    </table>${rows.length>CAP?`<div class="fe-more">Showing the first ${CAP} of ${rows.length.toLocaleString()} items — narrow the filters, or export CSV for all of them. Totals cover every matching item.</div>`:''}</div>${_itemsGapNote(rows)}`;
+};
+// Streamtime's job-level logged total includes time on items since removed from the plan,
+// so item sums can sit a little under the job figure. Say so rather than look wrong.
+function _itemsGapNote(rows){
+  const s=FE.items;if(s.status!=='all'||s.person!=='all'||s.over||s.overdue||s.q.trim())return'';
+  const js=new Map();rows.forEach(r=>js.set(r.jobId,r.job));
+  let jobLog=0,itemLog=0;js.forEach(j=>{try{jobLog+=computeJobStats(j).loggedMins||0;}catch(e){}});
+  rows.forEach(r=>itemLog+=r.logM);
+  const gap=jobLog-itemLog;
+  return gap>=60?`<div class="fe-note">These ${js.size} jobs have ${_h(jobLog)} logged in total; ${_h(gap)} of it is on items no longer in the job plan, so it isn’t listed here.</div>`:'';
+}
+FE.itemsCSV=function(){
+  const rows=_itemsFiltered();if(!rows.length){toast('Nothing to export','warn');return;}
+  const head=['Job number','Job','Client','Phase','Item','Assigned','Planned hours','Logged hours','Used %','Planned sell','Used sell','Status','Due'];
+  const lines=[head.join(',')].concat(rows.map(r=>[r.jobId,r.jobName,r.client,r.phaseName,r.itemName,r.whoTxt,(r.planM/60).toFixed(2),(r.logM/60).toFixed(2),r.planM?r.pct:'',r.planSell,r.usedSell,(_ITEM_STATUS[r.status]||[r.status])[0],r.due||''].map(_csvCell).join(',')));
+  _dl(`items_${_today()}.csv`,lines.join('\n'));
+  toast(`Exported ${rows.length} items`,'success');
+};
+
+// Tab + panel, inserted once
+function _feInstallItemsTab(){
+  const nav=document.querySelector('#view-jobs .jobs-subnav');if(!nav||nav.querySelector('[data-tab="items"]'))return;
+  const jobsTab=nav.querySelector('.jsn-tab[data-tab="jobs"]');
+  const tab=document.createElement('div');tab.className='jsn-tab';tab.dataset.tab='items';tab.textContent='Items';
+  tab.setAttribute('onclick',"switchJobsTab('items')");
+  jobsTab?jobsTab.after(tab):nav.prepend(tab);
+  const jp=document.getElementById('jt-jobs');
+  const panel=document.createElement('div');panel.id='jt-items';panel.className='jt-panel';panel.style.display='none';
+  jp?jp.after(panel):document.getElementById('view-jobs').appendChild(panel);
+}
+_feInstallItemsTab();
+const _origSwitchJobsTab=window.switchJobsTab;
+window.switchJobsTab=switchJobsTab=function(tab){
+  _origSwitchJobsTab.apply(this,arguments);
+  if(tab==='items')FE.renderItems();
+};
+
+// ─────────────────────────────── 2 · WIP report ───────────────────────────────
+FE.wip={sort:'unbilled',dir:-1,client:'all',nb:false,onlyWip:false};
+Object.assign(FE.wip,_load('cc_fe_wip_state',{}));
+function _wipSave(){_save('cc_fe_wip_state',FE.wip);}
+FE.wipRows=function(){
+  // Platform-raised invoices (sent/paid) per job, ex GST — same source as the Invoices list.
+  const natInv={};
+  try{(typeof _nativeInvoiceRows==='function'?_nativeInvoiceRows({}):[]).forEach(r=>{
+    const st=r.invoiceStatus?.name;if(st==='Draft'||st==='Voided')return;
+    natInv[r._jobId]=(natInv[r._jobId]||0)+(+r.totalAmountExTax||0);
+  });}catch(e){console.warn('WIP: native invoices unavailable',e);}
+  const w=FE.wip;
+  return (jobs||[]).filter(j=>j.status==='inplay'&&(w.nb||j.billable!==false)&&(w.client==='all'||j.company===w.client)).map(j=>{
+    const p=computeJobProfit(j);
+    const wip=(p.sellUsed||0)+(p.expSell||0);
+    const split=(j.splitInvoices||[]).filter(x=>x.status==='sent'||x.status==='paid').reduce((a,x)=>a+(+x.amount||0),0);
+    const invoiced=(j._stInvoiced||0)+(natInv[j.id]||0)+split;
+    const plan=p.plannedSell||0;
+    const unbilled=wip-invoiced;
+    const remSell=Math.max(0,plan-wip);
+    const projRev=plan>0?Math.max(plan,invoiced):Math.max(wip,invoiced);
+    const blended=p.loggedMins>0?p.staffCost/(p.loggedMins/60):_defCostRate();
+    const remH=Math.max(0,(p.plannedMins||0)-(p.loggedMins||0))/60;
+    const projCost=p.cost+remH*blended;
+    const projMargin=projRev-projCost;
+    return{job:j,id:j.id,name:j.name||'',client:j.company||'',plan,wip,invoiced,unbilled,remSell,cost:p.cost,projRev,projCost,projMargin,
+      projPct:projRev>0?Math.round(projMargin/projRev*100):null,est:!!p.costEstimated,overPlan:plan>0&&wip>plan,remH};
+  }).filter(r=>!w.onlyWip||r.unbilled>0.5);
+};
+FE.wipSort=function(c){const w=FE.wip;if(w.sort===c)w.dir=-w.dir;else{w.sort=c;w.dir=['job','client'].includes(c)?1:-1;}_wipSave();FE.renderWip();};
+FE.wipSet=function(k,v){FE.wip[k]=v;_wipSave();FE.renderWip();};
+function _wipSorted(){
+  const w=FE.wip;const rows=FE.wipRows();
+  const key={job:r=>r.id.padStart(8,'0'),client:r=>r.client.toLowerCase(),plan:r=>r.plan,wip:r=>r.wip,invoiced:r=>r.invoiced,unbilled:r=>r.unbilled,cost:r=>r.cost,projRev:r=>r.projRev,projCost:r=>r.projCost,projMargin:r=>r.projMargin,projPct:r=>r.projPct??-1e9}[w.sort]||(r=>r.unbilled);
+  rows.sort((a,b)=>{const av=key(a),bv=key(b);return av<bv?-w.dir:av>bv?w.dir:0;});
+  return rows;
+}
+function _wipTotals(rows){
+  const t=rows.reduce((a,r)=>{['plan','wip','invoiced','unbilled','remSell','cost','projRev','projCost','projMargin'].forEach(k=>a[k]+=r[k]);return a;},{plan:0,wip:0,invoiced:0,unbilled:0,remSell:0,cost:0,projRev:0,projCost:0,projMargin:0});
+  t.projPct=t.projRev>0?Math.round(t.projMargin/t.projRev*100):null;return t;
+}
+FE.renderWip=function(){
+  const el=document.getElementById('rp-wip');if(!el)return;
+  const w=FE.wip;const rows=_wipSorted();const t=_wipTotals(rows);
+  const sub=document.getElementById('r-sub');if(sub)sub.textContent='Work in progress · as at '+fmtDate(_today());
+  const arrow=c=>w.sort===c?` <i class="ti ti-chevron-${w.dir===1?'up':'down'}" style="font-size:10px;"></i>`:'';
+  const th=(c,l,num,tip)=>`<th class="inv-th${num?' fe-num':''}" style="cursor:pointer;user-select:none;"${tip?` title="${esc(tip)}"`:''} onclick="_fe.wipSort('${c}')">${l}${arrow(c)}</th>`;
+  const money=(n,cls)=>`<td class="inv-td fe-num${cls?' '+cls:''}">${_$(n)}</td>`;
+  const pctCell=p=>p==null?'<td class="inv-td fe-num fe-muted">—</td>':`<td class="inv-td fe-num"><span class="fe-pill ${p<0?'danger':p<20?'warn':'ok'}">${p}%</span></td>`;
+  const nEst=rows.filter(r=>r.est).length;
+  el.innerHTML=`
+    <div class="r-kpi-grid">
+      <div class="r-kpi"><div class="r-kpi-lbl">Work in progress</div><div class="r-kpi-val">${fmtDollar(t.wip)}</div><div class="r-kpi-sub">time sell + expenses on ${rows.length} live job${rows.length!==1?'s':''}</div></div>
+      <div class="r-kpi"><div class="r-kpi-lbl">Invoiced</div><div class="r-kpi-val">${fmtDollar(t.invoiced)}</div><div class="r-kpi-sub">Streamtime + platform, ex GST</div></div>
+      <div class="r-kpi"><div class="r-kpi-lbl">Uninvoiced WIP</div><div class="r-kpi-val"${t.unbilled>0?' style="color:var(--warn-ink);"':''}>${t.unbilled<0?'-':''}${fmtDollar(Math.abs(t.unbilled))}</div><div class="r-kpi-sub">${rows.filter(r=>r.unbilled>0.5).length} jobs with work not yet billed</div></div>
+      <div class="r-kpi"><div class="r-kpi-lbl">Projected margin</div><div class="r-kpi-val"${t.projMargin<0?' style="color:var(--danger-ink);"':''}>${t.projMargin<0?'-':''}${fmtDollar(Math.abs(t.projMargin))}</div><div class="r-kpi-sub">${t.projPct!=null?t.projPct+'% of '+fmtDollar(t.projRev)+' projected revenue':'no projected revenue'}</div></div>
+    </div>
+    <div class="r-section" style="margin-bottom:0;">
+      <div class="r-section-hd">Live jobs <span style="text-transform:none;letter-spacing:0;color:var(--muted);">— lifetime figures, click a job to open it</span></div>
+      ${rows.length?`<div class="fe-card" style="margin-top:0;"><table class="inv-table"><thead><tr>
+        ${th('job','Job')}${th('client','Client')}${th('plan','Plan',1,'Agreed budget (Streamtime final budget, else planned time sell)')}${th('wip','WIP',1,'Logged time sell + expense sell')}${th('invoiced','Invoiced',1,'Issued Streamtime invoices + sent/paid platform and split invoices, ex GST')}${th('unbilled','Uninvoiced',1,'WIP minus invoiced. Negative = billed ahead of work')}${th('cost','Cost to date',1,'Staff time at cost rates + expense cost')}${th('projRev','Proj. revenue',1,'Plan (or invoiced, if higher). Jobs without a plan: WIP')}${th('projCost','Proj. cost',1,'Cost to date + remaining planned hours at the job’s blended cost rate')}${th('projMargin','Proj. margin',1)}${th('projPct','%',1)}
+      </tr></thead><tbody>${rows.map(r=>`<tr class="inv-tr fe-tr-click" onclick="openJobDetail('${_jsq(r.id)}')">
+        <td class="inv-td" style="white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis;" title="${esc(r.name)}"><span class="fe-muted" style="margin-right:5px;">${esc(r.id)}</span>${esc(r.name)}${r.overPlan?' <span class="fe-pill danger" title="WIP is above the plan">Over plan</span>':''}</td>
+        <td class="inv-td fe-muted" style="max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(r.client||'—')}</td>
+        <td class="inv-td fe-num">${r.plan?_$(r.plan):'<span class="fe-muted">—</span>'}</td>
+        ${money(r.wip)}${money(r.invoiced)}${money(r.unbilled,r.unbilled<-0.5?'fe-neg':'')}
+        <td class="inv-td fe-num">${_$(r.cost)}${r.est?' <span class="fe-muted" title="Uses the default cost rate for some people">est.</span>':''}</td>
+        ${money(r.projRev)}${money(r.projCost)}${money(r.projMargin,r.projMargin<0?'fe-neg':'')}${pctCell(r.projPct)}
+      </tr>`).join('')}</tbody>
+      <tfoot><tr class="fe-tfoot"><td class="inv-td" colspan="2">Total · ${rows.length} jobs</td>
+        ${money(t.plan)}${money(t.wip)}${money(t.invoiced)}${money(t.unbilled,t.unbilled<0?'fe-neg':'')}${money(t.cost)}${money(t.projRev)}${money(t.projCost)}${money(t.projMargin,t.projMargin<0?'fe-neg':'')}${pctCell(t.projPct)}</tr></tfoot>
+      </table></div>`:emptyStateHTML('ti-briefcase','No live jobs','Nothing in play matches these filters.','','')}
+      <div class="fe-note">WIP = logged time sell + expense sell. Projected cost assumes the remaining planned hours are worked at the job’s blended cost rate so far; future expenses aren’t included.${nEst?` ${nEst} job${nEst!==1?'s use':' uses'} the default cost rate for some people (marked est.).`:''} Non-billable jobs are ${w.nb?'included':'excluded'}.</div>
+    </div>`;
+};
+FE.wipCSV=function(){
+  const rows=_wipSorted();if(!rows.length){toast('Nothing to export','warn');return;}
+  const t=_wipTotals(rows);
+  const head=['Job number','Job','Client','Plan','WIP','Invoiced','Uninvoiced WIP','Cost to date','Cost estimated','Projected revenue','Projected cost','Projected margin','Projected margin %'];
+  const r2=n=>Math.round(n*100)/100;
+  const lines=[head.join(',')].concat(rows.map(r=>[r.id,r.name,r.client,r2(r.plan),r2(r.wip),r2(r.invoiced),r2(r.unbilled),r2(r.cost),r.est?'Yes':'No',r2(r.projRev),r2(r.projCost),r2(r.projMargin),r.projPct??''].map(_csvCell).join(',')));
+  lines.push(['','Total','',r2(t.plan),r2(t.wip),r2(t.invoiced),r2(t.unbilled),r2(t.cost),'',r2(t.projRev),r2(t.projCost),r2(t.projMargin),t.projPct??''].map(_csvCell).join(','));
+  _dl(`wip_${_today()}.csv`,lines.join('\n'));
+  toast(`Exported ${rows.length} jobs`,'success');
+};
+function _feInstallWipTab(){
+  const tabs=document.querySelector('#view-reporting .r-tabs');
+  if(tabs&&!document.getElementById('rt-wip')){
+    const b=document.createElement('button');b.className='tvt-btn r-subtab';b.id='rt-wip';
+    b.setAttribute('onclick',"switchReportTab('wip')");
+    b.innerHTML='<i class="ti ti-hourglass" style="font-size:13px;"></i>WIP';
+    (document.getElementById('rt-jobs')||tabs.lastElementChild).after(b);
+  }
+  const cl=document.getElementById('rp-clients');
+  if(cl&&!document.getElementById('rp-wip')){const p=document.createElement('div');p.id='rp-wip';p.style.display='none';cl.after(p);}
+}
+_feInstallWipTab();
+function _wipFilters(){
+  const wrap=document.getElementById('r-tab-filters');if(!wrap)return;
+  const w=FE.wip;
+  const cos=[...new Set((jobs||[]).filter(j=>j.status==='inplay').map(j=>j.company).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  if(w.client!=='all'&&!cos.includes(w.client))w.client='all';
+  wrap.innerHTML=`<select class="cc-select" onchange="_fe.wipSet('client',this.value)"><option value="all">All clients</option>${cos.map(c=>`<option value="${esc(c)}"${c===w.client?' selected':''}>${esc(c)}</option>`).join('')}</select>
+    <label class="filter-btn fe-check"><input type="checkbox"${w.onlyWip?' checked':''} onchange="_fe.wipSet('onlyWip',this.checked)"> Uninvoiced only</label>
+    <label class="filter-btn fe-check"><input type="checkbox"${w.nb?' checked':''} onchange="_fe.wipSet('nb',this.checked)"> Include non-billable</label>`;
+}
+function _periodVis(show){
+  const p=document.getElementById('r-period');if(p)p.style.display=show?'':'none';
+  const c=document.getElementById('r-custom-range');if(c)c.style.display=show&&p?.value==='custom'?'flex':'none';
+}
+const _origSwitchReportTab=window.switchReportTab;
+window.switchReportTab=switchReportTab=function(tab){
+  const wp=document.getElementById('rp-wip');
+  if(tab!=='wip'){
+    if(wp)wp.style.display='none';
+    _periodVis(true);
+    return _origSwitchReportTab.apply(this,arguments);
+  }
+  _reportTab='wip';
+  document.querySelectorAll('.r-subtab').forEach(b=>b.classList.toggle('on',b.id==='rt-wip'));
+  ['business','teams','people','jobs','clients'].forEach(t=>{const el=document.getElementById('rp-'+t);if(el)el.style.display='none';});
+  if(wp)wp.style.display='';
+  _periodVis(false);
+  _wipFilters();
+  renderReporting();
+};
+const _origRenderReporting=window.renderReporting;
+window.renderReporting=renderReporting=function(){
+  if(_reportTab==='wip')return FE.renderWip();
+  return _origRenderReporting.apply(this,arguments);
+};
+const _origExportReportTab=window.exportReportTab;
+window.exportReportTab=exportReportTab=function(){
+  if(_reportTab==='wip')return FE.wipCSV();
+  return _origExportReportTab.apply(this,arguments);
+};
+
+// ─────────────────────────────── 3 · Contact import ───────────────────────────────
+// Parses RFC-4180-ish CSV (quoted fields, "" escapes, CRLF), auto-maps headers, previews
+// each row as New / Add contact / Duplicate / Skipped, then writes into clientsData.
+// Contacts on an existing company go into c.localContacts ({name,role,email,phone}) — the
+// shape the client detail view already edits.
+FE.parseCSV=function(text){
+  const rows=[];let row=[],f='',q=false;const sep=FE._csvSemi?';':',';
+  text=String(text||'').replace(/^\s+/,'');
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(q){if(ch==='"'){if(text[i+1]==='"'){f+='"';i++;}else q=false;}else f+=ch;continue;}
+    if(ch==='"'&&f==='')q=true;
+    else if(ch===sep){row.push(f);f='';}
+    else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(f);f='';if(row.some(c=>c.trim()!==''))rows.push(row);row=[];}
+    else f+=ch;
+  }
+  row.push(f);if(row.some(c=>c.trim()!==''))rows.push(row);
+  return rows.map(r=>r.map(c=>c.trim()));
+};
+const IMP_FIELDS=[
+  ['company','Company',/^(company|company name|organi[sz]ation|account|account name|client|business|customer)$/],
+  ['contact','Contact (full name)',/^(contact|contact name|full name|name|person|contactname)$/],
+  ['first','First name',/^(first|first name|firstname|given name)$/],
+  ['last','Last name',/^(last|last name|lastname|surname|family name)$/],
+  ['email','Email',/^(e-?mail|email address|e-?mail address|work email)$/],
+  ['phone','Phone',/^(phone|phone number|mobile|telephone|tel|work phone|cell)$/],
+  ['position','Position',/^(position|title|job title|role)$/],
+  ['website','Website',/^(website|web|url|website address|domain)$/],
+  ['address','Address',/^(address|street|physical address|postal address|address line 1|address1)$/],
+  ['notes','Notes',/^(notes?|comments?|description)$/],
+];
+FE.imp={rows:[],head:[],map:{}};
+const _norm=s=>String(s||'').toLowerCase().replace(/&/g,'and').replace(/\b(ltd|limited|llc|inc|pty|co|nz|the)\b\.?/g,'').replace(/[^a-z0-9]/g,'');
+const _em=s=>String(s||'').trim().toLowerCase();
+function _findClient(name){const n=_norm(name);if(!n)return null;return clientsData.find(c=>_norm(c.name)===n||(c.nickname&&_norm(c.nickname)===n))||null;}
+function _clientEmails(c){
+  const s=new Set();if(c.email)s.add(_em(c.email));
+  (c.localContacts||[]).forEach(x=>x.email&&s.add(_em(x.email)));
+  (c.contacts||[]).forEach(x=>x.email&&s.add(_em(x.email)));
+  (stContacts||[]).forEach(x=>{if(x.email&&(x.companyId===c._stId||x.company?.id===c._stId||x.company?.name===c.name))s.add(_em(x.email));});
+  return s;
+}
+FE.impPlan=function(){
+  const {rows,map}=FE.imp;
+  const get=(r,k)=>map[k]!=null&&map[k]!==''?(r[+map[k]]||'').trim():'';
+  const pending={};// new companies created earlier in this same file
+  const seenEmail=new Set();
+  return rows.map((r,i)=>{
+    const company=get(r,'company');
+    const name=get(r,'contact')||[get(r,'first'),get(r,'last')].filter(Boolean).join(' ');
+    const email=get(r,'email');
+    const rec={i,company,name,email,phone:get(r,'phone'),position:get(r,'position'),website:get(r,'website'),address:get(r,'address'),notes:get(r,'notes')};
+    if(!company){rec.action='skip';rec.why='No company';return rec;}
+    if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){rec.action='skip';rec.why='Email looks wrong';return rec;}
+    const ek=_em(company)+'|'+_em(email||name);
+    if((email||name)&&seenEmail.has(ek)){rec.action='skip';rec.why='Repeated in file';return rec;}
+    seenEmail.add(ek);
+    const ex=_findClient(company);
+    if(ex){
+      rec.target=ex.name;
+      if(email&&_clientEmails(ex).has(_em(email))){rec.action='dup';rec.why='Contact already on '+ex.name;return rec;}
+      if(!email&&!name){rec.action='dup';rec.why='Company exists, no contact';return rec;}
+      rec.action='merge';return rec;
+    }
+    const nk=_norm(company);
+    if(pending[nk]){rec.target=pending[nk];rec.action=(email||name)?'merge':'skip';if(rec.action==='skip')rec.why='Repeated company';return rec;}
+    pending[nk]=company;rec.action='new';return rec;
+  });
+};
+FE.openImport=function(){
+  document.getElementById('fe-imp-modal')?.remove();
+  FE.imp={rows:[],head:[],map:{}};
+  const m=document.createElement('div');m.className='modal-bg on';m.id='fe-imp-modal';
+  m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+  m.innerHTML=`<div class="modal fe-imp-modal">
+    <div class="modal-hd"><span class="modal-hd-title">Import clients and contacts</span><button class="modal-x" onclick="this.closest('.modal-bg').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd">
+      <div class="field"><label>CSV file</label>
+        <div class="fe-imp-drop" id="fe-imp-drop"><i class="ti ti-file-upload" style="font-size:18px;display:block;margin-bottom:4px;"></i>Drop a .csv here, or <a href="#" onclick="event.preventDefault();document.getElementById('fe-imp-file').click()" style="color:var(--ink);">choose a file</a>. Exports from Xero, Streamtime, HubSpot or a spreadsheet all work — one row per contact.
+          <input type="file" id="fe-imp-file" accept=".csv,text/csv,text/plain" style="display:none" onchange="_fe.impFile(this.files[0])"></div>
+      </div>
+      <div class="field"><label>…or paste CSV text</label><textarea id="fe-imp-paste" class="form-inp" rows="3" style="width:100%;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;" placeholder="Company,Contact,Email,Phone&#10;Silver Fern Farms,Jo Bloggs,jo@sff.co.nz,+64 21 000 000" oninput="_fe.impText(this.value)"></textarea></div>
+      <div id="fe-imp-body"></div>
+    </div>
+    <div class="modal-ft"><button class="modal-cancel" onclick="this.closest('.modal-bg').remove()">Cancel</button><button class="modal-save" id="fe-imp-go" disabled onclick="_fe.impRun()">Import</button></div>
+  </div>`;
+  document.body.appendChild(m);
+  const drop=m.querySelector('#fe-imp-drop');
+  drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('on');});
+  drop.addEventListener('dragleave',()=>drop.classList.remove('on'));
+  drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('on');const f=e.dataTransfer.files?.[0];if(f)FE.impFile(f);});
+};
+FE.impFile=function(f){
+  if(!f)return;
+  if(f.size>5*1024*1024){toast('That file is over 5 MB — split it first','warn');return;}
+  const rd=new FileReader();
+  rd.onload=()=>{const t=String(rd.result||'');const ta=document.getElementById('fe-imp-paste');if(ta)ta.value=t.slice(0,20000);FE.impText(t);};
+  rd.onerror=()=>toast('Couldn\'t read that file','warn');
+  rd.readAsText(f);
+};
+FE.impText=function(text){
+  const first=(String(text||'').split(/\r?\n/)[0]||'');
+  FE._csvSemi=!first.includes(',')&&first.includes(';');
+  const all=FE.parseCSV(text);
+  if(all.length<2){FE.imp={rows:[],head:[],map:{}};FE.impRender();return;}
+  const head=all[0];const map={};
+  IMP_FIELDS.forEach(([k,,re])=>{const ix=head.findIndex(h=>re.test(h.trim().toLowerCase()));if(ix>=0&&!Object.values(map).includes(String(ix)))map[k]=String(ix);});
+  if(map.contact!=null&&(map.first!=null||map.last!=null)&&head[+map.contact].toLowerCase()==='name'){delete map.contact;}
+  FE.imp={head,rows:all.slice(1),map};
+  FE.impRender();
+};
+FE.impMap=function(k,v){FE.imp.map[k]=v;FE.impRender();};
+FE.impRender=function(){
+  const body=document.getElementById('fe-imp-body');const go=document.getElementById('fe-imp-go');if(!body)return;
+  const {head,rows,map}=FE.imp;
+  if(!rows.length){body.innerHTML=head.length?'<div class="fe-note">Need a header row and at least one data row.</div>':'';if(go)go.disabled=true;return;}
+  const plan=FE.impPlan();
+  const n=a=>plan.filter(p=>p.action===a).length;
+  const ACT={new:['New client','ok'],merge:['Add contact',''],dup:['Already there','warn'],skip:['Skipped','danger']};
+  body.innerHTML=`
+    <div class="field"><label>Match columns <span class="fe-muted">(${rows.length} rows, ${head.length} columns)</span></label>
+      <div class="fe-imp-map">${IMP_FIELDS.map(([k,l])=>`<div><label>${esc(l)}${k==='company'?' *':''}</label><select class="cc-select" onchange="_fe.impMap('${k}',this.value)"><option value="">— Don’t import —</option>${head.map((h,i)=>`<option value="${i}"${String(map[k])===String(i)?' selected':''}>${esc(h||'Column '+(i+1))}</option>`).join('')}</select></div>`).join('')}</div>
+    </div>
+    <div class="fe-imp-sum"><span class="fe-pill ok">${n('new')} new client${n('new')!==1?'s':''}</span><span class="fe-pill">${n('merge')} contact${n('merge')!==1?'s':''} added to existing</span><span class="fe-pill warn">${n('dup')} already there</span><span class="fe-pill danger">${n('skip')} skipped</span></div>
+    <div class="fe-imp-prev"><table class="inv-table"><thead><tr><th class="inv-th">Result</th><th class="inv-th">Company</th><th class="inv-th">Contact</th><th class="inv-th">Email</th><th class="inv-th">Phone</th></tr></thead><tbody>
+      ${plan.slice(0,200).map(p=>`<tr class="inv-tr"><td class="inv-td"><span class="fe-pill ${ACT[p.action][1]}" title="${esc(p.why||'')}">${ACT[p.action][0]}</span>${p.why&&p.action!=='dup'?` <span class="fe-muted">${esc(p.why)}</span>`:''}</td><td class="inv-td">${esc(p.company||'—')}${p.target&&_norm(p.target)!==_norm(p.company)?` <span class="fe-muted">→ ${esc(p.target)}</span>`:''}</td><td class="inv-td">${esc(p.name||'—')}</td><td class="inv-td fe-muted">${esc(p.email||'—')}</td><td class="inv-td fe-muted">${esc(p.phone||'—')}</td></tr>`).join('')}
+    </tbody></table>${plan.length>200?`<div class="fe-more">Previewing 200 of ${plan.length} rows.</div>`:''}</div>
+    ${map.company==null||map.company===''?'<div class="fe-note" style="color:var(--danger-ink);">Pick the column that holds the company name.</div>':''}
+    <div class="fe-note">Duplicates are matched on company name (ignoring Ltd, Limited, punctuation) and on email. Existing details are never overwritten — empty fields are filled in.</div>`;
+  if(go){const k=n('new')+n('merge');go.disabled=!k;go.textContent=k?`Import ${k}`:'Import';}
+};
+FE.impRun=function(){
+  const plan=FE.impPlan();let added=0,merged=0;const created={};
+  plan.forEach(p=>{
+    if(p.action==='new'){
+      const c={id:uid('cl'),name:p.company,nickname:'',contact:p.name,contactTitle:p.position,email:p.email,phone:p.phone,website:p.website,address:p.address,notes:p.notes,localContacts:[],_imported:_today()};
+      clientsData.push(c);created[_norm(p.company)]=c;added++;
+    }else if(p.action==='merge'){
+      const c=created[_norm(p.company)]||_findClient(p.company);if(!c)return;
+      if(!Array.isArray(c.localContacts))c.localContacts=[];
+      if(!c.contact&&!c.email){c.contact=p.name;c.email=p.email;if(!c.phone)c.phone=p.phone;}
+      else c.localContacts.push({name:p.name,role:p.position,email:p.email,phone:p.phone});
+      if(!c.website&&p.website)c.website=p.website;
+      if(!c.address&&p.address)c.address=p.address;
+      merged++;
+    }
+  });
+  if(!added&&!merged){toast('Nothing to import','warn');return;}
+  saveClientsData();
+  document.getElementById('fe-imp-modal')?.remove();
+  if(typeof renderClients==='function')renderClients();
+  toast(`Imported ${added} new client${added!==1?'s':''} and ${merged} contact${merged!==1?'s':''}`,'success');
+};
+const _origRenderClients=window.renderClients;
+window.renderClients=renderClients=function(){
+  const r=_origRenderClients.apply(this,arguments);
+  const bar=document.querySelector('#clients-wrap .clients-toolbar');
+  if(bar&&!bar.querySelector('#fe-imp-btn')){
+    const b=document.createElement('button');b.className='d-action';b.id='fe-imp-btn';b.style.marginLeft='auto';
+    b.innerHTML='<i class="ti ti-file-import" style="font-size:12px"></i> Import CSV';b.onclick=()=>FE.openImport();
+    bar.appendChild(b);
+  }
+  return r;
+};
+
+// ─────────────────────────────── 4 · Soft bookings ───────────────────────────────
+// Streamtime "soft bookings" are paused To Dos: shown dashed, still holding capacity.
+// Here: right-click a To Do → Mark as tentative. Stored per browser by task id.
+const SOFT_KEY='cc_soft_bookings';
+FE.soft=_load(SOFT_KEY,{});
+FE.isSoft=id=>!!(id&&FE.soft[id]);
+FE.toggleSoft=function(id){
+  if(!id)return;
+  if(FE.soft[id])delete FE.soft[id];else FE.soft[id]={at:Date.now(),by:typeof MY_PERSON!=='undefined'?MY_PERSON:''};
+  _save(SOFT_KEY,FE.soft);
+  const on=!!FE.soft[id];
+  try{if(typeof _todoViewMode!=='undefined'&&_todoViewMode==='calendar')renderTodoCalendar();else renderTodo();}catch(e){}
+  toast(on?'Marked as tentative — still holds the time':'No longer tentative',on?'info':'success');
+};
+const _origCreateTaskCard=window.createTaskCard;
+window.createTaskCard=createTaskCard=function(t,day,isDone){
+  const card=_origCreateTaskCard.apply(this,arguments);
+  try{
+    if(card&&t&&!isDone&&FE.isSoft(t.id)){
+      card.classList.add('fe-soft');
+      card.title='Tentative booking (soft) — right-click to confirm';
+      const tt=card.querySelector('.tc-title');
+      if(tt&&!tt.querySelector('.fe-soft-tag'))tt.insertAdjacentHTML('afterbegin','<span class="fe-soft-tag">Tentative</span> ');
+    }
+  }catch(e){}
+  return card;
+};
+const _origShowTaskContextMenu=window.showTaskContextMenu;
+window.showTaskContextMenu=showTaskContextMenu=function(e,t,day){
+  const r=_origShowTaskContextMenu.apply(this,arguments);
+  try{
+    const menu=document.getElementById('task-ctx-menu');
+    if(menu&&t&&!t.done){
+      const soft=FE.isSoft(t.id);
+      const it=document.createElement('div');it.className='tcm-item';it.id='fe-tcm-soft';
+      it.innerHTML=`<i class="ti ${soft?'ti-circle-check':'ti-circle-dashed'} tcm-icon"></i> ${soft?'Confirm booking':'Mark as tentative'}`;
+      it.addEventListener('click',()=>{closeTaskContextMenu();FE.toggleSoft(t.id);});
+      const dup=[...menu.querySelectorAll('.tcm-item')].find(x=>/Duplicate/.test(x.textContent));
+      dup?dup.after(it):menu.prepend(it);
+      // keep the menu on-screen after growing
+      const rc=menu.getBoundingClientRect();
+      if(rc.bottom>window.innerHeight-8)menu.style.top=Math.max(8,window.innerHeight-rc.height-8)+'px';
+    }
+  }catch(err){}
+  return r;
+};
+})();
+</script>
 </body>
 </html>

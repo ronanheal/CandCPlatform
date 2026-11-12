@@ -145,4 +145,10 @@ All of it sits in `<script id="feat-e-script">` and `<style id="feat-e-styles">`
 
   It also has totals and CSV, and the Export button exports this tab. Rows flagged "est." use the default cost rate.
 - **Clients → Import CSV:** upload or paste a CSV and map its columns: company, contact, first and last name, email, phone, position, website, address and notes. The preview marks each row new, merge (contact added to an existing company) or duplicate (company plus email already known, skipped). Import writes to `clientsData` through `saveClientsData()`.
-- **Soft bookings:** right-click a To Do card and choose "Mark as tentative". The card gets a dashed outline and a "Tentative" tag, and stays in capacity, as in Streamtime. It's stored per browser in `cc_soft_bookings` keyed by task id. Streamtime's own paused To Dos aren't synced, so they can't show yet (see section 3).
+- **Soft bookings:** right-click a To Do card and choose "Mark as tentative". The card gets a dashed outline and a "Tentative" tag, and stays in capacity, as in Streamtime. It's stored per browser in `cc_soft_bookings` keyed by task id. Streamtime's own paused To Dos aren't synced, so they can't show yet (see section 3). The tag only appears on the Week board. The Calendar view and the Schedule don't show it yet, because doing so would mean editing their renderers.
+
+**Checked against the live data (13 Nov):**
+- **Items:** 134 live jobs give 1,207 items, of which 1,141 are not complete. Item planned hours add up exactly to the jobs' planned totals: 290,910 minutes on both sides. Item logged hours come to 101h 10m less than the job-level logged total. That gap is time logged against items that were later removed from the job plan, and the list shows a note saying so.
+- **WIP report:** 136 live billable jobs.
+  - WIP is $285,927 and invoiced is $194,063, which leaves $91,864 uninvoiced. The total row equals the sum of the job rows.
+  - Projected revenue is $923,664 against a projected cost of $846,560, a margin of $77,104 (8%). The margin is low because most people have no cost rate in Streamtime, so their time is costed at the $150/h default.
