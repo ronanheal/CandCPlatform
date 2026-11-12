@@ -19137,6 +19137,8 @@ body.dark .sidebar:hover,body.dark .sidebar:has(:focus-visible){box-shadow:0 6px
 .s-btn.on{color:var(--ink)!important;background:transparent!important;}
 .s-btn.on i{color:var(--red)!important;}
 .s-btn.on::before{display:none!important;}
+.sidebar:has(:focus-visible) .s-tip{opacity:1!important;transform:none!important;}
+.s-btn:focus-visible,.s-avatar:focus-visible{outline-offset:-2px!important;}
 .s-tip{font-size:13.5px!important;font-weight:500!important;letter-spacing:-.005em!important;color:inherit!important;}
 /* Gliding active marker (positioned by ds-v3-script) */
 .ds-nav-ind{position:absolute;left:0;right:0;top:0;height:40px;border-radius:12px;background:var(--white);box-shadow:var(--e-1),0 0 0 1px var(--border);pointer-events:none;z-index:0;transition:transform var(--d-4) var(--ease-spring),opacity var(--d-2) ease;opacity:0;}

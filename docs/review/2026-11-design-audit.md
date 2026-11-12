@@ -269,4 +269,6 @@ With `prefers-reduced-motion: reduce`, all animation and transition durations co
 7. **Copy.** Fix the remaining Title Case ("In Play", "Group by Company").
 8. **Inline styles.** About 1,600 remain. Each render function the screen pass touches should move its inline styles onto the v3 classes, so `ds-v3` can drop its `!important`s over time.
 9. **Legacy CSS.** Once a screen is rebuilt, delete its rules from the base sheet and the v2.29–v2.42 layers. The tokens in `ds-v3` are the only `:root` the app needs.
-10. **Tiny type.** 8, 9 and 10px text still appears in inline styles (drop-dock day names, split seams, a few meta lines). Raise them to 11px when those templates are touched.
+10. **Stat tiles.** Time's stat tiles put the label under the number, but the KPI tiles put it above. Pick the KPI anatomy everywhere.
+11. **Invoice document bug.** Hours print unrounded ("5.3333333333333h" on INV-5883's retainer lines). This is a formatting bug in the document template, not a style issue.
+12. **Tiny type.** 8, 9 and 10px text still appears in inline styles (drop-dock day names, split seams, a few meta lines). Raise them to 11px when those templates are touched.
