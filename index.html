@@ -2145,7 +2145,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
                 <button class="tvt-btn" id="tvt-cal" onclick="setTodoView('calendar')" title="Calendar"><i class="ti ti-calendar-week" style="font-size:13px;"></i><span>Calendar</span></button>
               </div>
               <button class="wbtn" id="vsp-btn" title="View settings" onclick="toggleVSP(event)" style="padding:5px 7px;"><i class="ti ti-adjustments-horizontal" style="font-size:13px;pointer-events:none;"></i></button>
-              <button class="d-action primary todo-add-btn" onclick="openTodoModal(null,5)"><i class="ti ti-plus" style="font-size:12px;"></i> Add task</button>
+              <button class="d-action primary todo-add-btn" onclick="openTodoModal(null)"><i class="ti ti-plus" style="font-size:12px;"></i> Add task</button>
             </div>
           </div>
           <div class="todo-body">
@@ -2170,7 +2170,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
         <div id="jt-jobs" class="jt-panel" style="display:flex;">
           <div style="padding:20px 28px 4px;"><div class="view-title">Jobs</div><div class="view-sub">Every job on the books</div></div>
           <div class="jobs-toolbar">
-            <div class="jobs-search"><i class="ti ti-search"></i><input id="jobs-search-inp" placeholder="Search jobs…" oninput="filterJobs(this.value)"/></div>
+            <div class="jobs-search"><i class="ti ti-search"></i><input id="jobs-search-inp" placeholder="Search jobs, clients, PO, labels…" oninput="filterJobs(this.value)"/></div>
             <button class="d-action" onclick="_addFilter('jobs')"><i class="ti ti-filter" style="font-size:11px;"></i> Add filter</button>
             <select class="cc-select" id="jobs-groupby" onchange="_setGroupBy('jobs',this.value)">
               <option value="none">No grouping</option>
@@ -2373,7 +2373,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
                   <div id="create-item-menu" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:var(--white);border:1px solid var(--border);border-radius:var(--r-ctl);box-shadow:var(--shadow-l);z-index:900;min-width:160px;padding:4px 0;">
                     <div class="tcm-item" onclick="closeCreateItemMenu();showAddItemForm(null)"><i class="ti ti-list-check" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Item</div>
                     <div class="tcm-item" onclick="closeCreateItemMenu();addPhase()"><i class="ti ti-layout-rows" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Phase</div>
-                    <div class="tcm-item" onclick="closeCreateItemMenu();openTodoModal(activeJobId,5)"><i class="ti ti-checklist" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>To Do</div>
+                    <div class="tcm-item" onclick="closeCreateItemMenu();openTodoModal(activeJobId)"><i class="ti ti-checklist" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>To Do</div>
                     <div class="tcm-item" onclick="closeCreateItemMenu();openLogTimeModal({jobId:activeJobId})"><i class="ti ti-circle-check" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Done task (log time)</div>
                     <div class="tcm-item" onclick="closeCreateItemMenu();startTimer(activeJobId)"><i class="ti ti-player-play" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Start timer</div>
                     <div class="tcm-item" onclick="closeCreateItemMenu();showAddExpenseInline()"><i class="ti ti-receipt" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Expense</div>
@@ -3894,6 +3894,7 @@ const CHANGELOG=[
   ]},
 ];
 let _fupTask=null;    // task that triggered the follow-up prompt
+let _fupDay=null;     // its day (1-5) in the week shown, so follow-up time is dated that day
 let personStatus=(function(){
   const def={ro:'available',bee:'available',jb:'allocated'};
   let s=def;
@@ -4654,7 +4655,7 @@ function renderDashboard(){
     const totalBooked=todoH+doneH;
     return`<div class="team-card" onclick="viewTeamTodo('${k}')">
       <div class="tc-head"><div class="tc-av" style="background:${tp.color};">${tp.initials}</div><div><div class="tc-name">${tp.name}</div></div><div class="tc-meta">${formatHrs(totalBooked)||'0h'} booked</div>
-        <button onclick="event.stopPropagation();openTodoModal(null,null,'${k}')" title="Add task for ${tp.name}" style="margin-left:8px;background:transparent;border:1px solid var(--border);border-radius:8px;width:22px;height:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted);font-size:13px;"><i class="ti ti-plus" style="font-size:11px;"></i></button>
+        <button onclick="event.stopPropagation();weekOffset=0;openTodoModal(null,null,'${k}')" title="Add task for ${tp.name}" style="margin-left:8px;background:transparent;border:1px solid var(--border);border-radius:8px;width:22px;height:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted);font-size:13px;"><i class="ti ti-plus" style="font-size:11px;"></i></button>
       </div>
       <div class="tc-timeline">${taskBlocks||'<div style="font-size:12px;color:var(--muted);padding:4px 0;">No tasks today</div>'}</div>
       <div class="tc-footer"><div class="tc-stat">Done <span>${formatHrs(doneH)||'0h'}</span></div><div class="tc-stat">To do <span>${formatHrs(todoH)||'0h'}</span></div>${urgCnt?`<div class="tc-stat" style="margin-left:auto;color:var(--red);font-size:11px;">${urgCnt} urgent</div>`:'<div class="tc-stat" style="margin-left:auto;font-size:11px;color:var(--muted);">On track</div>'}</div>
@@ -4774,11 +4775,11 @@ function renderDashboard(){
     </div>
     ${_happinessCardHTML()}
     <div class="kpi-row">
-      <div class="kpi"><div class="kpi-label">Billable booked this week</div><div class="kpi-val">${formatHrs(billH)||'0h'}</div><div class="kpi-sub">${formatHrs(billDoneH)||'0h'} done · ${formatHrs(billTodoH)||'0h'} planned · of ${totalTarget}h</div>${_wkTrend.bill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('bill')">${_sparkSVG(_wkTrend.bill,'#4CAF50')}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${billPct}%;background:${billPct>=120?'var(--red)':'var(--ok)'};"></div></div></div>
+      <div class="kpi"><div class="kpi-label">Billable booked this week</div><div class="kpi-val">${formatHrs(billH)||'0h'}</div><div class="kpi-sub">${formatHrs(billDoneH)||'0h'} done · ${formatHrs(billTodoH)||'0h'} planned · of ${totalTarget}h</div>${_wkTrend.bill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('bill')">${_sparkSVG(_wkTrend.bill,'#4CAF50')}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${billPct}%;background:${billH>=(totalTarget||1)*1.2?'var(--red)':'var(--ok)'};"></div></div></div>
       <div class="kpi"><div class="kpi-label">Non-billable</div><div class="kpi-val">${formatHrs(nbillH)||'0h'}</div><div class="kpi-sub">internal & admin</div>${_wkTrend.nbill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('nbill')">${_sparkSVG(_wkTrend.nbill,'#FF9800')}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${nbillPct}%;background:var(--warn);"></div></div></div>
       <div class="kpi"><div class="kpi-label">My tasks today</div><div class="kpi-val">${todayTodo.length}</div><div class="kpi-sub">${urgentCount?urgentCount+' urgent · ':''}${todayDone.length} done</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${todayTasks.length?Math.round(todayDone.length/todayTasks.length*100):0}%;background:${urgentCount?'var(--red)':'var(--ok)'};"></div></div></div>
     </div>
-    <div class="section-label" style="margin-bottom:12px;">Your day <button onclick="openTodoModal(null,null,'${MY_PERSON}')" title="Add task" style="background:transparent;border:1px solid var(--border);border-radius:8px;padding:1px 8px;cursor:pointer;font-size:11px;color:var(--muted);font-family:var(--font);margin-left:8px;vertical-align:middle;">+ Add task</button></div>
+    <div class="section-label" style="margin-bottom:12px;">Your day <button onclick="weekOffset=0;openTodoModal(null,null,'${MY_PERSON}')" title="Add task" style="background:transparent;border:1px solid var(--border);border-radius:8px;padding:1px 8px;cursor:pointer;font-size:11px;color:var(--muted);font-family:var(--font);margin-left:8px;vertical-align:middle;">+ Add task</button></div>
     <div class="my-todos" style="margin-bottom:28px;">${todoRows||'<div class="my-todo-item" style="color:var(--muted);font-size:13px;"><i class="ti ti-sun" style="font-size:16px;margin-right:10px;"></i>No tasks scheduled today.</div>'}</div>
     ${deadlinesHTML?`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Needs attention</div><div class="att-grid">${deadlinesHTML}</div>`:''}
     ${_show('team')&&teamHTML?`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Team · today</div><div class="team-grid">${teamHTML}</div>`:''}
@@ -5044,7 +5045,7 @@ function renderSchedule(){
       <div><div class="view-title">Schedule</div><div class="view-sub">Team week at a glance</div></div>
       <div style="display:flex;align-items:center;gap:8px;">
         ${weekOffset!==0?`<button class="d-action" onclick="weekOffset=0;renderSchedule()">This week</button>`:''}
-        <div class="sched-week"><button onclick="weekOffset--;renderSchedule()" title="Previous week (←)"><i class="ti ti-chevron-left"></i></button><span class="sched-range"><i class="ti ti-calendar" style="font-size:14px;color:var(--muted);"></i>${weekRange}</span><button onclick="weekOffset++;renderSchedule()" title="Next week (→)"><i class="ti ti-chevron-right"></i></button></div>
+        <div class="sched-week"><button onclick="weekOffset-=(_c2.weeks||1);renderSchedule()" title="Previous (←)"><i class="ti ti-chevron-left"></i></button><span class="sched-range"><i class="ti ti-calendar" style="font-size:14px;color:var(--muted);"></i>${weekRange}</span><button onclick="weekOffset+=(_c2.weeks||1);renderSchedule()" title="Next (→)"><i class="ti ti-chevron-right"></i></button></div>
       </div>
     </div>
     ${schedToolbar}
@@ -5931,7 +5932,7 @@ function renderTodo(){
 
     let capHTML='';
     if(isWork){
-      const label=dayTotalH>0?(isOver?`<span class="day-cap-info over">${formatHrs(dayTotalH)} / ${formatHrs(DAY_CAP)} · OVER</span>`:`<span class="day-cap-info">${formatHrs(dayTodoH)||'0h'} to do · ${formatHrs(dayDoneH)||'0h'} done</span>`):'<span class="day-cap-info">No tasks</span>';
+      const label=dayTotalH>0?(isOver?`<span class="day-cap-info over">${formatHrs(dayTotalH)} / ${formatHrs(DAY_CAP)} · over</span>`:`<span class="day-cap-info">${formatHrs(dayTodoH)||'0h'} to do · ${formatHrs(dayDoneH)||'0h'} done</span>`):'<span class="day-cap-info">No tasks</span>';
       capHTML=`<div class="day-cap">${label}<div class="day-cap-bar"><div class="dcb-done" style="width:${bDoneW}%;"></div><div class="dcb-nbill-done" style="width:${nDoneW}%;"></div><div class="dcb-todo" style="width:${bTodoW}%;${isOver?'background:var(--red);':''}"></div><div class="dcb-nbill-todo" style="width:${nTodoW}%;${isOver?'background:var(--red);opacity:.6':''}"></div></div></div>`;
     }
 
@@ -5939,7 +5940,7 @@ function renderTodo(){
       <div class="day-head"${isWork&&isOver?' style="background:var(--warn-bg);"':''}>
         <div class="day-head-row">
           <div><div class="day-name">${DAY_NAMES[i]}</div><div class="day-num ${isToday?'today-red':''}">${calDate}</div></div>
-          ${isWork?`<button class="day-add-btn" onclick="openTodoModal(null,${d})"><i class="ti ti-plus" style="font-size:10px"></i> Add New</button>`:''}
+          ${isWork?`<button class="day-add-btn" onclick="openTodoModal(null,${d})"><i class="ti ti-plus" style="font-size:10px"></i> Add task</button>`:''}
         </div>
         ${capHTML}
       </div>
@@ -6341,7 +6342,7 @@ function renderTodoHeader(day){
   if(!col)return;
   const cap=col.querySelector('.day-cap');
   if(!cap)return;
-  const label=total>0?(isOver?`<span class="day-cap-info over">${formatHrs(total)} / ${formatHrs(DAY_CAP)} · OVER</span>`:`<span class="day-cap-info">${formatHrs(todoH)||'0h'} to do · ${formatHrs(doneH)||'0h'} done</span>`):'<span class="day-cap-info">No tasks</span>';
+  const label=total>0?(isOver?`<span class="day-cap-info over">${formatHrs(total)} / ${formatHrs(DAY_CAP)} · over</span>`:`<span class="day-cap-info">${formatHrs(todoH)||'0h'} to do · ${formatHrs(doneH)||'0h'} done</span>`):'<span class="day-cap-info">No tasks</span>';
   cap.innerHTML=`${label}<div class="day-cap-bar"><div class="dcb-done" style="width:${bDW}%;"></div><div class="dcb-nbill-done" style="width:${nDW}%;"></div><div class="dcb-todo" style="width:${bTW}%;${isOver?'background:var(--red);':''}"></div><div class="dcb-nbill-todo" style="width:${nTW}%;${isOver?'background:var(--red);opacity:.6':''}"></div></div>`;
 }
 
@@ -6396,7 +6397,7 @@ function onDropToSection(e,toDay,markDone){
       if(insertIdx>=0)wd[toDay].splice(insertIdx,0,task);else wd[toDay].push(task);
     }
     // Trigger follow-up prompt when marking a task as done
-    if(markDone&&!wasAlreadyDone)_showFupForTask(task);
+    if(markDone&&!wasAlreadyDone){_fupDay=+toDay||null;_showFupForTask(task);}
     renderTodo();saveData();
   }catch(err){}
 }
@@ -6775,7 +6776,7 @@ function _resetTodoModal(day){
   updateJobLabel();
 }
 function openTodoModal(jobId,day,personOverride){
-  _resetTodoModal(day||5);
+  _resetTodoModal(day||(weekOffset===0?_todayDayNum():1));
   if(personOverride&&people[personOverride]){
     _todoAssignTo=personOverride;
     const p=people[personOverride];
@@ -6891,7 +6892,7 @@ function toggleTaskDone(taskId){
     if(t){
       t.done=!t.done;
       if(t.jobId)logActivity(t.jobId,currentPerson,'task_status',`Task <strong>${esc(t.title)}</strong> ${t.done?'marked done':'reopened'}`);
-      if(t.done)_showFupForTask(t);
+      if(t.done){_fupDay=d;_showFupForTask(t);}
       renderTodo();saveData();_refreshJobStats();return;
     }
   }
@@ -6976,7 +6977,7 @@ async function _logTimeFromFup(){
   const userId=people[currentPerson]?._stId;
   if(!userId)return; // local-only person — no ST user id to attribute the entry to
   await dbCreateTimeEntry({
-    job:{id:job._stId,name:job.name,number:job.id,isBillable:job.isBillable!==false},
+    job:{id:job._stId,name:job.name,number:job.id,isBillable:job.billable!==false},
     jobId:job._stId,
     userId,
     itemId:t.itemId||null,
@@ -6985,7 +6986,7 @@ async function _logTimeFromFup(){
     hours,
     // Local date, not UTC (toISOString was yesterday before 1pm NZ). jobItemUser lets
     // seedWeekFromST pair this entry with its scheduled block instead of a duplicate card.
-    date:(n=>`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`)(new Date()),
+    date:(()=>{try{if(typeof _taskDateISO==='function'&&_fupDay)return _taskDateISO(weekOffset,_fupDay);}catch(e){}return _localISO(new Date());})(),
     jobItemUser:t._stItemId?{jobItemId:t._stItemId}:null
   });
   renderTodo();_refreshJobStats();
@@ -7013,7 +7014,7 @@ function closeFup(yes){
       updateJobLabel();
     }
   }
-  _fupTask=null;
+  _fupTask=null;_fupDay=null;
 }
 
 // Task card tooltip
@@ -7356,7 +7357,7 @@ function _spawnRepeatOccurrences(savedTask,targetPerson,dayNum){
   }
 }
 function saveTodo(){
-  const name=document.getElementById('td-task').value.trim();if(!name)return;
+  const name=document.getElementById('td-task').value.trim();if(!name){toast('Give the task a name','warn');document.getElementById('td-task')?.focus();return;}
   const jobId=document.getElementById('td-job').value;
   const hoursRaw=document.getElementById('td-hours').value.trim();
   const hours=hoursRaw?parseHrsInput(hoursRaw):1;
@@ -7416,15 +7417,17 @@ function saveTodo(){
   }
   closeTodoModal();
   renderTodo();saveData();_refreshJobStats();
+  if(!document.getElementById('view-dashboard')?.classList.contains('hidden'))try{renderDashboard();}catch(e){}
 }
 // Parse hours input like "2h", "1h30m", "1.5", "90m"
 // "$1,250.50" → 1250.5; "—", "" or junk → 0. Plan/invoice maths used parseInt on "—" → NaN.
 function _num(v){const n=parseFloat(String(v??'').replace(/[^0-9.\-]/g,''));return isFinite(n)?n:0;}
 function parseHrsInput(s){
   s=String(s??'').trim().toLowerCase();
-  const hm=s.match(/^(\d+(?:\.\d+)?)\s*h(?:\s*(\d+)\s*m?)?$/);
+  const hm=s.match(/^(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hour|hours)(?:\s*(\d+)\s*(?:m|min|mins|minute|minutes)?)?$/);
   if(hm)return parseFloat(hm[1])+(hm[2]?parseInt(hm[2])/60:0);
-  const m=s.match(/^(\d+)\s*m$/);if(m)return parseInt(m[1])/60;
+  const m=s.match(/^(\d+(?:\.\d+)?)\s*(?:m|min|mins|minute|minutes)$/);if(m)return parseFloat(m[1])/60;
+  const c=s.match(/^(\d+):([0-5]\d)$/);if(c)return parseInt(c[1])+parseInt(c[2])/60; // 1:30
   const n=parseFloat(s);return isNaN(n)?0:n; // '—' / blank = no hours (was 1h, inflating plans)
 }
 
@@ -7504,7 +7507,7 @@ function renderJobs(){
   // Apply chip filters
   let filteredJobs=sorted.filter(j=>{
     if(j.status==='archived'&&!_jobsFilters.some(f=>f.type==='status'&&f.value==='Archived'))return false;
-    if(q&&!(`${j.id} ${j.name} ${j.company}`).toLowerCase().includes(q))return false;
+    if(q&&!(`${j.id} ${j.name} ${j.company} ${j.po||""} ${(j.labels||[]).join(" ")} ${j.contact||""}`).toLowerCase().includes(q))return false; // PO, labels and contact too
     return true;
   });
   _jobsFilters.forEach(f=>{
@@ -7577,10 +7580,10 @@ function renderJobs(){
       const sl=j.status==='inplay'||j.status==='paused'?'In Play':j.status==='new'?'New':j.status==='archived'?'Archived':'Complete';
       computeJobStats(j);
       const bPct=j._bPct||0;const hPct=j._hPct||0;
-      const bCol=bPct>=100?'var(--red)':bPct>=80?'#FF9800':'#4CAF50';
-      const hCol=hPct>=100?'var(--red)':hPct>=80?'#FF9800':'#4CAF50';
+      const bCol=bPct>=100?'var(--red)':bPct>=80?'var(--warn)':'var(--ok)';
+      const hCol=hPct>=100?'var(--red)':hPct>=80?'var(--warn)':'var(--ok)';
       const billDot=j.billable===false?'<span style="width:6px;height:6px;border-radius:50%;background:#CBD5E1;display:inline-block;margin-right:5px;" title="Non-billable"></span>':'<span style="width:6px;height:6px;border-radius:50%;background:var(--ok);display:inline-block;margin-right:5px;" title="Billable"></span>';
-      const labels=(j.labels||[]).slice(0,3).map(l=>{const c=labelColor(l);return`<span class="job-label-pip" style="background:${c}18;color:${c};border:1px solid ${c}44;">${l}</span>`;}).join('');
+      const labels=(j.labels||[]).slice(0,3).map(l=>{const c=labelColor(l);return`<span class="job-label-pip" style="background:${c}18;color:${c};border:1px solid ${c}44;">${esc(l)}</span>`;}).join('');
       const notePrev=j.notes?`<div class="job-notes-preview" title="${j.notes.replace(/"/g,'&quot;')}">${linkify(j.notes.replace(/</g,'&lt;'))}</div>`:'';
       const pausedBadge=j.paused?`<span class="paused-badge" style="margin-left:6px;"><i class="ti ti-pause" style="font-size:10px;"></i> Paused</span>`:'';
       const jPhases=j.id===activeJobId?phases:[];
@@ -7599,7 +7602,7 @@ function renderJobs(){
         <td class="cj-company"><span class="job-co" title="${esc(j.company)}">${billDot}${esc(j.company)}</span></td>
         <td class="cj-budget">
           <div class="bbar-wrap">
-            <div class="bbar-nums"><span style="font-weight:400;color:${bPct>=100?'var(--red)':'inherit'}">$${(j._sellUsed||0).toLocaleString()}</span><span class="bbar-of">/ $${(j._plannedSell||0).toLocaleString()}</span></div>
+            <div class="bbar-nums"><span style="font-weight:400;color:${bPct>=100?'var(--red)':'inherit'}">${_money(Math.round((j._sellUsed||0)))}</span><span class="bbar-of">/ ${_money(Math.round(j._plannedSell||0))}</span></div>
             <div class="bbar-track"><div class="bbar-fill" style="width:${Math.min(bPct,100)}%;background:${bCol};"></div></div>
             <div style="font-size:10px;color:${bPct>=100?'var(--red)':'var(--muted)'};">${bPct}%</div>
           </div>
@@ -7612,7 +7615,7 @@ function renderJobs(){
           </div>
         </td>
         <td class="cj-labels"><div class="job-labels-cell">${labels||'<span style="font-size:12px;color:var(--muted);">—</span>'}</div>${progHTML}</td>
-        <td class="cj-status">${wfCls==='wf-live'?`<span class="wf-quiet"><i></i>Live</span>`:`<span class="wf-badge ${wfCls}">${wfLabel}</span>`}${j.po?`<div style="font-size:10px;color:var(--muted);margin-top:3px;">PO ${j.po}</div>`:''}</td>`;
+        <td class="cj-status">${wfCls==='wf-live'?`<span class="wf-quiet"><i></i>Live</span>`:`<span class="wf-badge ${wfCls}">${wfLabel}</span>`}${j.po?`<div style="font-size:10px;color:var(--muted);margin-top:3px;">PO ${esc(j.po)}</div>`:''}</td>`;
       frag.appendChild(tr);
       _jobsRenderedCount=i+1;
     }
@@ -8609,7 +8612,7 @@ function _showSplitZones(t,day){
     z.style.left=(r.right-18)+'px';
     z.style.top=(r.top+64)+'px';
     z.style.height=Math.max(120,r.height-72)+'px';
-    z.dataset.left=i+1;z.dataset.right=i+2;
+    z.dataset.left=cols[i].dataset.day;z.dataset.right=cols[i+1].dataset.day;
     z.dataset.taskId=t.id;z.dataset.fromDay=day;
     const _h=formatHrs((t.hours||0)/2)||'';
     z.innerHTML=`<span class="sz-ico"><i class="ti ti-arrows-split-2"></i></span><span class="sz-lbl">Split</span><span class="sz-sub">${_h} + ${_h}</span>`;
@@ -9541,7 +9544,7 @@ function ctxDo(a){
   if(a==='delete'){ph.items=ph.items.filter(i=>i.id!==ctxTarget.itemId);renderPhases();}
   else if(a==='todo'){
     // Open todo modal pre-filled with item name, note, and job
-    openTodoModal(activeJobId,5);
+    openTodoModal(activeJobId);
     setTimeout(()=>{
       if(item){
         // Pre-fill task title with item name
@@ -10295,8 +10298,8 @@ function renderInvoice(j){
   const phSections=phases.map(ph=>{
     const phTotal=ph.items.reduce((s,i)=>s+_num(i.total),0);
     subtotal+=phTotal;
-    const lines=ph.items.map(i=>`<div class="inv-line"><span class="inv-ln">${i.name}</span><span class="inv-lv">$${_num(i.total).toLocaleString()}.00</span></div>`).join('');
-    return`<div class="inv-sec"><div class="inv-sec-h">${ph.name}</div>${lines}<div class="inv-sub"><span class="inv-sub-l">Subtotal</span><span>$${phTotal.toLocaleString()}.00</span></div></div>`;
+    const lines=ph.items.map(i=>`<div class="inv-line"><span class="inv-ln">${esc(i.name)}</span><span class="inv-lv">${_c2m2(_num(i.total))}</span></div>`).join('');
+    return`<div class="inv-sec"><div class="inv-sec-h">${esc(ph.name)}</div>${lines}<div class="inv-sub"><span class="inv-sub-l">Subtotal</span><span>${_c2m2(phTotal)}</span></div></div>`;
   }).join('');
   const gst=Math.round(subtotal*0.15);
   const total=subtotal+gst;
@@ -10318,14 +10321,14 @@ function renderInvoice(j){
       <div><div class="inv-ml">Issued</div><div class="inv-mv">${fmt(now)}</div></div>
       <div><div class="inv-ml">Due</div><div class="inv-mv">${fmt(due)} · 20 days</div></div>
       <div><div class="inv-ml">Client</div><div class="inv-mv">${esc(j.company)}</div></div>
-      <div><div class="inv-ml">Reference</div><div class="inv-mv inv-editable" contenteditable="true" id="inv-ref">${j.id} ${j.company.split(' ')[0]} ${now.getFullYear()}</div></div>
+      <div><div class="inv-ml">Reference</div><div class="inv-mv inv-editable" contenteditable="true" id="inv-ref">${j.id} ${esc((j.company||'').split(' ')[0])} ${now.getFullYear()}</div></div>
     </div>
     <div class="inv-job-title">${j.id} ${esc(j.name)}</div>
     ${_splitInvoicesHTML(j)}
     ${phSections}
-    <div class="inv-tot"><span class="inv-tot-l">Subtotal ex GST</span><span>$${subtotal.toLocaleString()}.00</span></div>
-    <div class="inv-tot" style="border-top:none;padding-top:0;"><span class="inv-tot-l">GST 15%</span><span>$${gst.toLocaleString()}.00</span></div>
-    <div class="inv-tot" style="font-size:16px;"><span>Total inc GST</span><span style="font-weight:500;">$${total.toLocaleString()}.00</span></div>`;
+    <div class="inv-tot"><span class="inv-tot-l">Subtotal ex GST</span><span>${_c2m2(subtotal)}</span></div>
+    <div class="inv-tot" style="border-top:none;padding-top:0;"><span class="inv-tot-l">GST 15%</span><span>${_c2m2(gst)}</span></div>
+    <div class="inv-tot" style="font-size:16px;"><span>Total inc GST</span><span style="font-weight:500;">${_c2m2(total)}</span></div>`;
 }
 function copyInvoiceToXero(){
   const j=jobs.find(x=>x.id===activeJobId);if(!j)return;
@@ -11625,6 +11628,7 @@ function closeAnyOpenModal(){
   const sp=document.getElementById('starred-panel');
   if(sp?.classList.contains('on')){closeStarredPanel();return true;}
   if(document.getElementById('label-picker')){closeLabelPicker();return true;}
+  if(document.getElementById('tm-panel')?.classList.contains('open')&&!document.querySelector('.modal-bg.on')){closeTeamPanel();return true;}
   let closed=false;
   ['create-modal','todo-modal','inv-modal','fup'].forEach(id=>{
     const el=document.getElementById(id);
@@ -11657,6 +11661,7 @@ document.addEventListener('keydown',e=>{
   const ae=document.activeElement;
   const typing=ae&&(/INPUT|TEXTAREA|SELECT/.test(ae.tagName)||ae.isContentEditable);
   if(typing||mod||e.altKey)return;
+  if(document.querySelector('.modal-bg.on,#todo-modal.on,#create-modal.on,#inv-modal.on,#starred-panel.on,#tm-panel.open'))return;
   // Create shortcuts (review C extras): J job · Q quote · E expense · ? list
   if(!document.querySelector('.modal-bg.on')){
     const k=e.key.toLowerCase();
@@ -11681,7 +11686,7 @@ document.addEventListener('keydown',e=>{
   }
   const todoActive=!document.getElementById('view-todo').classList.contains('hidden');
   const schedActive=!document.getElementById('view-schedule')?.classList.contains('hidden');
-  if(schedActive&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();weekOffset+=e.key==='ArrowLeft'?-1:1;renderSchedule();return;}
+  if(schedActive&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();const _st=(typeof _c2Sched!=='undefined'&&_c2Sched.weeks)||1;weekOffset+=e.key==='ArrowLeft'?-_st:_st;renderSchedule();return;}
   if(todoActive&&e.key==='ArrowLeft'){e.preventDefault();toggleWeek(-1);}
   if(todoActive&&e.key==='ArrowRight'){e.preventDefault();toggleWeek(1);}
   if(todoActive&&(e.key==='f'||e.key==='F')){e.preventDefault();toggleFocusToday();}
@@ -11709,7 +11714,10 @@ function _focusToggleDone(taskId){
   const wd=getWeekData(currentPerson,0);
   const t=(wd[day]||[]).find(x=>x.id===taskId);if(!t)return;
   t.done=!t.done;
-  saveData();renderFocusToday();
+  // Same done path as the board: activity, job stats and the "log time?" follow-up.
+  try{if(t.jobId)logActivity(t.jobId,currentPerson,'task_status',`Task <strong>${esc(t.title)}</strong> ${t.done?'marked done':'reopened'}`);}catch(e){}
+  if(t.done){_fupDay=weekOffset===0?day:null;_showFupForTask(t);}
+  saveData();renderFocusToday();try{_refreshJobStats();}catch(e){}
 }
 function renderFocusToday(){
   const cols=document.getElementById('day-cols');if(!cols)return;
@@ -11814,7 +11822,7 @@ function _getTimeEntries(){
   if(stLoggedTimes.length){
     return stLoggedTimes.map(lt=>{
       const u=stUsersById[lt.userId]||{name:'Unknown',initials:'?',color:'#999',key:'st_'+lt.userId};
-      const jobNum=_stIdToJobNum[lt.job?.id]||null;
+      const jobNum=_stIdToJobNum[lt.job?.id]||(lt.job?.number?String(lt.job.number):null); // platform-created jobs have no ST id
       return{
         personKey:u.key,personName:u.name,personColor:u.color,personInitials:u.initials,
         date:new Date((lt.date||'').slice(0,10)+'T12:00:00'),
@@ -12468,7 +12476,7 @@ function renderQuotes(){
     const qtValue=qt.totalAmountExTax!=null?qt.totalAmountExTax:(job?job._plannedSell:null);
     const jobNum=qt.jobNumber||job?.id||'';
     return`<div class="qinv-card" id="qcard-${qt.id}">
-      <div class="qinv-card-head" onclick="openQuoteDocPreview('${qt.id}')">
+      <div class="qinv-card-head" onclick="toggleQinvDetail('qcard-${qt.id}')" title="Show details">
         <span class="qinv-card-num">${qt.quoteNumber||qt.id}</span>
         <span class="qinv-card-job">${jobNum||'—'}</span>
         <span class="qinv-card-name" title="${esc(qt.quoteName||qt.jobName||'')}">${esc(String(qt.quoteName||qt.jobName||'—').replace(/^\[\d+\]\s*/,''))}${qt._local?'<span style="font-size:10px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:6px;">Local</span>':''}</span>
@@ -12482,15 +12490,16 @@ function renderQuotes(){
         <div style="padding:14px 20px;font-size:12px;color:var(--muted);display:flex;gap:24px;flex-wrap:wrap;">
           <span><strong>Quote #:</strong> ${qt.quoteNumber||qt.id}</span>
           <span><strong>Job:</strong> ${jobNum?`#${jobNum} `:''} ${esc(qt.jobName||'—')}</span>
-          <span><strong>Sent by:</strong> ${qt.sentByUser||'—'}</span>
+          <span><strong>Sent by:</strong> ${esc(qt.sentByUser||'—')}</span>
           <span><strong>Sent:</strong> ${fmtDate(qt.sentDate)}</span>
           ${qt.approvedDate?`<span><strong>Approved:</strong> ${fmtDate(qt.approvedDate)}</span>`:''}
           ${qtValue!=null?`<span><strong>Value:</strong> $${Math.round(qtValue).toLocaleString()} ex GST</span>`:''}
-          ${job?.po?`<span><strong>PO:</strong> ${job.po}</span>`:''}
-          ${job?.lead&&people[job.lead]?`<span><strong>Lead:</strong> ${people[job.lead].name}</span>`:''}
+          ${job?.po?`<span><strong>PO:</strong> ${esc(job.po)}</span>`:''}
+          ${job?.lead&&people[job.lead]?`<span><strong>Lead:</strong> ${esc(people[job.lead].name)}</span>`:''}
         </div>
         <div class="qinv-actions">
-          <button class="d-action" onclick="event.stopPropagation();openQuoteDetail('${qt.id}')"><i class="ti ti-file-text" style="font-size:12px;"></i> View detail</button>
+          <button class="d-action primary" onclick="event.stopPropagation();openQuoteDetail('${qt.id}')"><i class="ti ti-file-text" style="font-size:12px;"></i> Open quote</button>
+          <button class="d-action" onclick="event.stopPropagation();openQuoteDocPreview('${qt.id}')"><i class="ti ti-printer" style="font-size:12px;"></i> Preview document</button>
           ${job?`<button class="d-action" onclick="event.stopPropagation();openJobDetail('${job.id}')"><i class="ti ti-external-link" style="font-size:12px;"></i> Open job</button>`:''}
         </div>
       </div>
@@ -12598,14 +12607,15 @@ function renderInvoices(){
   // Totals inc GST — read the real inc-tax fields from the invoices rather than grossing up
   // ex-tax by a flat 1.15 (which ignores discounts / mixed tax).
   let totalIssuedInc=0,totalPaidInc=0;
-  [...(stInvoices||[]),..._natInv].forEach(i=>{
+  inv.forEach(i=>{
     const s=_getInvStatus(i);
     if(s!=='draft'&&s!=='voided')totalIssuedInc+=(i.totalAmountIncTax||0);
     totalPaidInc+=(i.amountPaidIncTax||0);
   });
   document.getElementById('invoices-count').textContent=`${inv.length} invoice${inv.length!==1?'s':''}`;
   const totEl=document.getElementById('invoices-total');
-  if(totEl)totEl.innerHTML=`$${Math.round(totalIssuedInc).toLocaleString()} issued &nbsp;·&nbsp; <span style="color:var(--ok-ink);">$${Math.round(totalPaidInc).toLocaleString()} paid</span>`;
+  const _owing=Math.max(0,totalIssuedInc-totalPaidInc);
+  if(totEl)totEl.innerHTML=`$${Math.round(totalIssuedInc).toLocaleString()} issued &nbsp;·&nbsp; <span style="color:var(--ok-ink);">$${Math.round(totalPaidInc).toLocaleString()} paid</span>${_owing>=1?` &nbsp;·&nbsp; <span style="color:var(--warn-ink);">$${Math.round(_owing).toLocaleString()} owing</span>`:''}`;
 
   // DSO metric
   const paidInvs=inv.filter(i=>i.paidDate&&i.sentDate);
@@ -15061,7 +15071,7 @@ function _c2SchedPeopleGrid(keys,days){
     return`<tr><td class="lbl"><div style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="c2-av" style="background:${esc(p.color||'#999')};width:20px;height:20px;font-size:8px;">${esc(p.initials||'?')}</span><span style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.name)}</span></div></td>${cells}<td class="tot" title="Capacity ${esc(formatHrs(capTot)||'0h')}">${esc(formatHrs(tot)||'—')}<div class="c2-hint">of ${esc(formatHrs(capTot)||'0h')}</div></td></tr>`;
   }).join('');
   const foot=`<tfoot><tr><td class="lbl">Total</td>${days.map((d,i)=>`<td class="${d.first?'wk-start':''}">${esc(formatHrs(dayTot[i])||'—')}</td>`).join('')}<td class="tot" id="c2-sched-grand">${esc(formatHrs(grand)||'—')}</td></tr></tfoot>`;
-  return{html:`<table class="c2-sg${_c2Sched.weeks>1?' multi':''}" style="min-width:${180+days.length*(_c2Sched.weeks>2?44:64)+80}px;">${_c2SchedHead(days,180,80)}<tbody>${rows}</tbody>${foot}</table>`,grand};
+  return{html:`<table class="c2-sg${_c2Sched.weeks>1?' multi':''}" style="min-width:${180+days.length*(_c2Sched.weeks>2?44:64)+80}px;">${_c2SchedHead(days,180,80)}<tbody>${rows||`<tr><td colspan="${days.length+2}" style="padding:36px;text-align:center;color:var(--muted);">No people selected — pick someone above.</td></tr>`}</tbody>${foot}</table>`,grand};
 }
 function _c2SchedJobsGrid(keys,days){
   const jobById=new Map(jobs.map(j=>[String(j.id),j]));
