@@ -10691,13 +10691,13 @@ function renderDeadlinesCal(){
   const addEv=(dateStr,ev)=>{if(!dateStr)return;const k=dateStr.slice(0,10);if(!events[k])events[k]=[];events[k].push(ev);};
   // Job due dates — live (in-play) jobs only, matching the Dashboard's "Needs attention" deadlines
   jobs.filter(j=>j.status==='inplay'&&j.dueDate).forEach(j=>{
-    addEv(j.dueDate,{label:`${j.id} ${esc(j.name)}`,color:'#E65100',jid:j.id,type:'job'});
+    addEv(j.dueDate,{label:`${j.id} ${esc(j.name)}`,color:'var(--warn-ink)',jid:j.id,type:'job'});
   });
   // Invoice due dates
   (stInvoices||[]).filter(i=>i.dueDate).forEach(i=>{
     const s=(i.invoiceStatus?.name||'').toLowerCase();
     if(s==='paid'||s==='voided')return;
-    addEv(i.dueDate,{label:esc(i.company?.name||i.jobName||'Invoice'),color:'var(--red)',jid:null,type:'inv'});
+    addEv(i.dueDate,{label:esc(`${i.number?i.number+' · ':''}${i.company?.name||i.jobName||'Invoice'}${i.totalAmountIncTax?' · '+fmtDollar(i.totalAmountIncTax):''}`),color:'var(--red)',jid:null,on:`openInvoiceDetail(${JSON.stringify(i.id)})`,type:'inv'});
   });
   // Calendar grid
   const firstDay=new Date(yr,mo,1);
@@ -10715,7 +10715,7 @@ function renderDeadlinesCal(){
     const evs=events[dStr]||[];
     html+=`<div style="background:var(--white);min-height:150px;padding:8px 8px 4px;${isToday?'outline:2px solid var(--red);outline-offset:-2px;':''}">
       <div style="font-size:13px;font-weight:${isToday?600:400};color:${isToday?'var(--red)':'var(--ink)'};margin-bottom:6px;">${d}</div>
-      ${evs.slice(0,5).map(ev=>`<div onclick="${ev.jid?`openJobDetail('${ev.jid}')`:''}" style="font-size:11px;background:${ev.color};color:#fff;border-radius:6px;padding:2px 5px;margin-bottom:3px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;${ev.jid?'cursor:pointer;':''}" title="${ev.label}">${ev.label}</div>`).join('')}
+      ${evs.slice(0,5).map(ev=>`<div onclick="${ev.jid?`openJobDetail('${ev.jid}')`:(ev.on?esc(ev.on):'')}" style="font-size:11px;background:${ev.color};color:#fff;border-radius:6px;padding:2px 5px;margin-bottom:3px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;${ev.jid||ev.on?'cursor:pointer;':''}" title="${ev.label}">${ev.label}</div>`).join('')}
       ${evs.length>5?`<div style="font-size:10px;color:var(--muted);">+${evs.length-5} more</div>`:''}
     </div>`;
   }
