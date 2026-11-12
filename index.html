@@ -2487,12 +2487,12 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
         <!-- Settings sidebar nav -->
         <div id="sett-sidenav" style="width:216px;flex-shrink:0;border-right:1px solid var(--border);background:transparent;overflow-y:auto;padding:36px 0 20px;">
           <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:0 22px 10px;">Settings</div>
-          <div class="sett-nav-item active" id="sni-profile" onclick="switchSettTab('profile')"><i class="ti ti-user" style="font-size:14px;"></i> My Profile</div>
+          <div class="sett-nav-item active" id="sni-profile" onclick="switchSettTab('profile')"><i class="ti ti-user" style="font-size:14px;"></i> My profile</div>
           <div class="sett-nav-item" id="sni-team" onclick="switchSettTab('team')"><i class="ti ti-users" style="font-size:14px;"></i> Team</div>
-          <div class="sett-nav-item" id="sni-defaults" onclick="switchSettTab('defaults')"><i class="ti ti-adjustments" style="font-size:14px;"></i> Workspace Defaults</div>
-          <div class="sett-nav-item" id="sni-items" onclick="switchSettTab('items')"><i class="ti ti-list" style="font-size:14px;"></i> Job Items</div>
+          <div class="sett-nav-item" id="sni-defaults" onclick="switchSettTab('defaults')"><i class="ti ti-adjustments" style="font-size:14px;"></i> Workspace defaults</div>
+          <div class="sett-nav-item" id="sni-items" onclick="switchSettTab('items')"><i class="ti ti-list" style="font-size:14px;"></i> Job items</div>
           <div class="sett-nav-item" id="sni-labels" onclick="switchSettTab('labels')"><i class="ti ti-tag" style="font-size:14px;"></i> Labels</div>
-          <div class="sett-nav-item" id="sni-sync" onclick="switchSettTab('sync')"><i class="ti ti-cloud" style="font-size:14px;"></i> Workspace Sync</div>
+          <div class="sett-nav-item" id="sni-sync" onclick="switchSettTab('sync')"><i class="ti ti-cloud" style="font-size:14px;"></i> Workspace sync</div>
           <div class="sett-nav-item" id="sni-data" onclick="switchSettTab('data')"><i class="ti ti-database" style="font-size:14px;"></i> Data</div>
           <div class="sett-nav-item" id="sni-about" onclick="switchSettTab('about')"><i class="ti ti-info-circle" style="font-size:14px;"></i> About</div>
           <div style="margin-top:auto;padding:16px 12px 4px;border-top:1px solid var(--border);margin-top:24px;">
@@ -2500,7 +2500,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
               <div id="sett-av-mini" style="width:32px;height:32px;border-radius:50%;background:#6B7FA3;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0;">?</div>
               <div style="min-width:0;">
                 <div id="sett-name-mini" style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</div>
-                <div id="sett-role-mini" style="font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">My Profile</div>
+                <div id="sett-role-mini" style="font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">My profile</div>
               </div>
             </div>
           </div>
@@ -3159,9 +3159,15 @@ function savePeople(){
 }
 // ── Workspace backup (export / import all local data) ─────────────────────────
 const WORKSPACE_KEYS=['cc_people','cc_person_status','cc_clients','cc_boards','cc_labels','cc_line_items','cc_expense_items','cc_config_published_at','cc_local_quotes','cc_native_jobs','cc_job_overlay','cc_native_time'];
+// Back up every cc_* key (leave, rate cards, templates, counters, targets…), not just a fixed list —
+// the fixed list missed the invoice/PO/credit-note counters, so a restore could reissue numbers.
+// Secrets and per-device state stay out.
+const _WS_SKIP=['cc_gh_token','cc_me','cc_timer','cc_bg_image','cc_last_sync','cc_seen_version','cc_config_applied_at','cc_rollover_seen'];
+function _wsBackupAllowed(k){return /^cc_/.test(k)&&!_WS_SKIP.includes(k);}
+function _wsBackupKeys(){const out=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(_wsBackupAllowed(k))out.push(k);}}catch(e){}return out.length?out:WORKSPACE_KEYS;}
 function exportWorkspace(){
   const blob={_app:'cc-platform',_version:APP_VERSION,_exportedAt:new Date().toISOString(),data:{}};
-  WORKSPACE_KEYS.forEach(k=>{const v=localStorage.getItem(k);if(v!=null)blob.data[k]=v;});
+  _wsBackupKeys().forEach(k=>{const v=localStorage.getItem(k);if(v!=null)blob.data[k]=v;});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([JSON.stringify(blob,null,2)],{type:'application/json'}));
   a.download=`cc-workspace-${_localISO()}.json`;
@@ -3176,7 +3182,7 @@ function importWorkspace(file){
       const blob=JSON.parse(e.target.result);
       if(!blob||blob._app!=='cc-platform'||!blob.data)throw new Error('Not a C&C workspace file');
       ccConfirm(`Restore this workspace backup from ${blob._exportedAt?new Date(blob._exportedAt).toLocaleString():'unknown date'}? This overwrites your current people, boards, clients and config in this browser.`,()=>{
-        Object.entries(blob.data).forEach(([k,v])=>{if(WORKSPACE_KEYS.includes(k))localStorage.setItem(k,v);});
+        Object.entries(blob.data).forEach(([k,v])=>{if(_wsBackupAllowed(k))localStorage.setItem(k,v);});
         toast('Workspace restored — reloading…','success');
         setTimeout(()=>location.reload(),900);
       },'Restore',true);
@@ -4386,10 +4392,14 @@ async function initStreamtime(silent){
         let _cfgSeen=null;try{_cfgSeen=localStorage.getItem('cc_config_applied_at');}catch(e){}
         if(!isOwnPublish&&_cfgSeen!==_cfgVer){
           try{localStorage.setItem('cc_config_applied_at',_cfgVer);}catch(e){}
-          Object.entries(cfg.people||{}).forEach(([k,v])=>{people[k]={...(people[k]||{}),...v};});
-          if(cfg.globalLabels?.length)globalLabels=cfg.globalLabels;
-          if(cfg.LINE_ITEMS?.length)LINE_ITEMS=cfg.LINE_ITEMS;
-          if(cfg.EXPENSE_ITEMS?.length)EXPENSE_ITEMS=cfg.EXPENSE_ITEMS;
+          // Per-person dashboard preferences are personal to each browser: never take the publisher's copy.
+          const _personal=['dashTeams','dashHide'];
+          Object.entries(cfg.people||{}).forEach(([k,v])=>{const vv={...v};_personal.forEach(f=>delete vv[f]);people[k]={...(people[k]||{}),...vv};});
+          // Persist what we apply — previously labels/item types were memory-only and reverted on the next load.
+          if(cfg.globalLabels?.length){globalLabels=cfg.globalLabels;saveGlobalLabels();}
+          if(cfg.LINE_ITEMS?.length){LINE_ITEMS=cfg.LINE_ITEMS;try{localStorage.setItem('cc_line_items',JSON.stringify(LINE_ITEMS));}catch(e){}}
+          if(cfg.EXPENSE_ITEMS?.length){EXPENSE_ITEMS=cfg.EXPENSE_ITEMS;try{localStorage.setItem('cc_expense_items',JSON.stringify(EXPENSE_ITEMS));}catch(e){}}
+          if(Array.isArray(cfg.teams)){try{localStorage.setItem('cc_teams',JSON.stringify(cfg.teams));}catch(e){}}
           savePeople();
         }
       }
@@ -10716,7 +10726,7 @@ function _updateSettSidenavProfile(){
   const rl=document.getElementById('sett-role-mini');
   if(av){av.style.background=me.color||'#6B7FA3';av.textContent=me.initials||'?';}
   if(nm)nm.textContent=me.name||'—';
-  if(rl)rl.textContent=me.role||'My Profile';
+  if(rl)rl.textContent=me.role||'My profile';
 }
 function switchSettTab(tab){
   _settActiveTab=tab;
@@ -10738,7 +10748,7 @@ function renderSettings(){
     const dh=me.dashHide||[];
     const stU=Object.values(stUsersById||{}).find(u=>u.name===me.name)||null;
     wrap.innerHTML=`
-      <div class="sett-tab-hd">My Profile</div>
+      <div class="sett-tab-hd">My profile</div>
       <div class="sett-tab-sub">Your identity, rates, and dashboard preferences.</div>
       <div class="sett-card">
         <div class="sett-card-hd">Identity</div>
@@ -10748,9 +10758,9 @@ function renderSettings(){
               <div id="my-av-preview" style="width:72px;height:72px;border-radius:50%;background:${me.color||'#6B7FA3'};display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:600;color:#fff;">${me.initials||'?'}</div>
             </div>
             <div style="flex:1;display:flex;flex-direction:column;gap:10px;">
-              <div class="tm-panel-field" style="margin:0;"><label>Display name</label><input value="${me.name||''}" onchange="updatePerson('${MY_PERSON}','name',this.value);renderSettings()"></div>
-              <div class="tm-panel-field" style="margin:0;"><label>Role / title</label><input value="${me.role||''}" placeholder="e.g. Creative Director" onchange="updatePerson('${MY_PERSON}','role',this.value)"></div>
-              <div class="tm-panel-field" style="margin:0;"><label>Team</label><input list="my-team-dl" value="${me.team||''}" placeholder="e.g. Design" onchange="updatePerson('${MY_PERSON}','team',this.value.trim())"><datalist id="my-team-dl">${allTeams.map(t=>`<option value="${t}">`).join('')}</datalist></div>
+              <div class="tm-panel-field" style="margin:0;"><label>Display name</label><input value="${esc(me.name||"")}" onchange="updatePerson('${MY_PERSON}','name',this.value);renderSettings()"></div>
+              <div class="tm-panel-field" style="margin:0;"><label>Role / title</label><input value="${esc(me.role||"")}" placeholder="e.g. Creative Director" onchange="updatePerson('${MY_PERSON}','role',this.value)"></div>
+              <div class="tm-panel-field" style="margin:0;"><label>Team</label><input list="my-team-dl" value="${esc(me.team||"")}" placeholder="e.g. Design" onchange="updatePerson('${MY_PERSON}','team',this.value.trim())"><datalist id="my-team-dl">${allTeams.map(t=>`<option value="${esc(t)}">`).join('')}</datalist></div>
             </div>
           </div>
           <div class="tm-panel-section-lbl" style="margin-bottom:10px;">Avatar colour</div>
@@ -10834,8 +10844,8 @@ function renderSettings(){
       return`<div class="tm-card${p._archived?' archived':''}" onclick="openTeamMember('${key}')">
         <div class="tm-av" style="background:${p.color||'#6B7FA3'}">${p.initials||'?'}</div>
         <div class="tm-info">
-          <div class="tm-name">${p.name}${isMe?' <span style="font-size:10px;background:var(--off);border:1px solid var(--border);border-radius:6px;padding:1px 5px;color:var(--muted);margin-left:4px;">You</span>':''}</div>
-          <div class="tm-role">${p.role||'No role set'}${p.team?' · '+p.team:''}</div>
+          <div class="tm-name">${esc(p.name)}${isMe?' <span style="font-size:10px;background:var(--off);border:1px solid var(--border);border-radius:6px;padding:1px 5px;color:var(--muted);margin-left:4px;">You</span>':''}</div>
+          <div class="tm-role">${esc(p.role||"No role set")}${p.team?" · "+esc(p.team):""}</div>
           <div class="tm-meta">
             <span>$${costR}/h cost</span>${billR?`<span>$${billR}/h bill</span>`:''}
             <span>${p.hoursPerDay||8}h/day</span>
@@ -10873,7 +10883,7 @@ function renderSettings(){
   /* ── Workspace Defaults ── */
   if(tab==='defaults'){
     wrap.innerHTML=`
-      <div class="sett-tab-hd">Workspace Defaults</div>
+      <div class="sett-tab-hd">Workspace defaults</div>
       <div class="sett-tab-sub">Company-wide defaults used across all jobs and reporting.</div>
       <div class="sett-card">
         <div class="sett-card-hd">Rates &amp; billing</div>
@@ -10901,7 +10911,7 @@ function renderSettings(){
   /* ── Job Items ── */
   if(tab==='items'){
     wrap.innerHTML=`
-      <div class="sett-tab-hd">Job Items</div>
+      <div class="sett-tab-hd">Job items</div>
       <div class="sett-tab-sub">Item types available when building a job plan, and expense categories.</div>
       <div class="sett-card">
         <div class="sett-card-hd">Plan item types</div>
@@ -10951,7 +10961,7 @@ function renderSettings(){
   if(tab==='sync'){
     const lastPub=localStorage.getItem('cc_config_published_at');
     wrap.innerHTML=`
-      <div class="sett-tab-hd">Workspace Sync</div>
+      <div class="sett-tab-hd">Workspace sync</div>
       <div class="sett-tab-sub">Publish your team config to GitHub so every team member sees the same setup.</div>
       <div class="sett-card">
         <div class="sett-card-hd">GitHub connection</div>
@@ -11067,19 +11077,19 @@ function openTeamMember(key){
   head.innerHTML=`
     <div style="width:56px;height:56px;border-radius:50%;background:${p.color||'#6B7FA3'};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;color:#fff;flex-shrink:0;">${p.initials||'?'}</div>
     <div style="flex:1;min-width:0;">
-      <div style="font-size:16px;font-weight:500;">${p.name}</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:2px;">${p.role||'No role set'}${p.team?' · '+p.team:''}</div>
+      <div style="font-size:16px;font-weight:500;">${esc(p.name)}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px;">${esc(p.role||"No role set")}${p.team?" · "+esc(p.team):""}</div>
       ${stU?`<div style="font-size:11px;color:var(--muted);margin-top:2px;">Synced from Streamtime</div>`:''}
     </div>
     <button onclick="closeTeamPanel()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;font-size:18px;"><i class="ti ti-x"></i></button>`;
   body.innerHTML=`
     <div class="tm-panel-section">
       <div class="tm-panel-section-lbl">Identity</div>
-      <div class="tm-panel-field"><label>Display name</label><input value="${p.name}" onchange="updatePerson('${key}','name',this.value);document.querySelector('#tm-panel-head div:nth-child(2) div').textContent=this.value;"></div>
-      <div class="tm-panel-field"><label>Role / title</label><input value="${p.role||''}" placeholder="e.g. Senior Designer" onchange="updatePerson('${key}','role',this.value)"></div>
+      <div class="tm-panel-field"><label>Display name</label><input value="${esc(p.name)}" onchange="updatePerson('${key}','name',this.value);document.querySelector('#tm-panel-head div:nth-child(2) div').textContent=this.value;"></div>
+      <div class="tm-panel-field"><label>Role / title</label><input value="${esc(p.role||"")}" placeholder="e.g. Senior Designer" onchange="updatePerson('${key}','role',this.value)"></div>
       <div class="tm-panel-field"><label>Team</label>
-        <input list="tm-team-list" value="${p.team||''}" placeholder="e.g. Design" onchange="updatePerson('${key}','team',this.value.trim())">
-        <datalist id="tm-team-list">${allTeams.map(t=>`<option value="${t}">`).join('')}</datalist>
+        <input list="tm-team-list" value="${esc(p.team||"")}" placeholder="e.g. Design" onchange="updatePerson('${key}','team',this.value.trim())">
+        <datalist id="tm-team-list">${allTeams.map(t=>`<option value="${esc(t)}">`).join('')}</datalist>
       </div>
     </div>
     <div class="tm-panel-section">
@@ -11143,7 +11153,7 @@ async function publishConfig(){
     if(getRes.ok){const d=await getRes.json();sha=d.sha;}
     else if(getRes.status!==404){const e=await getRes.json();throw new Error('GET failed: '+(e.message||getRes.status));}
 
-    const config={people,globalLabels,LINE_ITEMS,EXPENSE_ITEMS,published_at:new Date().toISOString(),published_by:people[MY_PERSON]?.name||MY_PERSON};
+    const config={people,globalLabels,LINE_ITEMS,EXPENSE_ITEMS,teams:(typeof _rfTeamList==='function'?_rfTeamList():undefined),published_at:new Date().toISOString(),published_by:people[MY_PERSON]?.name||MY_PERSON};
     const content=btoa(unescape(encodeURIComponent(JSON.stringify(config,null,2))));
     const body={message:`config: publish workspace settings`,content,branch:BRANCH};
     if(sha)body.sha=sha;
@@ -18175,6 +18185,211 @@ function _fdRenderPoList(){
     try{_fdExpToolbar();}catch(e){console.error('feat-d expenses toolbar',e);}
     if(_fdExpMode==='po'){try{_fdRenderPoList();}catch(e){console.error('feat-d PO list',e);}return;}
     return _origREL.apply(this,arguments);
+  };
+})();
+</script>
+
+<style id="review-fix-styles">
+/* ── Review fixes (Nov 2026 platform review) ── */
+.rf-teams{display:flex;flex-wrap:wrap;gap:8px;}
+.rf-team-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 10px 6px 12px;border:1px solid var(--border);border-radius:var(--r-ctl);background:var(--white);font-size:12.5px;color:var(--ink);}
+.rf-team-chip .rf-n,.rf-n{font-size:11px;color:var(--muted);}
+.rf-team-chip.none{border-style:dashed;color:var(--muted);}
+.rf-avs{display:inline-flex;}
+.rf-av{width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:600;color:#fff;border:2px solid var(--white);margin-left:-5px;flex-shrink:0;}
+.rf-av:first-child{margin-left:0;}
+.rf-tm-modal{width:720px;}
+.rf-tm-modal .modal-bd{max-height:68vh;overflow-y:auto;}
+.rf-sec-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:2px 0 8px;}
+.rf-team-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+.rf-team-row:last-of-type{border-bottom:none;}
+.rf-team-row .rf-name{font-size:13px;font-weight:500;color:var(--ink);min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rf-team-row .rf-name small{font-weight:400;color:var(--muted);margin-left:6px;font-size:11.5px;}
+.rf-team-row .form-inp{flex:1;min-width:0;padding:6px 9px;}
+.rf-icon-btn{background:transparent;border:1px solid transparent;border-radius:var(--r-ctl);width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer;font-size:14px;flex-shrink:0;}
+.rf-icon-btn:hover{border-color:var(--border);color:var(--ink);background:var(--off);}
+.rf-people{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;}
+.rf-person{display:flex;align-items:center;gap:8px;min-width:0;padding:3px 0;}
+.rf-person .rf-pname{flex:1;min-width:0;font-size:12.5px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rf-person .cc-select{width:150px;flex-shrink:0;}
+.rf-add-row{display:flex;gap:8px;margin-top:10px;}
+.rf-add-row .form-inp{flex:1;}
+.rf-note{font-size:11.5px;color:var(--muted);margin-top:14px;line-height:1.5;}
+.rf-ft-note{margin-right:auto;font-size:11.5px;color:var(--muted);align-self:center;}
+@media (max-width:720px){.rf-people{grid-template-columns:1fr;}}
+</style>
+<script id="review-fix-script">
+/* Review fixes and additions (Nov 2026 platform review). New helpers live here; small
+   in-place fixes are made where the original code is. */
+
+/* ── Settings → Team → Manage teams ────────────────────────────────────────────────
+   Teams are a free-text field on each person (people[k].team). This gives admins one place
+   to rename, merge, add and move people between teams. Empty teams (just added, or kept
+   after moving everyone out) are remembered in cc_teams and travel with the published
+   team config, so the team list is the same for everyone once published. */
+function _rfStoredTeams(){try{const t=JSON.parse(localStorage.getItem('cc_teams')||'[]');return Array.isArray(t)?t.filter(x=>typeof x==='string'&&x.trim()):[];}catch(e){return[];}}
+function _rfSaveTeams(list){try{localStorage.setItem('cc_teams',JSON.stringify([...new Set(list)]));}catch(e){}}
+function _rfActiveKeys(){return Object.keys(people).filter(k=>people[k]&&!people[k]._archived);}
+function _rfTeamList(){
+  const fromPeople=Object.values(people).filter(p=>p&&p.team&&!p._archived).map(p=>p.team);
+  return [...new Set([..._rfStoredTeams(),...fromPeople])].sort((a,b)=>a.localeCompare(b));
+}
+function _rfTeamMembers(t){return _rfActiveKeys().filter(k=>(people[k].team||'')===t);}
+function _rfAvs(keys,max){
+  max=max||5;
+  return `<span class="rf-avs">${keys.slice(0,max).map(k=>{const p=people[k];return`<span class="rf-av" style="background:${esc(p.color||'#6B7FA3')}" title="${esc(p.name)}">${esc(p.initials||'?')}</span>`;}).join('')}</span>${keys.length>max?`<span class="rf-n">+${keys.length-max}</span>`:''}`;
+}
+// Move a team name everywhere it is stored: people (archived too), everyone's dashboard team
+// filter, team targets (Reporting → Teams) and the stored team list.
+function _rfRenameTeamEverywhere(from,to){
+  let moved=0;
+  Object.values(people).forEach(p=>{
+    if(!p)return;
+    if(p.team===from){p.team=to;if(!p._archived)moved++;}
+    if(Array.isArray(p.dashTeams)&&p.dashTeams.includes(from))p.dashTeams=[...new Set(p.dashTeams.map(t=>t===from?to:t))];
+  });
+  try{
+    const tt=JSON.parse(localStorage.getItem('cc_team_targets')||'{}');
+    if(tt&&tt[from]!=null){if(tt[to]==null)tt[to]=tt[from];delete tt[from];localStorage.setItem('cc_team_targets',JSON.stringify(tt));}
+  }catch(e){}
+  _rfSaveTeams(_rfStoredTeams().filter(t=>t!==from).concat(to));
+  return moved;
+}
+function _rfAfterTeamChange(msg){
+  savePeople();
+  try{populatePersonSwitcher();}catch(e){}
+  if(document.getElementById('rf-teams-modal'))_rfRenderTeamsModal();
+  if((typeof _settActiveTab!=='undefined'?_settActiveTab:'')==='team'&&!document.getElementById('view-settings')?.classList.contains('hidden'))renderSettings();
+  if(msg)toast(esc(msg)+' — publish the team config in Settings → Workspace sync to share it','success',4200);
+}
+function openManageTeams(){
+  if(!_needAdmin('manage teams'))return;
+  document.getElementById('rf-teams-modal')?.remove();
+  _rfEditingTeam=null;
+  const m=document.createElement('div');m.className='modal-bg on';m.id='rf-teams-modal';
+  m.innerHTML=`<div class="modal rf-tm-modal" role="dialog" aria-label="Manage teams">
+    <div class="modal-hd"><span class="modal-hd-title">Manage teams</span><button class="modal-x" onclick="closeManageTeams()" aria-label="Close"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd" id="rf-teams-bd"></div>
+    <div class="modal-ft"><span class="rf-ft-note">Changes save as you go.</span><button class="modal-save" onclick="closeManageTeams()">Done</button></div>
+  </div>`;
+  m.addEventListener('mousedown',e=>{if(e.target===m)closeManageTeams();});
+  document.body.appendChild(m);
+  _rfRenderTeamsModal();
+}
+function closeManageTeams(){document.getElementById('rf-teams-modal')?.remove();}
+let _rfEditingTeam=null;
+function _rfRenderTeamsModal(){
+  const bd=document.getElementById('rf-teams-bd');if(!bd)return;
+  const teams=_rfTeamList();
+  const active=_rfActiveKeys().sort((a,b)=>(people[a].name||'').localeCompare(people[b].name||''));
+  const noTeam=active.filter(k=>!people[k].team);
+  const teamOpts=t=>`<option value="">No team</option>`+teams.map(x=>`<option value="${esc(x)}"${x===t?' selected':''}>${esc(x)}</option>`).join('');
+  const rows=teams.map((t,i)=>{
+    const mem=_rfTeamMembers(t);
+    if(_rfEditingTeam===t){
+      return `<div class="rf-team-row">
+        <input class="form-inp" id="rf-rename-inp" value="${esc(t)}" aria-label="Team name" onkeydown="if(event.key==='Enter')_rfCommitRename(${i});if(event.key==='Escape'){event.stopPropagation();_rfEditingTeam=null;_rfRenderTeamsModal();}">
+        <button class="d-action primary" onclick="_rfCommitRename(${i})">Save</button>
+        <button class="d-action" onclick="_rfEditingTeam=null;_rfRenderTeamsModal()">Cancel</button>
+      </div>`;
+    }
+    const others=teams.filter(x=>x!==t);
+    return `<div class="rf-team-row">
+      <div class="rf-name">${esc(t)}<small>${mem.length} ${mem.length===1?'person':'people'}</small></div>
+      ${_rfAvs(mem)}
+      <button class="rf-icon-btn" title="Rename" aria-label="Rename" onclick="_rfStartRename(${i})"><i class="ti ti-pencil"></i></button>
+      ${others.length?`<select class="cc-select" title="Merge into another team" aria-label="Merge into" onchange="if(this.value)_rfMergeTeam(${i},this.value);this.value=''"><option value="">Merge into…</option>${others.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}</select>`:''}
+      <button class="rf-icon-btn" title="${mem.length?'Remove team (its people get no team)':'Remove team'}" aria-label="Remove team" onclick="_rfRemoveTeam(${i})"><i class="ti ti-trash"></i></button>
+    </div>`;
+  }).join('');
+  bd.innerHTML=`
+    <div class="rf-sec-lbl">Teams · ${teams.length}</div>
+    ${rows||`<div class="rf-note" style="margin-top:0;">No teams yet. Add one below, then put people in it.</div>`}
+    <div class="rf-add-row">
+      <input class="form-inp" id="rf-new-team" placeholder="New team name, e.g. Creative" aria-label="New team name" onkeydown="if(event.key==='Enter')_rfAddTeam()">
+      <button class="d-action" onclick="_rfAddTeam()"><i class="ti ti-plus"></i> Add team</button>
+    </div>
+    <div class="rf-sec-lbl" style="margin-top:22px;">People · ${active.length}${noTeam.length?` <span style="text-transform:none;letter-spacing:0;">(${noTeam.length} without a team)</span>`:''}</div>
+    <div class="rf-people">${active.map(k=>{const p=people[k];return`<div class="rf-person">
+      ${_rfAvs([k],1)}<span class="rf-pname" title="${esc(p.name)}${p.role?' · '+esc(p.role):''}">${esc(p.name)}</span>
+      <select class="cc-select" aria-label="Team for ${esc(p.name)}" data-k="${esc(k)}" onchange="_rfMovePerson(this.dataset.k,this.value)">${teamOpts(p.team||'')}</select>
+    </div>`;}).join('')}</div>
+    <div class="rf-note">Renaming or merging updates every person's team, dashboard team filters and team targets. Teams are saved in this browser. Publish the team config in Settings → Workspace sync so everyone sees the same teams.</div>`;
+}
+function _rfStartRename(i){
+  _rfEditingTeam=_rfTeamList()[i]||null;_rfRenderTeamsModal();
+  setTimeout(()=>{const x=document.getElementById('rf-rename-inp');if(x){x.focus();x.select();}},0);
+}
+function _rfCommitRename(i){
+  const from=_rfTeamList()[i];const inp=document.getElementById('rf-rename-inp');
+  const to=(inp?.value||'').trim();
+  if(!from)return;
+  if(!to){toast('Give the team a name','warn');return;}
+  _rfEditingTeam=null;
+  if(to===from){_rfRenderTeamsModal();return;}
+  const exists=_rfTeamList().find(t=>t.toLowerCase()===to.toLowerCase()&&t!==from);
+  if(exists){
+    _rfRenderTeamsModal();
+    ccConfirm(`${esc(exists)} already exists. Merge ${esc(from)} into it?`,()=>_rfMergeTeamByName(from,exists),'Merge');
+    return;
+  }
+  const n=_rfRenameTeamEverywhere(from,to);
+  _rfAfterTeamChange(`Renamed ${from} to ${to} (${n} ${n===1?'person':'people'})`);
+}
+function _rfMergeTeam(i,into){
+  const from=_rfTeamList()[i];
+  if(from&&into&&from!==into)ccConfirm(`Move everyone in ${esc(from)} into ${esc(into)} and remove ${esc(from)}?`,()=>_rfMergeTeamByName(from,into),'Merge');
+}
+function _rfMergeTeamByName(from,into){
+  const n=_rfRenameTeamEverywhere(from,into);
+  _rfAfterTeamChange(`Merged ${from} into ${into} (${n} moved)`);
+}
+function _rfRemoveTeam(i){
+  const t=_rfTeamList()[i];if(!t)return;
+  const mem=_rfTeamMembers(t);
+  const go=()=>{
+    Object.values(people).forEach(p=>{if(!p)return;if(p.team===t)p.team='';if(Array.isArray(p.dashTeams))p.dashTeams=p.dashTeams.filter(x=>x!==t);});
+    _rfSaveTeams(_rfStoredTeams().filter(x=>x!==t));
+    _rfAfterTeamChange(`Removed ${t}`);
+  };
+  if(mem.length)ccConfirm(`Remove ${esc(t)}? Its ${mem.length} ${mem.length===1?'person':'people'} will have no team until you move them.`,go,'Remove team',true);else go();
+}
+function _rfAddTeam(){
+  const inp=document.getElementById('rf-new-team');const name=(inp?.value||'').trim();
+  if(!name){inp?.focus();return;}
+  if(_rfTeamList().some(t=>t.toLowerCase()===name.toLowerCase())){toast(`${esc(name)} already exists`,'warn');return;}
+  _rfSaveTeams(_rfStoredTeams().concat(name));
+  _rfAfterTeamChange(`Added ${name}`);
+  setTimeout(()=>document.getElementById('rf-new-team')?.focus(),0);
+}
+function _rfMovePerson(k,team){
+  const p=people[k];if(!p)return;
+  if(!_needAdmin('manage teams')){_rfRenderTeamsModal();return;}
+  const from=p.team||'';p.team=team||'';
+  // Keep a team that just lost its last person in the list, so it can be refilled or removed on purpose.
+  if(from&&!_rfStoredTeams().includes(from))_rfSaveTeams(_rfStoredTeams().concat(from));
+  _rfAfterTeamChange(`${p.name} moved to ${team||'no team'}`);
+}
+// Team tab: a Teams summary card with the Manage teams entry point, above the member grid.
+(function(){
+  const _orig=renderSettings;
+  renderSettings=function(){
+    _orig.apply(this,arguments);
+    try{
+      if((_settActiveTab||'profile')!=='team')return;
+      const wrap=document.getElementById('settings-scroll');if(!wrap)return;
+      const firstCard=wrap.querySelector('.sett-card');if(!firstCard)return;
+      const teams=_rfTeamList();const noTeam=_rfActiveKeys().filter(k=>!people[k].team);
+      const card=document.createElement('div');card.className='sett-card';card.id='rf-teams-card';
+      card.innerHTML=`<div class="sett-card-hd">Teams <span style="font-weight:400;color:var(--muted);">${teams.length}</span>
+          <button class="d-action" onclick="openManageTeams()" style="margin-left:auto;"><i class="ti ti-users-group" style="font-size:12px"></i> Manage teams</button></div>
+        <div class="sett-card-body" style="padding:14px 16px;">
+          <div class="rf-teams">${teams.map(t=>{const mem=_rfTeamMembers(t);return`<span class="rf-team-chip">${esc(t)} <span class="rf-n">${mem.length}</span>${_rfAvs(mem,4)}</span>`;}).join('')}
+          ${noTeam.length?`<span class="rf-team-chip none">No team <span class="rf-n">${noTeam.length}</span>${_rfAvs(noTeam,4)}</span>`:''}
+          ${!teams.length&&!noTeam.length?'<span style="font-size:12px;color:var(--muted);">No teams yet.</span>':''}</div>
+        </div>`;
+      firstCard.parentNode.insertBefore(card,firstCard);
+    }catch(e){console.warn('teams card',e);}
   };
 })();
 </script>
