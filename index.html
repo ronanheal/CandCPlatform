@@ -19090,8 +19090,9 @@ body.dark{
 }
 
 /* ── 2 · Base ───────────────────────────────────────────────────────────────────────────── */
-body{background:radial-gradient(1200px 760px at 92% -10%,#EFDCD3 0%,var(--desk) 58%)!important;color:var(--ink);font-family:var(--font);font-feature-settings:"cv11","ss01","ss03";}
-body.dark{background:radial-gradient(1200px 760px at 92% -10%,#2A1817 0%,var(--desk) 58%)!important;}
+body:not(.has-bg){background:radial-gradient(1200px 760px at 92% -10%,#EFDCD3 0%,var(--desk) 58%)!important;}
+body{color:var(--ink);font-family:var(--font);font-feature-settings:"cv11","ss01","ss03";}
+body.dark:not(.has-bg){background:radial-gradient(1200px 760px at 92% -10%,#2A1817 0%,var(--desk) 58%)!important;}
 body.has-bg{background-size:cover!important;background-position:center!important;}
 ::selection{background:color-mix(in srgb,var(--red) 18%,transparent);}
 input,textarea{caret-color:var(--red);}
