@@ -2145,7 +2145,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
                 <button class="tvt-btn" id="tvt-cal" onclick="setTodoView('calendar')" title="Calendar"><i class="ti ti-calendar-week" style="font-size:13px;"></i><span>Calendar</span></button>
               </div>
               <button class="wbtn" id="vsp-btn" title="View settings" onclick="toggleVSP(event)" style="padding:5px 7px;"><i class="ti ti-adjustments-horizontal" style="font-size:13px;pointer-events:none;"></i></button>
-              <button class="d-action primary todo-add-btn" onclick="openTodoModal(null,5)"><i class="ti ti-plus" style="font-size:12px;"></i> Add task</button>
+              <button class="d-action primary todo-add-btn" onclick="openTodoModal(null)"><i class="ti ti-plus" style="font-size:12px;"></i> Add task</button>
             </div>
           </div>
           <div class="todo-body">
@@ -2170,7 +2170,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
         <div id="jt-jobs" class="jt-panel" style="display:flex;">
           <div style="padding:20px 28px 4px;"><div class="view-title">Jobs</div><div class="view-sub">Every job on the books</div></div>
           <div class="jobs-toolbar">
-            <div class="jobs-search"><i class="ti ti-search"></i><input id="jobs-search-inp" placeholder="Search jobs…" oninput="filterJobs(this.value)"/></div>
+            <div class="jobs-search"><i class="ti ti-search"></i><input id="jobs-search-inp" placeholder="Search jobs, clients, PO, labels…" oninput="filterJobs(this.value)"/></div>
             <button class="d-action" onclick="_addFilter('jobs')"><i class="ti ti-filter" style="font-size:11px;"></i> Add filter</button>
             <select class="cc-select" id="jobs-groupby" onchange="_setGroupBy('jobs',this.value)">
               <option value="none">No grouping</option>
@@ -2373,7 +2373,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
                   <div id="create-item-menu" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:var(--white);border:1px solid var(--border);border-radius:var(--r-ctl);box-shadow:var(--shadow-l);z-index:900;min-width:160px;padding:4px 0;">
                     <div class="tcm-item" onclick="closeCreateItemMenu();showAddItemForm(null)"><i class="ti ti-list-check" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Item</div>
                     <div class="tcm-item" onclick="closeCreateItemMenu();addPhase()"><i class="ti ti-layout-rows" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Phase</div>
-                    <div class="tcm-item" onclick="closeCreateItemMenu();openTodoModal(activeJobId,5)"><i class="ti ti-checklist" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>To Do</div>
+                    <div class="tcm-item" onclick="closeCreateItemMenu();openTodoModal(activeJobId)"><i class="ti ti-checklist" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>To Do</div>
                     <div class="tcm-item" onclick="closeCreateItemMenu();openLogTimeModal({jobId:activeJobId})"><i class="ti ti-circle-check" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Done task (log time)</div>
                     <div class="tcm-item" onclick="closeCreateItemMenu();startTimer(activeJobId)"><i class="ti ti-player-play" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Start timer</div>
                     <div class="tcm-item" onclick="closeCreateItemMenu();showAddExpenseInline()"><i class="ti ti-receipt" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Expense</div>
@@ -2487,12 +2487,12 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
         <!-- Settings sidebar nav -->
         <div id="sett-sidenav" style="width:216px;flex-shrink:0;border-right:1px solid var(--border);background:transparent;overflow-y:auto;padding:36px 0 20px;">
           <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:0 22px 10px;">Settings</div>
-          <div class="sett-nav-item active" id="sni-profile" onclick="switchSettTab('profile')"><i class="ti ti-user" style="font-size:14px;"></i> My Profile</div>
+          <div class="sett-nav-item active" id="sni-profile" onclick="switchSettTab('profile')"><i class="ti ti-user" style="font-size:14px;"></i> My profile</div>
           <div class="sett-nav-item" id="sni-team" onclick="switchSettTab('team')"><i class="ti ti-users" style="font-size:14px;"></i> Team</div>
-          <div class="sett-nav-item" id="sni-defaults" onclick="switchSettTab('defaults')"><i class="ti ti-adjustments" style="font-size:14px;"></i> Workspace Defaults</div>
-          <div class="sett-nav-item" id="sni-items" onclick="switchSettTab('items')"><i class="ti ti-list" style="font-size:14px;"></i> Job Items</div>
+          <div class="sett-nav-item" id="sni-defaults" onclick="switchSettTab('defaults')"><i class="ti ti-adjustments" style="font-size:14px;"></i> Workspace defaults</div>
+          <div class="sett-nav-item" id="sni-items" onclick="switchSettTab('items')"><i class="ti ti-list" style="font-size:14px;"></i> Job items</div>
           <div class="sett-nav-item" id="sni-labels" onclick="switchSettTab('labels')"><i class="ti ti-tag" style="font-size:14px;"></i> Labels</div>
-          <div class="sett-nav-item" id="sni-sync" onclick="switchSettTab('sync')"><i class="ti ti-cloud" style="font-size:14px;"></i> Workspace Sync</div>
+          <div class="sett-nav-item" id="sni-sync" onclick="switchSettTab('sync')"><i class="ti ti-cloud" style="font-size:14px;"></i> Workspace sync</div>
           <div class="sett-nav-item" id="sni-data" onclick="switchSettTab('data')"><i class="ti ti-database" style="font-size:14px;"></i> Data</div>
           <div class="sett-nav-item" id="sni-about" onclick="switchSettTab('about')"><i class="ti ti-info-circle" style="font-size:14px;"></i> About</div>
           <div style="margin-top:auto;padding:16px 12px 4px;border-top:1px solid var(--border);margin-top:24px;">
@@ -2500,7 +2500,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
               <div id="sett-av-mini" style="width:32px;height:32px;border-radius:50%;background:#6B7FA3;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0;">?</div>
               <div style="min-width:0;">
                 <div id="sett-name-mini" style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</div>
-                <div id="sett-role-mini" style="font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">My Profile</div>
+                <div id="sett-role-mini" style="font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">My profile</div>
               </div>
             </div>
           </div>
@@ -2829,10 +2829,10 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
     <div class="gs-inp-row">
       <i class="ti ti-search"></i>
       <input id="gs-inp" placeholder="Search jobs, clients, tasks…" oninput="runGlobalSearch(this.value)" autocomplete="off">
-      <i class="ti ti-star" id="gs-star-btn" title="Show starred" style="cursor:pointer;color:#E6A700;" onclick="showStarredInSearch()"></i>
+      <i class="ti ti-star" id="gs-star-btn" title="Show starred" style="cursor:pointer;color:var(--star);" onclick="showStarredInSearch()"></i>
       <span class="gs-kbd">esc</span>
     </div>
-    <div id="gs-results"><div class="gs-empty">Type to search across everything, or click <i class="ti ti-star" style="color:#E6A700;vertical-align:-1px;"></i> for starred items.<div style="margin-top:10px;font-size:11px;color:var(--muted);">Or type a command — <strong style="color:var(--ink);">log 2h on 6928</strong> · <strong style="color:var(--ink);">pause 7023</strong> · <strong style="color:var(--ink);">todo Call printer 30m</strong></div></div></div>
+    <div id="gs-results"><div class="gs-empty">Type to search across everything, or click <i class="ti ti-star" style="color:var(--star);vertical-align:-1px;"></i> for starred items.<div style="margin-top:10px;font-size:11px;color:var(--muted);">Or type a command — <strong style="color:var(--ink);">log 2h on 6928</strong> · <strong style="color:var(--ink);">pause 7023</strong> · <strong style="color:var(--ink);">todo Call printer 30m</strong></div></div></div>
     <div class="gs-foot"><span><kbd>↑↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span><kbd>esc</kbd> close</span><span class="gs-count" id="gs-foot-count"></span></div>
   </div>
 </div>
@@ -2841,7 +2841,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
 <div class="gs-bg" id="starred-panel" onclick="if(event.target===this)closeStarredPanel()">
   <div class="gs-panel">
     <div class="gs-inp-row">
-      <i class="ti ti-star" style="color:#E6A700;"></i>
+      <i class="ti ti-star" style="color:var(--star);"></i>
       <span style="font-size:13px;font-weight:500;flex:1;">Starred</span>
       <span class="gs-kbd">esc</span>
     </div>
@@ -3159,9 +3159,15 @@ function savePeople(){
 }
 // ── Workspace backup (export / import all local data) ─────────────────────────
 const WORKSPACE_KEYS=['cc_people','cc_person_status','cc_clients','cc_boards','cc_labels','cc_line_items','cc_expense_items','cc_config_published_at','cc_local_quotes','cc_native_jobs','cc_job_overlay','cc_native_time'];
+// Back up every cc_* key (leave, rate cards, templates, counters, targets…), not just a fixed list —
+// the fixed list missed the invoice/PO/credit-note counters, so a restore could reissue numbers.
+// Secrets and per-device state stay out.
+const _WS_SKIP=['cc_gh_token','cc_me','cc_timer','cc_bg_image','cc_last_sync','cc_seen_version','cc_config_applied_at','cc_rollover_seen'];
+function _wsBackupAllowed(k){return /^cc_/.test(k)&&!_WS_SKIP.includes(k);}
+function _wsBackupKeys(){const out=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(_wsBackupAllowed(k))out.push(k);}}catch(e){}return out.length?out:WORKSPACE_KEYS;}
 function exportWorkspace(){
   const blob={_app:'cc-platform',_version:APP_VERSION,_exportedAt:new Date().toISOString(),data:{}};
-  WORKSPACE_KEYS.forEach(k=>{const v=localStorage.getItem(k);if(v!=null)blob.data[k]=v;});
+  _wsBackupKeys().forEach(k=>{const v=localStorage.getItem(k);if(v!=null)blob.data[k]=v;});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([JSON.stringify(blob,null,2)],{type:'application/json'}));
   a.download=`cc-workspace-${_localISO()}.json`;
@@ -3176,7 +3182,7 @@ function importWorkspace(file){
       const blob=JSON.parse(e.target.result);
       if(!blob||blob._app!=='cc-platform'||!blob.data)throw new Error('Not a C&C workspace file');
       ccConfirm(`Restore this workspace backup from ${blob._exportedAt?new Date(blob._exportedAt).toLocaleString():'unknown date'}? This overwrites your current people, boards, clients and config in this browser.`,()=>{
-        Object.entries(blob.data).forEach(([k,v])=>{if(WORKSPACE_KEYS.includes(k))localStorage.setItem(k,v);});
+        Object.entries(blob.data).forEach(([k,v])=>{if(_wsBackupAllowed(k))localStorage.setItem(k,v);});
         toast('Workspace restored — reloading…','success');
         setTimeout(()=>location.reload(),900);
       },'Restore',true);
@@ -3191,8 +3197,17 @@ const MY_PERSON=(()=>{try{return localStorage.getItem('cc_me')||'st_114330';}cat
 let currentPerson=MY_PERSON;
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:MY_PERSON==='st_114330'?'Ronan Heal':'…',initials:MY_PERSON==='st_114330'?'RH':'?',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true,_stub:true};
-const APP_VERSION='2.43.0';
+const APP_VERSION='2.44.0';
 const CHANGELOG=[
+  {version:'2.44.0',date:'13 Nov 2026',title:'Reporting rebuilt, Manage teams, and a big round of fixes',items:[
+    'Reporting rebuilt: numbers that read easily (2,196h, $342k), changes against the previous period, and every section as one consistent card with a sortable table and CSV export. Click any row to open the job, client or person.',
+    'New reports: revenue by month, quote win rate and time to approval, aged receivables, unpaid invoices, budget watch, job and client profitability, utilisation by week per person and team, and work mix.',
+    'Settings → Team → Manage teams (admins): rename or merge teams, add teams and move people — then publish the team config to share it.',
+    'Search (⌘K) now shows recent jobs and quick actions before you type, and finds actions like "new quote" or "manage teams" and people.',
+    'New Timesheets card for admins: who is behind on logging time this week.',
+    'Fixes: splitting a task across days for part-timers, follow-up time using the task\'s date and billable setting, "45min" no longer read as 45 hours, reopened tasks no longer log twice, platform time entries can be deleted, quote details are reachable again, invoice amounts print correctly, and "select all" covers every matching job.',
+    'Published team settings no longer reset labels and item types or overwrite people\'s own dashboard preferences, and the workspace backup now includes invoice, PO and credit-note numbering.',
+  ]},
   {version:'2.43.0',date:'13 Nov 2026',title:'Purchase orders, credit notes, items list and WIP',items:[
     'New: supplier purchase orders. Create one on a job (Create → Purchase order) from its expenses or blank lines — numbered PO-1001 onwards, with supplier, dates, status and a printable document. See them all under Jobs → Expenses → Purchase orders.',
     'New: credit notes on platform invoices (full or part, with a reason), numbered CN-1001 onwards. They show in the Invoices list and totals, and print with their own document.',
@@ -3888,6 +3903,7 @@ const CHANGELOG=[
   ]},
 ];
 let _fupTask=null;    // task that triggered the follow-up prompt
+let _fupDay=null;     // its day (1-5) in the week shown, so follow-up time is dated that day
 let personStatus=(function(){
   const def={ro:'available',bee:'available',jb:'allocated'};
   let s=def;
@@ -4386,10 +4402,14 @@ async function initStreamtime(silent){
         let _cfgSeen=null;try{_cfgSeen=localStorage.getItem('cc_config_applied_at');}catch(e){}
         if(!isOwnPublish&&_cfgSeen!==_cfgVer){
           try{localStorage.setItem('cc_config_applied_at',_cfgVer);}catch(e){}
-          Object.entries(cfg.people||{}).forEach(([k,v])=>{people[k]={...(people[k]||{}),...v};});
-          if(cfg.globalLabels?.length)globalLabels=cfg.globalLabels;
-          if(cfg.LINE_ITEMS?.length)LINE_ITEMS=cfg.LINE_ITEMS;
-          if(cfg.EXPENSE_ITEMS?.length)EXPENSE_ITEMS=cfg.EXPENSE_ITEMS;
+          // Per-person dashboard preferences are personal to each browser: never take the publisher's copy.
+          const _personal=['dashTeams','dashHide'];
+          Object.entries(cfg.people||{}).forEach(([k,v])=>{const vv={...v};_personal.forEach(f=>delete vv[f]);people[k]={...(people[k]||{}),...vv};});
+          // Persist what we apply — previously labels/item types were memory-only and reverted on the next load.
+          if(cfg.globalLabels?.length){globalLabels=cfg.globalLabels;saveGlobalLabels();}
+          if(cfg.LINE_ITEMS?.length){LINE_ITEMS=cfg.LINE_ITEMS;try{localStorage.setItem('cc_line_items',JSON.stringify(LINE_ITEMS));}catch(e){}}
+          if(cfg.EXPENSE_ITEMS?.length){EXPENSE_ITEMS=cfg.EXPENSE_ITEMS;try{localStorage.setItem('cc_expense_items',JSON.stringify(EXPENSE_ITEMS));}catch(e){}}
+          if(Array.isArray(cfg.teams)){try{localStorage.setItem('cc_teams',JSON.stringify(cfg.teams));}catch(e){}}
           savePeople();
         }
       }
@@ -4626,7 +4646,7 @@ function renderDashboard(){
       <div class="todo-check${isDone?' done-c':isUrgent?' urg-c':''}">${isDone?'<i class="ti ti-check" style="font-size:10px;color:var(--done-ink);"></i>':''}</div>
       <div style="flex:1;min-width:0;">
         <div style="${isDone?'text-decoration:line-through;opacity:.5;':''}font-size:13px;">${esc(t.title)}</div>
-        ${metaArr.length?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${metaArr.join(' · ')}</div>`:''}
+        ${metaArr.length?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${esc(metaArr.join(' · '))}</div>`:''}
       </div>
       ${isUrgent?`<div class="todo-meta" style="color:var(--red);flex-shrink:0;">Urgent</div>`:''}
     </div>`;
@@ -4644,7 +4664,7 @@ function renderDashboard(){
     const totalBooked=todoH+doneH;
     return`<div class="team-card" onclick="viewTeamTodo('${k}')">
       <div class="tc-head"><div class="tc-av" style="background:${tp.color};">${tp.initials}</div><div><div class="tc-name">${tp.name}</div></div><div class="tc-meta">${formatHrs(totalBooked)||'0h'} booked</div>
-        <button onclick="event.stopPropagation();openTodoModal(null,null,'${k}')" title="Add task for ${tp.name}" style="margin-left:8px;background:transparent;border:1px solid var(--border);border-radius:8px;width:22px;height:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted);font-size:13px;"><i class="ti ti-plus" style="font-size:11px;"></i></button>
+        <button onclick="event.stopPropagation();weekOffset=0;openTodoModal(null,null,'${k}')" title="Add task for ${tp.name}" style="margin-left:8px;background:transparent;border:1px solid var(--border);border-radius:8px;width:22px;height:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted);font-size:13px;"><i class="ti ti-plus" style="font-size:11px;"></i></button>
       </div>
       <div class="tc-timeline">${taskBlocks||'<div style="font-size:12px;color:var(--muted);padding:4px 0;">No tasks today</div>'}</div>
       <div class="tc-footer"><div class="tc-stat">Done <span>${formatHrs(doneH)||'0h'}</span></div><div class="tc-stat">To do <span>${formatHrs(todoH)||'0h'}</span></div>${urgCnt?`<div class="tc-stat" style="margin-left:auto;color:var(--red);font-size:11px;">${urgCnt} urgent</div>`:'<div class="tc-stat" style="margin-left:auto;font-size:11px;color:var(--muted);">On track</div>'}</div>
@@ -4764,11 +4784,11 @@ function renderDashboard(){
     </div>
     ${_happinessCardHTML()}
     <div class="kpi-row">
-      <div class="kpi"><div class="kpi-label">Billable booked this week</div><div class="kpi-val">${formatHrs(billH)||'0h'}</div><div class="kpi-sub">${formatHrs(billDoneH)||'0h'} done · ${formatHrs(billTodoH)||'0h'} planned · of ${totalTarget}h</div>${_wkTrend.bill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('bill')">${_sparkSVG(_wkTrend.bill,'#4CAF50')}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${billPct}%;background:${billPct>=120?'var(--red)':'var(--ok)'};"></div></div></div>
+      <div class="kpi"><div class="kpi-label">Billable booked this week</div><div class="kpi-val">${formatHrs(billH)||'0h'}</div><div class="kpi-sub">${formatHrs(billDoneH)||'0h'} done · ${formatHrs(billTodoH)||'0h'} planned · of ${totalTarget}h</div>${_wkTrend.bill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('bill')">${_sparkSVG(_wkTrend.bill,'#4CAF50')}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${billPct}%;background:${billH>=(totalTarget||1)*1.2?'var(--red)':'var(--ok)'};"></div></div></div>
       <div class="kpi"><div class="kpi-label">Non-billable</div><div class="kpi-val">${formatHrs(nbillH)||'0h'}</div><div class="kpi-sub">internal & admin</div>${_wkTrend.nbill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('nbill')">${_sparkSVG(_wkTrend.nbill,'#FF9800')}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${nbillPct}%;background:var(--warn);"></div></div></div>
       <div class="kpi"><div class="kpi-label">My tasks today</div><div class="kpi-val">${todayTodo.length}</div><div class="kpi-sub">${urgentCount?urgentCount+' urgent · ':''}${todayDone.length} done</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${todayTasks.length?Math.round(todayDone.length/todayTasks.length*100):0}%;background:${urgentCount?'var(--red)':'var(--ok)'};"></div></div></div>
     </div>
-    <div class="section-label" style="margin-bottom:12px;">Your day <button onclick="openTodoModal(null,null,'${MY_PERSON}')" title="Add task" style="background:transparent;border:1px solid var(--border);border-radius:8px;padding:1px 8px;cursor:pointer;font-size:11px;color:var(--muted);font-family:var(--font);margin-left:8px;vertical-align:middle;">+ Add task</button></div>
+    <div class="section-label" style="margin-bottom:12px;">Your day <button onclick="weekOffset=0;openTodoModal(null,null,'${MY_PERSON}')" title="Add task" style="background:transparent;border:1px solid var(--border);border-radius:8px;padding:1px 8px;cursor:pointer;font-size:11px;color:var(--muted);font-family:var(--font);margin-left:8px;vertical-align:middle;">+ Add task</button></div>
     <div class="my-todos" style="margin-bottom:28px;">${todoRows||'<div class="my-todo-item" style="color:var(--muted);font-size:13px;"><i class="ti ti-sun" style="font-size:16px;margin-right:10px;"></i>No tasks scheduled today.</div>'}</div>
     ${deadlinesHTML?`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Needs attention</div><div class="att-grid">${deadlinesHTML}</div>`:''}
     ${_show('team')&&teamHTML?`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Team · today</div><div class="team-grid">${teamHTML}</div>`:''}
@@ -5034,7 +5054,7 @@ function renderSchedule(){
       <div><div class="view-title">Schedule</div><div class="view-sub">Team week at a glance</div></div>
       <div style="display:flex;align-items:center;gap:8px;">
         ${weekOffset!==0?`<button class="d-action" onclick="weekOffset=0;renderSchedule()">This week</button>`:''}
-        <div class="sched-week"><button onclick="weekOffset--;renderSchedule()" title="Previous week (←)"><i class="ti ti-chevron-left"></i></button><span class="sched-range"><i class="ti ti-calendar" style="font-size:14px;color:var(--muted);"></i>${weekRange}</span><button onclick="weekOffset++;renderSchedule()" title="Next week (→)"><i class="ti ti-chevron-right"></i></button></div>
+        <div class="sched-week"><button onclick="weekOffset-=(_c2.weeks||1);renderSchedule()" title="Previous (←)"><i class="ti ti-chevron-left"></i></button><span class="sched-range"><i class="ti ti-calendar" style="font-size:14px;color:var(--muted);"></i>${weekRange}</span><button onclick="weekOffset+=(_c2.weeks||1);renderSchedule()" title="Next (→)"><i class="ti ti-chevron-right"></i></button></div>
       </div>
     </div>
     ${schedToolbar}
@@ -5325,7 +5345,7 @@ function navTo(v){
 }
 let _invMode='all'; // kept for compat
 function setInvMode(mode){_invMode=mode;renderInvoices();}
-const _JOBS_PRIMARY={time:['Add task','openLogTimeModal'],quotes:['New quote','openNewQuoteModal'],expenses:['Add expense','openLogExpense'],clients:['Add client','openNewClientModal']};
+const _JOBS_PRIMARY={time:['Log time','openLogTimeModal'],quotes:['New quote','openNewQuoteModal'],expenses:['Add expense','openLogExpense'],clients:['Add client','openNewClientModal']};
 let _jobsTab='jobs';
 function _jobsPrimaryAction(){const a=_JOBS_PRIMARY[_jobsTab];if(a)window[a[1]]();else openCreateJob();}
 function switchJobsTab(tab){
@@ -5921,7 +5941,7 @@ function renderTodo(){
 
     let capHTML='';
     if(isWork){
-      const label=dayTotalH>0?(isOver?`<span class="day-cap-info over">${formatHrs(dayTotalH)} / ${formatHrs(DAY_CAP)} · OVER</span>`:`<span class="day-cap-info">${formatHrs(dayTodoH)||'0h'} to do · ${formatHrs(dayDoneH)||'0h'} done</span>`):'<span class="day-cap-info">No tasks</span>';
+      const label=dayTotalH>0?(isOver?`<span class="day-cap-info over">${formatHrs(dayTotalH)} / ${formatHrs(DAY_CAP)} · over</span>`:`<span class="day-cap-info">${formatHrs(dayTodoH)||'0h'} to do · ${formatHrs(dayDoneH)||'0h'} done</span>`):'<span class="day-cap-info">No tasks</span>';
       capHTML=`<div class="day-cap">${label}<div class="day-cap-bar"><div class="dcb-done" style="width:${bDoneW}%;"></div><div class="dcb-nbill-done" style="width:${nDoneW}%;"></div><div class="dcb-todo" style="width:${bTodoW}%;${isOver?'background:var(--red);':''}"></div><div class="dcb-nbill-todo" style="width:${nTodoW}%;${isOver?'background:var(--red);opacity:.6':''}"></div></div></div>`;
     }
 
@@ -5929,7 +5949,7 @@ function renderTodo(){
       <div class="day-head"${isWork&&isOver?' style="background:var(--warn-bg);"':''}>
         <div class="day-head-row">
           <div><div class="day-name">${DAY_NAMES[i]}</div><div class="day-num ${isToday?'today-red':''}">${calDate}</div></div>
-          ${isWork?`<button class="day-add-btn" onclick="openTodoModal(null,${d})"><i class="ti ti-plus" style="font-size:10px"></i> Add New</button>`:''}
+          ${isWork?`<button class="day-add-btn" onclick="openTodoModal(null,${d})"><i class="ti ti-plus" style="font-size:10px"></i> Add task</button>`:''}
         </div>
         ${capHTML}
       </div>
@@ -6331,7 +6351,7 @@ function renderTodoHeader(day){
   if(!col)return;
   const cap=col.querySelector('.day-cap');
   if(!cap)return;
-  const label=total>0?(isOver?`<span class="day-cap-info over">${formatHrs(total)} / ${formatHrs(DAY_CAP)} · OVER</span>`:`<span class="day-cap-info">${formatHrs(todoH)||'0h'} to do · ${formatHrs(doneH)||'0h'} done</span>`):'<span class="day-cap-info">No tasks</span>';
+  const label=total>0?(isOver?`<span class="day-cap-info over">${formatHrs(total)} / ${formatHrs(DAY_CAP)} · over</span>`:`<span class="day-cap-info">${formatHrs(todoH)||'0h'} to do · ${formatHrs(doneH)||'0h'} done</span>`):'<span class="day-cap-info">No tasks</span>';
   cap.innerHTML=`${label}<div class="day-cap-bar"><div class="dcb-done" style="width:${bDW}%;"></div><div class="dcb-nbill-done" style="width:${nDW}%;"></div><div class="dcb-todo" style="width:${bTW}%;${isOver?'background:var(--red);':''}"></div><div class="dcb-nbill-todo" style="width:${nTW}%;${isOver?'background:var(--red);opacity:.6':''}"></div></div>`;
 }
 
@@ -6386,7 +6406,7 @@ function onDropToSection(e,toDay,markDone){
       if(insertIdx>=0)wd[toDay].splice(insertIdx,0,task);else wd[toDay].push(task);
     }
     // Trigger follow-up prompt when marking a task as done
-    if(markDone&&!wasAlreadyDone)_showFupForTask(task);
+    if(markDone&&!wasAlreadyDone){_fupDay=+toDay||null;_showFupForTask(task);}
     renderTodo();saveData();
   }catch(err){}
 }
@@ -6765,7 +6785,7 @@ function _resetTodoModal(day){
   updateJobLabel();
 }
 function openTodoModal(jobId,day,personOverride){
-  _resetTodoModal(day||5);
+  _resetTodoModal(day||(weekOffset===0?_todayDayNum():1));
   if(personOverride&&people[personOverride]){
     _todoAssignTo=personOverride;
     const p=people[personOverride];
@@ -6881,7 +6901,7 @@ function toggleTaskDone(taskId){
     if(t){
       t.done=!t.done;
       if(t.jobId)logActivity(t.jobId,currentPerson,'task_status',`Task <strong>${esc(t.title)}</strong> ${t.done?'marked done':'reopened'}`);
-      if(t.done)_showFupForTask(t);
+      if(t.done){_fupDay=d;_showFupForTask(t);}
       renderTodo();saveData();_refreshJobStats();return;
     }
   }
@@ -6966,7 +6986,7 @@ async function _logTimeFromFup(){
   const userId=people[currentPerson]?._stId;
   if(!userId)return; // local-only person — no ST user id to attribute the entry to
   await dbCreateTimeEntry({
-    job:{id:job._stId,name:job.name,number:job.id,isBillable:job.isBillable!==false},
+    job:{id:job._stId,name:job.name,number:job.id,isBillable:job.billable!==false},
     jobId:job._stId,
     userId,
     itemId:t.itemId||null,
@@ -6975,7 +6995,7 @@ async function _logTimeFromFup(){
     hours,
     // Local date, not UTC (toISOString was yesterday before 1pm NZ). jobItemUser lets
     // seedWeekFromST pair this entry with its scheduled block instead of a duplicate card.
-    date:(n=>`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`)(new Date()),
+    date:(()=>{try{if(typeof _taskDateISO==='function'&&_fupDay)return _taskDateISO(weekOffset,_fupDay);}catch(e){}return _localISO(new Date());})(),
     jobItemUser:t._stItemId?{jobItemId:t._stItemId}:null
   });
   renderTodo();_refreshJobStats();
@@ -7003,7 +7023,7 @@ function closeFup(yes){
       updateJobLabel();
     }
   }
-  _fupTask=null;
+  _fupTask=null;_fupDay=null;
 }
 
 // Task card tooltip
@@ -7346,7 +7366,7 @@ function _spawnRepeatOccurrences(savedTask,targetPerson,dayNum){
   }
 }
 function saveTodo(){
-  const name=document.getElementById('td-task').value.trim();if(!name)return;
+  const name=document.getElementById('td-task').value.trim();if(!name){toast('Give the task a name','warn');document.getElementById('td-task')?.focus();return;}
   const jobId=document.getElementById('td-job').value;
   const hoursRaw=document.getElementById('td-hours').value.trim();
   const hours=hoursRaw?parseHrsInput(hoursRaw):1;
@@ -7386,7 +7406,7 @@ function saveTodo(){
         _spawnRepeatOccurrences(editedTask,targetPerson,dayNum);
       }
       if(_tdStartTimerAfterSave&&editedTask)_startTaskTimer(editedTask,targetPerson,weekOffset,dayNum);
-      if(_doneEdit&&editedTask&&!editedTask.done){editedTask.done=true;if(_logTaskTime(editedTask,targetPerson,_taskDateISO(weekOffset,dayNum)))toast(`Logged ${formatHrs(editedTask.hours)}`,'success');}
+      if(_doneEdit&&editedTask&&!editedTask.done){editedTask.done=true;if(editedTask._loggedEntry)toast("Marked done — its time was already logged","info");else if(_logTaskTime(editedTask,targetPerson,_taskDateISO(weekOffset,dayNum)))toast(`Logged ${formatHrs(editedTask.hours)}`,'success');}
     }
   } else {
     // Paused guard
@@ -7406,15 +7426,17 @@ function saveTodo(){
   }
   closeTodoModal();
   renderTodo();saveData();_refreshJobStats();
+  if(!document.getElementById('view-dashboard')?.classList.contains('hidden'))try{renderDashboard();}catch(e){}
 }
 // Parse hours input like "2h", "1h30m", "1.5", "90m"
 // "$1,250.50" → 1250.5; "—", "" or junk → 0. Plan/invoice maths used parseInt on "—" → NaN.
 function _num(v){const n=parseFloat(String(v??'').replace(/[^0-9.\-]/g,''));return isFinite(n)?n:0;}
 function parseHrsInput(s){
   s=String(s??'').trim().toLowerCase();
-  const hm=s.match(/^(\d+(?:\.\d+)?)\s*h(?:\s*(\d+)\s*m?)?$/);
+  const hm=s.match(/^(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hour|hours)(?:\s*(\d+)\s*(?:m|min|mins|minute|minutes)?)?$/);
   if(hm)return parseFloat(hm[1])+(hm[2]?parseInt(hm[2])/60:0);
-  const m=s.match(/^(\d+)\s*m$/);if(m)return parseInt(m[1])/60;
+  const m=s.match(/^(\d+(?:\.\d+)?)\s*(?:m|min|mins|minute|minutes)$/);if(m)return parseFloat(m[1])/60;
+  const c=s.match(/^(\d+):([0-5]\d)$/);if(c)return parseInt(c[1])+parseInt(c[2])/60; // 1:30
   const n=parseFloat(s);return isNaN(n)?0:n; // '—' / blank = no hours (was 1h, inflating plans)
 }
 
@@ -7494,7 +7516,7 @@ function renderJobs(){
   // Apply chip filters
   let filteredJobs=sorted.filter(j=>{
     if(j.status==='archived'&&!_jobsFilters.some(f=>f.type==='status'&&f.value==='Archived'))return false;
-    if(q&&!(`${j.id} ${j.name} ${j.company}`).toLowerCase().includes(q))return false;
+    if(q&&!(`${j.id} ${j.name} ${j.company} ${j.po||""} ${(j.labels||[]).join(" ")} ${j.contact||""}`).toLowerCase().includes(q))return false; // PO, labels and contact too
     return true;
   });
   _jobsFilters.forEach(f=>{
@@ -7525,6 +7547,7 @@ function renderJobs(){
     }
   });
   const shown=filteredJobs.length;
+  window._rfJobsFiltered=filteredJobs; // bulk "select all matching" (review fix)
   document.getElementById('jobs-count').textContent=`${shown} job${shown!==1?'s':''} · NZD`;
 
   // Group-by: inject header rows into filteredJobs array as sentinel objects
@@ -7567,10 +7590,10 @@ function renderJobs(){
       const sl=j.status==='inplay'||j.status==='paused'?'In Play':j.status==='new'?'New':j.status==='archived'?'Archived':'Complete';
       computeJobStats(j);
       const bPct=j._bPct||0;const hPct=j._hPct||0;
-      const bCol=bPct>=100?'var(--red)':bPct>=80?'#FF9800':'#4CAF50';
-      const hCol=hPct>=100?'var(--red)':hPct>=80?'#FF9800':'#4CAF50';
+      const bCol=bPct>=100?'var(--red)':bPct>=80?'var(--warn)':'var(--ok)';
+      const hCol=hPct>=100?'var(--red)':hPct>=80?'var(--warn)':'var(--ok)';
       const billDot=j.billable===false?'<span style="width:6px;height:6px;border-radius:50%;background:#CBD5E1;display:inline-block;margin-right:5px;" title="Non-billable"></span>':'<span style="width:6px;height:6px;border-radius:50%;background:var(--ok);display:inline-block;margin-right:5px;" title="Billable"></span>';
-      const labels=(j.labels||[]).slice(0,3).map(l=>{const c=labelColor(l);return`<span class="job-label-pip" style="background:${c}18;color:${c};border:1px solid ${c}44;">${l}</span>`;}).join('');
+      const labels=(j.labels||[]).slice(0,3).map(l=>{const c=labelColor(l);return`<span class="job-label-pip" style="background:${c}18;color:${c};border:1px solid ${c}44;">${esc(l)}</span>`;}).join('');
       const notePrev=j.notes?`<div class="job-notes-preview" title="${j.notes.replace(/"/g,'&quot;')}">${linkify(j.notes.replace(/</g,'&lt;'))}</div>`:'';
       const pausedBadge=j.paused?`<span class="paused-badge" style="margin-left:6px;"><i class="ti ti-pause" style="font-size:10px;"></i> Paused</span>`:'';
       const jPhases=j.id===activeJobId?phases:[];
@@ -7589,7 +7612,7 @@ function renderJobs(){
         <td class="cj-company"><span class="job-co" title="${esc(j.company)}">${billDot}${esc(j.company)}</span></td>
         <td class="cj-budget">
           <div class="bbar-wrap">
-            <div class="bbar-nums"><span style="font-weight:400;color:${bPct>=100?'var(--red)':'inherit'}">$${(j._sellUsed||0).toLocaleString()}</span><span class="bbar-of">/ $${(j._plannedSell||0).toLocaleString()}</span></div>
+            <div class="bbar-nums"><span style="font-weight:400;color:${bPct>=100?'var(--red)':'inherit'}">${_money(Math.round((j._sellUsed||0)))}</span><span class="bbar-of">/ ${_money(Math.round(j._plannedSell||0))}</span></div>
             <div class="bbar-track"><div class="bbar-fill" style="width:${Math.min(bPct,100)}%;background:${bCol};"></div></div>
             <div style="font-size:10px;color:${bPct>=100?'var(--red)':'var(--muted)'};">${bPct}%</div>
           </div>
@@ -7602,7 +7625,7 @@ function renderJobs(){
           </div>
         </td>
         <td class="cj-labels"><div class="job-labels-cell">${labels||'<span style="font-size:12px;color:var(--muted);">—</span>'}</div>${progHTML}</td>
-        <td class="cj-status">${wfCls==='wf-live'?`<span class="wf-quiet"><i></i>Live</span>`:`<span class="wf-badge ${wfCls}">${wfLabel}</span>`}${j.po?`<div style="font-size:10px;color:var(--muted);margin-top:3px;">PO ${j.po}</div>`:''}</td>`;
+        <td class="cj-status">${wfCls==='wf-live'?`<span class="wf-quiet"><i></i>Live</span>`:`<span class="wf-badge ${wfCls}">${wfLabel}</span>`}${j.po?`<div style="font-size:10px;color:var(--muted);margin-top:3px;">PO ${esc(j.po)}</div>`:''}</td>`;
       frag.appendChild(tr);
       _jobsRenderedCount=i+1;
     }
@@ -7735,7 +7758,7 @@ function openJobDetail(id){
   const _dueStr=_due?fmtDate(j.dueDate):'';
   const _dueSoon=_due&&(_due-_now)/(86400000)<=7&&_due>=_now&&j.status==='inplay';
   const _overdue=_due&&_due<_now&&j.status==='inplay';
-  const _dueBadgeCls=_overdue?'background:#FFEBEE;color:#C62828;border-color:#EF9A9A;':_dueSoon?'background:#FFF9C4;color:#E65100;border-color:#FFE082;':'';
+  const _dueBadgeCls=_overdue?'background:var(--danger-bg);color:var(--danger-ink);border-color:color-mix(in srgb,var(--danger-ink) 35%,transparent);':_dueSoon?'background:var(--warn-bg);color:var(--warn-ink);border-color:color-mix(in srgb,var(--warn-ink) 35%,transparent);':'';
   const _dueIcon=_overdue?'<i class="ti ti-alert-triangle" style="font-size:10px;"></i> ':_dueSoon?'<i class="ti ti-clock" style="font-size:10px;"></i> ':'';
   const _startStr=j.startDate?fmtDate(j.startDate):'';
   // ONE dates control (was two separate Set start / Set due pills): shows the range when
@@ -7817,9 +7840,9 @@ function _renderAddMemberRows(jobId,query){
     .sort((a,b)=>(j.members.includes(b)?1:0)-(j.members.includes(a)?1:0)||people[a].name.localeCompare(people[b].name));
   box.innerHTML=keys.map(k=>{
     const p=people[k];const on=j.members.includes(k);
-    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;background:${on?'var(--off)':'#fff'};" onclick="toggleJobMember('${jobId}','${k}',this)">
-      <div class="d-av" style="background:${p.color};flex-shrink:0;">${p.initials}</div>
-      <span style="flex:1;font-size:13px;">${p.name}</span>
+    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;background:${on?'var(--off)':'var(--white)'};" onclick="toggleJobMember('${jobId}','${k}',this)">
+      <div class="d-av" style="background:${esc(p.color)};flex-shrink:0;">${esc(p.initials)}</div>
+      <span style="flex:1;font-size:13px;">${esc(p.name)}</span>
       ${on?'<i class="ti ti-check" style="color:var(--red);font-size:12px;"></i>':''}
     </div>`;
   }).join('')||'<div style="padding:14px 16px;font-size:12px;color:var(--muted);">No matches.</div>';
@@ -7829,8 +7852,8 @@ function toggleJobMember(jobId,personKey,rowEl){
   if(!j.members)j.members=[];
   const idx=j.members.indexOf(personKey);
   if(idx===-1){j.members.push(personKey);rowEl.style.background='var(--off)';rowEl.insertAdjacentHTML('beforeend','<i class="ti ti-check" style="color:var(--red);font-size:12px;"></i>');}
-  else{j.members.splice(idx,1);rowEl.style.background='#fff';rowEl.querySelector('.ti-check')?.remove();}
-  logActivity(jobId,MY_PERSON,'member_change',`<strong>${people[personKey]?.name||personKey}</strong> ${idx===-1?'added to':'removed from'} the job`);
+  else{j.members.splice(idx,1);rowEl.style.background='var(--white)';rowEl.querySelector('.ti-check')?.remove();}
+  logActivity(jobId,MY_PERSON,'member_change',`<strong>${esc(people[personKey]?.name||personKey)}</strong> ${idx===-1?'added to':'removed from'} the job`);
   _keepJobEdits(j,['members']);
   // Refresh the avatars row
   const membersRow=document.getElementById('d-members-row');
@@ -8599,7 +8622,7 @@ function _showSplitZones(t,day){
     z.style.left=(r.right-18)+'px';
     z.style.top=(r.top+64)+'px';
     z.style.height=Math.max(120,r.height-72)+'px';
-    z.dataset.left=i+1;z.dataset.right=i+2;
+    z.dataset.left=cols[i].dataset.day;z.dataset.right=cols[i+1].dataset.day;
     z.dataset.taskId=t.id;z.dataset.fromDay=day;
     const _h=formatHrs((t.hours||0)/2)||'';
     z.innerHTML=`<span class="sz-ico"><i class="ti ti-arrows-split-2"></i></span><span class="sz-lbl">Split</span><span class="sz-sub">${_h} + ${_h}</span>`;
@@ -8791,7 +8814,7 @@ async function saveMilestoneInline(){
   const date=document.getElementById('mi-date')?.value||null;
   if(!activeJobId)return;
   await dbCreateMilestone(activeJobId,{name,date});
-  logActivity(activeJobId,MY_PERSON,'milestone_add',`Added milestone <strong>${name}</strong>`);
+  logActivity(activeJobId,MY_PERSON,'milestone_add',`Added milestone <strong>${esc(name)}</strong>`);
   document.querySelector('.add-ms-form-row')?.remove();
   renderMilestonesSection();
   toast('Milestone added');
@@ -8822,7 +8845,7 @@ async function deleteMilestoneRow(msId){
   const j=jobs.find(x=>x.id===activeJobId);
   const m=j&&(j.milestones||[]).find(x=>x.id===msId);
   await dbDeleteMilestone(activeJobId,msId);
-  if(m)logActivity(activeJobId,MY_PERSON,'milestone_delete',`Deleted milestone <strong>${m.name}</strong>`);
+  if(m)logActivity(activeJobId,MY_PERSON,'milestone_delete',`Deleted milestone <strong>${esc(m.name)}</strong>`);
   renderMilestonesSection();
   toast('Milestone deleted');
 }
@@ -9121,7 +9144,7 @@ function setQuoteStatus(jobId,status){
 function sendQuote(jobId){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
   if((j.quoteStatus||'draft')==='draft'){j.quoteStatus='sent';_keepJobEdits(j,['quoteStatus']);renderQuoteTab();}
-  logActivity(jobId,MY_PERSON,'quote_sent',`Quote <strong>sent</strong> to ${j.company}`);
+  logActivity(jobId,MY_PERSON,'quote_sent',`Quote <strong>sent</strong> to ${esc(j.company)}`);
   printQuote(jobId);
   toast('Quote marked as sent — save the PDF to attach to your email','success');
 }
@@ -9383,8 +9406,8 @@ function inlineEditItem(e,itemId,phId,field){
     const item=ph?.items.find(i=>i.id===itemId);
     if(item){
       if(val!==current){
-        if(field==='name')logActivity(activeJobId,MY_PERSON,'item_rename',`Renamed <strong>${current}</strong> to <strong>${val}</strong>`);
-        else logActivity(activeJobId,MY_PERSON,'item_edit',`Changed ${field} on <strong>${item.name}</strong> to <strong>${val}</strong>`);
+        if(field==='name')logActivity(activeJobId,MY_PERSON,'item_rename',`Renamed <strong>${esc(current)}</strong> to <strong>${esc(val)}</strong>`);
+        else logActivity(activeJobId,MY_PERSON,'item_edit',`Changed ${esc(field)} on <strong>${esc(item.name)}</strong> to <strong>${esc(val)}</strong>`);
       }
       item[field]=val;
       // Recalculate total if hours or rate changed
@@ -9431,7 +9454,7 @@ function toggleItemStatus(itemId,phId,e){
   const ph=phases.find(p=>p.id===phId);if(!ph)return;
   const item=ph.items.find(i=>i.id===itemId);if(!item)return;
   item.status=item.status==='complete'?'open':'complete';
-  logActivity(activeJobId,MY_PERSON,'item_status',`<strong>${item.name}</strong> marked <strong>${item.status}</strong>`);
+  logActivity(activeJobId,MY_PERSON,'item_status',`<strong>${esc(item.name)}</strong> marked <strong>${esc(item.status)}</strong>`);
   renderPhases();saveData();
 }
 function showAddItemForm(phId){
@@ -9452,7 +9475,7 @@ function saveItem(phId){
   const r=parseInt(rate.replace(/[$,]/g,''))||150;
   const total='$'+(Math.round(h*r)).toLocaleString();
   const ph=phases.find(p=>p.id===phId);ph.items.push({id:uid('i'),name,hours,rate,used:'$0',total,status:'open'});
-  logActivity(activeJobId,MY_PERSON,'item_add',`Added <strong>${name}</strong> to <strong>${ph.name}</strong>`);
+  logActivity(activeJobId,MY_PERSON,'item_add',`Added <strong>${esc(name)}</strong> to <strong>${esc(ph.name)}</strong>`);
   renderPhases();saveData();setTimeout(()=>document.getElementById('fup').classList.add('on'),700);
 }
 function showAddExpenseInline(afterPhaseId){
@@ -9516,7 +9539,7 @@ function saveExpenseInline(){
   if(!j.expenses)j.expenses=[];
   const sell=cost*(1+markup/100);
   j.expenses.push({id:'e'+Date.now(),desc,cost,markup,qty,date:_localISO(),sell,total:sell*qty,status:'draft'});
-  logActivity(activeJobId,MY_PERSON,'expense_add',`Added expense <strong>${desc}</strong>`);
+  logActivity(activeJobId,MY_PERSON,'expense_add',`Added expense <strong>${esc(desc)}</strong>`);
   saveData();
   document.querySelector('.add-exp-form-row')?.remove();
   renderExpenses();
@@ -9531,7 +9554,7 @@ function ctxDo(a){
   if(a==='delete'){ph.items=ph.items.filter(i=>i.id!==ctxTarget.itemId);renderPhases();}
   else if(a==='todo'){
     // Open todo modal pre-filled with item name, note, and job
-    openTodoModal(activeJobId,5);
+    openTodoModal(activeJobId);
     setTimeout(()=>{
       if(item){
         // Pre-fill task title with item name
@@ -9648,7 +9671,7 @@ function saveExpense(jid){
   if(!j){toast('Job not found','error');return;}
   if(!j.expenses)j.expenses=[];
   j.expenses.push({id:'e'+Date.now(),desc,cost,markup,qty,date:date||_localISO(),sell,total:sell*qty,supplier,status:'draft'});
-  logActivity(_jid,MY_PERSON,'expense_add',`Added expense <strong>${desc}</strong> — $${(sell*qty).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} sell`);
+  logActivity(_jid,MY_PERSON,'expense_add',`Added expense <strong>${esc(desc)}</strong> — $${(sell*qty).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} sell`);
   saveData();
   document.getElementById('exp-modal')?.remove();
   renderExpenses();
@@ -10247,7 +10270,7 @@ function saveSplitInvoice(jobId){
   if(!j.splitInvoices)j.splitInvoices=[];
   j.splitInvoices.push({id:uid('si'),label,pct,amount,status:'draft',date:_localISO()});
   saveData();
-  logActivity(jobId,MY_PERSON,'split_invoice_add',`Added split invoice <strong>${label}</strong> ($${Math.round(amount).toLocaleString()})`);
+  logActivity(jobId,MY_PERSON,'split_invoice_add',`Added split invoice <strong>${esc(label)}</strong> ($${Math.round(amount).toLocaleString()})`);
   renderInvoice(j);
   toast('Split invoice added','success');
 }
@@ -10285,8 +10308,8 @@ function renderInvoice(j){
   const phSections=phases.map(ph=>{
     const phTotal=ph.items.reduce((s,i)=>s+_num(i.total),0);
     subtotal+=phTotal;
-    const lines=ph.items.map(i=>`<div class="inv-line"><span class="inv-ln">${i.name}</span><span class="inv-lv">$${_num(i.total).toLocaleString()}.00</span></div>`).join('');
-    return`<div class="inv-sec"><div class="inv-sec-h">${ph.name}</div>${lines}<div class="inv-sub"><span class="inv-sub-l">Subtotal</span><span>$${phTotal.toLocaleString()}.00</span></div></div>`;
+    const lines=ph.items.map(i=>`<div class="inv-line"><span class="inv-ln">${esc(i.name)}</span><span class="inv-lv">${_c2m2(_num(i.total))}</span></div>`).join('');
+    return`<div class="inv-sec"><div class="inv-sec-h">${esc(ph.name)}</div>${lines}<div class="inv-sub"><span class="inv-sub-l">Subtotal</span><span>${_c2m2(phTotal)}</span></div></div>`;
   }).join('');
   const gst=Math.round(subtotal*0.15);
   const total=subtotal+gst;
@@ -10308,14 +10331,14 @@ function renderInvoice(j){
       <div><div class="inv-ml">Issued</div><div class="inv-mv">${fmt(now)}</div></div>
       <div><div class="inv-ml">Due</div><div class="inv-mv">${fmt(due)} · 20 days</div></div>
       <div><div class="inv-ml">Client</div><div class="inv-mv">${esc(j.company)}</div></div>
-      <div><div class="inv-ml">Reference</div><div class="inv-mv inv-editable" contenteditable="true" id="inv-ref">${j.id} ${j.company.split(' ')[0]} ${now.getFullYear()}</div></div>
+      <div><div class="inv-ml">Reference</div><div class="inv-mv inv-editable" contenteditable="true" id="inv-ref">${j.id} ${esc((j.company||'').split(' ')[0])} ${now.getFullYear()}</div></div>
     </div>
     <div class="inv-job-title">${j.id} ${esc(j.name)}</div>
     ${_splitInvoicesHTML(j)}
     ${phSections}
-    <div class="inv-tot"><span class="inv-tot-l">Subtotal ex GST</span><span>$${subtotal.toLocaleString()}.00</span></div>
-    <div class="inv-tot" style="border-top:none;padding-top:0;"><span class="inv-tot-l">GST 15%</span><span>$${gst.toLocaleString()}.00</span></div>
-    <div class="inv-tot" style="font-size:16px;"><span>Total inc GST</span><span style="font-weight:500;">$${total.toLocaleString()}.00</span></div>`;
+    <div class="inv-tot"><span class="inv-tot-l">Subtotal ex GST</span><span>${_c2m2(subtotal)}</span></div>
+    <div class="inv-tot" style="border-top:none;padding-top:0;"><span class="inv-tot-l">GST 15%</span><span>${_c2m2(gst)}</span></div>
+    <div class="inv-tot" style="font-size:16px;"><span>Total inc GST</span><span style="font-weight:500;">${_c2m2(total)}</span></div>`;
 }
 function copyInvoiceToXero(){
   const j=jobs.find(x=>x.id===activeJobId);if(!j)return;
@@ -10367,7 +10390,7 @@ function renderClients(){
       const totalInvoiced=cjobs.reduce((a,j)=>a+(j._stInvoiced||0),0);
       const totalPaid=cjobs.reduce((a,j)=>a+(j._stPaid||0),0);
       const fmtDol=n=>n?fmtDollar(n):''; // $1.5M not $1466k (review A5)
-      return`<div class="client-card-full" onclick="openClientDetail('${c.id}')" draggable="true" ondragstart="_showClientDock('${esc(c.name).replace(/'/g,'&#39;')}')" ondragend="_hideTaskDock()">
+      return`<div class="client-card-full" onclick="openClientDetail('${c.id}')" draggable="true" data-cname="${esc(c.name)}" ondragstart="_showClientDock(this.dataset.cname)" ondragend="_hideTaskDock()">
         <div class="ccf-name">${c.nickname?`<span style="font-weight:500;">${esc(c.nickname)}</span> <span style="font-size:12px;color:var(--muted);font-weight:400;">— ${esc(c.name)}</span>`:esc(c.name)}</div>
         <div class="ccf-contact">${c.contact?esc(c.contact):'<span style="color:var(--muted);opacity:.7;">No contact added</span>'}</div>
         <div class="ccf-meta">
@@ -10410,7 +10433,7 @@ function renderClients(){
     const totalInvoiced=cjobs.reduce((a,j)=>a+(j._stInvoiced||0),0);
     const totalPaid=cjobs.reduce((a,j)=>a+(j._stPaid||0),0);
     const fmtDol=n=>n?fmtDollar(n):''; // $1.5M not $1466k (review A5)
-    return`<div class="client-card-full" onclick="openClientDetail('${c.id}')" draggable="true" ondragstart="_showClientDock('${esc(c.name).replace(/'/g,'&#39;')}')" ondragend="_hideTaskDock()">
+    return`<div class="client-card-full" onclick="openClientDetail('${c.id}')" draggable="true" data-cname="${esc(c.name)}" ondragstart="_showClientDock(this.dataset.cname)" ondragend="_hideTaskDock()">
       <div class="ccf-name" style="display:flex;align-items:center;gap:6px;justify-content:space-between;"><span>${c.nickname?`<span style="font-weight:500;">${esc(c.nickname)}</span> <span style="font-size:12px;color:var(--muted);font-weight:400;">— ${esc(c.name)}</span>`:esc(c.name)}</span>${starBtnHTML('client',c.id,c.nickname||c.name)}</div>
       <div class="ccf-contact">${c.contact?esc(c.contact):'<span style="color:var(--muted);opacity:.7;">No contact added</span>'}</div>
       <div class="ccf-meta">
@@ -10677,13 +10700,13 @@ function renderDeadlinesCal(){
   const addEv=(dateStr,ev)=>{if(!dateStr)return;const k=dateStr.slice(0,10);if(!events[k])events[k]=[];events[k].push(ev);};
   // Job due dates — live (in-play) jobs only, matching the Dashboard's "Needs attention" deadlines
   jobs.filter(j=>j.status==='inplay'&&j.dueDate).forEach(j=>{
-    addEv(j.dueDate,{label:`${j.id} ${esc(j.name)}`,color:'#E65100',jid:j.id,type:'job'});
+    addEv(j.dueDate,{label:`${j.id} ${esc(j.name)}`,color:'var(--warn-ink)',jid:j.id,type:'job'});
   });
   // Invoice due dates
   (stInvoices||[]).filter(i=>i.dueDate).forEach(i=>{
     const s=(i.invoiceStatus?.name||'').toLowerCase();
     if(s==='paid'||s==='voided')return;
-    addEv(i.dueDate,{label:esc(i.company?.name||i.jobName||'Invoice'),color:'var(--red)',jid:null,type:'inv'});
+    addEv(i.dueDate,{label:esc(`${i.number?i.number+' · ':''}${i.company?.name||i.jobName||'Invoice'}${i.totalAmountIncTax?' · '+fmtDollar(i.totalAmountIncTax):''}`),color:'var(--red)',jid:null,on:`openInvoiceDetail(${JSON.stringify(i.id)})`,type:'inv'});
   });
   // Calendar grid
   const firstDay=new Date(yr,mo,1);
@@ -10701,7 +10724,7 @@ function renderDeadlinesCal(){
     const evs=events[dStr]||[];
     html+=`<div style="background:var(--white);min-height:150px;padding:8px 8px 4px;${isToday?'outline:2px solid var(--red);outline-offset:-2px;':''}">
       <div style="font-size:13px;font-weight:${isToday?600:400};color:${isToday?'var(--red)':'var(--ink)'};margin-bottom:6px;">${d}</div>
-      ${evs.slice(0,5).map(ev=>`<div onclick="${ev.jid?`openJobDetail('${ev.jid}')`:''}" style="font-size:11px;background:${ev.color};color:#fff;border-radius:6px;padding:2px 5px;margin-bottom:3px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;${ev.jid?'cursor:pointer;':''}" title="${ev.label}">${ev.label}</div>`).join('')}
+      ${evs.slice(0,5).map(ev=>`<div onclick="${ev.jid?`openJobDetail('${ev.jid}')`:(ev.on?esc(ev.on):'')}" style="font-size:11px;background:${ev.color};color:#fff;border-radius:6px;padding:2px 5px;margin-bottom:3px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;${ev.jid||ev.on?'cursor:pointer;':''}" title="${ev.label}">${ev.label}</div>`).join('')}
       ${evs.length>5?`<div style="font-size:10px;color:var(--muted);">+${evs.length-5} more</div>`:''}
     </div>`;
   }
@@ -10716,7 +10739,7 @@ function _updateSettSidenavProfile(){
   const rl=document.getElementById('sett-role-mini');
   if(av){av.style.background=me.color||'#6B7FA3';av.textContent=me.initials||'?';}
   if(nm)nm.textContent=me.name||'—';
-  if(rl)rl.textContent=me.role||'My Profile';
+  if(rl)rl.textContent=me.role||'My profile';
 }
 function switchSettTab(tab){
   _settActiveTab=tab;
@@ -10738,7 +10761,7 @@ function renderSettings(){
     const dh=me.dashHide||[];
     const stU=Object.values(stUsersById||{}).find(u=>u.name===me.name)||null;
     wrap.innerHTML=`
-      <div class="sett-tab-hd">My Profile</div>
+      <div class="sett-tab-hd">My profile</div>
       <div class="sett-tab-sub">Your identity, rates, and dashboard preferences.</div>
       <div class="sett-card">
         <div class="sett-card-hd">Identity</div>
@@ -10748,9 +10771,9 @@ function renderSettings(){
               <div id="my-av-preview" style="width:72px;height:72px;border-radius:50%;background:${me.color||'#6B7FA3'};display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:600;color:#fff;">${me.initials||'?'}</div>
             </div>
             <div style="flex:1;display:flex;flex-direction:column;gap:10px;">
-              <div class="tm-panel-field" style="margin:0;"><label>Display name</label><input value="${me.name||''}" onchange="updatePerson('${MY_PERSON}','name',this.value);renderSettings()"></div>
-              <div class="tm-panel-field" style="margin:0;"><label>Role / title</label><input value="${me.role||''}" placeholder="e.g. Creative Director" onchange="updatePerson('${MY_PERSON}','role',this.value)"></div>
-              <div class="tm-panel-field" style="margin:0;"><label>Team</label><input list="my-team-dl" value="${me.team||''}" placeholder="e.g. Design" onchange="updatePerson('${MY_PERSON}','team',this.value.trim())"><datalist id="my-team-dl">${allTeams.map(t=>`<option value="${t}">`).join('')}</datalist></div>
+              <div class="tm-panel-field" style="margin:0;"><label>Display name</label><input value="${esc(me.name||"")}" onchange="updatePerson('${MY_PERSON}','name',this.value);renderSettings()"></div>
+              <div class="tm-panel-field" style="margin:0;"><label>Role / title</label><input value="${esc(me.role||"")}" placeholder="e.g. Creative Director" onchange="updatePerson('${MY_PERSON}','role',this.value)"></div>
+              <div class="tm-panel-field" style="margin:0;"><label>Team</label><input list="my-team-dl" value="${esc(me.team||"")}" placeholder="e.g. Design" onchange="updatePerson('${MY_PERSON}','team',this.value.trim())"><datalist id="my-team-dl">${allTeams.map(t=>`<option value="${esc(t)}">`).join('')}</datalist></div>
             </div>
           </div>
           <div class="tm-panel-section-lbl" style="margin-bottom:10px;">Avatar colour</div>
@@ -10800,7 +10823,7 @@ function renderSettings(){
           <div style="display:flex;flex-wrap:wrap;gap:6px;">
             ${!allTeams.length?'<span style="font-size:12px;color:var(--muted);">No teams defined yet — add team names in the Team tab.</span>':allTeams.map(tn=>{
               const on=myT.includes(tn);
-              return`<button onclick="toggleDashTeam('${tn.replace(/'/g,"\\'")}');renderSettings()" class="filter-btn" style="cursor:pointer;font-size:12px;${on?'background:var(--ink);color:var(--on-ink);border-color:var(--ink);':''}">${on?'✓ ':''}${tn}</button>`;
+              return`<button onclick="toggleDashTeam('${tn.replace(/'/g,"\\'")}');renderSettings()" class="filter-btn" style="cursor:pointer;font-size:12px;${on?'background:var(--ink);color:var(--on-ink);border-color:var(--ink);':''}">${on?'<i class="ti ti-check" style="font-size:11px;"></i> ':''}${esc(tn)}</button>`;
             }).join('')}
           </div>
         </div>
@@ -10809,11 +10832,11 @@ function renderSettings(){
         <div class="sett-card-hd">Dashboard — visible blocks</div>
         <div class="sett-card-body">
           <div style="display:flex;flex-direction:column;gap:8px;">
-            ${[['deadlines','Needs attention','Urgent items and quote expiry'],['team','Team · today','Scheduled hours per person'],['kpis','Business KPIs','Revenue, costs and pipeline'],['clients','Active clients','Recent job activity per client']].map(([k,lbl,desc])=>{
+            ${[['deadlines','Needs attention','Urgent items and quote expiry'],['team','Team · today','Scheduled hours per person'],['kpis','Business KPIs','Revenue, costs and pipeline'],['clients','Active clients','Recent job activity per client'],['timesheets','Timesheets','Who is behind on logging time this week (admins)']].map(([k,lbl,desc])=>{
               const on=!dh.includes(k);
               return`<div class="sett-row">
                 <div><div class="sett-row-lbl">${lbl}</div><div class="sett-row-sub">${desc}</div></div>
-                <button onclick="toggleDashBlock('${k}');renderSettings()" class="filter-btn" style="cursor:pointer;font-size:12px;${on?'background:var(--ink);color:var(--on-ink);border-color:var(--ink);':''}">${on?'✓ On':'Off'}</button>
+                <button onclick="toggleDashBlock('${k}');renderSettings()" class="filter-btn" style="cursor:pointer;font-size:12px;${on?'background:var(--ink);color:var(--on-ink);border-color:var(--ink);':''}">${on?'<i class="ti ti-check" style="font-size:11px;"></i> On':'Off'}</button>
               </div>`;
             }).join('')}
           </div>
@@ -10834,8 +10857,8 @@ function renderSettings(){
       return`<div class="tm-card${p._archived?' archived':''}" onclick="openTeamMember('${key}')">
         <div class="tm-av" style="background:${p.color||'#6B7FA3'}">${p.initials||'?'}</div>
         <div class="tm-info">
-          <div class="tm-name">${p.name}${isMe?' <span style="font-size:10px;background:var(--off);border:1px solid var(--border);border-radius:6px;padding:1px 5px;color:var(--muted);margin-left:4px;">You</span>':''}</div>
-          <div class="tm-role">${p.role||'No role set'}${p.team?' · '+p.team:''}</div>
+          <div class="tm-name">${esc(p.name)}${isMe?' <span style="font-size:10px;background:var(--off);border:1px solid var(--border);border-radius:6px;padding:1px 5px;color:var(--muted);margin-left:4px;">You</span>':''}</div>
+          <div class="tm-role">${esc(p.role||"No role set")}${p.team?" · "+esc(p.team):""}</div>
           <div class="tm-meta">
             <span>$${costR}/h cost</span>${billR?`<span>$${billR}/h bill</span>`:''}
             <span>${p.hoursPerDay||8}h/day</span>
@@ -10873,7 +10896,7 @@ function renderSettings(){
   /* ── Workspace Defaults ── */
   if(tab==='defaults'){
     wrap.innerHTML=`
-      <div class="sett-tab-hd">Workspace Defaults</div>
+      <div class="sett-tab-hd">Workspace defaults</div>
       <div class="sett-tab-sub">Company-wide defaults used across all jobs and reporting.</div>
       <div class="sett-card">
         <div class="sett-card-hd">Rates &amp; billing</div>
@@ -10901,7 +10924,7 @@ function renderSettings(){
   /* ── Job Items ── */
   if(tab==='items'){
     wrap.innerHTML=`
-      <div class="sett-tab-hd">Job Items</div>
+      <div class="sett-tab-hd">Job items</div>
       <div class="sett-tab-sub">Item types available when building a job plan, and expense categories.</div>
       <div class="sett-card">
         <div class="sett-card-hd">Plan item types</div>
@@ -10951,7 +10974,7 @@ function renderSettings(){
   if(tab==='sync'){
     const lastPub=localStorage.getItem('cc_config_published_at');
     wrap.innerHTML=`
-      <div class="sett-tab-hd">Workspace Sync</div>
+      <div class="sett-tab-hd">Workspace sync</div>
       <div class="sett-tab-sub">Publish your team config to GitHub so every team member sees the same setup.</div>
       <div class="sett-card">
         <div class="sett-card-hd">GitHub connection</div>
@@ -11067,19 +11090,19 @@ function openTeamMember(key){
   head.innerHTML=`
     <div style="width:56px;height:56px;border-radius:50%;background:${p.color||'#6B7FA3'};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;color:#fff;flex-shrink:0;">${p.initials||'?'}</div>
     <div style="flex:1;min-width:0;">
-      <div style="font-size:16px;font-weight:500;">${p.name}</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:2px;">${p.role||'No role set'}${p.team?' · '+p.team:''}</div>
+      <div style="font-size:16px;font-weight:500;">${esc(p.name)}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px;">${esc(p.role||"No role set")}${p.team?" · "+esc(p.team):""}</div>
       ${stU?`<div style="font-size:11px;color:var(--muted);margin-top:2px;">Synced from Streamtime</div>`:''}
     </div>
     <button onclick="closeTeamPanel()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;font-size:18px;"><i class="ti ti-x"></i></button>`;
   body.innerHTML=`
     <div class="tm-panel-section">
       <div class="tm-panel-section-lbl">Identity</div>
-      <div class="tm-panel-field"><label>Display name</label><input value="${p.name}" onchange="updatePerson('${key}','name',this.value);document.querySelector('#tm-panel-head div:nth-child(2) div').textContent=this.value;"></div>
-      <div class="tm-panel-field"><label>Role / title</label><input value="${p.role||''}" placeholder="e.g. Senior Designer" onchange="updatePerson('${key}','role',this.value)"></div>
+      <div class="tm-panel-field"><label>Display name</label><input value="${esc(p.name)}" onchange="updatePerson('${key}','name',this.value);document.querySelector('#tm-panel-head div:nth-child(2) div').textContent=this.value;"></div>
+      <div class="tm-panel-field"><label>Role / title</label><input value="${esc(p.role||"")}" placeholder="e.g. Senior Designer" onchange="updatePerson('${key}','role',this.value)"></div>
       <div class="tm-panel-field"><label>Team</label>
-        <input list="tm-team-list" value="${p.team||''}" placeholder="e.g. Design" onchange="updatePerson('${key}','team',this.value.trim())">
-        <datalist id="tm-team-list">${allTeams.map(t=>`<option value="${t}">`).join('')}</datalist>
+        <input list="tm-team-list" value="${esc(p.team||"")}" placeholder="e.g. Design" onchange="updatePerson('${key}','team',this.value.trim())">
+        <datalist id="tm-team-list">${allTeams.map(t=>`<option value="${esc(t)}">`).join('')}</datalist>
       </div>
     </div>
     <div class="tm-panel-section">
@@ -11143,7 +11166,7 @@ async function publishConfig(){
     if(getRes.ok){const d=await getRes.json();sha=d.sha;}
     else if(getRes.status!==404){const e=await getRes.json();throw new Error('GET failed: '+(e.message||getRes.status));}
 
-    const config={people,globalLabels,LINE_ITEMS,EXPENSE_ITEMS,published_at:new Date().toISOString(),published_by:people[MY_PERSON]?.name||MY_PERSON};
+    const config={people,globalLabels,LINE_ITEMS,EXPENSE_ITEMS,teams:(typeof _rfTeamList==='function'?_rfTeamList():undefined),published_at:new Date().toISOString(),published_by:people[MY_PERSON]?.name||MY_PERSON};
     const content=btoa(unescape(encodeURIComponent(JSON.stringify(config,null,2))));
     const body={message:`config: publish workspace settings`,content,branch:BRANCH};
     if(sha)body.sha=sha;
@@ -11232,7 +11255,7 @@ function saveNewPerson(){
   const COLORS=['#ED1E24','#6B7FA3','#7B9E87','#C4956A','#9B59B6','#E67E22','#1ABC9C','#3498DB'];
   const initials=name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
   const color=COLORS[Object.keys(people).length%COLORS.length];
-  let key=name.toLowerCase().replace(/\s+/g,'_');
+  let key=name.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')||'person';
   while(people[key])key+='_';
   people[key]={name,initials,color,days:[1,2,3,4,5],role};
   personStatus[key]='available';
@@ -11284,7 +11307,7 @@ function showStarredInSearch(){
   const other=_getStarred().map(s=>({cat:'Starred',icon:ICONS[s.type]||'ti-star',title:s.name||s.id,sub:s.type.charAt(0).toUpperCase()+s.type.slice(1),fn:()=>openStarredItem(s.type,s.id)}));
   _gsResults=[...starredJobs,...other];_gsSel=0;
   renderGsResults('');
-  if(!_gsResults.length)document.getElementById('gs-results').innerHTML=`<div class="gs-empty">Nothing starred yet. Click the <i class="ti ti-star" style="color:#E6A700;vertical-align:-1px;"></i> on a job or client to pin it here.</div>`;
+  if(!_gsResults.length)document.getElementById('gs-results').innerHTML=`<div class="gs-empty">Nothing starred yet. Click the <i class="ti ti-star" style="color:var(--star);vertical-align:-1px;"></i> on a job or client to pin it here.</div>`;
 }
 function openGlobalSearch(){
   document.getElementById('gsearch').classList.add('on');
@@ -11345,14 +11368,16 @@ function _logTaskTime(task,personKey,dateISO){
   const userId=people[personKey]?._stId;
   if(!userId){toast(`${people[personKey]?.name||'This person'} isn't linked to Streamtime, so the time wasn't logged`,'warn');return false;}
   let item=null;(job.phases||[]).forEach(ph=>(ph.items||[]).forEach(it=>{if((task.itemId&&it.id===task.itemId)||(!task.itemId&&task.item&&it.name===task.item))item=it;}));
+  const _ltId=uid('lt');
   dbCreateTimeEntry({
+    id:_ltId,
     job:{id:job._stId||null,number:job.id,name:job.name,isBillable:job.billable!==false},
     jobId:job._stId||null,userId,
     itemId:item?._stId||task.itemId||null,itemName:item?.name||task.item||'',
     notes:task.title||'',hours,date:dateISO||_localISO(),
     jobItemUser:item?._stId?{jobItemId:item._stId}:null,
   });
-  task._loggedEntry=true; // the entry now carries this time — Job Plan must not count the card too
+  task._loggedEntry=_ltId; // (truthy) the entry now carries this time — Job Plan must not count the card too
   logActivity(job.id,personKey,'time_log',`Logged <strong>${formatHrs(hours)}</strong>${item?` on ${esc(item.name)}`:''}${task.title?` — ${esc(task.title)}`:''}`);
   return true;
 }
@@ -11544,8 +11569,8 @@ function renderGsResults(q){
   }
   let html='',lastCat='';
   _gsResults.forEach((r,i)=>{
-    if(r.cat!==lastCat){html+=`<div class="gs-cat">${r.cat}</div>`;lastCat=r.cat;}
-    html+=`<div class="gs-item${i===_gsSel?' sel':''}" onclick="gsGo(${i})" onmousemove="_gsSel=${i};renderGsResults(document.getElementById('gs-inp').value)">
+    if(r.cat!==lastCat){html+=`<div class="gs-cat">${esc(r.cat)}</div>`;lastCat=r.cat;}
+    html+=`<div class="gs-item${i===_gsSel?' sel':''}" onclick="gsGo(${i})" onmousemove="if(_gsSel!==${i}){_gsSel=${i};this.parentNode.querySelectorAll('.gs-item.sel').forEach(x=>x.classList.remove('sel'));this.classList.add('sel');}">
       <div class="gs-ico ${_GS_CAT_CLS[r.cat]||''}"><i class="ti ${r.icon}"></i></div>
       <div style="flex:1;min-width:0;"><div class="gs-t">${esc(r.title)}</div><div class="gs-s">${esc(r.sub)}</div></div>
     </div>`;
@@ -11594,13 +11619,13 @@ function openStarredItem(type,id){
 // Star toggle button — used on job rows/detail headers. Re-renders whatever container called it.
 function starBtnHTML(type,id,name,size){
   const on=isStarred(type,id);
-  return `<i class="ti ti-star" style="font-size:${size||14}px;color:${on?'#E6A700':'var(--muted)'};cursor:pointer;" title="${on?'Remove from starred':'Add to starred'}" onclick="event.stopPropagation();toggleStarAndRefresh('${type}','${id}',this.dataset.name||'')" data-name="${(name||'').replace(/"/g,'&quot;')}"></i>`;
+  return `<i class="ti ti-star" style="font-size:${size||14}px;color:${on?'var(--star)':'var(--muted)'};cursor:pointer;" title="${on?'Remove from starred':'Add to starred'}" onclick="event.stopPropagation();toggleStarAndRefresh('${type}','${id}',this.dataset.name||'')" data-name="${(name||'').replace(/"/g,'&quot;')}"></i>`;
 }
 function toggleStarAndRefresh(type,id,name){
   toggleStarItem(type,id,name);
   document.querySelectorAll(`[onclick*="toggleStarAndRefresh('${type}','${id}'"]`).forEach(elm=>{
     const on=isStarred(type,id);
-    elm.style.color=on?'#E6A700':'var(--muted)';
+    elm.style.color=on?'var(--star)':'var(--muted)';
     elm.title=on?'Remove from starred':'Add to starred';
   });
 }
@@ -11615,6 +11640,7 @@ function closeAnyOpenModal(){
   const sp=document.getElementById('starred-panel');
   if(sp?.classList.contains('on')){closeStarredPanel();return true;}
   if(document.getElementById('label-picker')){closeLabelPicker();return true;}
+  if(document.getElementById('tm-panel')?.classList.contains('open')&&!document.querySelector('.modal-bg.on')){closeTeamPanel();return true;}
   let closed=false;
   ['create-modal','todo-modal','inv-modal','fup'].forEach(id=>{
     const el=document.getElementById(id);
@@ -11647,6 +11673,7 @@ document.addEventListener('keydown',e=>{
   const ae=document.activeElement;
   const typing=ae&&(/INPUT|TEXTAREA|SELECT/.test(ae.tagName)||ae.isContentEditable);
   if(typing||mod||e.altKey)return;
+  if(document.querySelector('.modal-bg.on,#todo-modal.on,#create-modal.on,#inv-modal.on,#starred-panel.on,#tm-panel.open'))return;
   // Create shortcuts (review C extras): J job · Q quote · E expense · ? list
   if(!document.querySelector('.modal-bg.on')){
     const k=e.key.toLowerCase();
@@ -11671,7 +11698,7 @@ document.addEventListener('keydown',e=>{
   }
   const todoActive=!document.getElementById('view-todo').classList.contains('hidden');
   const schedActive=!document.getElementById('view-schedule')?.classList.contains('hidden');
-  if(schedActive&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();weekOffset+=e.key==='ArrowLeft'?-1:1;renderSchedule();return;}
+  if(schedActive&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){e.preventDefault();const _st=(typeof _c2Sched!=='undefined'&&_c2Sched.weeks)||1;weekOffset+=e.key==='ArrowLeft'?-_st:_st;renderSchedule();return;}
   if(todoActive&&e.key==='ArrowLeft'){e.preventDefault();toggleWeek(-1);}
   if(todoActive&&e.key==='ArrowRight'){e.preventDefault();toggleWeek(1);}
   if(todoActive&&(e.key==='f'||e.key==='F')){e.preventDefault();toggleFocusToday();}
@@ -11699,7 +11726,10 @@ function _focusToggleDone(taskId){
   const wd=getWeekData(currentPerson,0);
   const t=(wd[day]||[]).find(x=>x.id===taskId);if(!t)return;
   t.done=!t.done;
-  saveData();renderFocusToday();
+  // Same done path as the board: activity, job stats and the "log time?" follow-up.
+  try{if(t.jobId)logActivity(t.jobId,currentPerson,'task_status',`Task <strong>${esc(t.title)}</strong> ${t.done?'marked done':'reopened'}`);}catch(e){}
+  if(t.done){_fupDay=weekOffset===0?day:null;_showFupForTask(t);}
+  saveData();renderFocusToday();try{_refreshJobStats();}catch(e){}
 }
 function renderFocusToday(){
   const cols=document.getElementById('day-cols');if(!cols)return;
@@ -11804,7 +11834,7 @@ function _getTimeEntries(){
   if(stLoggedTimes.length){
     return stLoggedTimes.map(lt=>{
       const u=stUsersById[lt.userId]||{name:'Unknown',initials:'?',color:'#999',key:'st_'+lt.userId};
-      const jobNum=_stIdToJobNum[lt.job?.id]||null;
+      const jobNum=_stIdToJobNum[lt.job?.id]||(lt.job?.number?String(lt.job.number):null); // platform-created jobs have no ST id
       return{
         personKey:u.key,personName:u.name,personColor:u.color,personInitials:u.initials,
         date:new Date((lt.date||'').slice(0,10)+'T12:00:00'),
@@ -11815,6 +11845,7 @@ function _getTimeEntries(){
         billable:lt.job?.isBillable!==false, // billability is on the nested job, not the logged-time top level
         sell:lt.totalExTax||0, // real ST sell value for this entry
         note:'',item:lt.itemName||'',notes:lt.notes||'', // item/notes: feat-c CSV export
+        _ltId:lt.id,_local:!!lt._local,
       };
     });
   }
@@ -11932,8 +11963,9 @@ function renderTime(){
   // Track collapsed groups in module scope — groups start minimised so the
   // Time view reads as a summary first; click a person to expand
   if(!window._timeCollapsedGroups)window._timeCollapsedGroups={};
+  const _singleGroup=Object.keys(byPerson).length===1;
   Object.keys(byPerson).forEach(pKey=>{
-    if(!(pKey in window._timeCollapsedGroups))window._timeCollapsedGroups[pKey]=true;
+    if(!(pKey in window._timeCollapsedGroups))window._timeCollapsedGroups[pKey]=!_singleGroup;
   });
   Object.keys(byPerson).forEach(pKey=>{
     const p=people[pKey]||Object.values(stUsersById).find(u=>u.key===pKey)||{name:pKey,color:'#999',initials:'?'};
@@ -11943,8 +11975,8 @@ function renderTime(){
     const isCollapsed=window._timeCollapsedGroups[pKey];
     const chevron=isCollapsed?'ti-chevron-right':'ti-chevron-down';
     rows+=`<tr class="time-group-row" style="cursor:pointer;" onclick="toggleTimeGroup('${pKey}')"><td colspan="7">
-      <span class="time-av" style="background:${p.color};">${p.initials}</span>
-      <strong>${p.name}</strong> &nbsp;<span style="color:var(--muted);font-weight:400;">${fmtH(pTotal)} total · ${fmtH(pBill)} billable · ${pEntries.length} entries</span>
+      <span class="time-av" style="background:${esc(p.color)};">${esc(p.initials)}</span>
+      <strong>${esc(p.name)}</strong> &nbsp;<span style="color:var(--muted);font-weight:400;">${fmtH(pTotal)} total · ${fmtH(pBill)} billable · ${pEntries.length} entries</span>
       <i class="ti ${chevron}" style="float:right;font-size:11px;color:var(--muted);margin-top:2px;"></i>
     </td></tr>`;
     if(!isCollapsed){
@@ -11959,7 +11991,7 @@ function renderTime(){
           <td style="color:var(--muted);font-size:12px;white-space:nowrap;">${fmtDate(e.date)}</td>
           <td style="text-align:right;font-variant-numeric:tabular-nums;">${fmtH(e.hours)}</td>
           <td>${e.billable?'<span class="t-bill">Billable</span>':'<span class="t-nobill">Non-billable</span>'}</td>
-          <td>${statusStr}</td>
+          <td>${statusStr}${e._local&&e._ltId?` <button class="rf-icon-btn rf-te-del" title="Delete this time entry (logged in the platform)" aria-label="Delete time entry" onclick="event.stopPropagation();rfDeleteTimeEntry('${esc(e._ltId)}')"><i class="ti ti-trash"></i></button>`:''}</td>
         </tr>`;
         if(e.note){
           rows+=`<tr class="tg-${pKey}"><td colspan="7"><div class="te-note-row"><i class="ti ti-note" style="font-size:11px;"></i> ${esc(e.note)}</div></td></tr>`;
@@ -12439,8 +12471,11 @@ function renderQuotes(){
   document.getElementById('quotes-count').textContent=`${quotes.length} quote${quotes.length!==1?'s':''}`;
 
   if(!quotes.length){
-    const msg=stQuotes.length===0?'Quote data syncing — check back shortly.':'No quotes match the current filters.';
-    list.innerHTML=`<div style="padding:40px 28px;font-size:13px;color:var(--muted);">${msg}</div>`;
+    // Platform quotes count too: "syncing" showed even when a filter was hiding local quotes.
+    const anyQuotes=(stQuotes.length+(typeof localQuotes!=='undefined'?localQuotes.length:0))>0;
+    list.innerHTML=anyQuotes
+      ?emptyStateHTML('ti-filter-off','No quotes match','Try a different search, or clear the filters.')
+      :emptyStateHTML('ti-file-text','No quotes yet','Quotes from Streamtime appear here after the next sync. You can also write one here.','New quote','openNewQuoteModal()');
     return;
   }
 
@@ -12458,7 +12493,7 @@ function renderQuotes(){
     const qtValue=qt.totalAmountExTax!=null?qt.totalAmountExTax:(job?job._plannedSell:null);
     const jobNum=qt.jobNumber||job?.id||'';
     return`<div class="qinv-card" id="qcard-${qt.id}">
-      <div class="qinv-card-head" onclick="openQuoteDocPreview('${qt.id}')">
+      <div class="qinv-card-head" onclick="toggleQinvDetail('qcard-${qt.id}')" title="Show details">
         <span class="qinv-card-num">${qt.quoteNumber||qt.id}</span>
         <span class="qinv-card-job">${jobNum||'—'}</span>
         <span class="qinv-card-name" title="${esc(qt.quoteName||qt.jobName||'')}">${esc(String(qt.quoteName||qt.jobName||'—').replace(/^\[\d+\]\s*/,''))}${qt._local?'<span style="font-size:10px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:6px;">Local</span>':''}</span>
@@ -12472,15 +12507,16 @@ function renderQuotes(){
         <div style="padding:14px 20px;font-size:12px;color:var(--muted);display:flex;gap:24px;flex-wrap:wrap;">
           <span><strong>Quote #:</strong> ${qt.quoteNumber||qt.id}</span>
           <span><strong>Job:</strong> ${jobNum?`#${jobNum} `:''} ${esc(qt.jobName||'—')}</span>
-          <span><strong>Sent by:</strong> ${qt.sentByUser||'—'}</span>
+          <span><strong>Sent by:</strong> ${esc(qt.sentByUser||'—')}</span>
           <span><strong>Sent:</strong> ${fmtDate(qt.sentDate)}</span>
           ${qt.approvedDate?`<span><strong>Approved:</strong> ${fmtDate(qt.approvedDate)}</span>`:''}
           ${qtValue!=null?`<span><strong>Value:</strong> $${Math.round(qtValue).toLocaleString()} ex GST</span>`:''}
-          ${job?.po?`<span><strong>PO:</strong> ${job.po}</span>`:''}
-          ${job?.lead&&people[job.lead]?`<span><strong>Lead:</strong> ${people[job.lead].name}</span>`:''}
+          ${job?.po?`<span><strong>PO:</strong> ${esc(job.po)}</span>`:''}
+          ${job?.lead&&people[job.lead]?`<span><strong>Lead:</strong> ${esc(people[job.lead].name)}</span>`:''}
         </div>
         <div class="qinv-actions">
-          <button class="d-action" onclick="event.stopPropagation();openQuoteDetail('${qt.id}')"><i class="ti ti-file-text" style="font-size:12px;"></i> View detail</button>
+          <button class="d-action primary" onclick="event.stopPropagation();openQuoteDetail('${qt.id}')"><i class="ti ti-file-text" style="font-size:12px;"></i> Open quote</button>
+          <button class="d-action" onclick="event.stopPropagation();openQuoteDocPreview('${qt.id}')"><i class="ti ti-printer" style="font-size:12px;"></i> Preview document</button>
           ${job?`<button class="d-action" onclick="event.stopPropagation();openJobDetail('${job.id}')"><i class="ti ti-external-link" style="font-size:12px;"></i> Open job</button>`:''}
         </div>
       </div>
@@ -12588,14 +12624,15 @@ function renderInvoices(){
   // Totals inc GST — read the real inc-tax fields from the invoices rather than grossing up
   // ex-tax by a flat 1.15 (which ignores discounts / mixed tax).
   let totalIssuedInc=0,totalPaidInc=0;
-  [...(stInvoices||[]),..._natInv].forEach(i=>{
+  inv.forEach(i=>{
     const s=_getInvStatus(i);
     if(s!=='draft'&&s!=='voided')totalIssuedInc+=(i.totalAmountIncTax||0);
     totalPaidInc+=(i.amountPaidIncTax||0);
   });
   document.getElementById('invoices-count').textContent=`${inv.length} invoice${inv.length!==1?'s':''}`;
   const totEl=document.getElementById('invoices-total');
-  if(totEl)totEl.innerHTML=`$${Math.round(totalIssuedInc).toLocaleString()} issued &nbsp;·&nbsp; <span style="color:var(--ok-ink);">$${Math.round(totalPaidInc).toLocaleString()} paid</span>`;
+  const _owing=Math.max(0,totalIssuedInc-totalPaidInc);
+  if(totEl)totEl.innerHTML=`$${Math.round(totalIssuedInc).toLocaleString()} issued &nbsp;·&nbsp; <span style="color:var(--ok-ink);">$${Math.round(totalPaidInc).toLocaleString()} paid</span>${_owing>=1?` &nbsp;·&nbsp; <span style="color:var(--warn-ink);">$${Math.round(_owing).toLocaleString()} owing</span>`:''}`;
 
   // DSO metric
   const paidInvs=inv.filter(i=>i.paidDate&&i.sentDate);
@@ -12673,8 +12710,8 @@ function renderInvoices(){
     const _tbiArrow=col=>_tbiSortCol===col?(_tbiSortDir===1?' <i class="ti ti-chevron-up" style="font-size:10px;"></i>':' <i class="ti ti-chevron-down" style="font-size:10px;"></i>'):'';
     const _tbiTh=(col,label,alignRight)=>`<th class="inv-th ci-${col}" style="cursor:pointer;user-select:none;${alignRight?'text-align:right;':''}" onclick="_setTbiSort('${col}')">${label}${_tbiArrow(col)}</th>`;
     if(tbiJobs.length||hidden.length){
-      tbiHTML=`<div class="grp-hd" style="background:#fffbea;border-left:3px solid #F39C12;">
-        <span><i class="ti ti-alert-triangle" style="color:#F39C12;margin-right:6px;"></i>Uninvoiced jobs</span>
+      tbiHTML=`<div class="grp-hd" style="background:var(--warn-bg);border-left:3px solid var(--warn);">
+        <span><i class="ti ti-alert-triangle" style="color:var(--warn-ink);margin-right:6px;"></i>Uninvoiced jobs</span>
         <span style="font-weight:400;font-size:11px;display:flex;align-items:center;gap:10px;">${tbiJobs.length} job${tbiJobs.length!==1?'s':''} complete &amp; not invoiced${hidden.length?`<a href="#" onclick="event.preventDefault();showHiddenUninvoiced()" style="color:var(--muted);">${hidden.length} hidden</a>`:''}</span>
       </div>
       ${tbiJobs.length?`<table class="inv-table"><thead><tr>
@@ -13411,7 +13448,7 @@ function _ccRenderTimeGrouped(entries,gb){
         <td style="color:var(--muted);font-size:12px;white-space:nowrap;">${fd(e.date)}</td>
         <td style="text-align:right;font-variant-numeric:tabular-nums;">${fmtH(e.hours)}</td>
         <td>${e.billable?'<span class="t-bill">Billable</span>':'<span class="t-nobill">Non-billable</span>'}</td>
-        <td>${statusStr}</td>
+        <td>${statusStr}${e._local&&e._ltId?` <button class="rf-icon-btn rf-te-del" title="Delete this time entry (logged in the platform)" aria-label="Delete time entry" onclick="event.stopPropagation();rfDeleteTimeEntry('${esc(e._ltId)}')"><i class="ti ti-trash"></i></button>`:''}</td>
       </tr>`;
     });
   });
@@ -14623,7 +14660,7 @@ function _c2SchedPeopleGrid(keys,days){
     return`<tr><td class="lbl"><div style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="c2-av" style="background:${esc(p.color||'#999')};width:20px;height:20px;font-size:8px;">${esc(p.initials||'?')}</span><span style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.name)}</span></div></td>${cells}<td class="tot" title="Capacity ${esc(formatHrs(capTot)||'0h')}">${esc(formatHrs(tot)||'—')}<div class="c2-hint">of ${esc(formatHrs(capTot)||'0h')}</div></td></tr>`;
   }).join('');
   const foot=`<tfoot><tr><td class="lbl">Total</td>${days.map((d,i)=>`<td class="${d.first?'wk-start':''}">${esc(formatHrs(dayTot[i])||'—')}</td>`).join('')}<td class="tot" id="c2-sched-grand">${esc(formatHrs(grand)||'—')}</td></tr></tfoot>`;
-  return{html:`<table class="c2-sg${_c2Sched.weeks>1?' multi':''}" style="min-width:${180+days.length*(_c2Sched.weeks>2?44:64)+80}px;">${_c2SchedHead(days,180,80)}<tbody>${rows}</tbody>${foot}</table>`,grand};
+  return{html:`<table class="c2-sg${_c2Sched.weeks>1?' multi':''}" style="min-width:${180+days.length*(_c2Sched.weeks>2?44:64)+80}px;">${_c2SchedHead(days,180,80)}<tbody>${rows||`<tr><td colspan="${days.length+2}" style="padding:36px;text-align:center;color:var(--muted);">No people selected — pick someone above.</td></tr>`}</tbody>${foot}</table>`,grand};
 }
 function _c2SchedJobsGrid(keys,days){
   const jobById=new Map(jobs.map(j=>[String(j.id),j]));
@@ -18500,6 +18537,465 @@ function _rvSetClientsInternal(on){RV.state.clientsInternal=!!on;_rvSaveState();
       ${_rvSec('Live jobs',`Lifetime figures for jobs in play. Non-billable jobs are ${FE.wip.nb?'included':'excluded'}. Click a job to open it.`,tbl+`<div class="rv-note">WIP = logged time sell + expense sell. Projected cost assumes the remaining planned hours are worked at the job’s blended cost rate so far; future expenses aren’t included.${nEst?` ${nEst} job${nEst!==1?'s use':' uses'} the $${_rvN(_defCostRate())}/h default cost rate for some people, so their costs are estimates.`:''}</div>`,_rvCsvBtn('wip'))}`;
   };
 })();
+</script>
+<style id="review-fix-styles">
+/* ── Review fixes (Nov 2026 platform review) ── */
+:root{--star:#E6A700;}
+body.dark{--star:#F2C14E;}
+.rf-teams{display:flex;flex-wrap:wrap;gap:8px;}
+.rf-team-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 10px 6px 12px;border:1px solid var(--border);border-radius:var(--r-ctl);background:var(--white);font-size:12.5px;color:var(--ink);}
+.rf-team-chip .rf-n,.rf-n{font-size:11px;color:var(--muted);}
+.rf-team-chip.none{border-style:dashed;color:var(--muted);}
+.rf-avs{display:inline-flex;}
+.rf-av{width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:600;color:#fff;border:2px solid var(--white);margin-left:-5px;flex-shrink:0;}
+.rf-av:first-child{margin-left:0;}
+.rf-tm-modal{width:720px;}
+.rf-tm-modal .modal-bd{max-height:68vh;overflow-y:auto;}
+.rf-sec-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:2px 0 8px;}
+.rf-team-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+.rf-team-row:last-of-type{border-bottom:none;}
+.rf-team-row .rf-name{font-size:13px;font-weight:500;color:var(--ink);min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rf-team-row .rf-name small{font-weight:400;color:var(--muted);margin-left:6px;font-size:11.5px;}
+.rf-team-row .form-inp{flex:1;min-width:0;padding:6px 9px;}
+.rf-icon-btn{background:transparent;border:1px solid transparent;border-radius:var(--r-ctl);width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer;font-size:14px;flex-shrink:0;}
+.rf-icon-btn:hover{border-color:var(--border);color:var(--ink);background:var(--off);}
+.rf-people{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;}
+.rf-person{display:flex;align-items:center;gap:8px;min-width:0;padding:3px 0;}
+.rf-person .rf-pname{flex:1;min-width:0;font-size:12.5px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rf-person .cc-select{width:150px;flex-shrink:0;}
+.rf-add-row{display:flex;gap:8px;margin-top:10px;}
+.rf-add-row .form-inp{flex:1;}
+.rf-note{font-size:11.5px;color:var(--muted);margin-top:14px;line-height:1.5;}
+.rf-ft-note{margin-right:auto;font-size:11.5px;color:var(--muted);align-self:center;}
+@media (max-width:720px){.rf-people{grid-template-columns:1fr;}}
+.rf-te-del{width:22px;height:22px;font-size:12px;vertical-align:middle;margin-left:4px;opacity:0;}
+tr:hover .rf-te-del,.rf-te-del:focus{opacity:1;}
+/* Dashboard timesheets card */
+.rf-ts-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-card);box-shadow:var(--shadow-s);padding:4px 0 6px;margin-bottom:8px;}
+.rf-ts-hd{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding:12px 16px 8px;font-size:13px;color:var(--ink);}
+.rf-ts-sub{font-size:11.5px;color:var(--muted);}
+.rf-ts-row{display:flex;align-items:center;gap:10px;padding:7px 16px;cursor:pointer;border-top:1px solid var(--faint);}
+.rf-ts-row:hover,.rf-ts-row:focus{background:var(--off);outline:none;}
+.rf-ts-name{flex:0 0 180px;min-width:0;font-size:13px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rf-ts-bar{flex:1;height:5px;border-radius:3px;background:var(--faint);overflow:hidden;max-width:280px;}
+.rf-ts-bar span{display:block;height:100%;background:var(--warn);border-radius:3px;}
+.rf-ts-num{font-size:12px;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;margin-left:auto;}
+.rf-ts-num span{color:var(--muted);}
+.rf-ts-ok{padding:8px 16px 10px;font-size:13px;color:var(--ok-ink);display:flex;align-items:center;gap:8px;border-top:1px solid var(--faint);}
+.rf-ts-more{padding:6px 16px 4px;font-size:11.5px;color:var(--muted);}
+@media (max-width:720px){.rf-ts-name{flex-basis:120px;}}</style>
+<script id="review-fix-script">
+/* Review fixes and additions (Nov 2026 platform review). New helpers live here; small
+   in-place fixes are made where the original code is. */
+
+/* ── Settings → Team → Manage teams ────────────────────────────────────────────────
+   Teams are a free-text field on each person (people[k].team). This gives admins one place
+   to rename, merge, add and move people between teams. Empty teams (just added, or kept
+   after moving everyone out) are remembered in cc_teams and travel with the published
+   team config, so the team list is the same for everyone once published. */
+function _rfStoredTeams(){try{const t=JSON.parse(localStorage.getItem('cc_teams')||'[]');return Array.isArray(t)?t.filter(x=>typeof x==='string'&&x.trim()):[];}catch(e){return[];}}
+function _rfSaveTeams(list){try{localStorage.setItem('cc_teams',JSON.stringify([...new Set(list)]));}catch(e){}}
+function _rfActiveKeys(){return Object.keys(people).filter(k=>people[k]&&!people[k]._archived);}
+function _rfTeamList(){
+  const fromPeople=Object.values(people).filter(p=>p&&p.team&&!p._archived).map(p=>p.team);
+  return [...new Set([..._rfStoredTeams(),...fromPeople])].sort((a,b)=>a.localeCompare(b));
+}
+function _rfTeamMembers(t){return _rfActiveKeys().filter(k=>(people[k].team||'')===t);}
+function _rfAvs(keys,max){
+  max=max||5;
+  return `<span class="rf-avs">${keys.slice(0,max).map(k=>{const p=people[k];return`<span class="rf-av" style="background:${esc(p.color||'#6B7FA3')}" title="${esc(p.name)}">${esc(p.initials||'?')}</span>`;}).join('')}</span>${keys.length>max?`<span class="rf-n">+${keys.length-max}</span>`:''}`;
+}
+// Move a team name everywhere it is stored: people (archived too), everyone's dashboard team
+// filter, team targets (Reporting → Teams) and the stored team list.
+function _rfRenameTeamEverywhere(from,to){
+  let moved=0;
+  Object.values(people).forEach(p=>{
+    if(!p)return;
+    if(p.team===from){p.team=to;if(!p._archived)moved++;}
+    if(Array.isArray(p.dashTeams)&&p.dashTeams.includes(from))p.dashTeams=[...new Set(p.dashTeams.map(t=>t===from?to:t))];
+  });
+  try{
+    const tt=JSON.parse(localStorage.getItem('cc_team_targets')||'{}');
+    if(tt&&tt[from]!=null){if(tt[to]==null)tt[to]=tt[from];delete tt[from];localStorage.setItem('cc_team_targets',JSON.stringify(tt));}
+  }catch(e){}
+  _rfSaveTeams(_rfStoredTeams().filter(t=>t!==from).concat(to));
+  return moved;
+}
+function _rfAfterTeamChange(msg){
+  savePeople();
+  try{populatePersonSwitcher();}catch(e){}
+  if(document.getElementById('rf-teams-modal'))_rfRenderTeamsModal();
+  if((typeof _settActiveTab!=='undefined'?_settActiveTab:'')==='team'&&!document.getElementById('view-settings')?.classList.contains('hidden'))renderSettings();
+  if(msg)toast(esc(msg)+' — publish the team config in Settings → Workspace sync to share it','success',4200);
+}
+function openManageTeams(){
+  if(!_needAdmin('manage teams'))return;
+  document.getElementById('rf-teams-modal')?.remove();
+  _rfEditingTeam=null;
+  const m=document.createElement('div');m.className='modal-bg on';m.id='rf-teams-modal';
+  m.innerHTML=`<div class="modal rf-tm-modal" role="dialog" aria-label="Manage teams">
+    <div class="modal-hd"><span class="modal-hd-title">Manage teams</span><button class="modal-x" onclick="closeManageTeams()" aria-label="Close"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd" id="rf-teams-bd"></div>
+    <div class="modal-ft"><span class="rf-ft-note">Changes save as you go.</span><button class="modal-save" onclick="closeManageTeams()">Done</button></div>
+  </div>`;
+  m.addEventListener('mousedown',e=>{if(e.target===m)closeManageTeams();});
+  document.body.appendChild(m);
+  _rfRenderTeamsModal();
+}
+function closeManageTeams(){document.getElementById('rf-teams-modal')?.remove();}
+let _rfEditingTeam=null;
+function _rfRenderTeamsModal(){
+  const bd=document.getElementById('rf-teams-bd');if(!bd)return;
+  const teams=_rfTeamList();
+  const active=_rfActiveKeys().sort((a,b)=>(people[a].name||'').localeCompare(people[b].name||''));
+  const noTeam=active.filter(k=>!people[k].team);
+  const teamOpts=t=>`<option value="">No team</option>`+teams.map(x=>`<option value="${esc(x)}"${x===t?' selected':''}>${esc(x)}</option>`).join('');
+  const rows=teams.map((t,i)=>{
+    const mem=_rfTeamMembers(t);
+    if(_rfEditingTeam===t){
+      return `<div class="rf-team-row">
+        <input class="form-inp" id="rf-rename-inp" value="${esc(t)}" aria-label="Team name" onkeydown="if(event.key==='Enter')_rfCommitRename(${i});if(event.key==='Escape'){event.stopPropagation();_rfEditingTeam=null;_rfRenderTeamsModal();}">
+        <button class="d-action primary" onclick="_rfCommitRename(${i})">Save</button>
+        <button class="d-action" onclick="_rfEditingTeam=null;_rfRenderTeamsModal()">Cancel</button>
+      </div>`;
+    }
+    const others=teams.filter(x=>x!==t);
+    return `<div class="rf-team-row">
+      <div class="rf-name">${esc(t)}<small>${mem.length} ${mem.length===1?'person':'people'}</small></div>
+      ${_rfAvs(mem)}
+      <button class="rf-icon-btn" title="Rename" aria-label="Rename" onclick="_rfStartRename(${i})"><i class="ti ti-pencil"></i></button>
+      ${others.length?`<select class="cc-select" title="Merge into another team" aria-label="Merge into" onchange="if(this.value)_rfMergeTeam(${i},this.value);this.value=''"><option value="">Merge into…</option>${others.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')}</select>`:''}
+      <button class="rf-icon-btn" title="${mem.length?'Remove team (its people get no team)':'Remove team'}" aria-label="Remove team" onclick="_rfRemoveTeam(${i})"><i class="ti ti-trash"></i></button>
+    </div>`;
+  }).join('');
+  bd.innerHTML=`
+    <div class="rf-sec-lbl">Teams · ${teams.length}</div>
+    ${rows||`<div class="rf-note" style="margin-top:0;">No teams yet. Add one below, then put people in it.</div>`}
+    <div class="rf-add-row">
+      <input class="form-inp" id="rf-new-team" placeholder="New team name, e.g. Creative" aria-label="New team name" onkeydown="if(event.key==='Enter')_rfAddTeam()">
+      <button class="d-action" onclick="_rfAddTeam()"><i class="ti ti-plus"></i> Add team</button>
+    </div>
+    <div class="rf-sec-lbl" style="margin-top:22px;">People · ${active.length}${noTeam.length?` <span style="text-transform:none;letter-spacing:0;">(${noTeam.length} without a team)</span>`:''}</div>
+    <div class="rf-people">${active.map(k=>{const p=people[k];return`<div class="rf-person">
+      ${_rfAvs([k],1)}<span class="rf-pname" title="${esc(p.name)}${p.role?' · '+esc(p.role):''}">${esc(p.name)}</span>
+      <select class="cc-select" aria-label="Team for ${esc(p.name)}" data-k="${esc(k)}" onchange="_rfMovePerson(this.dataset.k,this.value)">${teamOpts(p.team||'')}</select>
+    </div>`;}).join('')}</div>
+    <div class="rf-note">Renaming or merging updates every person's team, dashboard team filters and team targets. Teams are saved in this browser. Publish the team config in Settings → Workspace sync so everyone sees the same teams.</div>`;
+}
+function _rfStartRename(i){
+  _rfEditingTeam=_rfTeamList()[i]||null;_rfRenderTeamsModal();
+  setTimeout(()=>{const x=document.getElementById('rf-rename-inp');if(x){x.focus();x.select();}},0);
+}
+function _rfCommitRename(i){
+  const from=_rfTeamList()[i];const inp=document.getElementById('rf-rename-inp');
+  const to=(inp?.value||'').trim();
+  if(!from)return;
+  if(!to){toast('Give the team a name','warn');return;}
+  _rfEditingTeam=null;
+  if(to===from){_rfRenderTeamsModal();return;}
+  const exists=_rfTeamList().find(t=>t.toLowerCase()===to.toLowerCase()&&t!==from);
+  if(exists){
+    _rfRenderTeamsModal();
+    ccConfirm(`${esc(exists)} already exists. Merge ${esc(from)} into it?`,()=>_rfMergeTeamByName(from,exists),'Merge');
+    return;
+  }
+  const n=_rfRenameTeamEverywhere(from,to);
+  _rfAfterTeamChange(`Renamed ${from} to ${to} (${n} ${n===1?'person':'people'})`);
+}
+function _rfMergeTeam(i,into){
+  const from=_rfTeamList()[i];
+  if(from&&into&&from!==into)ccConfirm(`Move everyone in ${esc(from)} into ${esc(into)} and remove ${esc(from)}?`,()=>_rfMergeTeamByName(from,into),'Merge');
+}
+function _rfMergeTeamByName(from,into){
+  const n=_rfRenameTeamEverywhere(from,into);
+  _rfAfterTeamChange(`Merged ${from} into ${into} (${n} moved)`);
+}
+function _rfRemoveTeam(i){
+  const t=_rfTeamList()[i];if(!t)return;
+  const mem=_rfTeamMembers(t);
+  const go=()=>{
+    Object.values(people).forEach(p=>{if(!p)return;if(p.team===t)p.team='';if(Array.isArray(p.dashTeams))p.dashTeams=p.dashTeams.filter(x=>x!==t);});
+    _rfSaveTeams(_rfStoredTeams().filter(x=>x!==t));
+    _rfAfterTeamChange(`Removed ${t}`);
+  };
+  if(mem.length)ccConfirm(`Remove ${esc(t)}? Its ${mem.length} ${mem.length===1?'person':'people'} will have no team until you move them.`,go,'Remove team',true);else go();
+}
+function _rfAddTeam(){
+  const inp=document.getElementById('rf-new-team');const name=(inp?.value||'').trim();
+  if(!name){inp?.focus();return;}
+  if(_rfTeamList().some(t=>t.toLowerCase()===name.toLowerCase())){toast(`${esc(name)} already exists`,'warn');return;}
+  _rfSaveTeams(_rfStoredTeams().concat(name));
+  _rfAfterTeamChange(`Added ${name}`);
+  setTimeout(()=>document.getElementById('rf-new-team')?.focus(),0);
+}
+function _rfMovePerson(k,team){
+  const p=people[k];if(!p)return;
+  if(!_needAdmin('manage teams')){_rfRenderTeamsModal();return;}
+  const from=p.team||'';p.team=team||'';
+  // Keep a team that just lost its last person in the list, so it can be refilled or removed on purpose.
+  if(from&&!_rfStoredTeams().includes(from))_rfSaveTeams(_rfStoredTeams().concat(from));
+  _rfAfterTeamChange(`${p.name} moved to ${team||'no team'}`);
+}
+// Team tab: a Teams summary card with the Manage teams entry point, above the member grid.
+(function(){
+  const _orig=renderSettings;
+  renderSettings=function(){
+    _orig.apply(this,arguments);
+    try{
+      if((_settActiveTab||'profile')!=='team')return;
+      const wrap=document.getElementById('settings-scroll');if(!wrap)return;
+      const firstCard=wrap.querySelector('.sett-card');if(!firstCard)return;
+      const teams=_rfTeamList();const noTeam=_rfActiveKeys().filter(k=>!people[k].team);
+      const card=document.createElement('div');card.className='sett-card';card.id='rf-teams-card';
+      card.innerHTML=`<div class="sett-card-hd">Teams <span style="font-weight:400;color:var(--muted);">${teams.length}</span>
+          <button class="d-action" onclick="openManageTeams()" style="margin-left:auto;"><i class="ti ti-users-group" style="font-size:12px"></i> Manage teams</button></div>
+        <div class="sett-card-body" style="padding:14px 16px;">
+          <div class="rf-teams">${teams.map(t=>{const mem=_rfTeamMembers(t);return`<span class="rf-team-chip">${esc(t)} <span class="rf-n">${mem.length}</span>${_rfAvs(mem,4)}</span>`;}).join('')}
+          ${noTeam.length?`<span class="rf-team-chip none">No team <span class="rf-n">${noTeam.length}</span>${_rfAvs(noTeam,4)}</span>`:''}
+          ${!teams.length&&!noTeam.length?'<span style="font-size:12px;color:var(--muted);">No teams yet.</span>':''}</div>
+        </div>`;
+      firstCard.parentNode.insertBefore(card,firstCard);
+    }catch(e){console.warn('teams card',e);}
+  };
+})();
+
+/* ── ⌘K: useful before you type (recent jobs, starred, quick actions), and while typing it also
+   matches actions ("new quote", "schedule", "dark") and people. ─────────────────────────── */
+function _rfRecentJobs(){try{const r=JSON.parse(localStorage.getItem('cc_rf_recent_jobs')||'[]');return Array.isArray(r)?r:[];}catch(e){return[];}}
+(function(){
+  const _o=openJobDetail;
+  openJobDetail=function(id){
+    try{if(id!=null){const k=String(id);const r=_rfRecentJobs().filter(x=>x!==k);r.unshift(k);localStorage.setItem('cc_rf_recent_jobs',JSON.stringify(r.slice(0,8)));}}catch(e){}
+    return _o.apply(this,arguments);
+  };
+})();
+function _rfJobsTab(tab){return()=>{navTo('jobs');setTimeout(()=>switchJobsTab(tab),0);};}
+function _rfGsActions(){
+  const dark=document.body.classList.contains('dark');
+  return [
+    {t:'Log time',k:'log time timesheet hours',icon:'ti-clock-plus',fn:()=>openLogTimeModal()},
+    {t:'Add task',k:'add task todo to do new task',icon:'ti-square-plus',fn:()=>{weekOffset=0;openTodoModal(null);}},
+    {t:'New job',k:'new job create job',icon:'ti-briefcase',fn:()=>openCreateJob()},
+    {t:'New quote',k:'new quote create quote estimate',icon:'ti-file-text',fn:()=>openNewQuoteModal()},
+    {t:'Add expense',k:'add expense new expense cost',icon:'ti-receipt',fn:()=>openLogExpense()},
+    {t:'Add client',k:'add client new client company',icon:'ti-building',fn:()=>{_rfJobsTab('clients')();setTimeout(()=>openNewClientModal(),30);}},
+    {t:'Dashboard',k:'go dashboard home',icon:'ti-layout-dashboard',fn:()=>navTo('dashboard')},
+    {t:'To Do',k:'go to do todo week board my week',icon:'ti-checklist',fn:()=>navTo('todo')},
+    {t:'Jobs',k:'go jobs list',icon:'ti-briefcase',fn:_rfJobsTab('jobs')},
+    {t:'Items',k:'go items job items',icon:'ti-list-details',fn:_rfJobsTab('items')},
+    {t:'Time',k:'go time logged timesheets',icon:'ti-clock',fn:_rfJobsTab('time')},
+    {t:'Expenses and purchase orders',k:'go expenses purchase orders po',icon:'ti-receipt',fn:_rfJobsTab('expenses')},
+    {t:'Quotes',k:'go quotes',icon:'ti-file-text',fn:_rfJobsTab('quotes')},
+    {t:'Invoices',k:'go invoices billing owing overdue',icon:'ti-file-invoice',fn:_rfJobsTab('invoices')},
+    {t:'Clients',k:'go clients companies contacts',icon:'ti-building',fn:_rfJobsTab('clients')},
+    {t:'Deadlines',k:'go deadlines calendar due',icon:'ti-calendar-due',fn:_rfJobsTab('deadlines')},
+    {t:'Schedule',k:'go schedule capacity resourcing',icon:'ti-calendar',fn:()=>navTo('schedule')},
+    {t:'Reporting',k:'go reporting reports',icon:'ti-chart-bar',fn:()=>navTo('reporting')},
+    {t:'Boards',k:'go boards',icon:'ti-layout-kanban',fn:()=>navTo('boards')},
+    {t:'Settings',k:'go settings preferences profile',icon:'ti-settings',fn:()=>navTo('settings')},
+    {t:'Manage teams',k:'manage teams departments rename team settings',icon:'ti-users-group',fn:()=>{navTo('settings');setTimeout(()=>{switchSettTab('team');openManageTeams();},30);}},
+    {t:dark?'Switch to light mode':'Switch to dark mode',k:'theme dark light mode appearance',icon:dark?'ti-sun':'ti-moon',fn:()=>toggleTheme()},
+    {t:'Keyboard shortcuts',k:'keyboard shortcuts help keys',icon:'ti-keyboard',fn:()=>_showShortcuts()},
+  ];
+}
+(function(){
+  const _o=runGlobalSearch;
+  runGlobalSearch=function(q){
+    const raw=String(q||'').trim();const s=raw.toLowerCase();
+    const r=_o.apply(this,arguments);
+    try{
+      if(!s){
+        const out=[];
+        _rfRecentJobs().forEach(id=>{const j=jobs.find(x=>String(x.id)===id);if(j&&out.length<5)out.push({cat:'Recent',icon:'ti-history',title:`${j.id} — ${j.name}`,sub:j.company||'',fn:()=>openJobDetail(j.id)});});
+        try{_getStarred().slice(0,4).forEach(x=>{out.push({cat:'Starred',icon:'ti-star',title:x.name||x.id,sub:x.type||'',fn:()=>openStarredItem(x.type,x.id)});});}catch(e){}
+        _rfGsActions().slice(0,6).forEach(a=>out.push({cat:'Actions',icon:a.icon,title:a.t,sub:'',fn:a.fn}));
+        _gsResults=out;_gsSel=0;renderGsResults('');
+        const el=document.getElementById('gs-results');
+        if(el)el.insertAdjacentHTML('beforeend',`<div class="gs-empty" style="padding:10px 16px 14px;text-align:left;">Try a job number, client, person or command, e.g. <strong>log 2h on 6928</strong>, <strong>new quote</strong>, <strong>schedule</strong>.</div>`);
+        return r;
+      }
+      const words=s.split(/\s+/);
+      const acts=_rfGsActions().filter(a=>{const hay=(a.t+' '+a.k).toLowerCase();return words.every(w=>hay.includes(w));}).slice(0,4)
+        .map(a=>({cat:'Actions',icon:a.icon,title:a.t,sub:'',fn:a.fn}));
+      const ppl=s.length>=2?_rfActiveKeys().filter(k=>`${people[k].name} ${people[k].role||''} ${people[k].team||''}`.toLowerCase().includes(s)).slice(0,4)
+        .map(k=>({cat:'People',icon:'ti-user',title:people[k].name,sub:[people[k].role,people[k].team].filter(Boolean).join(' · ')+' · open their week',fn:()=>{currentPerson=k;weekOffset=0;navTo('todo');try{renderTodo();}catch(e){}}})):[];
+      if(acts.length||ppl.length){
+        // Command verbs ("log 2h on 6928") stay first, then matching actions and people, then the rest.
+        const cmd=_gsResults.filter(x=>x.cat==='Actions');
+        const rest=_gsResults.filter(x=>x.cat!=='Actions');
+        _gsResults=[...cmd,...acts,...ppl,...rest].slice(0,30);
+        _gsSel=0;renderGsResults(s);
+      }
+    }catch(e){console.warn('gs extras',e);}
+    return r;
+  };
+})();
+if(typeof _GS_CAT_CLS!=='undefined'){_GS_CAT_CLS['People']='gsc-clients';_GS_CAT_CLS['Recent']='gsc-jobs';}
+
+/* ── Time: delete a time entry logged in the platform (a mis-logged or doubled entry could not
+   be removed anywhere). Streamtime entries stay read-only. ───────────────────────────────── */
+function rfDeleteTimeEntry(id){
+  const e=(stLoggedTimes||[]).find(x=>x.id===id&&x._local);if(!e)return;
+  const what=`${formatHrs((e.minutes||0)/60)||'0m'}${e.job?.number?` on ${e.job.number}`:''}${e.date?` (${fmtDate(e.date)})`:''}`;
+  ccConfirm(`Delete ${esc(what)}? This removes the time from the job and reports.`,()=>{
+    const i=stLoggedTimes.findIndex(x=>x.id===id);if(i<0)return;
+    stLoggedTimes.splice(i,1);
+    // Any task that logged this entry can log again
+    Object.values(todoData||{}).forEach(wks=>Object.values(wks||{}).forEach(w=>[1,2,3,4,5].forEach(d=>(w[d]||[]).forEach(t=>{if(t._loggedEntry===id)delete t._loggedEntry;}))));
+    try{persistNativeData();}catch(err){}
+    try{resetTodoStore(true);}catch(err){}
+    try{if(e.job?.number)logActivity(String(e.job.number),MY_PERSON,'time_log',`Deleted logged time <strong>${esc(formatHrs((e.minutes||0)/60))}</strong>`);}catch(err){}
+    try{_refreshJobStats();}catch(err){}
+    try{renderTime();}catch(err){}
+    toast('Time entry deleted','success');
+  },'Delete',true);
+}
+
+/* ── Jobs bulk actions: "Select all N matching". Rows load 60 at a time, so ticking the header
+   box used to select (and archive/label) only the rows that happened to be rendered. ────── */
+let _rfAllMatching=false;
+(function(){
+  const _gs=getSelectedJobIds;
+  getSelectedJobIds=function(){
+    if(_rfAllMatching&&Array.isArray(window._rfJobsFiltered))return window._rfJobsFiltered.map(j=>j.id);
+    return _gs.apply(this,arguments);
+  };
+  const _ub=updateBulkBar;
+  updateBulkBar=function(){
+    const all=document.getElementById('jobs-cb-all');
+    const rendered=document.querySelectorAll('.job-cb').length;
+    const checked=document.querySelectorAll('.job-cb:checked').length;
+    if(_rfAllMatching&&checked<rendered)_rfAllMatching=false; // unticked a row → back to a normal selection
+    _ub.apply(this,arguments);
+    const bar=document.getElementById('bulk-bar');const cnt=document.getElementById('bulk-count');
+    if(!bar||!cnt)return;
+    bar.querySelector('#rf-bulk-all')?.remove();
+    const total=(window._rfJobsFiltered||[]).length;
+    if(_rfAllMatching){cnt.textContent=`All ${total} matching selected`;return;}
+    if(checked&&checked===rendered&&total>rendered){
+      cnt.insertAdjacentHTML('afterend',`<button class="bulk-btn" id="rf-bulk-all" onclick="_rfAllMatching=true;updateBulkBar()">Select all ${total} matching</button>`);
+    }
+  };
+  const _cs=clearJobSelection;
+  clearJobSelection=function(){_rfAllMatching=false;return _cs.apply(this,arguments);};
+  const _rj=renderJobs;
+  renderJobs=function(){_rfAllMatching=false;return _rj.apply(this,arguments);};
+})();
+
+/* ── Settings guards: publishing the shared config, removing labels/item types and editing
+   someone else's profile (rates, team, hours) are admin actions. Soft permission like the
+   rest (_needAdmin): until anyone is an admin, everyone can. ─────────────────────────────── */
+(function(){
+  const _pub=publishConfig;
+  publishConfig=function(){if(!_needAdmin('publish the team config'))return;return _pub.apply(this,arguments);};
+  const _rl=removeGlobalLabel;
+  removeGlobalLabel=function(i){
+    if(!_needAdmin('remove labels'))return;
+    const l=globalLabels[i];if(!l)return;
+    const n=jobs.filter(j=>(j.labels||[]).includes(l.name)).length;
+    const self=this,args=arguments;
+    ccConfirm(`Remove the label ${esc(l.name)}?${n?` ${n} job${n!==1?'s':''} still use it; they keep the label text but it loses its colour.`:''}`,()=>_rl.apply(self,args),'Remove',true);
+  };
+  const _ri=removeSettItem;
+  removeSettItem=function(type,val){
+    if(!_needAdmin('remove item types'))return;
+    const self=this,args=arguments;
+    ccConfirm(`Remove ${esc(val)} from the ${type==='line'?'job item':'expense'} list? Existing jobs keep it.`,()=>_ri.apply(self,args),'Remove',true);
+  };
+  const _up=updatePerson;
+  updatePerson=function(key,field,val){
+    if(key!==MY_PERSON&&!_isAdmin()){
+      _needAdmin('edit other people\'s profiles');
+      try{if(document.getElementById('tm-panel')?.classList.contains('open'))openTeamMember(key);}catch(e){}
+      return;
+    }
+    return _up.apply(this,arguments);
+  };
+  // The Appearance card's "Switch to dark/light" label went stale after switching
+  const _tt=toggleTheme;
+  toggleTheme=function(){
+    const r=_tt.apply(this,arguments);
+    try{if(!document.getElementById('view-settings')?.classList.contains('hidden')&&(_settActiveTab||'profile')==='profile')renderSettings();}catch(e){}
+    return r;
+  };
+})();
+
+/* ── Dashboard: Timesheets card (admins) ───────────────────────────────────────────
+   Who is behind on logging time this week, Monday to yesterday (on a Monday: last week).
+   Expected = their working days × daily capacity, less leave. Logged = Streamtime logged
+   time plus time logged in the platform. Hidden from non-admins once admins exist, and can be
+   turned off in Settings → My profile like the other dashboard blocks. */
+function _rfTimesheetRows(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const dow=(today.getDay()+6)%7; // 0=Mon
+  const mon=new Date(today);mon.setDate(today.getDate()-dow-(dow===0?7:0));
+  const end=new Date(today);end.setDate(today.getDate()-1); // up to yesterday
+  if(dow===0){end.setTime(mon.getTime());end.setDate(mon.getDate()+4);}
+  const days=[];for(let d=new Date(mon);d<=end;d.setDate(d.getDate()+1)){const wd=(d.getDay()+6)%7;if(wd<5)days.push({iso:_localISO(d),wd:wd+1});}
+  if(!days.length)return{rows:[],from:mon,to:end,lastWeek:dow===0};
+  const fromIso=days[0].iso,toIso=days[days.length-1].iso;
+  const byUser={},recent={};
+  const r28=new Date(mon);r28.setDate(mon.getDate()-28);const r28Iso=_localISO(r28);
+  (stLoggedTimes||[]).forEach(lt=>{const d=String(lt.date||'').slice(0,10);
+    if(d>=r28Iso&&d<fromIso)recent[lt.userId]=1;
+    if(d<fromIso||d>toIso)return;byUser[lt.userId]=(byUser[lt.userId]||0)+(lt.minutes||0)/60;});
+  const rows=[];
+  _rfActiveKeys().forEach(k=>{
+    const p=people[k];if(!p._stId)return;
+    const u=stUsersById[p._stId];if(u&&u.active===false)return;
+    const cap=(typeof _c2PersonCap==='function'?_c2PersonCap(k):(p.hoursPerDay||8));
+    const wdays=Array.isArray(p.days)&&p.days.length?p.days:[1,2,3,4,5];
+    let exp=0;days.forEach(d=>{if(!wdays.includes(d.wd))return;if(typeof _ccAwayOn==='function'&&_ccAwayOn(k,d.iso))return;exp+=cap;});
+    if(exp<=0)return;
+    const got=byUser[p._stId]||0;
+    if(!got&&!recent[p._stId])return; // placeholder / freelance seats that never log time
+    rows.push({k,p,exp,got,pct:got/exp});
+  });
+  rows.sort((a,b)=>a.pct-b.pct);
+  return{rows,from:mon,to:end,lastWeek:dow===0};
+}
+function _rfTimesheetCardHTML(){
+  const {rows,lastWeek}=_rfTimesheetRows();
+  if(!rows.length)return'';
+  const behind=rows.filter(r=>r.pct<0.8);
+  const list=(behind.length?behind:[]).slice(0,8).map(r=>{
+    const w=Math.min(100,Math.round(r.pct*100));
+    return`<div class="rf-ts-row" role="button" tabindex="0" data-k="${esc(r.k)}" onclick="rfOpenPersonWeek(this.dataset.k,${lastWeek?-1:0})" onkeydown="if(event.key==='Enter')this.click()" title="Open ${esc(r.p.name)}'s week">
+      ${_rfAvs([r.k],1)}<span class="rf-ts-name">${esc(r.p.name)}</span>
+      <span class="rf-ts-bar"><span style="width:${w}%"></span></span>
+      <span class="rf-ts-num">${esc(formatHrs(r.got)||'0h')} <span>of ${esc(formatHrs(r.exp))}</span></span>
+    </div>`;}).join('');
+  const done=rows.length-behind.length;
+  return`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Timesheets · ${lastWeek?'last week':'this week so far'}</div>
+    <div class="rf-ts-card">
+      <div class="rf-ts-hd"><span><strong>${done}</strong> of ${rows.length} people up to date</span><span class="rf-ts-sub">Logged time against working hours${lastWeek?'':' to yesterday'}, less leave · under 80% listed</span></div>
+      ${list||`<div class="rf-ts-ok"><i class="ti ti-circle-check"></i> Everyone has logged their time.</div>`}
+      ${behind.length>8?`<div class="rf-ts-more">+${behind.length-8} more</div>`:''}
+    </div>`;
+}
+function rfOpenPersonWeek(k,off){if(!people[k])return;currentPerson=k;weekOffset=off||0;navTo('todo');try{renderTodo();}catch(e){}}
+(function(){
+  const _rd=renderDashboard;
+  renderDashboard=function(){
+    const r=_rd.apply(this,arguments);
+    try{
+      const dh=people[MY_PERSON]?.dashHide||[];
+      if(dh.includes('timesheets')||!_isAdmin())return r;
+      const anchor=document.querySelector('#dash-scroll .my-todos');if(!anchor)return r;
+      const html=_rfTimesheetCardHTML();if(!html)return r;
+      const box=document.createElement('div');box.id='rf-ts-block';box.innerHTML=html;
+      anchor.insertAdjacentElement('afterend',box);
+    }catch(e){console.warn('timesheets card',e);}
+    return r;
+  };
+})();
+
+/* ── Task modal: ⌘/Ctrl+Enter saves ───────────────────────────────────────────── */
+document.addEventListener('keydown',e=>{
+  if(!(e.metaKey||e.ctrlKey)||e.key!=='Enter')return;
+  if(document.getElementById('todo-modal')?.classList.contains('on')){e.preventDefault();saveTodo();return;}
+  if(document.getElementById('create-modal')?.classList.contains('on')&&typeof createJob==='function'){e.preventDefault();createJob();}
+});
 </script>
 
 </body>
