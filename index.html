@@ -4637,7 +4637,7 @@ function renderDashboard(){
       <div class="todo-check${isDone?' done-c':isUrgent?' urg-c':''}">${isDone?'<i class="ti ti-check" style="font-size:10px;color:var(--done-ink);"></i>':''}</div>
       <div style="flex:1;min-width:0;">
         <div style="${isDone?'text-decoration:line-through;opacity:.5;':''}font-size:13px;">${esc(t.title)}</div>
-        ${metaArr.length?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${metaArr.join(' · ')}</div>`:''}
+        ${metaArr.length?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${esc(metaArr.join(' · '))}</div>`:''}
       </div>
       ${isUrgent?`<div class="todo-meta" style="color:var(--red);flex-shrink:0;">Urgent</div>`:''}
     </div>`;
@@ -8805,7 +8805,7 @@ async function saveMilestoneInline(){
   const date=document.getElementById('mi-date')?.value||null;
   if(!activeJobId)return;
   await dbCreateMilestone(activeJobId,{name,date});
-  logActivity(activeJobId,MY_PERSON,'milestone_add',`Added milestone <strong>${name}</strong>`);
+  logActivity(activeJobId,MY_PERSON,'milestone_add',`Added milestone <strong>${esc(name)}</strong>`);
   document.querySelector('.add-ms-form-row')?.remove();
   renderMilestonesSection();
   toast('Milestone added');
@@ -8836,7 +8836,7 @@ async function deleteMilestoneRow(msId){
   const j=jobs.find(x=>x.id===activeJobId);
   const m=j&&(j.milestones||[]).find(x=>x.id===msId);
   await dbDeleteMilestone(activeJobId,msId);
-  if(m)logActivity(activeJobId,MY_PERSON,'milestone_delete',`Deleted milestone <strong>${m.name}</strong>`);
+  if(m)logActivity(activeJobId,MY_PERSON,'milestone_delete',`Deleted milestone <strong>${esc(m.name)}</strong>`);
   renderMilestonesSection();
   toast('Milestone deleted');
 }
@@ -9135,7 +9135,7 @@ function setQuoteStatus(jobId,status){
 function sendQuote(jobId){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
   if((j.quoteStatus||'draft')==='draft'){j.quoteStatus='sent';_keepJobEdits(j,['quoteStatus']);renderQuoteTab();}
-  logActivity(jobId,MY_PERSON,'quote_sent',`Quote <strong>sent</strong> to ${j.company}`);
+  logActivity(jobId,MY_PERSON,'quote_sent',`Quote <strong>sent</strong> to ${esc(j.company)}`);
   printQuote(jobId);
   toast('Quote marked as sent — save the PDF to attach to your email','success');
 }
@@ -9397,8 +9397,8 @@ function inlineEditItem(e,itemId,phId,field){
     const item=ph?.items.find(i=>i.id===itemId);
     if(item){
       if(val!==current){
-        if(field==='name')logActivity(activeJobId,MY_PERSON,'item_rename',`Renamed <strong>${current}</strong> to <strong>${val}</strong>`);
-        else logActivity(activeJobId,MY_PERSON,'item_edit',`Changed ${field} on <strong>${item.name}</strong> to <strong>${val}</strong>`);
+        if(field==='name')logActivity(activeJobId,MY_PERSON,'item_rename',`Renamed <strong>${esc(current)}</strong> to <strong>${esc(val)}</strong>`);
+        else logActivity(activeJobId,MY_PERSON,'item_edit',`Changed ${esc(field)} on <strong>${esc(item.name)}</strong> to <strong>${esc(val)}</strong>`);
       }
       item[field]=val;
       // Recalculate total if hours or rate changed
@@ -9445,7 +9445,7 @@ function toggleItemStatus(itemId,phId,e){
   const ph=phases.find(p=>p.id===phId);if(!ph)return;
   const item=ph.items.find(i=>i.id===itemId);if(!item)return;
   item.status=item.status==='complete'?'open':'complete';
-  logActivity(activeJobId,MY_PERSON,'item_status',`<strong>${item.name}</strong> marked <strong>${item.status}</strong>`);
+  logActivity(activeJobId,MY_PERSON,'item_status',`<strong>${esc(item.name)}</strong> marked <strong>${esc(item.status)}</strong>`);
   renderPhases();saveData();
 }
 function showAddItemForm(phId){
@@ -9466,7 +9466,7 @@ function saveItem(phId){
   const r=parseInt(rate.replace(/[$,]/g,''))||150;
   const total='$'+(Math.round(h*r)).toLocaleString();
   const ph=phases.find(p=>p.id===phId);ph.items.push({id:uid('i'),name,hours,rate,used:'$0',total,status:'open'});
-  logActivity(activeJobId,MY_PERSON,'item_add',`Added <strong>${name}</strong> to <strong>${ph.name}</strong>`);
+  logActivity(activeJobId,MY_PERSON,'item_add',`Added <strong>${esc(name)}</strong> to <strong>${esc(ph.name)}</strong>`);
   renderPhases();saveData();setTimeout(()=>document.getElementById('fup').classList.add('on'),700);
 }
 function showAddExpenseInline(afterPhaseId){
@@ -9530,7 +9530,7 @@ function saveExpenseInline(){
   if(!j.expenses)j.expenses=[];
   const sell=cost*(1+markup/100);
   j.expenses.push({id:'e'+Date.now(),desc,cost,markup,qty,date:_localISO(),sell,total:sell*qty,status:'draft'});
-  logActivity(activeJobId,MY_PERSON,'expense_add',`Added expense <strong>${desc}</strong>`);
+  logActivity(activeJobId,MY_PERSON,'expense_add',`Added expense <strong>${esc(desc)}</strong>`);
   saveData();
   document.querySelector('.add-exp-form-row')?.remove();
   renderExpenses();
@@ -9662,7 +9662,7 @@ function saveExpense(jid){
   if(!j){toast('Job not found','error');return;}
   if(!j.expenses)j.expenses=[];
   j.expenses.push({id:'e'+Date.now(),desc,cost,markup,qty,date:date||_localISO(),sell,total:sell*qty,supplier,status:'draft'});
-  logActivity(_jid,MY_PERSON,'expense_add',`Added expense <strong>${desc}</strong> — $${(sell*qty).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} sell`);
+  logActivity(_jid,MY_PERSON,'expense_add',`Added expense <strong>${esc(desc)}</strong> — $${(sell*qty).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} sell`);
   saveData();
   document.getElementById('exp-modal')?.remove();
   renderExpenses();
@@ -10261,7 +10261,7 @@ function saveSplitInvoice(jobId){
   if(!j.splitInvoices)j.splitInvoices=[];
   j.splitInvoices.push({id:uid('si'),label,pct,amount,status:'draft',date:_localISO()});
   saveData();
-  logActivity(jobId,MY_PERSON,'split_invoice_add',`Added split invoice <strong>${label}</strong> ($${Math.round(amount).toLocaleString()})`);
+  logActivity(jobId,MY_PERSON,'split_invoice_add',`Added split invoice <strong>${esc(label)}</strong> ($${Math.round(amount).toLocaleString()})`);
   renderInvoice(j);
   toast('Split invoice added','success');
 }
@@ -10381,7 +10381,7 @@ function renderClients(){
       const totalInvoiced=cjobs.reduce((a,j)=>a+(j._stInvoiced||0),0);
       const totalPaid=cjobs.reduce((a,j)=>a+(j._stPaid||0),0);
       const fmtDol=n=>n?fmtDollar(n):''; // $1.5M not $1466k (review A5)
-      return`<div class="client-card-full" onclick="openClientDetail('${c.id}')" draggable="true" ondragstart="_showClientDock('${esc(c.name).replace(/'/g,'&#39;')}')" ondragend="_hideTaskDock()">
+      return`<div class="client-card-full" onclick="openClientDetail('${c.id}')" draggable="true" data-cname="${esc(c.name)}" ondragstart="_showClientDock(this.dataset.cname)" ondragend="_hideTaskDock()">
         <div class="ccf-name">${c.nickname?`<span style="font-weight:500;">${esc(c.nickname)}</span> <span style="font-size:12px;color:var(--muted);font-weight:400;">— ${esc(c.name)}</span>`:esc(c.name)}</div>
         <div class="ccf-contact">${c.contact?esc(c.contact):'<span style="color:var(--muted);opacity:.7;">No contact added</span>'}</div>
         <div class="ccf-meta">
@@ -10424,7 +10424,7 @@ function renderClients(){
     const totalInvoiced=cjobs.reduce((a,j)=>a+(j._stInvoiced||0),0);
     const totalPaid=cjobs.reduce((a,j)=>a+(j._stPaid||0),0);
     const fmtDol=n=>n?fmtDollar(n):''; // $1.5M not $1466k (review A5)
-    return`<div class="client-card-full" onclick="openClientDetail('${c.id}')" draggable="true" ondragstart="_showClientDock('${esc(c.name).replace(/'/g,'&#39;')}')" ondragend="_hideTaskDock()">
+    return`<div class="client-card-full" onclick="openClientDetail('${c.id}')" draggable="true" data-cname="${esc(c.name)}" ondragstart="_showClientDock(this.dataset.cname)" ondragend="_hideTaskDock()">
       <div class="ccf-name" style="display:flex;align-items:center;gap:6px;justify-content:space-between;"><span>${c.nickname?`<span style="font-weight:500;">${esc(c.nickname)}</span> <span style="font-size:12px;color:var(--muted);font-weight:400;">— ${esc(c.name)}</span>`:esc(c.name)}</span>${starBtnHTML('client',c.id,c.nickname||c.name)}</div>
       <div class="ccf-contact">${c.contact?esc(c.contact):'<span style="color:var(--muted);opacity:.7;">No contact added</span>'}</div>
       <div class="ccf-meta">
@@ -11246,7 +11246,7 @@ function saveNewPerson(){
   const COLORS=['#ED1E24','#6B7FA3','#7B9E87','#C4956A','#9B59B6','#E67E22','#1ABC9C','#3498DB'];
   const initials=name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
   const color=COLORS[Object.keys(people).length%COLORS.length];
-  let key=name.toLowerCase().replace(/\s+/g,'_');
+  let key=name.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')||'person';
   while(people[key])key+='_';
   people[key]={name,initials,color,days:[1,2,3,4,5],role};
   personStatus[key]='available';
@@ -12462,8 +12462,11 @@ function renderQuotes(){
   document.getElementById('quotes-count').textContent=`${quotes.length} quote${quotes.length!==1?'s':''}`;
 
   if(!quotes.length){
-    const msg=stQuotes.length===0?'Quote data syncing — check back shortly.':'No quotes match the current filters.';
-    list.innerHTML=`<div style="padding:40px 28px;font-size:13px;color:var(--muted);">${msg}</div>`;
+    // Platform quotes count too: "syncing" showed even when a filter was hiding local quotes.
+    const anyQuotes=(stQuotes.length+(typeof localQuotes!=='undefined'?localQuotes.length:0))>0;
+    list.innerHTML=anyQuotes
+      ?emptyStateHTML('ti-filter-off','No quotes match','Try a different search, or clear the filters.')
+      :emptyStateHTML('ti-file-text','No quotes yet','Quotes from Streamtime appear here after the next sync. You can also write one here.','New quote','openNewQuoteModal()');
     return;
   }
 
@@ -18532,6 +18535,44 @@ let _rfAllMatching=false;
   clearJobSelection=function(){_rfAllMatching=false;return _cs.apply(this,arguments);};
   const _rj=renderJobs;
   renderJobs=function(){_rfAllMatching=false;return _rj.apply(this,arguments);};
+})();
+
+/* ── Settings guards: publishing the shared config, removing labels/item types and editing
+   someone else's profile (rates, team, hours) are admin actions. Soft permission like the
+   rest (_needAdmin): until anyone is an admin, everyone can. ─────────────────────────────── */
+(function(){
+  const _pub=publishConfig;
+  publishConfig=function(){if(!_needAdmin('publish the team config'))return;return _pub.apply(this,arguments);};
+  const _rl=removeGlobalLabel;
+  removeGlobalLabel=function(i){
+    if(!_needAdmin('remove labels'))return;
+    const l=globalLabels[i];if(!l)return;
+    const n=jobs.filter(j=>(j.labels||[]).includes(l.name)).length;
+    const self=this,args=arguments;
+    ccConfirm(`Remove the label ${esc(l.name)}?${n?` ${n} job${n!==1?'s':''} still use it; they keep the label text but it loses its colour.`:''}`,()=>_rl.apply(self,args),'Remove',true);
+  };
+  const _ri=removeSettItem;
+  removeSettItem=function(type,val){
+    if(!_needAdmin('remove item types'))return;
+    const self=this,args=arguments;
+    ccConfirm(`Remove ${esc(val)} from the ${type==='line'?'job item':'expense'} list? Existing jobs keep it.`,()=>_ri.apply(self,args),'Remove',true);
+  };
+  const _up=updatePerson;
+  updatePerson=function(key,field,val){
+    if(key!==MY_PERSON&&!_isAdmin()){
+      _needAdmin('edit other people\'s profiles');
+      try{if(document.getElementById('tm-panel')?.classList.contains('open'))openTeamMember(key);}catch(e){}
+      return;
+    }
+    return _up.apply(this,arguments);
+  };
+  // The Appearance card's "Switch to dark/light" label went stale after switching
+  const _tt=toggleTheme;
+  toggleTheme=function(){
+    const r=_tt.apply(this,arguments);
+    try{if(!document.getElementById('view-settings')?.classList.contains('hidden')&&(_settActiveTab||'profile')==='profile')renderSettings();}catch(e){}
+    return r;
+  };
 })();
 
 /* ── Task modal: ⌘/Ctrl+Enter saves ───────────────────────────────────────────── */
