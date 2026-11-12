@@ -16794,5 +16794,767 @@ window.addEventListener('keydown',e=>{
   }
 },true);
 </script>
+<style id="feat-d-styles">
+/* ── Feature set D — platform invoices everywhere · supplier purchase orders (C9) · credit notes · print fixes ── */
+/* Purchase orders on the job plan (sits under Expenses) */
+.fd-po-sec{margin-top:16px;border:1px solid var(--border);border-radius:var(--r-card);overflow:hidden;background:var(--white);}
+.fd-po-head{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--off);border-bottom:1px solid var(--border);}
+.fd-po-head .t{font-size:13px;font-weight:500;flex:1;color:var(--ink);}
+.fd-po-head .n{font-size:11px;color:var(--muted);}
+.fd-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.fd-tbl th{text-align:left;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:500;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--off);white-space:nowrap;}
+.fd-tbl td{padding:9px 12px;border-bottom:1px solid var(--faint);color:var(--ink);vertical-align:middle;}
+.fd-tbl tr:last-child td{border-bottom:none;}
+.fd-tbl .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.fd-tbl .mut{color:var(--muted);}
+.fd-tbl .nw{white-space:nowrap;}
+.fd-tbl .ell{max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fd-tbl tbody tr.click{cursor:pointer;}
+.fd-tbl tbody tr.click:hover td{background:color-mix(in srgb,var(--off) 70%,var(--white));}
+.fd-tbl tfoot td{background:var(--off);font-weight:600;border-top:1px solid var(--border);border-bottom:none;}
+.fd-acts{display:flex;gap:2px;justify-content:flex-end;}
+.fd-pill{display:inline-block;font-size:11px;font-weight:500;padding:2px 9px;border-radius:10px;background:var(--off);color:var(--muted);border:1px solid var(--border);white-space:nowrap;}
+.fd-pill.sent{background:var(--warn-bg);color:var(--warn-ink);border-color:transparent;}
+.fd-pill.received{background:var(--info-bg);color:var(--info-ink);border-color:transparent;}
+.fd-pill.billed{background:var(--ok-bg);color:var(--ok-ink);border-color:transparent;}
+.fd-pill.cancelled{background:var(--danger-bg);color:var(--danger-ink);border-color:transparent;}
+.fd-add-row{display:flex;align-items:center;gap:6px;padding:9px 14px;font-size:12px;color:var(--muted);cursor:pointer;border-top:1px solid var(--faint);}
+.fd-add-row:hover{color:var(--ink);background:var(--off);}
+/* PO editor */
+.fd-exp-pick{border:1px solid var(--border);border-radius:var(--r-ctl);max-height:168px;overflow-y:auto;background:var(--white);}
+.fd-exp-pick label{display:flex;align-items:center;gap:10px;padding:7px 10px;border-bottom:1px solid var(--faint);font-size:12px;color:var(--ink);cursor:pointer;margin:0;text-transform:none;letter-spacing:0;font-weight:400;}
+.fd-exp-pick label:last-child{border-bottom:none;}
+.fd-exp-pick label:hover{background:var(--off);}
+.fd-exp-pick .d{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fd-exp-pick .m{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.fd-exp-pick input{width:auto;margin:0;}
+.fd-sub-lbl{font-size:11px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;margin-left:6px;}
+/* Expenses tab: Expenses | Purchase orders */
+.fd-mode{margin-right:4px;}
+.fd-mode .tvt-btn{display:inline-flex;align-items:center;gap:5px;}
+/* Credit notes inside the invoice payments panel */
+.fd-cn-li .a{color:var(--danger-ink)!important;}
+.fd-cn-li .n{color:var(--ink)!important;}
+.fd-pay-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.fd-sum{background:var(--off);border:1px solid var(--border);border-radius:var(--r-card);padding:8px 14px;font-size:12px;margin-top:4px;}
+.fd-sum-row{display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-variant-numeric:tabular-nums;}
+.fd-sum-row .l{color:var(--muted);}
+.fd-sum-row.strong{font-weight:600;border-top:1px solid var(--border);margin-top:4px;padding-top:7px;}
+/* Invoices list: credit note rows */
+.inv-pill.fd-cn{background:var(--danger-bg);color:var(--danger-ink);border:none;}
+.st-tag.fd-cn-tag{background:var(--danger-bg);color:var(--danger-ink);}
+.inv-tr.fd-cn-row td:last-child{color:var(--danger-ink);}
+/* Document previews: the paper is always light, also in dark mode (it was white paper with light-grey ink) */
+.fd-paper,#quote-doc{--ink:#1D1C19;--muted:#8D887C;--white:#FFFFFF;--off:#F4F2EC;--border:#E2DDD2;--faint:#EBE7DE;--ok-ink:#2E7D32;--ok-bg:#E8F5E9;--warn-ink:#E65100;--warn-bg:#FFF3E0;--danger-ink:#C62828;--danger-bg:#FFEBEE;--info-ink:#1565C0;--info-bg:#E3F2FD;color:var(--ink);}
+.fd-doc-print{margin-left:auto;margin-right:6px;}
+/* Print: tables break between rows (header repeats), totals/notes never split, dark-mode inks print dark */
+@media print{
+  body.dark{--ok-ink:#2E7D32;--ok-bg:#E8F5E9;--warn-ink:#E65100;--warn-bg:#FFF3E0;--danger-ink:#C62828;--danger-bg:#FFEBEE;--info-ink:#1565C0;--info-bg:#E3F2FD;--red:#ED1E24;}
+  #print-area{color:#1D1C19;}
+  #print-area .fd-paper{padding:0!important;border-radius:0!important;box-shadow:none!important;}
+  #print-area table{page-break-inside:auto;}
+  #print-area tr,#print-area .inv-line{break-inside:avoid;page-break-inside:avoid;}
+  #print-area thead{display:table-header-group;}
+  #print-area .fd-keep,#print-area .inv-tot,#print-area .c2-pay{break-inside:avoid;page-break-inside:avoid;}
+  #print-area .inv-sec-h{break-after:avoid;page-break-after:avoid;}
+  #print-area .c2-inv-bar,#print-area .c2-pay-form,#print-area .fd-pay-acts,#print-area .cc-icon-btn,#print-area .modal-x{display:none!important;}
+  #print-area a{color:inherit!important;text-decoration:none!important;}
+}
+</style>
+<script id="feat-d-script">
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Feature set D — platform invoices everywhere (Dashboard, search, Reporting), supplier
+//  purchase orders (C9), credit notes, and document print fixes.
+//  Same pattern as feat-c / feat-c2: existing functions are wrapped here (original first),
+//  so the main script carries no edits for this block.
+//  Wrapped: _docModalShell, _nativeInvoiceRows, renderInvoices, openInvoiceForJob,
+//  openInvoiceDetail, renderDashboard, renderDeadlinesCal, runGlobalSearch,
+//  _renderBusinessReport, _renderClientsReport, renderInvoice, openJobDetail, renderExpenses,
+//  renderExpensesList, c2AddPayment, saveC2InvLines, _c2KeepInv. Replaced (credit-aware):
+//  _c2PaymentsHTML, _c2SyncInvStatus.
+//  Stored on the job (persisted via _keepJobEdits): purchaseOrders [...], creditNotes [...].
+//  Money in cents via _c2r so lines, GST, payments and credits always add up.
+// ═══════════════════════════════════════════════════════════════════════════════
+const FD_PO_STATUSES=['draft','sent','received','billed','cancelled'];
+function _fdCap(s){s=String(s||'');return s.charAt(0).toUpperCase()+s.slice(1);}
+// Own number sequences, persisted like _nextInvNum: highest of 1001, the saved counter and
+// any existing document's number + 1.
+function _fdNextNum(prefix,storeKey,field){
+  let n=1001;
+  try{n=Math.max(n,+localStorage.getItem(storeKey)||0);}catch(e){}
+  (jobs||[]).forEach(j=>(Array.isArray(j[field])?j[field]:[]).forEach(d=>{const v=parseInt(String(d.number||'').replace(/^\D+/,''),10);if(v)n=Math.max(n,v+1);}));
+  try{localStorage.setItem(storeKey,String(n+1));}catch(e){}
+  return prefix+n;
+}
+function _fdJob(id){return jobs.find(x=>x.id===String(id))||null;}
+function _fdDateOk(s){return/^\d{4}-\d{2}-\d{2}$/.test(String(s||''));}
+
+// ───────────────────────── Document shell: Print button + always-light paper ─────────────────────────
+let _fdDocTitle='';
+(function(){
+  const _orig=_docModalShell;
+  _docModalShell=function(titleWord){
+    const r=_orig.apply(this,arguments);
+    try{
+      const m=document.getElementById('doc-preview-modal');
+      const paper=m?.querySelector('.modal-bd > div');
+      if(paper){paper.classList.add('fd-paper');paper.querySelector(':scope > div[style*="justify-content:flex-end"]')?.classList.add('fd-keep');}
+      const x=m?.querySelector('.modal-hd .modal-x');
+      if(x&&!m.querySelector('.fd-doc-print')){
+        const b=document.createElement('button');b.className='d-action fd-doc-print';
+        b.innerHTML='<i class="ti ti-printer" style="font-size:12px;"></i> Print / PDF';
+        // Print title (also the PDF file name): "Quote 1198 — Client" rather than just "Quote".
+        let t=_fdDocTitle;
+        if(!t){
+          const numEl=[...paper.querySelectorAll('strong')].find(x=>/#:\s*$/.test(x.textContent));
+          const num=numEl?String(numEl.parentElement.textContent).replace(numEl.textContent,'').trim():'';
+          const co=paper.querySelector('div[style*="font-weight:500;font-size:13px"]')?.textContent.trim()||'';
+          t=[titleWord.replace(/^Tax /,''),num].filter(Boolean).join(' ')+(co&&co!=='—'?' — '+co:'');
+        }
+        b.onclick=()=>printElement(m.querySelector('.fd-paper'),t);
+        x.before(b);
+      }
+    }catch(e){console.error('feat-d doc shell',e);}
+    _fdDocTitle='';
+    return r;
+  };
+})();
+// Streamtime quote / invoice previews rounded the totals to whole dollars ($4,657.50 showed as
+// $4,658, GST $607.50 as $608). Redraw the totals box to the cent from the document's own fields.
+function _fdExactTotals(rows){
+  const tb=document.querySelector('#doc-preview-modal .fd-keep table');if(!tb)return;
+  tb.innerHTML=rows.join('');
+}
+(function(){
+  const _origQ=openQuoteDocPreview;
+  openQuoteDocPreview=function(qtId){
+    const r=_origQ.apply(this,arguments);
+    try{
+      const q=_findQuote(qtId);
+      if(q&&!(q._local&&Array.isArray(q.lines)&&q.lines.length)&&q.totalAmountExTax!=null){
+        const ex=_c2r(_c2num(q.totalAmountExTax));const inc=q.totalAmountIncTax!=null?_c2r(_c2num(q.totalAmountIncTax)):_c2r(ex*1.15);
+        _fdExactTotals([_fdTotRow('Subtotal (ex GST)',_c2m2(ex)),_fdTotRow('GST (15%)',_c2m2(inc-ex)),_fdTotRow('Total (inc GST)',_c2m2(inc),true,true)]);
+      }
+    }catch(e){console.error('feat-d quote totals',e);}
+    return r;
+  };
+  const _origI=openInvoiceDocPreview;
+  openInvoiceDocPreview=function(invId){
+    const r=_origI.apply(this,arguments);
+    try{
+      const inv=stInvoices.find(i=>String(i.id)===String(invId));
+      if(inv){
+        const ex=_c2r(_c2num(inv.totalAmountExTax));const inc=inv.totalAmountIncTax!=null?_c2r(_c2num(inv.totalAmountIncTax)):_c2r(ex*1.15);
+        const paid=_c2r(_c2num(inv.amountPaidIncTax));const bal=inv.balance!=null?_c2r(_c2num(inv.balance)):_c2r(inc-paid);
+        const rows=[_fdTotRow('Subtotal (ex GST)',_c2m2(ex)),_fdTotRow('GST (15%)',_c2m2(inc-ex)),_fdTotRow('Total (inc GST)',_c2m2(inc),true,true)];
+        if(paid>0)rows.push(_fdTotRow('<span style="color:var(--ok-ink);">Paid</span>',`<span style="color:var(--ok-ink);">${_c2m2(-paid)}</span>`),_fdTotRow('Balance due',_c2m2(bal),true));
+        _fdExactTotals(rows);
+      }
+    }catch(e){console.error('feat-d invoice totals',e);}
+    return r;
+  };
+})();
+// Shell + line table header/caption for our own documents (POs, credit notes).
+function _fdDoc(title,pill,meta,rows,totals,extra,opt){
+  opt=opt||{};_fdDocTitle=opt.printTitle||title;
+  _docModalShell(title,pill,meta,rows,totals,extra);
+  const m=document.getElementById('doc-preview-modal');if(!m)return;
+  const ths=m.querySelectorAll('thead th');if(ths[1])ths[1].textContent=opt.col2||'QTY × UNIT';
+  const cap=[...m.querySelectorAll('div')].find(d=>/Breakdown reflects the current job plan/.test(d.textContent)&&!d.children.length);
+  if(cap){if(opt.caption)cap.textContent=opt.caption;else cap.remove();}
+}
+function _fdPill(label){
+  const sc=_docStatusColor(label);
+  return`<span style="display:inline-block;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:500;background:${sc}22;color:${sc};border:1px solid ${sc}44;">${esc(label)}</span>`;
+}
+function _fdLineRows(rows){
+  return rows.map(r=>`<tr style="border-bottom:1px solid var(--faint);"><td style="padding:7px 14px;font-size:12px;">${esc(r.desc)}</td><td style="padding:7px 14px;font-size:12px;text-align:right;color:var(--muted);white-space:nowrap;">${esc(_c2qty(r.qty))} × ${_c2m2(r.unit)}</td><td style="padding:7px 14px;font-size:12px;text-align:right;white-space:nowrap;">${_c2m2(r.amount)}</td></tr>`).join('');
+}
+function _fdTotRow(l,v,strong,big){
+  return`<tr${strong?' style="border-top:1px solid var(--border);"':''}><td style="padding:${strong?'7px':'5px'} 10px;${strong?'font-weight:600;':'color:var(--muted);'}">${l}</td><td style="padding:${strong?'7px':'5px'} 10px;text-align:right;white-space:nowrap;${strong?'font-weight:600;':''}${big?'font-family:var(--display);font-size:15px;':''}">${v}</td></tr>`;
+}
+
+// ───────────────────────────── Credit notes ─────────────────────────────
+// j.creditNotes [{id,number:'CN-1001',date,reason,type:'full'|'partial',ex,gst,inc,invNum}]
+// (amounts positive; they reduce the invoice). Outstanding = total − paid − credited.
+function _fdCNs(j){return j&&Array.isArray(j.creditNotes)?j.creditNotes:[];}
+function _fdCredited(j){return _c2r(_fdCNs(j).reduce((s,c)=>s+_c2num(c.inc),0));}
+function _fdCreditedEx(j){return _c2r(_fdCNs(j).reduce((s,c)=>s+_c2num(c.ex),0));}
+function _fdOutstanding(j){return _c2r(_c2InvTotals(j).inc-_c2Paid(j)-_fdCredited(j));}
+(function(){
+  const _origKeep=_c2KeepInv;
+  _c2KeepInv=function(j,extra){return _origKeep.call(this,j,[...(extra||[]),'creditNotes']);};
+  // Credit-aware: an invoice is settled once payments + credit notes cover its total.
+  _c2SyncInvStatus=function(j){
+    const tot=_c2InvTotals(j);const paid=_c2Paid(j),cr=_fdCredited(j);
+    const settled=tot.inc>0&&_c2r(paid+cr)>=_c2r(tot.inc);
+    if(settled){
+      j.invStatus='paid';
+      const last=[...(j.invPayments||[]).map(p=>p.date),..._fdCNs(j).map(c=>c.date)].filter(Boolean).sort().pop();
+      j.invPaidDate=last||_localISO();
+    }else if(j.invStatus==='paid'&&j._c2PaidByPayments){
+      j.invStatus='sent';j.invPaidDate=null;
+    }
+    j._c2PaidByPayments=settled&&j.invStatus==='paid';
+    const sel=document.getElementById('inv-status');if(sel&&_c2InvJobId===j.id)sel.value=j.invStatus||'draft';
+  };
+  const _origAdd=c2AddPayment;
+  c2AddPayment=function(jobId){
+    const j=_fdJob(jobId);
+    if(j&&_fdCNs(j).length){
+      const amt=_c2r(_c2num(document.getElementById('c2-pay-amt')?.value));const out=_fdOutstanding(j);
+      if(amt>out+0.004){toast(`That's more than the ${_c2m2(Math.max(0,out))} outstanding`,'warn');return;}
+    }
+    return _origAdd.apply(this,arguments);
+  };
+  const _origSaveLines=saveC2InvLines;
+  saveC2InvLines=function(jobId){
+    const j=_fdJob(jobId);
+    if(j&&_fdCNs(j).length){
+      const t=_c2Totals(_c2EdLines('il'),null);const covered=_c2r(_c2Paid(j)+_fdCredited(j));
+      if(t.inc<covered){toast(`Payments and credit notes (${_c2m2(covered)}) are more than this total`,'warn');return;}
+    }
+    return _origSaveLines.apply(this,arguments);
+  };
+})();
+// Payments panel, now with credit notes and the outstanding balance net of both.
+_c2PaymentsHTML=function(j){
+  const tot=_c2InvTotals(j);const pays=(j.invPayments||[]).slice().sort((a,b)=>(a.date||'')<(b.date||'')?-1:1);
+  const cns=_fdCNs(j).slice().sort((a,b)=>(a.date||'')<(b.date||'')?-1:1);
+  const paid=_c2Paid(j),cr=_fdCredited(j),out=_c2r(tot.inc-paid-cr);
+  const jid=esc(j.id);const issued=j.invStatus==='sent'||j.invStatus==='paid';
+  return`<div class="c2-pay${pays.length||cns.length?'':' no-print'}" id="c2-pay">
+    <div class="c2-pay-hd"><span>Payments${cns.length?' and credits':''}</span><span>Amounts inc GST</span></div>
+    ${pays.map(p=>`<div class="c2-pay-li"><span class="d">${esc(fmtDate(p.date))}</span><span class="n">${esc(p.note||'Payment')}</span><span class="a">${_c2m2(p.amount)}</span><button class="cc-icon-btn danger no-print" title="Remove payment" onclick="c2RemovePayment('${jid}','${esc(p.id)}')"><i class="ti ti-x"></i></button></div>`).join('')}
+    ${cns.map(c=>`<div class="c2-pay-li fd-cn-li"><span class="d">${esc(fmtDate(c.date))}</span><span class="n">Credit note ${esc(c.number)}${c.reason?' · '+esc(c.reason):''}</span><span class="a">${_c2m2(-_c2num(c.inc))}</span><button class="cc-icon-btn no-print" title="Preview / print credit note" onclick="openFdCreditNoteDoc('${jid}','${esc(c.id)}')"><i class="ti ti-printer"></i></button><button class="cc-icon-btn danger no-print" title="Delete credit note" onclick="fdDeleteCreditNote('${jid}','${esc(c.id)}')"><i class="ti ti-x"></i></button></div>`).join('')}
+    ${!pays.length&&!cns.length?'<div class="c2-hint">No payments recorded yet.</div>':''}
+    <div class="c2-pay-sum"><span>Total ${_c2m2(tot.inc)}</span><span>Paid ${_c2m2(paid)}</span>${cr?`<span>Credited ${_c2m2(cr)}</span>`:''}<span class="out${out<=0?' zero':''}">Outstanding ${_c2m2(Math.max(0,out))}</span></div>
+    ${out>0?`<div class="c2-pay-form no-print">
+      <input class="form-inp" id="c2-pay-amt" type="number" min="0" step="0.01" placeholder="Amount">
+      <input class="form-inp" id="c2-pay-date" type="date" value="${_localISO()}">
+      <input class="form-inp" id="c2-pay-note" placeholder="Note (optional)" maxlength="60" style="width:160px;">
+      <button class="d-action" onclick="document.getElementById('c2-pay-amt').value='${out.toFixed(2)}'">Fill balance</button>
+      <button class="d-action primary" onclick="c2AddPayment('${jid}')"><i class="ti ti-cash" style="font-size:12px;"></i> Record payment</button>
+    </div>`:''}
+    ${out>0?`<div class="fd-pay-acts no-print"><button class="d-action" ${issued?`onclick="openFdCreditNote('${jid}')"`:'disabled title="Mark the invoice sent first"'}><i class="ti ti-receipt-refund" style="font-size:12px;"></i> Create credit note</button>${issued?'':'<span class="c2-hint" style="align-self:center;">Credit notes can be raised once the invoice is sent.</span>'}</div>`:''}
+  </div>`;
+};
+let _fdCnJobId=null;
+function _fdCnCalc(j){
+  const tot=_c2InvTotals(j);const out=_fdOutstanding(j);
+  const type=document.getElementById('fd-cn-type')?.value||'full';
+  if(type==='full'){
+    // Untouched invoice: mirror its own ex/GST split exactly. Otherwise credit the balance.
+    if(!_c2Paid(j)&&!_fdCredited(j))return{type,ex:_c2r(tot.ex),gst:_c2r(tot.gst),inc:_c2r(tot.inc),out};
+    const ex=_c2r(out/1.15);return{type,ex,gst:_c2r(out-ex),inc:out,out};
+  }
+  const ex=_c2r(_c2num(document.getElementById('fd-cn-amt')?.value));const gst=_c2r(ex*0.15);
+  return{type,ex,gst,inc:_c2r(ex+gst),out};
+}
+function _fdCnRefresh(){
+  const j=_fdJob(_fdCnJobId);if(!j)return;
+  const type=document.getElementById('fd-cn-type')?.value||'full';
+  const amt=document.getElementById('fd-cn-amt');if(amt){amt.disabled=type==='full';}
+  const c=_fdCnCalc(j);
+  if(type==='full'&&amt)amt.value=c.ex.toFixed(2);
+  const el=document.getElementById('fd-cn-sum');if(!el)return;
+  const after=_c2r(c.out-c.inc);
+  el.innerHTML=`<div class="fd-sum-row"><span class="l">Credit ex GST</span><span>${_c2m2(c.ex)}</span></div>
+    <div class="fd-sum-row"><span class="l">GST 15%</span><span>${_c2m2(c.gst)}</span></div>
+    <div class="fd-sum-row strong"><span>Credit inc GST</span><span>${_c2m2(c.inc)}</span></div>
+    <div class="fd-sum-row"><span class="l">Outstanding now</span><span>${_c2m2(c.out)}</span></div>
+    <div class="fd-sum-row"><span class="l">Outstanding after</span><span style="${after<0?'color:var(--danger-ink);':''}">${_c2m2(after)}</span></div>`;
+}
+function openFdCreditNote(jobId){
+  const j=_fdJob(jobId);if(!j)return;
+  if(!(j.invStatus==='sent'||j.invStatus==='paid')){toast('Mark the invoice sent before crediting it','warn');return;}
+  const out=_fdOutstanding(j);if(out<=0){toast('Nothing outstanding to credit','warn');return;}
+  _fdCnJobId=j.id;
+  document.getElementById('fd-cn-modal')?.remove();
+  const m=document.createElement('div');m.className='modal-bg on';m.id='fd-cn-modal';
+  m.innerHTML=`<div class="modal" style="max-width:480px;width:94vw;">
+    <div class="modal-hd"><span class="modal-hd-title">Credit note · invoice #${esc(j.invNum)}</span><button class="modal-x" onclick="document.getElementById('fd-cn-modal').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd">
+      <div class="field-row">
+        <div class="field"><label>Credit</label><select class="cc-select" id="fd-cn-type" style="width:100%;" onchange="_fdCnRefresh()"><option value="full">Full balance</option><option value="partial">Part amount</option></select></div>
+        <div class="field"><label>Amount ex GST</label><input class="form-inp" id="fd-cn-amt" type="number" min="0" step="0.01" style="width:100%;" oninput="_fdCnRefresh()"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Date</label><input class="form-inp" id="fd-cn-date" type="date" style="width:100%;" value="${_localISO()}"></div>
+        <div class="field"><label>Credit note #</label><input class="form-inp" style="width:100%;" value="Next in sequence" disabled></div>
+      </div>
+      <div class="field"><label>Reason</label><input class="form-inp" id="fd-cn-reason" maxlength="140" style="width:100%;" placeholder="e.g. Scope reduced — one deliverable dropped"></div>
+      <div class="fd-sum" id="fd-cn-sum"></div>
+    </div>
+    <div class="modal-ft"><button class="modal-cancel" onclick="document.getElementById('fd-cn-modal').remove()">Cancel</button><button class="modal-save" onclick="saveFdCreditNote()">Create credit note</button></div>
+  </div>`;
+  m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+  document.body.appendChild(m);
+  _fdCnRefresh();
+}
+function saveFdCreditNote(){
+  const j=_fdJob(_fdCnJobId);if(!j)return;
+  const c=_fdCnCalc(j);
+  const reason=(document.getElementById('fd-cn-reason')?.value||'').trim();
+  const date=document.getElementById('fd-cn-date')?.value||'';
+  if(!reason){toast('Add a reason for the credit','warn');return;}
+  if(!_fdDateOk(date)){toast('Pick a date','warn');return;}
+  if(!(c.inc>0)){toast('Enter an amount to credit','warn');return;}
+  if(c.inc>c.out+0.004){toast(`That's more than the ${_c2m2(c.out)} outstanding`,'warn');return;}
+  const cn={id:uid('cn'),number:_fdNextNum('CN-','cc_cn_counter','creditNotes'),date,reason,type:c.type,ex:c.ex,gst:c.gst,inc:c.inc,invNum:j.invNum};
+  j.creditNotes=[..._fdCNs(j),cn];
+  _c2SyncInvStatus(j);_c2KeepInv(j);
+  logActivity(j.id,MY_PERSON,'credit_note',`Credit note <strong>${esc(cn.number)}</strong> of ${_c2m2(cn.inc)} against invoice #${esc(j.invNum)}`);
+  document.getElementById('fd-cn-modal')?.remove();
+  if(document.getElementById('inv-modal')?.classList.contains('on')&&_c2InvJobId===j.id)renderInvoice(j);
+  try{if(activeJobId===j.id)renderStats(j);}catch(e){}
+  _fdRefreshInvLists();
+  toast(`Credit note ${esc(cn.number)} created · ${_c2m2(cn.inc)}`,'success');
+}
+function fdDeleteCreditNote(jobId,cnId){
+  const j=_fdJob(jobId);if(!j)return;const c=_fdCNs(j).find(x=>x.id===cnId);if(!c)return;
+  ccConfirm(`Delete credit note ${esc(c.number)} (${_c2m2(c.inc)})? Its number is not reused.`,()=>{
+    j.creditNotes=_fdCNs(j).filter(x=>x.id!==cnId);
+    _c2SyncInvStatus(j);_c2KeepInv(j);
+    if(document.getElementById('inv-modal')?.classList.contains('on')&&_c2InvJobId===j.id)renderInvoice(j);
+    _fdRefreshInvLists();
+    toast('Credit note deleted','success');
+  },'Delete',true);
+}
+function _fdRefreshInvLists(){try{if(document.getElementById('invoices-list')?.offsetParent)renderInvoices();}catch(e){}}
+function _fdBillTo(company){
+  const cl=clientsData.find(c=>c.name===company);
+  const contact=cl&&cl.contact?`${cl.contact}${cl.contactTitle?` — ${cl.contactTitle}`:''}`:'';
+  return{contact,address:cl&&cl.address?cl.address:'',email:cl&&cl.email?cl.email:''};
+}
+function openFdCreditNoteDoc(jobId,cnId){
+  const j=_fdJob(jobId);if(!j)return;const c=_fdCNs(j).find(x=>x.id===cnId);if(!c)return;
+  const b=_fdBillTo(j.company);const tot=_c2InvTotals(j);
+  const meta=`<div style="flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Credit to</div><div style="font-weight:500;font-size:13px;">${esc(j.company||'—')}</div>${b.contact?`<div style="color:var(--muted);margin-top:2px;">${esc(b.contact)}</div>`:''}${b.address?`<div style="color:var(--muted);margin-top:2px;">${esc(b.address).replace(/\n/g,'<br>')}</div>`:''}<div style="color:var(--muted);margin-top:2px;">Job #${esc(j.id)} · ${esc(j.name)}</div></div>
+    <div style="text-align:right;color:var(--muted);"><div><strong style="color:var(--ink);">Credit note #:</strong> ${esc(c.number)}</div><div><strong style="color:var(--ink);">Date:</strong> ${_docFmtDate(c.date)}</div><div><strong style="color:var(--ink);">Against invoice #:</strong> ${esc(c.invNum||j.invNum||'—')}</div>${j.po?`<div><strong style="color:var(--ink);">PO:</strong> ${esc(j.po)}</div>`:''}</div>`;
+  const rows=_fdLineRows([{desc:`${c.type==='full'?'Credit of balance':'Part credit'} — invoice #${c.invNum||j.invNum||''}${c.reason?': '+c.reason:''}`,qty:1,unit:-c.ex,amount:-c.ex}]);
+  const totals=_fdTotRow('Credit (ex GST)',_c2m2(-c.ex))+_fdTotRow('GST (15%)',_c2m2(-c.gst))+_fdTotRow('Total credit (inc GST)',_c2m2(-c.inc),true,true);
+  const others=_fdCNs(j).filter(x=>x.id!==c.id);
+  const extra=`<div class="fd-keep" style="margin-top:18px;padding-top:14px;border-top:1px solid var(--faint);font-size:11.5px;color:var(--muted);line-height:1.7;">
+    <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">Invoice #${esc(j.invNum||'')} after credits</div>
+    <div>Invoice total ${_c2m2(tot.inc)} · Paid ${_c2m2(_c2Paid(j))} · This credit ${_c2m2(c.inc)}${others.length?` · Other credits ${_c2m2(_c2r(others.reduce((s,x)=>s+_c2num(x.inc),0)))}`:''} · <strong style="color:var(--ink);">Balance ${_c2m2(Math.max(0,_fdOutstanding(j)))}</strong></div>
+    ${c.reason?`<div style="margin-top:6px;"><strong style="color:var(--ink);">Reason:</strong> ${esc(c.reason)}</div>`:''}
+  </div>`;
+  _fdDoc('Credit Note',_fdPill('Credit note'),meta,rows,totals,extra,{col2:'QTY × UNIT',printTitle:`Credit note ${c.number} — ${j.company||''}`});
+}
+
+// ───────────────────────── Platform invoices everywhere ─────────────────────────
+(function(){
+  // Credit note rows (negative) after their invoice; a "paid" invoice settled partly by credit
+  // only counts the cash actually received as paid.
+  const _origRows=_nativeInvoiceRows;
+  _nativeInvoiceRows=function(jobByStId){
+    const rows=_origRows.apply(this,arguments);const out=[];
+    rows.forEach(r=>{
+      out.push(r);
+      const j=_fdJob(r._jobId);const cns=_fdCNs(j);if(!j||!cns.length)return;
+      const cash=_c2Paid(j);
+      if(!cash&&(j.invStatus||'draft')==='paid')r.amountPaidIncTax=_c2r(Math.max(0,r.totalAmountIncTax-_fdCredited(j)));
+      cns.forEach(c=>out.push({id:'nat-cn-'+c.id,_native:true,_cn:true,_jobId:'cn:'+j.id+':'+c.id,_issue:c.date||'',number:c.number,jobId:r.jobId,jobNumber:j.id,
+        company:{name:j.company||''},purchaseOrderNumber:j.po||'',sentDate:c.date||'',dueDate:'',paidDate:'',
+        invoiceStatus:{name:'Credit note'},totalAmountExTax:-_c2num(c.ex),totalAmountIncTax:-_c2num(c.inc),amountPaidIncTax:0}));
+    });
+    return out;
+  };
+  const _origRI=renderInvoices;
+  renderInvoices=function(){
+    const r=_origRI.apply(this,arguments);
+    try{
+      document.querySelectorAll('#invoices-list tr.inv-tr[onclick^="openInvoiceForJob(\'cn:"]').forEach(tr=>{
+        tr.classList.add('fd-cn-row');
+        const tag=tr.querySelector('.ci-num .st-tag');if(tag){tag.textContent='Credit note';tag.classList.add('fd-cn-tag');tag.title='Credit note raised in the platform';}
+        const st=tr.querySelector('.ci-status');if(st)st.innerHTML='<span class="inv-pill fd-cn">Credit</span>';
+        const amt=tr.lastElementChild;if(amt&&/\$-/.test(amt.textContent))amt.textContent='−'+amt.textContent.replace('$-','$');
+      });
+    }catch(e){console.error('feat-d invoices list',e);}
+    return r;
+  };
+  const _origOIJ=openInvoiceForJob;
+  openInvoiceForJob=function(id){
+    const s=String(id||'');
+    if(s.startsWith('cn:')){const[,jid,cid]=s.split(':');return openFdCreditNoteDoc(jid,cid);}
+    // Job detail open on another job: open this job first, then its invoice (its buttons act on activeJobId).
+    const j=_fdJob(s);
+    if(j&&activeJobId!==j.id&&!document.getElementById('view-detail')?.classList.contains('hidden'))return _c2OpenJobInvoice(j);
+    return _origOIJ.apply(this,arguments);
+  };
+  const _origOID=openInvoiceDetail;
+  openInvoiceDetail=function(id){
+    const s=String(id||'');
+    if(s.startsWith('nat-')&&!stInvoices.some(i=>String(i.id)===s))return openInvoiceForJob(s.slice(4));
+    return _origOID.apply(this,arguments);
+  };
+})();
+// `phases` is the plan of the job open in detail; saveData mirrors it into jobs[activeJobId].
+// Opening an invoice from a list (openInvoiceForJob, the invoice row menu) moved activeJobId
+// without loading that job's plan, so the invoice showed the previous job's lines and the
+// next save copied them onto this job. Keep the two in step.
+let _fdPhasesJobId=null;
+function _fdSyncPhases(){
+  if(!activeJobId||_fdPhasesJobId===activeJobId)return;
+  const j=_fdJob(activeJobId);if(!j)return;
+  phases=JSON.parse(JSON.stringify(j.phases||[]));_fdPhasesJobId=activeJobId;
+}
+(function(){
+  const _origOJD=openJobDetail;
+  openJobDetail=function(id){_fdPhasesJobId=String(id);return _origOJD.apply(this,arguments);};
+  const _origSave=saveData;
+  saveData=function(){_fdSyncPhases();return _origSave.apply(this,arguments);};
+  const _origOI=openInvoice;
+  openInvoice=function(){_fdSyncPhases();return _origOI.apply(this,arguments);};
+})();
+// Issued platform invoices shaped like Streamtime ones (drafts and credit notes left out).
+function _fdIssuedNativeRows(){
+  let rows=[];try{rows=_nativeInvoiceRows({});}catch(e){return[];}
+  return rows.filter(r=>!r._cn&&(r.invoiceStatus?.name||'')!=='Draft');
+}
+// Run fn with stInvoices temporarily extended by extra rows (synchronous renders only).
+function _fdWithInvoices(extra,fn,self,args){
+  if(!extra.length)return fn.apply(self,args);
+  const orig=stInvoices;stInvoices=[...(orig||[]),...extra];
+  try{return fn.apply(self,args);}finally{stInvoices=orig;}
+}
+(function(){
+  // Dashboard "Overdue invoices" + Deadlines calendar: only invoices with money still owed.
+  const owed=()=>_fdIssuedNativeRows().filter(r=>{const j=_fdJob(r._jobId);return j&&_fdOutstanding(j)>0.004;});
+  const _origDash=renderDashboard;
+  renderDashboard=function(){return _fdWithInvoices(owed(),_origDash,this,arguments);};
+  if(typeof renderDeadlinesCal==='function'){const _origDC=renderDeadlinesCal;renderDeadlinesCal=function(){return _fdWithInvoices(owed(),_origDC,this,arguments);};}
+  // Reporting: issued platform invoices, net of their credit notes, added to Streamtime's.
+  // (Separate documents from any Streamtime invoice on the same job — added, never replaced.)
+  const repRows=()=>{
+    const out=[];
+    jobs.forEach(j=>{
+      if(!j.invNum)return;const st=j.invStatus||'draft';if(st!=='sent'&&st!=='paid')return;
+      let t;try{t=_c2InvTotals(j);}catch(e){return;}
+      const ex=_c2r(t.ex-_fdCreditedEx(j)),inc=_c2r(t.inc-_fdCredited(j));if(!(ex>0))return;
+      const d=j.invIssueDate||j.invPaidDate||'';if(!d)return;
+      out.push({id:'nat-'+j.id,_native:true,number:j.invNum,jobId:j._stId||('nat-job-'+j.id),jobNumber:j.id,company:{name:j.company||''},
+        invoiceDate:d,sentDate:d,dueDate:j.invDueDate||'',paidDate:st==='paid'?(j.invPaidDate||''):'',
+        invoiceStatus:{name:st==='paid'?'Paid':'Awaiting Payment'},totalAmountExTax:ex,totalAmountIncTax:inc,amountPaidIncTax:_c2Paid(j)});
+    });
+    return out;
+  };
+  const _origBiz=_renderBusinessReport;
+  _renderBusinessReport=function(){return _fdWithInvoices(repRows(),_origBiz,this,arguments);};
+  const _origCl=_renderClientsReport;
+  _renderClientsReport=function(){return _fdWithInvoices(repRows(),_origCl,this,arguments);};
+  window._fdReportRows=repRows;
+  // Global search: platform invoices and credit notes next to the Streamtime invoices.
+  const _origGS=runGlobalSearch;
+  runGlobalSearch=function(q){
+    const r=_origGS.apply(this,arguments);
+    try{
+      const s=String(q||'').trim().toLowerCase();if(!s)return r;
+      const add=[];
+      _nativeInvoiceRows({}).forEach(row=>{
+        const j=_fdJob(row.jobNumber);if(!j)return;
+        const st=row._cn?'Credit note':(row.invoiceStatus?.name||'');
+        if(!(`${row.number} ${j.company||''} ${j.id} ${j.name||''} ${j.po||''} ${st} platform`).toLowerCase().includes(s))return;
+        const amt=_c2m2(row.totalAmountIncTax);
+        add.push(row._cn
+          ?{cat:'Invoices',icon:'ti-receipt-refund',title:`Credit note ${row.number}`,sub:`${j.company||''} · #${j.id} · ${amt}`,fn:()=>openInvoiceForJob(row._jobId)}
+          :{cat:'Invoices',icon:'ti-file-invoice',title:`Invoice ${row.number}`,sub:`${j.company||''} · #${j.id} · ${st} · Platform`,fn:()=>openInvoiceForJob(j.id)});
+      });
+      if(!add.length)return r;
+      const list=[..._gsResults];
+      // Ahead of tasks / plan items so they survive the 30-result cap.
+      let at=list.findIndex(x=>['Tasks','Job plan items','Invoices','Quotes'].includes(x.cat));if(at<0)at=list.length;
+      const ins=add.slice(0,6);at=Math.min(at,30-ins.length);
+      list.splice(at,0,...ins);
+      _gsResults=list.slice(0,30);_gsSel=0;renderGsResults(s);
+    }catch(e){console.error('feat-d search',e);}
+    return r;
+  };
+})();
+
+// ───────────────────────── Invoice document fixes (screen + print) ─────────────────────────
+(function(){
+  const _origRI=renderInvoice;
+  renderInvoice=function(j){
+    // The plan invoice reads the global `phases`; make sure they are this job's.
+    let swapped=false,prev;
+    if(j&&_fdPhasesJobId!==j.id){prev=phases;phases=JSON.parse(JSON.stringify(j.phases||[]));swapped=true;}
+    let r;
+    try{r=_origRI.apply(this,arguments);}finally{if(swapped)phases=prev;}
+    try{
+      const wrap=document.getElementById('inv-body');if(!wrap||!j)return r;
+      // Issued / due showed "today" and "+20 days" whatever was stored; show the invoice's own dates.
+      const cells=wrap.querySelectorAll('.inv-meta-grid > div');
+      const setMv=(i,t)=>{const v=cells[i]?.querySelector('.inv-mv');if(v)v.textContent=t;};
+      if(j.invIssueDate)setMv(2,fmtDate(j.invIssueDate));
+      if(j.invDueDate){
+        const days=j.invIssueDate?Math.round((_pDate(j.invDueDate)-_pDate(j.invIssueDate))/86400000):null;
+        setMv(3,fmtDate(j.invDueDate)+(days!=null&&days>0?` · ${days} days`:''));
+      }
+      if(j.po){const ref=wrap.querySelector('#inv-ref');if(ref&&!ref.dataset.fdPo){ref.dataset.fdPo='1';ref.insertAdjacentHTML('afterend',`<div class="c2-inv-q">PO ${esc(j.po)}</div>`);}}
+      // An empty deposit / split box is UI, not part of the document.
+      const title=wrap.querySelector(':scope > .inv-job-title');const split=title?.nextElementSibling;
+      if(split&&!split.classList.contains('inv-sec')&&!split.classList.contains('inv-tot')&&!(j.splitInvoices||[]).length)split.classList.add('no-print');
+    }catch(e){console.error('feat-d invoice render',e);}
+    return r;
+  };
+})();
+
+// ───────────────────────── C9 · Supplier purchase orders ─────────────────────────
+// j.purchaseOrders [{id,number:'PO-1001',supplier:{name,contact,email},issueDate,requiredDate,
+//   lines:[{desc,qty,unit,amount}],expIds:[...],ex,gst,inc,notes,status,createdAt}]
+// Unit = cost to us (ex GST). Totals: ex = Σ lines, GST 15%, inc = ex + GST.
+function _fdPOs(j){return j&&Array.isArray(j.purchaseOrders)?j.purchaseOrders:[];}
+function _fdKeepPOs(j){_keepJobEdits(j,['purchaseOrders']);}
+function _fdJobExpenses(j){
+  const out=[];
+  (j.expenses||[]).forEach(e=>out.push({id:String(e.id),desc:e.desc||e.name||'Expense',qty:_c2num(e.qty)||1,unit:_c2num(e.cost),supplier:e.supplier||'',src:'local'}));
+  (stExpenses||[]).filter(e=>String(e.jobNumber)===String(j.id)||(j._stId&&String(e.jobId)===String(j._stId))).forEach(e=>{
+    const qty=_c2num(e.quantity)||1;
+    out.push({id:'st-exp-'+e.id,desc:e.description||e.itemName||'Expense',qty,unit:_c2num(e.costRate)||(qty?_c2r(_c2num(e.totalCost)/qty):0),
+      supplier:e.supplierCompanyName||'',contact:e.supplierContactFullName||'',email:e.supplierContactEmail||'',src:'st',stPo:e.purchaseOrderNumber||''});
+  });
+  return out;
+}
+function _fdAllSuppliers(){
+  const s=new Set();
+  jobs.forEach(j=>_fdPOs(j).forEach(p=>{if(p.supplier?.name)s.add(p.supplier.name);}));
+  (stExpenses||[]).forEach(e=>{if(e.supplierCompanyName)s.add(e.supplierCompanyName);});
+  return[...s].sort((a,b)=>a.localeCompare(b));
+}
+let _fdPo={jobId:null,poId:null,picked:new Set()};
+function openFdPoModal(jobId,poId){
+  const j=_fdJob(jobId||activeJobId);if(!j){toast('Open a job first','warn');return;}
+  const po=poId?_fdPOs(j).find(p=>p.id===poId):null;
+  if(poId&&!po)return;
+  _fdPo={jobId:j.id,poId:po?po.id:null,picked:new Set(po?.expIds||[])};
+  const exps=_fdJobExpenses(j);
+  const due=new Date();due.setDate(due.getDate()+14);
+  document.getElementById('fd-po-modal')?.remove();
+  const m=document.createElement('div');m.className='modal-bg on';m.id='fd-po-modal';
+  m.innerHTML=`<div class="modal c2-modal-wide">
+    <div class="modal-hd"><span class="modal-hd-title">${po?`Purchase order ${esc(po.number)}`:'New purchase order'} · job ${esc(j.id)}</span><button class="modal-x" onclick="document.getElementById('fd-po-modal').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd">
+      <div class="field-row">
+        <div class="field" style="flex:2;"><label>Supplier</label><input class="form-inp" id="fd-po-sup" list="fd-po-sup-list" style="width:100%;" placeholder="Company name" value="${esc(po?.supplier?.name||'')}"><datalist id="fd-po-sup-list">${_fdAllSuppliers().map(s=>`<option value="${esc(s)}">`).join('')}</datalist></div>
+        <div class="field"><label>Status</label><select class="cc-select" id="fd-po-status" style="width:100%;">${FD_PO_STATUSES.map(s=>`<option value="${s}"${(po?.status||'draft')===s?' selected':''}>${_fdCap(s)}</option>`).join('')}</select></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Contact <span class="fd-sub-lbl">optional</span></label><input class="form-inp" id="fd-po-contact" style="width:100%;" value="${esc(po?.supplier?.contact||'')}"></div>
+        <div class="field"><label>Email <span class="fd-sub-lbl">optional</span></label><input class="form-inp" id="fd-po-email" type="email" style="width:100%;" value="${esc(po?.supplier?.email||'')}"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Issue date</label><input class="form-inp" id="fd-po-issue" type="date" style="width:100%;" value="${esc(po?.issueDate||_localISO())}"></div>
+        <div class="field"><label>Required by <span class="fd-sub-lbl">optional</span></label><input class="form-inp" id="fd-po-req" type="date" style="width:100%;" value="${esc(po?po.requiredDate||'':_localISO(due))}"></div>
+      </div>
+      ${exps.length?`<div class="field"><label>From job expenses <span class="fd-sub-lbl">tick to add a line at cost</span></label><div class="fd-exp-pick">${exps.map(e=>`<label><input type="checkbox" value="${esc(e.id)}"${_fdPo.picked.has(e.id)?' checked':''} onchange="_fdPoPick(this)"><span class="d">${esc(e.desc)}${e.supplier?` <span class="m">· ${esc(e.supplier)}</span>`:''}${e.stPo?` <span class="st-tag">ST PO ${esc(e.stPo)}</span>`:''}</span><span class="m">${esc(_c2qty(e.qty))} × ${_c2m2(e.unit)}</span></label>`).join('')}</div></div>`:''}
+      <div class="field"><label>Lines <span class="fd-sub-lbl">unit cost ex GST</span></label>${_c2EdHTML('po',{})}</div>
+      <div class="field"><label>Notes <span class="fd-sub-lbl">printed on the PO</span></label><textarea class="form-inp" id="fd-po-notes" rows="3" style="width:100%;resize:vertical;" placeholder="Delivery details, terms…">${esc(po?.notes||'')}</textarea></div>
+    </div>
+    <div class="modal-ft"><button class="modal-cancel" onclick="document.getElementById('fd-po-modal').remove()">Cancel</button><button class="modal-save" onclick="saveFdPo()">${po?'Save purchase order':'Create purchase order'}</button></div>
+  </div>`;
+  m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+  document.body.appendChild(m);
+  const th=m.querySelectorAll('.c2-lines thead th');if(th[2])th[2].textContent='Unit cost';
+  _c2EdInit('po',po?po.lines:[],null,{});
+  // Each line ticked from an expense remembers it, so unticking removes that line.
+  if(po)(po.lines||[]).forEach((l,i)=>{if(l.expId&&_c2Ed.po.lines[i])_c2Ed.po.lines[i]._exp=l.expId;});
+}
+function _fdPoPick(cb){
+  const st=_c2Ed.po;if(!st)return;
+  const j=_fdJob(_fdPo.jobId);const e=j?_fdJobExpenses(j).find(x=>x.id===cb.value):null;if(!e)return;
+  if(cb.checked){
+    _fdPo.picked.add(e.id);
+    // Replace a single empty starter line rather than adding below it.
+    st.lines=st.lines.filter(l=>String(l.desc||'').trim()||_c2num(l.unit));
+    st.lines.push({desc:e.desc,qty:e.qty,unit:e.unit,_exp:e.id});
+    const sup=document.getElementById('fd-po-sup');
+    if(sup&&!sup.value.trim()&&e.supplier){sup.value=e.supplier;
+      const c=document.getElementById('fd-po-contact'),em=document.getElementById('fd-po-email');
+      if(c&&!c.value&&e.contact)c.value=e.contact;if(em&&!em.value&&e.email)em.value=e.email;}
+  }else{
+    _fdPo.picked.delete(e.id);st.lines=st.lines.filter(l=>l._exp!==e.id);
+  }
+  st.touched=true;_c2EdRender('po');
+}
+function saveFdPo(){
+  const j=_fdJob(_fdPo.jobId);if(!j)return;
+  const name=(document.getElementById('fd-po-sup')?.value||'').trim();
+  if(!name){toast('Add the supplier','warn');return;}
+  const issue=document.getElementById('fd-po-issue')?.value||'';
+  const req=document.getElementById('fd-po-req')?.value||'';
+  if(!_fdDateOk(issue)){toast('Pick an issue date','warn');return;}
+  if(req&&!_fdDateOk(req)){toast('Check the required-by date','warn');return;}
+  if(req&&req<issue){toast('Required-by is before the issue date','warn');return;}
+  const st=_c2Ed.po;
+  const raw=(st?.lines||[]).map(l=>({desc:String(l.desc||'').trim(),qty:_c2num(l.qty),unit:_c2num(l.unit),expId:l._exp||null}))
+    .filter(l=>l.desc||_c2r(l.qty*l.unit)!==0);
+  if(!raw.length){toast('Add at least one line','warn');return;}
+  if(raw.some(l=>!(l.qty>0))){toast('Each line needs a quantity above 0','warn');return;}
+  const t=_c2Totals(raw,null);
+  if(!(t.ex>0)){toast('The PO total must be more than $0','warn');return;}
+  const lines=t.rows.map((r,i)=>{const o={desc:r.desc||'Item',qty:r.qty,unit:r.unit,amount:r.amount};if(raw[i].expId)o.expId=raw[i].expId;return o;});
+  const data={supplier:{name,contact:(document.getElementById('fd-po-contact')?.value||'').trim(),email:(document.getElementById('fd-po-email')?.value||'').trim()},
+    issueDate:issue,requiredDate:req||'',lines,expIds:[...new Set(lines.map(l=>l.expId).filter(Boolean))],
+    ex:t.ex,gst:t.gst,inc:t.inc,notes:(document.getElementById('fd-po-notes')?.value||'').trim(),status:document.getElementById('fd-po-status')?.value||'draft'};
+  let po;
+  if(_fdPo.poId){
+    po=_fdPOs(j).find(p=>p.id===_fdPo.poId);if(!po)return;
+    Object.assign(po,data,{updatedAt:Date.now()});j.purchaseOrders=[..._fdPOs(j)];
+  }else{
+    po={id:uid('po'),number:_fdNextNum('PO-','cc_po_counter','purchaseOrders'),...data,createdAt:Date.now()};
+    j.purchaseOrders=[..._fdPOs(j),po];
+    logActivity(j.id,MY_PERSON,'purchase_order',`Purchase order <strong>${esc(po.number)}</strong> to ${esc(name)} — ${_c2m2(po.ex)} ex GST`);
+  }
+  _fdKeepPOs(j);
+  document.getElementById('fd-po-modal')?.remove();
+  _fdRefreshPOs(j);
+  toast(`${esc(po.number)} ${_fdPo.poId?'saved':'created'} · ${_c2m2(po.inc)} inc GST`,'success');
+}
+function fdSetPoStatus(jobId,poId,val){
+  const j=_fdJob(jobId);const po=_fdPOs(j).find(p=>p.id===poId);if(!po||!FD_PO_STATUSES.includes(val))return;
+  po.status=val;po.updatedAt=Date.now();j.purchaseOrders=[..._fdPOs(j)];_fdKeepPOs(j);
+  _fdRefreshPOs(j);toast(`${esc(po.number)} marked ${val}`,'success');
+}
+function fdDeletePo(jobId,poId){
+  const j=_fdJob(jobId);const po=_fdPOs(j).find(p=>p.id===poId);if(!po)return;
+  ccConfirm(`Delete purchase order ${esc(po.number)} to ${esc(po.supplier?.name||'')}? Its number is not reused.`,()=>{
+    j.purchaseOrders=_fdPOs(j).filter(p=>p.id!==poId);_fdKeepPOs(j);_fdRefreshPOs(j);toast('Purchase order deleted','success');
+  },'Delete',true);
+}
+function _fdRefreshPOs(j){
+  try{if(activeJobId===j.id)_fdRenderJobPOs();}catch(e){}
+  try{if(_fdExpMode==='po'&&document.getElementById('exp-list-wrap')?.offsetParent)renderExpensesList();}catch(e){}
+}
+function openFdPoDoc(jobId,poId){
+  const j=_fdJob(jobId);const po=_fdPOs(j).find(p=>p.id===poId);if(!po)return;
+  const t=_c2Totals(po.lines,null);const s=po.supplier||{};
+  const meta=`<div style="flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Supplier</div><div style="font-weight:500;font-size:13px;">${esc(s.name||'—')}</div>${s.contact?`<div style="color:var(--muted);margin-top:2px;">${esc(s.contact)}</div>`:''}${s.email?`<div style="color:var(--muted);margin-top:2px;">${esc(s.email)}</div>`:''}
+      <div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin:12px 0 3px;">Deliver to / bill</div><div style="color:var(--ink);">Content &amp; Co NZ Ltd</div><div style="color:var(--muted);">Level 1, 53 Fort Street, Auckland</div></div>
+    <div style="text-align:right;color:var(--muted);"><div><strong style="color:var(--ink);">PO #:</strong> ${esc(po.number)}</div><div><strong style="color:var(--ink);">Issued:</strong> ${_docFmtDate(po.issueDate)}</div>${po.requiredDate?`<div><strong style="color:var(--ink);">Required by:</strong> ${_docFmtDate(po.requiredDate)}</div>`:''}<div><strong style="color:var(--ink);">Job:</strong> #${esc(j.id)} · ${esc(j.name)}</div><div><strong style="color:var(--ink);">Client:</strong> ${esc(j.company||'—')}</div></div>`;
+  const totals=_fdTotRow('Subtotal (ex GST)',_c2m2(t.ex))+_fdTotRow('GST (15%)',_c2m2(t.gst))+_fdTotRow('Total (inc GST)',_c2m2(t.inc),true,true);
+  const extra=`<div class="fd-keep" style="margin-top:18px;padding-top:14px;border-top:1px solid var(--faint);font-size:11.5px;color:var(--muted);line-height:1.7;">
+    ${po.notes?`<div style="color:var(--ink);white-space:pre-wrap;margin-bottom:8px;">${esc(po.notes)}</div>`:''}
+    <div>Please quote <strong style="color:var(--ink);">${esc(po.number)}</strong> on your invoice and send it to accounts@content-co.nz. Prices are in NZD.</div>
+  </div>`;
+  _fdDoc('Purchase Order',_fdPill(_fdCap(po.status||'draft')),meta,_fdLineRows(t.rows),totals,extra,{col2:'QTY × COST',printTitle:`Purchase order ${po.number} — ${s.name||''}`});
+}
+function _fdPoRowHTML(j,po,withJob){
+  const jid=esc(j.id),pid=esc(po.id);
+  return`<tr class="click" onclick="openFdPoDoc('${jid}','${pid}')">
+    <td class="nw"><strong style="font-weight:500;">${esc(po.number)}</strong></td>
+    <td class="ell" title="${esc(po.supplier?.name||'')}">${esc(po.supplier?.name||'—')}</td>
+    ${withJob?`<td class="ell" title="${esc(j.company||'')}"><span class="mut" style="margin-right:4px;">${jid}</span>${esc(j.name||'')}<div class="mut" style="font-size:11px;">${esc(j.company||'')}</div></td>`:''}
+    <td class="mut nw">${esc(fmtDate(po.issueDate))}</td>
+    <td class="mut nw">${po.requiredDate?esc(fmtDate(po.requiredDate)):'—'}</td>
+    <td onclick="event.stopPropagation()"><select class="cc-select" style="font-size:11px;padding:3px 26px 3px 8px;" title="Status" onchange="fdSetPoStatus('${jid}','${pid}',this.value)">${FD_PO_STATUSES.map(s=>`<option value="${s}"${(po.status||'draft')===s?' selected':''}>${_fdCap(s)}</option>`).join('')}</select></td>
+    <td class="num">${_c2m2(po.ex)}</td>
+    <td class="num">${_c2m2(po.inc)}</td>
+    <td onclick="event.stopPropagation()"><div class="fd-acts">
+      <button class="cc-icon-btn" title="Edit" onclick="openFdPoModal('${jid}','${pid}')"><i class="ti ti-edit"></i></button>
+      <button class="cc-icon-btn" title="Preview / print" onclick="openFdPoDoc('${jid}','${pid}')"><i class="ti ti-printer"></i></button>
+      <button class="cc-icon-btn danger" title="Delete" onclick="fdDeletePo('${jid}','${pid}')"><i class="ti ti-x"></i></button>
+    </div></td>
+  </tr>`;
+}
+// Job plan: a "Purchase orders" section under Expenses.
+function _fdRenderJobPOs(){
+  const j=_fdJob(activeJobId);
+  let el=document.getElementById('fd-po-wrap');
+  const anchor=document.getElementById('exp-wrap');
+  if(!el&&anchor){el=document.createElement('div');el.id='fd-po-wrap';el.className='fd-po-sec';anchor.after(el);}
+  if(!el)return;
+  const pos=_fdPOs(j);
+  if(!j||!pos.length){el.style.display='none';el.innerHTML='';return;}
+  el.style.display='';
+  const live=pos.filter(p=>p.status!=='cancelled');
+  const ex=_c2r(live.reduce((s,p)=>s+_c2num(p.ex),0));
+  el.innerHTML=`<div class="fd-po-head"><i class="ti ti-truck-delivery" style="font-size:14px;color:var(--muted);"></i><span class="t">Purchase orders</span><span class="n">${pos.length} PO${pos.length!==1?'s':''} · ${_c2m2(ex)} ex GST${pos.length!==live.length?' (excl. cancelled)':''}</span></div>
+    <table class="fd-tbl"><thead><tr><th>PO #</th><th>Supplier</th><th>Issued</th><th>Required</th><th>Status</th><th class="num">Ex GST</th><th class="num">Inc GST</th><th></th></tr></thead>
+    <tbody>${pos.slice().sort((a,b)=>String(b.number).localeCompare(String(a.number),undefined,{numeric:true})).map(p=>_fdPoRowHTML(j,p,false)).join('')}</tbody></table>
+    <div class="fd-add-row" onclick="openFdPoModal('${esc(j.id)}')"><i class="ti ti-plus" style="font-size:11px"></i> New purchase order</div>`;
+}
+(function(){
+  const _origRE=renderExpenses;
+  renderExpenses=function(){
+    const r=_origRE.apply(this,arguments);
+    try{
+      const w=document.getElementById('exp-wrap');
+      if(w&&w.style.display!=='none'&&!w.querySelector('.fd-exp-po')){
+        const add=w.querySelector(':scope > .add-e-row');
+        if(add)add.insertAdjacentHTML('afterend',`<div class="add-e-row fd-exp-po" onclick="openFdPoModal(activeJobId)"><i class="ti ti-truck-delivery" style="font-size:11px"></i> Create purchase order from expenses</div>`);
+      }
+      _fdRenderJobPOs();
+    }catch(e){console.error('feat-d job POs',e);}
+    return r;
+  };
+})();
+// Create menu → Purchase order (added once, after "Expense").
+(function(){
+  try{
+    const menu=document.getElementById('create-item-menu');if(!menu||menu.querySelector('.fd-cm-po'))return;
+    const it=document.createElement('div');it.className='tcm-item fd-cm-po';
+    it.innerHTML='<i class="ti ti-truck-delivery" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Purchase order';
+    it.onclick=()=>{closeCreateItemMenu();openFdPoModal(activeJobId);};
+    const exp=[...menu.querySelectorAll('.tcm-item')].find(x=>/showAddExpenseInline/.test(x.getAttribute('onclick')||''));
+    if(exp)exp.after(it);else menu.appendChild(it);
+  }catch(e){console.error('feat-d create menu',e);}
+})();
+// Jobs → Expenses tab: Expenses | Purchase orders, with status + supplier filters.
+let _fdExpMode=(()=>{try{return localStorage.getItem('cc_exp_mode')==='po'?'po':'exp';}catch(e){return'exp';}})();
+function fdSetExpMode(m){_fdExpMode=m==='po'?'po':'exp';try{localStorage.setItem('cc_exp_mode',_fdExpMode);}catch(e){}renderExpensesList();}
+function _fdExpToolbar(){
+  const bar=document.querySelector('#jt-expenses .qinv-toolbar');if(!bar)return;
+  if(!bar.querySelector('.fd-mode')){
+    bar.insertAdjacentHTML('afterbegin',`<div class="todo-view-toggle fd-mode"><button class="tvt-btn" data-m="exp" onclick="fdSetExpMode('exp')"><i class="ti ti-receipt" style="font-size:13px;"></i>Expenses</button><button class="tvt-btn" data-m="po" onclick="fdSetExpMode('po')"><i class="ti ti-truck-delivery" style="font-size:13px;"></i>Purchase orders</button></div>`);
+    bar.insertAdjacentHTML('beforeend',`<select class="cc-select" id="fd-po-status-f" onchange="renderExpensesList()"><option value="all">All statuses</option>${FD_PO_STATUSES.map(s=>`<option value="${s}">${_fdCap(s)}</option>`).join('')}</select><select class="cc-select" id="fd-po-sup-f" onchange="renderExpensesList()"><option value="all">All suppliers</option></select>`);
+  }
+  const po=_fdExpMode==='po';
+  bar.querySelectorAll('.fd-mode .tvt-btn').forEach(b=>b.classList.toggle('on',b.dataset.m===_fdExpMode));
+  ['exp-status-filter','exp-client-filter'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display=po?'none':'';});
+  ['fd-po-status-f','fd-po-sup-f'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display=po?'':'none';});
+  const inp=document.getElementById('exp-search-inp');if(inp)inp.placeholder=po?'Search purchase orders…':'Search expenses…';
+  const sub=document.querySelector('#jt-expenses .view-sub');if(sub)sub.textContent=po?'Supplier purchase orders across every job':'Logged purchases across every job';
+  const ttl=document.querySelector('#jt-expenses .view-title');if(ttl)ttl.textContent=po?'Purchase orders':'Expenses';
+  if(po){
+    const sel=document.getElementById('fd-po-sup-f');
+    if(sel){const cur=sel.value;const sups=[...new Set(jobs.flatMap(j=>_fdPOs(j).map(p=>p.supplier?.name||'')).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+      sel.innerHTML='<option value="all">All suppliers</option>'+sups.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
+      sel.value=sups.includes(cur)?cur:'all';}
+  }
+}
+function _fdRenderPoList(){
+  const el=document.getElementById('exp-list-wrap');if(!el)return;
+  const q=(document.getElementById('exp-search-inp')?.value||'').trim().toLowerCase();
+  const stF=document.getElementById('fd-po-status-f')?.value||'all';
+  const supF=document.getElementById('fd-po-sup-f')?.value||'all';
+  let all=[];jobs.forEach(j=>_fdPOs(j).forEach(p=>all.push({j,p})));
+  if(q)all=all.filter(({j,p})=>(`${p.number} ${p.supplier?.name||''} ${p.supplier?.contact||''} ${j.id} ${j.name||''} ${j.company||''} ${p.notes||''} ${(p.lines||[]).map(l=>l.desc).join(' ')}`).toLowerCase().includes(q));
+  if(stF!=='all')all=all.filter(({p})=>(p.status||'draft')===stF);
+  if(supF!=='all')all=all.filter(({p})=>(p.supplier?.name||'')===supF);
+  all.sort((a,b)=>(b.p.issueDate||'').localeCompare(a.p.issueDate||'')||String(b.p.number).localeCompare(String(a.p.number),undefined,{numeric:true}));
+  if(!all.length){
+    const any=jobs.some(j=>_fdPOs(j).length);
+    el.innerHTML=emptyStateHTML('ti-truck-delivery',any?'No matching purchase orders':'No purchase orders yet',any?'Try another status, supplier or search.':'Open a job and use Create → Purchase order, or tick its expenses to bundle them into one.','','');
+    return;
+  }
+  // Cancelled POs are listed but left out of the totals.
+  const live=all.filter(({p})=>p.status!=='cancelled');
+  const ex=_c2r(live.reduce((s,{p})=>s+_c2num(p.ex),0)),inc=_c2r(live.reduce((s,{p})=>s+_c2num(p.inc),0));
+  el.innerHTML=`<table class="fd-tbl"><thead><tr><th>PO #</th><th>Supplier</th><th>Job / client</th><th>Issued</th><th>Required</th><th>Status</th><th class="num">Ex GST</th><th class="num">Inc GST</th><th></th></tr></thead>
+    <tbody>${all.map(({j,p})=>_fdPoRowHTML(j,p,true)).join('')}</tbody>
+    <tfoot><tr><td colspan="6" class="mut" style="font-weight:400;">${all.length} purchase order${all.length!==1?'s':''}${all.length!==live.length?` · ${all.length-live.length} cancelled not in totals`:''}</td><td class="num">${_c2m2(ex)}</td><td class="num">${_c2m2(inc)}</td><td></td></tr></tfoot></table>`;
+}
+(function(){
+  const _origREL=renderExpensesList;
+  renderExpensesList=function(){
+    try{_fdExpToolbar();}catch(e){console.error('feat-d expenses toolbar',e);}
+    if(_fdExpMode==='po'){try{_fdRenderPoList();}catch(e){console.error('feat-d PO list',e);}return;}
+    return _origREL.apply(this,arguments);
+  };
+})();
+</script>
+
 </body>
 </html>
