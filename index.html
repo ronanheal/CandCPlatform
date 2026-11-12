@@ -4572,7 +4572,7 @@ function _sparkSVG(vals,color){
   return'';
 }
 // KPI sparkline colours: billable = brand red, non-billable = warm graphite (chart system)
-function _sparkCol(kind){if(typeof CV==='undefined')return kind==='bill'?'#ED1E24':'#5E574D';return kind==='bill'?CV.slot(0):CV.t().graphite;}
+function _sparkCol(kind){if(typeof CV==='undefined')return kind==='bill'?'#ED1E24':'#7D7468';return kind==='bill'?CV.slot(0):CV.t().graphite;}
 // Expanded trend: click a KPI sparkline → 26-week Chart.js view with real numbers.
 function openTrendModal(kind){
   const n=26;
@@ -4793,7 +4793,7 @@ function renderDashboard(){
     ${_happinessCardHTML()}
     <div class="kpi-row">
       <div class="kpi"><div class="kpi-label">Billable booked this week</div><div class="kpi-val">${formatHrs(billH)||'0h'}</div><div class="kpi-sub">${formatHrs(billDoneH)||'0h'} done · ${formatHrs(billTodoH)||'0h'} planned · of ${totalTarget}h</div>${_wkTrend.bill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('bill')">${_sparkSVG(_wkTrend.bill,_sparkCol('bill'))}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${billPct}%;background:${billH>=(totalTarget||1)*1.2?'var(--red)':'var(--ok)'};"></div></div></div>
-      <div class="kpi"><div class="kpi-label">Non-billable</div><div class="kpi-val">${formatHrs(nbillH)||'0h'}</div><div class="kpi-sub">internal & admin</div>${_wkTrend.nbill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('nbill')">${_sparkSVG(_wkTrend.nbill,_sparkCol('nbill'))}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${nbillPct}%;background:var(--warn);"></div></div></div>
+      <div class="kpi"><div class="kpi-label">Non-billable</div><div class="kpi-val">${formatHrs(nbillH)||'0h'}</div><div class="kpi-sub">internal & admin</div>${_wkTrend.nbill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('nbill')">${_sparkSVG(_wkTrend.nbill,_sparkCol('nbill'))}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${nbillPct}%;background:var(--cv-graphite);"></div></div></div>
       <div class="kpi"><div class="kpi-label">My tasks today</div><div class="kpi-val">${todayTodo.length}</div><div class="kpi-sub">${urgentCount?urgentCount+' urgent · ':''}${todayDone.length} done</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${todayTasks.length?Math.round(todayDone.length/todayTasks.length*100):0}%;background:${urgentCount?'var(--red)':'var(--ok)'};"></div></div></div>
     </div>
     <div class="section-label" style="margin-bottom:12px;">Your day <button onclick="weekOffset=0;openTodoModal(null,null,'${MY_PERSON}')" title="Add task" style="background:transparent;border:1px solid var(--border);border-radius:8px;padding:1px 8px;cursor:pointer;font-size:11px;color:var(--muted);font-family:var(--font);margin-left:8px;vertical-align:middle;">+ Add task</button></div>
@@ -12979,7 +12979,7 @@ let _rCharts={};
 // 7th series folds into "Other". Non-billable / "the rest" is a warm stone neutral; unsplit
 // hours use warm graphite. Dark mode uses its own steps (CV.slot reads the theme at render).
 const CHART_PALETTE=['#ED1E24','#2E8F6E','#8B4F8A','#B0781A','#5B6BAF','#9A5F1C'];
-const CHART_NONBILL='#D3CABB',CHART_ONE='#5E574D';
+const CHART_NONBILL='#D3CABB',CHART_ONE='#7D7468';
 let _chartThemeMode=null; // 'light' | 'dark' — re-applied when the app theme flips
 function _applyChartTheme(){
   if(typeof Chart==='undefined')return;
@@ -18235,7 +18235,7 @@ function _rvBusiness(el){
       {label:'Non-billable',data:nA,backgroundColor:nA.map((v,i)=>fade(tk.stone,i)),hoverBackgroundColor:nA.map((v,i)=>fade(tk.stone,i)),cvColor:tk.stone,cvTotal:_rvH(_rvSum(nA,x=>x))},
       // capacity: a short rule over each week's column (handles partial weeks without a staircase)
       ...(showCap?[{type:'line',label:'Capacity',stack:'cap',data:capW.map(v=>Math.round(v*100)/100),cvRef:true,cvKey:'ln',cvNoTip:true,cvColor:tk.ink2,showLine:false,
-        pointStyle:'line',pointRadius:15,pointHoverRadius:15,pointBorderWidth:2,pointHoverBorderWidth:2,pointBorderColor:tk.ink2,pointHoverBorderColor:tk.ink2,pointBackgroundColor:tk.ink2,order:-1}]:[])]},
+        pointStyle:'line',pointRadius:CV.colRadius,pointHoverRadius:CV.colRadius,pointBorderWidth:2,pointHoverBorderWidth:2,pointBorderColor:tk.ink2,pointHoverBorderColor:tk.ink2,pointBackgroundColor:tk.ink2,order:-1}]:[])]},
     options:_rvBarOpts({stacked:true,legend:true,total:'Total logged',
       title:i=>`Week of ${CV.dShort(wkInfo[i].wk)}`,
       extra:i=>{const t=bA[i]+nA[i];const x=[['Billable share',_rvP(t>0?bA[i]/t*100:0)]];if(showCap)x.push(['Capacity',_rvH(capW[i])]);return x;},
@@ -18312,9 +18312,10 @@ function _rvTeams(el){
   // Weekly utilisation per team
   const wl=_rvWeekList(R,26);const wkIdx={};wl.forEach((w,i)=>wkIdx[w.wk]=i);
   // Colour follows the team (alphabetical slot), never its rank by hours — so a period change
-  // doesn't repaint a team. Teams past the 6th slot share graphite.
+  // doesn't repaint a team. Red stays reserved for billable/revenue, so teams start at slot 2;
+  // teams past the 6th slot share graphite.
   const tk=CV.t();const tNames=[...new Set(list.map(T=>T.name))].filter(n=>n!=='No team').sort((a,b)=>a.localeCompare(b));
-  const tCol=n=>{const i=tNames.indexOf(n);return i>=0&&i<tk.pal.length?CV.slot(i):tk.graphite;};
+  const tCol=n=>{const i=tNames.indexOf(n)+1;return i>0&&i<tk.pal.length?CV.slot(i):tk.graphite;};
   const series=list.filter(T=>T.name!=='No team'||list.length===1).map((T,ti)=>{
     const bill=wl.map(()=>0);
     tasks.forEach(t=>{if(teamOf[t.person]!==T||t.billable===false)return;const i=wkIdx[t.weekKey];if(i!=null)bill[i]+=t.hours||0;});
@@ -18381,7 +18382,7 @@ function _rvPeople(el){
   };
   const heatTbl=_rvTable('people-heat',{file:'people_weekly_utilisation',sort:'name',dir:1,total:false,rows:heatRows,empty:'No time logged in this period.',onRow:P=>people[P.k]?_rvCall('openTeamMember',P.k):'',cols:[
     {k:'name',l:'Person',v:P=>P.name,cls:'tx'},
-    ...wl.map((w,i)=>({k:'w'+i,l:w.label,cl:'Week of '+w.wk,num:1,cls:'hc',v:P=>P.w[i].u,h:P=>heatCell(P.w[i])})),
+    ...wl.map((w,i)=>({k:'w'+i,l:CV.dShort(w.wk),cl:'Week of '+w.wk,tip:'Week of '+CV.dShort(w.wk),num:1,cls:'hc',v:P=>P.w[i].u,h:P=>heatCell(P.w[i])})),
   ]});
 
   const dayTotals=[0,0,0,0,0,0,0];tasks.forEach(t=>{if(t.day>=1&&t.day<=7)dayTotals[t.day-1]+=t.hours||0;});
@@ -19060,23 +19061,24 @@ document.addEventListener('keydown',e=>{
      light  #ED1E24 red · #2E8F6E sage · #8B4F8A plum · #B0781A ochre · #5B6BAF dusk · #9A5F1C bronze
      dark   #F2464B red · #2A9670 sage · #B97AB7 plum · #B88428 ochre · #7383CC dusk · #B0733A bronze
    Red is the hero: billable time and revenue. Non-billable / "the rest" is a warm stone neutral.
-   Unsplit hours use warm graphite. Heat-maps use one red ramp, light → dark (dark mode: dark → bright). */
+   Unsplit hours use warm graphite. Heat-maps use one red-clay ramp, light → dark (dark mode: dark → bright),
+   with status amber reserved for over-capacity (>110%). */
 :root{
   --cv-ink:#1D1C19;--cv-ink2:#5F5A51;--cv-muted:#8D887C;
   --cv-grid:#EFECE6;--cv-base:#D9D3C7;
   --cv-tip-bg:#FFFFFF;--cv-tip-bd:rgba(29,28,25,.08);--cv-tip-sh:0 1px 2px rgba(35,28,18,.06),0 10px 30px rgba(35,28,18,.14);
-  --cv-red:#ED1E24;--cv-stone:#D3CABB;--cv-graphite:#5E574D;
-  --cv-h0:#FDF1EF;--cv-h1:#FBDCD7;--cv-h2:#F6BCB3;--cv-h3:#EF9286;--cv-h4:#E4655A;--cv-h5:#CD3B33;--cv-h6:#A3231F;--cv-over:#F3B04A;
+  --cv-red:#ED1E24;--cv-stone:#D3CABB;--cv-graphite:#7D7468;
+  --cv-h0:#FBF1EE;--cv-h1:#F7E0DA;--cv-h2:#F0C7BD;--cv-h3:#E7A797;--cv-h4:#DB8471;--cv-h5:#C9614E;--cv-h6:#A8432F;--cv-over:#F3B04A;
 }
 body.dark{
   --cv-ink:#F2F2F4;--cv-ink2:#C6C3BD;--cv-muted:#9C9CA3;
   --cv-grid:rgba(255,255,255,.06);--cv-base:rgba(255,255,255,.16);
   --cv-tip-bg:#2E2E33;--cv-tip-bd:rgba(255,255,255,.08);--cv-tip-sh:0 2px 6px rgba(0,0,0,.35),0 14px 36px rgba(0,0,0,.45);
   --cv-red:#F2464B;--cv-stone:#69635A;--cv-graphite:#B3AB9F;
-  --cv-h0:#2E2829;--cv-h1:#422B2C;--cv-h2:#5E302F;--cv-h3:#823634;--cv-h4:#AA3C38;--cv-h5:#D4453F;--cv-h6:#F2716B;--cv-over:#C98A2A;
+  --cv-h0:#2F2826;--cv-h1:#3A2B28;--cv-h2:#583832;--cv-h3:#744238;--cv-h4:#934F40;--cv-h5:#B5604D;--cv-h6:#D77B63;--cv-over:#C98A2A;
 }
 /* Tooltip — roomy, rounded, dot keys, values right-aligned and strong */
-.cv-tip{position:fixed;z-index:10050;pointer-events:none;min-width:172px;max-width:300px;padding:11px 13px 10px;border-radius:12px;background:var(--cv-tip-bg);border:1px solid var(--cv-tip-bd);box-shadow:var(--cv-tip-sh);color:var(--cv-ink);font:12.5px/1.35 'Inter',-apple-system,sans-serif;opacity:0;transform:translateY(3px);transition:opacity .12s ease,transform .12s ease;}
+.cv-tip{position:fixed;z-index:2147483000;pointer-events:none;min-width:172px;max-width:300px;padding:11px 13px 10px;border-radius:12px;background:var(--cv-tip-bg);border:1px solid var(--cv-tip-bd);box-shadow:var(--cv-tip-sh);color:var(--cv-ink);font:12.5px/1.35 'Inter',-apple-system,sans-serif;opacity:0;transform:translateY(3px);transition:opacity .12s ease,transform .12s ease;}
 .cv-tip.on{opacity:1;transform:none;}
 .cv-tip-t{font-weight:600;font-size:12.5px;letter-spacing:-.003em;color:var(--cv-ink);margin-bottom:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .cv-tip-r{display:flex;align-items:center;gap:8px;padding:2.5px 0;}
@@ -19163,10 +19165,10 @@ const CV=(function(){
     dark:['#F2464B','#2A9670','#B97AB7','#B88428','#7383CC','#B0733A'],
   };
   const TOK={
-    light:{ink:'#1D1C19',ink2:'#5F5A51',muted:'#8D887C',grid:'#EFECE6',base:'#D9D3C7',band:'rgba(29,28,25,.045)',stone:'#D3CABB',graphite:'#5E574D',surface:'#FFFFFF',wash:.2,
-      heat:['#FDF1EF','#FBDCD7','#F6BCB3','#EF9286','#E4655A','#CD3B33','#A3231F'],over:'#F3B04A'},
+    light:{ink:'#1D1C19',ink2:'#5F5A51',muted:'#8D887C',grid:'#EFECE6',base:'#D9D3C7',band:'rgba(29,28,25,.045)',stone:'#D3CABB',graphite:'#7D7468',surface:'#FFFFFF',wash:.2,
+      heat:['#FBF1EE','#F7E0DA','#F0C7BD','#E7A797','#DB8471','#C9614E','#A8432F'],over:'#F3B04A'},
     dark:{ink:'#F2F2F4',ink2:'#C6C3BD',muted:'#9C9CA3',grid:'rgba(255,255,255,.06)',base:'rgba(255,255,255,.16)',band:'rgba(255,255,255,.05)',stone:'#69635A',graphite:'#B3AB9F',surface:'#242427',wash:.3,
-      heat:['#2E2829','#422B2C','#5E302F','#823634','#AA3C38','#D4453F','#F2716B'],over:'#C98A2A'},
+      heat:['#2F2826','#3A2B28','#583832','#744238','#934F40','#B5604D','#D77B63'],over:'#C98A2A'},
   };
   const mode=()=>document.body.classList.contains('dark')?'dark':'light';
   const t=()=>Object.assign({mode:mode(),pal:PAL[mode()]},TOK[mode()]);
@@ -19201,15 +19203,17 @@ const CV=(function(){
   function topRadius(r){
     r=r==null?4:r;
     return ctx=>{
-      if(ctx.type!=='data')return 0;
+      // always the same shape (an object) so Chart.js can animate between hover states
+      const R=v=>({topLeft:v,topRight:v,bottomLeft:v,bottomRight:v});
+      if(ctx.type!=='data')return R(0);
       const ch=ctx.chart,i=ctx.dataIndex,di=ctx.datasetIndex,ds=ch.data.datasets;
       const val=ch.options.indexAxis==='y'?'x':'y';
-      if(!ch.options.scales?.[val]?.stacked)return r;
+      if(!ch.options.scales?.[val]?.stacked)return R(r);
       for(let k=ds.length-1;k>=0;k--){
         if((ds[k].type||ch.config.type)!=='bar'||!ch.isDatasetVisible(k))continue;
-        if((+ds[k].data[i]||0)!==0)return k===di?{topLeft:r,topRight:r,bottomLeft:r,bottomRight:r}:0;
+        if((+ds[k].data[i]||0)!==0)return R(k===di?r:0);
       }
-      return 0;
+      return R(0);
     };
   }
 
@@ -19238,7 +19242,7 @@ const CV=(function(){
     else{
       const sc=ch.scales[hz?'y':'x'];const n=ch.data.labels.length||1;
       const step=(hz?ca.bottom-ca.top:ca.right-ca.left)/n;const c=sc.getPixelForValue(act[0].index);
-      const w=Math.min(step*.86,Math.max(36,step*.6));
+      const w=Math.min(step*.86,56);
       ctx.fillStyle=tk.band;ctx.beginPath();
       if(hz)ctx.roundRect?ctx.roundRect(ca.left-4,c-w/2,ca.right-ca.left+8,w,6):ctx.rect(ca.left-4,c-w/2,ca.right-ca.left+8,w);
       else ctx.roundRect?ctx.roundRect(c-w/2,ca.top-6,w,ca.bottom-ca.top+6,6):ctx.rect(c-w/2,ca.top-6,w,ca.bottom-ca.top+6);
@@ -19304,6 +19308,9 @@ const CV=(function(){
     el.style.left=Math.round(x)+'px';el.style.top=Math.round(y)+'px';
   }
   document.addEventListener('scroll',hideTip,true);
+  // a click (navigating away, opening a row) or a hidden page never leaves a tooltip behind
+  document.addEventListener('pointerdown',hideTip,true);
+  document.addEventListener('visibilitychange',hideTip);
 
   // ── legend (HTML, above the plot; click toggles a series) ──
   function legend(ch,host){
@@ -19346,7 +19353,7 @@ const CV=(function(){
   // valueAxis(fmt) → hairline grid, darker zero baseline, 5 round ticks, no axis border.
   function valueAxis(o){
     o=o||{};const tk=t();
-    return{beginAtZero:true,stacked:!!o.stacked,suggestedMax:o.max,grace:o.grace||'4%',border:{display:false},
+    return{beginAtZero:true,stacked:!!o.stacked,suggestedMax:o.max,grace:o.max?0:(o.grace||'4%'),border:{display:false},
       grid:{color:c=>c.tick&&c.tick.value===0?tk.base:tk.grid,lineWidth:1,drawTicks:false},
       ticks:{maxTicksLimit:o.ticks||5,precision:o.precision==null?0:o.precision,padding:8,callback:v=>typeof v==='number'?(o.fmt||hTick)(v):v}};
   }
@@ -19384,7 +19391,7 @@ const CV=(function(){
     if(cfg.options.plugins&&cfg.options.plugins.cvTip){tipCfgs.set(el,cfg.options.plugins.cvTip);delete cfg.options.plugins.cvTip;}else tipCfgs.delete(el);
     if(sigs[id]===sig||reduced())cfg.options.animation=false;
     sigs[id]=sig;
-    wrap.style.height=cfg.cvHeight?cfg.cvHeight+'px':'';
+    if(cfg.cvHeight){wrap.style.height=cfg.cvHeight+'px';wrap.dataset.cvH='1';}else if(wrap.dataset.cvH){wrap.style.height='';delete wrap.dataset.cvH;}
     // legend
     const wantLg=cfg.options.plugins?.cvLegend;
     if(wantLg&&card){
@@ -19445,7 +19452,9 @@ const CV=(function(){
     return`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block;overflow:visible;" aria-hidden="true"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${accent}" stop-opacity=".16"/><stop offset="1" stop-color="${accent}" stop-opacity="0"/></linearGradient></defs><path d="${d} L${w},${h} L0,${h} Z" fill="url(#${gid})"/><path class="cv-sp-line" d="${d}" fill="none" stroke="${accent}" stroke-opacity=".8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3.2" fill="${accent}" stroke="var(--white)" stroke-width="1.6"/></svg>`;
   }
 
-  return{t,slot,alpha,fgOn,surfaceOf,reduced,topRadius,valueAxis,catAxis,applyTheme,prepare,heat,heatLegend,segBar,spark,hideTip,
+  // half-width of a column rule (capacity marks): ~42% of the category slot, 3–15px
+  const colRadius=ctx=>{const ch=ctx.chart,ca=ch.chartArea,n=(ch.data.labels||[]).length||1;if(!ca)return 10;return Math.max(3,Math.min(15,(ca.right-ca.left)/n*.42));};
+  return{colRadius,t,slot,alpha,fgOn,surfaceOf,reduced,topRadius,valueAxis,catAxis,applyTheme,prepare,heat,heatLegend,segBar,spark,hideTip,
     hTick,hFull,kTick,mFull,pTick,dShort,dDay,monthLong,pd,MON};
 })();
 </script>
