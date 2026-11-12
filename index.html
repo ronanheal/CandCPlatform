@@ -2829,10 +2829,10 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
     <div class="gs-inp-row">
       <i class="ti ti-search"></i>
       <input id="gs-inp" placeholder="Search jobs, clients, tasks…" oninput="runGlobalSearch(this.value)" autocomplete="off">
-      <i class="ti ti-star" id="gs-star-btn" title="Show starred" style="cursor:pointer;color:#E6A700;" onclick="showStarredInSearch()"></i>
+      <i class="ti ti-star" id="gs-star-btn" title="Show starred" style="cursor:pointer;color:var(--star);" onclick="showStarredInSearch()"></i>
       <span class="gs-kbd">esc</span>
     </div>
-    <div id="gs-results"><div class="gs-empty">Type to search across everything, or click <i class="ti ti-star" style="color:#E6A700;vertical-align:-1px;"></i> for starred items.<div style="margin-top:10px;font-size:11px;color:var(--muted);">Or type a command — <strong style="color:var(--ink);">log 2h on 6928</strong> · <strong style="color:var(--ink);">pause 7023</strong> · <strong style="color:var(--ink);">todo Call printer 30m</strong></div></div></div>
+    <div id="gs-results"><div class="gs-empty">Type to search across everything, or click <i class="ti ti-star" style="color:var(--star);vertical-align:-1px;"></i> for starred items.<div style="margin-top:10px;font-size:11px;color:var(--muted);">Or type a command — <strong style="color:var(--ink);">log 2h on 6928</strong> · <strong style="color:var(--ink);">pause 7023</strong> · <strong style="color:var(--ink);">todo Call printer 30m</strong></div></div></div>
     <div class="gs-foot"><span><kbd>↑↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span><kbd>esc</kbd> close</span><span class="gs-count" id="gs-foot-count"></span></div>
   </div>
 </div>
@@ -2841,7 +2841,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
 <div class="gs-bg" id="starred-panel" onclick="if(event.target===this)closeStarredPanel()">
   <div class="gs-panel">
     <div class="gs-inp-row">
-      <i class="ti ti-star" style="color:#E6A700;"></i>
+      <i class="ti ti-star" style="color:var(--star);"></i>
       <span style="font-size:13px;font-weight:500;flex:1;">Starred</span>
       <span class="gs-kbd">esc</span>
     </div>
@@ -7397,7 +7397,7 @@ function saveTodo(){
         _spawnRepeatOccurrences(editedTask,targetPerson,dayNum);
       }
       if(_tdStartTimerAfterSave&&editedTask)_startTaskTimer(editedTask,targetPerson,weekOffset,dayNum);
-      if(_doneEdit&&editedTask&&!editedTask.done){editedTask.done=true;if(_logTaskTime(editedTask,targetPerson,_taskDateISO(weekOffset,dayNum)))toast(`Logged ${formatHrs(editedTask.hours)}`,'success');}
+      if(_doneEdit&&editedTask&&!editedTask.done){editedTask.done=true;if(editedTask._loggedEntry)toast("Marked done — its time was already logged","info");else if(_logTaskTime(editedTask,targetPerson,_taskDateISO(weekOffset,dayNum)))toast(`Logged ${formatHrs(editedTask.hours)}`,'success');}
     }
   } else {
     // Paused guard
@@ -7538,6 +7538,7 @@ function renderJobs(){
     }
   });
   const shown=filteredJobs.length;
+  window._rfJobsFiltered=filteredJobs; // bulk "select all matching" (review fix)
   document.getElementById('jobs-count').textContent=`${shown} job${shown!==1?'s':''} · NZD`;
 
   // Group-by: inject header rows into filteredJobs array as sentinel objects
@@ -7748,7 +7749,7 @@ function openJobDetail(id){
   const _dueStr=_due?fmtDate(j.dueDate):'';
   const _dueSoon=_due&&(_due-_now)/(86400000)<=7&&_due>=_now&&j.status==='inplay';
   const _overdue=_due&&_due<_now&&j.status==='inplay';
-  const _dueBadgeCls=_overdue?'background:#FFEBEE;color:#C62828;border-color:#EF9A9A;':_dueSoon?'background:#FFF9C4;color:#E65100;border-color:#FFE082;':'';
+  const _dueBadgeCls=_overdue?'background:var(--danger-bg);color:var(--danger-ink);border-color:color-mix(in srgb,var(--danger-ink) 35%,transparent);':_dueSoon?'background:var(--warn-bg);color:var(--warn-ink);border-color:color-mix(in srgb,var(--warn-ink) 35%,transparent);':'';
   const _dueIcon=_overdue?'<i class="ti ti-alert-triangle" style="font-size:10px;"></i> ':_dueSoon?'<i class="ti ti-clock" style="font-size:10px;"></i> ':'';
   const _startStr=j.startDate?fmtDate(j.startDate):'';
   // ONE dates control (was two separate Set start / Set due pills): shows the range when
@@ -7830,9 +7831,9 @@ function _renderAddMemberRows(jobId,query){
     .sort((a,b)=>(j.members.includes(b)?1:0)-(j.members.includes(a)?1:0)||people[a].name.localeCompare(people[b].name));
   box.innerHTML=keys.map(k=>{
     const p=people[k];const on=j.members.includes(k);
-    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;background:${on?'var(--off)':'#fff'};" onclick="toggleJobMember('${jobId}','${k}',this)">
-      <div class="d-av" style="background:${p.color};flex-shrink:0;">${p.initials}</div>
-      <span style="flex:1;font-size:13px;">${p.name}</span>
+    return`<div style="display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;background:${on?'var(--off)':'var(--white)'};" onclick="toggleJobMember('${jobId}','${k}',this)">
+      <div class="d-av" style="background:${esc(p.color)};flex-shrink:0;">${esc(p.initials)}</div>
+      <span style="flex:1;font-size:13px;">${esc(p.name)}</span>
       ${on?'<i class="ti ti-check" style="color:var(--red);font-size:12px;"></i>':''}
     </div>`;
   }).join('')||'<div style="padding:14px 16px;font-size:12px;color:var(--muted);">No matches.</div>';
@@ -7842,8 +7843,8 @@ function toggleJobMember(jobId,personKey,rowEl){
   if(!j.members)j.members=[];
   const idx=j.members.indexOf(personKey);
   if(idx===-1){j.members.push(personKey);rowEl.style.background='var(--off)';rowEl.insertAdjacentHTML('beforeend','<i class="ti ti-check" style="color:var(--red);font-size:12px;"></i>');}
-  else{j.members.splice(idx,1);rowEl.style.background='#fff';rowEl.querySelector('.ti-check')?.remove();}
-  logActivity(jobId,MY_PERSON,'member_change',`<strong>${people[personKey]?.name||personKey}</strong> ${idx===-1?'added to':'removed from'} the job`);
+  else{j.members.splice(idx,1);rowEl.style.background='var(--white)';rowEl.querySelector('.ti-check')?.remove();}
+  logActivity(jobId,MY_PERSON,'member_change',`<strong>${esc(people[personKey]?.name||personKey)}</strong> ${idx===-1?'added to':'removed from'} the job`);
   _keepJobEdits(j,['members']);
   // Refresh the avatars row
   const membersRow=document.getElementById('d-members-row');
@@ -10813,7 +10814,7 @@ function renderSettings(){
           <div style="display:flex;flex-wrap:wrap;gap:6px;">
             ${!allTeams.length?'<span style="font-size:12px;color:var(--muted);">No teams defined yet — add team names in the Team tab.</span>':allTeams.map(tn=>{
               const on=myT.includes(tn);
-              return`<button onclick="toggleDashTeam('${tn.replace(/'/g,"\\'")}');renderSettings()" class="filter-btn" style="cursor:pointer;font-size:12px;${on?'background:var(--ink);color:var(--on-ink);border-color:var(--ink);':''}">${on?'✓ ':''}${tn}</button>`;
+              return`<button onclick="toggleDashTeam('${tn.replace(/'/g,"\\'")}');renderSettings()" class="filter-btn" style="cursor:pointer;font-size:12px;${on?'background:var(--ink);color:var(--on-ink);border-color:var(--ink);':''}">${on?'<i class="ti ti-check" style="font-size:11px;"></i> ':''}${esc(tn)}</button>`;
             }).join('')}
           </div>
         </div>
@@ -10826,7 +10827,7 @@ function renderSettings(){
               const on=!dh.includes(k);
               return`<div class="sett-row">
                 <div><div class="sett-row-lbl">${lbl}</div><div class="sett-row-sub">${desc}</div></div>
-                <button onclick="toggleDashBlock('${k}');renderSettings()" class="filter-btn" style="cursor:pointer;font-size:12px;${on?'background:var(--ink);color:var(--on-ink);border-color:var(--ink);':''}">${on?'✓ On':'Off'}</button>
+                <button onclick="toggleDashBlock('${k}');renderSettings()" class="filter-btn" style="cursor:pointer;font-size:12px;${on?'background:var(--ink);color:var(--on-ink);border-color:var(--ink);':''}">${on?'<i class="ti ti-check" style="font-size:11px;"></i> On':'Off'}</button>
               </div>`;
             }).join('')}
           </div>
@@ -11297,7 +11298,7 @@ function showStarredInSearch(){
   const other=_getStarred().map(s=>({cat:'Starred',icon:ICONS[s.type]||'ti-star',title:s.name||s.id,sub:s.type.charAt(0).toUpperCase()+s.type.slice(1),fn:()=>openStarredItem(s.type,s.id)}));
   _gsResults=[...starredJobs,...other];_gsSel=0;
   renderGsResults('');
-  if(!_gsResults.length)document.getElementById('gs-results').innerHTML=`<div class="gs-empty">Nothing starred yet. Click the <i class="ti ti-star" style="color:#E6A700;vertical-align:-1px;"></i> on a job or client to pin it here.</div>`;
+  if(!_gsResults.length)document.getElementById('gs-results').innerHTML=`<div class="gs-empty">Nothing starred yet. Click the <i class="ti ti-star" style="color:var(--star);vertical-align:-1px;"></i> on a job or client to pin it here.</div>`;
 }
 function openGlobalSearch(){
   document.getElementById('gsearch').classList.add('on');
@@ -11358,14 +11359,16 @@ function _logTaskTime(task,personKey,dateISO){
   const userId=people[personKey]?._stId;
   if(!userId){toast(`${people[personKey]?.name||'This person'} isn't linked to Streamtime, so the time wasn't logged`,'warn');return false;}
   let item=null;(job.phases||[]).forEach(ph=>(ph.items||[]).forEach(it=>{if((task.itemId&&it.id===task.itemId)||(!task.itemId&&task.item&&it.name===task.item))item=it;}));
+  const _ltId=uid('lt');
   dbCreateTimeEntry({
+    id:_ltId,
     job:{id:job._stId||null,number:job.id,name:job.name,isBillable:job.billable!==false},
     jobId:job._stId||null,userId,
     itemId:item?._stId||task.itemId||null,itemName:item?.name||task.item||'',
     notes:task.title||'',hours,date:dateISO||_localISO(),
     jobItemUser:item?._stId?{jobItemId:item._stId}:null,
   });
-  task._loggedEntry=true; // the entry now carries this time — Job Plan must not count the card too
+  task._loggedEntry=_ltId; // (truthy) the entry now carries this time — Job Plan must not count the card too
   logActivity(job.id,personKey,'time_log',`Logged <strong>${formatHrs(hours)}</strong>${item?` on ${esc(item.name)}`:''}${task.title?` — ${esc(task.title)}`:''}`);
   return true;
 }
@@ -11607,13 +11610,13 @@ function openStarredItem(type,id){
 // Star toggle button — used on job rows/detail headers. Re-renders whatever container called it.
 function starBtnHTML(type,id,name,size){
   const on=isStarred(type,id);
-  return `<i class="ti ti-star" style="font-size:${size||14}px;color:${on?'#E6A700':'var(--muted)'};cursor:pointer;" title="${on?'Remove from starred':'Add to starred'}" onclick="event.stopPropagation();toggleStarAndRefresh('${type}','${id}',this.dataset.name||'')" data-name="${(name||'').replace(/"/g,'&quot;')}"></i>`;
+  return `<i class="ti ti-star" style="font-size:${size||14}px;color:${on?'var(--star)':'var(--muted)'};cursor:pointer;" title="${on?'Remove from starred':'Add to starred'}" onclick="event.stopPropagation();toggleStarAndRefresh('${type}','${id}',this.dataset.name||'')" data-name="${(name||'').replace(/"/g,'&quot;')}"></i>`;
 }
 function toggleStarAndRefresh(type,id,name){
   toggleStarItem(type,id,name);
   document.querySelectorAll(`[onclick*="toggleStarAndRefresh('${type}','${id}'"]`).forEach(elm=>{
     const on=isStarred(type,id);
-    elm.style.color=on?'#E6A700':'var(--muted)';
+    elm.style.color=on?'var(--star)':'var(--muted)';
     elm.title=on?'Remove from starred':'Add to starred';
   });
 }
@@ -11833,6 +11836,7 @@ function _getTimeEntries(){
         billable:lt.job?.isBillable!==false, // billability is on the nested job, not the logged-time top level
         sell:lt.totalExTax||0, // real ST sell value for this entry
         note:'',item:lt.itemName||'',notes:lt.notes||'', // item/notes: feat-c CSV export
+        _ltId:lt.id,_local:!!lt._local,
       };
     });
   }
@@ -11950,8 +11954,9 @@ function renderTime(){
   // Track collapsed groups in module scope — groups start minimised so the
   // Time view reads as a summary first; click a person to expand
   if(!window._timeCollapsedGroups)window._timeCollapsedGroups={};
+  const _singleGroup=Object.keys(byPerson).length===1;
   Object.keys(byPerson).forEach(pKey=>{
-    if(!(pKey in window._timeCollapsedGroups))window._timeCollapsedGroups[pKey]=true;
+    if(!(pKey in window._timeCollapsedGroups))window._timeCollapsedGroups[pKey]=!_singleGroup;
   });
   Object.keys(byPerson).forEach(pKey=>{
     const p=people[pKey]||Object.values(stUsersById).find(u=>u.key===pKey)||{name:pKey,color:'#999',initials:'?'};
@@ -11961,8 +11966,8 @@ function renderTime(){
     const isCollapsed=window._timeCollapsedGroups[pKey];
     const chevron=isCollapsed?'ti-chevron-right':'ti-chevron-down';
     rows+=`<tr class="time-group-row" style="cursor:pointer;" onclick="toggleTimeGroup('${pKey}')"><td colspan="7">
-      <span class="time-av" style="background:${p.color};">${p.initials}</span>
-      <strong>${p.name}</strong> &nbsp;<span style="color:var(--muted);font-weight:400;">${fmtH(pTotal)} total · ${fmtH(pBill)} billable · ${pEntries.length} entries</span>
+      <span class="time-av" style="background:${esc(p.color)};">${esc(p.initials)}</span>
+      <strong>${esc(p.name)}</strong> &nbsp;<span style="color:var(--muted);font-weight:400;">${fmtH(pTotal)} total · ${fmtH(pBill)} billable · ${pEntries.length} entries</span>
       <i class="ti ${chevron}" style="float:right;font-size:11px;color:var(--muted);margin-top:2px;"></i>
     </td></tr>`;
     if(!isCollapsed){
@@ -11977,7 +11982,7 @@ function renderTime(){
           <td style="color:var(--muted);font-size:12px;white-space:nowrap;">${fmtDate(e.date)}</td>
           <td style="text-align:right;font-variant-numeric:tabular-nums;">${fmtH(e.hours)}</td>
           <td>${e.billable?'<span class="t-bill">Billable</span>':'<span class="t-nobill">Non-billable</span>'}</td>
-          <td>${statusStr}</td>
+          <td>${statusStr}${e._local&&e._ltId?` <button class="rf-icon-btn rf-te-del" title="Delete this time entry (logged in the platform)" aria-label="Delete time entry" onclick="event.stopPropagation();rfDeleteTimeEntry('${esc(e._ltId)}')"><i class="ti ti-trash"></i></button>`:''}</td>
         </tr>`;
         if(e.note){
           rows+=`<tr class="tg-${pKey}"><td colspan="7"><div class="te-note-row"><i class="ti ti-note" style="font-size:11px;"></i> ${esc(e.note)}</div></td></tr>`;
@@ -12693,8 +12698,8 @@ function renderInvoices(){
     const _tbiArrow=col=>_tbiSortCol===col?(_tbiSortDir===1?' <i class="ti ti-chevron-up" style="font-size:10px;"></i>':' <i class="ti ti-chevron-down" style="font-size:10px;"></i>'):'';
     const _tbiTh=(col,label,alignRight)=>`<th class="inv-th ci-${col}" style="cursor:pointer;user-select:none;${alignRight?'text-align:right;':''}" onclick="_setTbiSort('${col}')">${label}${_tbiArrow(col)}</th>`;
     if(tbiJobs.length||hidden.length){
-      tbiHTML=`<div class="grp-hd" style="background:#fffbea;border-left:3px solid #F39C12;">
-        <span><i class="ti ti-alert-triangle" style="color:#F39C12;margin-right:6px;"></i>Uninvoiced jobs</span>
+      tbiHTML=`<div class="grp-hd" style="background:var(--warn-bg);border-left:3px solid var(--warn);">
+        <span><i class="ti ti-alert-triangle" style="color:var(--warn-ink);margin-right:6px;"></i>Uninvoiced jobs</span>
         <span style="font-weight:400;font-size:11px;display:flex;align-items:center;gap:10px;">${tbiJobs.length} job${tbiJobs.length!==1?'s':''} complete &amp; not invoiced${hidden.length?`<a href="#" onclick="event.preventDefault();showHiddenUninvoiced()" style="color:var(--muted);">${hidden.length} hidden</a>`:''}</span>
       </div>
       ${tbiJobs.length?`<table class="inv-table"><thead><tr>
@@ -13859,7 +13864,7 @@ function _ccRenderTimeGrouped(entries,gb){
         <td style="color:var(--muted);font-size:12px;white-space:nowrap;">${fd(e.date)}</td>
         <td style="text-align:right;font-variant-numeric:tabular-nums;">${fmtH(e.hours)}</td>
         <td>${e.billable?'<span class="t-bill">Billable</span>':'<span class="t-nobill">Non-billable</span>'}</td>
-        <td>${statusStr}</td>
+        <td>${statusStr}${e._local&&e._ltId?` <button class="rf-icon-btn rf-te-del" title="Delete this time entry (logged in the platform)" aria-label="Delete time entry" onclick="event.stopPropagation();rfDeleteTimeEntry('${esc(e._ltId)}')"><i class="ti ti-trash"></i></button>`:''}</td>
       </tr>`;
     });
   });
@@ -18201,6 +18206,8 @@ function _fdRenderPoList(){
 
 <style id="review-fix-styles">
 /* ── Review fixes (Nov 2026 platform review) ── */
+:root{--star:#E6A700;}
+body.dark{--star:#F2C14E;}
 .rf-teams{display:flex;flex-wrap:wrap;gap:8px;}
 .rf-team-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 10px 6px 12px;border:1px solid var(--border);border-radius:var(--r-ctl);background:var(--white);font-size:12.5px;color:var(--ink);}
 .rf-team-chip .rf-n,.rf-n{font-size:11px;color:var(--muted);}
@@ -18227,7 +18234,8 @@ function _fdRenderPoList(){
 .rf-note{font-size:11.5px;color:var(--muted);margin-top:14px;line-height:1.5;}
 .rf-ft-note{margin-right:auto;font-size:11.5px;color:var(--muted);align-self:center;}
 @media (max-width:720px){.rf-people{grid-template-columns:1fr;}}
-</style>
+.rf-te-del{width:22px;height:22px;font-size:12px;vertical-align:middle;margin-left:4px;opacity:0;}
+tr:hover .rf-te-del,.rf-te-del:focus{opacity:1;}</style>
 <script id="review-fix-script">
 /* Review fixes and additions (Nov 2026 platform review). New helpers live here; small
    in-place fixes are made where the original code is. */
@@ -18475,6 +18483,56 @@ function _rfGsActions(){
   };
 })();
 if(typeof _GS_CAT_CLS!=='undefined'){_GS_CAT_CLS['People']='gsc-clients';_GS_CAT_CLS['Recent']='gsc-jobs';}
+
+/* ── Time: delete a time entry logged in the platform (a mis-logged or doubled entry could not
+   be removed anywhere). Streamtime entries stay read-only. ───────────────────────────────── */
+function rfDeleteTimeEntry(id){
+  const e=(stLoggedTimes||[]).find(x=>x.id===id&&x._local);if(!e)return;
+  const what=`${formatHrs((e.minutes||0)/60)||'0m'}${e.job?.number?` on ${e.job.number}`:''}${e.date?` (${fmtDate(e.date)})`:''}`;
+  ccConfirm(`Delete ${esc(what)}? This removes the time from the job and reports.`,()=>{
+    const i=stLoggedTimes.findIndex(x=>x.id===id);if(i<0)return;
+    stLoggedTimes.splice(i,1);
+    // Any task that logged this entry can log again
+    Object.values(todoData||{}).forEach(wks=>Object.values(wks||{}).forEach(w=>[1,2,3,4,5].forEach(d=>(w[d]||[]).forEach(t=>{if(t._loggedEntry===id)delete t._loggedEntry;}))));
+    try{persistNativeData();}catch(err){}
+    try{resetTodoStore(true);}catch(err){}
+    try{if(e.job?.number)logActivity(String(e.job.number),MY_PERSON,'time_log',`Deleted logged time <strong>${esc(formatHrs((e.minutes||0)/60))}</strong>`);}catch(err){}
+    try{_refreshJobStats();}catch(err){}
+    try{renderTime();}catch(err){}
+    toast('Time entry deleted','success');
+  },'Delete',true);
+}
+
+/* ── Jobs bulk actions: "Select all N matching". Rows load 60 at a time, so ticking the header
+   box used to select (and archive/label) only the rows that happened to be rendered. ────── */
+let _rfAllMatching=false;
+(function(){
+  const _gs=getSelectedJobIds;
+  getSelectedJobIds=function(){
+    if(_rfAllMatching&&Array.isArray(window._rfJobsFiltered))return window._rfJobsFiltered.map(j=>j.id);
+    return _gs.apply(this,arguments);
+  };
+  const _ub=updateBulkBar;
+  updateBulkBar=function(){
+    const all=document.getElementById('jobs-cb-all');
+    const rendered=document.querySelectorAll('.job-cb').length;
+    const checked=document.querySelectorAll('.job-cb:checked').length;
+    if(_rfAllMatching&&checked<rendered)_rfAllMatching=false; // unticked a row → back to a normal selection
+    _ub.apply(this,arguments);
+    const bar=document.getElementById('bulk-bar');const cnt=document.getElementById('bulk-count');
+    if(!bar||!cnt)return;
+    bar.querySelector('#rf-bulk-all')?.remove();
+    const total=(window._rfJobsFiltered||[]).length;
+    if(_rfAllMatching){cnt.textContent=`All ${total} matching selected`;return;}
+    if(checked&&checked===rendered&&total>rendered){
+      cnt.insertAdjacentHTML('afterend',`<button class="bulk-btn" id="rf-bulk-all" onclick="_rfAllMatching=true;updateBulkBar()">Select all ${total} matching</button>`);
+    }
+  };
+  const _cs=clearJobSelection;
+  clearJobSelection=function(){_rfAllMatching=false;return _cs.apply(this,arguments);};
+  const _rj=renderJobs;
+  renderJobs=function(){_rfAllMatching=false;return _rj.apply(this,arguments);};
+})();
 
 /* ── Task modal: ⌘/Ctrl+Enter saves ───────────────────────────────────────────── */
 document.addEventListener('keydown',e=>{
