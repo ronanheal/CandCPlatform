@@ -19124,10 +19124,10 @@ body.dark .sidebar:hover,body.dark .sidebar:has(:focus-visible){box-shadow:0 6px
 /* Workspace mark: a slot that can take a future logo (img/svg) + workspace name */
 .ds-ws{display:flex;align-items:center;gap:12px;height:40px;margin:0 0 18px;padding:0 4px;flex-shrink:0;border-radius:12px;color:var(--ink);text-decoration:none;}
 .ds-ws .s-logo{width:36px!important;margin:0!important;flex-shrink:0;fill:var(--ink)!important;}
-.ds-ws-name{display:flex;flex-direction:column;line-height:1.15;opacity:0;transform:translateX(-4px);transition:opacity var(--d-2) ease,transform var(--d-3) var(--ease-out);white-space:nowrap;}
+.ds-ws-name{display:flex;flex-direction:column;line-height:1.15;opacity:0;visibility:hidden;transform:translateX(-4px);transition:opacity var(--d-2) ease,transform var(--d-3) var(--ease-out),visibility 0s linear var(--d-2);white-space:nowrap;}
 .ds-ws-name b{font:700 13.5px/1.15 var(--display);letter-spacing:-.02em;}
 .ds-ws-name small{font-size:11px;color:var(--muted);}
-.sidebar:hover .ds-ws-name,.sidebar:has(:focus-visible) .ds-ws-name{opacity:1;transform:none;transition-delay:.06s;}
+.sidebar:hover .ds-ws-name,.sidebar:has(:focus-visible) .ds-ws-name{opacity:1;visibility:visible;transform:none;transition-delay:.06s,.06s,0s;}
 .s-nav{position:relative;gap:2px!important;}
 .s-btn{height:40px!important;border-radius:12px!important;padding:0 11px!important;gap:14px!important;color:var(--muted)!important;font-size:19px!important;background:transparent!important;transition:color var(--d-1) ease,background var(--d-1) ease!important;z-index:1;}
 .s-btn i{transition:transform var(--d-2) var(--ease-spring);}
@@ -19285,6 +19285,9 @@ body.dark .sett-nav-item.active{background:var(--surface-2)!important;}
 .kpi-spark .ks-lbl{font-size:11px!important;letter-spacing:0!important;text-transform:none!important;}
 .att-title{font-family:var(--display);font-size:15px!important;font-weight:700!important;letter-spacing:-.015em!important;}
 .sett-card-hd{font:700 14px/1.3 var(--display)!important;letter-spacing:-.01em!important;text-transform:none!important;color:var(--ink)!important;padding:16px 20px!important;}
+.sett-card-hd{gap:8px;}
+.sett-card-hd>span{font-family:var(--font);font-size:13px;}
+.items-t th,.prog-card-hd,.prog-lbl,.micro-lbl,.tm-panel-section-lbl{text-transform:none!important;letter-spacing:0!important;font-weight:600!important;font-size:11.5px!important;}
 .sett-card-body{padding:20px!important;}
 
 /* ── 10 · Progress bars / meters ────────────────────────────────────────────────────────── */
@@ -19499,12 +19502,14 @@ html.ds-theming *,html.ds-theming *::before,html.ds-theming *::after{transition:
   const STAG='.kpi,.hp-card,.att-card,.my-todos,.time-stat,.rv-kpi,.rv-card,.sett-card,.client-card-full,.bv-tile,.bv-tpl,.team-card,.rf-ts-card,.jobs-table-wrap,.time-table-wrap,#invoices-list,#quotes-list,#exp-list-wrap,.section-label';
   const NUMS='.kpi-val,.time-stat .ts-val,.rv-kpi-v,.r-kpi-val';
   const seen=new Set();
+  function choreograph(root){
+    let i=0;root.querySelectorAll(STAG).forEach(el=>{if(el.offsetParent!==null&&i<14)el.style.setProperty('--ds-i',i++);});
+    root.classList.add('ds-enter');root.querySelectorAll(NUMS).forEach(el=>countUp(el));
+    clearTimeout(root._dsT);root._dsT=setTimeout(()=>root.classList.remove('ds-enter'),1100);
+  }
   function enter(root,key){
     if(!root||still()||seen.has(key))return;seen.add(key);
-    const go=()=>{let i=0;root.querySelectorAll(STAG).forEach(el=>{if(el.offsetParent!==null&&i<14)el.style.setProperty('--ds-i',i++);});
-      root.classList.add('ds-enter');root.querySelectorAll(NUMS).forEach(el=>countUp(el));
-      clearTimeout(root._dsT);root._dsT=setTimeout(()=>root.classList.remove('ds-enter'),1100);};
-    raf(go);
+    setTimeout(()=>choreograph(root),0);
   }
   window.dsEnter=enter;
 
@@ -19580,7 +19585,10 @@ html.ds-theming *,html.ds-theming *::before,html.ds-theming *::after{transition:
     wrap('switchReportTab',args=>{setTimeout(()=>enter(document.getElementById('view-reporting'),'rep:'+args[0]),140);});
     // Dashboard: the boot render is the first paint — wait for real numbers, then choreograph
     wrap('renderDashboard',()=>{const ve=document.getElementById('view-dashboard');
-      if(!ve||ve.classList.contains('hidden')||seen.has('view:dashboard'))return;
+      if(!ve||ve.classList.contains('hidden'))return;
+      // A data refresh landing mid-entrance re-plays as part of the same entrance
+      if(ve.classList.contains('ds-enter')){choreograph(ve);return;}
+      if(seen.has('view:dashboard'))return;
       if(!ve.querySelector('.kpi'))return;
       const splash=document.getElementById('cc-splash');
       setTimeout(()=>enter(ve,'view:dashboard'),splash?520:0);});
