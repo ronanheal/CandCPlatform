@@ -12827,40 +12827,35 @@ function _buildTabFilters(tab){
   }
   if(tab==='clients'){
     wrap.appendChild(mkSel('r-client-sel','All clients',allCos.map(c=>[c])));
+    const lb=document.createElement('label');lb.className='filter-btn rv-chk';lb.title='Include time on non-billable (internal) jobs';
+    lb.innerHTML=`<input type="checkbox"${typeof RV!=='undefined'&&RV.state.clientsInternal?' checked':''} onchange="_rvSetClientsInternal(this.checked)"> Include internal time`;
+    wrap.appendChild(lb);
   }
 }
 
-function _getPeriodCutoff(){
+// Report period as whole local days: "Last 30 days" = today and the 29 days before it, so a
+// figure no longer depends on the time of day the page was opened. Returns ISO date strings;
+// from is null for "All time". _rvRange() (report-v2-script) adds the previous equal period.
+function _reportDates(){
   const period=document.getElementById('r-period')?.value||'month';
-  const now=Date.now();
-  if(period==='week')return now-7*86400000;
-  if(period==='2weeks')return now-14*86400000;
-  if(period==='month')return now-30*86400000;
-  if(period==='quarter')return now-90*86400000;
-  if(period==='year')return now-365*86400000;
-  if(period==='custom'){const f=document.getElementById('r-from')?.value;return f?new Date(f+'T00:00:00').getTime():0;}
-  return 0;
+  const today=new Date();today.setHours(0,0,0,0);
+  const N={week:7,'2weeks':14,month:30,quarter:90,year:365}[period];
+  let from=null,to=_localISO(today);
+  if(N){const f=new Date(today);f.setDate(f.getDate()-(N-1));from=_localISO(f);}
+  else if(period==='custom'){from=document.getElementById('r-from')?.value||null;to=document.getElementById('r-to')?.value||to;}
+  return{period,from,to};
 }
-function _getPeriodCeiling(){
-  const period=document.getElementById('r-period')?.value||'month';
-  if(period==='custom'){const t=document.getElementById('r-to')?.value;return t?new Date(t+'T23:59:59').getTime():Date.now();}
-  return Date.now();
-}
+function _getPeriodCutoff(){const r=_reportDates();return r.from?_pDate(r.from).getTime():0;}
+function _getPeriodCeiling(){const r=_reportDates();const d=_pDate(r.to);d.setHours(23,59,59,999);return d.getTime();}
 
-function getFilteredTasks(){
-  const period=(document.getElementById('r-period')?.value)||'month';
+// Logged time for the report period (or an explicit {from,to} ISO range — used for the
+// previous-period comparisons), honouring the People/Jobs filters on the toolbar.
+function getFilteredTasks(range){
   const person=(document.getElementById('r-person')?.value)||'all';
   const jobFilter=(document.getElementById('r-job')?.value)||'all';
+  const r=range||_reportDates();
+  const inRange=ds=>!!ds&&(!r.from||ds>=r.from)&&ds<=r.to;
   let tasks=[];
-  const now=new Date();
-  let cutoffMs=_getPeriodCutoff();
-  const ceilingMs=_getPeriodCeiling();
-  if(period!=='custom'){
-    if(period==='week')cutoffMs=now-7*86400000;
-    else if(period==='2weeks')cutoffMs=now-14*86400000;
-    else if(period==='month')cutoffMs=now-30*86400000;
-    else if(period==='quarter')cutoffMs=now-90*86400000;
-  }
 
   // ST logged times (primary source)
   if(stLoggedTimes.length){
@@ -12873,9 +12868,9 @@ function getFilteredTasks(){
       }else if(person!=='all'&&pKey!==person)return;
       const jobNum=lt.job?.number?String(lt.job.number):null;
       if(jobFilter!=='all'&&jobFilter!==jobNum)return;
-      const d=new Date((lt.date||'').slice(0,10)+'T12:00:00');
-      if(cutoffMs&&d.getTime()<cutoffMs)return;
-      if(period==='custom'&&d.getTime()>ceilingMs)return;
+      const ds=(lt.date||'').slice(0,10);
+      if(!inRange(ds))return;
+      const d=_pDate(ds);
       const dayNum=((d.getDay()+6)%7)+1;
       // Weekend time is kept (it was dropped from every report); the Mon–Fri day chart skips it (L13)
       const weekMon=new Date(d);weekMon.setDate(d.getDate()-((d.getDay()+6)%7));weekMon.setHours(0,0,0,0);
@@ -12884,13 +12879,17 @@ function getFilteredTasks(){
         title:lt.notes||lt.itemName||lt.job?.name||'',
         person:pKey,personName:u.name,
         job:jobNum?(jobNum+(lt.job?.name?' '+lt.job.name:'')):'',
+        jobNum:jobNum||'',
         item:lt.itemName||'',
         hours:(lt.minutes||0)/60,
+        sell:+lt.totalExTax||0,
+        cost:(lt.minutes||0)/60*((u.costRate)||_defCostRate()),
+        costEst:!!u.costRateIsDefault,
         done:true,urgent:false,
         billable:lt.job?.isBillable!==false, // billability is on the nested job, not the logged-time top level
         day:dayNum,
         weekKey:_localISO(weekMon), // real local Monday — toISOString() gave Sunday in NZ (M5)
-        date:(lt.date||'').slice(0,10),
+        date:ds,
         _fromST:true,
       });
     });
@@ -12910,10 +12909,11 @@ function getFilteredTasks(){
       for(let d=1;d<=5;d++){
         const dayTasks=weekDays[d]||[];
         dayTasks.forEach(t=>{
-          if(jobFilter!=='all'){const jn=t.jobId||t.job?.match(/^(\d+)/)?.[1];if(jn!==jobFilter)return;}
+          const jn=t.jobId||t.job?.match(/^(\d+)/)?.[1];
+          if(jobFilter!=='all'&&jn!==jobFilter)return;
           const weekMon=_weekKeyMonday(weekKey);const taskDate=new Date(weekMon);taskDate.setDate(weekMon.getDate()+(d-1));
-          if(cutoffMs&&taskDate.getTime()<cutoffMs)return;
-          tasks.push({...t,person:pKey,personName:people[pKey]?.name||pKey,day:d,weekKey:_localISO(weekMon),date:_localISO(taskDate)});
+          const ds=_localISO(taskDate);if(!inRange(ds))return;
+          tasks.push({...t,jobNum:jn||'',sell:0,cost:0,person:pKey,personName:people[pKey]?.name||pKey,day:d,weekKey:_localISO(weekMon),date:ds});
         });
       }
     });
@@ -12992,453 +12992,25 @@ function setTeamTarget(team,val){
   try{localStorage.setItem('cc_team_targets',JSON.stringify(t));}catch(e){}
   _renderTeamsReport();toast(`${team} target ${n?'set to '+n+'%':'cleared'}`,'success');
 }
-function _renderTeamsReport(){
-  const el=document.getElementById('rp-teams');if(!el)return;
-  const tasks=getFilteredTasks();
-  const W=7*86400000,cut=_getPeriodCutoff(),ceil=_getPeriodCeiling();
-  let weeks=4.3;
-  if(cut)weeks=Math.max(1,(ceil-cut)/W);
-  else{let first=Infinity;(stLoggedTimes||[]).forEach(l=>{const d=_pDate((l.date||'').slice(0,10));if(d&&d<first)first=+d;});if(first<Infinity)weeks=Math.max(1,(ceil-first)/W);}
-  const sellById={};(stLoggedTimes||[]).forEach(l=>{sellById['st-lt-'+l.id]=+l.totalExTax||0;});
-  const active=Object.keys(people).filter(k=>!people[k]._archived);
-  const teams={};
-  active.forEach(k=>{const t=people[k].team||'No team';(teams[t]=teams[t]||{name:t,members:[],h:0,bill:0,rev:0,cap:0,jobs:{},per:{}}).members.push(k);});
-  Object.values(teams).forEach(T=>T.members.forEach(k=>{
-    let cap=personWeeklyCap(k)*weeks;
-    try{if(typeof _ccLeaveHoursInReportPeriod==='function')cap=Math.max(0,cap-_ccLeaveHoursInReportPeriod(k));}catch(e){}
-    T.cap+=cap;T.per[k]={h:0,bill:0,cap};
-  }));
-  tasks.forEach(t=>{
-    const k=t.person;const T=Object.values(teams).find(x=>x.members.includes(k));if(!T)return;
-    const h=+t.hours||0;T.h+=h;T.per[k].h+=h;
-    if(t.billable!==false){T.bill+=h;T.per[k].bill+=h;}
-    T.rev+=sellById[t.id]||0;
-    const jn=(t.job||'').trim();if(jn)T.jobs[jn]=(T.jobs[jn]||0)+h;
-  });
-  const targets=_getTeamTargets();const admin=_isAdmin();
-  const list=Object.values(teams).filter(T=>T.members.length).sort((a,b)=>(a.name==='No team')-(b.name==='No team')||b.h-a.h);
-  if(!list.length){el.innerHTML=emptyStateHTML('ti-users-group','No teams yet','Give people a team in Settings → Team to see how each department is tracking.');return;}
-  const pct=(a,b)=>b>0?Math.round(a/b*100):0;
-  const cards=list.map(T=>{
-    const util=pct(T.bill,T.cap),billPct=pct(T.bill,T.h),tgt=targets[T.name]||0;
-    const state=!tgt?'':util>=tgt?'ok':util>=tgt*0.85?'near':'under';
-    const col=state==='ok'?'var(--ok)':state==='near'?'var(--warn)':state==='under'?'var(--red)':'var(--ink)';
-    const topJobs=Object.entries(T.jobs).sort((a,b)=>b[1]-a[1]).slice(0,3);
-    const ppl=T.members.map(k=>{const P=T.per[k];const u=pct(P.bill,P.cap);return`<div class="tm-row"><span class="sw-av" style="background:${people[k].color||'#999'}">${esc(people[k].initials||'?')}</span><span class="tm-n">${esc(people[k].name)}</span><span class="tm-bar"><i style="width:${Math.min(100,u)}%;"></i></span><span class="tm-v">${u}%</span></div>`;}).join('');
-    return`<div class="team-rep">
-      <div class="tr-hd"><div><div class="tr-name">${esc(T.name)}</div><div class="tr-sub">${T.members.length} ${T.members.length===1?'person':'people'} · ${formatHrs(T.cap)||'0h'} capacity</div></div>
-        <div class="tr-target">${admin?`<label>Target <input type="number" min="0" max="150" value="${tgt||''}" placeholder="—" onchange="setTeamTarget('${esc(T.name).replace(/'/g,"\\'")}',this.value)">%</label>`:tgt?`<span>Target ${tgt}%</span>`:''}</div></div>
-      <div class="tr-big"><span class="tr-util" style="color:${col};">${util}%</span><span class="tr-util-lbl">billable utilisation${state==='ok'?' · on target':state==='near'?' · close to target':state==='under'?' · under target':''}</span></div>
-      <div class="tr-meter"><i style="width:${Math.min(100,util)}%;background:${col};"></i>${tgt?`<b style="left:${Math.min(100,tgt)}%;" title="Target ${tgt}%"></b>`:''}</div>
-      <div class="tr-stats">
-        <div><span>${formatHrs(T.bill)||'0h'}</span>Billable</div>
-        <div><span>${formatHrs(T.h)||'0h'}</span>Logged</div>
-        <div><span>${billPct}%</span>Billable share</div>
-        <div><span>${fmtDollar(T.rev)}</span>Revenue</div>
-      </div>
-      <div class="tr-sec">People</div>${ppl}
-      ${topJobs.length?`<div class="tr-sec">Top jobs</div>${topJobs.map(([j,h])=>`<div class="tm-row tm-job"><span class="tm-n">${esc(j)}</span><span class="tm-v">${formatHrs(h)}</span></div>`).join('')}`:''}
-    </div>`;
-  }).join('');
-  el.innerHTML=`<div class="team-rep-grid">${cards}</div>
-    <div class="c2-sched-note" style="margin-top:14px;">Utilisation = billable hours ÷ capacity (working hours less leave) for the period.${admin?' Targets are set per team by admins.':''}</div>`;
-}
+// Every tab renders through report-v2-script (shared sections, tables, number formats).
+// Business and Clients stay separate entry points: feat-d wraps them to add platform invoices.
+function _renderTeamsReport(){const el=document.getElementById('rp-teams');if(el)_rvTeams(el);}
 
 // ── BUSINESS ─────────────────────────────────────────────────────────────────
-function _renderBusinessReport(){
-  const el=document.getElementById('rp-business');if(!el)return;
-  const tasks=getFilteredTasks();
-  const cutoff=_getPeriodCutoff();
-  const ceiling=_getPeriodCeiling();
-  const bizCo=document.getElementById('r-biz-company')?.value||'all';
-  const _invDate=inv=>new Date(((inv.invoiceDate||inv.sentDate||'')+'').slice(0,10)+'T12:00:00');
-  const _invInPeriod=inv=>{const d=_invDate(inv);return(!cutoff||d.getTime()>=cutoff)&&d.getTime()<=ceiling;};
-  const _invForCo=inv=>bizCo==='all'||(inv.company?.name||'')===(bizCo);
-  const filtInv=stInvoices.filter(inv=>_invInPeriod(inv)&&_invForCo(inv));
-  const filtTasks=bizCo==='all'?tasks:tasks.filter(t=>{
-    // Exact job-number match, not startsWith — t.job is "<number> <name>", and startsWith
-    // let job "12" match "120"/"123"/"1234" (the same substring bug class fixed elsewhere
-    // in the v2.20.2 data audit; this call site had been missed).
-    const num=t.job?t.job.match(/^(\d+)/)?.[1]:null;
-    const j=num?jobs.find(jj=>jj.id===num):null;
-    return j&&j.company===bizCo;
-  });
-  const totalH=filtTasks.reduce((s,t)=>s+(t.hours||0),0);
-  const billH=filtTasks.filter(t=>t.billable!==false&&t.job).reduce((s,t)=>s+(t.hours||0),0);
-  const nbillH=totalH-billH;
-  const liveJobs=jobs.filter(j=>j.status==='inplay'&&(bizCo==='all'||j.company===bizCo));
-  const totalInvoiced=filtInv.reduce((s,inv)=>s+(inv.totalAmountExTax||0),0);
-  const totalPaid=filtInv.filter(inv=>(inv.invoiceStatus?.name||'').toLowerCase()==='paid').reduce((s,inv)=>s+(inv.totalAmountExTax||0),0);
-  const billPct=totalH>0?Math.round(billH/totalH*100):0;
-
-  // Year-over-year revenue breakdown (always uses full stInvoices regardless of period)
-  const _yoyHTML=(()=>{
-    const byYear={};
-    stInvoices.filter(_invForCo).forEach(inv=>{
-      const d=_invDate(inv);const yr=d.getFullYear();if(!yr||yr<2010||yr>2099)return;
-      if(!byYear[yr])byYear[yr]={inv:0,paid:0,count:0};
-      byYear[yr].inv+=(inv.totalAmountExTax||0);
-      byYear[yr].count++;
-      if((inv.invoiceStatus?.name||'').toLowerCase()==='paid')byYear[yr].paid+=(inv.totalAmountExTax||0);
-    });
-    const yrs=Object.keys(byYear).sort();if(!yrs.length)return'';
-    const maxInv=Math.max(...yrs.map(y=>byYear[y].inv),1);
-    return`<div class="r-section"><div class="r-section-hd">Revenue by year <span style="text-transform:none;letter-spacing:0;color:var(--muted);">— all time · ex GST</span></div>
-      <table style="width:100%;border-collapse:collapse;font-size:12px;">
-        <thead><tr style="border-bottom:1px solid var(--border);">
-          <th style="text-align:left;padding:6px 0;font-size:10px;color:var(--muted);font-weight:400;text-transform:uppercase;letter-spacing:.08em;">Year</th>
-          <th style="padding:6px 10px;font-size:10px;color:var(--muted);font-weight:400;text-transform:uppercase;letter-spacing:.08em;">#</th>
-          <th style="text-align:right;padding:6px 0;font-size:10px;color:var(--muted);font-weight:400;text-transform:uppercase;letter-spacing:.08em;">Invoiced</th>
-          <th style="text-align:right;padding:6px 0 6px 12px;font-size:10px;color:var(--muted);font-weight:400;text-transform:uppercase;letter-spacing:.08em;">Paid</th>
-          <th style="padding:6px 0 6px 16px;width:180px;"></th>
-        </tr></thead><tbody>
-        ${yrs.map(yr=>{
-          const row=byYear[yr];const pct=Math.round(row.inv/maxInv*100);
-          return`<tr style="border-bottom:1px solid var(--faint,#f5f4f2);">
-            <td style="padding:7px 0;font-weight:500;">${yr}</td>
-            <td style="padding:7px 10px;color:var(--muted);">${row.count}</td>
-            <td style="text-align:right;padding:7px 0;font-variant-numeric:tabular-nums;">${fmtDollar(row.inv)}</td>
-            <td style="text-align:right;padding:7px 0 7px 12px;color:var(--ok-ink);font-variant-numeric:tabular-nums;">${fmtDollar(row.paid)}</td>
-            <td style="padding:7px 0 7px 16px;"><div style="height:14px;background:var(--faint);border-radius:6px;overflow:hidden;"><div style="width:${pct}%;height:100%;background:var(--red);border-radius:6px;min-width:2px;"></div></div></td>
-          </tr>`;
-        }).join('')}
-        </tbody>
-      </table></div>`;
-  })();
-
-  // Hours by week buckets for trend chart
-  const weekBuckets={};
-  tasks.forEach(t=>{
-    if(!t.weekKey)return;
-    weekBuckets[t.weekKey]=(weekBuckets[t.weekKey]||0)+(t.hours||0);
-  });
-  const wKeys=Object.keys(weekBuckets).sort();
-  const wLabels=wKeys.map(k=>{const d=new Date(k+'T00:00:00');return`${d.getDate()}/${d.getMonth()+1}`;});
-  const wData=wKeys.map(k=>weekBuckets[k]);
-
-  // Billable split for doughnut
-  const splitPalette=['#ED1E24',CHART_NONBILL];
-
-  el.innerHTML=`
-    <div class="r-kpi-grid">
-      <div class="r-kpi"><div class="r-kpi-lbl">Total hours</div><div class="r-kpi-val">${fmtHrs(totalH)}</div><div class="r-kpi-sub">${billPct}% billable</div><div class="r-kpi-bar"><div class="r-kpi-fill" style="width:${billPct}%;background:var(--red);"></div></div></div>
-      <div class="r-kpi"><div class="r-kpi-lbl">Billable hours</div><div class="r-kpi-val">${fmtHrs(billH)}</div><div class="r-kpi-sub">${fmtHrs(nbillH)} non-billable</div><div class="r-kpi-bar"><div class="r-kpi-fill" style="width:${billPct}%;background:var(--ok);"></div></div></div>
-      <div class="r-kpi"><div class="r-kpi-lbl">Revenue invoiced</div><div class="r-kpi-val">${fmtDollar(totalInvoiced)}</div><div class="r-kpi-sub">${fmtDollar(totalPaid)} paid</div><div class="r-kpi-bar"><div class="r-kpi-fill" style="width:${totalInvoiced>0?Math.min(100,Math.round(totalPaid/totalInvoiced*100)):0}%;background:var(--ok);"></div></div></div>
-      <div class="r-kpi"><div class="r-kpi-lbl">Active jobs</div><div class="r-kpi-val">${liveJobs.length}</div><div class="r-kpi-sub">of ${jobs.length} total</div><div class="r-kpi-bar"><div class="r-kpi-fill" style="width:${Math.min(100,Math.round(liveJobs.length/Math.max(1,jobs.length)*100))}%;background:#3498DB;"></div></div></div>
-    </div>
-    <div class="r-charts-2">
-      <div class="r-chart-card"><div class="r-chart-h">Hours logged per week</div><div class="r-chart-wrap"><canvas id="rc-trend"></canvas></div></div>
-      <div class="r-chart-card"><div class="r-chart-h">Billable vs non-billable</div><div class="r-chart-wrap"><canvas id="rc-split"></canvas></div></div>
-    </div>
-    ${_yoyHTML}
-    ${(function(){
-      const qStr=q=>(typeof q.quoteStatus==='string'?q.quoteStatus:q.quoteStatus?.name||'').toLowerCase();
-      const quotesSent=(stQuotes||[]).filter(q=>q.sentDate||qStr(q).includes('approv')||qStr(q).includes('pending'));
-      const quotesApproved=(stQuotes||[]).filter(q=>qStr(q).includes('approv')&&!qStr(q).includes('pending'));
-      const jobsLive=jobs.filter(j=>j.status==='inplay');
-      const jobsComplete=jobs.filter(j=>j.workflowStatus==='completed'||j.status==='complete');
-      const invoiced=(stInvoices||[]).filter(i=>{const s=(i.invoiceStatus?.name||'').toLowerCase();return s&&s!=='draft'&&s!=='voided';});
-      const paid=(stInvoices||[]).filter(i=>(i.invoiceStatus?.name||'').toLowerCase()==='paid');
-      // [label, count, colour, conversionBaseIndex] — conv only shown where the ratio is meaningful
-      const stages=[['Quotes sent',quotesSent.length,'#B9AFA2',null],['Approved',quotesApproved.length,'#7B9E87',0],['Jobs live',jobsLive.length,'#8A6A2E',null],['Completed',jobsComplete.length,'#C4956A',null],['Invoiced',invoiced.length,'#9B7B6B',null],['Paid',paid.length,'#4CAF50',4]];
-      const max=Math.max(...stages.map(s=>s[1]),1);
-      return `<div class="r-section"><div class="r-section-hd">Pipeline funnel <span style="text-transform:none;letter-spacing:0;color:var(--muted);">— volume by stage (all time)</span></div>
-        ${stages.map((s)=>{
-          const base=s[3]!=null?stages[s[3]][1]:null;
-          const conv=base&&base>0?Math.round(s[1]/base*100):null;
-          return`<div style="display:flex;align-items:center;gap:12px;padding:5px 0;">
-            <span style="width:90px;font-size:12px;color:var(--muted);flex-shrink:0;">${s[0]}</span>
-            <div style="flex:1;height:22px;background:var(--faint);border-radius:8px;overflow:hidden;"><div style="width:${Math.round(s[1]/max*100)}%;height:100%;background:${s[2]};border-radius:8px;min-width:2px;"></div></div>
-            <span style="width:44px;text-align:right;font-weight:500;font-size:13px;">${s[1]}</span>
-            <span style="width:90px;text-align:right;font-size:11px;color:var(--muted);">${conv!=null?conv+'% of '+stages[s[3]][0].toLowerCase():''}</span>
-          </div>`;
-        }).join('')}</div>`;
-    })()}
-    ${(function(){
-      const uninvJobs=jobs.filter(j=>{if(!_uninvEligible(j)||(bizCo!=='all'&&j.company!==bizCo))return false;const gap=(j._sellUsed||0)-(j._stInvoiced||0);return gap>=100;}).sort((a,b)=>((b._sellUsed||0)-(b._stInvoiced||0))-((a._sellUsed||0)-(a._stInvoiced||0)));
-      const totalUninv=uninvJobs.reduce((s,j)=>s+Math.max(0,(j._sellUsed||0)-(j._stInvoiced||0)),0);
-      if(!uninvJobs.length)return'';
-      return`<div class="r-section"><div class="r-section-hd">Uninvoiced work <span style="text-transform:none;letter-spacing:0;color:var(--muted);">— revenue logged but not yet invoiced · ${fmtDollar(totalUninv)} total</span></div>
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-          <thead><tr style="border-bottom:1px solid var(--border);">
-            <th style="text-align:left;padding:6px 10px 6px 0;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:400;">Job</th>
-            <th style="text-align:left;padding:6px 10px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:400;">Client</th>
-            <th style="text-align:right;padding:6px 0 6px 10px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:400;">Revenue logged</th>
-            <th style="text-align:right;padding:6px 0 6px 10px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:400;">Invoiced</th>
-            <th style="text-align:right;padding:6px 0 6px 10px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:400;">Gap</th>
-          </tr></thead><tbody>
-          ${uninvJobs.slice(0,15).map(j=>{const gap=(j._sellUsed||0)-(j._stInvoiced||0);return`<tr style="border-bottom:1px solid var(--faint);cursor:pointer;" onclick="openJobDetail('${j.id}')">
-            <td style="padding:7px 10px 7px 0;"><span class="job-num" style="font-size:10px;">${j.id}</span> ${j.name}</td>
-            <td style="padding:7px 10px;color:var(--muted);">${esc(j.company)}</td>
-            <td style="padding:7px 0 7px 10px;text-align:right;">$${(j._sellUsed||0).toLocaleString()}</td>
-            <td style="padding:7px 0 7px 10px;text-align:right;color:var(--muted);">$${(j._stInvoiced||0).toLocaleString()}</td>
-            <td style="padding:7px 0 7px 10px;text-align:right;font-weight:500;color:#9C6FD6;">$${Math.round(gap).toLocaleString()}</td>
-          </tr>`;}).join('')}
-          </tbody>
-        </table>
-      </div>`;
-    })()}
-    <div class="r-section">
-      <div class="r-section-hd">Over-budget jobs</div>
-      ${jobs.filter(j=>j.status==='inplay'&&(j._bPct||0)>=90).sort((a,b)=>(b._bPct||0)-(a._bPct||0)).slice(0,10).map(j=>`
-        <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--faint);">
-          <span style="font-size:12px;color:var(--muted);width:50px;flex-shrink:0;">${j.id}</span>
-          <span style="flex:1;font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;color:var(--ink);" onclick="openJobDetail('${j.id}')">${j.name}</span>
-          <span style="font-size:12px;color:var(--muted);">${j.company||''}</span>
-          <div style="width:120px;height:6px;background:var(--faint);border-radius:6px;overflow:hidden;flex-shrink:0;"><div style="width:${Math.min(100,j._bPct||0)}%;height:100%;background:${(j._bPct||0)>=100?'var(--red)':'#F57F17'};border-radius:6px;"></div></div>
-          <span style="font-size:12px;font-weight:500;color:${(j._bPct||0)>=100?'var(--red)':'#F57F17'};width:42px;text-align:right;">${j._bPct||0}%</span>
-        </div>`).join('')||'<div style="color:var(--muted);font-size:13px;padding:16px 0;">No jobs near or over budget.</div>'}
-    </div>
-    ${(()=>{
-      const _dn=new Date();_dn.setHours(0,0,0,0);
-      const dueSoon=jobs.filter(j=>j.dueDate&&j.status==='inplay').map(j=>({j,d:_pDate(j.dueDate)})).filter(({d})=>(d-_dn)/86400000<=7&&d>=_dn).sort((a,b)=>a.d-b.d);
-      const overdue=jobs.filter(j=>j.dueDate&&j.status==='inplay').map(j=>({j,d:_pDate(j.dueDate)})).filter(({d})=>d<_dn).sort((a,b)=>a.d-b.d);
-      if(!dueSoon.length&&!overdue.length)return'';
-      const rows=[...overdue,...dueSoon].slice(0,10).map(({j,d})=>{
-        const daysLeft=Math.round((d-_dn)/86400000);
-        const over=daysLeft<0;
-        const lbl=over?`Overdue ${Math.abs(daysLeft)}d`:`Due in ${daysLeft}d`;
-        const col=over?'var(--red)':'#E65100';
-        return`<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--faint);">
-          <span style="font-size:12px;color:var(--muted);width:50px;flex-shrink:0;">${j.id}</span>
-          <span style="flex:1;font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;color:var(--ink);" onclick="openJobDetail('${j.id}')">${j.name}</span>
-          <span style="font-size:12px;color:var(--muted);">${j.company||''}</span>
-          <span style="font-size:11px;font-weight:500;color:${col};white-space:nowrap;">${lbl}</span>
-        </div>`;
-      }).join('');
-      return`<div class="r-section"><div class="r-section-hd">Deadlines</div>${rows}</div>`;
-    })()}`;
-
-  _makeChart('rc-trend',{type:'bar',data:{labels:wLabels,datasets:[{data:wData,backgroundColor:'#ED1E24bb',hoverBackgroundColor:'#ED1E24'}]},options:_chartOpts()});
-  _makeChart('rc-split',{type:'doughnut',data:{labels:['Billable','Non-billable'],datasets:[{data:[billH,nbillH],backgroundColor:splitPalette,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12}}}}});
-}
+function _renderBusinessReport(){const el=document.getElementById('rp-business');if(el)_rvBusiness(el);}
 
 // ── PEOPLE ────────────────────────────────────────────────────────────────────
-function _renderPeopleReport(){
-  const el=document.getElementById('rp-people');if(!el)return;
-  const personFilter=document.getElementById('r-person')?.value||'all';
-  const _period=document.getElementById('r-period')?.value||'month';
-  // Capacity weeks = the period's real span. The old lookup had no year/all/custom entries and
-  // fell back to ~1 month, so "This year" showed ~1,000% utilisation (bug audit M6).
-  const _periodWeeks=(()=>{
-    const W=7*86400000,cut=_getPeriodCutoff(),ceil=_getPeriodCeiling();
-    if(cut)return Math.max(1,(ceil-cut)/W);
-    let first=Infinity;(stLoggedTimes||[]).forEach(l=>{const d=_pDate((l.date||'').slice(0,10));if(d&&d<first)first=+d;});
-    return first===Infinity?4.3:Math.max(1,(ceil-first)/W);
-  })();
-  const tasks=getFilteredTasks();
-  const palette=CHART_PALETTE;
-
-  // Group by person
-  const byPerson={};
-  tasks.forEach(t=>{
-    const key=t.personKey||t.person;
-    const u=stUsersById[Object.values(stUsersById).find(x=>x.key===key)?.id]||null;
-    const name=u?.name||people[key]?.name||key;
-    const color=u?.color||people[key]?.color||'#999';
-    if(!byPerson[key])byPerson[key]={name,color,hours:0,billH:0,jobs:new Set()};
-    byPerson[key].hours+=t.hours||0;
-    const _tjid=t.jobId||(t.job||'').match(/^(\d+)/)?.[1];
-    if(t.billable!==false&&_tjid)byPerson[key].billH+=t.hours||0;
-    if(_tjid)byPerson[key].jobs.add(_tjid);
-  });
-
-  const entries=Object.entries(byPerson).sort((a,b)=>b[1].hours-a[1].hours);
-  const maxH=entries.length?entries[0][1].hours:1;
-  const pLabels=entries.map(([,v])=>v.name);
-  const pHours=entries.map(([,v])=>v.hours);
-  const pColors=entries.map(([,v])=>v.color);
-
-  // Hours by day of week
-  const dayTotals=[0,0,0,0,0];
-  tasks.forEach(t=>{if(t.day>=1&&t.day<=5)dayTotals[t.day-1]+=t.hours||0;});
-
-  el.innerHTML=`
-    <div class="r-people-grid">
-      ${entries.map(([k,v])=>{
-        const billPct=v.hours>0?Math.round(v.billH/v.hours*100):0;
-        const barW=Math.round(v.hours/maxH*100);
-        return`<div class="r-person-card">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
-            <div style="width:32px;height:32px;border-radius:50%;background:${v.color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0;">${v.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div>
-            <div class="r-person-card-name">${v.name}</div>
-          </div>
-          <div class="r-person-card-hours">${fmtHrs(v.hours)}</div>
-          <div class="r-person-card-meta">${billPct}% billable · ${v.jobs.size} job${v.jobs.size!==1?'s':''}</div>
-          <div class="r-kpi-bar" style="margin-top:8px;"><div class="r-kpi-fill" style="width:${barW}%;background:${v.color};"></div></div>
-        </div>`;
-      }).join('')||'<div style="color:var(--muted);font-size:13px;grid-column:1/-1;padding:24px 0;">No data for this period.</div>'}
-    </div>
-    <div class="r-charts-2">
-      <div class="r-chart-card"><div class="r-chart-h">Hours by person</div><div class="r-chart-wrap"><canvas id="rc-people-bar"></canvas></div></div>
-      <div class="r-chart-card"><div class="r-chart-h">Hours by day of week</div><div class="r-chart-wrap"><canvas id="rc-people-day"></canvas></div></div>
-    </div>
-    <div class="r-section">
-      <div class="r-section-hd">Utilisation &amp; logged time <span style="text-transform:none;letter-spacing:0;color:var(--muted);">— billable hours vs capacity over the period</span></div>
-      <div class="r-table-wrap"><table class="r-table"><thead><tr><th>Person</th><th>Total hours</th><th>Billable</th><th>Non-billable</th><th>Capacity</th><th>Utilisation</th><th>Jobs</th></tr></thead><tbody>
-        ${entries.map(([k,v])=>{
-          const cap=Math.max(0,Math.round(personWeeklyCap(k)*_periodWeeks-(window._ccLeaveHoursInReportPeriod?_ccLeaveHoursInReportPeriod(k):0)));
-          const util=cap>0?Math.round(v.billH/cap*100):0;
-          const uCol=util>=75?'#4CAF50':util>=50?'#FF9800':'var(--red)';
-          return`<tr><td style="font-weight:500;">${v.name}</td><td>${fmtHrs(v.hours)}</td><td style="color:var(--ok);">${fmtHrs(v.billH)}</td><td style="color:var(--muted);">${fmtHrs(v.hours-v.billH)}</td><td style="color:var(--muted);">${cap}h</td><td><span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:46px;height:6px;background:var(--faint);border-radius:6px;overflow:hidden;display:inline-block;"><span style="display:block;width:${Math.min(100,util)}%;height:100%;background:${uCol};"></span></span><span style="color:${uCol};font-weight:500;font-size:12px;">${util}%</span></span></td><td style="font-size:12px;color:var(--muted);">${v.jobs.size}</td></tr>`;
-        }).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;">No data.</td></tr>'}
-      </tbody></table></div>
-    </div>`;
-
-  _makeChart('rc-people-bar',{type:'bar',data:{labels:pLabels,datasets:[{data:pHours,backgroundColor:pColors}]},options:_chartOpts()});
-  _makeChart('rc-people-day',{type:'bar',data:{labels:['Mon','Tue','Wed','Thu','Fri'],datasets:[{data:dayTotals,backgroundColor:CHART_ONE}]},options:_chartOpts()});
-}
+function _renderPeopleReport(){const el=document.getElementById('rp-people');if(el)_rvPeople(el);}
 
 // ── JOBS ──────────────────────────────────────────────────────────────────────
-function _renderJobsReport(){
-  const el=document.getElementById('rp-jobs');if(!el)return;
-  const statusFilter=document.getElementById('r-job-status')?.value||'all';
-  const clientFilter=document.getElementById('r-job-client')?.value||'all';
-  const tasks=getFilteredTasks();
-
-  // Hours per job from logged times
-  const hoursPerJob={};
-  tasks.forEach(t=>{
-    const jid=t.jobId||(t.job||'').match(/^(\d+)/)?.[1];
-    if(jid)hoursPerJob[jid]=(hoursPerJob[jid]||0)+(t.hours||0);
-  });
-
-  let filteredJobs=[...jobs];
-  if(statusFilter!=='all')filteredJobs=filteredJobs.filter(j=>j.status===statusFilter);
-  if(clientFilter!=='all')filteredJobs=filteredJobs.filter(j=>j.company===clientFilter);
-  filteredJobs.sort((a,b)=>(hoursPerJob[b.id]||0)-(hoursPerJob[a.id]||0));
-  // Jobs with logged activity in the selected period — this is what actually moves with the
-  // period dropdown. (Budget %/status are lifetime job properties with no period dimension —
-  // they're shown as-is, same reason "all jobs" total doesn't change with the date range.)
-  const period=document.getElementById('r-period')?.value||'month';
-  const activeInPeriod=filteredJobs.filter(j=>hoursPerJob[j.id]>0);
-
-  // Budget chart: top 10 by budget usage
-  const budgetJobs=filteredJobs.filter(j=>j._bPct>0).sort((a,b)=>(b._bPct||0)-(a._bPct||0)).slice(0,10); // _bPct is the real field (L2)
-  // Hours chart: top 10 by hours
-  const topHoursJobs=filteredJobs.filter(j=>hoursPerJob[j.id]).slice(0,10);
-
-  el.innerHTML=`
-    <div class="r-kpi-grid cols3">
-      <div class="r-kpi"><div class="r-kpi-lbl">Active in period</div><div class="r-kpi-val">${activeInPeriod.length}</div><div class="r-kpi-sub">of ${filteredJobs.length} matching the filters</div></div>
-      <div class="r-kpi"><div class="r-kpi-lbl">Total hours logged</div><div class="r-kpi-val">${fmtHrs(Object.values(hoursPerJob).reduce((s,h)=>s+h,0))}</div><div class="r-kpi-sub">in selected period</div></div>
-      <div class="r-kpi"><div class="r-kpi-lbl">Over budget</div><div class="r-kpi-val" style="color:var(--red);">${filteredJobs.filter(j=>(j._bPct||0)>=100).length}</div><div class="r-kpi-sub">jobs at 100%+ budget (lifetime)</div></div>
-    </div>
-    <div class="r-charts-2">
-      <div class="r-chart-card"><div class="r-chart-h">Hours by job (top 10)</div><div class="r-chart-wrap"><canvas id="rc-jobs-hrs"></canvas></div></div>
-      <div class="r-chart-card"><div class="r-chart-h">Budget used % (top 10)</div><div class="r-chart-wrap"><canvas id="rc-jobs-budget"></canvas></div></div>
-    </div>
-    <div class="r-section">
-      <div class="r-section-hd">All jobs <span style="text-transform:none;letter-spacing:0;color:var(--muted);">— hours logged reflect the selected period; budget % and status are lifetime job figures</span></div>
-      <div class="r-job-hd"><span>Job</span><span>Client</span><span>Hours logged</span><span>Budget</span><span>Status</span></div>
-      ${filteredJobs.slice(0,50).map(j=>{
-        const h=hoursPerJob[j.id]||0;
-        const bPct=j._bPct||0;
-        const statusCls={'inplay':'wf-badge live','complete':'wf-badge completed','archived':'wf-badge completed','paused':'wf-badge live'}[j.status]||'wf-badge';
-        const statusLbl={'inplay':'In Play','complete':'Complete','archived':'Archived','paused':'Paused'}[j.status]||j.status;
-        return`<div class="r-job-row">
-          <span style="cursor:pointer;" onclick="openJobDetail('${j.id}')"><span style="font-size:11px;color:var(--muted);margin-right:6px;">${j.id}</span><span style="font-size:13px;">${j.name}</span></span>
-          <span style="font-size:12px;color:var(--muted);">${j.company||'—'}</span>
-          <span style="font-size:13px;font-weight:500;">${h>0?fmtHrs(h):'—'}</span>
-          <div style="display:flex;align-items:center;gap:6px;"><div style="width:60px;height:5px;background:var(--faint);border-radius:6px;overflow:hidden;"><div style="width:${Math.min(100,bPct)}%;height:100%;background:${bPct>=100?'var(--red)':bPct>=80?'#F57F17':'var(--ok)'};"></div></div><span style="font-size:11px;color:var(--muted);">${bPct}%</span></div>
-          <span class="${statusCls}" style="font-size:10px;">${statusLbl}</span>
-        </div>`;
-      }).join('')}
-    </div>`;
-
-  _makeChart('rc-jobs-hrs',{type:'bar',data:{labels:topHoursJobs.map(j=>j.name.slice(0,20)),datasets:[{data:topHoursJobs.map(j=>hoursPerJob[j.id]||0),backgroundColor:CHART_ONE}]},options:{...(_chartOpts()),indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{callback:v=>fmtHrs(v)}},y:{grid:{display:false}}}}});
-  _makeChart('rc-jobs-budget',{type:'bar',data:{labels:budgetJobs.map(j=>j.name.slice(0,20)),datasets:[{data:budgetJobs.map(j=>j._bPct||0),backgroundColor:budgetJobs.map(j=>(j._bPct||0)>=100?'#ED1E24':'#4CAF50')}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:120,ticks:{callback:v=>v+'%'}},y:{grid:{display:false}}}}});
-}
+function _renderJobsReport(){const el=document.getElementById('rp-jobs');if(el)_rvJobs(el);}
 
 // ── CLIENTS ───────────────────────────────────────────────────────────────────
-function _renderClientsReport(){
-  const el=document.getElementById('rp-clients');if(!el)return;
-  const clientFilter=document.getElementById('r-client-sel')?.value||'all';
-  const tasks=getFilteredTasks();
-  const palette=CHART_PALETTE.slice(1).concat(['#ED1E24']);
-
-  // Seed every client up front (not just ones with logged time in the period) so a client
-  // with invoices but no time logged this period still shows up with $0/0h, rather than
-  // disappearing from the report entirely.
-  const byClient={};
-  [...new Set(jobs.map(j=>j.company).filter(Boolean))].forEach(co=>{byClient[co]={hours:0,jobs:new Set(),revenue:0};});
-  // Hours per client from logged times
-  tasks.forEach(t=>{
-    const jid=t.jobId||(t.job||'').match(/^(\d+)/)?.[1];
-    if(!jid)return;
-    const j=jobs.find(x=>x.id===jid);
-    const co=j?.company||'Unknown';
-    if(!byClient[co])byClient[co]={hours:0,jobs:new Set(),revenue:0};
-    byClient[co].hours+=t.hours||0;
-    byClient[co].jobs.add(jid);
-  });
-  // Add revenue from invoices — filtered to same period as hours
-  const _cutoff=_getPeriodCutoff();const _ceil=_getPeriodCeiling();
-  stInvoices.forEach(inv=>{
-    const co=inv.company?.name||inv.companyName||'';
-    if(!co||!byClient[co])return;
-    const ds=inv.invoiceDate||inv.sentDate;if(!ds)return;
-    const ms=new Date(ds).getTime();if(ms<_cutoff||ms>_ceil)return;
-    byClient[co].revenue+=(inv.totalAmountExTax||inv.amount||0);
-  });
-
-  let entries=Object.entries(byClient).sort((a,b)=>b[1].hours-a[1].hours);
-  if(clientFilter!=='all')entries=entries.filter(([co])=>co===clientFilter);
-  // Drop zero-activity clients from the "all" view (they're only seeded so a specific
-  // client pick doesn't wrongly show "no data") — keeps the cards/charts from filling up
-  // with clients that simply have nothing in this period.
-  else entries=entries.filter(([,v])=>v.hours>0||v.revenue>0);
-  const clrIdx=(co)=>palette[Object.keys(byClient).indexOf(co)%palette.length];
-
-  el.innerHTML=`
-    <div class="r-client-grid" style="margin-bottom:28px;">
-      ${entries.slice(0,9).map(([co,v])=>{
-        const cl=clientsData.find(c=>c.name===co);
-        const initials=(cl?.nickname||(co.match(/\b\w/g)||[co[0]]).join('')).slice(0,2).toUpperCase();
-        return`<div class="r-client-card" onclick="navTo('clients')">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-            <div style="width:36px;height:36px;border-radius:50%;background:${clrIdx(co)};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;flex-shrink:0;">${initials}</div>
-            <div style="font-size:14px;font-weight:500;line-height:1.2;">${cl?.nickname||co}</div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
-            <div><div style="font-size:18px;font-weight:500;">${fmtHrs(v.hours)}</div><div style="font-size:10px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-top:2px;">Hours</div></div>
-            <div><div style="font-size:18px;font-weight:500;">${v.jobs.size}</div><div style="font-size:10px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-top:2px;">Jobs</div></div>
-            <div><div style="font-size:18px;font-weight:500;">${fmtDollar(v.revenue)}</div><div style="font-size:10px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-top:2px;">Invoiced</div></div>
-          </div>
-        </div>`;
-      }).join('')||'<div style="color:var(--muted);font-size:13px;grid-column:1/-1;padding:24px 0;">No client data for this period.</div>'}
-    </div>
-    <div class="r-charts-2">
-      <div class="r-chart-card"><div class="r-chart-h">Hours by client</div><div class="r-chart-wrap"><canvas id="rc-client-hrs"></canvas></div></div>
-      <div class="r-chart-card"><div class="r-chart-h">Revenue by client</div><div class="r-chart-wrap"><canvas id="rc-client-rev"></canvas></div></div>
-    </div>
-    <div class="r-chart-card" style="margin-top:18px;"><div class="r-chart-h">Monthly invoiced revenue${clientFilter!=='all'?' — '+clientFilter:' (all clients)'}</div><div class="r-chart-wrap"><canvas id="rc-client-trend"></canvas></div></div>`;
-
-  // ── Monthly revenue trend (last 12 months) ──
-  const MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const trendMonths=[];const _tm=new Date();_tm.setDate(1);
-  for(let i=11;i>=0;i--){const d=new Date(_tm);d.setMonth(_tm.getMonth()-i);trendMonths.push({key:`${d.getFullYear()}-${d.getMonth()}`,label:`${MO[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`});}
-  const trendMap={};trendMonths.forEach(m=>trendMap[m.key]=0);
-  stInvoices.forEach(inv=>{
-    const co=inv.company?.name||'';
-    if(clientFilter!=='all'&&co!==clientFilter)return;
-    const ds=inv.invoiceDate||inv.sentDate;if(!ds)return;
-    const d=new Date(ds);const k=`${d.getFullYear()}-${d.getMonth()}`;
-    if(k in trendMap)trendMap[k]+=(inv.totalAmountExTax||0);
-  });
-  _makeChart('rc-client-trend',{type:'bar',data:{labels:trendMonths.map(m=>m.label),datasets:[{data:trendMonths.map(m=>trendMap[m.key]),backgroundColor:'#7B9E87'}]},options:{...(_chartOpts()),scales:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{callback:v=>fmtDollar(v)}}}}});
-
-  const cLabels=entries.slice(0,10).map(([co])=>co.slice(0,20));
-  const cHours=entries.slice(0,10).map(([,v])=>v.hours);
-  const cRev=entries.slice(0,10).map(([,v])=>v.revenue);
-  const cColors=entries.slice(0,10).map(([co])=>clrIdx(co));
-  _makeChart('rc-client-hrs',{type:'doughnut',data:{labels:cLabels,datasets:[{data:cHours,backgroundColor:cColors,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},padding:10}}}}});
-  _makeChart('rc-client-rev',{type:'bar',data:{labels:cLabels,datasets:[{data:cRev,backgroundColor:cColors}]},options:{...(_chartOpts()),scales:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{callback:v=>fmtDollar(v)}}}}});
-}
+function _renderClientsReport(){const el=document.getElementById('rp-clients');if(el)_rvClients(el);}
 
 function exportReportTab(){
   const tasks=getFilteredTasks();
-  if(tasks.length===0){alert('No data to export.');return;}
+  if(tasks.length===0){toast('No time entries in this period','warn');return;}
   let csv='Person,Title,Job,Item,Hours,Billable,Date\n';
   tasks.forEach(t=>{
     const _tpk=t.personKey||t.person;
@@ -18175,6 +17747,757 @@ function _fdRenderPoList(){
     try{_fdExpToolbar();}catch(e){console.error('feat-d expenses toolbar',e);}
     if(_fdExpMode==='po'){try{_fdRenderPoList();}catch(e){console.error('feat-d PO list',e);}return;}
     return _origREL.apply(this,arguments);
+  };
+})();
+</script>
+
+<style id="report-v2-styles">
+/* ── Reporting v2: one KPI card, one section card, one table, one number style ── */
+.rv-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px;}
+.rv-kpi{background:var(--white);border:1px solid var(--border);border-radius:var(--r-card);box-shadow:var(--shadow-s);padding:16px 18px 15px;min-width:0;}
+.rv-kpi-l{font-size:12.5px;font-weight:500;color:var(--muted);line-height:1.3;}
+.rv-kpi-v{font-family:var(--font);font-size:26px;font-weight:600;letter-spacing:-.01em;line-height:1.15;margin-top:8px;color:var(--ink);font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rv-kpi-v.neg{color:var(--danger-ink);}
+.rv-kpi-v.warn{color:var(--warn-ink);}
+.rv-kpi-s{font-size:12px;color:var(--muted);margin-top:6px;display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;line-height:1.35;}
+.rv-delta{display:inline-flex;align-items:center;gap:2px;font-size:11.5px;font-weight:600;padding:1px 7px 1px 5px;border-radius:99px;font-variant-numeric:tabular-nums;white-space:nowrap;cursor:default;}
+.rv-delta i{font-size:12px;}
+.rv-delta.up{background:var(--ok-bg);color:var(--ok-ink);}
+.rv-delta.down{background:var(--danger-bg);color:var(--danger-ink);}
+.rv-delta.flat{background:var(--off);color:var(--muted);}
+.rv-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-card);box-shadow:var(--shadow-s);padding:20px;margin-bottom:20px;min-width:0;}
+.rv-grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;margin-bottom:20px;align-items:start;}
+.rv-grid2>.rv-card{margin-bottom:0;}
+@media (max-width:1000px){.rv-grid2{grid-template-columns:minmax(0,1fr);}}
+.rv-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;}
+.rv-t{font-size:14.5px;font-weight:600;color:var(--ink);letter-spacing:-.005em;line-height:1.3;}
+.rv-d{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.45;}
+.rv-act{display:flex;gap:6px;flex-shrink:0;align-items:center;}
+.rv-chart{position:relative;height:260px;}
+.rv-tw{overflow:auto;max-height:540px;border-radius:8px;}
+.rv-table{width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px;}
+.rv-table th{position:sticky;top:0;z-index:1;background:var(--off);color:var(--muted);font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;text-align:left;padding:9px 10px;white-space:nowrap;border-bottom:1px solid var(--border);}
+.rv-table th.n,.rv-table td.n{padding-left:8px;padding-right:8px;}
+.rv-table th:first-child,.rv-table td:first-child{padding-left:12px;}
+.rv-table th:last-child,.rv-table td:last-child{padding-right:12px;}
+.rv-table th:first-child{border-top-left-radius:8px;}
+.rv-table th:last-child{border-top-right-radius:8px;}
+.rv-table th.s{cursor:pointer;user-select:none;}
+.rv-table th.s:hover,.rv-table th.on{color:var(--ink);}
+.rv-table td{padding:10px 10px;border-bottom:1px solid var(--faint);color:var(--ink);vertical-align:middle;}
+.rv-table .n{text-align:right;font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;white-space:nowrap;}
+.rv-table tbody tr:hover td{background:var(--off);}
+.rv-table tbody tr.go{cursor:pointer;}
+.rv-table tfoot td{position:sticky;bottom:0;background:var(--white);font-weight:600;border-top:1px solid var(--border);border-bottom:none;}
+.rv-table td.tx{max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rv-table td.tx.rv-m{max-width:130px;}
+.rv-table td.hc{padding:3px;}
+.rv-m{color:var(--muted);}
+.rv-neg{color:var(--danger-ink);}
+.rv-pos{color:var(--ok-ink);}
+.rv-id{color:var(--muted);font-size:11.5px;margin-right:6px;font-variant-numeric:tabular-nums;}
+.rv-pill{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:1px 7px;border-radius:99px;white-space:nowrap;background:var(--off);color:var(--muted);}
+.rv-pill.ok{background:var(--ok-bg);color:var(--ok-ink);}
+.rv-pill.warn{background:var(--warn-bg);color:var(--warn-ink);}
+.rv-pill.danger{background:var(--danger-bg);color:var(--danger-ink);}
+.rv-meter{display:inline-flex;align-items:center;gap:8px;justify-content:flex-end;}
+.rv-meter b{display:inline-block;width:52px;height:6px;border-radius:99px;background:var(--faint);overflow:hidden;position:relative;}
+.rv-meter b i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;}
+.rv-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1px;background:var(--faint);border:1px solid var(--faint);border-radius:10px;overflow:hidden;margin-bottom:16px;}
+.rv-stats>div{background:var(--white);padding:12px 14px;min-width:0;}
+.rv-stats b{display:block;font-size:18px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap;}
+.rv-stats span{font-size:12px;color:var(--muted);}
+.rv-stats b.neg{color:var(--danger-ink);}
+.rv-stats b.warn{color:var(--warn-ink);}
+.rv-note{font-size:12px;color:var(--muted);margin-top:12px;line-height:1.5;}
+.rv-empty{font-size:13px;color:var(--muted);padding:22px 0;text-align:center;}
+.rv-heat{display:block;min-width:46px;text-align:center;font-size:12px;font-weight:500;padding:7px 4px;border-radius:6px;color:var(--ink);font-variant-numeric:tabular-nums;}
+.rv-heat.z{color:var(--muted);}
+.rv-chk{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink);white-space:nowrap;cursor:pointer;}
+/* Teams: cards share the KPI number style */
+#rp-teams .team-rep{padding:20px;}
+#rp-teams .tr-name{font-family:var(--font);font-size:15px;font-weight:600;letter-spacing:-.005em;}
+#rp-teams .tr-util{font-family:var(--font);font-size:30px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums;}
+#rp-teams .tr-stats span{font-family:var(--font);font-size:15px;font-weight:600;letter-spacing:-.005em;font-variant-numeric:tabular-nums;white-space:nowrap;}
+#rp-teams .tr-sec{text-transform:none;letter-spacing:0;font-size:12px;font-weight:600;color:var(--muted);border-top:1px solid var(--faint);padding-top:12px;margin:14px 0 4px;}
+#rp-teams .team-rep-grid{margin-bottom:20px;}
+</style>
+<script id="report-v2-script">
+// ═══════════════════════════════════════════════════════════════════════════════
+// Reporting v2 — one number format, one section card, one table for every tab.
+//   Numbers: hours ≥100 → "2,196h", under 100 → "12h 30m"; money "$342k"/"$1.2M" in KPIs
+//   and exact "$12,404.99" in tables. KPIs compare with the previous equal period.
+//   Tables: sortable headers, totals = sum of the rows shown, CSV export, rows open the
+//   job / client / person. Business + Clients run inside feat-d's wrapper, so stInvoices
+//   there already includes issued platform invoices (never double counted).
+// ═══════════════════════════════════════════════════════════════════════════════
+const RV={sort:{},tables:{},state:{clientsInternal:false}};
+try{Object.assign(RV.state,JSON.parse(localStorage.getItem('cc_rv_state')||'{}'));}catch(e){}
+function _rvSaveState(){try{localStorage.setItem('cc_rv_state',JSON.stringify(RV.state));}catch(e){}}
+const _RV_MINUS='−';
+
+// ── number formats ──
+function _rvH(h){
+  h=+h||0;const neg=h<0;h=Math.abs(h);let s;
+  if(h>=100)s=Math.round(h).toLocaleString('en-NZ')+'h';
+  else{const m=Math.round(h*60);const hh=Math.floor(m/60),mm=m%60;s=!m?'0h':hh&&mm?`${hh}h ${mm}m`:hh?`${hh}h`:`${mm}m`;}
+  return(neg&&s!=='0h'?_RV_MINUS:'')+s;
+}
+function _rvMoney(n){
+  n=+n||0;const neg=n<=-0.005;
+  const s='$'+Math.abs(n).toLocaleString('en-NZ',{minimumFractionDigits:2,maximumFractionDigits:2});
+  return neg?_RV_MINUS+s:s;
+}
+function _rvK(n){
+  n=+n||0;const neg=n<=-0.5;const a=Math.abs(n);let s;
+  if(a<999.5)s='$'+Math.round(a).toLocaleString('en-NZ');
+  else if(a<9950)s='$'+(a/1000).toFixed(1).replace(/\.0$/,'')+'k';
+  else if(a<999500)s='$'+Math.round(a/1000)+'k';
+  else{const m=a/1e6;s='$'+(m<9.95?m.toFixed(1).replace(/\.0$/,''):Math.round(m).toLocaleString('en-NZ'))+'M';}
+  return(neg?_RV_MINUS:'')+s;
+}
+function _rvN(n){return Math.round(+n||0).toLocaleString('en-NZ');}
+function _rvP(n){if(n==null||!isFinite(n))return'—';const r=Math.round(n);return(r<0?_RV_MINUS:'')+Math.abs(r)+'%';}
+// Earliest synced date per source — a comparison is only shown when the previous period is
+// fully inside the data we have (logged time is synced from mid-2025, so "vs previous
+// 12 months" would otherwise compare against an empty year).
+function _rvDataStart(src){
+  const list=src==='inv'?(stInvoices||[]):(stLoggedTimes||[]);
+  const key=src+':'+list.length;RV.ds=RV.ds||{};
+  if(!(key in RV.ds)){let m='9';list.forEach(x=>{const d=src==='inv'?(_rvIssued(x)?_rvInvDate(x):''):(x.date||'').slice(0,10);if(d&&d<m)m=d;});RV.ds[key]=m==='9'?null:m;}
+  return RV.ds[key];
+}
+function _rvAttr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function _rvCall(fn,...args){return fn+'('+args.map(a=>JSON.stringify(a)).join(',')+')';}
+const _rvSum=(a,f)=>a.reduce((s,x)=>s+(+f(x)||0),0);
+
+// ── period ──
+function _rvRange(){
+  const r=_reportDates();let prev=null,days=null;
+  if(r.from){
+    const f=_pDate(r.from),t=_pDate(r.to);days=Math.round((t-f)/864e5)+1;
+    if(days>0){const pt=new Date(f);pt.setDate(pt.getDate()-1);const pf=new Date(pt);pf.setDate(pf.getDate()-(days-1));prev={from:_localISO(pf),to:_localISO(pt)};}
+  }
+  r.days=days;r.prev=prev;
+  r.label={week:'Last 7 days','2weeks':'Last 2 weeks',month:'Last 30 days',quarter:'Last 90 days',year:'Last 12 months',all:'All time',custom:'Custom range'}[r.period]||'';
+  r.prevLabel=prev?`previous ${days} days`:'';
+  r.in=ds=>{ds=(ds||'').slice(0,10);return!!ds&&(!r.from||ds>=r.from)&&ds<=r.to;};
+  if(prev)prev.in=ds=>{ds=(ds||'').slice(0,10);return!!ds&&ds>=prev.from&&ds<=prev.to;};
+  return r;
+}
+// Capacity weeks for the period — the same span Teams/People have always used.
+function _rvPeriodWeeks(){
+  const W=7*864e5,cut=_getPeriodCutoff(),ceil=_getPeriodCeiling();
+  if(cut)return Math.max(1,(ceil-cut)/W);
+  let first=Infinity;(stLoggedTimes||[]).forEach(l=>{const d=_pDate((l.date||'').slice(0,10));if(d&&d<first)first=+d;});
+  return first===Infinity?4.3:Math.max(1,(ceil-first)/W);
+}
+// Monday-based weeks covering the period (latest `max`), each with its in-period days.
+function _rvWeekList(R,max){
+  let start=R.from;
+  if(!start){let first='9';(stLoggedTimes||[]).forEach(l=>{const d=(l.date||'').slice(0,10);if(d&&d<first)first=d;});start=first==='9'?R.to:first;}
+  const d=_pDate(start);d.setDate(d.getDate()-((d.getDay()+6)%7));
+  const out=[];
+  while(_localISO(d)<=R.to){
+    const wk=_localISO(d);const days=[];
+    for(let i=0;i<7;i++){const x=new Date(d);x.setDate(d.getDate()+i);const iso=_localISO(x);if(iso>=start&&iso<=R.to)days.push(iso);}
+    if(days.some(iso=>{const g=_pDate(iso).getDay();return g>0&&g<6;}))out.push({wk,days,label:`${d.getDate()}/${d.getMonth()+1}`}); // skip weekend-only stubs
+    d.setDate(d.getDate()+7);
+  }
+  return max&&out.length>max?out.slice(-max):out;
+}
+// A person's capacity over a set of days: contracted weekly hours spread over their working
+// days, less leave days.
+function _rvDaysCap(k,isoDays){
+  const days=people[k]?.days||[1,2,3,4,5];const dc=personWeeklyCap(k)/(days.length||5);
+  let c=0;isoDays.forEach(iso=>{
+    if(!days.includes(_pDate(iso).getDay()))return;
+    try{if(typeof _ccAwayOn==='function'&&_ccAwayOn(k,iso))return;}catch(e){}
+    c+=dc;
+  });
+  return c;
+}
+function _rvMonths(endIso,n){
+  const e=_pDate(endIso);const out=[];
+  for(let i=n-1;i>=0;i--){const d=new Date(e.getFullYear(),e.getMonth()-i,1);out.push({key:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,label:`${_FMT_MONTHS[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`});}
+  return out;
+}
+
+// ── invoices (stInvoices: Streamtime + issued platform rows inside feat-d's wrapper) ──
+const _rvInvSt=i=>(i.invoiceStatus?.name||'').toLowerCase();
+const _rvIssued=i=>{const s=_rvInvSt(i);return!!s&&s!=='draft'&&!s.includes('void');};
+const _rvIsPaid=i=>_rvInvSt(i)==='paid';
+const _rvInvDate=i=>((i.invoiceDate||i.sentDate||'')+'').slice(0,10);
+const _rvInvCo=i=>i.company?.name||i.companyName||'';
+const _rvEx=i=>+i.totalAmountExTax||0;
+function _rvOwed(i){
+  if(!_rvIssued(i)||_rvIsPaid(i))return 0;
+  if(i.balance!=null&&isFinite(+i.balance))return Math.max(0,+i.balance);
+  return Math.max(0,(+i.totalAmountIncTax||0)-(+i.amountPaidIncTax||0));
+}
+function _rvClientId(name){const c=(clientsData||[]).find(x=>x.name===name);return c?c.id:null;}
+function _rvClientOpen(name){const id=_rvClientId(name);return id!=null?_rvCall('_rvOpenClient',id):'';}
+function _rvOpenClient(id){navTo('jobs');if(typeof switchJobsTab==='function')switchJobsTab('clients');openClientDetail(id);}
+function _rvJobCell(id,name){return`<span class="rv-id">${esc(String(id))}</span>${esc(name||'')}`;}
+
+// ── building blocks ──
+function _rvDelta(cur,prev,R,o){
+  o=o||{};if(!R.prev||prev==null)return'';
+  const start=_rvDataStart(o.src||'time');if(!start||R.prev.from<start)return'';
+  const span=`${R.prevLabel} (${fmtDate(R.prev.from)} – ${fmtDate(R.prev.to)})`;
+  let txt,dir;
+  if(o.pts){const d=Math.round(cur-prev);dir=Math.sign(d);txt=Math.abs(d)+' pts';}
+  else{
+    if(!(prev>0))return cur>0?`<span class="rv-delta flat" title="${esc('Nothing in the '+span)}">New</span><span>vs ${esc(R.prevLabel)}</span>`:'';
+    const d=Math.round((cur-prev)/prev*100);dir=Math.sign(d);txt=Math.abs(d)+'%';
+  }
+  const good=o.invert?-dir:dir;const cls=dir===0?'flat':good>0?'up':'down';
+  const ic=dir>0?'ti-arrow-up-right':dir<0?'ti-arrow-down-right':'ti-minus';
+  const pv=o.fmt?o.fmt(prev):String(prev);
+  return`<span class="rv-delta ${cls}" title="${esc(span+': '+pv)}"><i class="ti ${ic}"></i>${txt}</span><span>vs ${esc(R.prevLabel)}</span>`;
+}
+function _rvKpi(label,val,sub,o){
+  o=o||{};
+  return`<div class="rv-kpi"${o.title?` title="${esc(o.title)}"`:''}><div class="rv-kpi-l">${esc(label)}</div><div class="rv-kpi-v${o.tone?' '+o.tone:''}">${val}</div>${sub?`<div class="rv-kpi-s">${sub}</div>`:''}${o.delta?`<div class="rv-kpi-s">${o.delta}</div>`:''}</div>`;
+}
+function _rvSec(title,desc,body,actions){
+  return`<section class="rv-card"><div class="rv-hd"><div><div class="rv-t">${esc(title)}</div>${desc?`<div class="rv-d">${desc}</div>`:''}</div>${actions?`<div class="rv-act">${actions}</div>`:''}</div>${body}</section>`;
+}
+function _rvCsvBtn(id){return`<button class="d-action" onclick="_rvCsv('${id}')"><i class="ti ti-download" style="font-size:12px"></i> Export CSV</button>`;}
+function _rvChartSec(id,title,desc){return _rvSec(title,desc,`<div class="rv-chart"><canvas id="${id}"></canvas></div>`);}
+function _rvMeter(pct,col){const w=Math.max(0,Math.min(100,pct||0));return`<span class="rv-meter"><b><i style="width:${w}%;background:${col};"></i></b>${_rvP(pct)}</span>`;}
+function _rvUtilCol(u,tgt){return tgt?(u>=tgt?'var(--ok)':u>=tgt*0.85?'var(--warn)':'var(--red)'):(u>=75?'var(--ok)':u>=50?'var(--warn)':'var(--red)');}
+
+// Table. cols: {k, l (label), num, v:row→raw (sort/CSV/total), h:row→html, f:raw→text,
+// sum (total = sum of v), tot:(rows,T)→raw (derived total), tip, cls, csv:false}.
+function _rvTable(id,cfg){
+  const cols=cfg.cols,rows=cfg.rows||[];
+  const def={k:cfg.sort||(cols.find(c=>c.num)||cols[0]).k,dir:cfg.dir||-1};
+  const st=RV.sort[id]&&cols.some(c=>c.k===RV.sort[id].k)?RV.sort[id]:def;
+  const sc=cols.find(c=>c.k===st.k);
+  const sorted=[...rows];
+  if(sc&&sc.v)sorted.sort((a,b)=>{
+    let x=sc.v(a),y=sc.v(b);
+    if(typeof x==='string'||typeof y==='string')return String(x??'').localeCompare(String(y??''),undefined,{numeric:true,sensitivity:'base'})*st.dir;
+    x=x==null||!isFinite(x)?-Infinity:x;y=y==null||!isFinite(y)?-Infinity:y;
+    return(x===y?0:x<y?-1:1)*st.dir;
+  });
+  const T={};
+  cols.forEach(c=>{if(c.sum)T[c.k]=_rvSum(rows,c.v);});
+  cols.forEach(c=>{if(c.tot)T[c.k]=c.tot(rows,T);});
+  const hasTotal=cfg.total!==false&&cols.some(c=>c.sum||c.tot);
+  RV.tables[id]={cols,rows:sorted,T,hasTotal,st,file:cfg.file||id};
+  if(!rows.length)return`<div class="rv-empty">${cfg.empty||'Nothing in this period.'}</div>`;
+  const fmt=(c,v)=>c.f?c.f(v):v==null||v===''?'—':esc(String(v));
+  const th=cols.map(c=>`<th class="s${c.num?' n':''}${c.k===st.k?' on':''}"${c.tip?` title="${esc(c.tip)}"`:''} onclick="_rvSort('${id}','${c.k}')">${esc(c.l)}${c.k===st.k?` <i class="ti ti-chevron-${st.dir===1?'up':'down'}" style="font-size:10px;"></i>`:''}</th>`).join('');
+  const body=sorted.map(r=>{
+    const on=cfg.onRow?cfg.onRow(r):'';
+    return`<tr${on?` class="go" onclick="${_rvAttr(on)}"`:''}>${cols.map(c=>`<td class="${[c.num?'n':'',c.cls||''].join(' ').trim()}">${c.h?c.h(r):fmt(c,c.v(r))}</td>`).join('')}</tr>`;
+  }).join('');
+  const label=cfg.totalLabel||`Total · ${_rvN(rows.length)} ${rows.length===1?(cfg.unit||'row'):(cfg.units||(cfg.unit?cfg.unit+'s':'rows'))}`;
+  const foot=hasTotal?`<tfoot><tr>${cols.map((c,i)=>`<td class="${c.num?'n':''}">${i===0?esc(label):(c.k in T)?(c.ft?c.ft(T[c.k],T):fmt(c,T[c.k])):''}</td>`).join('')}</tr></tfoot>`:'';
+  return`<div class="rv-tw"><table class="rv-table"><thead><tr>${th}</tr></thead><tbody>${body}</tbody>${foot}</table></div>`;
+}
+function _rvSort(id,k){
+  const t=RV.tables[id];const c=t&&t.cols.find(x=>x.k===k);
+  RV.sort[id]=t&&t.st.k===k?{k,dir:-t.st.dir}:{k,dir:c&&c.num?-1:1};
+  _rvRerender();
+}
+function _rvRerender(){
+  const sc=document.getElementById('r-scroll');const top=sc?sc.scrollTop:0;
+  renderReporting();
+  if(sc)sc.scrollTop=top;
+}
+function _rvCsv(id){
+  const t=RV.tables[id];if(!t||!t.rows.length){toast('Nothing to export','warn');return;}
+  const cell=v=>_ccCsvCell(typeof v==='number'?Math.round(v*100)/100:v==null?'':v);
+  const cols=t.cols.filter(c=>c.csv!==false);
+  const lines=[cols.map(c=>cell(c.cl||c.l)).join(',')];
+  t.rows.forEach(r=>lines.push(cols.map(c=>cell(c.cv?c.cv(r):c.v(r))).join(',')));
+  if(t.hasTotal)lines.push(cols.map((c,i)=>cell(i===0?'Total':(c.k in t.T)?t.T[c.k]:'')).join(','));
+  _ccDownload(`${t.file}_${_localISO()}.csv`,lines.join('\n'));
+  toast(`Exported ${t.rows.length} row${t.rows.length!==1?'s':''}`,'success');
+}
+// Chart options shared by every Reporting chart.
+function _rvBarOpts(o){
+  o=o||{};const fmt=o.money?_rvK:o.pct?(v=>Math.round(v)+'%'):_rvH;const tip=o.money?_rvMoney:o.pct?(v=>Math.round(v)+'%'):_rvH;
+  const val={beginAtZero:true,stacked:!!o.stacked,ticks:{callback:v=>typeof v==='number'?fmt(v):v}};
+  if(o.max)val.suggestedMax=o.max;
+  const cat={stacked:!!o.stacked,grid:{display:false},ticks:{autoSkip:true,maxRotation:0}};
+  return{responsive:true,maintainAspectRatio:false,indexAxis:o.horizontal?'y':'x',interaction:{mode:'index',intersect:false},
+    plugins:{legend:{display:!!o.legend,position:'bottom',align:'start'},tooltip:{displayColors:!!o.legend,callbacks:{label:c=>`${c.dataset.label?c.dataset.label+': ':''}${tip(o.horizontal?c.parsed.x:c.parsed.y)}`}}},
+    scales:o.horizontal?{x:val,y:cat}:{x:cat,y:val}};
+}
+function _rvDoughnutOpts(fmt){
+  return{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{padding:10}},
+    tooltip:{callbacks:{label:c=>{const tot=c.dataset.data.reduce((s,x)=>s+x,0);return`${c.label}: ${(fmt||_rvH)(c.raw)} (${tot>0?Math.round(c.raw/tot*100):0}%)`;}}}}};
+}
+const _rvTrunc=(s,n)=>{s=String(s||'');return s.length>n?s.slice(0,n-1)+'…':s;};
+
+// ═════════════════════════════ BUSINESS ═════════════════════════════
+function _rvBusiness(el){
+  const R=_rvRange();const co=document.getElementById('r-biz-company')?.value||'all';
+  const jobCo={};jobs.forEach(j=>{jobCo[j.id]=j.company||'';});
+  const forCo=t=>co==='all'||jobCo[t.jobNum||(t.job||'').match(/^(\d+)/)?.[1]]===co;
+  const hrs=ts=>{let h=0,b=0;ts.forEach(t=>{h+=t.hours||0;if(t.billable!==false&&t.job)b+=t.hours||0;});return{h,b};};
+  const tasks=getFilteredTasks().filter(forCo);
+  const ptasks=R.prev?getFilteredTasks(R.prev).filter(forCo):null;
+  const cur=hrs(tasks),prv=ptasks?hrs(ptasks):null;
+  const inv=(stInvoices||[]).filter(i=>_rvIssued(i)&&(co==='all'||_rvInvCo(i)===co));
+  const invIn=inv.filter(i=>R.in(_rvInvDate(i)));
+  const invPrev=R.prev?inv.filter(i=>R.prev.in(_rvInvDate(i))):null;
+  const invoiced=_rvSum(invIn,_rvEx),paid=_rvSum(invIn.filter(_rvIsPaid),_rvEx);
+  const prevInvoiced=invPrev?_rvSum(invPrev,_rvEx):null;
+  const today=_localISO();
+  const owedInv=inv.filter(i=>_rvOwed(i)>0.004);
+  const owed=_rvSum(owedInv,_rvOwed);
+  const overdue=_rvSum(owedInv.filter(i=>i.dueDate&&String(i.dueDate).slice(0,10)<today),_rvOwed);
+  const live=jobs.filter(j=>j.status==='inplay'&&(co==='all'||j.company===co));
+  const billPct=cur.h>0?cur.b/cur.h*100:0;
+  const coTxt=co==='all'?'':` · ${esc(co)}`;
+
+  const kpis=`<div class="rv-kpis">
+    ${_rvKpi('Hours logged',_rvH(cur.h),`${_rvP(billPct)} billable`,{delta:prv&&_rvDelta(cur.h,prv.h,R,{fmt:_rvH})})}
+    ${_rvKpi('Billable hours',_rvH(cur.b),`${_rvH(cur.h-cur.b)} non-billable`,{delta:prv&&_rvDelta(cur.b,prv.b,R,{fmt:_rvH})})}
+    ${_rvKpi('Invoiced',_rvK(invoiced),`${_rvK(paid)} paid · ex GST`,{title:_rvMoney(invoiced)+' ex GST, issued invoices dated in the period',delta:invPrev&&_rvDelta(invoiced,prevInvoiced,R,{fmt:_rvMoney,src:'inv'})})}
+    ${_rvKpi('Owed to us',_rvK(owed),overdue>0.5?`<span class="rv-neg">${_rvK(overdue)} overdue</span> · incl. GST`:'nothing overdue · incl. GST',{title:_rvMoney(owed)+' incl. GST outstanding today'})}
+    ${_rvKpi('Active jobs',_rvN(live.length),`in play · ${_rvN(jobs.length)} jobs in total`)}
+  </div>`;
+
+  // Hours per week, billable vs non-billable
+  const wk={};tasks.forEach(t=>{if(!t.weekKey)return;const w=wk[t.weekKey]||(wk[t.weekKey]={b:0,n:0});if(t.billable!==false&&t.job)w.b+=t.hours||0;else w.n+=t.hours||0;});
+  const wKeys=Object.keys(wk).sort();
+
+  // Revenue by month — 12 months to the end of the period, by invoice date
+  const months=_rvMonths(R.to,12);const mInv={},mPaid={};
+  inv.forEach(i=>{const k=_rvInvDate(i).slice(0,7);mInv[k]=(mInv[k]||0)+_rvEx(i);if(_rvIsPaid(i))mPaid[k]=(mPaid[k]||0)+_rvEx(i);});
+
+  // Revenue by year (all time)
+  const byYear={};
+  inv.forEach(i=>{const y=_rvInvDate(i).slice(0,4);if(!/^20\d\d$/.test(y))return;const Y=byYear[y]||(byYear[y]={y,n:0,inv:0,paid:0});Y.n++;Y.inv+=_rvEx(i);if(_rvIsPaid(i))Y.paid+=_rvEx(i);});
+  const yearTbl=_rvTable('biz-year',{file:'revenue_by_year',sort:'y',dir:-1,unit:'year',rows:Object.values(byYear),empty:'No invoices yet.',cols:[
+    {k:'y',l:'Year',v:r=>r.y},
+    {k:'n',l:'Invoices',num:1,v:r=>r.n,f:_rvN,sum:1},
+    {k:'inv',l:'Invoiced',num:1,v:r=>r.inv,f:_rvMoney,sum:1},
+    {k:'paid',l:'Paid',num:1,v:r=>r.paid,f:_rvMoney,sum:1},
+    {k:'unp',l:'Unpaid',num:1,v:r=>r.inv-r.paid,f:_rvMoney,sum:1},
+    {k:'pp',l:'Paid %',num:1,v:r=>r.inv>0?r.paid/r.inv*100:null,f:_rvP,tot:(rs,T)=>T.inv>0?T.paid/T.inv*100:null},
+  ]});
+
+  // Quotes in the period (by quote date)
+  const qs=q=>(typeof q.quoteStatus==='string'?q.quoteStatus:q.quoteStatus?.name||'').trim()||'Unknown';
+  const quotes=(stQuotes||[]).filter(q=>(co==='all'||(typeof q.company==='string'?q.company:q.company?.name)===co));
+  const qIn=quotes.filter(q=>R.in(q.quoteDate||q.sentDate));
+  const qBy={};qIn.forEach(q=>{const s=qs(q);const B=qBy[s]||(qBy[s]={s,n:0,v:0});B.n++;B.v+=+q.totalAmountExTax||0;});
+  const nAppr=qIn.filter(q=>/approved/i.test(qs(q))).length,nDecl=qIn.filter(q=>/declin/i.test(qs(q))).length;
+  const win=nAppr+nDecl>0?nAppr/(nAppr+nDecl)*100:null;
+  const turn=qIn.filter(q=>/approved/i.test(qs(q))&&q.approvedDate).map(q=>(_pDate(q.approvedDate.slice(0,10))-_pDate((q.sentDate||q.quoteDate).slice(0,10)))/864e5).filter(d=>d>=0);
+  const avgTurn=turn.length?turn.reduce((s,d)=>s+d,0)/turn.length:null;
+  const apprVal=_rvSum(qIn.filter(q=>/approved/i.test(qs(q))),q=>q.totalAmountExTax);
+  const qOrder=['Draft','Pending Approval','Approved','Declined'];
+  const qTbl=_rvTable('biz-quotes',{file:'quotes_by_status',sort:'s',dir:1,unit:'status',units:'statuses',rows:Object.values(qBy),empty:'No quotes dated in this period.',cols:[
+    {k:'s',l:'Status',v:r=>{const i=qOrder.indexOf(r.s);return(i<0?9:i)+' '+r.s;},h:r=>esc(r.s),cv:r=>r.s},
+    {k:'n',l:'Quotes',num:1,v:r=>r.n,f:_rvN,sum:1},
+    {k:'v',l:'Value ex GST',num:1,v:r=>r.v,f:_rvMoney,sum:1},
+    {k:'sh',l:'Share',num:1,v:r=>{const t=_rvSum(Object.values(qBy),x=>x.v);return t>0?r.v/t*100:null;},f:_rvP,tot:(rs,T)=>T.v>0?100:null},
+  ]});
+  const qStats=`<div class="rv-stats">
+    <div><b>${_rvN(qIn.length)}</b><span>Quotes</span></div>
+    <div><b>${_rvP(win)}</b><span title="Approved ÷ (approved + declined)">Win rate</span></div>
+    <div><b>${avgTurn==null?'—':(Math.round(avgTurn*10)/10).toLocaleString('en-NZ')+' d'}</b><span title="Days from sent (or quote date) to approval">Avg to approval</span></div>
+    <div><b>${_rvK(apprVal)}</b><span>Approved value</span></div>
+  </div>`;
+
+  // Aged receivables (today) — by client, Streamtime + platform invoices
+  const buckets=[['cur','Not yet due'],['b30','1–30 days'],['b60','31–60 days'],['b90','61–90 days'],['b90p','90+ days']];
+  const bucketOf=i=>{const due=i.dueDate?String(i.dueDate).slice(0,10):'';if(!due||due>=today)return'cur';const d=Math.round((_pDate(today)-_pDate(due))/864e5);return d<=30?'b30':d<=60?'b60':d<=90?'b90':'b90p';};
+  const agedBy={};const bTot={cur:0,b30:0,b60:0,b90:0,b90p:0},bN={cur:0,b30:0,b60:0,b90:0,b90p:0};
+  owedInv.forEach(i=>{const c=_rvInvCo(i)||'—';const A=agedBy[c]||(agedBy[c]={c,n:0,cur:0,b30:0,b60:0,b90:0,b90p:0});const b=bucketOf(i);const o=_rvOwed(i);A[b]+=o;A.n++;bTot[b]+=o;bN[b]++;});
+  const agedTbl=_rvTable('biz-aged',{file:'aged_receivables',sort:'tot',unit:'client',rows:Object.values(agedBy),empty:'Nothing owed — every issued invoice is paid.',onRow:r=>_rvClientOpen(r.c),cols:[
+    {k:'c',l:'Client',v:r=>r.c,cls:'tx'},
+    {k:'n',l:'Invoices',num:1,v:r=>r.n,f:_rvN,sum:1},
+    ...buckets.map(([k,l])=>({k,l,num:1,v:r=>r[k],h:r=>r[k]>0.004?`<span class="${k==='cur'?'':k==='b30'?'':'rv-neg'}">${_rvMoney(r[k])}</span>`:'<span class="rv-m">—</span>',f:_rvMoney,sum:1})),
+    {k:'tot',l:'Total owed',num:1,v:r=>r.cur+r.b30+r.b60+r.b90+r.b90p,f:_rvMoney,sum:1},
+  ]});
+  const agedStats=`<div class="rv-stats">${buckets.map(([k,l])=>`<div><b class="${k==='b60'||k==='b90'||k==='b90p'?(bTot[k]>0.004?'neg':''):k==='b30'&&bTot[k]>0.004?'warn':''}">${_rvMoney(bTot[k])}</b><span>${l} · ${bN[k]}</span></div>`).join('')}</div>`;
+  const unpaidTbl=_rvTable('biz-unpaid',{file:'unpaid_invoices',sort:'late',unit:'invoice',rows:owedInv,empty:'No unpaid invoices.',onRow:r=>r._native?(r.jobNumber?_rvCall('openJobDetail',String(r.jobNumber)):''):_rvCall('openInvoiceDetail',r.id),cols:[
+    {k:'no',l:'Invoice',v:r=>r.number||'',h:r=>`${esc(r.number||'—')}${r._native?' <span class="rv-pill" title="Raised in the platform">Platform</span>':''}`},
+    {k:'c',l:'Client',v:r=>_rvInvCo(r),cls:'tx'},
+    {k:'d',l:'Invoice date',v:r=>_rvInvDate(r),f:v=>v?fmtDate(v):'—'},
+    {k:'due',l:'Due',v:r=>r.dueDate?String(r.dueDate).slice(0,10):'',f:v=>v?fmtDate(v):'—'},
+    {k:'late',l:'Days overdue',num:1,v:r=>{const due=r.dueDate?String(r.dueDate).slice(0,10):'';return due&&due<today?Math.round((_pDate(today)-_pDate(due))/864e5):0;},h:r=>{const due=r.dueDate?String(r.dueDate).slice(0,10):'';const d=due&&due<today?Math.round((_pDate(today)-_pDate(due))/864e5):0;return d>0?`<span class="rv-pill ${d>30?'danger':'warn'}">${d} d</span>`:'<span class="rv-m">—</span>';}},
+    {k:'o',l:'Owed incl. GST',num:1,v:r=>_rvOwed(r),f:_rvMoney,sum:1},
+  ]});
+
+  // Uninvoiced work (lifetime, live state)
+  const uninv=jobs.filter(j=>_uninvEligible(j)&&(co==='all'||j.company===co)&&(j._sellUsed||0)-(j._stInvoiced||0)>=100);
+  const uninvTbl=_rvTable('biz-uninv',{file:'uninvoiced_work',sort:'gap',unit:'job',rows:uninv,empty:'Every job with logged time has been invoiced.',onRow:j=>_rvCall('openJobDetail',j.id),cols:[
+    {k:'job',l:'Job',v:j=>j.name||'',h:j=>_rvJobCell(j.id,j.name),cv:j=>`${j.id} ${j.name||''}`,cls:'tx'},
+    {k:'c',l:'Client',v:j=>j.company||'',cls:'tx rv-m'},
+    {k:'sell',l:'Sell logged',num:1,v:j=>j._sellUsed||0,f:_rvMoney,sum:1},
+    {k:'inv',l:'Invoiced',num:1,v:j=>j._stInvoiced||0,f:_rvMoney,sum:1},
+    {k:'gap',l:'Uninvoiced',num:1,v:j=>(j._sellUsed||0)-(j._stInvoiced||0),f:_rvMoney,sum:1},
+  ]});
+
+  // Budget watch — live jobs at 90%+ of budget
+  const watch=jobs.filter(j=>j.status==='inplay'&&(co==='all'||j.company===co)&&(j._bPct||0)>=90);
+  const budgetTbl=_rvTable('biz-budget',{file:'budget_watch',sort:'pct',unit:'job',rows:watch,empty:'No live jobs at 90% of budget or more.',onRow:j=>_rvCall('openJobDetail',j.id),cols:[
+    {k:'job',l:'Job',v:j=>j.name||'',h:j=>_rvJobCell(j.id,j.name),cv:j=>`${j.id} ${j.name||''}`,cls:'tx'},
+    {k:'c',l:'Client',v:j=>j.company||'',cls:'tx rv-m'},
+    {k:'b',l:'Budget',num:1,v:j=>j._plannedSell||0,f:_rvMoney,sum:1},
+    {k:'u',l:'Used',num:1,v:j=>j._sellUsed||0,f:_rvMoney,sum:1},
+    {k:'r',l:'Remaining',num:1,v:j=>(j._plannedSell||0)-(j._sellUsed||0),h:j=>{const r=(j._plannedSell||0)-(j._sellUsed||0);return`<span class="${r<0?'rv-neg':''}">${_rvMoney(r)}</span>`;},f:_rvMoney,sum:1},
+    {k:'pct',l:'Used %',num:1,v:j=>j._bPct||0,h:j=>{const p=j._bPct||0;return`<span class="rv-pill ${p>=100?'danger':'warn'}">${p}%</span>`;},tot:(rs,T)=>T.b>0?T.u/T.b*100:null,f:_rvP},
+  ]});
+
+  // Deadlines — live jobs overdue or due in the next 7 days
+  const dn=_pDate(today);
+  const dl=jobs.filter(j=>j.dueDate&&j.status==='inplay'&&(co==='all'||j.company===co)).map(j=>({j,d:Math.round((_pDate(String(j.dueDate).slice(0,10))-dn)/864e5)})).filter(x=>x.d<=7);
+  const dlTbl=_rvTable('biz-deadlines',{file:'deadlines',sort:'d',dir:1,total:false,rows:dl,empty:'Nothing overdue or due this week.',onRow:x=>_rvCall('openJobDetail',x.j.id),cols:[
+    {k:'job',l:'Job',v:x=>x.j.name||'',h:x=>_rvJobCell(x.j.id,x.j.name),cv:x=>`${x.j.id} ${x.j.name||''}`,cls:'tx'},
+    {k:'c',l:'Client',v:x=>x.j.company||'',cls:'tx rv-m'},
+    {k:'due',l:'Due',v:x=>String(x.j.dueDate).slice(0,10),f:fmtDate},
+    {k:'d',l:'Status',num:1,v:x=>x.d,h:x=>x.d<0?`<span class="rv-pill danger">Overdue ${-x.d} d</span>`:x.d===0?'<span class="rv-pill warn">Due today</span>':`<span class="rv-pill warn">Due in ${x.d} d</span>`,cl:'Days until due'},
+  ]});
+
+  el.innerHTML=`${kpis}
+    <div class="rv-grid2">
+      ${_rvChartSec('rc-trend','Hours per week',`Billable vs non-billable time · ${esc(R.label.toLowerCase())}${coTxt}`)}
+      ${_rvChartSec('rc-month','Revenue by month',`Invoiced and paid, ex GST, by invoice date · 12 months to ${esc(fmtDate(R.to))}${coTxt}`)}
+    </div>
+    <div class="rv-grid2">
+      ${_rvSec('Revenue by year',`Issued invoices, ex GST, all time${coTxt}`,yearTbl,_rvCsvBtn('biz-year'))}
+      ${_rvSec('Quotes',`Quotes dated in the period${coTxt}. Win rate = approved ÷ decided.`,qStats+qTbl,_rvCsvBtn('biz-quotes'))}
+    </div>
+    ${_rvSec('Aged receivables',`What clients owe today, incl. GST, by days past the due date${coTxt}`,agedStats+agedTbl,_rvCsvBtn('biz-aged'))}
+    ${_rvSec('Unpaid invoices',`Issued and not yet paid${coTxt}. Click one to open it.`,unpaidTbl,_rvCsvBtn('biz-unpaid'))}
+    ${_rvSec('Uninvoiced work',`Live and completed jobs with $100+ logged that hasn’t been invoiced yet${coTxt}`,uninvTbl,_rvCsvBtn('biz-uninv'))}
+    ${_rvSec('Budget watch',`Jobs in play that have used 90% or more of their budget${coTxt}`,budgetTbl,_rvCsvBtn('biz-budget'))}
+    ${_rvSec('Deadlines',`Jobs in play that are overdue or due in the next 7 days${coTxt}`,dlTbl)}`;
+
+  _makeChart('rc-trend',{type:'bar',data:{labels:wKeys.map(k=>{const d=_pDate(k);return`${d.getDate()}/${d.getMonth()+1}`;}),datasets:[
+    {label:'Billable',data:wKeys.map(k=>wk[k].b),backgroundColor:CHART_PALETTE[0]},
+    {label:'Non-billable',data:wKeys.map(k=>wk[k].n),backgroundColor:CHART_NONBILL}]},options:_rvBarOpts({stacked:true,legend:true})});
+  _makeChart('rc-month',{type:'bar',data:{labels:months.map(m=>m.label),datasets:[
+    {label:'Invoiced',data:months.map(m=>mInv[m.key]||0),backgroundColor:CHART_PALETTE[1]},
+    {label:'Paid',data:months.map(m=>mPaid[m.key]||0),backgroundColor:CHART_PALETTE[2]}]},options:_rvBarOpts({money:true,legend:true})});
+}
+
+// ═════════════════════════════ TEAMS ═════════════════════════════
+function _rvTeams(el){
+  const R=_rvRange();const tasks=getFilteredTasks();const weeks=_rvPeriodWeeks();
+  const active=Object.keys(people).filter(k=>!people[k]._archived);
+  const teams={};
+  active.forEach(k=>{const t=people[k].team||'No team';(teams[t]=teams[t]||{name:t,members:[],h:0,bill:0,rev:0,cap:0,jobs:{},per:{}}).members.push(k);});
+  const teamOf={};Object.values(teams).forEach(T=>T.members.forEach(k=>{
+    teamOf[k]=T;
+    let cap=personWeeklyCap(k)*weeks;
+    try{if(typeof _ccLeaveHoursInReportPeriod==='function')cap=Math.max(0,cap-_ccLeaveHoursInReportPeriod(k));}catch(e){}
+    T.cap+=cap;T.per[k]={h:0,bill:0,cap};
+  }));
+  tasks.forEach(t=>{
+    const T=teamOf[t.person];if(!T)return;
+    const h=+t.hours||0;T.h+=h;T.per[t.person].h+=h;
+    if(t.billable!==false){T.bill+=h;T.per[t.person].bill+=h;}
+    if(t.billable!==false)T.rev+=t.sell||0; // non-billable time carries a sell value in Streamtime but is not revenue
+    const jn=(t.job||'').trim();if(jn)T.jobs[jn]=(T.jobs[jn]||0)+h;
+  });
+  const targets=_getTeamTargets();const admin=_isAdmin();
+  const list=Object.values(teams).filter(T=>T.members.length).sort((a,b)=>(a.name==='No team')-(b.name==='No team')||b.h-a.h);
+  if(!list.length){el.innerHTML=emptyStateHTML('ti-users-group','No teams yet','Give people a team in Settings → Team to see how each department is tracking.');return;}
+  const pct=(a,b)=>b>0?Math.round(a/b*100):0;
+
+  const sumTbl=_rvTable('teams-sum',{file:'teams',sort:'h',unit:'team',rows:list,cols:[
+    {k:'name',l:'Team',v:T=>T.name},
+    {k:'n',l:'People',num:1,v:T=>T.members.length,f:_rvN,sum:1},
+    {k:'cap',l:'Capacity',num:1,v:T=>T.cap,f:_rvH,sum:1,tip:'Working hours less leave for the period'},
+    {k:'h',l:'Logged',num:1,v:T=>T.h,f:_rvH,sum:1},
+    {k:'bill',l:'Billable',num:1,v:T=>T.bill,f:_rvH,sum:1},
+    {k:'sh',l:'Billable share',num:1,v:T=>T.h>0?T.bill/T.h*100:0,f:_rvP,tot:(r,X)=>X.h>0?X.bill/X.h*100:0},
+    {k:'u',l:'Utilisation',num:1,v:T=>T.cap>0?T.bill/T.cap*100:0,h:T=>{const u=pct(T.bill,T.cap);return _rvMeter(u,_rvUtilCol(u,targets[T.name]));},f:_rvP,tot:(r,X)=>X.cap>0?X.bill/X.cap*100:0,tip:'Billable hours ÷ capacity'},
+    {k:'tg',l:'Target',num:1,v:T=>targets[T.name]||null,f:v=>v?v+'%':'—'},
+    {k:'rev',l:'Time value',num:1,v:T=>T.rev,f:_rvMoney,sum:1,tip:'Sell value of billable time logged, ex GST'},
+  ]});
+
+  const cards=list.map(T=>{
+    const util=pct(T.bill,T.cap),billPct=pct(T.bill,T.h),tgt=targets[T.name]||0;
+    const state=!tgt?'':util>=tgt?'ok':util>=tgt*0.85?'near':'under';
+    const col=state==='ok'?'var(--ok)':state==='near'?'var(--warn)':state==='under'?'var(--red)':'var(--ink)';
+    const topJobs=Object.entries(T.jobs).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    const ppl=T.members.map(k=>{const P=T.per[k];const u=pct(P.bill,P.cap);return`<div class="tm-row" style="cursor:pointer;" onclick="${_rvAttr(_rvCall('openTeamMember',k))}"><span class="sw-av" style="background:${people[k].color||'#999'}">${esc(people[k].initials||'?')}</span><span class="tm-n">${esc(people[k].name)}</span><span class="tm-bar"><i style="width:${Math.min(100,u)}%;"></i></span><span class="tm-v">${u}%</span></div>`;}).join('');
+    return`<div class="team-rep">
+      <div class="tr-hd"><div><div class="tr-name">${esc(T.name)}</div><div class="tr-sub">${T.members.length} ${T.members.length===1?'person':'people'} · ${_rvH(T.cap)} capacity</div></div>
+        <div class="tr-target">${admin?`<label>Target <input type="number" min="0" max="150" value="${tgt||''}" placeholder="—" onchange="${_rvAttr('setTeamTarget('+JSON.stringify(T.name)+',this.value)')}">%</label>`:tgt?`<span>Target ${tgt}%</span>`:''}</div></div>
+      <div class="tr-big"><span class="tr-util" style="color:${col};">${util}%</span><span class="tr-util-lbl">billable utilisation${state==='ok'?' · on target':state==='near'?' · close to target':state==='under'?' · under target':''}</span></div>
+      <div class="tr-meter"><i style="width:${Math.min(100,util)}%;background:${col};"></i>${tgt?`<b style="left:${Math.min(100,tgt)}%;" title="Target ${tgt}%"></b>`:''}</div>
+      <div class="tr-stats">
+        <div><span>${_rvH(T.bill)}</span>Billable</div>
+        <div><span>${_rvH(T.h)}</span>Logged</div>
+        <div><span>${billPct}%</span>Billable share</div>
+        <div><span>${_rvK(T.rev)}</span>Time value</div>
+      </div>
+      <div class="tr-sec">People</div>${ppl}
+      ${topJobs.length?`<div class="tr-sec">Top jobs</div>${topJobs.map(([j,h])=>{const id=(j.match(/^(\d+)/)||[])[1];return`<div class="tm-row tm-job"${id?` style="cursor:pointer;" onclick="${_rvAttr(_rvCall('openJobDetail',id))}"`:''}><span class="tm-n">${esc(j)}</span><span class="tm-v">${_rvH(h)}</span></div>`;}).join('')}`:''}
+    </div>`;
+  }).join('');
+
+  // Weekly utilisation per team
+  const wl=_rvWeekList(R,26);const wkIdx={};wl.forEach((w,i)=>wkIdx[w.wk]=i);
+  const series=list.filter(T=>T.name!=='No team'||list.length===1).map((T,ti)=>{
+    const bill=wl.map(()=>0);
+    tasks.forEach(t=>{if(teamOf[t.person]!==T||t.billable===false)return;const i=wkIdx[t.weekKey];if(i!=null)bill[i]+=t.hours||0;});
+    const cap=wl.map(w=>T.members.reduce((s,k)=>s+_rvDaysCap(k,w.days),0));
+    return{label:T.name,data:wl.map((w,i)=>cap[i]>0?Math.round(bill[i]/cap[i]*100):null),borderColor:CHART_PALETTE[ti%CHART_PALETTE.length],backgroundColor:CHART_PALETTE[ti%CHART_PALETTE.length],tension:.3,spanGaps:true,pointRadius:wl.length>14?0:3,borderWidth:2};
+  });
+
+  el.innerHTML=`
+    ${_rvSec('Teams at a glance',`Utilisation = billable hours ÷ capacity (working hours less leave) · ${esc(R.label.toLowerCase())}${admin?'. Admins set each team’s target on its card.':''}`,sumTbl,_rvCsvBtn('teams-sum'))}
+    ${_rvChartSec('rc-team-trend','Utilisation by week',`Billable hours ÷ capacity for each team, week by week${wl.length===26?' (latest 26 weeks)':''}`)}
+    <div class="team-rep-grid">${cards}</div>`;
+  _makeChart('rc-team-trend',{type:'line',data:{labels:wl.map(w=>w.label),datasets:series},options:_rvBarOpts({pct:true,legend:true})});
+}
+
+// ═════════════════════════════ PEOPLE ═════════════════════════════
+function _rvPeople(el){
+  const R=_rvRange();const tasks=getFilteredTasks();const ptasks=R.prev?getFilteredTasks(R.prev):null;
+  const weeks=_rvPeriodWeeks();
+  const agg=ts=>{const by={};ts.forEach(t=>{
+    const k=t.personKey||t.person;
+    const P=by[k]||(by[k]={k,name:people[k]?.name||t.personName||k,team:people[k]?.team||'',color:people[k]?.color||'#999',h:0,b:0,jobs:new Set()});
+    P.h+=t.hours||0;const jid=t.jobNum||t.jobId||(t.job||'').match(/^(\d+)/)?.[1];
+    if(t.billable!==false&&jid)P.b+=t.hours||0;if(jid)P.jobs.add(jid);
+  });return by;};
+  const by=agg(tasks);const rows=Object.values(by);
+  rows.forEach(P=>{P.cap=Math.max(0,Math.round(personWeeklyCap(P.k)*weeks-(window._ccLeaveHoursInReportPeriod?_ccLeaveHoursInReportPeriod(P.k):0)));P.u=P.cap>0?P.b/P.cap*100:0;});
+  const pRows=ptasks?Object.values(agg(ptasks)):null;
+  const H=_rvSum(rows,r=>r.h),B=_rvSum(rows,r=>r.b),C=_rvSum(rows,r=>r.cap);
+  const pH=pRows?_rvSum(pRows,r=>r.h):null,pB=pRows?_rvSum(pRows,r=>r.b):null;
+
+  const kpis=`<div class="rv-kpis">
+    ${_rvKpi('Hours logged',_rvH(H),`by ${rows.length} ${rows.length===1?'person':'people'}`,{delta:pRows&&_rvDelta(H,pH,R,{fmt:_rvH})})}
+    ${_rvKpi('Billable hours',_rvH(B),`${_rvP(H>0?B/H*100:0)} of logged time`,{delta:pRows&&_rvDelta(B,pB,R,{fmt:_rvH})})}
+    ${_rvKpi('Utilisation',_rvP(C>0?B/C*100:0),`billable ÷ ${_rvH(C)} capacity`)}
+    ${_rvKpi('Average per person',_rvH(rows.length?H/rows.length:0),`${_rvH(rows.length?H/rows.length/weeks:0)} a week`)}
+  </div>`;
+
+  const tbl=_rvTable('people-util',{file:'people_utilisation',sort:'h',unit:'person',units:'people',rows,empty:'No time logged in this period.',onRow:P=>people[P.k]?_rvCall('openTeamMember',P.k):'',cols:[
+    {k:'name',l:'Person',v:P=>P.name,h:P=>`<span class="sw-av" style="background:${P.color};margin-right:8px;">${esc(people[P.k]?.initials||P.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase())}</span>${esc(P.name)}`,cv:P=>P.name},
+    {k:'team',l:'Team',v:P=>P.team,cls:'rv-m'},
+    {k:'h',l:'Logged',num:1,v:P=>P.h,f:_rvH,sum:1},
+    {k:'b',l:'Billable',num:1,v:P=>P.b,f:_rvH,sum:1},
+    {k:'nb',l:'Non-billable',num:1,v:P=>P.h-P.b,f:_rvH,sum:1},
+    {k:'bp',l:'Billable %',num:1,v:P=>P.h>0?P.b/P.h*100:0,f:_rvP,tot:(r,T)=>T.h>0?T.b/T.h*100:0},
+    {k:'cap',l:'Capacity',num:1,v:P=>P.cap,f:_rvH,sum:1,tip:'Contracted hours for the period less leave'},
+    {k:'u',l:'Utilisation',num:1,v:P=>P.u,h:P=>_rvMeter(P.u,_rvUtilCol(P.u)),f:_rvP,tot:(r,T)=>T.cap>0?T.b/T.cap*100:0,tip:'Billable hours ÷ capacity'},
+    {k:'j',l:'Jobs',num:1,v:P=>P.jobs.size,f:_rvN},
+  ]});
+
+  // Heat-map: billable utilisation per person per week
+  const wl=_rvWeekList(R,26);const wkIdx={};wl.forEach((w,i)=>wkIdx[w.wk]=i);
+  const hb={};tasks.forEach(t=>{const i=wkIdx[t.weekKey];if(i==null)return;const k=t.personKey||t.person;const jid=t.jobNum||(t.job||'').match(/^(\d+)/)?.[1];if(t.billable!==false&&jid)(hb[k]=hb[k]||{})[i]=((hb[k]||{})[i]||0)+(t.hours||0);});
+  const heatRows=rows.map(P=>({...P,w:wl.map((w,i)=>{const cap=_rvDaysCap(P.k,w.days);const b=(hb[P.k]||{})[i]||0;return{b,cap,u:cap>0?b/cap*100:null};})}));
+  const heatCell=c=>{
+    if(c.u==null)return c.b>0?`<span class="rv-heat" title="${esc(_rvH(c.b)+' billable, no capacity')}">${_rvH(c.b)}</span>`:'<span class="rv-heat z">—</span>';
+    const u=Math.round(c.u);const mix=Math.min(100,Math.max(6,u));
+    const bg=u>110?`color-mix(in srgb, var(--warn) 45%, var(--white))`:`color-mix(in srgb, var(--ok) ${Math.round(mix*0.6)}%, var(--white))`;
+    return`<span class="rv-heat${u===0?' z':''}" style="background:${bg};" title="${esc(_rvH(c.b)+' billable of '+_rvH(c.cap)+' capacity')}">${u}%</span>`;
+  };
+  const heatTbl=_rvTable('people-heat',{file:'people_weekly_utilisation',sort:'name',dir:1,total:false,rows:heatRows,empty:'No time logged in this period.',onRow:P=>people[P.k]?_rvCall('openTeamMember',P.k):'',cols:[
+    {k:'name',l:'Person',v:P=>P.name,cls:'tx'},
+    ...wl.map((w,i)=>({k:'w'+i,l:w.label,cl:'Week of '+w.wk,num:1,cls:'hc',v:P=>P.w[i].u,h:P=>heatCell(P.w[i])})),
+  ]});
+
+  const dayTotals=[0,0,0,0,0,0,0];tasks.forEach(t=>{if(t.day>=1&&t.day<=7)dayTotals[t.day-1]+=t.hours||0;});
+  const top=[...rows].sort((a,b)=>b.h-a.h);
+
+  el.innerHTML=`${kpis}
+    ${_rvSec('Utilisation and logged time',`Billable hours against capacity (contracted hours less leave) · ${esc(R.label.toLowerCase())}. Click a person to open them.`,tbl,_rvCsvBtn('people-util'))}
+    ${_rvSec('Weekly utilisation',`Billable hours ÷ capacity each week${wl.length===26?' (latest 26 weeks)':''}. Darker = busier; amber = over 110%.`,heatTbl,_rvCsvBtn('people-heat'))}
+    <div class="rv-grid2">
+      ${_rvChartSec('rc-people-bar','Hours by person','Billable and non-billable time')}
+      ${_rvChartSec('rc-people-day','Hours by day of week','All logged time in the period')}
+    </div>`;
+  _makeChart('rc-people-bar',{type:'bar',data:{labels:top.map(P=>P.name),datasets:[
+    {label:'Billable',data:top.map(P=>P.b),backgroundColor:CHART_PALETTE[0]},
+    {label:'Non-billable',data:top.map(P=>P.h-P.b),backgroundColor:CHART_NONBILL}]},options:_rvBarOpts({stacked:true,legend:true,horizontal:top.length>8})});
+  _makeChart('rc-people-day',{type:'bar',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{label:'Hours',data:dayTotals,backgroundColor:CHART_ONE}]},options:_rvBarOpts()});
+}
+
+// ═════════════════════════════ JOBS ═════════════════════════════
+function _rvProfit(j){
+  // computeJobProfit walks every logged entry; cache it briefly so sorting stays snappy.
+  const now=Date.now();if(!RV.pc||now-RV.pc.t>30000)RV.pc={t:now,m:{}};
+  return RV.pc.m[j.id]||(RV.pc.m[j.id]=computeJobProfit(j));
+}
+function _rvJobType(j){
+  if(j.billable===false)return'Internal';
+  return(j.labels||[]).some(l=>/^(retainer|monthly)$/i.test(String(l).trim()))?'Retainer':'Project';
+}
+function _rvJobs(el){
+  const R=_rvRange();
+  const statusFilter=document.getElementById('r-job-status')?.value||'all';
+  const clientFilter=document.getElementById('r-job-client')?.value||'all';
+  const jobById={};jobs.forEach(j=>{jobById[j.id]=j;});
+  const match=j=>!!j&&(statusFilter==='all'||j.status===statusFilter)&&(clientFilter==='all'||j.company===clientFilter);
+  const perJob=ts=>{const m={};ts.forEach(t=>{const jid=t.jobNum||t.jobId||(t.job||'').match(/^(\d+)/)?.[1];if(!jid||!match(jobById[jid]))return;const J=m[jid]||(m[jid]={h:0,b:0,sell:0});J.h+=t.hours||0;if(t.billable!==false)J.b+=t.hours||0;if(t.billable!==false)J.sell+=t.sell||0;});return m;};
+  const tasks=getFilteredTasks();const cur=perJob(tasks);
+  const prev=R.prev?perJob(getFilteredTasks(R.prev)):null;
+  const filtered=jobs.filter(match);
+  const activeJobs=Object.keys(cur).map(id=>jobById[id]).filter(Boolean);
+  const H=_rvSum(Object.values(cur),x=>x.h),S=_rvSum(Object.values(cur),x=>x.sell);
+  const pH=prev?_rvSum(Object.values(prev),x=>x.h):null,pS=prev?_rvSum(Object.values(prev),x=>x.sell):null;
+
+  const rows=activeJobs.filter(j=>j.billable!==false).map(j=>{const p=_rvProfit(j);const J=cur[j.id];
+    const budget=p.plannedSell||0,spent=p.revenue||0;
+    return{j,id:j.id,name:j.name||'',client:j.company||'',type:_rvJobType(j),h:J.h,sell:J.sell,budget,spent,used:budget>0?spent/budget*100:null,cost:p.cost||0,margin:spent-(p.cost||0),est:!!p.costEstimated};});
+  const over=rows.filter(r=>r.used!=null&&r.used>=100).length;
+
+  const kpis=`<div class="rv-kpis">
+    ${_rvKpi('Jobs worked on',_rvN(activeJobs.length),`of ${_rvN(filtered.length)} matching the filters`,{delta:prev&&_rvDelta(activeJobs.length,Object.keys(prev).length,R,{fmt:_rvN})})}
+    ${_rvKpi('Hours logged',_rvH(H),'on those jobs',{delta:prev&&_rvDelta(H,pH,R,{fmt:_rvH})})}
+    ${_rvKpi('Time value logged',_rvK(S),'billable time at sell rates, ex GST',{title:_rvMoney(S),delta:prev&&_rvDelta(S,pS,R,{fmt:_rvMoney})})}
+    ${_rvKpi('Over budget',_rvN(over),`billable jobs worked on that have spent their budget`,{tone:over?'neg':''})}
+  </div>`;
+
+  const profTbl=_rvTable('jobs-profit',{file:'job_profitability',sort:'h',unit:'job',rows,empty:'No time logged on jobs matching these filters.',onRow:r=>_rvCall('openJobDetail',r.id),cols:[
+    {k:'name',l:'Job',v:r=>r.name,h:r=>_rvJobCell(r.id,r.name),cv:r=>`${r.id} ${r.name}`,cls:'tx'},
+    {k:'client',l:'Client',v:r=>r.client,cls:'tx rv-m'},
+    {k:'h',l:'Hours',num:1,v:r=>r.h,f:_rvH,sum:1,tip:'Logged in the period'},
+    {k:'sell',l:'Time value',num:1,v:r=>r.sell,f:_rvMoney,sum:1,tip:'Sell value of billable time logged in the period, ex GST'},
+    {k:'budget',l:'Budget',num:1,v:r=>r.budget,f:v=>v>0?_rvMoney(v):'—',sum:1,tip:'Planned sell (lifetime)'},
+    {k:'spent',l:'Spent',num:1,v:r=>r.spent,f:_rvMoney,sum:1,tip:'Time + expense sell to date (lifetime)'},
+    {k:'used',l:'Used',num:1,v:r=>r.used,h:r=>r.used==null?'<span class="rv-m">—</span>':`<span class="rv-pill ${r.used>=100?'danger':r.used>=80?'warn':'ok'}">${_rvP(r.used)}</span>`,f:_rvP,tot:(rs,T)=>{const b=_rvSum(rs.filter(r=>r.budget>0),r=>r.budget);return b>0?_rvSum(rs.filter(r=>r.budget>0),r=>r.spent)/b*100:null;},tip:'Spent ÷ budget'},
+    {k:'cost',l:'Cost',num:1,v:r=>r.cost,f:_rvMoney,sum:1,tip:'Staff time at cost rates + expense cost (lifetime)'},
+    {k:'margin',l:'Margin',num:1,v:r=>r.margin,h:r=>`<span class="${r.margin<0?'rv-neg':''}">${_rvMoney(r.margin)}</span>`,f:_rvMoney,sum:1},
+    {k:'mp',l:'Margin %',num:1,v:r=>r.spent>0?r.margin/r.spent*100:null,h:r=>r.spent>0?`<span class="${r.margin<0?'rv-neg':''}">${_rvP(r.margin/r.spent*100)}</span>`:'<span class="rv-m">—</span>',f:_rvP,tot:(rs,T)=>T.spent>0?T.margin/T.spent*100:null},
+  ]});
+
+  // Work mix: by job type and by activity (job item)
+  const types={};const acts={};
+  tasks.forEach(t=>{const jid=t.jobNum||(t.job||'').match(/^(\d+)/)?.[1];const j=jobById[jid];if(!match(j))return;
+    const ty=_rvJobType(j);const T=types[ty]||(types[ty]={ty,jobs:new Set(),h:0,sell:0});T.jobs.add(jid);T.h+=t.hours||0;if(t.billable!==false)T.sell+=t.sell||0;
+    const an=(t.item||'').trim()||'(no item)';const A=acts[an]||(acts[an]={a:an,h:0,b:0,sell:0});A.h+=t.hours||0;if(t.billable!==false)A.b+=t.hours||0;if(t.billable!==false)A.sell+=t.sell||0;});
+  const typeRows=Object.values(types);
+  const typeTbl=_rvTable('jobs-type',{file:'work_mix_by_job_type',sort:'h',unit:'type',rows:typeRows,cols:[
+    {k:'ty',l:'Job type',v:r=>r.ty},
+    {k:'n',l:'Jobs',num:1,v:r=>r.jobs.size,f:_rvN,sum:1},
+    {k:'h',l:'Hours',num:1,v:r=>r.h,f:_rvH,sum:1},
+    {k:'sh',l:'Share',num:1,v:r=>H>0?r.h/H*100:0,f:_rvP,tot:()=>H>0?100:0},
+    {k:'sell',l:'Time value',num:1,v:r=>r.sell,f:_rvMoney,sum:1},
+  ]});
+  const actTbl=_rvTable('jobs-activity',{file:'work_mix_by_activity',sort:'h',unit:'activity',units:'activities',rows:Object.values(acts),cols:[
+    {k:'a',l:'Activity',v:r=>r.a,cls:'tx'},
+    {k:'h',l:'Hours',num:1,v:r=>r.h,f:_rvH,sum:1},
+    {k:'bp',l:'Billable',num:1,v:r=>r.h>0?r.b/r.h*100:0,f:_rvP,tot:(rs,T)=>{const b=_rvSum(rs,r=>r.b);return T.h>0?b/T.h*100:0;}},
+    {k:'sell',l:'Time value',num:1,v:r=>r.sell,f:_rvMoney,sum:1},
+  ]});
+
+  const top=[...rows].sort((a,b)=>b.h-a.h).slice(0,10);
+  el.innerHTML=`${kpis}
+    ${_rvSec('Job profitability',`Hours and time value are for ${esc(R.label.toLowerCase())}; budget, spent, cost and margin are lifetime figures for each job. Billable jobs only — internal time is under Work mix. Click a job to open it.`,profTbl+(rows.some(r=>r.est)?`<div class="rv-note">Cost = staff time at each person’s cost rate (the $${_rvN(_defCostRate())}/h workspace default where none is set) + expense cost, so treat margins on ${_rvN(rows.filter(r=>r.est).length)} of ${_rvN(rows.length)} jobs as estimates.</div>`:''),_rvCsvBtn('jobs-profit'))}
+    <div class="rv-grid2">
+      ${_rvChartSec('rc-jobs-hrs','Hours by job','Top 10 jobs in the period')}
+      ${_rvChartSec('rc-jobs-mix','Work mix','Hours by job type: retainer (Retainer/Monthly label), project, internal (non-billable job)')}
+    </div>
+    <div class="rv-grid2">
+      ${_rvSec('By job type','Where the period’s hours went',typeTbl,_rvCsvBtn('jobs-type'))}
+      ${_rvSec('By activity','Hours per job item, with the billable share',actTbl,_rvCsvBtn('jobs-activity'))}
+    </div>`;
+  _makeChart('rc-jobs-hrs',{type:'bar',data:{labels:top.map(r=>_rvTrunc(r.id+' '+r.name,28)),datasets:[{label:'Hours',data:top.map(r=>r.h),backgroundColor:CHART_ONE}]},options:_rvBarOpts({horizontal:true})});
+  const order=['Project','Retainer','Internal'];const tr=order.filter(t=>types[t]);
+  _makeChart('rc-jobs-mix',{type:'doughnut',data:{labels:tr,datasets:[{data:tr.map(t=>types[t].h),backgroundColor:tr.map(t=>t==='Project'?CHART_PALETTE[0]:t==='Retainer'?CHART_PALETTE[1]:CHART_NONBILL),hoverOffset:6}]},options:_rvDoughnutOpts()});
+}
+
+// ═════════════════════════════ CLIENTS ═════════════════════════════
+function _rvClients(el){
+  const R=_rvRange();const clientSel=document.getElementById('r-client-sel')?.value||'all';
+  const internal=!!RV.state.clientsInternal;
+  const jobCo={};jobs.forEach(j=>{jobCo[j.id]=j.company||'';});
+  const agg=ts=>{const by={};ts.forEach(t=>{
+    const jid=t.jobNum||t.jobId||(t.job||'').match(/^(\d+)/)?.[1];if(!jid)return;
+    if(!internal&&t.billable===false)return;
+    const co=jobCo[jid]||'Unknown';if(clientSel!=='all'&&co!==clientSel)return;
+    const C=by[co]||(by[co]={co,jobs:new Set(),h:0,b:0,sell:0,cost:0,est:false,inv:0});
+    C.jobs.add(jid);C.h+=t.hours||0;if(t.billable!==false)C.b+=t.hours||0;if(t.billable!==false)C.sell+=t.sell||0;C.cost+=t.cost||0;if(t.costEst)C.est=true;
+  });return by;};
+  const by=agg(getFilteredTasks());const pby=R.prev?agg(getFilteredTasks(R.prev)):null;
+  const inv=(stInvoices||[]).filter(i=>_rvIssued(i)&&(clientSel==='all'||_rvInvCo(i)===clientSel));
+  let pInv=null;
+  inv.forEach(i=>{const co=_rvInvCo(i)||'Unknown';const ds=_rvInvDate(i);
+    if(R.in(ds))(by[co]||(by[co]={co,jobs:new Set(),h:0,b:0,sell:0,cost:0,est:false,inv:0})).inv+=_rvEx(i);
+    if(R.prev&&R.prev.in(ds))pInv=(pInv||0)+_rvEx(i);});
+  if(R.prev&&pInv==null)pInv=0;
+  const rows=Object.values(by);
+  const H=_rvSum(rows,r=>r.h),S=_rvSum(rows,r=>r.sell),Cst=_rvSum(rows,r=>r.cost),I=_rvSum(rows,r=>r.inv);
+  const pH=pby?_rvSum(Object.values(pby),r=>r.h):null,pS=pby?_rvSum(Object.values(pby),r=>r.sell):null;
+  const M=S-Cst;
+
+  const kpis=`<div class="rv-kpis">
+    ${_rvKpi('Clients',_rvN(rows.filter(r=>r.h>0).length),`with time logged · ${_rvN(rows.filter(r=>r.inv>0).length)} invoiced`)}
+    ${_rvKpi('Hours on client work',_rvH(H),internal?'including internal jobs':'billable jobs only',{delta:pby&&_rvDelta(H,pH,R,{fmt:_rvH})})}
+    ${_rvKpi('Time value',_rvK(S),`${_rvK(M)} margin after staff cost`,{title:_rvMoney(S),delta:pby&&_rvDelta(S,pS,R,{fmt:_rvMoney})})}
+    ${_rvKpi('Invoiced',_rvK(I),'issued in the period · ex GST',{title:_rvMoney(I),delta:R.prev&&_rvDelta(I,pInv,R,{fmt:_rvMoney,src:'inv'})})}
+  </div>`;
+
+  const tbl=_rvTable('clients-profit',{file:'client_profitability',sort:'sell',unit:'client',rows,empty:'No client activity in this period.',onRow:r=>_rvClientOpen(r.co),cols:[
+    {k:'co',l:'Client',v:r=>r.co,cls:'tx'},
+    {k:'n',l:'Jobs',num:1,v:r=>r.jobs.size,f:_rvN,sum:1},
+    {k:'h',l:'Hours',num:1,v:r=>r.h,f:_rvH,sum:1},
+    {k:'sell',l:'Time value',num:1,v:r=>r.sell,f:_rvMoney,sum:1,tip:'Sell value of billable time logged in the period, ex GST'},
+    {k:'rate',l:'Per hour',num:1,v:r=>r.h>0?r.sell/r.h:null,f:v=>v==null?'—':_rvMoney(v),tot:(rs,T)=>T.h>0?T.sell/T.h:null,tip:'Time value ÷ hours'},
+    {k:'cost',l:'Staff cost',num:1,v:r=>r.cost,f:_rvMoney,sum:1,tip:'Hours × each person’s cost rate'},
+    {k:'m',l:'Margin',num:1,v:r=>r.sell-r.cost,h:r=>`<span class="${r.sell-r.cost<0?'rv-neg':''}">${_rvMoney(r.sell-r.cost)}</span>`,f:_rvMoney,sum:1},
+    {k:'mp',l:'Margin %',num:1,v:r=>r.sell>0?(r.sell-r.cost)/r.sell*100:null,h:r=>r.sell>0?`<span class="${r.sell-r.cost<0?'rv-neg':''}">${_rvP((r.sell-r.cost)/r.sell*100)}</span>`:'<span class="rv-m">—</span>',f:_rvP,tot:(rs,T)=>T.sell>0?T.m/T.sell*100:null},
+    {k:'inv',l:'Invoiced',num:1,v:r=>r.inv,f:_rvMoney,sum:1,tip:'Issued invoices dated in the period, ex GST (Streamtime + platform)'},
+  ]});
+
+  const months=_rvMonths(R.to,12);const mInv={};
+  inv.forEach(i=>{const k=_rvInvDate(i).slice(0,7);mInv[k]=(mInv[k]||0)+_rvEx(i);});
+  const top=[...rows].filter(r=>r.h>0).sort((a,b)=>b.h-a.h).slice(0,10);
+  const anyEst=rows.some(r=>r.est);
+  el.innerHTML=`${kpis}
+    ${_rvSec('Client profitability',`Time value vs staff cost for ${esc(R.label.toLowerCase())}${internal?', including internal (non-billable) jobs':', billable jobs only'}. Click a client to open it.`,tbl+(anyEst?`<div class="rv-note">Staff cost uses each person’s cost rate; people without one are costed at the $${_rvN(_defCostRate())}/h workspace default, so treat margins as estimates.</div>`:''),_rvCsvBtn('clients-profit'))}
+    <div class="rv-grid2">
+      ${_rvChartSec('rc-client-hrs','Hours by client','Top 10 clients in the period')}
+      ${_rvChartSec('rc-client-trend','Invoiced by month',`Issued invoices, ex GST · 12 months to ${esc(fmtDate(R.to))}${clientSel!=='all'?' · '+esc(clientSel):''}`)}
+    </div>`;
+  _makeChart('rc-client-hrs',{type:'bar',data:{labels:top.map(r=>_rvTrunc(r.co,26)),datasets:[
+    {label:'Billable',data:top.map(r=>r.b),backgroundColor:CHART_PALETTE[0]},
+    {label:'Non-billable',data:top.map(r=>r.h-r.b),backgroundColor:CHART_NONBILL}]},options:_rvBarOpts({horizontal:true,stacked:true,legend:internal})});
+  _makeChart('rc-client-trend',{type:'bar',data:{labels:months.map(m=>m.label),datasets:[{label:'Invoiced',data:months.map(m=>mInv[m.key]||0),backgroundColor:CHART_PALETTE[2]}]},options:_rvBarOpts({money:true})});
+}
+function _rvSetClientsInternal(on){RV.state.clientsInternal=!!on;_rvSaveState();_rvRerender();}
+
+// ═════════════════════════════ WIP (feat-e data, v2 layout) ═════════════════════════════
+(function(){
+  const FE=window._fe;if(!FE||!FE.wipRows)return;
+  FE.renderWip=function(){
+    const el=document.getElementById('rp-wip');if(!el)return;
+    const sub=document.getElementById('r-sub');if(sub)sub.textContent='Work in progress · as at '+fmtDate(_localISO());
+    const rows=FE.wipRows();
+    const W=_rvSum(rows,r=>r.wip),I=_rvSum(rows,r=>r.invoiced),U=_rvSum(rows,r=>r.unbilled),PR=_rvSum(rows,r=>r.projRev),PM=_rvSum(rows,r=>r.projMargin);
+    const PP=PR>0?PM/PR*100:null;const nEst=rows.filter(r=>r.est).length;
+    const money=(v,neg)=>`<span class="${neg&&v<-0.004?'rv-neg':''}">${_rvMoney(v)}</span>`;
+    const tbl=_rvTable('wip',{file:'wip',sort:'unbilled',unit:'job',rows,empty:'Nothing in play matches these filters.',onRow:r=>_rvCall('openJobDetail',r.id),cols:[
+      {k:'job',l:'Job',v:r=>r.name,h:r=>`${_rvJobCell(r.id,r.name)}${r.overPlan?' <span class="rv-pill danger" title="WIP is above the plan">Over plan</span>':''}`,cv:r=>`${r.id} ${r.name}`,cls:'tx'},
+      {k:'client',l:'Client',v:r=>r.client,cls:'tx rv-m'},
+      {k:'plan',l:'Plan',num:1,v:r=>r.plan,f:v=>v?_rvMoney(v):'—',sum:1,tip:'Agreed budget (Streamtime final budget, else planned time sell)'},
+      {k:'wip',l:'WIP',num:1,v:r=>r.wip,f:_rvMoney,sum:1,tip:'Logged time sell + expense sell'},
+      {k:'invoiced',l:'Invoiced',num:1,v:r=>r.invoiced,f:_rvMoney,sum:1,tip:'Issued Streamtime invoices + sent/paid platform and split invoices, ex GST'},
+      {k:'unbilled',l:'Uninvoiced',num:1,v:r=>r.unbilled,h:r=>money(r.unbilled,1),f:_rvMoney,ft:v=>money(v,1),sum:1,tip:'WIP minus invoiced. Negative = billed ahead of work'},
+      {k:'cost',l:'Cost to date',num:1,v:r=>r.cost,f:_rvMoney,sum:1,tip:'Staff time at cost rates + expense cost'},
+      {k:'projRev',l:'Proj. revenue',num:1,v:r=>r.projRev,f:_rvMoney,sum:1,tip:'Plan (or invoiced, if higher). Jobs without a plan: WIP'},
+      {k:'projCost',l:'Proj. cost',num:1,v:r=>r.projCost,f:_rvMoney,sum:1,tip:'Cost to date + remaining planned hours at the job’s blended cost rate'},
+      {k:'projMargin',l:'Proj. margin',num:1,v:r=>r.projMargin,h:r=>money(r.projMargin,1),f:_rvMoney,ft:v=>money(v,1),sum:1},
+      {k:'projPct',l:'Margin %',num:1,v:r=>r.projPct,h:r=>r.projPct==null?'<span class="rv-m">—</span>':`<span class="rv-pill ${r.projPct<0?'danger':r.projPct<20?'warn':'ok'}">${r.projPct}%</span>`,f:_rvP,tot:(rs,T)=>T.projRev>0?T.projMargin/T.projRev*100:null},
+    ]});
+    el.innerHTML=`<div class="rv-kpis">
+        ${_rvKpi('Work in progress',_rvK(W),`time sell + expenses on ${rows.length} live job${rows.length!==1?'s':''}`,{title:_rvMoney(W)})}
+        ${_rvKpi('Invoiced',_rvK(I),'Streamtime + platform, ex GST',{title:_rvMoney(I)})}
+        ${_rvKpi('Uninvoiced WIP',_rvK(U),`${rows.filter(r=>r.unbilled>0.5).length} jobs with work not yet billed`,{tone:U>0.5?'warn':'',title:_rvMoney(U)})}
+        ${_rvKpi('Projected margin',_rvK(PM),PP!=null?`${_rvP(PP)} of ${_rvK(PR)} projected revenue`:'no projected revenue',{tone:PM<0?'neg':'',title:_rvMoney(PM)})}
+      </div>
+      ${_rvSec('Live jobs',`Lifetime figures for jobs in play. Non-billable jobs are ${FE.wip.nb?'included':'excluded'}. Click a job to open it.`,tbl+`<div class="rv-note">WIP = logged time sell + expense sell. Projected cost assumes the remaining planned hours are worked at the job’s blended cost rate so far; future expenses aren’t included.${nEst?` ${nEst} job${nEst!==1?'s use':' uses'} the $${_rvN(_defCostRate())}/h default cost rate for some people, so their costs are estimates.`:''}</div>`,_rvCsvBtn('wip'))}`;
   };
 })();
 </script>
