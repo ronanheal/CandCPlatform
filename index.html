@@ -2174,10 +2174,10 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
             <button class="d-action" onclick="_addFilter('jobs')"><i class="ti ti-filter" style="font-size:11px;"></i> Add filter</button>
             <select class="cc-select" id="jobs-groupby" onchange="_setGroupBy('jobs',this.value)">
               <option value="none">No grouping</option>
-              <option value="company">Group by Company</option>
-              <option value="status">Group by Status</option>
-              <option value="workflow">Group by Workflow</option>
-              <option value="lead">Group by Lead</option>
+              <option value="company">Group by company</option>
+              <option value="status">Group by status</option>
+              <option value="workflow">Group by workflow</option>
+              <option value="lead">Group by lead</option>
             </select>
             <button class="d-action" onclick="saveFilterPreset('jobs')"><i class="ti ti-bookmark" style="font-size:11px;"></i> Save</button>
             <button class="d-action" id="jobs-clear-btn" onclick="_clearFilters('jobs')" style="display:none;"><i class="ti ti-x" style="font-size:11px;"></i> Clear</button>
@@ -2192,7 +2192,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
               <tbody id="jobs-tbody"></tbody>
             </table>
           </div>
-          <div id="jobs-footer-bar" style="display:flex;align-items:center;gap:8px;padding:10px 20px 10px 28px;border-top:3px solid var(--ink);background:var(--white);flex-shrink:0;min-height:40px;"></div>
+          <div id="jobs-footer-bar"></div>
           <div id="bulk-bar" style="display:none;position:sticky;bottom:16px;margin:0 auto;width:fit-content;background:var(--ink);color:#fff;border-radius:6px;padding:8px 14px;box-shadow:0 4px 16px rgba(0,0,0,.25);align-items:center;gap:10px;z-index:50;">
             <span id="bulk-count" style="font-size:12px;font-weight:500;margin-right:4px;">0 selected</span>
             <button class="bulk-btn" onclick="bulkLabelJobs()"><i class="ti ti-tag" style="font-size:12px;"></i> Label</button>
@@ -2267,9 +2267,9 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
               <button class="d-action" onclick="_addFilter('qt')"><i class="ti ti-filter" style="font-size:11px;"></i> Add filter</button>
               <select class="cc-select" id="qt-groupby" onchange="_setGroupBy('qt',this.value)">
                 <option value="none">No grouping</option>
-                <option value="status">Group by Status</option>
-                <option value="company">Group by Company</option>
-                <option value="job">Group by Job</option>
+                <option value="status">Group by status</option>
+                <option value="company">Group by company</option>
+                <option value="job">Group by job</option>
               </select>
               <button class="d-action" onclick="saveFilterPreset('qt')" title="Save current filters as a preset"><i class="ti ti-bookmark" style="font-size:11px;"></i> Save</button>
               <button class="d-action" id="qt-clear-btn" onclick="_clearFilters('qt')" title="Clear all filters" style="display:none;"><i class="ti ti-x" style="font-size:11px;"></i> Clear</button>
@@ -2291,18 +2291,17 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
               <button class="d-action" onclick="_addFilter('inv')"><i class="ti ti-filter" style="font-size:11px;"></i> Add filter</button>
               <select class="cc-select" id="inv-groupby" onchange="_setGroupBy('inv',this.value)">
                 <option value="none">No grouping</option>
-                <option value="status">Group by Status</option>
-                <option value="company">Group by Company</option>
-                <option value="job">Group by Job</option>
+                <option value="status">Group by status</option>
+                <option value="company">Group by company</option>
+                <option value="job">Group by job</option>
               </select>
               <button class="d-action" onclick="saveFilterPreset('inv')"><i class="ti ti-bookmark" style="font-size:11px;"></i> Save</button>
               <button class="d-action" id="inv-clear-btn" onclick="_clearFilters('inv')" style="display:none;"><i class="ti ti-x" style="font-size:11px;"></i> Clear</button>
               <button class="d-action" onclick="openColPicker(event,'inv')" title="Choose columns"><i class="ti ti-columns" style="font-size:11px;"></i> Columns</button>
               <label class="filter-btn" style="cursor:pointer;display:flex;align-items:center;gap:5px;"><input type="checkbox" id="inv-show-tbi" style="accent-color:var(--red)" onchange="renderInvoices()"/> Uninvoiced jobs</label>
               <span class="jobs-count" id="invoices-count" style="margin-left:auto;"></span>
-              <span class="jobs-count" id="invoices-total" style="font-size:13px;font-weight:400;"></span>
-              <span class="jobs-count" id="invoices-dso" style="font-size:12px;color:var(--muted);"></span>
             </div>
+            <div class="ls-kpis" id="inv-kpis"></div>
             <div id="inv-presets-bar" class="fpresets-bar" style="display:none;"></div>
             <div id="inv-fbar" class="fbar" style="display:none;"></div>
             <div id="invoices-list" style="overflow-y:auto;flex:1;"></div>
@@ -2363,10 +2362,10 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
           <div class="detail-head">
             <div class="detail-back" onclick="navTo('jobs')"><i class="ti ti-arrow-left" style="font-size:12px"></i> Jobs</div>
             <div class="detail-title-row">
-              <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;" id="d-meta-line"></div><div class="detail-title" id="d-title-text">—</div></div>
+              <div class="dt-titleblock"><div class="dt-meta" id="d-meta-line"></div><div class="detail-title" id="d-title-text">—</div></div>
               <div class="detail-actions">
-                <button class="d-action" onclick="openJobSettingsModal()"><i class="ti ti-settings" style="font-size:13px"></i></button>
-                <button class="d-action" onclick="showJobDotMenu(event)"><i class="ti ti-dots" style="font-size:13px"></i></button>
+                <button class="d-action dt-ibtn" onclick="openJobSettingsModal()" title="Job settings"><i class="ti ti-settings"></i></button>
+                <button class="d-action dt-ibtn" onclick="showJobDotMenu(event)" title="More actions"><i class="ti ti-dots"></i></button>
                 <button class="d-action" onclick="openInvoice()"><i class="ti ti-file-invoice" style="font-size:13px"></i> Invoice</button>
                 <div class="create-item-wrap" style="position:relative;display:inline-block;">
                   <button class="d-action primary" onclick="toggleCreateItemMenu(event)"><i class="ti ti-plus" style="font-size:12px"></i> Create <i class="ti ti-chevron-down" style="font-size:10px;margin-left:2px;"></i></button>
@@ -2386,7 +2385,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
             </div>
             <div class="detail-meta-line">
               <div style="display:flex;" id="d-members-row"><!-- populated by openJobDetail --></div>
-              <span id="d-hours-sell" style="margin-left:8px;font-size:12px;color:var(--muted);"></span>
+              <span id="d-hours-sell" class="dt-hours-sell"></span>
             </div>
             <div class="labels-row" id="labels-row">
               <div class="label-add-btn" onclick="addLabel(event)"><i class="ti ti-plus" style="font-size:11px"></i> Add label</div>
@@ -7485,7 +7484,7 @@ function filterJobs(q){_jobSearch=(q||'').toLowerCase();renderJobs();}
 // paused state on the separate j.paused flag, so status filters/groups must consult it here.
 function jobStatusLabel(j){
   if(j.paused)return'Paused';
-  return({inplay:'In Play',complete:'Complete',new:'New',archived:'Archived'}[j.status])||j.status||'—';
+  return({inplay:'In play',complete:'Complete',new:'New',archived:'Archived'}[j.status])||j.status||'—';
 }
 // ── Column picker (Jobs / Invoices / Quotes) ─────────────────────────────────
 // Show/hide is done with hc-* classes on the persistent container element and static CSS
@@ -7624,7 +7623,7 @@ function renderJobs(){
       const j=item;
       const jWf=j.workflowStatus||'live';
       const sc=j.status==='inplay'||j.status==='paused'?'sp-ip':j.status==='new'?'sp-new':'sp-co';
-      const sl=j.status==='inplay'||j.status==='paused'?'In Play':j.status==='new'?'New':j.status==='archived'?'Archived':'Complete';
+      const sl=j.status==='inplay'||j.status==='paused'?'In play':j.status==='new'?'New':j.status==='archived'?'Archived':'Complete';
       computeJobStats(j);
       const bPct=j._bPct||0;const hPct=j._hPct||0;
       const bCol=bPct>=100?'var(--red)':bPct>=80?'var(--warn)':'var(--ok)';
@@ -7706,8 +7705,8 @@ function renderJobs(){
   const footerEl=document.getElementById('jobs-footer-bar');
   if(footerEl){
     const overallPct=totalBudget>0?Math.round(totalUsed/totalBudget*100):0;
-    const barCol=overallPct>=100?'var(--red)':overallPct>=80?'#F57F17':'#4CAF50';
-    footerEl.innerHTML=`<span style="font-size:12px;color:var(--muted);">TOTAL (${shown})</span><div style="flex:1;max-width:300px;margin:0 20px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span>$${(totalUsed||0).toLocaleString('en-NZ',{minimumFractionDigits:2,maximumFractionDigits:2})}</span><span style="color:var(--muted);">/ $${(totalBudget||0).toLocaleString('en-NZ',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div><div style="height:4px;background:var(--faint);border-radius:6px;overflow:hidden;"><div style="width:${Math.min(100,overallPct)}%;height:100%;background:${barCol};border-radius:6px;"></div></div></div>${overBudgetCount?`<span style="font-size:11px;color:var(--red);">${overBudgetCount} over budget</span>`:''}`;
+    const barCls=overallPct>=100?'over':overallPct>=80?'warn':'';
+    footerEl.innerHTML=`<span class="jf-lbl">Total <span>${shown} job${shown!==1?'s':''}</span></span><div class="jf-meter"><div class="jf-nums"><strong>$${(totalUsed||0).toLocaleString('en-NZ',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong><span>of $${(totalBudget||0).toLocaleString('en-NZ',{minimumFractionDigits:2,maximumFractionDigits:2})} budget · ${overallPct}%</span></div><div class="jf-bar ${barCls}"><i style="width:${Math.min(100,overallPct)}%"></i></div></div>${overBudgetCount?`<span class="jf-over"><i class="ti ti-alert-triangle"></i>${overBudgetCount} over budget</span>`:''}`;
   }
   _renderIcons();
 }
@@ -8091,8 +8090,8 @@ function deleteJobConfirm(id){
 
 function _statBlock(label,val,sub,pct,col){
   const bar=pct!=null?`<div class="stat-bar" style="margin-top:8px;"><div class="stat-bar-fill" style="width:${Math.min(100,pct)}%;background:${col||'var(--ok)'};"></div></div>`:'';
-  const subHtml=sub?`<div style="font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:.05em;">${sub}</div>`:'';
-  return`<div class="stat-b"><div class="stat-label">${label}</div><div class="stat-val">${val}</div>${subHtml}${bar}</div>`;
+  const subHtml=sub?`<div class="stat-sub">${sub}</div>`:'';
+  return`<div class="stat-b${pct!=null&&pct>=100?' is-over':''}"><div class="stat-label">${label}</div><div class="stat-val">${val}</div>${subHtml}${bar}</div>`;
 }
 // Live stats refresh — called after any task save/toggle to keep job plan in sync
 function _refreshJobStats(){
@@ -8205,12 +8204,12 @@ function renderStats(j){
   const planStr=plannedMins>0?fmtH(plannedMins):'—';
   const hCol=hPct>=100?'var(--red)':hPct>=80?'#FF9800':'#4CAF50';
   const bCol=bPct>=100?'var(--red)':bPct>=80?'#FF9800':'#4CAF50';
-  const billLabel=j.billable!==false?'BILLABLE':'NON-BILLABLE';
+  const billLabel=j.billable!==false?'Billable':'Non-billable';
   s.innerHTML=
     _statBlock('Time used / planned',`${logStr} <span class="stat-of">/ ${planStr}</span>`,plannedMins>0?`${hPct}% of plan`:null,plannedMins>0?hPct:null,hCol)+
     _statBlock('Sell used / planned',`$${sellUsed.toLocaleString()} <span class="stat-of">/ $${plannedSell.toLocaleString()}</span>`,plannedSell>0?`${bPct}% of plan`:null,plannedSell>0?bPct:null,bCol)+
     _statBlock('Budget from quote',plannedSell>0?`$${plannedSell.toLocaleString()}`:'—',billLabel,null)+
-    _statBlock('Invoiced ex GST',j._streamtime?(j._stInvoiced>0?`$${j._stInvoiced.toLocaleString()}`:'—'):((j.invStatus==='sent'||j.invStatus==='paid')&&(j.invTotal||plannedSell)?`$${(j.invTotal||plannedSell).toLocaleString()}`:'—'),j._streamtime?(j._stInvoiced>0?(j._stPaid>=j._stInvoiced?'PAID':j._stAwaitingPayment>0?'AWAITING':'SENT'):null):((j.invStatus==='sent'||j.invStatus==='paid')?j.invStatus.toUpperCase():null),null)+
+    _statBlock('Invoiced ex GST',j._streamtime?(j._stInvoiced>0?`$${j._stInvoiced.toLocaleString()}`:'—'):((j.invStatus==='sent'||j.invStatus==='paid')&&(j.invTotal||plannedSell)?`$${(j.invTotal||plannedSell).toLocaleString()}`:'—'),j._streamtime?(j._stInvoiced>0?(j._stPaid>=j._stInvoiced?'Paid':j._stAwaitingPayment>0?'Awaiting payment':'Sent'):null):((j.invStatus==='sent'||j.invStatus==='paid')?(j.invStatus==='paid'?'Paid':'Sent'):null),null)+
     _statBlock('Expenses',`$${Math.round(expUsed).toLocaleString()}`,null,null);
 }
 
@@ -8806,7 +8805,7 @@ function renderMilestonesSection(){
     const dateCell=canEdit
       ?`<span class="item-editable" title="Click to edit date" onclick="inlineEditMilestone(event,'${m.id}','date')">${dateLabel}</span>`
       :`<span style="color:var(--muted);">${dateLabel}</span>`;
-    const stTag=m._source==='st'?'<span style="font-size:10px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:6px;">ST</span>':'';
+    const stTag=m._source==='st'?'<span class="st-tag" title="From Streamtime">ST</span>':'';
     const delBtn=canEdit?`<i class="ti ti-x" title="Delete milestone" style="cursor:pointer;color:var(--muted);font-size:12px;" onclick="deleteMilestoneRow('${m.id}')"></i>`:'';
     return`<div class="ms-row" style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--faint);">
       <i class="ti ti-flag-3" style="font-size:13px;color:var(--muted);flex-shrink:0;"></i>
@@ -9783,11 +9782,11 @@ function renderExpenses(){
   wrap.style.display='';
   const total=Math.round(exps.reduce((a,e)=>a+_expMoney(e).total,0)*100)/100; // sum of row totals, so the rows add up (M7)
   const expHead=`<div class="exp-head" onclick="toggleExp()">
-    <i class="ti ti-chevron-down ph-chv exp-chv" style="font-size:12px;color:var(--muted);"></i>
-    <i class="ti ti-receipt" style="font-size:13px;color:var(--muted);"></i>
-    <span style="font-size:13px;font-weight:500;flex:1;">Expenses</span>
-    <span style="font-size:11px;color:var(--muted);background:var(--white);border:1px solid var(--border);padding:2px 8px;border-radius:10px;">${exps.length} item${exps.length!==1?'s':''}</span>
-    <span style="font-size:12px;font-weight:500;margin-left:8px;">$${total.toLocaleString()}</span>
+    <i class="ti ti-chevron-down ph-chv exp-chv"></i>
+    <span class="exp-h-ico"><i class="ti ti-receipt"></i></span>
+    <span class="exp-h-t">Expenses</span>
+    <span class="exp-h-cnt">${exps.length} item${exps.length!==1?'s':''}</span>
+    <span class="exp-h-tot">$${total.toLocaleString()}</span>
   </div>`;
   const expRows=exps.map(e=>{
     const status=e.status||'draft';
@@ -9803,7 +9802,7 @@ function renderExpenses(){
       ? `<span style="cursor:pointer;" onclick="toggleExpSubs('${e.id}')"><i class="ti ti-chevron-${open?'down':'right'}" style="font-size:11px;color:var(--muted);margin-right:4px;"></i>${e.desc||'—'}</span><span style="font-size:10px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:6px;">${subs.length} lines</span>`
       : `${e.desc||e.description||'—'}`;
     let html=`<tr>
-      <td style="font-weight:500;">${descCell}${e._source==='st'?'<span style="font-size:10px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:6px;">ST</span>':''}</td>
+      <td style="font-weight:500;">${descCell}${e._source==='st'?'<span class="st-tag" title="From Streamtime">ST</span>':''}</td>
       <td style="color:var(--muted);">${e.date?new Date(e.date+'T00:00:00').toLocaleDateString('en-NZ',{day:'numeric',month:'short',year:'2-digit'}):'-'}</td>
       <td style="text-align:center;">${qty}</td>
       <td>$${cost.toLocaleString()}</td>
@@ -10004,7 +10003,7 @@ async function saveJobDates(jobId){
 function editJobStatusField(jobId){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
   const el=document.querySelector(`#d-meta-line [onclick="editJobStatusField('${jobId}')"]`);if(!el)return;
-  const opts=[['inplay','In Play'],['complete','Complete'],['archived','Archived']].filter(([v])=>v!=='archived'||_isAdmin()||j.status==='archived');
+  const opts=[['inplay','In play'],['complete','Complete'],['archived','Archived']].filter(([v])=>v!=='archived'||_isAdmin()||j.status==='archived');
   const sel=document.createElement('select');
   sel.className='filter-btn';sel.style.cssText='font-size:11px;padding:1px 4px;';
   sel.innerHTML=opts.map(([v,l])=>`<option value="${v}" ${v===j.status?'selected':''}>${l}</option>`).join('');
@@ -10015,7 +10014,7 @@ function editJobStatusField(jobId){
     const cur=jobs.find(x=>x.id===jobId);
     const val=sel.value;
     if(cur&&val!==cur.status){
-      const labels={inplay:'In Play',complete:'Complete',archived:'Archived'};
+      const labels={inplay:'In play',complete:'Complete',archived:'Archived'};
       await dbUpdateJob(jobId,{status:val});
       logActivity(jobId,MY_PERSON,'status_change',`Status set to <strong>${labels[val]}</strong>`);
       toast(`Status set to ${labels[val]}`,'success');
@@ -11967,11 +11966,11 @@ function renderTime(){
 
   const statsEl=document.getElementById('time-stats-strip');
   if(statsEl)statsEl.innerHTML=`
-    <div class="time-stat"><div class="ts-val">${_bigH(totalH)}</div><div class="ts-lbl">Total hours</div><div class="ts-sub">${entries.length} task${entries.length!==1?'s':''}</div></div>
-    <div class="time-stat"><div class="ts-val">${_bigH(doneH)}</div><div class="ts-lbl">Logged (done)</div><div class="ts-sub">${Math.round(doneH/(totalH||1)*100)}% complete</div></div>
-    <div class="time-stat"><div class="ts-val">${_bigH(billH)}</div><div class="ts-lbl">Billable</div><div class="ts-sub">${billPct}% of logged</div></div>
-    <div class="time-stat"><div class="ts-val">$${Math.round(estRev).toLocaleString()}</div><div class="ts-lbl">Revenue ex GST</div><div class="ts-sub">${billH>0?'$'+Math.round(estRev/billH)+'/h avg':'billable logged'}</div></div>
-    <div class="time-stat"><div class="ts-val">${uniquePeople}</div><div class="ts-lbl">People</div><div class="ts-sub">${uniqueJobs} job${uniqueJobs!==1?'s':''}</div></div>`;
+    <div class="time-stat"><div class="ts-lbl">Total hours</div><div class="ts-val">${_bigH(totalH)}</div><div class="ts-sub">${entries.length} task${entries.length!==1?'s':''}</div></div>
+    <div class="time-stat"><div class="ts-lbl">Logged (done)</div><div class="ts-val">${_bigH(doneH)}</div><div class="ts-sub">${Math.round(doneH/(totalH||1)*100)}% complete</div></div>
+    <div class="time-stat"><div class="ts-lbl">Billable</div><div class="ts-val">${_bigH(billH)}</div><div class="ts-sub">${billPct}% of logged</div></div>
+    <div class="time-stat"><div class="ts-lbl">Revenue ex GST</div><div class="ts-val">$${Math.round(estRev).toLocaleString()}</div><div class="ts-sub">${billH>0?'$'+Math.round(estRev/billH)+'/h avg':'billable logged'}</div></div>
+    <div class="time-stat"><div class="ts-lbl">People</div><div class="ts-val">${uniquePeople}</div><div class="ts-sub">${uniqueJobs} job${uniqueJobs!==1?'s':''}</div></div>`;
 
   // Update sub label
   const parts=[];
@@ -12667,15 +12666,18 @@ function renderInvoices(){
     totalPaidInc+=(i.amountPaidIncTax||0);
   });
   document.getElementById('invoices-count').textContent=`${inv.length} invoice${inv.length!==1?'s':''}`;
-  const totEl=document.getElementById('invoices-total');
   const _owing=Math.max(0,totalIssuedInc-totalPaidInc);
-  if(totEl)totEl.innerHTML=`$${Math.round(totalIssuedInc).toLocaleString()} issued &nbsp;·&nbsp; <span style="color:var(--ok-ink);">$${Math.round(totalPaidInc).toLocaleString()} paid</span>${_owing>=1?` &nbsp;·&nbsp; <span style="color:var(--warn-ink);">$${Math.round(_owing).toLocaleString()} owing</span>`:''}`;
 
   // DSO metric
   const paidInvs=inv.filter(i=>i.paidDate&&i.sentDate);
   const dso=paidInvs.length?Math.round(paidInvs.reduce((s,i)=>s+(new Date(i.paidDate)-new Date(i.sentDate))/86400000,0)/paidInvs.length):null;
-  const dsoEl=document.getElementById('invoices-dso');
-  if(dsoEl)dsoEl.innerHTML=dso!=null?`DSO <strong>${dso}d</strong>`:'';
+  // KPI strip: issued, paid, owing, days to get paid (inc GST)
+  const kEl=document.getElementById('inv-kpis');
+  if(kEl){const paidPct=totalIssuedInc>0?Math.min(100,Math.round(totalPaidInc/totalIssuedInc*100)):0;
+    kEl.innerHTML=`<div class="ls-kpi"><div class="ls-kpi-l">Issued</div><div class="ls-kpi-v">$${Math.round(totalIssuedInc).toLocaleString()}</div><div class="ls-kpi-s">inc GST · ${inv.length} invoice${inv.length!==1?'s':''}</div></div>
+      <div class="ls-kpi"><div class="ls-kpi-l">Paid</div><div class="ls-kpi-v ok">$${Math.round(totalPaidInc).toLocaleString()}</div><div class="ls-kpi-s">${paidPct}% of issued</div><div class="ls-kpi-bar"><i style="width:${paidPct}%"></i></div></div>
+      <div class="ls-kpi"><div class="ls-kpi-l">Still owing</div><div class="ls-kpi-v${_owing>=1?' warn':''}">$${Math.round(_owing).toLocaleString()}</div><div class="ls-kpi-s">${_owing>=1?'awaiting payment':'all paid up'}</div></div>
+      <div class="ls-kpi"><div class="ls-kpi-l">Days to get paid</div><div class="ls-kpi-v">${dso!=null?dso+'d':'—'}</div><div class="ls-kpi-s">average, sent to paid</div></div>`;}
 
   const _invStatusPill=i=>{
     const s=_getInvStatus(i);
@@ -12890,7 +12892,7 @@ function _buildTabFilters(tab){
     wrap.appendChild(mkSel('r-person','All people',opts));
   }
   if(tab==='jobs'){
-    const _sMap={inplay:'In Play',paused:'Paused',complete:'Complete',new:'New',archived:'Archived'};
+    const _sMap={inplay:'In play',paused:'Paused',complete:'Complete',new:'New',archived:'Archived'};
     const statusCodes=[...new Set(jobs.map(j=>j.status).filter(Boolean))].sort();
     wrap.appendChild(mkSel('r-job-status','All statuses',statusCodes.map(s=>[s,_sMap[s]||s])));
     wrap.appendChild(mkSel('r-job-client','All clients',allCos.map(c=>[c])));
@@ -19872,6 +19874,110 @@ body.dark .zone-bucket.done-bucket{background:var(--ok-bg)!important;border-colo
 /* "Viewing someone else's To Do" banner, data warning */
 #st-data-warn{background:var(--warn-bg)!important;border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)!important;color:var(--warn-ink)!important;border-radius:var(--r-ctl)!important;}
 #st-data-warn button{color:var(--warn-ink)!important;}
+
+/* ── Jobs list: footer is the table's footer row ─────────────────────────────────────────── */
+#jt-jobs .jobs-table-wrap{margin-bottom:0!important;border-bottom-left-radius:0!important;border-bottom-right-radius:0!important;}
+#jobs-footer-bar{display:flex;align-items:center;gap:var(--s-6);min-height:52px;flex-shrink:0;margin:0 var(--gutter) var(--s-5)!important;padding:10px 20px!important;
+  background:var(--surface-2)!important;border:1px solid color-mix(in srgb,var(--border) 85%,transparent)!important;border-top:1px solid var(--border)!important;
+  border-radius:0 0 var(--r-card) var(--r-card)!important;box-shadow:var(--e-1)!important;}
+#jobs-footer-bar:empty{display:none;}
+.jf-lbl{font:700 13px var(--display);color:var(--ink);letter-spacing:-.01em;white-space:nowrap;}
+.jf-lbl span{font:500 12.5px var(--font);color:var(--muted);margin-left:6px;}
+.jf-meter{flex:1;max-width:420px;}
+.jf-nums{display:flex;align-items:baseline;gap:8px;margin-bottom:6px;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.jf-nums strong{font:700 14px var(--display);color:var(--ink);letter-spacing:-.02em;}
+.jf-bar{height:6px;border-radius:var(--r-pill);background:var(--faint);overflow:hidden;}
+.jf-bar i{display:block;height:100%;border-radius:inherit;background:var(--ok);transition:width var(--d-4) var(--ease-out);}
+.jf-bar.warn i{background:var(--warn);}.jf-bar.over i{background:var(--red);}
+.jf-over{display:inline-flex;align-items:center;gap:6px;margin-left:auto;padding:4px 11px;border-radius:var(--r-pill);background:var(--danger-bg);color:var(--danger-ink);font-size:12px;font-weight:600;white-space:nowrap;}
+.jf-over i{font-size:13px;}
+
+
+/* ── Job detail ─────────────────────────────────────────────────────────────────────────── */
+.detail-head{padding:0 var(--gutter)!important;}
+.detail-title-row{align-items:center!important;padding-top:14px!important;}
+.dt-titleblock{min-width:0;flex:1;}
+.dt-meta,#d-meta-line{font-size:12.5px!important;color:var(--muted)!important;margin-bottom:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.detail-title{font-size:30px!important;font-weight:750!important;letter-spacing:-.04em!important;line-height:1.1!important;}
+.dt-ibtn{width:var(--ctl-h);padding:0!important;justify-content:center;}
+.dt-ibtn i{font-size:16px;}
+.detail-meta-line{padding:10px 0 6px!important;}
+.dt-hours-sell{margin-left:var(--s-2);font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.d-av{width:26px!important;height:26px!important;font-size:10.5px!important;margin-left:-6px;}
+.d-av:first-child{margin-left:0;}
+.label-chip{font-size:12px!important;border-radius:var(--r-pill)!important;padding:2px 8px 2px 10px!important;}
+.label-add-btn{font-size:12px!important;border-radius:var(--r-pill)!important;padding:2px 10px!important;}
+#job-notes-inp{font-size:13px!important;border-radius:var(--r-ctl)!important;background:var(--surface-2)!important;}
+/* Stat strip → KPI tiles */
+.stats-strip{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:var(--s-3);padding:var(--s-5) var(--gutter) var(--s-2)!important;background:transparent!important;border:0!important;}
+.stats-strip .stat-b{position:relative;padding:16px 18px 16px!important;border:1px solid color-mix(in srgb,var(--border) 85%,transparent)!important;border-radius:var(--r-card);background:var(--white);box-shadow:var(--e-1);min-width:0;}
+.stats-strip .stat-label{font:600 12.5px/1.3 var(--font)!important;letter-spacing:-.003em!important;text-transform:none!important;color:var(--muted)!important;margin-bottom:10px!important;}
+.stats-strip .stat-val{font-size:26px!important;line-height:1.05!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.stats-strip .stat-of{font:500 13px var(--font)!important;letter-spacing:0!important;color:var(--muted);}
+.stat-sub{margin-top:6px;font-size:12px;color:var(--muted);}
+.stats-strip .stat-bar{margin-top:12px!important;}
+.stats-strip .stat-b.is-over{border-color:color-mix(in srgb,var(--red) 30%,var(--border))!important;}
+.stats-strip .stat-b.is-over .stat-sub{color:var(--red-ink);font-weight:600;}
+.plan-area{padding:0 var(--gutter) 56px!important;}
+.plan-actions{padding:var(--s-4) 0 var(--s-3)!important;}
+/* Phases and expenses: one table-card component */
+.phase{margin-bottom:var(--s-4)!important;border:1px solid color-mix(in srgb,var(--border) 85%,transparent);border-radius:var(--r-card)!important;background:var(--white);box-shadow:var(--e-1);overflow:hidden;}
+.phase-head{background:var(--white)!important;border:0!important;border-bottom:1px solid var(--faint)!important;padding:12px 16px!important;color:var(--ink)!important;}
+.phase-head:hover{background:var(--surface-2)!important;}
+.ph-n{font-family:var(--display);font-size:15px!important;font-weight:700!important;letter-spacing:-.015em!important;}
+.ph-cnt{font-size:12px!important;}
+.ph-meta{font-size:12.5px!important;color:var(--muted)!important;font-variant-numeric:tabular-nums;}
+.items-t{border:0!important;}
+.items-t td{font-size:13px;}
+.phase .add-item-row,.phase .ph-foot{border-top:1px solid var(--faint);}
+.exp-sec{margin-top:var(--s-4)!important;border:1px solid color-mix(in srgb,var(--border) 85%,transparent)!important;border-radius:var(--r-card)!important;box-shadow:var(--e-1);}
+.exp-head{background:var(--white)!important;border-bottom:1px solid var(--faint)!important;padding:12px 16px!important;gap:10px!important;}
+.exp-head:hover{background:var(--surface-2)!important;}
+.exp-head .exp-chv{font-size:13px;color:var(--muted);}
+.exp-h-ico{width:26px;height:26px;border-radius:var(--r-sm);display:inline-flex;align-items:center;justify-content:center;background:var(--warn-bg);color:var(--warn-ink);font-size:14px;}
+.exp-h-t{flex:1;font:700 15px var(--display);letter-spacing:-.015em;color:var(--ink);}
+.exp-h-cnt{font-size:12px;color:var(--muted);padding:2px 9px;border-radius:var(--r-pill);background:var(--surface-2);border:1px solid var(--faint);}
+.exp-h-tot{font:700 14px var(--display);letter-spacing:-.02em;color:var(--ink);font-variant-numeric:tabular-nums;}
+.exp-t td{font-size:13px!important;}
+.st-tag{font-size:11px!important;letter-spacing:.02em!important;border-radius:var(--r-pill)!important;padding:1px 7px!important;background:var(--surface-2)!important;border:1px solid var(--faint);color:var(--muted)!important;}
+.ph-add{font-size:13px!important;padding:14px 16px!important;border:1.5px dashed var(--border);border-radius:var(--r-card);margin-top:var(--s-4);justify-content:center;transition:border-color var(--d-1),color var(--d-1),background var(--d-1);}
+.ph-add:hover{border-color:var(--border-strong);color:var(--ink)!important;background:var(--white);}
+/* Other tabs breathe on the same gutter */
+#dtab-progress,#dtab-quote,#dtab-timeline{padding:var(--s-6) var(--gutter) 56px!important;}
+.prog-card-hd{text-transform:none!important;letter-spacing:-.015em!important;font:700 15px var(--display)!important;color:var(--ink)!important;}
+@media (max-width:1240px){.stats-strip{grid-template-columns:repeat(3,minmax(0,1fr));}}
+
+/* ── List screens: one template — header, toolbar, KPI strip, table card, empty state ────── */
+.qinv-toolbar,.jobs-toolbar{padding:var(--s-4) var(--gutter)!important;gap:var(--s-2)!important;border-bottom:0!important;background:transparent!important;flex-wrap:wrap!important;row-gap:var(--s-2)!important;}
+.qinv-toolbar .jobs-search,.jobs-toolbar .jobs-search{flex:1 1 200px!important;max-width:320px;min-width:180px;}
+.qinv-toolbar .jobs-search input,.jobs-toolbar .jobs-search input{width:100%!important;}
+.qinv-toolbar>*:not(.jobs-search):not(.jobs-count),.jobs-toolbar>*:not(.jobs-search):not(.jobs-count){flex-shrink:0;white-space:nowrap;}
+.qinv-toolbar .cc-select,.jobs-toolbar .cc-select{max-width:190px;text-overflow:ellipsis;}
+.qinv-toolbar .jobs-count,.jobs-toolbar .jobs-count{margin-left:auto;white-space:nowrap;font-size:12.5px!important;color:var(--muted)!important;font-variant-numeric:tabular-nums;}
+.qinv-toolbar .d-action i,.jobs-toolbar .d-action i{font-size:14px!important;}
+.fe-check{height:var(--ctl-h);}
+/* KPI strip (list screens) */
+.ls-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s-3);margin:0 var(--gutter) var(--s-4);}
+.ls-kpis:empty{display:none;}
+.ls-kpi{background:var(--white);border:1px solid color-mix(in srgb,var(--border) 85%,transparent);border-radius:var(--r-card);padding:14px 18px;box-shadow:var(--e-1);min-width:0;}
+.ls-kpi-l{font:600 12.5px/1.3 var(--font);color:var(--muted);margin-bottom:8px;}
+.ls-kpi-v{font:750 26px/1.05 var(--display);letter-spacing:-.04em;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ls-kpi-v.ok{color:var(--ok-ink);}.ls-kpi-v.warn{color:var(--warn-ink);}
+.ls-kpi-s{font-size:12px;color:var(--muted);margin-top:6px;}
+.ls-kpi-bar{height:6px;border-radius:var(--r-pill);background:var(--faint);overflow:hidden;margin-top:10px;}
+.ls-kpi-bar i{display:block;height:100%;border-radius:inherit;background:var(--ok);}
+/* Time: stat tiles share the KPI anatomy (label, value, context) */
+.time-stats-strip{margin:0 var(--gutter) var(--s-4)!important;gap:var(--s-3)!important;}
+.time-stat{display:flex;flex-direction:column;padding:14px 18px!important;text-align:left!important;}
+.time-stat .ts-lbl{order:0;margin:0 0 8px!important;}
+.time-stat .ts-val{order:1;font-size:26px!important;line-height:1.05!important;}
+.time-stat .ts-sub{order:2;margin-top:6px!important;font-size:12px!important;color:var(--muted)!important;}
+.time-head-bar{padding-left:var(--gutter)!important;padding-right:var(--gutter)!important;}
+/* Empty states in tables */
+#time-empty{text-align:center;padding:56px 32px!important;font-size:13px;}
+#time-empty::before{content:'';display:block;width:56px;height:56px;margin:0 auto 14px;border-radius:16px;transform:rotate(-6deg);box-shadow:var(--e-2);
+  background:var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A39D90' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8.5'/%3E%3Cpath d='M12 7.5V12l3 2'/%3E%3C/svg%3E") center/26px no-repeat;}
+@media (max-width:1240px){.ls-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}
 </style>
 <script id="screens-v3-script">
 // ═══ Screens v3 — behaviour for the screen-by-screen redesign (see screens-v3 CSS) ══════════
