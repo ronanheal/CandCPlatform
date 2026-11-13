@@ -2092,7 +2092,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
       <div class="s-btn" id="snav-theme" style="margin-top:auto;" onclick="toggleTheme()" title="Light / dark appearance"><i class="ti ti-moon" id="theme-icon"></i><span class="s-tip">Appearance</span></div>
       <div class="s-btn" id="snav-settings" onclick="navTo('settings')"><i class="ti ti-settings"></i><span class="s-tip">Settings</span></div>
     </div>
-    <div class="s-avatar" id="s-avatar" data-initials="RO" onclick="_avatarClick(event)" title="Switch user"><span class="s-tip" id="s-avatar-name">Ronan</span></div>
+    <div class="s-avatar" id="s-avatar" data-initials="RO" onclick="_avatarClick(event)" title="Account"><span class="s-tip" id="s-avatar-name">Ronan</span></div>
   </div>
 
   <div class="main">
@@ -3023,39 +3023,12 @@ function _syncSidebarAvatar(){
   el.style.setProperty('--av-bg',me.color||'var(--red)');
   const nm=document.getElementById('s-avatar-name');if(nm)nm.textContent=(me.name||'').split(' ')[0]||'Me';
 }
-function _askWhoAmI(cancelable){
-  if(AUTH&&!AUTH.admin)return; // signed in: you are who you signed in as
-  document.getElementById('whoami-modal')?.remove();
-  const list=Object.entries(people)
-    .filter(([k,p])=>!p._archived&&!p._stub&&p._stId&&stUsersById[p._stId]?.active!==false)
-    .sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||''));
-  if(!list.length){if(cancelable)toast('Team list still loading — try again in a moment','info');return;}
-  const m=document.createElement('div');m.className='modal-bg on';m.id='whoami-modal';
-  if(cancelable)m.addEventListener('click',e=>{if(e.target===m)m.remove();});
-  m.innerHTML=`<div class="modal" style="max-width:520px;">
-    <div class="modal-hd"><span class="modal-hd-title">${AUTH?'View as someone else':cancelable?'Switch user':'Who are you?'}</span>${cancelable?`<button class="modal-x" onclick="document.getElementById('whoami-modal').remove()"><i class="ti ti-x"></i></button>`:''}</div>
-    <div class="modal-bd">
-      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">${AUTH?`Admins only, for support: see the platform as this person sees it. You stay signed in as yourself, and anything you change is still done by you.${AUTH.personKey&&MY_PERSON!==AUTH.personKey?` <a href="#" onclick="event.preventDefault();_setWhoAmI('${AUTH.personKey}')" style="color:var(--ink);font-weight:500;">Back to me</a>`:''}`:'Pick yourself so your dashboard, To Do board and logged time are yours. This is remembered on this browser — change it any time from your avatar at the bottom of the sidebar.'}</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;max-height:52vh;overflow-y:auto;">
-        ${list.map(([k,p])=>`<button onclick="_setWhoAmI('${k}')" style="display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid ${k===MY_PERSON&&cancelable?'var(--ink)':'var(--border)'};border-radius:10px;background:var(--white);cursor:pointer;font-family:var(--font);font-size:13px;color:var(--ink);text-align:left;">
-          <span style="width:28px;height:28px;border-radius:50%;background:${p.color||'#999'};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;">${esc(p.initials||'?')}</span>
-          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(p.name)}</span></button>`).join('')}
-      </div>
-    </div>
-  </div>`;
-  document.body.appendChild(m);
-}
-function _setWhoAmI(key){
-  if(AUTH){
-    if(!AUTH.admin)return;
-    try{if(key===AUTH.personKey)localStorage.removeItem('cc_view_as');else localStorage.setItem('cc_view_as',key);}catch(e){}
-    if(key===MY_PERSON){document.getElementById('whoami-modal')?.remove();return;}
-    location.reload();return;
-  }
-  try{localStorage.setItem('cc_me',key);}catch(e){}
-  if(key===MY_PERSON){document.getElementById('whoami-modal')?.remove();return;}
-  location.reload();
-}
+// The "Who are you?" / "Switch user" / "View as someone else" screens were removed (todo-r5):
+// identity comes from the sign-in session (/api/me, cc_who) in production, and from cc_me (or
+// the default) on localhost. To see someone else's To Do list, use the To Do person switcher.
+// Harmless stubs stay in case anything old still calls them.
+function _askWhoAmI(){}
+function _setWhoAmI(){}
 // Collision-proof id minting (Date.now() alone collides within one ms)
 let _uidN=0;
 function uid(prefix){return (prefix||'')+Date.now().toString(36)+(_uidN++).toString(36)+Math.random().toString(36).slice(2,6);}
@@ -3227,14 +3200,14 @@ function importWorkspace(file){
   };
   reader.readAsText(file);
 }
-// Current user, chosen once per browser via the "Who are you?" picker (_askWhoAmI) and kept in
+// Current user. Locally it is cc_me when set (no picker any more, todo-r5), kept in
 // cc_me. Was hard-coded to Ronan, so every tester saw Ronan's dashboard, logged time as Ronan
 // and edited Ronan's profile (bug audit H5, Nov 2026). Ronan stays the fallback until chosen.
 // In production it is the signed-in person (or, for an admin, whoever they chose to view as).
 const MY_PERSON=(()=>{
   if(AUTH){
-    let v=null;if(AUTH.admin){try{v=localStorage.getItem('cc_view_as');}catch(e){}}
-    return v||AUTH.personKey||_authGuestKey();
+    try{localStorage.removeItem('cc_view_as');}catch(e){} // "view as" was removed (todo-r5)
+    return AUTH.personKey||_authGuestKey();
   }
   try{return localStorage.getItem('cc_me')||'st_114330';}catch(e){return 'st_114330';}
 })();
@@ -4566,7 +4539,6 @@ async function initStreamtime(silent){
   await _stYield(); // let the indicator paint before the (single) render of the visible view
   _stRenderViews(!!silent);
   _syncSidebarAvatar();
-  try{if(!AUTH&&!localStorage.getItem('cc_me')&&Object.keys(stUsersById).length)_askWhoAmI(false);}catch(e){}
   try{_applyAdminUi();}catch(e){} // hide admin-only actions for non-admins
   try{_renderTimer();}catch(e){} // a running timer survives reloads
   try{_migrateTeamsCreative();}catch(e){}
@@ -11432,7 +11404,7 @@ function openTeamMember(key){
       </label>
       ${key!==MY_PERSON?`<button class="d-action${p._archived?' primary':''}" onclick="toggleArchivePerson('${key}');closeTeamPanel();renderSettings();">
         <i class="ti ti-${p._archived?'rotate':'archive'}" style="font-size:12px"></i> ${p._archived?'Restore':'Archive'} ${p.name}
-      </button>`:`<div style="font-size:12px;color:var(--muted);">This is your account — switch users from the person switcher.</div>`}
+      </button>`:`<div style="font-size:12px;color:var(--muted);">This is your account.</div>`}
     </div>`;
   document.getElementById('tm-panel').classList.add('open');
   document.getElementById('tm-scrim').classList.add('on');
@@ -20780,7 +20752,7 @@ body.dark .zone-bucket.done-bucket{background:var(--ok-bg)!important;border-colo
   // ── First run: "Who are you?" first, "What's new" after — never both at once ─────────────
   let pendingCL=false;
   const whoOpen=()=>!!document.getElementById('whoami-modal');
-  const needWho=()=>{if(AUTH)return false;try{return !localStorage.getItem('cc_me');}catch(e){return false;}};
+  const needWho=()=>false; // no first-run picker any more (todo-r5)
   const _cl=window.showChangelog;
   if(typeof _cl==='function'){
     let tries=0;
@@ -22765,20 +22737,18 @@ body.dark .au-mi:hover,body.dark .au-mi:focus-visible{background:rgba(255,255,25
 // Avatar menu (profile, change password, view as, sign out), the change-password modal, the
 // boot check against /api/me, and the Access card in Settings → Team for admins.
 function _avatarClick(ev){
-  if(!AUTH){_askWhoAmI(true);return;}
   const open=document.getElementById('au-menu');if(open){open.remove();return;}
   const me=people[MY_PERSON]||{};
-  const real=AUTH.personKey?people[AUTH.personKey]:null;
-  const viewing=AUTH.admin&&MY_PERSON!==(AUTH.personKey||_authGuestKey());
+  const real=AUTH&&AUTH.personKey?people[AUTH.personKey]:null;
   const m=document.createElement('div');m.className='au-menu';m.id='au-menu';m.setAttribute('role','menu');
-  m.innerHTML=`<div class="au-menu-hd"><b>${esc((real&&real.name)||AUTH.name||AUTH.email)}</b><small>${esc(AUTH.email)}</small>
-      ${viewing?`<span class="au-viewing">Viewing as ${esc(me.name||'someone else')}</span>`:''}</div>
+  // Localhost has no session: just the profile link (no password or sign-out to offer)
+  m.innerHTML=AUTH?`<div class="au-menu-hd"><b>${esc((real&&real.name)||AUTH.name||AUTH.email)}</b><small>${esc(AUTH.email)}</small></div>
     <button class="au-mi" role="menuitem" data-a="profile"><i class="ti ti-user"></i>My profile</button>
     <button class="au-mi" role="menuitem" data-a="password"><i class="ti ti-key"></i>Change password</button>
-    ${AUTH.admin?`<button class="au-mi" role="menuitem" data-a="viewas"><i class="ti ti-eye"></i>View as someone else</button>`:''}
-    ${viewing?`<button class="au-mi" role="menuitem" data-a="back"><i class="ti ti-arrow-back-up"></i>Back to me</button>`:''}
     <div class="au-sep"></div>
-    <button class="au-mi" role="menuitem" data-a="signout"><i class="ti ti-logout"></i>Sign out</button>`;
+    <button class="au-mi" role="menuitem" data-a="signout"><i class="ti ti-logout"></i>Sign out</button>`
+    :`<div class="au-menu-hd"><b>${esc(me.name||'Me')}</b><small>Local preview, not signed in</small></div>
+    <button class="au-mi" role="menuitem" data-a="profile"><i class="ti ti-user"></i>My profile</button>`;
   document.body.appendChild(m);
   const r=(ev&&ev.currentTarget||document.getElementById('s-avatar')).getBoundingClientRect();
   m.style.left=Math.max(8,Math.min(r.right+8,innerWidth-m.offsetWidth-8))+'px';
@@ -22787,8 +22757,6 @@ function _avatarClick(ev){
     const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;m.remove();
     if(a==='profile'){navTo('settings');switchSettTab('profile');}
     else if(a==='password')openChangePassword();
-    else if(a==='viewas')_askWhoAmI(true);
-    else if(a==='back')_setWhoAmI(AUTH.personKey||_authGuestKey());
     else if(a==='signout')authSignOut();
   });
   setTimeout(()=>{
@@ -23047,6 +23015,487 @@ function _accBind(card){
   if(typeof navTo==='function'){
     const _navPrev=navTo;
     navTo=function(v){const r=_navPrev.apply(this,arguments);if(v==='jobs')try{_stFlushStale();}catch(e){}return r;};
+  }
+})();
+</script>
+<style id="todo-r5">
+/* ═══ To Do round 5 — the task sheet's language (muted small header, the title as hero, quiet
+   icon labels, soft tinted segmented controls, a calm footer, warm paper, rounded everything)
+   carried onto the To Do board, Focus and Calendar. Styling only where possible: card heights,
+   the Done divider, drag, split zones, the dock, rollover, repeats and leave are untouched.
+   ds-v3 tokens and the ux-r4 motion tokens only. ══════════════════════════════════════════ */
+
+/* ── 1 · Task sheet: a little wider and taller; the job field never moves ──────────────────
+   Copy and open-job float inside the job field, in a slot that is always reserved, so picking
+   a job changes nothing around it. Person, job and item share one right edge and chevron. */
+#todo-modal .ux-tm{width:640px!important;max-height:min(92vh,880px)!important;}
+#todo-modal .ux-tm .ux-job-cell{position:relative;display:block;}
+#todo-modal .ux-tm #td-job-btn{position:relative;padding-right:90px!important;}
+#todo-modal .ux-tm #td-job-btn .ux-sel-ico{position:absolute;right:10px;top:50%;margin:-7px 0 0;}
+#todo-modal .ux-tm .ux-job-acts{position:absolute;right:30px;top:50%;transform:translateY(-50%);z-index:2;gap:2px;}
+#todo-modal .ux-tm .ux-job-acts[hidden]{display:flex!important;visibility:hidden;pointer-events:none;}
+#todo-modal .ux-tm .ux-job-acts .ux-ibtn{width:28px;height:28px;}
+#todo-modal .ux-tm .ux-job-acts .ux-ibtn i{font-size:14px;}
+/* More of the job name before it truncates; the client gives way first */
+#todo-modal .ux-tm .ux-job-txt{gap:10px;}
+#todo-modal .ux-tm #td-job-label{flex:0 1 auto;min-width:0;}
+#todo-modal .ux-tm .ux-job-co{flex:0 100 auto;max-width:34%;min-width:4em;}
+
+/* ── 2 · To Do toolbar: one calm row on the window's paper ──────────────────────────────── */
+#view-todo .todo-bar{background:transparent!important;border-bottom:1px solid var(--faint)!important;padding:12px 20px!important;gap:10px!important;min-height:58px;}
+#view-todo .person-switcher{height:34px;padding:0 10px 0 4px!important;border-radius:var(--r-pill)!important;border:1px solid transparent;
+  transition:background-color var(--dur-1) var(--ease-out),border-color var(--dur-1) var(--ease-out);}
+#view-todo .person-switcher:hover{background:var(--white);border-color:var(--border);box-shadow:var(--e-1);}
+#view-todo .person-switcher .person-av{width:26px!important;height:26px!important;font-size:10px!important;}
+#view-todo .person-switcher .person-name{font:600 13.5px/1 var(--font)!important;letter-spacing:-.005em;color:var(--ink);}
+/* The period is the toolbar's title: display type, a quiet calendar icon */
+#view-todo #wbtn-cal{gap:8px!important;padding:0 12px!important;border-radius:var(--r-pill)!important;}
+#view-todo #wbtn-cal .wlabel{font:650 14px/1 var(--display)!important;letter-spacing:-.015em;color:var(--ink);font-variant-numeric:tabular-nums;}
+#view-todo #wbtn-cal>i:first-child{color:var(--muted);}
+#view-todo #wbtn-today{border-radius:var(--r-pill)!important;font-size:12.5px!important;color:var(--ink-2)!important;}
+#view-todo .tb-chip{border-radius:var(--r-pill)!important;box-shadow:none!important;background:color-mix(in srgb,var(--white) 70%,transparent)!important;border-color:var(--faint)!important;}
+#view-todo .tb-chip b{color:var(--ink);font-weight:600;}
+#view-todo #vsp-btn{border-radius:var(--r-ctl)!important;box-shadow:none;}
+#view-todo .todo-view-toggle{border-radius:var(--r-ctl)!important;}
+/* Viewing someone else's list: a soft tinted note, not a strip */
+#view-todo .todo-banner:not(.hidden){margin:10px 20px 0!important;border-radius:var(--r-ctl)!important;border:1px solid color-mix(in srgb,var(--info-ink) 18%,transparent)!important;
+  background:var(--info-bg)!important;color:var(--info-ink)!important;font-size:12.5px!important;padding:8px 12px!important;}
+#view-todo .todo-banner .todo-banner-switch{border-radius:var(--r-pill)!important;}
+
+/* ── 3 · Day headers: a muted small day name, the date as the hero ─────────────────────────
+   Today is the dashboard's red date disc, not a red rule along the top. */
+#view-todo .day-col{border-right:1px solid var(--faint)!important;}
+#view-todo .day-col:last-child{border-right:0!important;}
+#view-todo .day-head{padding:12px 12px 10px!important;border-bottom:1px solid var(--faint)!important;background:var(--white)!important;box-shadow:none!important;}
+#view-todo .day-col.today .day-head{background:var(--white)!important;box-shadow:none!important;}
+#view-todo .day-head-row{align-items:flex-start!important;}
+#view-todo .day-head-row>div:first-child{display:flex;align-items:baseline;gap:8px;min-width:0;}
+#view-todo .day-name{order:2;font:500 12.5px/1 var(--font)!important;letter-spacing:0!important;text-transform:none!important;color:var(--muted)!important;}
+#view-todo .day-col.today .day-name{color:var(--ink-2)!important;}
+#view-todo .day-num{order:1;font:700 22px/1 var(--display)!important;letter-spacing:-.035em!important;color:var(--ink);}
+#view-todo .day-num.today-red{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;padding:0 6px;margin:-4px 0 -4px -2px;border-radius:var(--r-pill);
+  background:var(--red);color:#fff!important;font-size:16px!important;letter-spacing:-.02em!important;box-shadow:0 2px 8px color-mix(in srgb,var(--red) 32%,transparent);}
+#view-todo .day-col.today .day-head-row>div:first-child{align-items:center;}
+#view-todo .day-add-btn{height:26px!important;padding:0 8px!important;border-radius:var(--r-pill)!important;margin:-3px -4px 0 0;}
+#view-todo .day-cap{margin-top:10px!important;gap:8px!important;}
+#view-todo .day-cap-bar{height:5px!important;}
+/* Today's column carries the faintest warmth, top to bottom */
+#view-todo .day-col.today .day-todo{background:linear-gradient(180deg,color-mix(in srgb,var(--red) 3%,transparent),transparent 70%);}
+
+/* ── 4 · Task cards: warm paper, rounded, the title leads; meaning stripes stay ──────────── */
+#view-todo .task-card{border-radius:12px!important;padding:8px 10px 7px 11px!important;background:var(--white)!important;
+  border:1px solid color-mix(in srgb,var(--border) 80%,transparent)!important;
+  transition:box-shadow var(--dur-2) var(--ease-out),border-color var(--dur-1) var(--ease-out),transform var(--dur-2) var(--ease-out)!important;}
+#view-todo .task-card:hover{transform:translateY(-1px);}
+#view-todo .task-card.dragging-c,#view-todo .task-card.resizing{transform:none;}
+#view-todo .tc-top{gap:7px!important;}
+#view-todo .tc-title{font:500 13px/1.35 var(--font)!important;letter-spacing:-.003em;color:var(--ink)!important;}
+#view-todo .tc-icon{color:var(--subtle);line-height:1.3!important;}
+#view-todo .tc-hrs{margin-top:0!important;padding:3px 7px!important;border-radius:var(--r-pill)!important;background:color-mix(in srgb,var(--ink) 5%,transparent)!important;
+  color:var(--ink-2)!important;font:600 10.5px/1.1 var(--font)!important;font-variant-numeric:tabular-nums;}
+#view-todo .tc-meta{margin-top:4px!important;gap:6px!important;}
+#view-todo .task-card:not(:has(.tc-icon)) .tc-meta,#view-todo .task-card:not(:has(.tc-icon)) .tc-note{padding-left:0!important;}
+#view-todo .tc-job{font-size:11.5px!important;color:var(--muted)!important;max-width:none!important;flex:0 1 auto;min-width:0;}
+#view-todo .tc-job.clickable:hover{color:var(--ink)!important;text-decoration:underline;text-decoration-color:var(--subtle);text-underline-offset:2px;}
+#view-todo .tc-sep{width:3px!important;height:3px!important;background:var(--subtle)!important;opacity:.6;}
+#view-todo .tc-item-tag{font-size:11px!important;color:var(--muted)!important;}
+#view-todo .tc-note{font-size:11.5px!important;font-style:normal!important;color:var(--muted)!important;}
+/* Done: a quieter, faintly green paper card */
+#view-todo .task-card.done-c{background:color-mix(in srgb,var(--ok-bg) 45%,var(--white))!important;box-shadow:none!important;}
+#view-todo .task-card.done-c .tc-title{color:var(--muted)!important;text-decoration-color:color-mix(in srgb,var(--muted) 55%,transparent)!important;}
+#view-todo .task-card.done-c .tc-hrs{background:color-mix(in srgb,var(--ok) 12%,transparent)!important;color:var(--ok-ink)!important;}
+body.dark #view-todo .task-card{background:var(--surface-2)!important;}
+body.dark #view-todo .task-card.done-c{background:color-mix(in srgb,var(--ok-bg) 40%,var(--white))!important;}
+body.dark #view-todo .tc-hrs{background:rgba(255,246,230,.07)!important;}
+/* The drop line inside a column: a soft rounded bar, not a hard rule */
+#view-todo .task-card.drop-above{border-top-color:color-mix(in srgb,var(--border) 80%,transparent)!important;box-shadow:0 -5px 0 -2px var(--red),var(--e-1)!important;}
+#view-todo .day-todo.drop-hi,#view-todo .day-done.drop-hi{background:color-mix(in srgb,var(--red) 4%,transparent)!important;outline:1.5px dashed color-mix(in srgb,var(--red) 35%,transparent);outline-offset:-5px;border-radius:14px;}
+
+/* ── 5 · Empty days: an inviting slot (click to add), not grey text ──────────────────────── */
+.r5-empty{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:44px;margin:0;padding:0 10px;
+  border:1px dashed color-mix(in srgb,var(--border) 90%,transparent);border-radius:12px;background:transparent;
+  font:500 12px/1 var(--font);color:var(--subtle);cursor:pointer;
+  transition:background-color var(--dur-1) var(--ease-out),color var(--dur-1) var(--ease-out),border-color var(--dur-1) var(--ease-out);}
+.r5-empty i{font-size:14px;}
+.r5-empty .r5-empty-add{display:none;}
+.r5-empty:hover,.r5-empty:focus-visible{background:var(--white);border-color:var(--border-strong);color:var(--ink-2);}
+.r5-empty:hover .r5-empty-add,.r5-empty:focus-visible .r5-empty-add{display:inline;}
+.r5-empty:hover .r5-empty-lbl,.r5-empty:focus-visible .r5-empty-lbl{display:none;}
+.r5-empty:focus-visible{outline:2px solid var(--focus);outline-offset:1px;}
+body.dark .r5-empty:hover{background:var(--surface-2);}
+#view-todo .day-done .day-done-empty{text-align:center;}
+
+/* ── 6 · Done section: the rail and the collapsed buckets in the same paper family ─────── */
+#view-todo .global-divider{background:var(--off)!important;border-color:var(--faint)!important;}
+#view-todo .global-divider:hover{background:var(--white)!important;}
+#view-todo .day-done{background:color-mix(in srgb,var(--ink) 1.5%,var(--off))!important;}
+body.dark #view-todo .day-done{background:color-mix(in srgb,#000 12%,var(--off))!important;}
+#view-todo .zone-bucket{border-radius:14px!important;box-shadow:none!important;padding:12px 12px 12px 14px!important;}
+#view-todo .zone-bucket .zb-kind{font-size:12px!important;font-weight:500!important;}
+#view-todo .zone-bucket .zb-count{font-size:18px!important;}
+#view-todo .zone-bucket .zb-hrs{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;}
+#view-todo .zone-bucket .zb-view{height:26px;padding:0 11px!important;border:1px solid var(--border)!important;color:var(--ink-2)!important;font-weight:500;cursor:pointer;
+  transition:background-color var(--dur-1) var(--ease-out),border-color var(--dur-1);}
+#view-todo .zone-bucket .zb-view:hover{border-color:var(--border-strong)!important;color:var(--ink)!important;}
+
+/* ── 7 · Drop dock and split seams: paper, rounded, sentence case ──────────────────────── */
+#task-dock{border-radius:20px!important;padding:10px!important;gap:6px!important;border:1px solid var(--border)!important;box-shadow:var(--e-4)!important;}
+#task-dock .ss-lbl{text-transform:none!important;letter-spacing:0!important;font-size:12px!important;font-weight:500!important;margin:0 2px 0 4px!important;white-space:nowrap;}
+#task-dock .ss-week{width:auto!important;flex:none;border-radius:14px!important;border:1.5px dashed var(--border)!important;background:var(--surface-2)!important;padding:13px 16px!important;}
+#task-dock .ss-week .ssd-name{white-space:nowrap;text-transform:none!important;letter-spacing:0!important;font:600 12.5px/1 var(--font)!important;color:var(--ink-2)!important;}
+#task-dock .ss-person{border-radius:14px!important;}
+#task-dock .ss-person .ssp-name{font-size:10.5px!important;}
+#task-dock .ss-day.drop-ok,#task-dock .ss-person.drop-ok{border-color:var(--red)!important;border-style:solid!important;}
+.split-zone{border-radius:var(--r-pill)!important;}
+.split-zone .sz-lbl{text-transform:none!important;letter-spacing:.02em!important;font-size:10.5px!important;font-weight:600!important;color:var(--red-ink)!important;}
+
+/* ── 8 · Focus: today as one sheet — muted header, hero line, quiet properties, calm footer ── */
+#view-todo .r5-focus{flex:1;overflow-y:auto;padding:28px 28px 72px;}
+.r5f-sheet{max-width:780px;margin:0 auto;background:var(--white);border:1px solid color-mix(in srgb,var(--border) 85%,transparent);border-radius:var(--r-lg);
+  box-shadow:var(--e-2);overflow:hidden;animation:dsRise var(--dur-3) var(--ease-out) backwards;}
+.r5f-hd{display:flex;align-items:center;gap:8px;padding:16px 16px 0 28px;font:500 12.5px/1.3 var(--font);color:var(--muted);}
+.r5f-hd .r5f-disc{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 5px;border-radius:var(--r-pill);background:var(--red);color:#fff;
+  font:700 11.5px/1 var(--display);box-shadow:0 2px 8px color-mix(in srgb,var(--red) 32%,transparent);}
+.r5f-hd .r5f-wk{padding:2px 8px;border-radius:var(--r-pill);background:var(--surface-2);border:1px solid var(--faint);font-size:11.5px;color:var(--ink-2);}
+.r5f-exit{margin-left:auto;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:0;border-radius:var(--r-sm);background:transparent;
+  font:500 12.5px/1 var(--font);color:var(--muted);cursor:pointer;transition:background-color var(--dur-1) var(--ease-out),color var(--dur-1);}
+.r5f-exit:hover{background:var(--surface-2);color:var(--ink);}
+.r5f-exit:focus-visible{outline:2px solid var(--focus);outline-offset:1px;}
+.r5f-exit kbd,.r5f-ft kbd{font:500 11px var(--font);color:var(--muted);padding:0 5px;border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;background:var(--surface-2);}
+.r5f-hero{padding:14px 28px 0;}
+.r5f-title{margin:0;font:700 28px/1.15 var(--display);letter-spacing:-.03em;color:var(--ink);}
+.r5f-sub{margin-top:6px;font-size:14px;line-height:1.5;color:var(--ink-2);}
+.r5f-sub b{font-weight:650;color:var(--ink);}
+.r5f-meter{display:flex;height:6px;margin:18px 28px 0;border-radius:var(--r-pill);background:var(--faint);overflow:hidden;}
+.r5f-meter span{display:block;height:100%;transition:width var(--dur-4) var(--ease-out);}
+.r5f-meter .m-done{background:var(--ok);}
+.r5f-meter .m-todo{background:color-mix(in srgb,var(--ink) 22%,transparent);}
+.r5f-meter.over .m-todo{background:var(--warn);}
+.r5f-props{display:flex;flex-wrap:wrap;gap:4px 22px;margin:14px 28px 0;padding:0 0 16px;border-bottom:1px solid var(--faint);}
+.r5f-prop{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);white-space:nowrap;}
+.r5f-prop i{font-size:15px;color:var(--subtle);}
+.r5f-prop b{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;}
+.r5f-prop.over b{color:var(--warn-ink);}
+.r5f-list{padding:8px 16px;}
+.r5f-sec{display:flex;align-items:center;gap:8px;margin:0 28px;padding:14px 0 6px;border-top:1px solid var(--faint);font:500 12.5px/1 var(--font);color:var(--muted);}
+.r5f-sec .r5f-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);}
+.r5f-sec b{font-weight:600;color:var(--ok-ink);font-variant-numeric:tabular-nums;}
+/* Rows: the task sheet's property-row rhythm, with the board's meaning stripe */
+#view-todo .r5f-row{position:relative;display:flex;align-items:center;gap:12px;min-height:52px;padding:10px 12px 10px 18px!important;border:0!important;border-radius:var(--r-ctl);
+  background:transparent;cursor:pointer;transition:background-color var(--dur-1) var(--ease-out)!important;}
+#view-todo .r5f-row::before{content:'';position:absolute;left:6px;top:12px;bottom:12px;width:3px;border-radius:3px;background:var(--r5-stripe,var(--border));}
+#view-todo .r5f-row.is-bill{--r5-stripe:var(--ok);}
+#view-todo .r5f-row.is-nonbill{--r5-stripe:var(--warn);}
+#view-todo .r5f-row.is-urgent{--r5-stripe:var(--red);}
+#view-todo .r5f-row.is-done{--r5-stripe:color-mix(in srgb,var(--ok) 55%,var(--border));}
+#view-todo .r5f-row:hover{background:var(--surface-2);}
+#view-todo .r5f-row:focus-visible{outline:2px solid var(--focus);outline-offset:-2px;}
+#view-todo .r5f-row .todo-check{width:20px;height:20px;border-width:1.5px;cursor:pointer;flex:none;transition:border-color var(--dur-1),background-color var(--dur-1);}
+#view-todo .r5f-row .todo-check:hover{border-color:var(--ok);}
+#view-todo .r5f-row .todo-check.done-c{background:var(--ok-bg);border-color:color-mix(in srgb,var(--ok) 60%,transparent);}
+.r5f-main{flex:1;min-width:0;}
+#view-todo .r5f-row .fli-title{font:500 15px/1.4 var(--font)!important;letter-spacing:-.005em;color:var(--ink);overflow-wrap:anywhere;}
+#view-todo .r5f-row.is-done .fli-title{color:var(--muted);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--muted) 55%,transparent);}
+.r5f-meta{display:flex;flex-wrap:wrap;gap:2px 14px;margin-top:4px;font-size:12px;color:var(--muted);}
+.r5f-meta span{display:inline-flex;align-items:center;gap:5px;min-width:0;}
+.r5f-meta i{font-size:13px;color:var(--subtle);}
+.r5f-tag{flex:none;display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:var(--r-pill);font:600 11px/1 var(--font);}
+.r5f-tag.urgent{background:var(--danger-bg);color:var(--danger-ink);}
+.r5f-tag.soft{border:1px dashed var(--muted);color:var(--muted);font-weight:500;}
+.r5f-tag.timing{background:var(--red-wash);color:var(--red-ink);}
+.r5f-tag.timing::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--red);animation:r5Pulse 1.6s var(--ease-in-out) infinite;}
+@keyframes r5Pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+.r5f-hrs{flex:none;min-width:44px;text-align:right;font:600 12.5px/1 var(--font);color:var(--ink-2);font-variant-numeric:tabular-nums;}
+.r5f-row.is-done .r5f-hrs{color:var(--ok-ink);}
+.r5f-timer{flex:none;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;border:0;border-radius:var(--r-sm);background:transparent;color:var(--muted);cursor:pointer;
+  opacity:0;transition:opacity var(--dur-1) var(--ease-out),background-color var(--dur-1),color var(--dur-1);}
+.r5f-timer i{font-size:15px;}
+.r5f-row:hover .r5f-timer,.r5f-row:focus-within .r5f-timer,.r5f-timer.on{opacity:1;}
+.r5f-timer:hover{background:color-mix(in srgb,var(--ink) 7%,transparent);color:var(--ink);}
+.r5f-timer.on{color:var(--red-ink);}
+.r5f-timer:focus-visible{opacity:1;outline:2px solid var(--focus);outline-offset:1px;}
+@media (hover:none){.r5f-timer{opacity:.8;}}
+.r5f-empty{display:flex;align-items:center;gap:14px;padding:22px 18px;color:var(--muted);font-size:14px;}
+.r5f-empty i{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:var(--ok-bg);color:var(--ok-ink);font-size:19px;flex:none;}
+.r5f-empty b{display:block;font:650 15px/1.3 var(--font);color:var(--ink);margin-bottom:2px;}
+.r5f-ft{display:flex;align-items:center;gap:8px;padding:12px 16px 12px 28px;border-top:1px solid var(--faint);background:var(--surface-2);font-size:12px;color:var(--muted);}
+.r5f-ft .r5f-sp{flex:1;}
+.r5f-ft .tm-btn-save{display:inline-flex;align-items:center;gap:6px;min-height:34px;height:34px;padding:0 14px;}
+.r5f-ft .tm-btn-save i{font-size:14px;}
+body.dark .r5f-sheet{background:var(--white);border-color:var(--border);}
+body.dark .r5f-ft{background:color-mix(in srgb,#000 10%,var(--white));}
+body.dark #view-todo .r5f-row:hover{background:var(--surface-2);}
+
+/* ── 9 · Calendar: the period lives in the toolbar; filters are a soft tinted segmented row ── */
+#view-todo .cal-filter-bar{background:transparent!important;border-bottom:1px solid var(--faint)!important;padding:8px 20px!important;gap:8px!important;}
+#view-todo .cal-filter-label{text-transform:none!important;letter-spacing:0!important;font:500 12.5px/1 var(--font)!important;color:var(--muted)!important;}
+.r5-seg{display:inline-flex;align-items:center;gap:2px;padding:3px;border-radius:var(--r-ctl);background:color-mix(in srgb,var(--ink) 5%,var(--off));box-shadow:inset 0 1px 2px rgba(46,36,20,.06);}
+body.dark .r5-seg{background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px var(--faint);}
+#view-todo .cal-filter-bar .cal-filter-chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px 0 9px!important;border:0!important;border-radius:calc(var(--r-ctl) - 3px)!important;
+  background:transparent!important;color:var(--muted)!important;font:500 12.5px/1 var(--font)!important;box-shadow:none!important;
+  transition:background-color var(--dur-2) var(--ease-out),color var(--dur-1),box-shadow var(--dur-2) var(--ease-out)!important;}
+#view-todo .cal-filter-bar .cal-filter-chip i{font-size:13px!important;color:inherit;}
+#view-todo .cal-filter-bar .cal-filter-chip:hover{color:var(--ink)!important;}
+#view-todo .cal-filter-bar .cal-filter-chip.on{background:var(--white)!important;color:var(--ink)!important;box-shadow:var(--e-1),0 0 0 1px color-mix(in srgb,var(--border) 70%,transparent)!important;}
+body.dark #view-todo .cal-filter-bar .cal-filter-chip.on{background:var(--surface-2)!important;box-shadow:0 0 0 1px var(--border)!important;}
+#view-todo .cal-filter-bar .cal-filter-chip.on .ti-alert-circle{color:var(--red)!important;}
+#view-todo .cal-filter-bar .cal-filter-chip.on .ti-circle-check{color:var(--ok)!important;}
+#view-todo .cal-filter-bar .cal-filter-chip:focus-visible{outline:2px solid var(--focus);outline-offset:1px;}
+/* Day heads match the board: name muted, date as the hero, today as the red disc */
+#view-todo .cal-time-axis{padding-top:52px!important;border-right:1px solid var(--faint)!important;}
+#view-todo .cal-time-slot{font:500 11px/1 var(--font)!important;color:var(--subtle)!important;letter-spacing:0!important;padding-top:0;transform:translateY(-5px);font-variant-numeric:tabular-nums;}
+#view-todo .cal-day-col{border-right:1px solid var(--faint)!important;}
+#view-todo .cal-day-col:last-child{border-right:0!important;}
+#view-todo .cal-day-head{height:52px!important;flex-direction:row!important;gap:8px;align-items:center!important;justify-content:flex-start!important;padding:0 12px;border-top:0!important;border-bottom:1px solid var(--faint)!important;background:var(--white)!important;}
+#view-todo .cal-day-head-name{order:2;font:500 12.5px/1 var(--font)!important;letter-spacing:0!important;text-transform:none!important;color:var(--muted)!important;}
+#view-todo .cal-day-head.today .cal-day-head-name{color:var(--ink-2)!important;}
+#view-todo .cal-day-head-num{order:1;font:700 20px/1 var(--display)!important;letter-spacing:-.03em;color:var(--ink);}
+#view-todo .cal-day-head-num.today-red{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;padding:0 6px;border-radius:var(--r-pill);background:var(--red);color:#fff!important;
+  font-size:15px!important;box-shadow:0 2px 8px color-mix(in srgb,var(--red) 32%,transparent);}
+#view-todo .cal-slot-line{border-top-color:var(--faint)!important;}
+/* Blocks: rounded paper with the board's meaning stripe; no hard-coded blues and purples */
+#view-todo .cal-task-block.r5-ctb{left:5px;right:5px;padding:6px 8px 8px 10px;border-radius:10px;border:1px solid color-mix(in srgb,var(--border) 80%,transparent);
+  border-left:3px solid var(--r5-stripe,var(--border));background:var(--white);box-shadow:var(--e-1);color:var(--ink);
+  transition:box-shadow var(--dur-2) var(--ease-out),border-color var(--dur-1),opacity var(--dur-1)!important;}
+#view-todo .cal-task-block.r5-ctb:hover{box-shadow:var(--e-2);border-color:var(--border-strong);border-left-color:var(--r5-stripe,var(--border));}
+#view-todo .r5-ctb.ctb-bill{--r5-stripe:var(--ok);}
+#view-todo .r5-ctb.ctb-nonbill{--r5-stripe:var(--warn);}
+#view-todo .r5-ctb.ctb-urgent{--r5-stripe:var(--red);background:color-mix(in srgb,var(--danger-bg) 55%,var(--white));}
+#view-todo .r5-ctb.ctb-personal{--r5-stripe:var(--info-ink);background:color-mix(in srgb,var(--info-bg) 50%,var(--white));}
+#view-todo .r5-ctb.is-done{--r5-stripe:color-mix(in srgb,var(--ok) 55%,var(--border));background:color-mix(in srgb,var(--ok-bg) 45%,var(--white));box-shadow:none;}
+#view-todo .r5-ctb.is-done .ctb-title{color:var(--muted);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--muted) 55%,transparent);}
+#view-todo .r5-ctb.is-soft{border-style:dashed;border-left-style:solid;background:repeating-linear-gradient(135deg,transparent 0 7px,color-mix(in srgb,var(--faint) 70%,transparent) 7px 14px),var(--white);box-shadow:none;}
+#view-todo .r5-ctb .ctb-title{font:500 12px/1.3 var(--font);color:var(--ink);}
+#view-todo .r5-ctb .ctb-hrs{font:600 10.5px/1.2 var(--font);color:var(--ink-2);opacity:1;margin-top:2px;font-variant-numeric:tabular-nums;}
+#view-todo .r5-ctb .ctb-job{font-size:11px;color:var(--muted);opacity:1;margin-top:1px;}
+#view-todo .r5-ctb .ctb-resize::after{background:color-mix(in srgb,var(--ink) 25%,transparent);}
+body.dark #view-todo .cal-task-block.r5-ctb{background:var(--surface-2);border-color:rgba(255,246,230,.085);border-left-color:var(--r5-stripe,var(--border));}
+body.dark #view-todo .r5-ctb.ctb-urgent{background:color-mix(in srgb,var(--danger-bg) 60%,var(--surface-2));}
+body.dark #view-todo .r5-ctb.ctb-personal{background:color-mix(in srgb,var(--info-bg) 60%,var(--surface-2));}
+body.dark #view-todo .r5-ctb.is-done{background:color-mix(in srgb,var(--ok-bg) 40%,var(--white));}
+.r5-cal-add{position:absolute;right:8px;bottom:8px;z-index:3;display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r-pill);
+  background:var(--white);color:var(--ink-2);font:500 12px/1 var(--font);box-shadow:var(--e-2);cursor:pointer;opacity:0;transform:translateY(2px);
+  transition:opacity var(--dur-1) var(--ease-out),transform var(--dur-2) var(--ease-out),border-color var(--dur-1);}
+.r5-cal-add i{font-size:13px;}
+#view-todo .cal-day-col:hover .r5-cal-add,.r5-cal-add:focus-visible{opacity:1;transform:none;}
+.r5-cal-add:hover{border-color:var(--border-strong);color:var(--ink);}
+.r5-cal-add:focus-visible{outline:2px solid var(--focus);outline-offset:1px;}
+/* Completed drawer: a calm footer with a count pill */
+#view-todo .todo-drawer{border-top:1px solid var(--faint)!important;background:var(--surface-2)!important;}
+#view-todo .todo-drawer.drag-over{border-top-color:var(--ok)!important;background:color-mix(in srgb,var(--ok-bg) 70%,var(--white))!important;}
+#view-todo .todo-drawer-handle{padding:10px 20px!important;}
+#view-todo .todo-drawer-label{text-transform:none!important;letter-spacing:0!important;font:500 12.5px/1 var(--font)!important;color:var(--ink-2)!important;flex:0 1 auto!important;}
+#view-todo .todo-drawer-count{background:var(--ok-bg)!important;color:var(--ok-ink)!important;border-radius:var(--r-pill)!important;font:600 11px/1 var(--font)!important;padding:4px 8px!important;}
+#view-todo .drawer-task-chip{border-radius:var(--r-pill)!important;background:var(--white)!important;border-color:var(--border)!important;padding:5px 11px!important;font-size:12px!important;}
+#view-todo .drawer-task-chip:hover{border-color:color-mix(in srgb,var(--ok) 50%,var(--border))!important;}
+body.dark #view-todo .todo-drawer{background:color-mix(in srgb,#000 10%,var(--off))!important;}
+body.dark #view-todo .drawer-task-chip{background:var(--surface-2)!important;}
+
+/* ── 10 · Avatar: the account menu only (no switch-user screens) ───────────────────────── */
+.au-menu-hd small{margin-top:2px;}
+
+@media (prefers-reduced-motion:reduce){
+  #view-todo .task-card:hover{transform:none;}
+  .r5f-sheet{animation:none;}
+  .r5f-tag.timing::before{animation:none;}
+  .r5f-meter span,.r5-empty,.r5-cal-add,.r5f-timer{transition:none!important;}
+}
+</style>
+<script id="todo-r5-script">
+// ═══ To Do round 5 — Focus as one sheet (with the task timer on each row), calendar blocks
+// that carry the board's meaning stripe, and empty days you can click to add to. The
+// renderers are wrapped or replaced here; every handler they call is unchanged. ═════════════
+(function(){
+  const $=id=>document.getElementById(id);
+  const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const _e=s=>typeof esc==='function'?esc(s):String(s??'');
+  const isoWeek=d=>{const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const n=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-n);
+    const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/864e5+1)/7);};
+  const kind=t=>{
+    if(t.urgent&&!t.done)return 'urgent';
+    let bill=t.billable!==false;try{bill=bill&&taskIsBillable(t);}catch(e){}
+    return bill?'bill':'nonbill';
+  };
+  const isSoft=t=>{try{return !!(window.FE&&FE.isSoft&&FE.isSoft(t.id));}catch(e){return false;}};
+
+  // ── Focus: today as one sheet ─────────────────────────────────────────────────────────
+  window.renderFocusToday=function(){
+    const cols=$('day-cols');if(!cols)return;
+    const now=new Date();const dow=(now.getDay()+6)%7;
+    if(dow>4){window._focusToday=false;document.querySelector('.todo-view')?.classList.remove('focus-today');renderTodo();return;}
+    const day=dow+1;
+    const wd=getWeekData(currentPerson,0);
+    const tasks=wd[day]||[];
+    const todo=tasks.filter(t=>!t.done),done=tasks.filter(t=>t.done);
+    const sum=a=>a.reduce((s,t)=>s+(t.hours||0),0);
+    const todoH=sum(todo),doneH=sum(done);
+    let cap=8;try{cap=_dayCap(currentPerson)||8;}catch(e){}
+    const total=todoH+doneH,over=total>cap;
+    const scale=Math.max(cap,total)||1;
+    const mine=currentPerson===MY_PERSON;
+    const timer=(()=>{try{return _getTimer();}catch(e){return null;}})();
+    const p=people[currentPerson]||{};
+    const first=(p.name||'').split(' ')[0]||'';
+    const dayName=DAY_NAMES[dow];
+    const fh=h=>formatHrs(h)||'0h';
+
+    const row=(t,isDone)=>{
+      const jm=t.job?String(t.job).match(/^(\d+)\s*(.*)$/):null;
+      let jobTxt='';
+      if(jm){const live=typeof jobs!=='undefined'?jobs.find(j=>j.id===jm[1]):null;jobTxt=live?`${live.id} ${live.name}`:`${jm[1]} ${jm[2]}`.trim();}
+      else if(t.job)jobTxt=String(t.job);
+      const meta=[];
+      if(jobTxt)meta.push(`<span title="${_e(jobTxt)}"><i class="ti ti-briefcase" aria-hidden="true"></i>${_e(jobTxt)}</span>`);
+      if(t.item&&t.item!==t.title)meta.push(`<span><i class="ti ti-list-details" aria-hidden="true"></i>${_e(t.item)}</span>`);
+      if(t.personal&&!jobTxt)meta.push(`<span><i class="ti ti-lock" aria-hidden="true"></i>Personal</span>`);
+      if(t.repeat||t.repeatGroup)meta.push(`<span><i class="ti ti-repeat" aria-hidden="true"></i>Repeats</span>`);
+      const timing=!!(timer&&timer.taskId===t.id);
+      const id=String(t.id).replace(/'/g,"\\'");
+      const tags=[];
+      if(timing)tags.push('<span class="r5f-tag timing">Timing</span>');
+      if(!isDone&&t.urgent)tags.push('<span class="r5f-tag urgent">Urgent</span>');
+      if(!isDone&&isSoft(t))tags.push('<span class="r5f-tag soft">Tentative</span>');
+      const timerBtn=(!isDone&&mine)
+        ?(timing?`<button type="button" class="r5f-timer on" onclick="event.stopPropagation();stopTimer();setTimeout(()=>window._focusToday&&renderFocusToday(),0)" title="Stop timer and log time" aria-label="Stop timer and log time"><i class="ti ti-player-stop-filled" aria-hidden="true"></i></button>`
+          :`<button type="button" class="r5f-timer" onclick="event.stopPropagation();window._r5FocusTimer('${id}')" title="Start timer" aria-label="Start timer on this task"><i class="ti ti-player-play" aria-hidden="true"></i></button>`)
+        :'';
+      return `<div class="my-todo-item focus-list-item r5f-row is-${isDone?'done':kind(t)}" tabindex="0" role="button" onclick="openEditTodo(getWeekData(currentPerson,0)[${day}].find(x=>x.id==='${id}'),${day})" onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();this.click();}">
+        <div class="todo-check${isDone?' done-c':t.urgent?' urg-c':''}" role="checkbox" aria-checked="${isDone}" tabindex="0" onclick="event.stopPropagation();_focusToggleDone('${id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();this.click();}" title="${isDone?'Mark as to do':'Mark done'}">${isDone?'<i class="ti ti-check" style="font-size:12px;color:var(--ok-ink);"></i>':''}</div>
+        <div class="r5f-main"><div class="fli-title">${_e(t.title)}</div>${meta.length?`<div class="r5f-meta">${meta.join('')}</div>`:''}</div>
+        ${tags.join('')}
+        <span class="r5f-hrs">${t.hours?formatHrs(t.hours):''}</span>
+        ${timerBtn}
+      </div>`;
+    };
+    const n=todo.length;
+    const title=n?`${n} task${n===1?'':'s'} left`:(done.length?'All done for today':'Nothing planned today');
+    const sub=n?`About <b>${fh(todoH)}</b> to go${doneH?` · ${fh(doneH)} done so far`:''}.`
+      :(done.length?`<b>${fh(doneH)}</b> done. Nice work${mine&&first?', '+_e(first):''}.`:`${mine?'Your':_e(first)+'’s'} day is wide open.`);
+    cols.innerHTML=`<div class="focus-wrap r5-focus"><div class="r5f-sheet" role="region" aria-label="Today">
+      <div class="r5f-hd"><span class="r5f-disc">${now.getDate()}</span><span>${dayName} ${now.getDate()} ${MONTHS[now.getMonth()]}</span><span class="r5f-wk">Week ${isoWeek(now)}</span>
+        ${mine?'':`<span>· ${_e(p.name||'')}</span>`}
+        <button type="button" class="r5f-exit" onclick="toggleFocusToday()" title="Back to the week">Exit focus <kbd>F</kbd></button></div>
+      <div class="r5f-hero"><h2 class="r5f-title">${title}</h2><div class="r5f-sub">${sub}</div></div>
+      <div class="r5f-meter${over?' over':''}" role="img" aria-label="${fh(doneH)} done and ${fh(todoH)} to do of ${fh(cap)}"><span class="m-done" style="width:${Math.min(100,doneH/scale*100)}%"></span><span class="m-todo" style="width:${Math.min(100,todoH/scale*100)}%"></span></div>
+      <div class="r5f-props">
+        <span class="r5f-prop"><i class="ti ti-clock" aria-hidden="true"></i>To do <b>${fh(todoH)}</b></span>
+        <span class="r5f-prop"><i class="ti ti-circle-check" aria-hidden="true"></i>Done <b>${fh(doneH)}</b></span>
+        <span class="r5f-prop${over?' over':''}"><i class="ti ti-gauge" aria-hidden="true"></i>Day <b>${fh(total)} / ${fh(cap)}</b></span>
+      </div>
+      <div class="r5f-list">${n?todo.map(t=>row(t,false)).join(''):`<div class="r5f-empty"><i class="ti ti-${done.length?'check':'sun'}" aria-hidden="true"></i><div><b>${done.length?'Nothing left to do':'A clear day'}</b>Add a task when something comes up.</div></div>`}</div>
+      ${done.length?`<div class="r5f-sec"><span class="r5f-dot"></span>Done <b>${fh(doneH)}</b></div><div class="r5f-list">${done.map(t=>row(t,true)).join('')}</div>`:''}
+      <div class="r5f-ft"><span><kbd>F</kbd> or <kbd>Esc</kbd> to leave focus</span><span class="r5f-sp"></span>
+        <button type="button" class="tm-btn-save" onclick="openTodoModal(null,${day})"><i class="ti ti-plus" aria-hidden="true"></i>Add task</button></div>
+    </div></div>`;
+    try{_renderIcons();}catch(e){}
+  };
+  window._r5FocusTimer=function(id){
+    const day=(new Date().getDay()+6)%7+1;
+    const t=(getWeekData(currentPerson,0)[day]||[]).find(x=>x.id===id);if(!t)return;
+    _startTaskTimer(t,currentPerson,0,day);
+    if(window._focusToday)renderFocusToday();
+  };
+  // A timer stopped from the pill (or another tab) updates the Focus rows too
+  if(typeof window._renderTimer==='function'){
+    const _rt=window._renderTimer;let last=null;
+    window._renderTimer=function(){const r=_rt.apply(this,arguments);
+      try{const t=_getTimer();const k=t?t.taskId||t.jobId:'';if(k!==last){last=k;if(window._focusToday&&!$('view-todo')?.classList.contains('hidden'))renderFocusToday();}}catch(e){}
+      return r;};
+  }
+
+  // ── Calendar: blocks carry classes (stripe + tint from tokens), not inline colours ───────
+  window._buildCalDayBlocks=function(tasksForDay,d){
+    let slotCursor=0;
+    const ordered=[...tasksForDay].sort((a,b)=>(b.done?1:0)-(a.done?1:0));
+    return ordered.map(t=>{
+      const h=t.hours||1;
+      const topPx=slotCursor;
+      const heightPx=Math.max(26,h*CAL_PX_PER_HOUR);
+      slotCursor+=heightPx+3;
+      const isDone=!!t.done;
+      const k=isDone?'':t.urgent?'ctb-urgent':t.personal?'ctb-personal':('ctb-'+kind(t));
+      const showJob=heightPx>52&&!t.personal&&t.job;
+      const jobName=showJob?String(t.job).replace(/^\d+\s+/,''):'';
+      const id=String(t.id).replace(/'/g,"\\'");
+      return `<div class="cal-task-block r5-ctb ${k}${isDone?' is-done':''}${!isDone&&isSoft(t)?' is-soft':''}"
+        style="top:${topPx}px;height:${heightPx}px;"
+        draggable="${isDone?'false':'true'}"
+        data-task-id="${_e(t.id)}" data-day="${d}"
+        title="${_e(t.title)}${t.hours?' · '+formatHrs(t.hours):''}"
+        ondragstart="calDragStart(event,'${id}',${d})"
+        ondragend="calDragEnd(event)"
+        onclick="openEditTodoById('${id}',${d})"
+        oncontextmenu="event.preventDefault();showTaskContextMenu(event,window._calTaskMap['${id}'],${d})">
+        <div class="ctb-title">${_e(t.title)}${(t.repeat||t.repeatGroup)?' <i class="ti ti-repeat" style="font-size:10px;opacity:.6;"></i>':''}</div>
+        ${_calShowHours&&heightPx>36?`<div class="ctb-hrs">${t.hours?formatHrs(t.hours):''}</div>`:''}
+        ${showJob?`<div class="ctb-job">${_e(jobName)}</div>`:''}
+        ${isDone?'':`<div class="ctb-resize" onmousedown="calResizeStart(event,'${id}',${d})" onclick="event.stopPropagation()"></div>`}
+      </div>`;
+    }).join('');
+  };
+  // Filter chips become one segmented row; the hidden "+" becomes a labelled add button
+  if(typeof window.renderTodoCalendar==='function'){
+    const _rc=window.renderTodoCalendar;
+    window.renderTodoCalendar=function(){
+      const r=_rc.apply(this,arguments);
+      try{
+        const bar=document.querySelector('#day-cols .cal-filter-bar');
+        if(bar){
+          const lbl=bar.querySelector('.cal-filter-label');if(lbl)lbl.textContent='Show';
+          const chips=[...bar.children].filter(c=>c.classList&&c.classList.contains('cal-filter-chip'));
+          if(chips.length){const seg=document.createElement('div');seg.className='r5-seg';seg.setAttribute('role','group');seg.setAttribute('aria-label','Show tasks');
+            chips[0].before(seg);chips.forEach(c=>{c.setAttribute('aria-pressed',c.classList.contains('on'));seg.appendChild(c);});}
+          const right=bar.querySelector('div[style*="margin-left:auto"]');
+          if(right){right.querySelectorAll('.cal-filter-chip').forEach(c=>{c.setAttribute('aria-pressed',c.classList.contains('on'));const s=document.createElement('div');s.className='r5-seg';c.before(s);s.appendChild(c);});}
+        }
+        document.querySelectorAll('#cal-day-cols .cal-day-col').forEach((col,i)=>{
+          const slots=col.querySelector('.cal-slots');if(!slots)return;
+          const old=[...slots.children].find(el=>el.tagName==='DIV'&&el.querySelector('button[title="Add task"]'));
+          if(!old)return;old.remove();
+          if(col.style.pointerEvents==='none')return;
+          const b=document.createElement('button');b.type='button';b.className='r5-cal-add';b.title='Add task';
+          b.innerHTML='<i class="ti ti-plus" aria-hidden="true"></i>Add task';
+          b.addEventListener('click',e=>{e.stopPropagation();openTodoModal(null,i+1);});
+          slots.appendChild(b);
+        });
+      }catch(e){console.warn('todo-r5 calendar',e);}
+      return r;
+    };
+  }
+
+  // ── To Do: an empty day is a slot you can click to add to ────────────────────────────────
+  if(typeof window.renderTodo==='function'){
+    const _rt=window.renderTodo;
+    window.renderTodo=function(){
+      const r=_rt.apply(this,arguments);
+      try{
+        if(!window._focusToday&&_todoViewMode!=='calendar'){
+          document.querySelectorAll('#day-cols .day-col.workday .day-todo > .day-done-empty').forEach(el=>{
+            const d=+el.closest('.day-col').dataset.day;
+            const b=document.createElement('button');b.type='button';b.className='r5-empty';
+            b.innerHTML='<i class="ti ti-plus" aria-hidden="true"></i><span class="r5-empty-lbl">Nothing planned</span><span class="r5-empty-add">Add a task</span>';
+            b.setAttribute('aria-label',`Add a task on ${DAY_NAMES[d-1]||'this day'}`);
+            b.addEventListener('click',e=>{e.stopPropagation();openTodoModal(null,d);});
+            el.replaceWith(b);
+          });
+        }
+      }catch(e){console.warn('todo-r5 board',e);}
+      return r;
+    };
+  }
+  // The task sheet: open-job and copy now float in a reserved slot; keep their tab order sane
+  const acts=$('ux-job-acts');
+  if(acts){new MutationObserver(()=>{acts.querySelectorAll('button').forEach(b=>{b.tabIndex=acts.hidden?-1:0;});}).observe(acts,{attributes:true,attributeFilter:['hidden']});
+    acts.querySelectorAll('button').forEach(b=>{b.tabIndex=acts.hidden?-1:0;});}
+  // Focus now says how to leave it in its own header and footer, so the entry toast (which sat
+  // on top of the sheet's footer) is dropped. Other toasts, like the weekend note, still show.
+  if(typeof window.toggleFocusToday==='function'){
+    const _tf=window.toggleFocusToday;
+    window.toggleFocusToday=function(){
+      const t=window.toast;
+      window.toast=function(m){if(typeof m==='string'&&m.indexOf('Focus —')===0)return;return t.apply(this,arguments);};
+      try{return _tf.apply(this,arguments);}finally{window.toast=t;}
+    };
   }
 })();
 </script>
