@@ -23064,7 +23064,7 @@ if(R5_PROD){
 // through the normal shared-save path. A board counts as existing if its name matches
 // (case-insensitive) or it carries the template marker, archived or not. Once per session;
 // if the shared list never loaded, nothing is created. On localhost it goes to local boards.
-let _r5BoardsSeen=false,_r5AutoDone=false;
+var _r5BoardsSeen=false,_r5AutoDone=false;   // var: read by renderBoardsList and _r5Pull, which may run before this line
 function _r5AutoWip(){
   if(_r5AutoDone||!R5_ADMIN)return;
   if(R5_PROD&&(!AUTH||!AUTH.admin||!R5S.pulledOk))return;
