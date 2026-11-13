@@ -20672,6 +20672,13 @@ body.dark .task-card:hover{border-color:rgba(255,246,230,.16)!important;
   box-shadow:inset 0 1px 0 rgba(255,246,230,.05),0 2px 4px rgba(0,0,0,.45),0 8px 22px rgba(0,0,0,.3)!important;}
 body.dark .task-card.done-c{background:color-mix(in srgb,var(--surface-2) 55%,var(--white))!important;border-color:rgba(255,246,230,.06)!important;
   box-shadow:0 1px 2px rgba(0,0,0,.35)!important;}
+/* ── Small finishes ─────────────────────────────────────────────────────────────────────── */
+/* Masonry rows carry one gap below the last card; give it back so the next section keeps its rhythm */
+.att-grid.is-masonry{margin-bottom:calc(var(--s-4) * -1);}
+/* Keyboard focus is visible on the controls added or reshaped in this round */
+:is(.modal-x,.tm-x,.inv-x,.ds-close,.hpr-link,.dt-iconset .dt-ibtn):focus-visible{outline:2px solid var(--focus)!important;outline-offset:2px;}
+.dt-status .paused-badge[onclick],.dt-status .wf-badge>span,.dt-status .wf-badge>i{outline:none;}
+.dt-status .paused-badge[onclick]:focus-visible,.dt-status .wf-badge>span:focus-visible,.dt-status .wf-badge>i:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:var(--r-pill);}
 /* Line breaks typed into a title show as line breaks (cards stay clamped) */
 .tc-title,.tt-title,.fli-title{white-space:pre-line;}
 </style>
@@ -20695,6 +20702,18 @@ body.dark .task-card.done-c{background:color-mix(in srgb,var(--surface-2) 55%,va
       set(v){desc.set.call(this,v);setTimeout(()=>grow(ti),0);}});
     const tm=document.getElementById('todo-modal');
     if(tm)new MutationObserver(()=>{if(tm.classList.contains('on'))setTimeout(()=>grow(ti),0);}).observe(tm,{attributes:true,attributeFilter:['class']});
+  }
+  // Shortcut hint speaks the platform's language (⌘ on Mac, Ctrl elsewhere)
+  try{if(!/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent||'')){
+    document.querySelectorAll('#td-task-hint kbd').forEach(k=>{if(k.textContent==='⌘')k.textContent='Ctrl';});}}catch(e){}
+  // Job header state controls are spans with click handlers — make them reachable by keyboard
+  const det=document.getElementById('view-detail');
+  if(det){
+    const kb=()=>det.querySelectorAll('#d-status .wf-badge>span,#d-status .wf-badge>i,#d-status .paused-badge[onclick]').forEach(el=>{
+      if(el.tabIndex>=0)return;el.tabIndex=0;el.setAttribute('role','button');
+      const t=el.textContent.trim();el.setAttribute('aria-label',el.matches('.wf-badge>span')?'Status: '+t+'. Change status':el.matches('.paused-badge')?'Dates: '+t+'. Edit dates':(el.getAttribute('title')||t));});
+    new MutationObserver(()=>kb()).observe(det,{childList:true,subtree:true});
+    det.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('#d-status [role="button"]')){e.preventDefault();e.target.click();}});
   }
   const GAP=16;
   let ro=null;
