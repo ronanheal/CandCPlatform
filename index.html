@@ -2328,7 +2328,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
             <div id="cd-info-strip" style="flex-shrink:0;display:flex;gap:16px;padding:12px 28px;border-bottom:1px solid var(--border);flex-wrap:wrap;"></div>
             <!-- Client jobs table -->
             <div style="flex:1;overflow-y:auto;padding:24px 28px 40px;">
-              <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Jobs</div>
+              <div class="ds-sec-lbl">Jobs</div>
               <div id="cd-jobs-list"></div>
             </div>
           </div>
@@ -2350,7 +2350,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
           <div id="dcal-grid"></div>
           <div id="dcal-legend" style="display:flex;gap:16px;margin-top:16px;font-size:11px;color:var(--muted);">
             <span><span style="display:inline-block;width:10px;height:10px;border-radius:6px;background:var(--warn-ink);margin-right:4px;vertical-align:middle;"></span>Job due</span>
-            <span><span style="display:inline-block;width:10px;height:10px;border-radius:6px;background:var(--red);margin-right:4px;vertical-align:middle;"></span>Invoice due</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:6px;background:var(--info-ink);margin-right:4px;vertical-align:middle;"></span>Invoice due</span>
           </div>
         </div>
       </div>
@@ -2377,7 +2377,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
                     <div class="tcm-item" onclick="closeCreateItemMenu();showAddExpenseInline()"><i class="ti ti-receipt" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Expense</div>
                     <div style="border-top:1px solid var(--border);margin:4px 0;"></div>
                     <div class="tcm-item" onclick="closeCreateItemMenu();openInvoice()"><i class="ti ti-file-invoice" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Invoice</div>
-                    <div class="tcm-item" onclick="closeCreateItemMenu();switchDTab(document.querySelectorAll('.d-tab')[1],'quote')"><i class="ti ti-file-text" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Quote</div>
+                    <div class="tcm-item" onclick="closeCreateItemMenu();switchDTab(document.querySelectorAll('.d-tab')[2],'quote')"><i class="ti ti-file-text" style="font-size:13px;margin-right:8px;color:var(--muted);"></i>Quote</div>
                   </div>
                 </div>
               </div>
@@ -2484,7 +2484,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
       <div id="view-settings" class="view hidden" style="flex-direction:row;overflow:hidden;">
         <!-- Settings sidebar nav -->
         <div id="sett-sidenav" style="width:216px;flex-shrink:0;border-right:1px solid var(--border);background:transparent;overflow-y:auto;padding:36px 0 20px;">
-          <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:0 22px 10px;">Settings</div>
+          <div class="ds-sett-eyebrow">Settings</div>
           <div class="sett-nav-item active" id="sni-profile" onclick="switchSettTab('profile')"><i class="ti ti-user" style="font-size:14px;"></i> My profile</div>
           <div class="sett-nav-item" id="sni-team" onclick="switchSettTab('team')"><i class="ti ti-users" style="font-size:14px;"></i> Team</div>
           <div class="sett-nav-item" id="sni-defaults" onclick="switchSettTab('defaults')"><i class="ti ti-adjustments" style="font-size:14px;"></i> Workspace defaults</div>
@@ -2543,44 +2543,38 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
 
 <!-- CREATE JOB MODAL -->
 <div class="modal-bg" id="create-modal">
-  <div class="modal">
-    <div class="modal-hd"><span class="modal-hd-title">Create a new job</span><button class="modal-x" onclick="closeCreateJob()"><i class="ti ti-x"></i></button></div>
+  <div class="modal ds-sheet" role="dialog" aria-modal="true" aria-labelledby="nj-sheet-hd">
+    <div class="modal-hd"><span class="modal-hd-title" id="nj-sheet-hd">New job</span><button class="modal-x" onclick="closeCreateJob()" aria-label="Close"><i class="ti ti-x"></i></button></div>
     <div class="modal-bd">
-      <div class="field"><label>Job name</label><input type="text" id="nj-name" placeholder="e.g. SFF Brand Guidelines"/></div>
-      <div class="field-row">
-        <div class="field"><label>Company</label><input id="nj-co" class="form-inp" placeholder="Search clients…" style="width:100%;"></div>
-        <div class="field"><label>Contact (optional)</label><input type="text" placeholder="Name…"/></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>Job number</label><input type="text" id="nj-num" readonly style="color:var(--muted);"/></div>
-        <div class="field"><label>PO number (optional)</label><input type="text" placeholder="Enter PO…"/></div>
-      </div>
-      <div class="field-row" style="gap:16px;">
-        <div class="field" style="flex:1;">
-          <label>Billing type</label>
-          <div class="bill-choice-row">
-            <div class="bill-choice on" id="bc-billable" onclick="selectBillChoice('billable')">
-              <i class="ti ti-currency-dollar" style="font-size:16px;color:var(--ink);"></i>
+      <input type="text" id="nj-name" class="ds-hero-inp" placeholder="Job name, e.g. SFF Brand Guidelines" aria-label="Job name"/>
+      <div class="ds-props">
+        <div class="ds-prop"><label class="ds-prop-l" for="nj-co"><i class="ti ti-building" aria-hidden="true"></i>Company</label><input id="nj-co" class="form-inp" placeholder="Search clients…"></div>
+        <div class="ds-prop"><label class="ds-prop-l" for="nj-contact"><i class="ti ti-user" aria-hidden="true"></i>Contact</label><input type="text" id="nj-contact" placeholder="Optional"/></div>
+        <div class="ds-prop"><label class="ds-prop-l" for="nj-num"><i class="ti ti-hash" aria-hidden="true"></i>Job number</label><input type="text" id="nj-num" readonly/></div>
+        <div class="ds-prop"><label class="ds-prop-l" for="nj-po"><i class="ti ti-receipt" aria-hidden="true"></i>PO number</label><input type="text" id="nj-po" placeholder="Optional"/></div>
+        <div class="ds-prop"><span class="ds-prop-l"><i class="ti ti-currency-dollar" aria-hidden="true"></i>Billing</span>
+          <div><div class="bill-choice-row" role="radiogroup" aria-label="Billing type">
+            <div class="bill-choice on" id="bc-billable" role="radio" tabindex="0" onclick="selectBillChoice('billable')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+              <i class="ti ti-currency-dollar"></i>
               <div><div class="bc-choice-title">Billable</div><div class="bc-choice-sub">Charged to client</div></div>
             </div>
-            <div class="bill-choice" id="bc-nonbillable" onclick="selectBillChoice('nonbillable')">
-              <i class="ti ti-heart" style="font-size:16px;color:var(--muted);"></i>
+            <div class="bill-choice" id="bc-nonbillable" role="radio" tabindex="0" onclick="selectBillChoice('nonbillable')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+              <i class="ti ti-heart"></i>
               <div><div class="bc-choice-title">Non-billable</div><div class="bc-choice-sub">Internal / pro bono</div></div>
             </div>
-          </div>
+          </div></div>
           <input type="hidden" id="nj-billable" value="billable">
         </div>
-        <div class="field" style="flex:1;">
-          <label>Workflow stage</label>
-          <div class="wf-choice-row">
+        <div class="ds-prop"><span class="ds-prop-l"><i class="ti ti-progress" aria-hidden="true"></i>Stage</span>
+          <div><div class="wf-choice-row" role="group" aria-label="Workflow stage">
             <button type="button" class="wf-stage-btn on" data-val="quote" onclick="selectWfChoice(this)">Quote</button>
             <button type="button" class="wf-stage-btn" data-val="live" onclick="selectWfChoice(this)">Live job</button>
             <button type="button" class="wf-stage-btn" data-val="invoiced" onclick="selectWfChoice(this)">Invoiced</button>
-          </div>
-          <div style="font-size:10px;color:var(--muted);margin-top:4px;" id="wf-stage-hint">Quote → a job plan is ready and priced, waiting for client sign-off</div>
+          </div></div>
           <input type="hidden" id="nj-workflow" value="quote">
         </div>
       </div>
+      <div class="ds-prop-hint" id="wf-stage-hint">Quote → a job plan is ready and priced, waiting for client sign-off</div>
     </div>
     <div class="modal-ft"><button class="modal-cancel" onclick="closeCreateJob()">Cancel</button><button class="modal-ok" onclick="createJob()">Create and plan</button></div>
   </div>
@@ -2588,19 +2582,17 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
 
 <!-- NEW QUOTE MODAL -->
 <div class="modal-bg" id="new-quote-modal">
-  <div class="modal">
-    <div class="modal-hd"><span class="modal-hd-title">New quote</span><button class="modal-x" onclick="closeNewQuoteModal()"><i class="ti ti-x"></i></button></div>
+  <div class="modal ds-sheet" role="dialog" aria-modal="true" aria-labelledby="nq-sheet-hd">
+    <div class="modal-hd"><span class="modal-hd-title" id="nq-sheet-hd">New quote</span><button class="modal-x" onclick="closeNewQuoteModal()" aria-label="Close"><i class="ti ti-x"></i></button></div>
     <div class="modal-bd">
-      <div class="field"><label>Quote name</label><input type="text" id="nq-name" class="form-inp" placeholder="e.g. Q2 campaign refresh" style="width:100%;"></div>
-      <div class="field-row">
-        <div class="field"><label>Company</label><input id="nq-co" class="form-inp" placeholder="Search clients…" style="width:100%;"></div>
-        <div class="field"><label>Link to job (optional)</label><input id="nq-job" class="form-inp" placeholder="Search jobs…" style="width:100%;"></div>
+      <input type="text" id="nq-name" class="ds-hero-inp" placeholder="Quote name, e.g. Q2 campaign refresh" aria-label="Quote name">
+      <div class="ds-props">
+        <div class="ds-prop"><label class="ds-prop-l" for="nq-co"><i class="ti ti-building" aria-hidden="true"></i>Company</label><input id="nq-co" class="form-inp" placeholder="Search clients…"></div>
+        <div class="ds-prop"><label class="ds-prop-l" for="nq-job"><i class="ti ti-briefcase" aria-hidden="true"></i>Job</label><input id="nq-job" class="form-inp" placeholder="Optional — search jobs…"></div>
+        <div class="ds-prop"><label class="ds-prop-l" for="nq-value"><i class="ti ti-currency-dollar" aria-hidden="true"></i>Value ex GST</label><input type="number" id="nq-value" class="form-inp" min="0" step="0.01" placeholder="0.00"></div>
+        <div class="ds-prop"><label class="ds-prop-l" for="nq-date"><i class="ti ti-calendar" aria-hidden="true"></i>Quote date</label><input type="date" id="nq-date" class="form-inp"></div>
+        <div class="ds-prop"><label class="ds-prop-l" for="nq-notes"><i class="ti ti-notes" aria-hidden="true"></i>Notes</label><input type="text" id="nq-notes" class="form-inp" placeholder="Scope summary, assumptions…"></div>
       </div>
-      <div class="field-row">
-        <div class="field"><label>Value (ex GST)</label><input type="number" id="nq-value" class="form-inp" min="0" step="0.01" placeholder="0.00" style="width:100%;"></div>
-        <div class="field"><label>Quote date</label><input type="date" id="nq-date" class="form-inp" style="width:100%;"></div>
-      </div>
-      <div class="field"><label>Notes (optional)</label><input type="text" id="nq-notes" class="form-inp" placeholder="Scope summary, assumptions…" style="width:100%;"></div>
     </div>
     <div class="modal-ft"><button class="modal-cancel" onclick="closeNewQuoteModal()">Cancel</button><button class="modal-ok" onclick="saveNewQuote()">Create quote</button></div>
   </div>
@@ -5020,12 +5012,12 @@ function renderDashboard(){
   const _jobSub=j=>`${j.id}${j.company?' · '+esc(j.company):''}`;
   const dh=people[MY_PERSON].dashHide||[];const _show=k=>!dh.includes(k);
   const deadlinesHTML=_show('deadlines')?[
-    _attCard('Due or overdue',dueJobs.map(j=>({label:esc(j.name),sub:_jobSub(j),meta:_inDays(j.dueDate)<0?`${-_inDays(j.dueDate)}d over`:_inDays(j.dueDate)===0?'Today':`in ${_inDays(j.dueDate)}d`,jid:j.id})),'#D9622B','ti-flag','due'),
-    _attCard('Deadline risk',riskJobs.map(r=>{const j=jobs.find(x=>x.id===r.jid);return j?{...r,label:esc(j.name),sub:_jobSub(j)}:r;}),'#C2185B','ti-alert-triangle','risk'),
-    _attCard('Overdue invoices',overdueInv.map(i=>({label:esc(i.company?.name||i.jobName||'—'),sub:`${esc(i.number||'')} · ${fmtDollar(i.totalAmountIncTax||i.totalAmountExTax||0)}`,meta:`${-_inDays(i.dueDate)}d late`,jid:null,on:`openInvoiceDetail('${i.id}')`})),'#C62828','ti-file-invoice','odinv'),
-    _attCard('Quotes awaiting reply',awaitingQuotes.map(q=>({label:esc(String(q.quoteName||q.jobName||(q.jobNumber?'Job '+q.jobNumber:'')||'—').replace(/^\[\d+\]\s*/,'')),sub:esc(q.company||''),meta:`${-_inDays(q.sentDate)}d`,jid:null,on:`openQuoteDetail('${q.id}')`})),'#A07B45','ti-file-text','awq'),
-    _attCard('Uninvoiced work',uninvoiced.map(j=>({label:esc(j.name),sub:_jobSub(j),meta:fmtDollar((j._sellUsed||0)-(j._stInvoiced||0)),jid:j.id})),'#7E57C2','ti-coin','uninv'),
-    _attCard('Quiet clients',quietClients.map(c=>({label:esc(c.label),meta:c.meta})),'#8A857C','ti-moon','quiet'),
+    _attCard('Due or overdue',dueJobs.map(j=>({label:esc(j.name),sub:_jobSub(j),meta:_inDays(j.dueDate)<0?`${-_inDays(j.dueDate)}d over`:_inDays(j.dueDate)===0?'Today':`in ${_inDays(j.dueDate)}d`,jid:j.id})),'var(--warn)','ti-flag','due'),
+    _attCard('Deadline risk',riskJobs.map(r=>{const j=jobs.find(x=>x.id===r.jid);return j?{...r,label:esc(j.name),sub:_jobSub(j)}:r;}),'var(--danger-ink)','ti-alert-triangle','risk'),
+    _attCard('Overdue invoices',overdueInv.map(i=>({label:esc(i.company?.name||i.jobName||'—'),sub:`${esc(i.number||'')} · ${fmtDollar(i.totalAmountIncTax||i.totalAmountExTax||0)}`,meta:`${-_inDays(i.dueDate)}d late`,jid:null,on:`openInvoiceDetail('${i.id}')`})),'var(--danger-ink)','ti-file-invoice','odinv'),
+    _attCard('Quotes awaiting reply',awaitingQuotes.map(q=>({label:esc(String(q.quoteName||q.jobName||(q.jobNumber?'Job '+q.jobNumber:'')||'—').replace(/^\[\d+\]\s*/,'')),sub:esc(q.company||''),meta:`${-_inDays(q.sentDate)}d`,jid:null,on:`openQuoteDetail('${q.id}')`})),'var(--muted)','ti-file-text','awq'),
+    _attCard('Uninvoiced work',uninvoiced.map(j=>({label:esc(j.name),sub:_jobSub(j),meta:fmtDollar((j._sellUsed||0)-(j._stInvoiced||0)),jid:j.id})),'var(--info-ink)','ti-coin','uninv'),
+    _attCard('Quiet clients',quietClients.map(c=>({label:esc(c.label),meta:c.meta})),'var(--muted)','ti-moon','quiet'),
   ].filter(Boolean).join(''):'';
   // ── Hero: today at a glance — the day as a strip of tasks, what's next, the week's load ──
   const todayH=todayTasks.reduce((s,t)=>s+(t.hours||0),0);
@@ -9185,25 +9177,25 @@ function renderTimelineTab(){
   const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const today=new Date();today.setHours(12,0,0,0);
   const todayPct=(today>=minD&&today<=maxD)?pctFor(today):null;
-  const headerTicks=ticks.map(t=>`<div style="position:absolute;left:${pctFor(t)}%;top:0;bottom:0;border-left:1px solid var(--faint);font-size:10px;color:var(--muted);padding-left:4px;">${MONTHS[t.getMonth()]} ${t.getFullYear()}</div>`).join('');
+  const headerTicks=ticks.map(t=>`<div style="position:absolute;left:${pctFor(t)}%;top:0;bottom:0;border-left:1px solid var(--faint);font-size:11.5px;font-weight:500;color:var(--muted);padding:9px 0 0 6px;white-space:nowrap;">${MONTHS[t.getMonth()]} ${t.getFullYear()}</div>`).join('');
   const barRows=rows.map(r=>{
     const left=pctFor(toDate(r.start)),right=pctFor(toDate(r.end));
     const width=Math.max(0.6,right-left);
-    const color=r.status==='complete'?'#7B9E87':r.paused?'#C4956A':'#ED1E24';
+    const color=r.status==='complete'?'var(--ok)':r.paused?'var(--subtle)':'var(--ink-2)';
     const label=r.start===r.end?_docFmtDate(r.start):`${_docFmtDate(r.start)} – ${_docFmtDate(r.end)}`;
     return `<div style="position:relative;height:34px;border-bottom:1px solid var(--faint);">
-      <div style="position:absolute;left:${left}%;width:${width}%;top:7px;height:20px;background:${color};border-radius:6px;opacity:${r.paused?0.55:0.9};" title="${r.name} · ${label}"></div>
+      <div style="position:absolute;left:${left}%;width:${width}%;top:9px;height:16px;background:${color};border-radius:5px;opacity:${r.paused?0.6:r.status==='complete'?0.75:1};" title="${r.name} · ${label}"></div>
     </div>`;
   }).join('');
-  const labelCol=rows.map(r=>`<div style="height:34px;display:flex;align-items:center;font-size:12px;border-bottom:1px solid var(--faint);padding-right:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.paused?'<i class="ti ti-pause" style="font-size:10px;color:var(--muted);margin-right:4px;"></i>':''}${r.name}</div>`).join('');
+  const labelCol=rows.map(r=>`<div style="height:34px;display:flex;align-items:center;font-size:12.5px;padding-left:14px;border-bottom:1px solid var(--faint);padding-right:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.paused?'<i class="ti ti-pause" style="font-size:10px;color:var(--muted);margin-right:4px;"></i>':''}${r.name}</div>`).join('');
   wrap.innerHTML=`
-    <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:var(--white);">
+    <div class="ds-gantt" style="display:flex;gap:0;border:1px solid color-mix(in srgb,var(--border) 85%,transparent);border-radius:var(--r-card);overflow:hidden;background:var(--white);box-shadow:var(--e-1);">
       <div style="width:180px;flex-shrink:0;border-right:1px solid var(--border);">
-        <div style="height:28px;border-bottom:1px solid var(--border);background:var(--off);"></div>
+        <div style="height:32px;border-bottom:1px solid var(--border);background:var(--white);"></div>
         ${labelCol}
       </div>
       <div style="flex:1;overflow-x:auto;position:relative;">
-        <div style="height:28px;position:relative;border-bottom:1px solid var(--border);background:var(--off);">${headerTicks}</div>
+        <div style="height:32px;position:relative;border-bottom:1px solid var(--border);background:var(--white);">${headerTicks}</div>
         <div style="position:relative;">
           ${todayPct!=null?`<div style="position:absolute;left:${todayPct}%;top:0;bottom:0;width:1px;background:var(--red);z-index:2;" title="Today"></div>`:''}
           ${barRows}
@@ -9211,9 +9203,9 @@ function renderTimelineTab(){
       </div>
     </div>
     <div style="display:flex;gap:16px;margin-top:12px;font-size:11px;color:var(--muted);">
-      <span><span style="display:inline-block;width:10px;height:10px;background:var(--red);border-radius:6px;vertical-align:-1px;"></span> Open</span>
-      <span><span style="display:inline-block;width:10px;height:10px;background:#C4956A;border-radius:6px;vertical-align:-1px;"></span> Paused</span>
-      <span><span style="display:inline-block;width:10px;height:10px;background:#7B9E87;border-radius:6px;vertical-align:-1px;"></span> Complete</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--ink-2);border-radius:3px;vertical-align:-1px;"></span> Open</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--subtle);border-radius:3px;vertical-align:-1px;"></span> Paused</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--ok);opacity:.75;border-radius:3px;vertical-align:-1px;"></span> Complete</span>
     </div>`;
 }
 function renderQuoteTab(){
@@ -11011,7 +11003,7 @@ function renderDeadlinesCal(){
   (stInvoices||[]).filter(i=>i.dueDate).forEach(i=>{
     const s=(i.invoiceStatus?.name||'').toLowerCase();
     if(s==='paid'||s==='voided')return;
-    addEv(i.dueDate,{label:esc(`${i.number?i.number+' · ':''}${i.company?.name||i.jobName||'Invoice'}${i.totalAmountIncTax?' · '+fmtDollar(i.totalAmountIncTax):''}`),color:'var(--danger-ink)',bg:'var(--danger-bg)',jid:null,on:`openInvoiceDetail(${JSON.stringify(i.id)})`,type:'inv'});
+    addEv(i.dueDate,{label:esc(`${i.number?i.number+' · ':''}${i.company?.name||i.jobName||'Invoice'}${i.totalAmountIncTax?' · '+fmtDollar(i.totalAmountIncTax):''}`),color:'var(--info-ink)',bg:'var(--info-bg)',jid:null,on:`openInvoiceDetail(${JSON.stringify(i.id)})`,type:'inv'});
   });
   // Calendar grid
   const firstDay=new Date(yr,mo,1);
@@ -13596,6 +13588,17 @@ function _ccEnsureTplField(){
   let sel=document.getElementById('nj-tpl');
   if(sel)return sel;
   const bd=modal.querySelector('.modal-bd');if(!bd)return null;
+  const props=bd.querySelector('.ds-props');
+  if(props){ // ds-r5 sheet: the template picker is one more property row
+    const r=document.createElement('div');r.className='ds-prop';r.id='nj-tpl-field';
+    r.innerHTML=`<label class="ds-prop-l" for="nj-tpl"><i class="ti ti-template" aria-hidden="true"></i>Template</label>
+      <div class="cc-tpl-row"><select class="cc-select" id="nj-tpl" onchange="_ccOnTplPick()"></select>
+      <button type="button" class="ux-ibtn" title="Manage templates" aria-label="Manage templates" onclick="openManageTemplates()"><i class="ti ti-settings"></i></button></div>`;
+    props.appendChild(r);
+    const h=document.createElement('div');h.className='ds-prop-hint';h.id='nj-tpl-hint';
+    props.after(h);
+    return document.getElementById('nj-tpl');
+  }
   const f=document.createElement('div');f.className='field';f.id='nj-tpl-field';
   f.innerHTML=`<label>Start from template</label>
     <div class="cc-tpl-row"><select class="cc-select" id="nj-tpl" onchange="_ccOnTplPick()"></select>
@@ -21996,6 +21999,309 @@ function _accBind(card){
     const _navPrev=navTo;
     navTo=function(v){const r=_navPrev.apply(this,arguments);if(v==='jobs')try{_stFlushStale();}catch(e){}return r;};
   }
+})();
+</script>
+<style id="ds-r5">
+/* ═══ Design language r5 — one family with the task sheet ════════════════════════════════════
+   The task sheet (ux-r4 §6) is the reference: a muted small header, the title as the hero, a
+   property grid with quiet icon labels, soft tinted segmented controls, a calm footer with the
+   destructive action quiet at the left and the primary at the right; warm paper, hairlines,
+   rounded corners, crisp type. This layer turns that into shared primitives and applies them to
+   every screen outside To Do / Focus / Calendar / Boards / the task sheet. ds-v3 tokens only.
+   Spec + audit: docs/review/2026-11-design-pass-r5.md
+
+   Primitives (each maps onto the existing class names listed in its section):
+     P1 page header · P2 toolbar · P3 card · P4 table · P5 stat tile · P6 property grid
+     P7 segmented control · P8 status chip · P9 modal shell · P10 drawer · P11 empty state
+   ═══════════════════════════════════════════════════════════════════════════════════════════ */
+:root{
+  --lbl:500 12.5px/1.3 var(--font);   /* quiet label: property labels, table heads, tile labels */
+  --row-h:44px;                       /* table row rhythm                                      */
+  --tile-v:700 26px/1.05 var(--display);
+  --hair:1px solid color-mix(in srgb,var(--border) 85%,transparent);
+  --seg-bg:color-mix(in srgb,var(--ink) 5%,var(--off));
+}
+body.dark{--seg-bg:rgba(255,255,255,.05);}
+
+/* ── P1 · Page header: title (display) → one muted line → toolbar. Same gutter everywhere. ── */
+.view-title,.sett-tab-hd{font:750 30px/1.1 var(--display)!important;letter-spacing:-.04em!important;}
+.view-sub,.sett-tab-sub{font-size:13.5px!important;color:var(--muted)!important;margin-top:6px!important;}
+#jt-jobs>div:first-child,#jt-expenses .qinv-wrap>div:first-child,#jt-quotes .qinv-wrap>div:first-child,#jt-invoices .qinv-wrap>div:first-child,#clients-list-view>div:first-child{padding:24px var(--gutter) 0!important;}
+#view-reporting>div:first-child{padding:24px var(--gutter) 0!important;}
+.time-head-bar{padding:24px var(--gutter) 0!important;}
+#jt-deadlines{padding:24px var(--gutter) 40px!important;}
+
+/* ── P2 · Toolbar: one row of 34px controls, 8px apart; the count sits quiet at the right ──── */
+.jobs-toolbar,.qinv-toolbar,.r-toolbar{gap:8px!important;padding:18px var(--gutter) 16px!important;margin:0!important;align-items:center!important;flex-wrap:wrap;}
+.r-toolbar{padding-left:0!important;padding-right:0!important;padding-bottom:0!important;border-bottom:0!important;}
+.jobs-toolbar>*,.qinv-toolbar>*{flex-shrink:0;}
+.jobs-toolbar .d-action,.qinv-toolbar .d-action,.qinv-toolbar .filter-btn,.r-toolbar .d-action,.time-head-bar .d-action{height:var(--ctl-h)!important;padding:0 12px!important;gap:6px;}
+.jobs-toolbar .cc-select,.qinv-toolbar .cc-select,.r-toolbar .cc-select,.time-head-bar .cc-select{height:var(--ctl-h)!important;}
+.jobs-search input{height:var(--ctl-h)!important;}
+.jobs-search>i{color:var(--subtle)!important;}
+.jobs-count{font-size:12.5px!important;color:var(--muted)!important;font-variant-numeric:tabular-nums;letter-spacing:0!important;text-transform:none!important;}
+.qinv-toolbar .filter-btn input[type=checkbox],.jobs-toolbar input[type=checkbox]{accent-color:var(--ink)!important;}
+body.dark .qinv-toolbar .filter-btn input[type=checkbox]{accent-color:var(--ink)!important;}
+.time-head-bar>div:last-child{gap:8px!important;}
+
+/* ── P3 · Card: white paper, hairline, 16px radius, one soft shadow. Card headers read like
+   the sheet's header: a crisp title, quiet meta at the right, a hairline under. ─────────────── */
+.rv-card,.sett-card,.att-card,.team-card,.rf-ts-card,.client-card-full,.r-section,.fe-card,.my-todos{border:var(--hair)!important;border-radius:var(--r-card)!important;}
+.sett-card-hd{padding:16px 20px 14px!important;border-bottom:1px solid var(--faint)!important;background:transparent!important;}
+.sett-card-hd>span,.sett-card-hd small{color:var(--muted)!important;font-weight:400!important;}
+.rv-card-h,.rv-card-t,.att-title,.rf-ts-hd b,.rf-ts-hd>span:first-child{font-family:var(--display);}
+
+/* ── P4 · Table: the header belongs to the card — white, quiet sentence-case labels, one
+   hairline under. Rows breathe at 44px, hover warms to surface-2, numbers are tabular. ───────── */
+.jobs-table thead th,.inv-th,.inv-table thead th,.time-table thead th,#exp-list-wrap thead th,.exp-t thead th,.qinv-head-row,.prog-table thead th,.rv-table thead th,.fd-tbl thead th,.c2-rc-table thead th,.items-t thead th,.c2-lines thead th,.c2-dd-lines thead th{
+  background:var(--white)!important;color:var(--muted)!important;font:var(--lbl)!important;letter-spacing:0!important;text-transform:none!important;
+  border-bottom:1px solid var(--border)!important;border-top:0!important;box-shadow:none!important;}
+.qinv-head-row>span,.qinv-head-row .qinv-card-val{font:var(--lbl)!important;letter-spacing:0!important;text-transform:none!important;color:var(--muted)!important;border:0!important;background:transparent!important;}
+.qinv-head-row{padding-top:11px!important;padding-bottom:11px!important;border-bottom:1px solid var(--border)!important;}
+.jobs-table thead th,.time-table thead th,.inv-table thead th,.inv-th{padding-top:12px!important;padding-bottom:12px!important;}
+.qinv-card-head,.jobs-table tbody tr,.inv-table tbody tr,.time-table tbody tr{transition:background-color var(--dur-1) var(--ease-out);}
+.qinv-card{border-bottom:1px solid var(--faint)!important;}
+.qinv-card-head{min-height:var(--row-h);}
+.qinv-card-head>i.ti-chevron-down{flex:0 0 46px;text-align:center;}
+.jt-panel>div.qinv-wrap:first-child,.jt-panel>div.time-wrap:first-child{padding-top:0!important;}
+.qinv-card-num,.qinv-card-job,.inv-td.ci-num{font-variant-numeric:tabular-nums;color:var(--muted);}
+.qinv-card-val,.inv-td.ci-amt{font-variant-numeric:tabular-nums;font-weight:600;}
+#invoices-list,#quotes-list,#exp-list-wrap,.jobs-table-wrap,.time-table-wrap{background:var(--white)!important;}
+#jobs-footer-bar{background:var(--white)!important;border:var(--hair)!important;box-shadow:var(--e-1)!important;}
+/* Job plan tables sit on the same white as their phase card (they used the window cream) */
+.items-t thead th{position:static;}
+.phase{border:var(--hair)!important;border-radius:var(--r-card)!important;box-shadow:var(--e-1)!important;background:var(--white)!important;overflow:hidden;}
+.items-t tbody td{border-bottom:1px solid var(--faint)!important;}
+.items-t tbody tr:hover td{background:var(--surface-2)!important;}
+
+/* ── P5 · Stat tile: quiet label → one big tabular number in ink → muted context → meter.
+   Numbers never wear status colour; status lives in the context line or a dot. ──────────────── */
+.time-stat,.ls-kpi,.rv-kpi,.stats-strip .stat-b,.r-kpi{padding:16px 18px 15px!important;border:var(--hair)!important;border-radius:var(--r-card)!important;box-shadow:var(--e-1)!important;background:var(--white)!important;}
+.ls-kpi-l,.rv-kpi-l,.time-stat .ts-lbl,.stats-strip .stat-label,.kpi-label,.r-kpi-lbl{font:var(--lbl)!important;color:var(--muted)!important;letter-spacing:0!important;text-transform:none!important;}
+.ls-kpi-v,.rv-kpi-v,.time-stat .ts-val,.stats-strip .stat-val,.r-kpi-val{font:var(--tile-v)!important;letter-spacing:-.035em!important;color:var(--ink)!important;font-variant-numeric:tabular-nums!important;}
+.rv-kpi-v{margin-top:8px!important;}
+.ls-kpi-v.ok,.ls-kpi-v.warn,.rv-kpi-v.warn{color:var(--ink)!important;}
+.rv-kpi-v.neg{color:var(--danger-ink)!important;}
+.ls-kpi-s,.rv-kpi-s,.time-stat .ts-sub,.stats-strip .stat-sub,.kpi-sub{font-size:12px!important;color:var(--muted)!important;}
+.ls-kpi:has(.ls-kpi-v.warn) .ls-kpi-s::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--warn);margin-right:6px;vertical-align:1px;}
+.ls-kpi-bar{height:6px!important;border-radius:var(--r-pill)!important;background:var(--faint)!important;margin-top:12px!important;overflow:hidden;}
+.ls-kpi-bar i{background:var(--ok)!important;border-radius:var(--r-pill)!important;}
+.stats-strip .stat-bar-fill[style*="#4CAF50"]{background:var(--ok)!important;}
+.time-stats-strip{gap:12px!important;padding:0 var(--gutter)!important;margin:16px 0!important;}
+.ls-kpis{margin:0 var(--gutter) 16px!important;gap:12px!important;}
+
+/* ── P6 · Property grid (task-sheet anatomy, shared): an icon + quiet label column, then a
+   control that is calm until hovered. Used by the job and quote sheets below. ────────────────── */
+.ds-props{display:flex;flex-direction:column;gap:2px;padding:8px 0;margin:4px 0 0;border-top:1px solid var(--faint);border-bottom:1px solid var(--faint);}
+.ds-prop{display:grid;grid-template-columns:116px minmax(0,1fr);align-items:center;column-gap:8px;min-height:40px;}
+.ds-prop-l{display:flex!important;align-items:center;gap:8px;margin:0!important;font:var(--lbl)!important;color:var(--muted)!important;white-space:nowrap;letter-spacing:0!important;text-transform:none!important;}
+.ds-prop-l i{font-size:15px;color:var(--subtle);}
+.ds-prop :is(input.form-inp,input[type=text],input[type=number],input[type=date],select.cc-select){width:100%;min-height:34px!important;height:34px;padding:0 10px!important;
+  background-color:transparent!important;border:1px solid transparent!important;border-radius:var(--r-sm)!important;box-shadow:none!important;font:500 13.5px/1.2 var(--font)!important;color:var(--ink)!important;}
+.ds-prop :is(input,select):hover{background-color:var(--surface-2)!important;border-color:var(--faint)!important;}
+.ds-prop :is(input,select):focus{background-color:var(--white)!important;border-color:color-mix(in srgb,var(--red) 55%,var(--border))!important;box-shadow:var(--ring)!important;}
+.ds-prop input[readonly]{color:var(--muted)!important;cursor:default;font-variant-numeric:tabular-nums;}
+.ds-prop input[readonly]:hover{background-color:transparent!important;border-color:transparent!important;}
+.ds-prop-hint{margin:6px 0 0 124px;font-size:12px;color:var(--muted);line-height:1.45;}
+.ds-prop-hint:empty{display:none;}
+.ds-prop .cc-tpl-row{gap:2px;}
+/* The hero input: the record's name, in display type, no box */
+.ds-hero-inp{display:block;width:100%;margin:0 0 10px!important;padding:2px 0 4px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;
+  font:650 22px/1.3 var(--display)!important;letter-spacing:-.022em!important;color:var(--ink)!important;caret-color:var(--red);}
+.ds-hero-inp::placeholder{color:var(--subtle)!important;font-weight:600;}
+.ds-hero-inp:focus{outline:none!important;box-shadow:none!important;}
+
+/* ── P7 · Segmented control: a soft tinted well; the chosen option is a raised paper chip ────── */
+.todo-view-toggle.fd-mode,.wf-choice-row,.ds-sheet .bill-choice-row,.c2-seg{display:inline-flex!important;gap:2px!important;padding:3px!important;border-radius:var(--r-ctl)!important;border:0!important;
+  background:var(--seg-bg)!important;box-shadow:inset 0 1px 2px rgba(46,36,20,.06)!important;height:auto!important;}
+.wf-choice-row .wf-stage-btn,.ds-sheet .bill-choice{display:inline-flex!important;align-items:center;gap:6px;height:30px!important;min-height:0!important;padding:0 12px!important;margin:0!important;
+  border:0!important;border-radius:calc(var(--r-ctl) - 3px)!important;background:transparent!important;box-shadow:none!important;color:var(--muted)!important;font:500 12.5px/1 var(--font)!important;white-space:nowrap;flex:none!important;cursor:pointer;
+  transition:background-color var(--dur-2) var(--ease-out),color var(--dur-1),box-shadow var(--dur-2) var(--ease-out)!important;}
+.wf-choice-row .wf-stage-btn:hover,.ds-sheet .bill-choice:hover{color:var(--ink)!important;}
+.wf-choice-row .wf-stage-btn.on,.ds-sheet .bill-choice.on{background:var(--white)!important;color:var(--ink)!important;box-shadow:var(--e-1),0 0 0 1px color-mix(in srgb,var(--border) 70%,transparent)!important;}
+body.dark .wf-choice-row .wf-stage-btn.on,body.dark .ds-sheet .bill-choice.on{background:var(--surface-2)!important;box-shadow:0 0 0 1px var(--border)!important;}
+.ds-sheet .bill-choice i{font-size:14px!important;color:inherit!important;}
+.ds-sheet .bill-choice.on i{color:var(--ink)!important;}
+.ds-sheet .bill-choice .bc-choice-title{font:inherit!important;color:inherit!important;}
+.ds-sheet .bill-choice .bc-choice-sub{display:none!important;}
+.wf-choice-row .wf-stage-btn:focus-visible,.ds-sheet .bill-choice:focus-visible{outline:2px solid var(--focus)!important;outline-offset:1px!important;}
+
+/* ── P8 · Status chips: one pill family — 22px, sentence case, tint + ink of the same role ──── */
+.inv-pill,.wf-badge,.exp-badg,.status-pill,.rv-pill,.fd-pill,.fe-pill{font:600 11.5px/1.35 var(--font)!important;padding:2px 9px!important;letter-spacing:0!important;}
+.label-chip,.jl-chip,.lbl-chip{border-radius:var(--r-pill)!important;}
+
+/* ── P9 · Modal shell: header (title + close), body, footer. The footer is a warm well with
+   the destructive action quiet at the far left and the primary at the right. ────────────────── */
+.modal{border-radius:var(--r-lg)!important;overflow:hidden;}
+.modal .modal-hd{display:flex;align-items:center;gap:8px;padding:18px 16px 8px 24px!important;border-bottom:0!important;background:transparent!important;}
+.modal .modal-hd-title{flex:1;font:650 17px/1.3 var(--display)!important;letter-spacing:-.02em!important;color:var(--ink)!important;text-transform:none!important;}
+.modal .modal-hd .modal-x{width:30px!important;height:30px!important;min-width:30px!important;flex-basis:30px;font-size:17px!important;}
+.modal .modal-bd{padding:8px 24px 20px!important;}
+.modal .modal-ft{display:flex;align-items:center;justify-content:flex-end;gap:8px!important;padding:12px 16px!important;border-top:1px solid var(--faint)!important;background:var(--surface-2)!important;}
+.modal .modal-ft :is(.modal-cancel,.cancel-b){background:transparent!important;border-color:transparent!important;box-shadow:none!important;color:var(--ink-2)!important;}
+.modal .modal-ft :is(.modal-cancel,.cancel-b):hover{background:color-mix(in srgb,var(--ink) 6%,transparent)!important;}
+.modal .modal-ft :is(.modal-ok,.modal-save,.modal-cancel,.cancel-b,.save-b,.d-action){min-height:34px!important;height:34px;padding:0 14px!important;}
+/* The quiet destructive (tagged by ds-r5-script: Delete / Remove / Void… that isn't the confirm) */
+.modal .modal-ft .ds-ft-del,.inv-modal .ds-ft-del{order:-1;margin-right:auto!important;background:transparent!important;border-color:transparent!important;box-shadow:none!important;color:var(--muted)!important;font-weight:500!important;}
+.modal .modal-ft .ds-ft-del:hover,.inv-modal .ds-ft-del:hover{background:var(--danger-bg)!important;color:var(--danger-ink)!important;}
+/* Confirm dialogs: a destructive confirm is danger-ink, not brand red */
+.modal-save.danger,.d-action.danger,.btn-danger,.modal-ok.danger{background:var(--danger-ink)!important;border-color:var(--danger-ink)!important;color:#fff!important;}
+body.dark :is(.modal-save.danger,.d-action.danger,.btn-danger,.modal-ok.danger){color:#1C1A16!important;}
+/* Labels + fields inside every modal: quiet sentence-case labels, 34px controls */
+.modal .field label,.modal label.fl,.modal .form-lbl{font:var(--lbl)!important;color:var(--muted)!important;letter-spacing:0!important;text-transform:none!important;}
+.modal .field{margin-bottom:14px;}
+.modal .field-row{gap:12px!important;}
+.modal .field input,.modal .field select{min-height:34px;}
+/* What's new: neutral bullets (red is brand + danger only) */
+#changelog-modal li::marker{color:var(--subtle)!important;}
+#changelog-modal .modal{max-width:560px;}
+
+/* ── The new job / new quote sheets (markup in place, IDs unchanged) ─────────────────────────── */
+.ds-sheet{width:540px!important;max-width:calc(100vw - 32px)!important;}
+.ds-sheet .modal-hd{padding:14px 14px 0 22px!important;}
+.ds-sheet .modal-hd-title{font:600 12.5px/1.3 var(--font)!important;letter-spacing:0!important;color:var(--muted)!important;}
+.ds-sheet .modal-bd{padding:4px 22px 16px!important;overflow:visible!important;}
+.ds-sheet .combo-dd{z-index:30;}
+
+/* ── P10 · Drawer: same anatomy as the sheet — muted eyebrow, display title, quiet body ─────── */
+.detail-drawer{background:var(--white)!important;}
+.detail-drawer-head{padding:18px 16px 14px 24px!important;border-bottom:1px solid var(--faint)!important;background:transparent!important;}
+.detail-drawer-title{font:650 20px/1.25 var(--display)!important;letter-spacing:-.022em!important;color:var(--ink)!important;}
+.detail-drawer-sub{font-size:12.5px!important;color:var(--muted)!important;margin-top:4px!important;}
+.detail-drawer-body{padding:16px 24px 24px!important;}
+
+/* ── P11 · Empty state: a calm icon well, a display line, one muted sentence ────────────────── */
+.empty-state .es-icon,.bv-empty-art{width:56px!important;height:56px!important;border-radius:16px!important;transform:none!important;background:var(--surface-2)!important;border:1px solid var(--faint)!important;box-shadow:none!important;margin-bottom:14px!important;}
+.empty-state .es-icon i{font-size:24px!important;color:var(--muted)!important;}
+.empty-state .es-title{font:650 17px/1.3 var(--display)!important;}
+#time-empty{text-align:center;padding:56px 24px!important;}
+
+/* ── Dashboard ───────────────────────────────────────────────────────────────────────────────── */
+.dh-sec .section-label,.section-label{font:700 16px/1.3 var(--display)!important;letter-spacing:-.018em!important;}
+.dh-sec{margin:var(--s-10) 0 var(--s-3)!important;}
+/* Needs attention: neutral icon wells and counts; only the urgency pill carries its role colour */
+.att-ico{background:var(--surface-2)!important;color:var(--ink-2)!important;border:1px solid var(--faint);}
+body.dark .att-ico{background:var(--surface-2)!important;color:var(--ink-2)!important;}
+.att-count{background:transparent!important;color:var(--muted)!important;font:500 12.5px/1 var(--font)!important;padding:0!important;font-variant-numeric:tabular-nums;}
+body.dark .att-count{background:transparent!important;color:var(--muted)!important;}
+.att-title{font-size:14.5px!important;}
+.att-val{font-variant-numeric:tabular-nums;}
+.att-row2.click{border-radius:var(--r-sm);}
+.att-more{color:var(--muted)!important;}
+.att-more:hover{color:var(--ink)!important;}
+/* Team today: task blocks read as quiet rows, not filled tiles */
+.team-card .tc-block{border-radius:var(--r-xs)!important;font-size:12.5px!important;}
+.team-card .tc-block.todo{background:transparent!important;border-color:var(--faint)!important;}
+.team-card .tc-block.done{background:transparent!important;border-color:var(--faint)!important;color:var(--muted)!important;text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--muted) 60%,transparent);}
+.team-card .tc-block.done::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ok);margin-right:7px;vertical-align:1px;}
+.team-card .tc-footer{font-variant-numeric:tabular-nums;}
+
+/* ── Jobs list ───────────────────────────────────────────────────────────────────────────────── */
+.jobs-table tbody td{height:var(--row-h);}
+.jobs-table .job-num,.jobs-table td:nth-child(2) .jnum{color:var(--muted);font-variant-numeric:tabular-nums;}
+
+/* ── Job detail: header reads like the sheet — muted meta line, the name as hero, a quiet row
+   of properties, then tabs on a hairline. ─────────────────────────────────────────────────────── */
+.detail-head{padding:16px var(--gutter) 0!important;border-bottom:1px solid var(--border)!important;}
+.detail-back{height:26px;display:inline-flex!important;align-items:center;gap:6px;padding:0 10px 0 8px!important;font-size:12.5px!important;color:var(--muted)!important;border:1px solid transparent!important;background:transparent!important;}
+.detail-back:hover{background:var(--white)!important;border-color:var(--border)!important;}
+.dt-num{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;color:var(--muted)!important;font:600 12.5px/1 var(--font)!important;font-variant-numeric:tabular-nums;}
+.dt-co{color:var(--ink-2)!important;font-weight:500;}
+.dt-meta>span+span::before,#d-meta-line .dt-bill::before{color:var(--subtle);}
+.detail-title{font:750 32px/1.12 var(--display)!important;letter-spacing:-.04em!important;}
+.dt-team,.detail-meta-line .labels-row{border-left-color:var(--faint)!important;}
+#job-notes-inp{background:transparent!important;border:1px solid transparent!important;padding:8px 10px!important;margin-left:-10px;width:calc(100% + 20px)!important;font-size:13px!important;line-height:1.5!important;color:var(--ink-2)!important;transition:background-color var(--dur-1),border-color var(--dur-1);}
+#job-notes-inp:hover{background:var(--surface-2)!important;border-color:var(--faint)!important;}
+#job-notes-inp:focus{background:var(--white)!important;border-color:color-mix(in srgb,var(--red) 55%,var(--border))!important;box-shadow:var(--ring)!important;}
+.detail-tabs{gap:4px;margin-left:-12px;}
+.d-tab{padding:14px 12px 13px!important;}
+.plan-area{padding-top:20px!important;}
+.ph-add{border-radius:var(--r-card)!important;border:1px dashed var(--border)!important;color:var(--muted)!important;background:transparent!important;transition:background-color var(--dur-1),color var(--dur-1),border-color var(--dur-1);}
+.ph-add:hover{background:var(--white)!important;color:var(--ink)!important;border-color:var(--border-strong)!important;}
+#create-item-menu{border-radius:14px!important;padding:6px!important;box-shadow:var(--e-3)!important;}
+#create-item-menu .tcm-item{border-radius:var(--r-sm);}
+
+/* ── Quotes / invoices documents (preview chrome only — the paper itself is the document) ──── */
+.inv-modal .inv-hd,.inv-modal-hd{border-bottom:1px solid var(--faint)!important;}
+.qd-opts input[type=checkbox],#dtab-quote input[type=checkbox],.inv-modal input[type=checkbox]{accent-color:var(--ink)!important;}
+body.dark :is(.qd-opts,#dtab-quote,.inv-modal) input[type=checkbox]{accent-color:var(--ink)!important;}
+
+/* ── Clients ─────────────────────────────────────────────────────────────────────────────────── */
+.client-card-full{padding:16px 18px!important;}
+.client-card-full .ccf-name{font:650 15px/1.3 var(--display)!important;letter-spacing:-.015em;}
+.client-card-full .ccf-contact{font-size:12.5px!important;color:var(--muted)!important;}
+.client-card-full .ccf-meta{font-size:12px!important;color:var(--muted)!important;font-variant-numeric:tabular-nums;}
+.client-card-full .ccf-meta strong{color:var(--ink);font-weight:600;}
+.client-card-full .ccf-meta [style*="color:#"],.client-card-full .ccf-meta [style*="--ok"]{color:var(--ok-ink)!important;}
+#client-detail-view>div:first-child{padding:16px var(--gutter)!important;border-bottom-color:var(--border)!important;}
+#cd-view-name{font:750 26px/1.15 var(--display)!important;letter-spacing:-.035em!important;}
+#cd-view-meta{font-size:12.5px!important;margin-top:4px!important;}
+#cd-info-strip{padding:12px var(--gutter)!important;border-bottom-color:var(--faint)!important;}
+.ds-sec-lbl{font:700 16px/1.3 var(--display)!important;letter-spacing:-.018em!important;text-transform:none!important;color:var(--ink)!important;margin-bottom:12px!important;}
+
+/* ── Settings ────────────────────────────────────────────────────────────────────────────────── */
+#sett-sidenav{background:transparent!important;border-right:1px solid var(--faint)!important;padding-top:28px!important;}
+#sett-sidenav .sett-nav-item{margin:0 10px 1px!important;}
+#sett-sidenav .sett-nav-item i{color:var(--subtle);transition:color var(--dur-1);}
+#sett-sidenav .sett-nav-item:hover i,#sett-sidenav .sett-nav-item.active i{color:var(--ink-2);}
+.ds-sett-eyebrow{font:600 12.5px/1.3 var(--font)!important;letter-spacing:0!important;text-transform:none!important;color:var(--muted)!important;padding:0 22px 10px!important;}
+
+/* ── Reporting ───────────────────────────────────────────────────────────────────────────────── */
+.rv-card{padding:20px 22px!important;}
+.rv-tbl-total td,.rv-table tfoot td{font-weight:600;}
+.rv-pill.neg,.rv-delta.neg{background:var(--danger-bg)!important;color:var(--danger-ink)!important;}
+
+/* ── ⌘K palette, toasts, tooltips ─────────────────────────────────────────────────────────────── */
+.gs-inp-row i{color:var(--muted)!important;}
+.gs-item.sel::before{background:var(--ink)!important;}
+.gs-cat{font:var(--lbl)!important;}
+
+/* ── Focus: one ring language — keyboard only ───────────────────────────────────────────────── */
+:is(.client-card-full,.qinv-card-head,.att-row2.click,.team-card,.sett-nav-item,.jsn-tab,.d-tab):focus-visible{outline:2px solid var(--focus)!important;outline-offset:2px!important;border-radius:var(--r-sm);}
+
+@media (max-width:1100px){
+  .ls-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  .ds-prop{grid-template-columns:96px minmax(0,1fr);}
+  .ds-prop-hint{margin-left:104px;}
+}
+@media (prefers-reduced-motion:reduce){
+  .wf-choice-row .wf-stage-btn,.ds-sheet .bill-choice,#job-notes-inp,.ph-add{transition:none!important;}
+}
+</style>
+<script id="ds-r5-script">
+// ═══ Design language r5 — behaviour that CSS can't express. Additive and defensive. ══════════
+(function(){
+  // 1 · Charts: red is brand + danger only. The hero series (billable, invoiced) moves to dusk,
+  //     the validated palette's calm blue; slot 5 becomes a sky blue. Validated with the dataviz
+  //     validator (light on #FCFCFB, dark on #1A1A19): lightness, chroma, CVD and normal-vision
+  //     floors all pass. The utilisation heat-map becomes one dusk ramp (amber still = over).
+  //     CV keeps its palette in closure arrays that t() hands out by reference, so they are
+  //     re-stepped in place; charts read them at render time.
+  try{
+    if(typeof CV!=='undefined'&&CV.t){
+      const body=document.body,had=body.classList.contains('dark');
+      const set=(dark,pal,heat)=>{body.classList.toggle('dark',dark);const t=CV.t();pal.forEach((c,i)=>{t.pal[i]=c;});heat.forEach((c,i)=>{t.heat[i]=c;});};
+      set(false,['#5B6BAF','#2E8F6E','#8B4F8A','#B0781A','#2A86B0','#9A5F1C'],['#F2F3F8','#E0E3F0','#C7CCE6','#A8B0D8','#8892C6','#6A77B4','#4F5C9C']);
+      set(true, ['#7383CC','#2A9670','#B97AB7','#B88428','#3A9CC0','#B0733A'],['#25272F','#2C3043','#363D5B','#444D76','#56619B','#6D7AC0','#8F9CE1']);
+      body.classList.toggle('dark',had);
+    }
+  }catch(e){}
+
+  // 2 · Modal footers: a destructive action that isn't the confirm sits quiet at the far left.
+  const DEL=/^\s*(delete|remove|void|discard|archive)\b/i;
+  function tagFooters(root){
+    (root.querySelectorAll?root:document).querySelectorAll('.modal-ft button,.modal-ft .d-action').forEach(b=>{
+      if(b.classList.contains('ds-ft-del'))return;
+      if(b.matches('.modal-ok,.modal-save,.save-b,.primary,.danger,.btn-danger'))return;
+      const ft=b.closest('.modal-ft');if(!ft)return;
+      if(ft.querySelectorAll('button').length<2)return;
+      if(DEL.test(b.textContent||''))b.classList.add('ds-ft-del');
+    });
+  }
+  let pend=false;
+  new MutationObserver(()=>{if(pend)return;pend=true;requestAnimationFrame(()=>{pend=false;tagFooters(document);});})
+    .observe(document.body,{childList:true,subtree:true});
+  tagFooters(document);
 })();
 </script>
 </body>
