@@ -11161,7 +11161,7 @@ function openTeamMember(key){
       <div style="font-size:12px;color:var(--muted);margin-top:2px;">${esc(p.role||"No role set")}${p.team?" · "+esc(p.team):""}</div>
       ${stU?`<div style="font-size:11px;color:var(--muted);margin-top:2px;">Synced from Streamtime</div>`:''}
     </div>
-    <button onclick="closeTeamPanel()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;font-size:18px;"><i class="ti ti-x"></i></button>`;
+    <button class="ds-close" title="Close" aria-label="Close" onclick="closeTeamPanel()"><i class="ti ti-x"></i></button>`;
   body.innerHTML=`
     <div class="tm-panel-section">
       <div class="tm-panel-section-lbl">Identity</div>
@@ -13147,7 +13147,7 @@ setTimeout(_renderIcons,50);
       <div class="detail-drawer-title" id="dd-title">—</div>
       <div class="detail-drawer-sub" id="dd-sub"></div>
     </div>
-    <button onclick="closeDetailDrawer()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;font-size:18px;line-height:1;flex-shrink:0;"><i class="ti ti-x"></i></button>
+    <button class="ds-close" title="Close" aria-label="Close" onclick="closeDetailDrawer()"><i class="ti ti-x"></i></button>
   </div>
   <div class="detail-drawer-body" id="dd-body"></div>
 </div>
@@ -13598,7 +13598,7 @@ function _ccRenderMyItems(){
   if(!show){panel?.remove();return;}
   if(!panel){
     panel=document.createElement('aside');panel.id='cc-mi-panel';
-    panel.innerHTML=`<div class="cc-mi-hd"><div class="cc-mi-hd-row"><span class="cc-mi-title">My items</span><button class="cc-icon-btn" title="Close" onclick="toggleMyItems()"><i class="ti ti-x"></i></button></div>
+    panel.innerHTML=`<div class="cc-mi-hd"><div class="cc-mi-hd-row"><span class="cc-mi-title">My items</span><button class="ds-close" title="Close" aria-label="Close" onclick="toggleMyItems()"><i class="ti ti-x"></i></button></div>
       <div class="cc-mi-sub" id="cc-mi-sub"></div>
       <input class="form-inp cc-mi-search" id="cc-mi-q" placeholder="Filter by job or item…" oninput="_ccMiQuery=this.value;_ccRenderMyItemsList()"></div>
       <div class="cc-mi-list" id="cc-mi-list"></div>`;
@@ -16261,7 +16261,7 @@ function _bvDrawerHTML({b,col,card:c}){
       <button class="bv-ibtn" title="Duplicate card" onclick="bvDuplicateCard(${_bvA(c.id)})"><i class="ti ti-copy"></i></button>
       <button class="bv-ibtn" title="Archive card" onclick="bvArchiveCard(${_bvA(c.id)})"><i class="ti ti-archive"></i></button>
       <button class="bv-ibtn" title="Delete card" onclick="bvDeleteCard(${_bvA(c.id)})"><i class="ti ti-trash"></i></button>
-      <button class="bv-ibtn" title="Close (Esc)" onclick="bvCloseCard()"><i class="ti ti-x"></i></button>
+      <button class="bv-ibtn ds-close" title="Close (Esc)" aria-label="Close" onclick="bvCloseCard()"><i class="ti ti-x"></i></button>
     </div>
     <div class="bv-dr-scroll">
       <textarea class="bv-dr-title" rows="1" data-grow placeholder="${esc(j?j.name:'Card title')}" oninput="_bvGrow(this)" onchange="bvSetField('title',this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">${esc(c.title||'')}</textarea>
@@ -19863,8 +19863,15 @@ body.dark .modal-bg,body.dark .gs-bg,body.dark .cb-overlay,body.dark .inv-bg{bac
 @keyframes dsModalIn{from{opacity:0;transform:translateY(14px) scale(.965);}to{opacity:1;transform:none;}}
 .modal-hd,.tm-hd{padding:22px 24px 14px!important;border-bottom:1px solid var(--faint)!important;background:var(--white)!important;color:var(--ink)!important;}
 .modal-hd-title,.tm-hd-title{font:700 18px/1.25 var(--display)!important;letter-spacing:-.025em!important;}
-.modal-x,.tm-x,.inv-x,.bv-card-x{width:32px;height:32px;border-radius:var(--r-sm)!important;display:inline-flex;align-items:center;justify-content:center;color:var(--muted)!important;transition:background var(--d-1),color var(--d-1),transform var(--d-2) var(--ease-spring)!important;}
-.modal-x:hover,.tm-x:hover,.inv-x:hover,.bv-card-x:hover{background:var(--surface-2)!important;color:var(--ink)!important;transform:rotate(90deg);}
+/* Close buttons: one 32px circle; hover fills it, nothing moves (see polish-r2 for the full set) */
+.modal-x,.tm-x,.inv-x,.ds-close,.cb-close{flex:0 0 32px;width:32px!important;height:32px!important;min-width:32px!important;padding:0!important;margin:0;border:0!important;border-radius:50%!important;
+  display:inline-flex!important;align-items:center;justify-content:center!important;background:transparent!important;color:var(--muted)!important;font-size:18px!important;line-height:1!important;cursor:pointer;
+  transform:none!important;transition:background-color var(--d-1) ease,color var(--d-1) ease!important;}
+.modal-x:hover,.tm-x:hover,.inv-x:hover,.ds-close:hover,.cb-close:hover{background:color-mix(in srgb,var(--ink) 7%,transparent)!important;color:var(--ink)!important;}
+.modal-x:active,.tm-x:active,.inv-x:active,.ds-close:active{background:color-mix(in srgb,var(--ink) 12%,transparent)!important;}
+.modal-x i,.tm-x i,.inv-x i,.ds-close i,.cb-close i{font-size:18px;line-height:1;display:block;}
+.bv-card-x{width:24px;height:24px;border-radius:50%!important;color:var(--muted)!important;transition:background-color var(--d-1),color var(--d-1)!important;}
+.bv-card-x:hover{background:var(--faint)!important;color:var(--ink)!important;}
 .modal-bd{padding:20px 24px!important;}
 .modal-ft{padding:14px 24px 18px!important;border-top:1px solid var(--faint)!important;gap:8px!important;}
 .detail-drawer,.tm-detail-panel{border-radius:var(--r-lg) 0 0 var(--r-lg)!important;box-shadow:var(--e-4)!important;border-left:1px solid var(--border)!important;transition:right var(--d-4) var(--ease-out)!important;}
