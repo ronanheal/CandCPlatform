@@ -8834,7 +8834,7 @@ function _docModalShell(titleWord,statusPill,metaHTML,lineRows,totalsRows,extraH
             <div style="margin-top:10px;">${statusPill}</div>
           </div>
         </div>
-        <div style="width:52px;height:3px;background:var(--red);margin:28px 0 26px;"></div>
+        <div style="height:3px;margin:28px 0 26px;"></div>
         <div style="display:flex;gap:24px;margin-bottom:32px;font-size:12.5px;line-height:1.75;">${metaHTML}</div>
         ${lineRows?`<table style="width:100%;border-collapse:collapse;">
           <thead><tr>
@@ -19773,11 +19773,9 @@ body.dark .ds-nav-ind{background:var(--surface-2);box-shadow:0 0 0 1px var(--bor
 .dash-scroll{padding:32px var(--gutter) 64px!important;}
 .dash-scroll>*{max-width:1400px;margin-left:auto;margin-right:auto;}
 
-/* Splash — logo with a red thread drawing underneath */
+/* Splash — logo only (the red line underneath was removed) */
 #cc-splash{background:var(--off)!important;flex-direction:column;gap:22px;}
 body.dark #cc-splash{background:var(--off)!important;}
-#cc-splash::after{content:'';width:120px;height:3px;border-radius:3px;background:linear-gradient(90deg,var(--red) 0 0) no-repeat 0 0/0% 100%,var(--faint);animation:dsThread 1.1s var(--ease-out) .1s forwards;}
-@keyframes dsThread{to{background-size:100% 100%;}}
 #cc-splash.out{transform:scale(1.02);transition:opacity .32s ease,transform .32s ease!important;}
 
 /* ── 4 · Buttons ────────────────────────────────────────────────────────────────────────── */
