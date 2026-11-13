@@ -23914,5 +23914,40 @@ body.dark :is(.qd-opts,#dtab-quote,.inv-modal) input[type=checkbox]{accent-color
   }
 })();
 </script>
+<style id="rep-r6">
+/* Reporting toolbar: tabs show icons, with the label only on the selected tab (like the To Do
+   view options), so the period/filters/export fit beside them on one row. Filters are one standard
+   width and truncate rather than wrap. A little breathing room under the sticky header. */
+.r-tabs .r-subtab .rt-lbl{display:none;}
+.r-tabs .r-subtab.on .rt-lbl{display:inline;}
+.r-tabs .r-subtab:not(.on){padding:0 10px!important;}
+#view-reporting .r-toolbar{flex-wrap:nowrap!important;}
+#view-reporting .r-tabs{flex-shrink:0;}
+#view-reporting .r-filters{flex-wrap:nowrap!important;min-width:0;justify-content:flex-end;}
+#view-reporting .r-filters .cc-select,#view-reporting .r-filters select{width:168px!important;min-width:0!important;max-width:168px!important;flex:0 1 168px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#view-reporting #r-tab-filters{min-width:0;flex-wrap:nowrap!important;}
+#view-reporting .r-filters .d-action{flex-shrink:0;}
+#view-reporting .r-head-wrap{padding-bottom:14px!important;}
+@media (max-width:1000px){#view-reporting .r-toolbar{flex-wrap:wrap!important;}}
+</style>
+<script id="rep-r6-script">
+(function(){
+  function tidy(){
+    const tabs=document.querySelector('#view-reporting .r-tabs');if(!tabs)return;
+    tabs.querySelectorAll('.r-subtab').forEach(b=>{
+      if(b.querySelector('.rt-lbl'))return;
+      const txt=[...b.childNodes].filter(n=>n.nodeType===3&&n.textContent.trim());
+      const label=txt.map(n=>n.textContent.trim()).join(' ');
+      txt.forEach(n=>n.remove());
+      const sp=document.createElement('span');sp.className='rt-lbl';sp.textContent=label;b.appendChild(sp);
+      b.title=label;b.setAttribute('aria-label',label);
+    });
+    const head=tabs.closest('.r-toolbar')?.parentElement;if(head)head.classList.add('r-head-wrap');
+  }
+  if(typeof _feInstallWipTab==='function'){const o=_feInstallWipTab;_feInstallWipTab=function(){const r=o.apply(this,arguments);try{tidy();}catch(e){}return r;};}
+  if(typeof switchReportTab==='function'){const o=switchReportTab;switchReportTab=function(){const r=o.apply(this,arguments);try{tidy();}catch(e){}return r;};}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',tidy);else tidy();
+})();
+</script>
 </body>
 </html>
