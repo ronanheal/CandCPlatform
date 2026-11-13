@@ -2402,7 +2402,6 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
             </div>
           </div>
           <div id="dtab-plan" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
-            <div class="stats-strip" id="d-stats"></div>
             <div class="plan-area">
               <div class="plan-actions">
                 <button class="p-btn" onclick="addPhase()"><i class="ti ti-layout-rows" style="font-size:12px"></i> New phase</button>
@@ -8232,15 +8231,21 @@ function computeJobProfit(j){
   return{...s,staffCost,expCost,expSell,revenue,cost,margin,marginPct,costEstimated};
 }
 
+// Job KPI tiles (time, sell, budget, invoiced, expenses; over-plan tiles turn red). They lead
+// the Progress tab; renderStats keeps them live wherever they're on screen.
 function renderStats(j){
-  const s=document.getElementById('d-stats');
+  const s=document.getElementById('prog-stats');
+  if(!s||!j)return;
+  s.innerHTML=_jobStatTilesHTML(j);
+}
+function _jobStatTilesHTML(j){
   const{plannedMins,plannedSell,loggedMins,sellUsed,expUsed,hPct,bPct,fmtH}=computeJobStats(j);
   const logStr=fmtH(loggedMins);
   const planStr=plannedMins>0?fmtH(plannedMins):'—';
   const hCol=hPct>=100?'var(--red)':hPct>=80?'#FF9800':'#4CAF50';
   const bCol=bPct>=100?'var(--red)':bPct>=80?'#FF9800':'#4CAF50';
   const billLabel=j.billable!==false?'Billable':'Non-billable';
-  s.innerHTML=
+  return ''+
     _statBlock('Time used / planned',`${logStr} <span class="stat-of">/ ${planStr}</span>`,plannedMins>0?`${hPct}% of plan`:null,plannedMins>0?hPct:null,hCol)+
     _statBlock('Sell used / planned',`$${sellUsed.toLocaleString()} <span class="stat-of">/ $${plannedSell.toLocaleString()}</span>`,plannedSell>0?`${bPct}% of plan`:null,plannedSell>0?bPct:null,bCol)+
     _statBlock('Budget from quote',plannedSell>0?`$${plannedSell.toLocaleString()}`:'—',billLabel,null)+
@@ -8390,27 +8395,12 @@ function renderProgressTab(){
   const j=jobs.find(x=>x.id===activeJobId);if(!j){el.innerHTML='';return;}
   const stats=computeJobStats(j);
   const entries=_jobTimeEntries(j.id);
-  const doneRows=entries.filter(r=>r.done);
-  const schedRows=entries.filter(r=>!r.done);
-  const schedMins=schedRows.reduce((s,r)=>s+Math.round(r.hours*60),0);
-  const unschedMins=Math.max(0,stats.plannedMins-stats.loggedMins-schedMins);
   const fmtH=stats.fmtH;
   const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const fmtD=d=>`${String(d.getDate()).padStart(2,'0')} ${MONTHS[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`;
-  const hCol=stats.hPct>=100?'var(--red)':stats.hPct>=80?'#FF9800':'#4C7DAF';
-  const bCol=stats.bPct>=100?'var(--red)':stats.bPct>=80?'#FF9800':'#4C7DAF';
-  const expTotal=Math.round(stats.expUsed);
-  const quoteStatus=j.quoteStatus||'draft';
 
-  // ── Summary bars ──
-  const barsHTML=`<div class="prog-card">
-    <div class="prog-card-hd">Progress</div>
-    ${_progBar('Time (h)',`<strong>${fmtH(stats.loggedMins)}</strong> <span class="prog-of">/ ${fmtH(stats.plannedMins)}</span>`,stats.hPct,hCol)}
-    ${_progBar('Time ($)',`<strong>$${stats.sellUsed.toLocaleString()}</strong> <span class="prog-of">/ $${stats.plannedSell.toLocaleString()}</span>`,stats.bPct,bCol)}
-    ${_progBar('Scheduled',`<strong>${fmtH(schedMins)}</strong> <span class="prog-of">booked · ${fmtH(unschedMins)} unscheduled</span>`,stats.plannedMins>0?Math.round(((stats.loggedMins+schedMins)/stats.plannedMins)*100):0,'#9A9A9A')}
-    ${_progBar('Expenses',`<strong>$${expTotal.toLocaleString()}</strong>`,expTotal>0?100:0,'#4CAF50')}
-    ${_progBar('Quote',`<strong>$${stats.plannedSell.toLocaleString()}</strong> <span class="prog-of">${quoteStatus}</span>`,quoteStatus==='approved'?100:quoteStatus==='sent'?50:0,'#C4956A')}
-  </div>`;
+  // ── Summary: the job's KPI tiles (moved here from the Job plan tab) ──
+  const barsHTML=`<div class="stats-strip prog-stats" id="prog-stats">${_jobStatTilesHTML(j)}</div>`;
 
   // ── Time table grouped by person ──
   const byPerson={};
@@ -20671,6 +20661,8 @@ body.dark .dt-status .paused-badge{background:var(--surface-2);border-color:var(
 .dt-iconset .dt-ibtn{background:transparent!important;border-color:transparent!important;box-shadow:none!important;color:var(--muted)!important;}
 .dt-iconset .dt-ibtn:hover{background:color-mix(in srgb,var(--ink) 6%,transparent)!important;color:var(--ink)!important;}
 #job-notes-row{padding-bottom:var(--s-3)!important;}
+/* ── Progress tab: the job KPI tiles lead the page (they replaced the old progress bars) ── */
+#dtab-progress .prog-stats{padding:0!important;margin:0 0 var(--s-5);}
 /* Line breaks typed into a title show as line breaks (cards stay clamped) */
 .tc-title,.tt-title,.fli-title{white-space:pre-line;}
 </style>
