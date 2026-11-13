@@ -2940,7 +2940,7 @@ function _syncThemeIcon(){const ic=document.getElementById('theme-icon');if(ic)i
 function toggleTheme(){
   const dark=!document.body.classList.contains('dark');
   document.body.classList.toggle('dark',dark);
-  localStorage.setItem('cc_theme',dark?'dark':'light');
+  try{localStorage.setItem('cc_theme',dark?'dark':'light');}catch(e){} // full/blocked storage: still switch
   _syncThemeIcon();
   _chartThemeMode=null; // charts re-theme on next render
   const rp=document.getElementById('view-reporting');
@@ -20414,7 +20414,10 @@ html.ds-theming *,html.ds-theming *::before,html.ds-theming *::after{transition:
       if(still()||!document.startViewTransition)return tt.apply(this,arguments);
       document.documentElement.classList.add('ds-theming');
       const vt=document.startViewTransition(()=>tt.apply(this,arguments));
-      vt.finished.finally(()=>document.documentElement.classList.remove('ds-theming'));};
+      // A second toggle mid-fade skips this transition, which rejects its promises: handle them
+      // so they don't surface as unhandled rejections ("Transition was skipped").
+      vt.ready.catch(()=>{});vt.updateCallbackDone.catch(()=>{});
+      vt.finished.catch(()=>{}).finally(()=>document.documentElement.classList.remove('ds-theming'));};
       w._ds=1;window.toggleTheme=w;}
     // Today/focus list: pop the tick you just pressed
     wrap('_focusToggleDone',()=>{if(lastPt&&Date.now()-lastPt.t<1500){const el=document.elementFromPoint(lastPt.x,lastPt.y);const ch=el&&el.closest('.todo-check');if(ch&&ch.classList.contains('done-c')){ch.classList.add('ds-pop');burst(lastPt.x,lastPt.y);}}});
