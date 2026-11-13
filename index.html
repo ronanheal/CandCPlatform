@@ -2328,7 +2328,6 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
             <div id="cd-info-strip" style="flex-shrink:0;display:flex;gap:16px;padding:12px 28px;border-bottom:1px solid var(--border);flex-wrap:wrap;"></div>
             <!-- Client jobs table -->
             <div style="flex:1;overflow-y:auto;padding:24px 28px 40px;">
-              <div class="ds-sec-lbl">Jobs</div>
               <div id="cd-jobs-list"></div>
             </div>
           </div>
@@ -10852,7 +10851,7 @@ function openClientDetail(id){
     <div style="min-width:200px;display:flex;gap:20px;">
       <div style="text-align:center;"><div class="micro-lbl">Revenue logged</div><div style="font-size:15px;font-weight:500;">${fmtD(totalSell)}</div></div>
       <div style="text-align:center;"><div class="micro-lbl">Invoiced</div><div style="font-size:15px;font-weight:500;">${fmtD(totalInvoiced)}</div></div>
-      <div style="text-align:center;"><div class="micro-lbl">Paid</div><div style="font-size:15px;font-weight:500;color:var(--ok);">${fmtD(totalPaid)}</div></div>
+      <div style="text-align:center;"><div class="micro-lbl">Paid</div><div style="font-size:15px;font-weight:500;">${fmtD(totalPaid)}</div></div>
     </div>
   `;
   // Contacts section — ST contacts (read-only) + local contacts (editable)
@@ -10860,16 +10859,16 @@ function openClientDetail(id){
   const allContactCount=coContacts.length+localContacts.length;
   const stContactsHTML=coContacts.map(ct=>{
     const name=[ct.firstName,ct.lastName].filter(Boolean).join(' ')||'Unknown';
-    return`<div style="background:var(--off);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:12px;min-width:160px;">
+    return`<div class="ds-contact" style="background:var(--white);border:1px solid color-mix(in srgb,var(--border) 85%,transparent);border-radius:var(--r-ctl);padding:10px 14px;font-size:12.5px;min-width:180px;box-shadow:var(--e-1);">
       <div style="font-weight:500;margin-bottom:2px;">${name}</div>
       ${ct.jobTitle||ct.position?`<div style="color:var(--muted);font-size:11px;">${ct.jobTitle||ct.position}</div>`:''}
       ${ct.email?`<div style="color:var(--muted);font-size:11px;">${ct.email}</div>`:''}
       ${ct.phone||ct.phoneNumber||ct.mobile?`<div style="color:var(--muted);font-size:11px;">${ct.phone||ct.phoneNumber||ct.mobile}</div>`:''}
-      <div style="font-size:10px;color:var(--muted);margin-top:4px;">Streamtime</div>
+      <div style="font-size:11.5px;color:var(--subtle);margin-top:4px;">From Streamtime</div>
     </div>`;
   }).join('');
   const localContactsHTML=localContacts.map((ct,i)=>`
-    <div style="background:var(--white);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:12px;min-width:180px;position:relative;">
+    <div class="ds-contact" style="background:var(--white);border:1px solid color-mix(in srgb,var(--border) 85%,transparent);border-radius:var(--r-ctl);padding:10px 14px;font-size:12.5px;min-width:200px;position:relative;box-shadow:var(--e-1);">
       <button onclick="deleteClientContact('${id}',${i})" style="position:absolute;top:6px;right:6px;background:none;border:none;cursor:pointer;color:var(--muted);padding:0;font-size:12px;" title="Remove"><i class="ti ti-x"></i></button>
       <input placeholder="Name" value="${ct.name||''}" oninput="updateLocalContact('${id}',${i},'name',this.value)" style="width:100%;border:none;border-bottom:1px dashed var(--border);outline:none;font-size:12px;font-weight:500;font-family:var(--font);margin-bottom:4px;background:transparent;">
       <input placeholder="Role / position" value="${ct.role||''}" oninput="updateLocalContact('${id}',${i},'role',this.value)" style="width:100%;border:none;border-bottom:1px dashed var(--border);outline:none;font-size:11px;color:var(--muted);font-family:var(--font);margin-bottom:4px;background:transparent;">
@@ -10879,14 +10878,14 @@ function openClientDetail(id){
   const contactsHTML=`
     <div style="margin-bottom:20px;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">Contacts${allContactCount?` (${allContactCount})`:''}</div>
+        <div class="ds-sec-lbl" style="margin:0!important;">Contacts${allContactCount?` <span style="font:500 12.5px var(--font);color:var(--muted);letter-spacing:0;">${allContactCount}</span>`:''}</div>
         <button class="d-action" onclick="addClientContact('${id}')" style="margin-left:auto;"><i class="ti ti-plus" style="font-size:11px;"></i> Add contact</button>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;">${stContactsHTML}${localContactsHTML}</div>
     </div>`;
   // Jobs list
   const jobsList=document.getElementById('cd-jobs-list');
-  jobsList.innerHTML=(contactsHTML)+(clientJobs.length===0?`<div style="font-size:13px;color:var(--muted);padding:24px 0;">No jobs yet for this client.</div>`
+  jobsList.innerHTML=(contactsHTML)+`<div class="ds-sec-lbl" style="margin-top:8px;">Jobs <span style="font:500 12.5px var(--font);color:var(--muted);letter-spacing:0;">${clientJobs.length||''}</span></div>`+(clientJobs.length===0?`<div style="font-size:13px;color:var(--muted);padding:24px 0;">No jobs yet for this client.</div>`
     :clientJobs.map(j=>{
       const wfLabel=j.workflowStatus==='quote'?'Quote':j.workflowStatus==='completed'?'Completed':j.workflowStatus==='invoiced'?'Invoiced':'Live';
       const wfCls=j.workflowStatus==='quote'?'wf-quote':j.workflowStatus==='completed'?'wf-completed':j.workflowStatus==='invoiced'?'wf-invoiced':'wf-live';
@@ -10897,16 +10896,16 @@ function openClientDetail(id){
       return`<div class="cd-job-row" onclick="openJobDetail('${j.id}')">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
           <span class="job-num">${j.id}</span>
-          <span style="flex:1;font-size:13px;font-weight:400;">${j.name}</span>
+          <span style="flex:1;font-size:13.5px;font-weight:500;">${j.name}</span>
           <span class="wf-badge ${wfCls}">${wfLabel}</span>
-          ${j.billable?'<span style="font-size:10px;background:var(--ok-bg);color:var(--ok-ink);padding:2px 6px;border-radius:10px;">Billable</span>':''}
+          ${j.billable?'<span class="st-tag" style="font-size:11px!important;">Billable</span>':''}
         </div>
         <div style="display:flex;align-items:center;gap:16px;">
-          <div style="flex:1;background:var(--off);border-radius:6px;height:3px;overflow:hidden;">
-            <div style="height:100%;width:${hPct}%;background:${hPct>90?'var(--red)':'var(--ink)'};border-radius:6px;"></div>
+          <div style="flex:1;background:var(--faint);border-radius:99px;height:4px;overflow:hidden;">
+            <div style="height:100%;width:${Math.min(100,hPct)}%;background:${hPct>90?'var(--danger-ink)':'var(--ink-2)'};border-radius:99px;"></div>
           </div>
-          <span style="font-size:11px;color:var(--muted);white-space:nowrap;">${loggedH} / ${plannedH}</span>
-          <span style="font-size:11px;color:var(--muted);white-space:nowrap;">${sell}</span>
+          <span style="font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums;">${loggedH} / ${plannedH}</span>
+          <span style="font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums;min-width:72px;text-align:right;">${sell}</span>
         </div>
       </div>`;
     }).join(''));
@@ -22272,6 +22271,17 @@ body.dark :is(.qd-opts,#dtab-quote,.inv-modal) input[type=checkbox]{accent-color
 .ds-sec-lbl{font:700 16px/1.3 var(--display)!important;letter-spacing:-.018em!important;text-transform:none!important;color:var(--ink)!important;margin-bottom:12px!important;}
 
 /* ── Settings ────────────────────────────────────────────────────────────────────────────────── */
+#cd-info-strip{margin:16px var(--gutter) 0;padding:14px 18px!important;gap:14px 18px!important;background:var(--white);border:var(--hair)!important;border-radius:var(--r-card);box-shadow:var(--e-1);}
+#cd-info-strip .micro-lbl{font:var(--lbl)!important;letter-spacing:0!important;text-transform:none!important;color:var(--muted)!important;margin-bottom:4px;}
+#cd-info-strip :is(input.form-inp,select){height:32px;min-height:32px!important;padding:0 8px!important;font-size:13px!important;background-color:transparent!important;border-color:transparent!important;box-shadow:none!important;margin-left:-8px;width:calc(100% + 8px)!important;}
+#cd-info-strip :is(input.form-inp,select):hover{background-color:var(--surface-2)!important;border-color:var(--faint)!important;}
+#cd-info-strip :is(input.form-inp,select):focus{background-color:var(--white)!important;border-color:color-mix(in srgb,var(--red) 55%,var(--border))!important;box-shadow:var(--ring)!important;}
+#cd-info-strip [style*="font-size:15px"]{font:700 18px/1.2 var(--display)!important;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+#cd-jobs-list .cd-job-row{background:var(--white)!important;border:var(--hair)!important;border-radius:var(--r-ctl)!important;padding:12px 16px!important;margin-bottom:6px!important;box-shadow:var(--e-1);transition:border-color var(--dur-1),box-shadow var(--dur-2);}
+#cd-jobs-list .cd-job-row:hover{box-shadow:var(--e-2);}
+#cd-jobs-list .job-num{color:var(--muted);font-variant-numeric:tabular-nums;font-size:12.5px;}
+
+/* ── Settings ───────────────────────────────────────────────────────────────────────────── */
 #sett-sidenav{background:transparent!important;border-right:1px solid var(--faint)!important;padding-top:28px!important;}
 #sett-sidenav .sett-nav-item{margin:0 10px 1px!important;}
 #sett-sidenav .sett-nav-item i{color:var(--subtle);transition:color var(--dur-1);}
