@@ -8304,6 +8304,9 @@ function duplicateJob(id){
   Object.keys(copy).filter(k=>k.startsWith('_')).forEach(k=>delete copy[k]);
   (copy.phases||[]).forEach(ph=>{ph.id=uid('ph');ph._local=true;(ph.items||[]).forEach(it=>{it.id=uid('it');it._local=true;delete it._stId;delete it._logMins;it.used='$0';});});
   Object.assign(copy,{id:newId,name:j.name+' (Copy)',activity:[],invNum:null,status:'inplay',workflowStatus:'quote',milestones:[],expenses:[],splitInvoices:[],_local:true,_createdAt:Date.now()});
+  // The original's invoice, payments, credit notes and purchase orders belong to it alone: a copy
+  // used to carry them, so it showed as already part-paid and repeated the same PO number.
+  ['invStatus','invLines','invSource','invPayments','invTotal','invIssueDate','invDueDate','invPaidDate','creditNotes','purchaseOrders'].forEach(k=>delete copy[k]);
   jobs.push(copy);saveData();
   toast('Job duplicated','success');
   openJobDetail(newId);
@@ -11593,7 +11596,9 @@ function openGlobalSearch(){
   document.getElementById('gsearch').classList.add('on');
   const inp=document.getElementById('gs-inp');
   inp.value='';runGlobalSearch('');
-  setTimeout(()=>inp.focus(),30);
+  // Focus now as well as after the open transition: typing straight after ⌘K lost the first letters.
+  try{inp.focus();}catch(e){}
+  setTimeout(()=>{if(document.activeElement!==inp)inp.focus();},30);
 }
 function closeGlobalSearch(){document.getElementById('gsearch').classList.remove('on');}
 // ── ⌘K command verbs — type an action, hit Enter, it happens ────────────────
