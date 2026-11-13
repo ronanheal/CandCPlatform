@@ -2174,10 +2174,10 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
             <button class="d-action" onclick="_addFilter('jobs')"><i class="ti ti-filter" style="font-size:11px;"></i> Add filter</button>
             <select class="cc-select" id="jobs-groupby" onchange="_setGroupBy('jobs',this.value)">
               <option value="none">No grouping</option>
-              <option value="company">Group by Company</option>
-              <option value="status">Group by Status</option>
-              <option value="workflow">Group by Workflow</option>
-              <option value="lead">Group by Lead</option>
+              <option value="company">Group by company</option>
+              <option value="status">Group by status</option>
+              <option value="workflow">Group by workflow</option>
+              <option value="lead">Group by lead</option>
             </select>
             <button class="d-action" onclick="saveFilterPreset('jobs')"><i class="ti ti-bookmark" style="font-size:11px;"></i> Save</button>
             <button class="d-action" id="jobs-clear-btn" onclick="_clearFilters('jobs')" style="display:none;"><i class="ti ti-x" style="font-size:11px;"></i> Clear</button>
@@ -2192,7 +2192,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
               <tbody id="jobs-tbody"></tbody>
             </table>
           </div>
-          <div id="jobs-footer-bar" style="display:flex;align-items:center;gap:8px;padding:10px 20px 10px 28px;border-top:3px solid var(--ink);background:var(--white);flex-shrink:0;min-height:40px;"></div>
+          <div id="jobs-footer-bar"></div>
           <div id="bulk-bar" style="display:none;position:sticky;bottom:16px;margin:0 auto;width:fit-content;background:var(--ink);color:#fff;border-radius:6px;padding:8px 14px;box-shadow:0 4px 16px rgba(0,0,0,.25);align-items:center;gap:10px;z-index:50;">
             <span id="bulk-count" style="font-size:12px;font-weight:500;margin-right:4px;">0 selected</span>
             <button class="bulk-btn" onclick="bulkLabelJobs()"><i class="ti ti-tag" style="font-size:12px;"></i> Label</button>
@@ -2267,9 +2267,9 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
               <button class="d-action" onclick="_addFilter('qt')"><i class="ti ti-filter" style="font-size:11px;"></i> Add filter</button>
               <select class="cc-select" id="qt-groupby" onchange="_setGroupBy('qt',this.value)">
                 <option value="none">No grouping</option>
-                <option value="status">Group by Status</option>
-                <option value="company">Group by Company</option>
-                <option value="job">Group by Job</option>
+                <option value="status">Group by status</option>
+                <option value="company">Group by company</option>
+                <option value="job">Group by job</option>
               </select>
               <button class="d-action" onclick="saveFilterPreset('qt')" title="Save current filters as a preset"><i class="ti ti-bookmark" style="font-size:11px;"></i> Save</button>
               <button class="d-action" id="qt-clear-btn" onclick="_clearFilters('qt')" title="Clear all filters" style="display:none;"><i class="ti ti-x" style="font-size:11px;"></i> Clear</button>
@@ -2291,18 +2291,17 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
               <button class="d-action" onclick="_addFilter('inv')"><i class="ti ti-filter" style="font-size:11px;"></i> Add filter</button>
               <select class="cc-select" id="inv-groupby" onchange="_setGroupBy('inv',this.value)">
                 <option value="none">No grouping</option>
-                <option value="status">Group by Status</option>
-                <option value="company">Group by Company</option>
-                <option value="job">Group by Job</option>
+                <option value="status">Group by status</option>
+                <option value="company">Group by company</option>
+                <option value="job">Group by job</option>
               </select>
               <button class="d-action" onclick="saveFilterPreset('inv')"><i class="ti ti-bookmark" style="font-size:11px;"></i> Save</button>
               <button class="d-action" id="inv-clear-btn" onclick="_clearFilters('inv')" style="display:none;"><i class="ti ti-x" style="font-size:11px;"></i> Clear</button>
               <button class="d-action" onclick="openColPicker(event,'inv')" title="Choose columns"><i class="ti ti-columns" style="font-size:11px;"></i> Columns</button>
               <label class="filter-btn" style="cursor:pointer;display:flex;align-items:center;gap:5px;"><input type="checkbox" id="inv-show-tbi" style="accent-color:var(--red)" onchange="renderInvoices()"/> Uninvoiced jobs</label>
               <span class="jobs-count" id="invoices-count" style="margin-left:auto;"></span>
-              <span class="jobs-count" id="invoices-total" style="font-size:13px;font-weight:400;"></span>
-              <span class="jobs-count" id="invoices-dso" style="font-size:12px;color:var(--muted);"></span>
             </div>
+            <div class="ls-kpis" id="inv-kpis"></div>
             <div id="inv-presets-bar" class="fpresets-bar" style="display:none;"></div>
             <div id="inv-fbar" class="fbar" style="display:none;"></div>
             <div id="invoices-list" style="overflow-y:auto;flex:1;"></div>
@@ -2363,10 +2362,10 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
           <div class="detail-head">
             <div class="detail-back" onclick="navTo('jobs')"><i class="ti ti-arrow-left" style="font-size:12px"></i> Jobs</div>
             <div class="detail-title-row">
-              <div><div style="font-size:11px;color:var(--muted);margin-bottom:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;" id="d-meta-line"></div><div class="detail-title" id="d-title-text">—</div></div>
+              <div class="dt-titleblock"><div class="dt-meta" id="d-meta-line"></div><div class="detail-title" id="d-title-text">—</div></div>
               <div class="detail-actions">
-                <button class="d-action" onclick="openJobSettingsModal()"><i class="ti ti-settings" style="font-size:13px"></i></button>
-                <button class="d-action" onclick="showJobDotMenu(event)"><i class="ti ti-dots" style="font-size:13px"></i></button>
+                <button class="d-action dt-ibtn" onclick="openJobSettingsModal()" title="Job settings"><i class="ti ti-settings"></i></button>
+                <button class="d-action dt-ibtn" onclick="showJobDotMenu(event)" title="More actions"><i class="ti ti-dots"></i></button>
                 <button class="d-action" onclick="openInvoice()"><i class="ti ti-file-invoice" style="font-size:13px"></i> Invoice</button>
                 <div class="create-item-wrap" style="position:relative;display:inline-block;">
                   <button class="d-action primary" onclick="toggleCreateItemMenu(event)"><i class="ti ti-plus" style="font-size:12px"></i> Create <i class="ti ti-chevron-down" style="font-size:10px;margin-left:2px;"></i></button>
@@ -2386,7 +2385,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
             </div>
             <div class="detail-meta-line">
               <div style="display:flex;" id="d-members-row"><!-- populated by openJobDetail --></div>
-              <span id="d-hours-sell" style="margin-left:8px;font-size:12px;color:var(--muted);"></span>
+              <span id="d-hours-sell" class="dt-hours-sell"></span>
             </div>
             <div class="labels-row" id="labels-row">
               <div class="label-add-btn" onclick="addLabel(event)"><i class="ti ti-plus" style="font-size:11px"></i> Add label</div>
@@ -2765,7 +2764,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
       <button class="tm-btn-delete" id="edit-task-btn" onclick="deleteTodo()">Delete</button>
       <button class="tm-btn-timer" id="td-timer-btn" onclick="startTimerFromTask()" title="Save the task and start timing it"><i class="ti ti-player-play" style="font-size:12px;"></i> Start timer</button>
       <button class="tm-btn-save" id="td-save-btn" onclick="saveTodo()">
-        <span id="td-save-lbl">Create To Do</span>
+        <span id="td-save-lbl">Add task</span>
         <i class="ti ti-chevron-down" style="font-size:11px;"></i>
       </button>
     </div>
@@ -4651,12 +4650,12 @@ function renderDashboard(){
     const isDone=t.done;const isUrgent=t.urgent&&!isDone;
     const metaArr=[];if(t.job)metaArr.push(t.job);if(t.item)metaArr.push(t.item);if(t.hours)metaArr.push(formatHrs(t.hours));
     return`<div class="my-todo-item" onclick="navTo('todo')">
-      <div class="todo-check${isDone?' done-c':isUrgent?' urg-c':''}">${isDone?'<i class="ti ti-check" style="font-size:10px;color:var(--done-ink);"></i>':''}</div>
-      <div style="flex:1;min-width:0;">
-        <div style="${isDone?'text-decoration:line-through;opacity:.5;':''}font-size:13px;">${esc(t.title)}</div>
-        ${metaArr.length?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${esc(metaArr.join(' · '))}</div>`:''}
+      <div class="todo-check${isDone?' done-c':isUrgent?' urg-c':''}">${isDone?'<i class="ti ti-check"></i>':''}</div>
+      <div class="dh-ti${isDone?' done':''}">
+        <div class="dh-ti-t">${esc(t.title)}</div>
+        ${metaArr.length?`<div class="dh-ti-m">${esc(metaArr.join(' · '))}</div>`:''}
       </div>
-      ${isUrgent?`<div class="todo-meta" style="color:var(--red);flex-shrink:0;">Urgent</div>`:''}
+      ${isUrgent?`<span class="dh-urg">Urgent</span>`:''}
     </div>`;
   }).join('');
   // Team cards — grouped by each person's team when teams are defined
@@ -4672,10 +4671,10 @@ function renderDashboard(){
     const totalBooked=todoH+doneH;
     return`<div class="team-card" onclick="viewTeamTodo('${k}')">
       <div class="tc-head"><div class="tc-av" style="background:${tp.color};">${tp.initials}</div><div><div class="tc-name">${tp.name}</div></div><div class="tc-meta">${formatHrs(totalBooked)||'0h'} booked</div>
-        <button onclick="event.stopPropagation();weekOffset=0;openTodoModal(null,null,'${k}')" title="Add task for ${tp.name}" style="margin-left:8px;background:transparent;border:1px solid var(--border);border-radius:8px;width:22px;height:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted);font-size:13px;"><i class="ti ti-plus" style="font-size:11px;"></i></button>
+        <button class="dh-tc-add" onclick="event.stopPropagation();weekOffset=0;openTodoModal(null,null,'${k}')" title="Add task for ${tp.name}"><i class="ti ti-plus"></i></button>
       </div>
-      <div class="tc-timeline">${taskBlocks||'<div style="font-size:12px;color:var(--muted);padding:4px 0;">No tasks today</div>'}</div>
-      <div class="tc-footer"><div class="tc-stat">Done <span>${formatHrs(doneH)||'0h'}</span></div><div class="tc-stat">To do <span>${formatHrs(todoH)||'0h'}</span></div>${urgCnt?`<div class="tc-stat" style="margin-left:auto;color:var(--red);font-size:11px;">${urgCnt} urgent</div>`:'<div class="tc-stat" style="margin-left:auto;font-size:11px;color:var(--muted);">On track</div>'}</div>
+      <div class="tc-timeline">${taskBlocks||'<div class="dh-tc-none">No tasks today</div>'}</div>
+      <div class="tc-footer"><div class="tc-stat">Done <span>${formatHrs(doneH)||'0h'}</span></div><div class="tc-stat">To do <span>${formatHrs(todoH)||'0h'}</span></div>${urgCnt?`<div class="tc-stat dh-tc-flag urg">${urgCnt} urgent</div>`:'<div class="tc-stat dh-tc-flag">On track</div>'}</div>
     </div>`;
   };
   let otherKeys=Object.keys(people).filter(k=>k!==MY_PERSON&&!people[k]._archived);
@@ -4686,10 +4685,10 @@ function renderDashboard(){
   if(teamNames.length){
     teamHTML=teamNames.map(tn=>{
       const members=otherKeys.filter(k=>people[k].team===tn);
-      return`<div style="grid-column:1/-1;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:4px 0 -6px;">${tn}</div>${members.map(_teamCard).join('')}`;
+      return`<div class="dh-group">${esc(tn)}<span>${members.length}</span></div>${members.map(_teamCard).join('')}`;
     }).join('');
     const unassigned=otherKeys.filter(k=>!people[k].team);
-    if(unassigned.length)teamHTML+=`<div style="grid-column:1/-1;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:4px 0 -6px;">No team</div>`+unassigned.map(_teamCard).join('');
+    if(unassigned.length)teamHTML+=`<div class="dh-group">No team<span>${unassigned.length}</span></div>`+unassigned.map(_teamCard).join('');
   }else{
     teamHTML=otherKeys.map(_teamCard).join('');
   }
@@ -4701,7 +4700,7 @@ function renderDashboard(){
   const totalSell=jobs.reduce((s,j)=>s+(j._sellUsed||0),0);
   const fmtDollar=n=>n>=1000000?`$${(n/1000000).toFixed(1)}m`:n>=1000?`$${(n/1000).toFixed(0)}k`:`$${n.toLocaleString()}`;
   const stKPIs=jobs.length?`
-    <div class="section-label" style="margin-top:28px;margin-bottom:12px;">Business overview</div>
+    <div class="dh-sec"><h2 class="section-label">Business overview</h2></div>
     <div class="kpi-row">
       <div class="kpi"><div class="kpi-label">Active jobs</div><div class="kpi-val">${liveJobs.length}</div><div class="kpi-sub">of ${jobs.length} total</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${Math.min(100,Math.round(liveJobs.length/jobs.length*100))}%;background:var(--red);"></div></div></div>
       <div class="kpi"><div class="kpi-label">Invoiced</div><div class="kpi-val">${fmtDollar(totalInvoiced)}</div><div class="kpi-sub">${fmtDollar(totalPaid)} paid · ${fmtDollar(totalAwaiting)} awaiting</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${totalInvoiced>0?Math.min(100,Math.round(totalPaid/totalInvoiced*100)):0}%;background:var(--ok);"></div></div></div>
@@ -4722,9 +4721,9 @@ function renderDashboard(){
     const clColor=clColors[clrIdx];
     const jobPills=cjobs.slice(0,4).map(j=>{
       const wl=j.workflowStatus==='quote'?'Q':j.workflowStatus==='completed'?'✓':j.workflowStatus==='invoiced'?'$':'';
-      return`<span onclick="event.stopPropagation();openJobDetail('${j.id}')" style="display:inline-block;background:var(--off);border:1px solid var(--border);border-radius:6px;padding:2px 7px;font-size:10px;cursor:pointer;white-space:nowrap;margin:2px 2px 0 0;" title="${esc(j.id+' '+j.name)}">${wl?wl+' ':''}<span style="color:var(--muted);">${j.id}</span> ${esc(j.name.slice(0,18))}${j.name.length>18?'…':''}</span>`;
+      return`<span class="dh-jobpill" onclick="event.stopPropagation();openJobDetail('${j.id}')" title="${esc(j.id+' '+j.name)}">${wl?wl+' ':''}<span>${j.id}</span> ${esc(j.name.slice(0,18))}${j.name.length>18?'…':''}</span>`;
     }).join('');
-    const moreCount=cjobs.length>4?`<span style="font-size:11px;color:var(--muted);margin-top:4px;display:block;">+${cjobs.length-4} more</span>`:'';
+    const moreCount=cjobs.length>4?`<span class="dh-more">+${cjobs.length-4} more</span>`:'';
     return`<div class="team-card" onclick="navTo('clients')">
       <div class="tc-head"><div class="tc-av" style="background:${clColor};">${initials}</div><div><div class="tc-name">${cl?.nickname?`${esc(cl.nickname)} <span style='font-size:11px;color:var(--muted);font-weight:400;'>${esc(co)}</span>`:esc(co)}</div></div><div class="tc-meta">${cjobs.length} job${cjobs.length!==1?'s':''}</div></div>
       <div class="tc-timeline">${jobPills}${moreCount}</div>
@@ -4784,25 +4783,62 @@ function renderDashboard(){
     _attCard('Uninvoiced work',uninvoiced.map(j=>({label:esc(j.name),sub:_jobSub(j),meta:fmtDollar((j._sellUsed||0)-(j._stInvoiced||0)),jid:j.id})),'#7E57C2','ti-coin','uninv'),
     _attCard('Quiet clients',quietClients.map(c=>({label:esc(c.label),meta:c.meta})),'#8A857C','ti-moon','quiet'),
   ].filter(Boolean).join(''):'';
-  wrap.innerHTML=`
-    <div style="margin-bottom:28px;">
-      <div class="dash-greeting">${greetStr}, ${p?.name||'Ronan'}.</div>
-      <div class="dash-date">${dateStr}</div>
-      <div class="dash-rule"></div>
+  // ── Hero: today at a glance — the day as a strip of tasks, what's next, the week's load ──
+  const todayH=todayTasks.reduce((s,t)=>s+(t.hours||0),0);
+  const todayDoneH=todayDone.reduce((s,t)=>s+(t.hours||0),0);
+  const todayLeftH=Math.max(0,todayH-todayDoneH);
+  const nextTask=todayTodo.find(t=>t.urgent)||todayTodo[0]||null;
+  const weekBooked=billH+nbillH;
+  const weekPct=Math.round(weekBooked/(totalTarget||1)*100);
+  const _timer=(typeof _getTimer==='function')?_getTimer():null;
+  const heroLine=todayDow===0?`It's the weekend. Nothing is booked for today.`
+    :!todayTasks.length?`Nothing is booked for today yet.`
+    :!todayTodo.length?`All ${todayDone.length} task${todayDone.length!==1?'s':''} done today. Nice work.`
+    :`<strong>${todayTodo.length} task${todayTodo.length!==1?'s':''} left</strong>${todayLeftH?`, about ${formatHrs(todayLeftH)}`:''}. ${todayDone.length?`${todayDone.length} done so far.`:`Nothing ticked off yet.`}`;
+  const daySegs=[...todayDone,...todayTodo].map(t=>`<span class="dh-seg${t.done?' done':t.urgent?' urg':''}" style="flex-grow:${Math.max(.25,t.hours||0)}" title="${esc(t.title||'')}${t.hours?' · '+formatHrs(t.hours):''}"></span>`).join('');
+  const R=46,C=2*Math.PI*R,ringFill=Math.min(1,weekBooked/(totalTarget||1));
+  const ringState=weekPct>105?'over':weekPct>=85?'full':'';
+  const heroHTML=`<section class="dh-hero" aria-label="Today at a glance">
+    <div class="dh-hero-main">
+      <div class="dh-date"><span class="dh-disc" aria-hidden="true">${now.getDate()}</span><span>${dayNames[now.getDay()]} ${now.getDate()} ${monthNames[now.getMonth()]}</span><span class="dh-wk">Week ${getWeekNum(now)}</span></div>
+      <h1 class="dash-greeting">${greetStr}, ${esc((p?.name||'Ronan').split(' ')[0])}.</h1>
+      <p class="dh-line">${heroLine}</p>
+      ${nextTask?`<div class="dh-next" role="button" tabindex="0" onclick="navTo('todo')"><span class="dh-next-lbl">${nextTask.urgent?'Urgent next':'Next up'}</span><span class="dh-next-t">${esc(nextTask.title||'Untitled task')}</span>${nextTask.hours?`<span class="dh-next-h">${formatHrs(nextTask.hours)}</span>`:''}</div>`:''}
+      <div class="dh-actions">
+        <button class="d-action primary" onclick="weekOffset=0;openTodoModal(null,null,'${MY_PERSON}')"><i class="ti ti-plus"></i> Add task</button>
+        ${_timer?`<button class="d-action dh-timing" onclick="stopTimer()"><span class="dh-live"></span> Stop timer and log</button>`
+          :nextTask?`<button class="d-action" onclick="_dhStartNext('${esc(String(nextTask.id))}',${todayDow})"><i class="ti ti-player-play"></i> Start timer on next</button>`:''}
+        <button class="d-action dh-ghost" onclick="navTo('todo')">Open To Do <i class="ti ti-arrow-right"></i></button>
+      </div>
     </div>
+    <div class="dh-hero-side">
+      <div class="dh-day">
+        <div class="dh-day-hd"><span>Your day</span><strong>${formatHrs(todayDoneH)||'0h'} <em>of ${formatHrs(todayH)||'0h'}</em></strong></div>
+        <div class="dh-strip${todayTasks.length?'':' empty'}">${daySegs||'<span class="dh-seg-empty">A clear day</span>'}</div>
+        <div class="dh-legend"><span><i class="done"></i>Done</span><span><i></i>To do</span>${urgentCount?`<span><i class="urg"></i>${urgentCount} urgent</span>`:''}</div>
+      </div>
+      <div class="dh-ring ${ringState}" title="Booked this week against your capacity">
+        <svg viewBox="0 0 112 112" aria-hidden="true"><circle cx="56" cy="56" r="${R}" class="dh-ring-track"/><circle cx="56" cy="56" r="${R}" class="dh-ring-fill" style="stroke-dasharray:${C.toFixed(1)};--dh-off:${(C*(1-ringFill)).toFixed(1)};stroke-dashoffset:${(C*(1-ringFill)).toFixed(1)}"/></svg>
+        <div class="dh-ring-c"><span class="dh-ring-val">${weekPct}%</span><span class="dh-ring-sub">of ${totalTarget}h</span></div>
+        <div class="dh-ring-lbl">Week booked<span>${formatHrs(weekBooked)||'0h'}</span></div>
+      </div>
+    </div>
+  </section>`;
+  wrap.innerHTML=`
+    ${heroHTML}
     ${_happinessCardHTML()}
     <div class="kpi-row">
       <div class="kpi"><div class="kpi-label">Billable booked this week</div><div class="kpi-val">${formatHrs(billH)||'0h'}</div><div class="kpi-sub">${formatHrs(billDoneH)||'0h'} done · ${formatHrs(billTodoH)||'0h'} planned · of ${totalTarget}h</div>${_wkTrend.bill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('bill')">${_sparkSVG(_wkTrend.bill,_sparkCol('bill'))}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${billPct}%;background:${billH>=(totalTarget||1)*1.2?'var(--red)':'var(--ok)'};"></div></div></div>
       <div class="kpi"><div class="kpi-label">Non-billable</div><div class="kpi-val">${formatHrs(nbillH)||'0h'}</div><div class="kpi-sub">internal & admin</div>${_wkTrend.nbill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('nbill')">${_sparkSVG(_wkTrend.nbill,_sparkCol('nbill'))}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${nbillPct}%;background:var(--cv-graphite);"></div></div></div>
       <div class="kpi"><div class="kpi-label">My tasks today</div><div class="kpi-val">${todayTodo.length}</div><div class="kpi-sub">${urgentCount?urgentCount+' urgent · ':''}${todayDone.length} done</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${todayTasks.length?Math.round(todayDone.length/todayTasks.length*100):0}%;background:${urgentCount?'var(--red)':'var(--ok)'};"></div></div></div>
     </div>
-    <div class="section-label" style="margin-bottom:12px;">Your day <button onclick="weekOffset=0;openTodoModal(null,null,'${MY_PERSON}')" title="Add task" style="background:transparent;border:1px solid var(--border);border-radius:8px;padding:1px 8px;cursor:pointer;font-size:11px;color:var(--muted);font-family:var(--font);margin-left:8px;vertical-align:middle;">+ Add task</button></div>
-    <div class="my-todos" style="margin-bottom:28px;">${todoRows||'<div class="my-todo-item" style="color:var(--muted);font-size:13px;"><i class="ti ti-sun" style="font-size:16px;margin-right:10px;"></i>No tasks scheduled today.</div>'}</div>
-    ${deadlinesHTML?`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Needs attention</div><div class="att-grid">${deadlinesHTML}</div>`:''}
-    ${_show('team')&&teamHTML?`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Team · today</div><div class="team-grid">${teamHTML}</div>`:''}
+    <div class="dh-sec"><h2 class="section-label">Today's tasks</h2><span class="dh-sec-meta">${todayTasks.length?`${todayDone.length} of ${todayTasks.length} done`:''}</span><button class="dh-sec-btn" onclick="weekOffset=0;openTodoModal(null,null,'${MY_PERSON}')"><i class="ti ti-plus"></i> Add task</button></div>
+    <div class="my-todos">${todoRows||`<div class="dh-empty"><span class="dh-empty-art" aria-hidden="true"><i class="ti ti-sun"></i></span><div><strong>${todayDow===0?'Enjoy the weekend':'A clear day'}</strong><span>${todayDow===0?'Nothing is booked. See you Monday.':'No tasks are scheduled for today. Add one, or plan the week in To Do.'}</span></div></div>`}</div>
+    ${deadlinesHTML?`<div class="dh-sec"><h2 class="section-label">Needs attention</h2></div><div class="att-grid">${deadlinesHTML}</div>`:''}
+    ${_show('team')&&teamHTML?`<div class="dh-sec"><h2 class="section-label">Team today</h2><span class="dh-sec-meta">${otherKeys.length} ${otherKeys.length===1?'person':'people'}</span></div><div class="team-grid">${teamHTML}</div>`:''}
     ${_show('kpis')?stKPIs:''}
-    ${_show('clients')&&_clientsHTML?`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Active clients</div><div class="team-grid">${_clientsHTML}</div>`:''}
-    ${alerts?`<div style="margin-top:28px;"><div class="section-label" style="margin-bottom:14px;">Over budget</div><div class="alert-list">${alerts}</div></div>`:''}
+    ${_show('clients')&&_clientsHTML?`<div class="dh-sec"><h2 class="section-label">Active clients</h2><span class="dh-sec-meta">${_clientCards.length}</span></div><div class="team-grid">${_clientsHTML}</div>`:''}
+    ${alerts?`<div class="dh-sec"><h2 class="section-label">Over budget</h2></div><div class="alert-list">${alerts}</div>`:''}
   `;
   _renderIcons();
 }
@@ -5043,15 +5079,15 @@ function renderSchedule(){
       }).join('');
       return`<td class="sched-cell${isToday?' sched-today':''}${over?' sched-over':''}"
           ondragover="_scheduleDragOver(event)" ondragleave="_scheduleDragLeave(event)" ondrop="_scheduleDrop(event,'${k}',${dayN})">
-        <div style="font-size:10px;font-weight:600;color:${over?'var(--red)':totalH>0?'var(--muted)':'#ccc'};margin-bottom:4px;">${totalH>0?formatHrs(totalH):'—'}${over?' ↑':''}</div>
+        <div class="sc-cap${over?' over':totalH>0?'':' none'}" title="${totalH>0?formatHrs(totalH)+' of '+formatHrs(capH):'Nothing booked'}"><span class="sc-h">${totalH>0?formatHrs(totalH):'—'}${over?' over':''}</span><span class="sc-bar"><i style="width:${Math.min(100,Math.round(totalH/(capH||1)*100))}%"></i></span></div>
         ${cardsHTML}
       </td>`;
     }).join('');
     return`<tr>
-      <td style="padding:10px 10px;vertical-align:top;border-bottom:1px solid var(--border);overflow:hidden;">
-        <div style="display:flex;align-items:center;gap:6px;min-width:0;">
-          <div style="width:24px;height:24px;border-radius:50%;background:${p.color||'#999'};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#fff;flex-shrink:0;">${p.initials||'?'}</div>
-          <div style="min-width:0;overflow:hidden;"><div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</div><div style="font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.role||''}</div></div>
+      <td class="sc-person">
+        <div class="sc-person-in">
+          <div class="sc-av" style="background:${p.color||'#999'};">${p.initials||'?'}</div>
+          <div class="sc-pt"><div class="sc-pn">${p.name}</div><div class="sc-pr">${p.role||''}</div></div>
         </div>
       </td>
       ${cells}
@@ -5712,8 +5748,8 @@ function _todoUsableH(){
 function buildZoneBucket(type,cards,isToday){
   const totalHrs=zoneCardHours(cards);
   const isDone=type==='done';
-  const label=isDone?'Done':'To Do';
-  const countText=isDone?`${cards.length} Done`:`${cards.length} To Do${cards.length!==1?"'s":''}`;
+  const label=isDone?'Done':'To do';
+  const countText=`${cards.length} task${cards.length!==1?'s':''}`;
   const action=isDone?'shrinkDoneToFit()':'expandTodoToFit()';
   const actionText=isDone?'View done':'View todos';
   const bk=document.createElement('div');
@@ -5798,7 +5834,7 @@ function showSumTip(el){
   const weekMon=new Date();const _wd2=(weekMon.getDay()+6)%7;
   weekMon.setDate(weekMon.getDate()-_wd2+(weekOffset*7));weekMon.setHours(0,0,0,0);
   let rows='<div style="display:grid;grid-template-columns:auto 70px 70px;gap:4px 16px;align-items:center;">';
-  rows+=`<div style="color:#888;font-size:10px;letter-spacing:.08em;text-transform:uppercase;">Day</div><div style="color:#888;font-size:10px;letter-spacing:.08em;text-transform:uppercase;text-align:right;">To Do</div><div style="color:#888;font-size:10px;letter-spacing:.08em;text-transform:uppercase;text-align:right;">Done</div>`;
+  rows+=`<div class="sumtip-h">Day</div><div class="sumtip-h r">To do</div><div class="sumtip-h r">Done</div>`;
   [1,2,3,4,5].forEach((d,i)=>{
     const tasks=data[d]||[];
     const todoH=tasks.filter(t=>!t.done).reduce((s,t)=>s+(t.hours||0),0);
@@ -5950,14 +5986,14 @@ function renderTodo(){
     let capHTML='';
     if(isWork){
       const label=dayTotalH>0?(isOver?`<span class="day-cap-info over">${formatHrs(dayTotalH)} / ${formatHrs(DAY_CAP)} · over</span>`:`<span class="day-cap-info">${formatHrs(dayTodoH)||'0h'} to do · ${formatHrs(dayDoneH)||'0h'} done</span>`):'<span class="day-cap-info">No tasks</span>';
-      capHTML=`<div class="day-cap">${label}<div class="day-cap-bar"><div class="dcb-done" style="width:${bDoneW}%;"></div><div class="dcb-nbill-done" style="width:${nDoneW}%;"></div><div class="dcb-todo" style="width:${bTodoW}%;${isOver?'background:var(--red);':''}"></div><div class="dcb-nbill-todo" style="width:${nTodoW}%;${isOver?'background:var(--red);opacity:.6':''}"></div></div></div>`;
+      capHTML=`<div class="day-cap">${label}<div class="day-cap-bar${isOver?' over':''}"><div class="dcb-done" style="width:${bDoneW}%;"></div><div class="dcb-nbill-done" style="width:${nDoneW}%;"></div><div class="dcb-todo" style="width:${bTodoW}%;"></div><div class="dcb-nbill-todo" style="width:${nTodoW}%;"></div></div></div>`;
     }
 
     col.innerHTML=`
-      <div class="day-head"${isWork&&isOver?' style="background:var(--warn-bg);"':''}>
+      <div class="day-head${isWork&&isOver?' over':''}">
         <div class="day-head-row">
           <div><div class="day-name">${DAY_NAMES[i]}</div><div class="day-num ${isToday?'today-red':''}">${calDate}</div></div>
-          ${isWork?`<button class="day-add-btn" onclick="openTodoModal(null,${d})"><i class="ti ti-plus" style="font-size:10px"></i> Add task</button>`:''}
+          ${isWork?`<button class="day-add-btn" onclick="openTodoModal(null,${d})"><i class="ti ti-plus"></i> Add task</button>`:''}
         </div>
         ${capHTML}
       </div>
@@ -5974,14 +6010,14 @@ function renderTodo(){
     // Always render cards; checkTodoOverflow/checkDoneOverflow collapse a zone to a
     // bucket only when it's genuinely cramped (cards can't fit at a readable size).
     if(todoTasks.length===0){
-      todoEl.innerHTML='<div class="day-done-empty">—</div>';
+      todoEl.innerHTML='<div class="day-done-empty">Nothing planned</div>';
     } else {
       todoTasks.forEach(t=>todoEl.appendChild(createTaskCard(t,d,false)));
       todoEl.scrollTop=todoEl.scrollHeight;
     }
 
     if(doneTasks.length===0){
-      doneEl.innerHTML='<div class="day-done-empty">—</div>';
+      doneEl.innerHTML='<div class="day-done-empty">Nothing done yet</div>';
     } else {
       doneTasks.forEach(t=>doneEl.appendChild(createTaskCard(t,d,true)));
     }
@@ -6360,7 +6396,7 @@ function renderTodoHeader(day){
   const cap=col.querySelector('.day-cap');
   if(!cap)return;
   const label=total>0?(isOver?`<span class="day-cap-info over">${formatHrs(total)} / ${formatHrs(DAY_CAP)} · over</span>`:`<span class="day-cap-info">${formatHrs(todoH)||'0h'} to do · ${formatHrs(doneH)||'0h'} done</span>`):'<span class="day-cap-info">No tasks</span>';
-  cap.innerHTML=`${label}<div class="day-cap-bar"><div class="dcb-done" style="width:${bDW}%;"></div><div class="dcb-nbill-done" style="width:${nDW}%;"></div><div class="dcb-todo" style="width:${bTW}%;${isOver?'background:var(--red);':''}"></div><div class="dcb-nbill-todo" style="width:${nTW}%;${isOver?'background:var(--red);opacity:.6':''}"></div></div>`;
+  cap.innerHTML=`${label}<div class="day-cap-bar${isOver?' over':''}"><div class="dcb-done" style="width:${bDW}%;"></div><div class="dcb-nbill-done" style="width:${nDW}%;"></div><div class="dcb-todo" style="width:${bTW}%;"></div><div class="dcb-nbill-todo" style="width:${nTW}%;"></div></div>`;
 }
 
 // Drop indicator helpers
@@ -7456,7 +7492,7 @@ function filterJobs(q){_jobSearch=(q||'').toLowerCase();renderJobs();}
 // paused state on the separate j.paused flag, so status filters/groups must consult it here.
 function jobStatusLabel(j){
   if(j.paused)return'Paused';
-  return({inplay:'In Play',complete:'Complete',new:'New',archived:'Archived'}[j.status])||j.status||'—';
+  return({inplay:'In play',complete:'Complete',new:'New',archived:'Archived'}[j.status])||j.status||'—';
 }
 // ── Column picker (Jobs / Invoices / Quotes) ─────────────────────────────────
 // Show/hide is done with hc-* classes on the persistent container element and static CSS
@@ -7595,7 +7631,7 @@ function renderJobs(){
       const j=item;
       const jWf=j.workflowStatus||'live';
       const sc=j.status==='inplay'||j.status==='paused'?'sp-ip':j.status==='new'?'sp-new':'sp-co';
-      const sl=j.status==='inplay'||j.status==='paused'?'In Play':j.status==='new'?'New':j.status==='archived'?'Archived':'Complete';
+      const sl=j.status==='inplay'||j.status==='paused'?'In play':j.status==='new'?'New':j.status==='archived'?'Archived':'Complete';
       computeJobStats(j);
       const bPct=j._bPct||0;const hPct=j._hPct||0;
       const bCol=bPct>=100?'var(--red)':bPct>=80?'var(--warn)':'var(--ok)';
@@ -7677,8 +7713,8 @@ function renderJobs(){
   const footerEl=document.getElementById('jobs-footer-bar');
   if(footerEl){
     const overallPct=totalBudget>0?Math.round(totalUsed/totalBudget*100):0;
-    const barCol=overallPct>=100?'var(--red)':overallPct>=80?'#F57F17':'#4CAF50';
-    footerEl.innerHTML=`<span style="font-size:12px;color:var(--muted);">TOTAL (${shown})</span><div style="flex:1;max-width:300px;margin:0 20px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span>$${(totalUsed||0).toLocaleString('en-NZ',{minimumFractionDigits:2,maximumFractionDigits:2})}</span><span style="color:var(--muted);">/ $${(totalBudget||0).toLocaleString('en-NZ',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div><div style="height:4px;background:var(--faint);border-radius:6px;overflow:hidden;"><div style="width:${Math.min(100,overallPct)}%;height:100%;background:${barCol};border-radius:6px;"></div></div></div>${overBudgetCount?`<span style="font-size:11px;color:var(--red);">${overBudgetCount} over budget</span>`:''}`;
+    const barCls=overallPct>=100?'over':overallPct>=80?'warn':'';
+    footerEl.innerHTML=`<span class="jf-lbl">Total <span>${shown} job${shown!==1?'s':''}</span></span><div class="jf-meter"><div class="jf-nums"><strong>$${(totalUsed||0).toLocaleString('en-NZ',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong><span>of $${(totalBudget||0).toLocaleString('en-NZ',{minimumFractionDigits:2,maximumFractionDigits:2})} budget · ${overallPct}%</span></div><div class="jf-bar ${barCls}"><i style="width:${Math.min(100,overallPct)}%"></i></div></div>${overBudgetCount?`<span class="jf-over"><i class="ti ti-alert-triangle"></i>${overBudgetCount} over budget</span>`:''}`;
   }
   _renderIcons();
 }
@@ -7913,7 +7949,7 @@ function openJobSettingsModal(){
   modal.innerHTML=`<div class="modal" style="max-width:500px;width:100%;">
     <div class="modal-hd">
       <div>
-        <div class="modal-hd-title">Job Settings</div>
+        <div class="modal-hd-title">Job settings</div>
         <div style="font-size:11px;color:var(--muted);margin-top:2px;">${j.id} · ${esc(j.company||'No company')}</div>
       </div>
       <button class="modal-x" onclick="document.getElementById('job-sett-modal')?.remove()"><i class="ti ti-x"></i></button>
@@ -7921,7 +7957,7 @@ function openJobSettingsModal(){
     <div class="modal-bd">
       <div class="field-row">
         <div class="field" style="flex:2;">
-          <label>Job Name</label>
+          <label>Job name</label>
           <input id="jsett-name" value="${esc(j.name||'')}" placeholder="e.g. Brand Guidelines 2025">
         </div>
         <div class="field" style="flex:1;">
@@ -7948,7 +7984,7 @@ function openJobSettingsModal(){
           </select>
         </div>
         <div class="field">
-          <label>Workflow Stage</label>
+          <label>Workflow stage</label>
           <select id="jsett-wf">
             <option value="quote" ${j.workflowStatus==='quote'?'selected':''}>Quote</option>
             <option value="live" ${j.workflowStatus==='live'?'selected':''}>Live job</option>
@@ -8062,8 +8098,8 @@ function deleteJobConfirm(id){
 
 function _statBlock(label,val,sub,pct,col){
   const bar=pct!=null?`<div class="stat-bar" style="margin-top:8px;"><div class="stat-bar-fill" style="width:${Math.min(100,pct)}%;background:${col||'var(--ok)'};"></div></div>`:'';
-  const subHtml=sub?`<div style="font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:.05em;">${sub}</div>`:'';
-  return`<div class="stat-b"><div class="stat-label">${label}</div><div class="stat-val">${val}</div>${subHtml}${bar}</div>`;
+  const subHtml=sub?`<div class="stat-sub">${sub}</div>`:'';
+  return`<div class="stat-b${pct!=null&&pct>=100?' is-over':''}"><div class="stat-label">${label}</div><div class="stat-val">${val}</div>${subHtml}${bar}</div>`;
 }
 // Live stats refresh — called after any task save/toggle to keep job plan in sync
 function _refreshJobStats(){
@@ -8176,12 +8212,12 @@ function renderStats(j){
   const planStr=plannedMins>0?fmtH(plannedMins):'—';
   const hCol=hPct>=100?'var(--red)':hPct>=80?'#FF9800':'#4CAF50';
   const bCol=bPct>=100?'var(--red)':bPct>=80?'#FF9800':'#4CAF50';
-  const billLabel=j.billable!==false?'BILLABLE':'NON-BILLABLE';
+  const billLabel=j.billable!==false?'Billable':'Non-billable';
   s.innerHTML=
     _statBlock('Time used / planned',`${logStr} <span class="stat-of">/ ${planStr}</span>`,plannedMins>0?`${hPct}% of plan`:null,plannedMins>0?hPct:null,hCol)+
     _statBlock('Sell used / planned',`$${sellUsed.toLocaleString()} <span class="stat-of">/ $${plannedSell.toLocaleString()}</span>`,plannedSell>0?`${bPct}% of plan`:null,plannedSell>0?bPct:null,bCol)+
     _statBlock('Budget from quote',plannedSell>0?`$${plannedSell.toLocaleString()}`:'—',billLabel,null)+
-    _statBlock('Invoiced ex GST',j._streamtime?(j._stInvoiced>0?`$${j._stInvoiced.toLocaleString()}`:'—'):((j.invStatus==='sent'||j.invStatus==='paid')&&(j.invTotal||plannedSell)?`$${(j.invTotal||plannedSell).toLocaleString()}`:'—'),j._streamtime?(j._stInvoiced>0?(j._stPaid>=j._stInvoiced?'PAID':j._stAwaitingPayment>0?'AWAITING':'SENT'):null):((j.invStatus==='sent'||j.invStatus==='paid')?j.invStatus.toUpperCase():null),null)+
+    _statBlock('Invoiced ex GST',j._streamtime?(j._stInvoiced>0?`$${j._stInvoiced.toLocaleString()}`:'—'):((j.invStatus==='sent'||j.invStatus==='paid')&&(j.invTotal||plannedSell)?`$${(j.invTotal||plannedSell).toLocaleString()}`:'—'),j._streamtime?(j._stInvoiced>0?(j._stPaid>=j._stInvoiced?'Paid':j._stAwaitingPayment>0?'Awaiting payment':'Sent'):null):((j.invStatus==='sent'||j.invStatus==='paid')?(j.invStatus==='paid'?'Paid':'Sent'):null),null)+
     _statBlock('Expenses',`$${Math.round(expUsed).toLocaleString()}`,null,null);
 }
 
@@ -8669,7 +8705,7 @@ function _docLineItemsHTML(job){
     items.forEach(i=>{
       const hrsNum=parseHrsInput(i.hours||'0h');
       const totalNum=_num(i.total);
-      rows+=`<tr style="border-bottom:1px solid var(--faint);"><td style="padding:7px 14px;font-size:12px;">${i.name}${i.note?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${i.note}</div>`:''}</td><td style="padding:7px 14px;font-size:12px;text-align:right;color:var(--muted);">${hrsNum>0?hrsNum+'h':'—'}</td><td style="padding:7px 14px;font-size:12px;text-align:right;">$${totalNum.toLocaleString()}</td></tr>`;
+      rows+=`<tr style="border-bottom:1px solid var(--faint);"><td style="padding:7px 14px;font-size:12px;">${i.name}${i.note?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${i.note}</div>`:''}</td><td style="padding:7px 14px;font-size:12px;text-align:right;color:var(--muted);">${hrsNum>0?formatHrs(hrsNum):'—'}</td><td style="padding:7px 14px;font-size:12px;text-align:right;">$${totalNum.toLocaleString()}</td></tr>`;
     });
   });
   return rows;
@@ -8682,7 +8718,7 @@ function _docModalShell(titleWord,statusPill,metaHTML,lineRows,totalsRows,extraH
   // body — red C&C mark, big tight document word, brand rule, generous margins, refined
   // line-item table and a boxed totals block, with a proper company footer line.
   m.innerHTML=`<div class="modal" style="max-width:820px;width:94vw;max-height:92vh;display:flex;flex-direction:column;background:var(--off);">
-    <div class="modal-hd" style="background:transparent;border-bottom:none;padding:16px 24px 4px;"><span class="modal-hd-title" style="font-size:11px;color:var(--muted);letter-spacing:.09em;text-transform:uppercase;font-weight:600;">${titleWord} preview</span><button class="modal-x" onclick="document.getElementById('doc-preview-modal').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-hd" style="background:transparent;border-bottom:none;padding:16px 24px 4px;"><span class="modal-hd-title" style="font-size:11px;color:var(--muted);letter-spacing:.09em;text-transform:uppercase;font-weight:600;">${titleWord.charAt(0).toUpperCase()+titleWord.slice(1)} preview</span><button class="modal-x" onclick="document.getElementById('doc-preview-modal').remove()"><i class="ti ti-x"></i></button></div>
     <div class="modal-bd" style="padding:8px 24px 28px;overflow-y:auto;">
       <div style="background:#fff;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.07),0 18px 52px rgba(0,0,0,.13);padding:52px 56px 40px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
@@ -8696,9 +8732,9 @@ function _docModalShell(titleWord,statusPill,metaHTML,lineRows,totalsRows,extraH
         <div style="display:flex;gap:24px;margin-bottom:32px;font-size:12.5px;line-height:1.75;">${metaHTML}</div>
         ${lineRows?`<table style="width:100%;border-collapse:collapse;">
           <thead><tr>
-            <th style="text-align:left;padding:0 14px 10px;font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:600;border-bottom:1.5px solid var(--ink);">DESCRIPTION</th>
-            <th style="text-align:right;padding:0 14px 10px;font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:600;border-bottom:1.5px solid var(--ink);">HRS</th>
-            <th style="text-align:right;padding:0 14px 10px;font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:600;border-bottom:1.5px solid var(--ink);">AMOUNT</th>
+            <th style="text-align:left;padding:0 14px 10px;font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:600;border-bottom:1.5px solid var(--ink);">Description</th>
+            <th style="text-align:right;padding:0 14px 10px;font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:600;border-bottom:1.5px solid var(--ink);">Hours</th>
+            <th style="text-align:right;padding:0 14px 10px;font-size:10px;letter-spacing:.12em;color:var(--muted);font-weight:600;border-bottom:1.5px solid var(--ink);">Amount</th>
           </tr></thead><tbody>${lineRows}</tbody></table>
           <div style="font-size:10px;color:var(--muted);font-style:italic;margin:10px 14px 22px;">Breakdown reflects the current job plan; the total below is the figure on record in Streamtime.</div>`
         :'<div style="font-size:12px;color:var(--muted);margin-bottom:22px;padding:14px 16px;background:var(--off);border-radius:10px;">No linked job plan to itemise — showing document totals only.</div>'}
@@ -8751,7 +8787,7 @@ function openInvoiceDocPreview(invId){
     <div style="text-align:right;color:var(--muted);"><div><strong style="color:var(--ink);">Invoice #:</strong> ${inv.number||inv.id}</div><div><strong style="color:var(--ink);">Issued:</strong> ${_docFmtDate(inv.invoiceDate)}</div><div><strong style="color:var(--ink);">Due:</strong> ${_docFmtDate(inv.dueDate)}</div>${inv.paidDate?`<div><strong style="color:var(--ink);">Paid:</strong> ${_docFmtDate(inv.paidDate)}</div>`:''}</div>`;
   let totals=`<tr><td style="padding:5px 10px;color:var(--muted);">Subtotal (ex GST)</td><td style="padding:5px 10px;text-align:right;">$${Math.round(ex).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;color:var(--muted);">GST (15%)</td><td style="padding:5px 10px;text-align:right;">$${gst.toLocaleString()}</td></tr><tr style="border-top:1px solid var(--border);"><td style="padding:7px 10px;font-weight:600;">Total (inc GST)</td><td style="padding:7px 10px;text-align:right;font-weight:600;font-family:var(--display);font-size:15px;">$${Math.round(inc).toLocaleString()}</td></tr>`;
   if(paid>0)totals+=`<tr><td style="padding:5px 10px;color:var(--ok-ink);">Paid</td><td style="padding:5px 10px;text-align:right;color:var(--ok-ink);">-$${Math.round(paid).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;font-weight:600;">Balance due</td><td style="padding:5px 10px;text-align:right;font-weight:600;">$${Math.round(bal).toLocaleString()}</td></tr>`;
-  _docModalShell('Tax Invoice',pill,meta,_docLineItemsHTML(job),totals,'');
+  _docModalShell('Tax invoice',pill,meta,_docLineItemsHTML(job),totals,'');
 }
 // ── Job Timeline — lightweight Gantt-style view built from phase/item date ranges ──
 // No external Gantt library: a date axis + absolutely-positioned bars is enough for
@@ -8777,7 +8813,7 @@ function renderMilestonesSection(){
     const dateCell=canEdit
       ?`<span class="item-editable" title="Click to edit date" onclick="inlineEditMilestone(event,'${m.id}','date')">${dateLabel}</span>`
       :`<span style="color:var(--muted);">${dateLabel}</span>`;
-    const stTag=m._source==='st'?'<span style="font-size:10px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:6px;">ST</span>':'';
+    const stTag=m._source==='st'?'<span class="st-tag" title="From Streamtime">ST</span>':'';
     const delBtn=canEdit?`<i class="ti ti-x" title="Delete milestone" style="cursor:pointer;color:var(--muted);font-size:12px;" onclick="deleteMilestoneRow('${m.id}')"></i>`:'';
     return`<div class="ms-row" style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--faint);">
       <i class="ti ti-flag-3" style="font-size:13px;color:var(--muted);flex-shrink:0;"></i>
@@ -8939,7 +8975,7 @@ function renderQuoteTab(){
       const totalNum=_num(i.total);
       const cols=[];
       cols.push(`<td style="padding:8px 14px;font-size:12px;">${i.name}${opts.showDescriptions&&i.note?`<div style="font-size:11px;color:var(--muted);margin-top:2px;">${i.note}</div>`:''}</td>`);
-      if(opts.showQty)cols.push(`<td style="padding:8px 14px;font-size:12px;text-align:right;color:var(--muted);">${hrsNum>0?hrsNum+'h':'—'}</td>`);
+      if(opts.showQty)cols.push(`<td style="padding:8px 14px;font-size:12px;text-align:right;color:var(--muted);">${hrsNum>0?formatHrs(hrsNum):'—'}</td>`);
       if(opts.showUnitRate)cols.push(`<td style="padding:8px 14px;font-size:12px;text-align:right;color:var(--muted);">${i.rate||'—'}</td>`);
       if(opts.showSubtotals)cols.push(`<td style="padding:8px 14px;font-size:12px;text-align:right;font-weight:500;">$${totalNum.toLocaleString()}</td>`);
       return`<tr style="border-bottom:1px solid var(--faint);">${cols.join('')}</tr>`;
@@ -8956,10 +8992,10 @@ function renderQuoteTab(){
   const gstAmt=Math.round(totalSell*0.15);
 
   // Column headers
-  let colHdrs=`<th style="padding:10px 14px;font-size:11px;letter-spacing:.08em;font-weight:500;color:var(--muted);">DESCRIPTION</th>`;
-  if(opts.showQty)colHdrs+=`<th style="padding:10px 14px;font-size:11px;letter-spacing:.08em;font-weight:500;color:var(--muted);text-align:right;">HRS</th>`;
-  if(opts.showUnitRate)colHdrs+=`<th style="padding:10px 14px;font-size:11px;letter-spacing:.08em;font-weight:500;color:var(--muted);text-align:right;">RATE</th>`;
-  if(opts.showSubtotals)colHdrs+=`<th style="padding:10px 14px;font-size:11px;letter-spacing:.08em;font-weight:500;color:var(--muted);text-align:right;">AMOUNT</th>`;
+  let colHdrs=`<th style="padding:10px 14px;font-size:11px;letter-spacing:.08em;font-weight:500;color:var(--muted);">Description</th>`;
+  if(opts.showQty)colHdrs+=`<th style="padding:10px 14px;font-size:11px;letter-spacing:.08em;font-weight:500;color:var(--muted);text-align:right;">Hours</th>`;
+  if(opts.showUnitRate)colHdrs+=`<th style="padding:10px 14px;font-size:11px;letter-spacing:.08em;font-weight:500;color:var(--muted);text-align:right;">Rate</th>`;
+  if(opts.showSubtotals)colHdrs+=`<th style="padding:10px 14px;font-size:11px;letter-spacing:.08em;font-weight:500;color:var(--muted);text-align:right;">Amount</th>`;
 
   // Footer cols
   let colFt=`<td style="padding:10px 14px;font-size:13px;font-weight:600;">Total (excl. GST)</td>`;
@@ -9140,7 +9176,7 @@ function setQuoteStatus(jobId,status){
   j.quoteStatus=status;
   if(status==='approved'&&(j.workflowStatus||'quote')==='quote'){
     j.workflowStatus='live';
-    logActivity(jobId,MY_PERSON,'workflow_change','Job moved to <strong>Live Job</strong> on quote approval');
+    logActivity(jobId,MY_PERSON,'workflow_change','Job moved to <strong>Live job</strong> on quote approval');
     toast('Quote approved — job moved to Live job','success');
   } else {
     toast(status==='approved'?'Quote approved':'Quote declined',status==='approved'?'success':'warn');
@@ -9491,7 +9527,7 @@ function showAddExpenseInline(afterPhaseId){
   document.querySelectorAll('.add-exp-form-row').forEach(r=>r.remove());
   const row=document.createElement('div');row.className='add-exp-form-row';
   row.style.cssText='background:var(--off);border:1px solid var(--border);border-radius:3px;padding:12px 16px;margin-top:4px;';
-  row.innerHTML=`<div style="font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Add Expense</div>
+  row.innerHTML=`<div style="font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Add expense</div>
     <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
       <div style="flex:2;min-width:160px;">
         <div style="font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em;">Description *</div>
@@ -9553,7 +9589,7 @@ function saveExpenseInline(){
   renderExpenses();
   toast('Expense added');
 }
-function addPhase(){const ph={id:uid('p'),name:'New Phase',status:'open',items:[]};phases.push(ph);logActivity(activeJobId,MY_PERSON,'phase_add','Added phase <strong>New Phase</strong>');renderPhases();saveData();}
+function addPhase(){const ph={id:uid('p'),name:'New phase',status:'open',items:[]};phases.push(ph);logActivity(activeJobId,MY_PERSON,'phase_add','Added phase <strong>New phase</strong>');renderPhases();saveData();}
 function showCtx(e,itemId,phId){e.stopPropagation();ctxTarget={itemId,phId};const m=document.getElementById('ctx');m.style.cssText=`left:${Math.min(e.clientX,window.innerWidth-205)}px;top:${Math.min(e.clientY,window.innerHeight-230)}px;`;m.classList.add('on');}
 function ctxDo(a){
   document.getElementById('ctx').classList.remove('on');if(!ctxTarget)return;
@@ -9754,11 +9790,11 @@ function renderExpenses(){
   wrap.style.display='';
   const total=Math.round(exps.reduce((a,e)=>a+_expMoney(e).total,0)*100)/100; // sum of row totals, so the rows add up (M7)
   const expHead=`<div class="exp-head" onclick="toggleExp()">
-    <i class="ti ti-chevron-down ph-chv exp-chv" style="font-size:12px;color:var(--muted);"></i>
-    <i class="ti ti-receipt" style="font-size:13px;color:var(--muted);"></i>
-    <span style="font-size:13px;font-weight:500;flex:1;">Expenses</span>
-    <span style="font-size:11px;color:var(--muted);background:var(--white);border:1px solid var(--border);padding:2px 8px;border-radius:10px;">${exps.length} item${exps.length!==1?'s':''}</span>
-    <span style="font-size:12px;font-weight:500;margin-left:8px;">$${total.toLocaleString()}</span>
+    <i class="ti ti-chevron-down ph-chv exp-chv"></i>
+    <span class="exp-h-ico"><i class="ti ti-receipt"></i></span>
+    <span class="exp-h-t">Expenses</span>
+    <span class="exp-h-cnt">${exps.length} item${exps.length!==1?'s':''}</span>
+    <span class="exp-h-tot">$${total.toLocaleString()}</span>
   </div>`;
   const expRows=exps.map(e=>{
     const status=e.status||'draft';
@@ -9774,7 +9810,7 @@ function renderExpenses(){
       ? `<span style="cursor:pointer;" onclick="toggleExpSubs('${e.id}')"><i class="ti ti-chevron-${open?'down':'right'}" style="font-size:11px;color:var(--muted);margin-right:4px;"></i>${e.desc||'—'}</span><span style="font-size:10px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:6px;">${subs.length} lines</span>`
       : `${e.desc||e.description||'—'}`;
     let html=`<tr>
-      <td style="font-weight:500;">${descCell}${e._source==='st'?'<span style="font-size:10px;color:var(--muted);margin-left:5px;background:var(--off);padding:1px 4px;border-radius:6px;">ST</span>':''}</td>
+      <td style="font-weight:500;">${descCell}${e._source==='st'?'<span class="st-tag" title="From Streamtime">ST</span>':''}</td>
       <td style="color:var(--muted);">${e.date?new Date(e.date+'T00:00:00').toLocaleDateString('en-NZ',{day:'numeric',month:'short',year:'2-digit'}):'-'}</td>
       <td style="text-align:center;">${qty}</td>
       <td>$${cost.toLocaleString()}</td>
@@ -9975,7 +10011,7 @@ async function saveJobDates(jobId){
 function editJobStatusField(jobId){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
   const el=document.querySelector(`#d-meta-line [onclick="editJobStatusField('${jobId}')"]`);if(!el)return;
-  const opts=[['inplay','In Play'],['complete','Complete'],['archived','Archived']].filter(([v])=>v!=='archived'||_isAdmin()||j.status==='archived');
+  const opts=[['inplay','In play'],['complete','Complete'],['archived','Archived']].filter(([v])=>v!=='archived'||_isAdmin()||j.status==='archived');
   const sel=document.createElement('select');
   sel.className='filter-btn';sel.style.cssText='font-size:11px;padding:1px 4px;';
   sel.innerHTML=opts.map(([v,l])=>`<option value="${v}" ${v===j.status?'selected':''}>${l}</option>`).join('');
@@ -9986,7 +10022,7 @@ function editJobStatusField(jobId){
     const cur=jobs.find(x=>x.id===jobId);
     const val=sel.value;
     if(cur&&val!==cur.status){
-      const labels={inplay:'In Play',complete:'Complete',archived:'Archived'};
+      const labels={inplay:'In play',complete:'Complete',archived:'Archived'};
       await dbUpdateJob(jobId,{status:val});
       logActivity(jobId,MY_PERSON,'status_change',`Status set to <strong>${labels[val]}</strong>`);
       toast(`Status set to ${labels[val]}`,'success');
@@ -10304,7 +10340,7 @@ function printSplitInvoice(jobId,siId){
     <div style="text-align:right;color:var(--muted);"><div><strong style="color:var(--ink);">Reference:</strong> ${si.label}</div><div><strong style="color:var(--ink);">Issued:</strong> ${_docFmtDate(si.date)}</div></div>`;
   const gst=Math.round(si.amount*0.15);
   const totals=`<tr><td style="padding:5px 10px;color:var(--muted);">${si.label} (ex GST)</td><td style="padding:5px 10px;text-align:right;">$${Math.round(si.amount).toLocaleString()}</td></tr><tr><td style="padding:5px 10px;color:var(--muted);">GST (15%)</td><td style="padding:5px 10px;text-align:right;">$${gst.toLocaleString()}</td></tr><tr style="border-top:1px solid var(--border);"><td style="padding:7px 10px;font-weight:600;">Total (inc GST)</td><td style="padding:7px 10px;text-align:right;font-weight:600;font-family:var(--display);font-size:15px;">$${(Math.round(si.amount)+gst).toLocaleString()}</td></tr>`;
-  _docModalShell('Tax Invoice',pill,meta,'',totals,'');
+  _docModalShell('Tax invoice',pill,meta,'',totals,'');
 }
 function renderInvoice(j){
   const wrap=document.getElementById('inv-body');if(!wrap)return;
@@ -10329,7 +10365,7 @@ function renderInvoice(j){
         <div style="font-size:11px;color:var(--muted);line-height:1.7;">NZ Ltd<br>Level 1, 53 Fort Street, Auckland<br>GST 116710013</div>
       </div>
       <div style="text-align:right;">
-        <div style="font-size:22px;font-family:var(--display);font-weight:400;">Tax Invoice</div>
+        <div style="font-size:22px;font-family:var(--display);font-weight:400;">Tax invoice</div>
         ${(()=>{const ci=clientsData.find(c=>c.name===j.company);return ci&&ci.address?`<div style="font-size:11px;color:var(--muted);line-height:1.6;margin-top:6px;">${ci.address.replace(/\n/g,'<br>')}</div>`:'';})()}
       </div>
     </div>
@@ -11938,11 +11974,11 @@ function renderTime(){
 
   const statsEl=document.getElementById('time-stats-strip');
   if(statsEl)statsEl.innerHTML=`
-    <div class="time-stat"><div class="ts-val">${_bigH(totalH)}</div><div class="ts-lbl">Total hours</div><div class="ts-sub">${entries.length} task${entries.length!==1?'s':''}</div></div>
-    <div class="time-stat"><div class="ts-val">${_bigH(doneH)}</div><div class="ts-lbl">Logged (done)</div><div class="ts-sub">${Math.round(doneH/(totalH||1)*100)}% complete</div></div>
-    <div class="time-stat"><div class="ts-val">${_bigH(billH)}</div><div class="ts-lbl">Billable</div><div class="ts-sub">${billPct}% of logged</div></div>
-    <div class="time-stat"><div class="ts-val">$${Math.round(estRev).toLocaleString()}</div><div class="ts-lbl">Revenue ex GST</div><div class="ts-sub">${billH>0?'$'+Math.round(estRev/billH)+'/h avg':'billable logged'}</div></div>
-    <div class="time-stat"><div class="ts-val">${uniquePeople}</div><div class="ts-lbl">People</div><div class="ts-sub">${uniqueJobs} job${uniqueJobs!==1?'s':''}</div></div>`;
+    <div class="time-stat"><div class="ts-lbl">Total hours</div><div class="ts-val">${_bigH(totalH)}</div><div class="ts-sub">${entries.length} task${entries.length!==1?'s':''}</div></div>
+    <div class="time-stat"><div class="ts-lbl">Logged (done)</div><div class="ts-val">${_bigH(doneH)}</div><div class="ts-sub">${Math.round(doneH/(totalH||1)*100)}% complete</div></div>
+    <div class="time-stat"><div class="ts-lbl">Billable</div><div class="ts-val">${_bigH(billH)}</div><div class="ts-sub">${billPct}% of logged</div></div>
+    <div class="time-stat"><div class="ts-lbl">Revenue ex GST</div><div class="ts-val">$${Math.round(estRev).toLocaleString()}</div><div class="ts-sub">${billH>0?'$'+Math.round(estRev/billH)+'/h avg':'billable logged'}</div></div>
+    <div class="time-stat"><div class="ts-lbl">People</div><div class="ts-val">${uniquePeople}</div><div class="ts-sub">${uniqueJobs} job${uniqueJobs!==1?'s':''}</div></div>`;
 
   // Update sub label
   const parts=[];
@@ -12033,7 +12069,7 @@ const JOBS_FILTER_DEFS=[
   {type:'label',     label:'Label',           input:'jobs_label'},
   {type:'health',    label:'Health',          input:'select',  opts:['On track','At risk','Over budget','Needs attention']},
   {type:'po',        label:'PO',              input:'select',  opts:['Has PO','No PO']},
-  {type:'lead',      label:'Job Lead',        input:'lead'},
+  {type:'lead',      label:'Job lead',        input:'lead'},
   {type:'member',    label:'Team member',     input:'lead'},
   {type:'billable',  label:'Billable',        input:'select',  opts:['Yes','No']},
   {type:'due_before',label:'Due before',      input:'date'},
@@ -12047,11 +12083,11 @@ const JOBS_FILTER_DEFS=[
 const QT_FILTER_DEFS=[
   {type:'status',    label:'Status',         input:'select',  opts:['Approved','Declined','Sent','Draft']},
   {type:'company',   label:'Company',        input:'company'},
-  {type:'job_number',label:'Job Number',     input:'text'},
-  {type:'job_name',  label:'Job Name',       input:'text'},
-  {type:'quote_name',label:'Quote Name',     input:'text'},
+  {type:'job_number',label:'Job number',     input:'text'},
+  {type:'job_name',  label:'Job name',       input:'text'},
+  {type:'quote_name',label:'Quote name',     input:'text'},
   {type:'po',        label:'PO Number',      input:'text'},
-  {type:'lead',      label:'Job Lead',       input:'lead'},
+  {type:'lead',      label:'Job lead',       input:'lead'},
   {type:'value_min', label:'Value ≥ $',      input:'number'},
   {type:'value_max', label:'Value ≤ $',      input:'number'},
   {type:'sent_after',label:'Sent after',     input:'date'},
@@ -12063,10 +12099,10 @@ const QT_FILTER_DEFS=[
 const INV_FILTER_DEFS=[
   {type:'status',    label:'Status',         input:'select',  opts:['Overdue','Sent','Awaiting','Paid','Draft','Voided']},
   {type:'company',   label:'Company',        input:'company'},
-  {type:'job_number',label:'Job Number',     input:'text'},
-  {type:'job_name',  label:'Job Name',       input:'text'},
+  {type:'job_number',label:'Job number',     input:'text'},
+  {type:'job_name',  label:'Job name',       input:'text'},
   {type:'po',        label:'PO Number',      input:'text'},
-  {type:'lead',      label:'Job Lead',       input:'lead'},
+  {type:'lead',      label:'Job lead',       input:'lead'},
   {type:'amount_min',label:'Amount ≥ $',     input:'number'},
   {type:'amount_max',label:'Amount ≤ $',     input:'number'},
   {type:'sent_after',label:'Sent after',     input:'date'},
@@ -12638,15 +12674,18 @@ function renderInvoices(){
     totalPaidInc+=(i.amountPaidIncTax||0);
   });
   document.getElementById('invoices-count').textContent=`${inv.length} invoice${inv.length!==1?'s':''}`;
-  const totEl=document.getElementById('invoices-total');
   const _owing=Math.max(0,totalIssuedInc-totalPaidInc);
-  if(totEl)totEl.innerHTML=`$${Math.round(totalIssuedInc).toLocaleString()} issued &nbsp;·&nbsp; <span style="color:var(--ok-ink);">$${Math.round(totalPaidInc).toLocaleString()} paid</span>${_owing>=1?` &nbsp;·&nbsp; <span style="color:var(--warn-ink);">$${Math.round(_owing).toLocaleString()} owing</span>`:''}`;
 
   // DSO metric
   const paidInvs=inv.filter(i=>i.paidDate&&i.sentDate);
   const dso=paidInvs.length?Math.round(paidInvs.reduce((s,i)=>s+(new Date(i.paidDate)-new Date(i.sentDate))/86400000,0)/paidInvs.length):null;
-  const dsoEl=document.getElementById('invoices-dso');
-  if(dsoEl)dsoEl.innerHTML=dso!=null?`DSO <strong>${dso}d</strong>`:'';
+  // KPI strip: issued, paid, owing, days to get paid (inc GST)
+  const kEl=document.getElementById('inv-kpis');
+  if(kEl){const paidPct=totalIssuedInc>0?Math.min(100,Math.round(totalPaidInc/totalIssuedInc*100)):0;
+    kEl.innerHTML=`<div class="ls-kpi"><div class="ls-kpi-l">Issued</div><div class="ls-kpi-v">$${Math.round(totalIssuedInc).toLocaleString()}</div><div class="ls-kpi-s">inc GST · ${inv.length} invoice${inv.length!==1?'s':''}</div></div>
+      <div class="ls-kpi"><div class="ls-kpi-l">Paid</div><div class="ls-kpi-v ok">$${Math.round(totalPaidInc).toLocaleString()}</div><div class="ls-kpi-s">${paidPct}% of issued</div><div class="ls-kpi-bar"><i style="width:${paidPct}%"></i></div></div>
+      <div class="ls-kpi"><div class="ls-kpi-l">Still owing</div><div class="ls-kpi-v${_owing>=1?' warn':''}">$${Math.round(_owing).toLocaleString()}</div><div class="ls-kpi-s">${_owing>=1?'awaiting payment':'all paid up'}</div></div>
+      <div class="ls-kpi"><div class="ls-kpi-l">Days to get paid</div><div class="ls-kpi-v">${dso!=null?dso+'d':'—'}</div><div class="ls-kpi-s">average, sent to paid</div></div>`;}
 
   const _invStatusPill=i=>{
     const s=_getInvStatus(i);
@@ -12861,7 +12900,7 @@ function _buildTabFilters(tab){
     wrap.appendChild(mkSel('r-person','All people',opts));
   }
   if(tab==='jobs'){
-    const _sMap={inplay:'In Play',paused:'Paused',complete:'Complete',new:'New',archived:'Archived'};
+    const _sMap={inplay:'In play',paused:'Paused',complete:'Complete',new:'New',archived:'Archived'};
     const statusCodes=[...new Set(jobs.map(j=>j.status).filter(Boolean))].sort();
     wrap.appendChild(mkSel('r-job-status','All statuses',statusCodes.map(s=>[s,_sMap[s]||s])));
     wrap.appendChild(mkSel('r-job-client','All clients',allCos.map(c=>[c])));
@@ -14218,7 +14257,7 @@ function _c2QuoteLinesSection(q){
   const linked=q.jobNumber?jobs.find(j=>j.id===String(q.jobNumber)):null;
   return`<div class="dd-section" id="c2-dd-qlines">
     <div class="dd-section-lbl">Line items</div>
-    ${lines.length?`<table class="c2-dd-lines">${t.rows.map(r=>`<tr><td>${esc(r.desc)}<div class="sub" style="font-size:11px;color:var(--muted);">${esc(_c2qty(r.qty))} × ${_c2m2(r.unit)}</div></td><td class="num">${_c2m2(r.amount)}</td></tr>`).join('')}
+    ${lines.length?`<table class="c2-dd-lines">${t.rows.map(r=>`<tr><td>${esc(r.desc)}<div class="sub" style="font-size:11px;color:var(--muted);">${esc(_c2QtyLabel(r))} × ${_c2m2(r.unit)}</div></td><td class="num">${_c2m2(r.amount)}</td></tr>`).join('')}
       <tr><td class="sub">Subtotal</td><td class="num">${_c2m2(t.subtotal)}</td></tr>
       ${t.discount?`<tr><td class="sub">${esc(_c2DiscLabel(q.discount))}</td><td class="num">${_c2m2(-t.discount)}</td></tr>`:''}
       <tr><td><strong>Total ex GST</strong></td><td class="num"><strong>${_c2m2(t.ex)}</strong></td></tr>
@@ -14260,7 +14299,7 @@ function _c2QuoteLinesSection(q){
     const contact=cl&&cl.contact?`${cl.contact}${cl.contactTitle?` — ${cl.contactTitle}`:''}`:'';
     const meta=`<div style="flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Prepared for</div><div style="font-weight:500;font-size:13px;">${esc(q.company||'—')}</div>${contact?`<div style="color:var(--muted);margin-top:2px;">${esc(contact)}</div>`:''}${job?`<div style="color:var(--muted);margin-top:2px;">Job #${esc(job.id)} · ${esc(job.name)}</div>`:''}</div>
       <div style="text-align:right;color:var(--muted);"><div><strong style="color:var(--ink);">Quote #:</strong> ${esc(q.quoteNumber||q.id)}</div><div><strong style="color:var(--ink);">Issued:</strong> ${_docFmtDate(q.quoteDate)}</div><div><strong style="color:var(--ink);">Sent:</strong> ${_docFmtDate(q.sentDate)}</div>${q.approvedDate?`<div><strong style="color:var(--ink);">Approved:</strong> ${_docFmtDate(q.approvedDate)}</div>`:''}</div>`;
-    const rows=t.rows.map(r=>`<tr style="border-bottom:1px solid var(--faint);"><td style="padding:7px 14px;font-size:12px;">${esc(r.desc)}</td><td style="padding:7px 14px;font-size:12px;text-align:right;color:var(--muted);white-space:nowrap;">${esc(_c2qty(r.qty))} × ${_c2m2(r.unit)}</td><td style="padding:7px 14px;font-size:12px;text-align:right;white-space:nowrap;">${_c2m2(r.amount)}</td></tr>`).join('');
+    const rows=t.rows.map(r=>`<tr style="border-bottom:1px solid var(--faint);"><td style="padding:7px 14px;font-size:12px;">${esc(r.desc)}</td><td style="padding:7px 14px;font-size:12px;text-align:right;color:var(--muted);white-space:nowrap;">${esc(_c2QtyLabel(r))} × ${_c2m2(r.unit)}</td><td style="padding:7px 14px;font-size:12px;text-align:right;white-space:nowrap;">${_c2m2(r.amount)}</td></tr>`).join('');
     const tr=(l,v,strong)=>`<tr${strong?' style="border-top:1px solid var(--border);"':''}><td style="padding:${strong?'7px':'5px'} 10px;${strong?'font-weight:600;':'color:var(--muted);'}">${l}</td><td style="padding:${strong?'7px':'5px'} 10px;text-align:right;${strong?'font-weight:600;':''}">${v}</td></tr>`;
     const totals=tr('Subtotal',_c2m2(t.subtotal))
       +(t.discount?tr(esc(_c2DiscLabel(q.discount)),_c2m2(-t.discount)):'')
@@ -14270,7 +14309,7 @@ function _c2QuoteLinesSection(q){
     _docModalShell('Quote',pill,meta,rows,totals,terms);
     try{
       const m=document.getElementById('doc-preview-modal');
-      const ths=m?.querySelectorAll('thead th');if(ths&&ths[1])ths[1].textContent='QTY × UNIT';
+      const ths=m?.querySelectorAll('thead th');if(ths&&ths[1])ths[1].textContent='Qty × unit';
       const cap=[...(m?.querySelectorAll('div')||[])].find(d=>/Breakdown reflects the current job plan/.test(d.textContent)&&!d.children.length);
       if(cap)cap.textContent='Prices in NZD. Line items as quoted.';
     }catch(e){}
@@ -17131,7 +17170,7 @@ let _fdDocTitle='';
           const numEl=[...paper.querySelectorAll('strong')].find(x=>/#:\s*$/.test(x.textContent));
           const num=numEl?String(numEl.parentElement.textContent).replace(numEl.textContent,'').trim():'';
           const co=paper.querySelector('div[style*="font-weight:500;font-size:13px"]')?.textContent.trim()||'';
-          t=[titleWord.replace(/^Tax /,''),num].filter(Boolean).join(' ')+(co&&co!=='—'?' — '+co:'');
+          t=[titleWord.replace(/^Tax i/i,'I'),num].filter(Boolean).join(' ')+(co&&co!=='—'?' — '+co:'');
         }
         b.onclick=()=>printElement(m.querySelector('.fd-paper'),t);
         x.before(b);
@@ -17181,7 +17220,7 @@ function _fdDoc(title,pill,meta,rows,totals,extra,opt){
   opt=opt||{};_fdDocTitle=opt.printTitle||title;
   _docModalShell(title,pill,meta,rows,totals,extra);
   const m=document.getElementById('doc-preview-modal');if(!m)return;
-  const ths=m.querySelectorAll('thead th');if(ths[1])ths[1].textContent=opt.col2||'QTY × UNIT';
+  const ths=m.querySelectorAll('thead th');if(ths[1])ths[1].textContent=opt.col2||'Qty × unit';
   const cap=[...m.querySelectorAll('div')].find(d=>/Breakdown reflects the current job plan/.test(d.textContent)&&!d.children.length);
   if(cap){if(opt.caption)cap.textContent=opt.caption;else cap.remove();}
 }
@@ -17190,7 +17229,7 @@ function _fdPill(label){
   return`<span style="display:inline-block;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:500;background:${sc}22;color:${sc};border:1px solid ${sc}44;">${esc(label)}</span>`;
 }
 function _fdLineRows(rows){
-  return rows.map(r=>`<tr style="border-bottom:1px solid var(--faint);"><td style="padding:7px 14px;font-size:12px;">${esc(r.desc)}</td><td style="padding:7px 14px;font-size:12px;text-align:right;color:var(--muted);white-space:nowrap;">${esc(_c2qty(r.qty))} × ${_c2m2(r.unit)}</td><td style="padding:7px 14px;font-size:12px;text-align:right;white-space:nowrap;">${_c2m2(r.amount)}</td></tr>`).join('');
+  return rows.map(r=>`<tr style="border-bottom:1px solid var(--faint);"><td style="padding:7px 14px;font-size:12px;">${esc(r.desc)}</td><td style="padding:7px 14px;font-size:12px;text-align:right;color:var(--muted);white-space:nowrap;">${esc(_c2QtyLabel(r))} × ${_c2m2(r.unit)}</td><td style="padding:7px 14px;font-size:12px;text-align:right;white-space:nowrap;">${_c2m2(r.amount)}</td></tr>`).join('');
 }
 function _fdTotRow(l,v,strong,big){
   return`<tr${strong?' style="border-top:1px solid var(--border);"':''}><td style="padding:${strong?'7px':'5px'} 10px;${strong?'font-weight:600;':'color:var(--muted);'}">${l}</td><td style="padding:${strong?'7px':'5px'} 10px;text-align:right;white-space:nowrap;${strong?'font-weight:600;':''}${big?'font-family:var(--display);font-size:15px;':''}">${v}</td></tr>`;
@@ -17362,7 +17401,7 @@ function openFdCreditNoteDoc(jobId,cnId){
     <div>Invoice total ${_c2m2(tot.inc)} · Paid ${_c2m2(_c2Paid(j))} · This credit ${_c2m2(c.inc)}${others.length?` · Other credits ${_c2m2(_c2r(others.reduce((s,x)=>s+_c2num(x.inc),0)))}`:''} · <strong style="color:var(--ink);">Balance ${_c2m2(Math.max(0,_fdOutstanding(j)))}</strong></div>
     ${c.reason?`<div style="margin-top:6px;"><strong style="color:var(--ink);">Reason:</strong> ${esc(c.reason)}</div>`:''}
   </div>`;
-  _fdDoc('Credit Note',_fdPill('Credit note'),meta,rows,totals,extra,{col2:'QTY × UNIT',printTitle:`Credit note ${c.number} — ${j.company||''}`});
+  _fdDoc('Credit note',_fdPill('Credit note'),meta,rows,totals,extra,{col2:'Qty × unit',printTitle:`Credit note ${c.number} — ${j.company||''}`});
 }
 
 // ───────────────────────── Platform invoices everywhere ─────────────────────────
@@ -17660,7 +17699,7 @@ function openFdPoDoc(jobId,poId){
     ${po.notes?`<div style="color:var(--ink);white-space:pre-wrap;margin-bottom:8px;">${esc(po.notes)}</div>`:''}
     <div>Please quote <strong style="color:var(--ink);">${esc(po.number)}</strong> on your invoice and send it to accounts@content-co.nz. Prices are in NZD.</div>
   </div>`;
-  _fdDoc('Purchase Order',_fdPill(_fdCap(po.status||'draft')),meta,_fdLineRows(t.rows),totals,extra,{col2:'QTY × COST',printTitle:`Purchase order ${po.number} — ${s.name||''}`});
+  _fdDoc('Purchase order',_fdPill(_fdCap(po.status||'draft')),meta,_fdLineRows(t.rows),totals,extra,{col2:'Qty × cost',printTitle:`Purchase order ${po.number} — ${s.name||''}`});
 }
 function _fdPoRowHTML(j,po,withJob){
   const jid=esc(j.id),pid=esc(po.id);
@@ -19975,8 +20014,8 @@ html.ds-theming *,html.ds-theming *::before,html.ds-theming *::after{transition:
   window.dsCountUp=countUp;
 
   // ── First-paint choreography: stagger cards + count up numbers, once per view per session ──
-  const STAG='.kpi,.hp-card,.att-card,.my-todos,.time-stat,.rv-kpi,.rv-card,.sett-card,.client-card-full,.bv-tile,.bv-tpl,.team-card,.rf-ts-card,.jobs-table-wrap,.time-table-wrap,#invoices-list,#quotes-list,#exp-list-wrap,.section-label';
-  const NUMS='.kpi-val,.time-stat .ts-val,.rv-kpi-v,.r-kpi-val';
+  const STAG='.dh-hero,.kpi,.hp-card,.att-card,.my-todos,.time-stat,.rv-kpi,.rv-card,.sett-card,.client-card-full,.bv-tile,.bv-tpl,.team-card,.rf-ts-card,.jobs-table-wrap,.time-table-wrap,#invoices-list,#quotes-list,#exp-list-wrap,.section-label';
+  const NUMS='.dh-ring-val,.kpi-val,.time-stat .ts-val,.rv-kpi-v,.r-kpi-val';
   const seen=new Set();
   function choreograph(root){
     let i=0;root.querySelectorAll(STAG).forEach(el=>{if(el.offsetParent!==null&&i<14)el.style.setProperty('--ds-i',i++);});
@@ -20100,6 +20139,404 @@ html.ds-theming *,html.ds-theming *::before,html.ds-theming *::after{transition:
   // The boot render may already have happened — choreograph it when the splash lifts
   window.addEventListener('load',()=>setTimeout(()=>{const ve=document.getElementById('view-dashboard');
     if(ve&&!ve.classList.contains('hidden')&&ve.querySelector('.kpi'))enter(ve,'view:dashboard');},620));
+})();
+</script>
+<style id="screens-v3">
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+   SCREENS v3 — the screen-by-screen redesign on top of ds-v3 (tokens + components above).
+   Only ds-v3 tokens are used here; nothing new at :root. One section per screen.
+   ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Dashboard ──────────────────────────────────────────────────────────────────────────── */
+.dh-hero{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--s-10);align-items:center;
+  background:var(--white);border:1px solid color-mix(in srgb,var(--border) 85%,transparent);border-radius:var(--r-lg);
+  padding:var(--s-8) var(--s-10) var(--s-8) var(--s-8);box-shadow:var(--e-1);margin-bottom:var(--s-6);overflow:hidden;}
+.dh-hero::after{content:'';position:absolute;right:-120px;top:-160px;width:420px;height:420px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(closest-side,color-mix(in srgb,var(--red) 7%,transparent),transparent);}
+body.dark .dh-hero::after{background:radial-gradient(closest-side,color-mix(in srgb,var(--red) 10%,transparent),transparent);}
+.dh-hero-main{min-width:0;position:relative;z-index:1;}
+.dh-date{display:flex;align-items:center;gap:var(--s-2);font-size:13px;color:var(--muted);margin-bottom:var(--s-3);}
+.dh-disc{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--red);color:#fff;
+  font:700 12px/1 var(--display);letter-spacing:-.02em;box-shadow:0 2px 8px color-mix(in srgb,var(--red) 35%,transparent);}
+.dh-wk{padding:2px 9px;border-radius:var(--r-pill);background:var(--surface-2);border:1px solid var(--faint);font-size:12px;font-weight:500;color:var(--ink-2);}
+.dh-hero .dash-greeting{margin:0 0 var(--s-2)!important;}
+.dh-line{margin:0;font-size:16px;line-height:1.5;color:var(--ink-2);max-width:56ch;}
+.dh-line strong{color:var(--ink);font-weight:650;}
+.dh-next{display:flex;align-items:center;gap:var(--s-3);margin-top:var(--s-4);padding:10px 14px;max-width:560px;border-radius:var(--r-ctl);
+  background:var(--surface-2);border:1px solid var(--faint);cursor:pointer;transition:border-color var(--d-1),background var(--d-1),transform var(--d-2) var(--ease-out);}
+.dh-next:hover{border-color:var(--border-strong);background:var(--white);transform:translateX(2px);}
+.dh-next-lbl{flex-shrink:0;font-size:11.5px;font-weight:600;color:var(--muted);}
+.dh-next-t{flex:1;min-width:0;font-size:13.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dh-next-h{flex-shrink:0;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.dh-actions{display:flex;flex-wrap:wrap;gap:var(--s-2);margin-top:var(--s-5);}
+.dh-actions .d-action{height:var(--ctl-h);display:inline-flex;align-items:center;gap:6px;}
+.dh-actions .d-action i{font-size:15px;}
+.dh-ghost{background:transparent!important;border-color:transparent!important;box-shadow:none!important;color:var(--ink-2)!important;}
+.dh-ghost:hover{background:var(--surface-2)!important;color:var(--ink)!important;}
+.dh-ghost i{transition:transform var(--d-2) var(--ease-out);}
+.dh-ghost:hover i{transform:translateX(3px);}
+.dh-live{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 0 0 color-mix(in srgb,var(--red) 45%,transparent);animation:dhLive 1.6s ease-out infinite;}
+@keyframes dhLive{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--red) 45%,transparent);}100%{box-shadow:0 0 0 9px transparent;}}
+
+.dh-hero-side{position:relative;z-index:1;display:flex;align-items:center;gap:var(--s-8);}
+.dh-day{width:300px;}
+.dh-day-hd{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:var(--s-3);font-size:12.5px;font-weight:600;color:var(--muted);}
+.dh-day-hd strong{font:750 22px/1 var(--display);letter-spacing:-.04em;color:var(--ink);font-variant-numeric:tabular-nums;}
+.dh-day-hd em{font:500 12.5px var(--font);font-style:normal;color:var(--muted);letter-spacing:0;}
+.dh-strip{display:flex;gap:3px;height:34px;}
+.dh-seg{flex-basis:0;min-width:6px;border-radius:6px;background:color-mix(in srgb,var(--ink) 13%,transparent);transform-origin:left center;
+  transition:transform var(--d-2) var(--ease-out),filter var(--d-1);}
+.dh-seg.done{background:var(--ok);}
+.dh-seg.urg{background:var(--red);}
+.dh-seg:hover{transform:translateY(-2px);filter:brightness(1.06);}
+.dh-strip.empty{align-items:center;justify-content:center;border:1.5px dashed var(--border);border-radius:8px;}
+.dh-seg-empty{font-size:12px;color:var(--muted);}
+.dh-legend{display:flex;gap:var(--s-4);margin-top:var(--s-3);font-size:12px;color:var(--muted);}
+.dh-legend span{display:inline-flex;align-items:center;gap:6px;}
+.dh-legend i{width:9px;height:9px;border-radius:3px;background:color-mix(in srgb,var(--ink) 13%,transparent);}
+.dh-legend i.done{background:var(--ok);}.dh-legend i.urg{background:var(--red);}
+
+.dh-ring{position:relative;display:flex;flex-direction:column;align-items:center;gap:var(--s-2);}
+.dh-ring svg{width:112px;height:112px;transform:rotate(-90deg);}
+.dh-ring circle{fill:none;stroke-width:10;}
+.dh-ring-track{stroke:var(--faint);}
+.dh-ring-fill{stroke:var(--ink);stroke-linecap:round;transition:stroke-dashoffset var(--d-4) var(--ease-out);}
+.dh-ring.full .dh-ring-fill{stroke:var(--ok);}
+.dh-ring.over .dh-ring-fill{stroke:var(--warn);}
+.dh-ring-c{position:absolute;top:0;left:0;width:112px;height:112px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.dh-ring-val{font:750 26px/1 var(--display);letter-spacing:-.045em;color:var(--ink);font-variant-numeric:tabular-nums;}
+.dh-ring-sub{font-size:11.5px;color:var(--muted);margin-top:3px;}
+.dh-ring-lbl{display:flex;flex-direction:column;align-items:center;font-size:12px;font-weight:600;color:var(--muted);}
+.dh-ring-lbl span{font-weight:500;color:var(--ink-2);font-variant-numeric:tabular-nums;}
+/* Entrance: the strip fills left to right, the ring draws — first visit only (ds-enter) */
+.ds-enter .dh-seg{animation:dhSeg var(--d-4) var(--ease-out) backwards;}
+.ds-enter .dh-seg:nth-child(2){animation-delay:40ms}.ds-enter .dh-seg:nth-child(3){animation-delay:80ms}.ds-enter .dh-seg:nth-child(4){animation-delay:120ms}
+.ds-enter .dh-seg:nth-child(5){animation-delay:160ms}.ds-enter .dh-seg:nth-child(6){animation-delay:200ms}.ds-enter .dh-seg:nth-child(n+7){animation-delay:240ms}
+@keyframes dhSeg{from{transform:scaleX(0);opacity:0;}}
+.ds-enter .dh-ring-fill{animation:dhRing 900ms var(--ease-out) 120ms backwards;}
+@keyframes dhRing{from{stroke-dashoffset:289;}}
+.ds-enter .dh-hero{animation:dsRise var(--d-4) var(--ease-out) backwards;}
+
+/* Section headers: title, quiet count, action on the right */
+.dh-sec{display:flex;align-items:center;gap:var(--s-3);margin:var(--s-10) 0 var(--s-4);}
+.dh-sec .section-label{margin:0!important;}
+.dh-sec .section-label::after{display:none!important;}
+.dh-sec-meta{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.dh-sec-btn{margin-left:auto;display:inline-flex;align-items:center;gap:5px;height:var(--ctl-h-sm);padding:0 12px;border-radius:var(--r-pill);
+  border:1px solid var(--border);background:var(--white);color:var(--ink-2);font:500 12.5px var(--font);cursor:pointer;box-shadow:var(--e-1);
+  transition:border-color var(--d-1),background var(--d-1);}
+.dh-sec-btn:hover{border-color:var(--border-strong);background:var(--surface-2);color:var(--ink);}
+.dh-sec-btn i{font-size:14px;}
+#view-dashboard .kpi-row{margin-bottom:0!important;}
+#view-dashboard .hp-card{margin:0 0 var(--s-6)!important;}
+#rf-ts-block .section-label{margin-top:var(--s-10)!important;}
+
+/* Today's tasks list */
+.dh-ti{flex:1;min-width:0;}
+.dh-ti-t{font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dh-ti-m{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dh-ti.done .dh-ti-t{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--subtle);}
+.dh-ti.done .dh-ti-m{color:var(--subtle);}
+.my-todo-item .todo-check{width:18px;height:18px;}
+.my-todo-item .todo-check i{font-size:11px;}
+.dh-urg{flex-shrink:0;font-size:11px;font-weight:600;padding:2px 9px;border-radius:var(--r-pill);background:var(--danger-bg);color:var(--danger-ink);}
+.dh-empty{display:flex;align-items:center;gap:var(--s-4);padding:var(--s-5) var(--s-5);}
+.dh-empty strong{display:block;font:700 15px var(--display);letter-spacing:-.015em;color:var(--ink);}
+.dh-empty span:not(.dh-empty-art){font-size:13px;color:var(--muted);}
+.dh-empty-art{position:relative;flex-shrink:0;width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  background:var(--warn-bg);color:var(--warn-ink);font-size:24px;transform:rotate(-6deg);}
+.dh-empty-art i{animation:dhSpin 14s linear infinite;}
+@keyframes dhSpin{to{transform:rotate(360deg);}}
+
+/* Team + clients cards */
+.dh-group{grid-column:1/-1;display:flex;align-items:center;gap:var(--s-2);margin:var(--s-2) 0 calc(var(--s-1) * -1);font-size:12.5px;font-weight:600;color:var(--ink-2);}
+.dh-group span{font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums;}
+.dh-tc-add{margin-left:var(--s-2);width:26px;height:26px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r-sm);
+  border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:background var(--d-1),color var(--d-1),border-color var(--d-1);}
+.dh-tc-add:hover{background:var(--ink);border-color:var(--ink);color:var(--white);}
+.dh-tc-add i{font-size:13px;}
+.dh-tc-none{font-size:12.5px;color:var(--muted);padding:4px 0;}
+.dh-tc-flag{margin-left:auto;font-size:12px!important;color:var(--muted);}
+.dh-tc-flag.urg{color:var(--red-ink);font-weight:600;}
+.dh-jobpill{display:inline-block;margin:2px 4px 0 0;padding:3px 9px;border-radius:var(--r-pill);background:var(--surface-2);border:1px solid var(--faint);
+  font-size:11.5px;color:var(--ink-2);white-space:nowrap;cursor:pointer;transition:border-color var(--d-1),background var(--d-1);}
+.dh-jobpill span{color:var(--muted);font-variant-numeric:tabular-nums;}
+.dh-jobpill:hover{border-color:var(--border-strong);background:var(--white);}
+.dh-more{display:block;margin-top:6px;font-size:12px;color:var(--muted);}
+.tc-block.urgent{background:var(--danger-bg)!important;border-color:color-mix(in srgb,var(--danger-ink) 22%,transparent)!important;color:var(--danger-ink)!important;}
+.tc-block.done{background:var(--ok-bg)!important;border-color:color-mix(in srgb,var(--ok) 30%,transparent)!important;color:var(--ok-ink)!important;}
+.tc-block.todo{background:var(--surface-2)!important;border-color:var(--faint)!important;}
+
+@media (max-width:1240px){
+  .dh-hero{grid-template-columns:1fr;gap:var(--s-6);padding:var(--s-7);}
+  .dh-hero-side{justify-content:space-between;padding-top:var(--s-5);border-top:1px solid var(--faint);}
+  .dh-day{flex:1;width:auto;max-width:520px;}
+  .dh-ring{flex-direction:row;gap:var(--s-4);}
+  .dh-ring-lbl{align-items:flex-start;}
+}
+
+/* ── To Do (styling only — card heights, drag, resize and the divider are untouched) ────── */
+/* Over capacity: the meter says it, not a tinted header row */
+.day-head.over{background:var(--white)!important;}
+.day-head{background:var(--white)!important;}
+.day-col.today .day-head{background:linear-gradient(180deg,color-mix(in srgb,var(--red) 5%,var(--white)) 0%,var(--white) 100%)!important;}
+.day-name{font-size:11px!important;font-weight:600!important;letter-spacing:.08em!important;color:var(--muted)!important;}
+.day-col.today .day-name{color:var(--red-ink)!important;}
+.day-num{font-family:var(--display)!important;font-weight:750!important;letter-spacing:-.04em!important;}
+.day-add-btn{height:24px;padding:0 9px!important;font-size:11.5px!important;font-weight:500!important;color:var(--muted)!important;border-color:transparent!important;background:transparent!important;opacity:.8;transition:opacity var(--d-1),background var(--d-1),color var(--d-1),border-color var(--d-1)!important;}
+.day-add-btn i{font-size:12px;}
+.day-col:hover .day-add-btn{opacity:1;border-color:var(--border)!important;background:var(--white)!important;}
+.day-add-btn:hover{color:var(--ink)!important;border-color:var(--border-strong)!important;}
+.day-cap{gap:8px!important;margin-top:6px!important;}
+.day-cap-info{font-size:11px!important;color:var(--muted)!important;font-variant-numeric:tabular-nums;}
+.day-cap-info.over{color:var(--warn-ink)!important;font-weight:600!important;}
+.day-cap-bar{height:4px!important;border-radius:var(--r-pill)!important;background:var(--faint)!important;}
+.dcb-nbill-todo{background:color-mix(in srgb,var(--ink) 22%,transparent)!important;}
+.dcb-nbill-done{background:color-mix(in srgb,var(--ok) 45%,transparent)!important;}
+.day-cap-bar.over .dcb-todo{background:var(--warn)!important;}
+.day-cap-bar.over .dcb-nbill-todo{background:color-mix(in srgb,var(--warn) 55%,transparent)!important;}
+.day-cap-bar.over{box-shadow:0 0 0 1px color-mix(in srgb,var(--warn) 35%,transparent);}
+.day-done-empty{font-size:11.5px!important;color:var(--subtle)!important;padding:10px 0!important;}
+body.dark .day-done-empty{color:var(--subtle)!important;}
+/* Done divider: a quiet labelled rail with a grip */
+.global-divider{background:var(--surface-2)!important;border-color:var(--border)!important;box-shadow:none!important;}
+.global-divider:hover{background:var(--white)!important;}
+.global-divider .gd-label{font-size:12px!important;font-weight:600!important;letter-spacing:0!important;text-transform:none!important;color:var(--ok-ink)!important;opacity:1!important;display:inline-flex;align-items:center;gap:6px;}
+.global-divider .gd-label::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--ok);}
+.global-divider .gd-handle{color:var(--subtle)!important;}
+.global-divider.div-drop-hi{background:var(--ok-bg)!important;border-color:var(--ok)!important;}
+body.dark .global-divider{background:var(--surface-2)!important;border-color:var(--border)!important;}
+/* Collapsed zones */
+.zone-bucket{background:var(--surface-2)!important;border:1px solid var(--border)!important;border-radius:var(--r-ctl)!important;}
+.zone-bucket.done-bucket{background:color-mix(in srgb,var(--ok-bg) 70%,var(--white))!important;border-color:color-mix(in srgb,var(--ok) 28%,transparent)!important;border-left:3px solid var(--ok)!important;}
+body.dark .zone-bucket,body.dark .zone-bucket.todo-bucket{background:var(--surface-2)!important;border-color:var(--border)!important;}
+body.dark .zone-bucket.done-bucket{background:var(--ok-bg)!important;border-color:color-mix(in srgb,var(--ok) 30%,transparent)!important;}
+.zb-kind{font-size:11.5px!important;letter-spacing:0!important;text-transform:none!important;font-weight:600!important;color:var(--muted)!important;}
+.done-bucket .zb-kind{color:var(--ok-ink)!important;}
+.zb-count{font-family:var(--display);font-size:17px!important;font-weight:700!important;letter-spacing:-.02em;}
+.zb-view{border-radius:var(--r-pill)!important;font-size:12px!important;padding:4px 11px!important;background:var(--white)!important;}
+/* Week summary tooltip */
+.sumtip-h{font-size:11.5px;font-weight:600;color:#A9A296;}
+.sumtip-h.r{text-align:right;}
+/* My items panel */
+#cc-mi-panel{background:var(--surface-2)!important;border-left:1px solid var(--border)!important;}
+.cc-mi-hd{background:var(--white);padding:16px 16px 12px!important;}
+.cc-mi-title{font-family:var(--display);font-size:15px!important;font-weight:700!important;letter-spacing:-.015em;}
+.cc-mi-sub{font-size:12px!important;line-height:1.45;}
+.cc-mi-job{font-size:11.5px!important;letter-spacing:0!important;text-transform:none!important;padding:14px 16px 6px!important;}
+.cc-mi-job>span:first-child{font-variant-numeric:tabular-nums;font-weight:600;}
+.cc-mi-row{margin:4px 12px!important;transition:border-color var(--d-1),box-shadow var(--d-2),transform var(--d-2) var(--ease-out);}
+.cc-mi-row:hover{border-color:var(--border-strong)!important;box-shadow:var(--e-2)!important;transform:translateY(-1px);}
+.cc-mi-row-name{font-size:13px!important;}
+.cc-mi-row-meta{font-size:11.5px!important;}
+.cc-mi-row-meta .over,.cc-mi-bar>span.over{color:var(--warn-ink);}
+.cc-mi-bar>span.over{background:var(--warn)!important;}
+.cc-mi-empty{font-size:13px!important;padding:40px 24px!important;}
+.cc-mi-empty::before{content:'';display:block;width:44px;height:44px;margin:0 auto 14px;border-radius:14px;transform:rotate(-6deg);
+  background:var(--ok-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233E9B48' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E") center/22px no-repeat;}
+.cc-away-chip{font-size:11px!important;}
+/* "Viewing someone else's To Do" banner, data warning */
+#st-data-warn{background:var(--warn-bg)!important;border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)!important;color:var(--warn-ink)!important;border-radius:var(--r-ctl)!important;}
+#st-data-warn button{color:var(--warn-ink)!important;}
+
+/* ── Jobs list: footer is the table's footer row ─────────────────────────────────────────── */
+#jt-jobs .jobs-table-wrap{margin-bottom:0!important;border-bottom-left-radius:0!important;border-bottom-right-radius:0!important;}
+#jobs-footer-bar{display:flex;align-items:center;gap:var(--s-6);min-height:52px;flex-shrink:0;margin:0 var(--gutter) var(--s-5)!important;padding:10px 20px!important;
+  background:var(--surface-2)!important;border:1px solid color-mix(in srgb,var(--border) 85%,transparent)!important;border-top:1px solid var(--border)!important;
+  border-radius:0 0 var(--r-card) var(--r-card)!important;box-shadow:var(--e-1)!important;}
+#jobs-footer-bar:empty{display:none;}
+.jf-lbl{font:700 13px var(--display);color:var(--ink);letter-spacing:-.01em;white-space:nowrap;}
+.jf-lbl span{font:500 12.5px var(--font);color:var(--muted);margin-left:6px;}
+.jf-meter{flex:1;max-width:420px;}
+.jf-nums{display:flex;align-items:baseline;gap:8px;margin-bottom:6px;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.jf-nums strong{font:700 14px var(--display);color:var(--ink);letter-spacing:-.02em;}
+.jf-bar{height:6px;border-radius:var(--r-pill);background:var(--faint);overflow:hidden;}
+.jf-bar i{display:block;height:100%;border-radius:inherit;background:var(--ok);transition:width var(--d-4) var(--ease-out);}
+.jf-bar.warn i{background:var(--warn);}.jf-bar.over i{background:var(--red);}
+.jf-over{display:inline-flex;align-items:center;gap:6px;margin-left:auto;padding:4px 11px;border-radius:var(--r-pill);background:var(--danger-bg);color:var(--danger-ink);font-size:12px;font-weight:600;white-space:nowrap;}
+.jf-over i{font-size:13px;}
+
+
+/* ── Job detail ─────────────────────────────────────────────────────────────────────────── */
+.detail-head{padding:0 var(--gutter)!important;}
+.detail-title-row{align-items:center!important;padding-top:14px!important;}
+.dt-titleblock{min-width:0;flex:1;}
+.dt-meta,#d-meta-line{font-size:12.5px!important;color:var(--muted)!important;margin-bottom:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.detail-title{font-size:30px!important;font-weight:750!important;letter-spacing:-.04em!important;line-height:1.1!important;}
+.dt-ibtn{width:var(--ctl-h);padding:0!important;justify-content:center;}
+.dt-ibtn i{font-size:16px;}
+.detail-meta-line{padding:10px 0 6px!important;}
+.dt-hours-sell{margin-left:var(--s-2);font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.d-av{width:26px!important;height:26px!important;font-size:10.5px!important;margin-left:-6px;}
+.d-av:first-child{margin-left:0;}
+.label-chip{font-size:12px!important;border-radius:var(--r-pill)!important;padding:2px 8px 2px 10px!important;}
+.label-add-btn{font-size:12px!important;border-radius:var(--r-pill)!important;padding:2px 10px!important;}
+#job-notes-inp{font-size:13px!important;border-radius:var(--r-ctl)!important;background:var(--surface-2)!important;}
+/* Stat strip → KPI tiles */
+.stats-strip{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:var(--s-3);padding:var(--s-5) var(--gutter) var(--s-2)!important;background:transparent!important;border:0!important;}
+.stats-strip .stat-b{position:relative;padding:16px 18px 16px!important;border:1px solid color-mix(in srgb,var(--border) 85%,transparent)!important;border-radius:var(--r-card);background:var(--white);box-shadow:var(--e-1);min-width:0;}
+.stats-strip .stat-label{font:600 12.5px/1.3 var(--font)!important;letter-spacing:-.003em!important;text-transform:none!important;color:var(--muted)!important;margin-bottom:10px!important;}
+.stats-strip .stat-val{font-size:26px!important;line-height:1.05!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.stats-strip .stat-of{font:500 13px var(--font)!important;letter-spacing:0!important;color:var(--muted);}
+.stat-sub{margin-top:6px;font-size:12px;color:var(--muted);}
+.stats-strip .stat-bar{margin-top:12px!important;}
+.stats-strip .stat-b.is-over{border-color:color-mix(in srgb,var(--red) 30%,var(--border))!important;}
+.stats-strip .stat-b.is-over .stat-sub{color:var(--red-ink);font-weight:600;}
+.plan-area{padding:0 var(--gutter) 56px!important;}
+.plan-actions{padding:var(--s-4) 0 var(--s-3)!important;}
+/* Phases and expenses: one table-card component */
+.phase{margin-bottom:var(--s-4)!important;border:1px solid color-mix(in srgb,var(--border) 85%,transparent);border-radius:var(--r-card)!important;background:var(--white);box-shadow:var(--e-1);overflow:hidden;}
+.phase-head{background:var(--white)!important;border:0!important;border-bottom:1px solid var(--faint)!important;padding:12px 16px!important;color:var(--ink)!important;}
+.phase-head:hover{background:var(--surface-2)!important;}
+.ph-n{font-family:var(--display);font-size:15px!important;font-weight:700!important;letter-spacing:-.015em!important;}
+.ph-cnt{font-size:12px!important;}
+.ph-meta{font-size:12.5px!important;color:var(--muted)!important;font-variant-numeric:tabular-nums;}
+.items-t{border:0!important;}
+.items-t td{font-size:13px;}
+.phase .add-item-row,.phase .ph-foot{border-top:1px solid var(--faint);}
+.exp-sec{margin-top:var(--s-4)!important;border:1px solid color-mix(in srgb,var(--border) 85%,transparent)!important;border-radius:var(--r-card)!important;box-shadow:var(--e-1);}
+.exp-head{background:var(--white)!important;border-bottom:1px solid var(--faint)!important;padding:12px 16px!important;gap:10px!important;}
+.exp-head:hover{background:var(--surface-2)!important;}
+.exp-head .exp-chv{font-size:13px;color:var(--muted);}
+.exp-h-ico{width:26px;height:26px;border-radius:var(--r-sm);display:inline-flex;align-items:center;justify-content:center;background:var(--warn-bg);color:var(--warn-ink);font-size:14px;}
+.exp-h-t{flex:1;font:700 15px var(--display);letter-spacing:-.015em;color:var(--ink);}
+.exp-h-cnt{font-size:12px;color:var(--muted);padding:2px 9px;border-radius:var(--r-pill);background:var(--surface-2);border:1px solid var(--faint);}
+.exp-h-tot{font:700 14px var(--display);letter-spacing:-.02em;color:var(--ink);font-variant-numeric:tabular-nums;}
+.exp-t td{font-size:13px!important;}
+.st-tag{font-size:11px!important;letter-spacing:.02em!important;border-radius:var(--r-pill)!important;padding:1px 7px!important;background:var(--surface-2)!important;border:1px solid var(--faint);color:var(--muted)!important;}
+.ph-add{font-size:13px!important;padding:14px 16px!important;border:1.5px dashed var(--border);border-radius:var(--r-card);margin-top:var(--s-4);justify-content:center;transition:border-color var(--d-1),color var(--d-1),background var(--d-1);}
+.ph-add:hover{border-color:var(--border-strong);color:var(--ink)!important;background:var(--white);}
+/* Other tabs breathe on the same gutter */
+#dtab-progress,#dtab-quote,#dtab-timeline{padding:var(--s-6) var(--gutter) 56px!important;}
+.prog-card-hd{text-transform:none!important;letter-spacing:-.015em!important;font:700 15px var(--display)!important;color:var(--ink)!important;}
+@media (max-width:1240px){.stats-strip{grid-template-columns:repeat(3,minmax(0,1fr));}}
+
+/* ── List screens: one template — header, toolbar, KPI strip, table card, empty state ────── */
+.qinv-toolbar,.jobs-toolbar{padding:var(--s-4) var(--gutter)!important;gap:var(--s-2)!important;border-bottom:0!important;background:transparent!important;flex-wrap:wrap!important;row-gap:var(--s-2)!important;}
+.qinv-toolbar .jobs-search,.jobs-toolbar .jobs-search{flex:1 1 200px!important;max-width:320px;min-width:180px;}
+.qinv-toolbar .jobs-search input,.jobs-toolbar .jobs-search input{width:100%!important;}
+.qinv-toolbar>*:not(.jobs-search):not(.jobs-count),.jobs-toolbar>*:not(.jobs-search):not(.jobs-count){flex-shrink:0;white-space:nowrap;}
+.qinv-toolbar .cc-select,.jobs-toolbar .cc-select{max-width:190px;text-overflow:ellipsis;}
+.qinv-toolbar .jobs-count,.jobs-toolbar .jobs-count{margin-left:auto;white-space:nowrap;font-size:12.5px!important;color:var(--muted)!important;font-variant-numeric:tabular-nums;}
+.qinv-toolbar .d-action i,.jobs-toolbar .d-action i{font-size:14px!important;}
+.fe-check{height:var(--ctl-h);}
+/* KPI strip (list screens) */
+.ls-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s-3);margin:0 var(--gutter) var(--s-4);}
+.ls-kpis:empty{display:none;}
+.ls-kpi{background:var(--white);border:1px solid color-mix(in srgb,var(--border) 85%,transparent);border-radius:var(--r-card);padding:14px 18px;box-shadow:var(--e-1);min-width:0;}
+.ls-kpi-l{font:600 12.5px/1.3 var(--font);color:var(--muted);margin-bottom:8px;}
+.ls-kpi-v{font:750 26px/1.05 var(--display);letter-spacing:-.04em;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ls-kpi-v.ok{color:var(--ok-ink);}.ls-kpi-v.warn{color:var(--warn-ink);}
+.ls-kpi-s{font-size:12px;color:var(--muted);margin-top:6px;}
+.ls-kpi-bar{height:6px;border-radius:var(--r-pill);background:var(--faint);overflow:hidden;margin-top:10px;}
+.ls-kpi-bar i{display:block;height:100%;border-radius:inherit;background:var(--ok);}
+/* Time: stat tiles share the KPI anatomy (label, value, context) */
+.time-stats-strip{margin:0 var(--gutter) var(--s-4)!important;gap:var(--s-3)!important;}
+.time-stat{display:flex;flex-direction:column;padding:14px 18px!important;text-align:left!important;}
+.time-stat .ts-lbl{order:0;margin:0 0 8px!important;}
+.time-stat .ts-val{order:1;font-size:26px!important;line-height:1.05!important;}
+.time-stat .ts-sub{order:2;margin-top:6px!important;font-size:12px!important;color:var(--muted)!important;}
+.time-head-bar{padding-left:var(--gutter)!important;padding-right:var(--gutter)!important;}
+/* Empty states in tables */
+#time-empty{text-align:center;padding:56px 32px!important;font-size:13px;}
+#time-empty::before{content:'';display:block;width:56px;height:56px;margin:0 auto 14px;border-radius:16px;transform:rotate(-6deg);box-shadow:var(--e-2);
+  background:var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A39D90' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8.5'/%3E%3Cpath d='M12 7.5V12l3 2'/%3E%3C/svg%3E") center/26px no-repeat;}
+@media (max-width:1240px){.ls-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+/* ── Schedule ───────────────────────────────────────────────────────────────────────────── */
+#schedule-scroll{padding:var(--s-5) var(--gutter)!important;}
+.sched-over{background:transparent!important;}
+.sched-today{background:color-mix(in srgb,var(--red) 3.5%,transparent)!important;}
+.sched-cell{padding:8px!important;border-color:var(--faint)!important;}
+.sc-cap{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+.sc-h{font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums;}
+.sc-cap.none .sc-h{color:var(--subtle);font-weight:500;}
+.sc-cap.over .sc-h{color:var(--warn-ink);}
+.sc-bar{flex:1;height:4px;border-radius:var(--r-pill);background:var(--faint);overflow:hidden;min-width:16px;}
+.sc-bar i{display:block;height:100%;border-radius:inherit;background:color-mix(in srgb,var(--ink) 45%,transparent);}
+.sc-cap.over .sc-bar i{background:var(--warn);}
+.sc-cap.none .sc-bar{opacity:.6;}
+.sc-person{padding:12px 12px!important;vertical-align:top;border-bottom:1px solid var(--faint);overflow:hidden;background:var(--white);position:sticky;left:0;z-index:1;}
+.sc-person-in{display:flex;align-items:center;gap:10px;min-width:0;}
+.sc-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:600;color:#fff;flex-shrink:0;box-shadow:0 0 0 2px var(--white);}
+.sc-pt{min-width:0;overflow:hidden;}
+.sc-pn{font:700 13.5px var(--display);letter-spacing:-.01em;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sc-pr{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;}
+.sched-card{font-size:12px!important;padding:5px 8px!important;border-color:var(--border)!important;border-radius:var(--r-sm)!important;transition:box-shadow var(--d-1),border-color var(--d-1),transform var(--d-2) var(--ease-out)!important;}
+.sched-card:hover{box-shadow:var(--e-2)!important;transform:translateY(-1px);}
+.sched-card-h{font-size:11px!important;font-variant-numeric:tabular-nums;}
+/* Done: readable in both themes — a check and muted ink rather than half opacity */
+.sched-card.sched-done{opacity:1!important;background:var(--surface-2)!important;border-color:var(--faint)!important;}
+.sched-card.sched-done .sched-card-t{text-decoration:none!important;color:var(--muted)!important;}
+.sched-card.sched-done .sched-card-t::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ok);margin-right:6px;vertical-align:1px;}
+.sched-card.sched-done .sched-card-h{color:var(--subtle)!important;}
+/* Drag dock (To Do): no 8–10px type */
+.ss-day .ssd-name{font-size:11px!important;letter-spacing:.06em!important;}
+.ss-person .ssp-name{font-size:11px!important;max-width:56px!important;}
+.ss-person{width:58px!important;}
+.ss-day.drop-ok,.ss-person.drop-ok{background:var(--red-wash)!important;}
+.tao-team-hdr{font-size:11.5px!important;letter-spacing:0!important;text-transform:none!important;font-weight:600!important;}
+
+/* ── Sweep: inline micro-labels from older templates ─────────────────────────────────────── */
+/* Sentence case everywhere (the strings are already written in sentence case); calendar day
+   names keep their uppercase through their own classes, not inline styles. */
+[style*="text-transform:uppercase"]{text-transform:none!important;letter-spacing:normal!important;}
+/* No text under 11px. Icons and avatar initials (round chips) are left at their own size. */
+:not(i):not(svg):not([style*="border-radius:50%"]):is([style*="font-size:8px"],[style*="font-size:8.5px"],[style*="font-size:9px"],[style*="font-size:9.5px"],[style*="font-size:10px"],[style*="font-size:10.5px"]){font-size:11px!important;}
+#doc-preview-modal thead th{letter-spacing:0!important;}
+
+/* ── Settings ───────────────────────────────────────────────────────────────────────────── */
+.tm-panel-field input,.tm-panel-field select,.tm-panel-field textarea{background:var(--white)!important;border:1px solid var(--border)!important;border-radius:var(--r-ctl)!important;min-height:var(--ctl-h);padding:0 12px!important;font-size:13px!important;color:var(--ink)!important;transition:border-color var(--d-1),box-shadow var(--d-1);}
+.tm-panel-field textarea{padding:8px 12px!important;}
+.tm-panel-field input:hover,.tm-panel-field select:hover{border-color:var(--border-strong)!important;}
+.tm-panel-field input:focus,.tm-panel-field select:focus,.tm-panel-field textarea:focus{border-color:color-mix(in srgb,var(--red) 55%,var(--border))!important;box-shadow:var(--ring)!important;outline:none;}
+.tm-panel-field label{font-size:12px!important;font-weight:500!important;color:var(--muted)!important;letter-spacing:0!important;text-transform:none!important;}
+
+/* ── Modals and ⌘K ──────────────────────────────────────────────────────────────────────── */
+/* ⌘K: neutral icon tiles; the selected row carries the red signal */
+.gs-ico{background:var(--surface-2)!important;color:var(--ink-2)!important;border:1px solid var(--faint)!important;transition:background var(--d-1),color var(--d-1),transform var(--d-2) var(--ease-spring);}
+.gs-item.sel .gs-ico{background:var(--red-wash)!important;color:var(--red-ink)!important;border-color:transparent!important;transform:scale(1.06);}
+/* New job: billing tiles never break "Non-billable" */
+.bill-choice{padding:10px 12px!important;gap:8px!important;min-width:0;}
+.bc-choice-title{white-space:nowrap;}
+</style>
+<script id="screens-v3-script">
+// ═══ Screens v3 — behaviour for the screen-by-screen redesign (see screens-v3 CSS) ══════════
+(function(){
+  // ── Dashboard: start the timer on the next task straight from the hero ───────────────────
+  window._dhStartNext=function(id,day){
+    try{const wd=getWeekData(MY_PERSON,0);const t=(wd[day]||[]).find(x=>String(x.id)===String(id));
+      if(!t){navTo('todo');return;}
+      _startTaskTimer(t,MY_PERSON,0,day);}catch(e){console.warn('[screens-v3] timer',e);}
+  };
+  // Re-render the hero when a timer starts or stops anywhere
+  const _st=window._setTimer;
+  if(typeof _st==='function'){window._setTimer=function(){const r=_st.apply(this,arguments);
+    try{if(!document.getElementById('view-dashboard')?.classList.contains('hidden'))renderDashboard();}catch(e){}return r;};}
+
+  // ── First run: "Who are you?" first, "What's new" after — never both at once ─────────────
+  let pendingCL=false;
+  const whoOpen=()=>!!document.getElementById('whoami-modal');
+  const needWho=()=>{try{return !localStorage.getItem('cc_me');}catch(e){return false;}};
+  const _cl=window.showChangelog;
+  if(typeof _cl==='function'){
+    let tries=0;
+    const attempt=function(){
+      if(whoOpen()){pendingCL=true;return;}
+      // Team list may still be loading — give the picker a moment to claim the screen first
+      if(needWho()&&tries++<10){setTimeout(attempt,800);return;}
+      pendingCL=false;_cl();
+    };
+    window.showChangelog=function(){tries=0;attempt();};
+  }
+  const _who=window._askWhoAmI;
+  if(typeof _who==='function'){window._askWhoAmI=function(cancelable){
+    const cm=document.getElementById('changelog-modal');
+    if(!cancelable&&cm&&cm.classList.contains('on')){cm.classList.remove('on');pendingCL=true;}
+    return _who.apply(this,arguments);};}
+  // When the picker closes without a reload (same person picked), show What's new next
+  new MutationObserver(()=>{if(pendingCL&&!whoOpen()){pendingCL=false;setTimeout(()=>window.showChangelog(),350);}})
+    .observe(document.body,{childList:true});
 })();
 </script>
 </body>
