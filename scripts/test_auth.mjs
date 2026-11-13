@@ -405,12 +405,15 @@ await t('serves decrypted bytes still gzipped, with private caching', async () =
   assert.equal(r.headers.get('cache-control'), 'private, max-age=60');
   assert.deepEqual(JSON.parse(gunzipSync(Buffer.from(await r.arrayBuffer()))), [{ id: 1 }]);
 });
-await t('plaintext fallback only for the config/meta files; access.json and odd names refused', async () => {
+await t('config/meta pass through plain, unencrypted sync files served gzipped; access.json and odd names refused', async () => {
   const pc = await dataHandle(req('/api/data/platform_config.json', { cookie: ownerCookie }), O);
   assert.equal(pc.status, 200); assert.equal(pc.headers.get('content-encoding'), null);
   assert.deepEqual(await pc.json(), { people: {} });
   raw.set('quotes.json', '[{"leak":1}]');
-  assert.equal((await dataHandle(req('/api/data/quotes.json', { cookie: ownerCookie }), O)).status, 404);
+  // Transition: a sync-owned file with no .enc yet is served gzipped (still signed-in only).
+  const q = await dataHandle(req('/api/data/quotes.json', { cookie: ownerCookie }), O);
+  assert.equal(q.status, 200); assert.equal(q.headers.get('content-encoding'), 'gzip');
+  assert.deepEqual(JSON.parse(gunzipSync(Buffer.from(await q.arrayBuffer())).toString()), [{ leak: 1 }]);
   for (const p of ['/api/data/access.json', '/api/data/%2e%2e%2fusers.json', '/api/data/USERS.json', '/api/data/users.json.enc']) {
     assert.equal((await dataHandle(req(p, { cookie: ownerCookie }), O)).status, 404, p);
   }
