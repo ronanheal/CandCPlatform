@@ -10030,7 +10030,7 @@ function renderExpenses(){
     <span class="exp-h-ico"><i class="ti ti-receipt"></i></span>
     <span class="exp-h-t">Expenses</span>
     <span class="exp-h-cnt">${exps.length} item${exps.length!==1?'s':''}</span>
-    <span class="exp-h-tot">$${total.toLocaleString()}</span>
+    <span class="exp-h-tot">${_money(Math.round(total*100)/100)}</span>
   </div>`;
   const expRows=exps.map(e=>{
     const status=e.status||'draft';
@@ -10049,10 +10049,10 @@ function renderExpenses(){
       <td style="font-weight:500;">${descCell}${e._source==='st'?'<span class="st-tag" title="From Streamtime">ST</span>':''}</td>
       <td style="color:var(--muted);">${e.date?new Date(e.date+'T00:00:00').toLocaleDateString('en-NZ',{day:'numeric',month:'short',year:'2-digit'}):'-'}</td>
       <td style="text-align:center;">${qty}</td>
-      <td>$${cost.toLocaleString()}</td>
+      <td>${_money(Math.round(cost*100)/100)}</td>
       <td style="color:var(--muted);">${markup?markup+'%':'—'}</td>
-      <td>$${unitSell.toLocaleString()}</td>
-      <td style="text-align:right;font-weight:500;">$${sTotal.toLocaleString()}</td>
+      <td>${_money(Math.round(unitSell*100)/100)}</td>
+      <td style="text-align:right;font-weight:500;">${_money(Math.round(sTotal*100)/100)}</td>
       <td style="text-align:right;">${canEdit?`<span class="exp-badg ${status}" style="cursor:pointer;" onclick="cycleExpenseStatus('${e.id}')" title="Click to change status">${status.charAt(0).toUpperCase()+status.slice(1)}</span>`:`<span class="exp-badg ${status}">${status.charAt(0).toUpperCase()+status.slice(1)}</span>`}</td>
     </tr>`;
     if(hasSubs&&open){
@@ -10876,7 +10876,7 @@ function openClientDetail(id){
       const hPct=j._hPct||j.hPct||0;
       const loggedH=j._loggedH||j.hours||'0h';
       const plannedH=j._plannedH||j.hoursTotal||'—';
-      const sell=j._sellUsed?`$${j._sellUsed.toLocaleString()}`:(j.budget||'—');
+      const sell=j._sellUsed?`$${Math.round(j._sellUsed).toLocaleString()}`:(j.budget||'—');
       return`<div class="cd-job-row" onclick="openJobDetail('${j.id}')">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
           <span class="job-num">${j.id}</span>
@@ -13007,7 +13007,7 @@ function renderInvoices(){
         <td class="inv-td ci-job"><span style="font-size:11px;color:var(--muted);margin-right:6px;">${j.id}</span>${esc(j.name)}</td>
         <td class="inv-td ci-po" style="font-size:12px;color:var(--muted);">${j.po||'—'}</td>
         <td class="inv-td ci-status"><span class="wf-badge wf-completed">Complete</span></td>
-        <td class="inv-td" style="text-align:right;font-family:var(--display);font-size:14px;font-variant-numeric:tabular-nums;">$${(j._sellUsed||0).toLocaleString()}</td>
+        <td class="inv-td" style="text-align:right;font-family:var(--display);font-size:14px;font-variant-numeric:tabular-nums;">$${Math.round(j._sellUsed||0).toLocaleString()}</td>
         <td class="inv-td" style="text-align:center;"><i class="ti ti-eye-off" title="Hide from this list" style="font-size:13px;color:var(--muted);cursor:pointer;" onclick="event.stopPropagation();hideUninvoicedJob('${j.id}')"></i></td>
       </tr>`).join('')}</tbody></table>`:''}`;
     }
