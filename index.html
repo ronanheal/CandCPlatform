@@ -4845,16 +4845,21 @@ function renderDashboard(){
         <button class="d-action dh-ghost" onclick="navTo('todo')">Open To Do <i class="ti ti-arrow-right"></i></button>
       </div>
     </div>
-    <div class="dh-hero-side">
+    <div class="dh-hero-side dh-glance">
       <div class="dh-day">
         <div class="dh-day-hd"><span>Your day</span><strong>${formatHrs(todayDoneH)||'0h'} <em>of ${formatHrs(todayH)||'0h'}</em></strong></div>
         <div class="dh-strip${todayTasks.length?'':' empty'}">${daySegs||'<span class="dh-seg-empty">A clear day</span>'}</div>
         <div class="dh-legend"><span><i class="done"></i>Done</span><span><i></i>To do</span>${urgentCount?`<span><i class="urg"></i>${urgentCount} urgent</span>`:''}</div>
       </div>
-      <div class="dh-ring ${ringState}" title="Booked this week against your capacity">
-        <svg viewBox="0 0 112 112" aria-hidden="true"><circle cx="56" cy="56" r="${R}" class="dh-ring-track"/><circle cx="56" cy="56" r="${R}" class="dh-ring-fill" style="stroke-dasharray:${C.toFixed(1)};--dh-off:${(C*(1-ringFill)).toFixed(1)};stroke-dashoffset:${(C*(1-ringFill)).toFixed(1)}"/></svg>
-        <div class="dh-ring-c"><span class="dh-ring-val">${weekPct}%</span><span class="dh-ring-sub">of ${totalTarget}h</span></div>
-        <div class="dh-ring-lbl">Week booked<span>${formatHrs(weekBooked)||'0h'}</span></div>
+      <div class="dh-wkrow">
+        <div class="dh-ring ${ringState}" title="Booked this week against your capacity">
+          <svg viewBox="0 0 112 112" aria-hidden="true"><circle cx="56" cy="56" r="${R}" class="dh-ring-track"/><circle cx="56" cy="56" r="${R}" class="dh-ring-fill" style="stroke-dasharray:${C.toFixed(1)};--dh-off:${(C*(1-ringFill)).toFixed(1)};stroke-dashoffset:${(C*(1-ringFill)).toFixed(1)}"/></svg>
+          <div class="dh-ring-c"><span class="dh-ring-val">${weekPct}%</span><span class="dh-ring-sub">of ${totalTarget}h</span></div>
+        </div>
+        <div class="dh-wkinfo">
+          <div class="dh-wkinfo-hd"><span>This week</span><span class="dh-wkinfo-sum"><b>${formatHrs(weekBooked)||'0h'} booked</b>${totalTarget>0?` · <span class="${weekBooked>totalTarget?'over':''}">${weekBooked>totalTarget?`${formatHrs(weekBooked-totalTarget)} over`:weekBooked<totalTarget?`${formatHrs(totalTarget-weekBooked)} free`:'full'}</span>`:''}</span></div>
+          ${typeof _dhWeekHTML==='function'?_dhWeekHTML(wd,todayDow):''}
+        </div>
       </div>
     </div>
     ${_hpRow?`<div class="dh-checkin">${_hpRow}</div>`:''}
@@ -20765,6 +20770,103 @@ html body .task-card.done-c,html body.dark .task-card.done-c{border-left-color:c
   if(dash){let q=0;new MutationObserver(()=>{if(q)return;q=setTimeout(()=>{q=0;bind();},0);})
     .observe(dash,{childList:true,subtree:true});bind();}
 })();
+</script>
+<style id="hero-r3">
+/* ═══ Hero round 3 — the hero's right side becomes one "Today / This week" panel. ═══════════
+   Left: date, greeting, Next up, actions. Right: one panel, Your day on top, then the week ring
+   (value inside) with this week's Mon–Fri bars beside it. The check-in row follows straight on.
+   <=1240px the panel drops under the main column and its two parts sit side by side. */
+.dh-hero{grid-template-columns:minmax(0,1fr) minmax(340px,400px);column-gap:var(--s-8);align-items:stretch;}
+.dh-hero-main{grid-column:1;grid-row:1;align-self:center;}
+.dh-hero-side.dh-glance{grid-column:2;grid-row:1;display:flex;flex-direction:column;justify-content:center;align-items:stretch;gap:var(--s-5);
+  padding:var(--s-5) var(--s-6);border-radius:var(--r-md,14px);background:color-mix(in srgb,var(--surface-2) 72%,transparent);
+  border:1px solid var(--faint);border-top:1px solid var(--faint);}
+.dh-glance .dh-day{width:auto;max-width:none;flex:none;}
+.dh-glance .dh-strip{height:28px;}
+.dh-glance .dh-legend{margin-top:var(--s-2);}
+
+/* Week row: ring dial + summary + bars. The ring's centre label is positioned against the dial
+   itself, so the value can never come loose from the circle. */
+.dh-wkrow{display:flex;align-items:center;gap:var(--s-5);padding-top:var(--s-5);border-top:1px solid var(--faint);}
+.dh-glance .dh-ring{flex:none;position:relative;display:block;width:92px;height:92px;gap:0;}
+.dh-glance .dh-ring svg{width:92px;height:92px;display:block;}
+.dh-glance .dh-ring circle{stroke-width:11;}
+.dh-glance .dh-ring-c{position:absolute;inset:0;width:auto;height:auto;}
+.dh-glance .dh-ring-val{font-size:22px;}
+.dh-glance .dh-ring-sub{font-size:11px;margin-top:2px;}
+.dh-wkinfo{flex:1;min-width:0;}
+.dh-wkinfo-hd{display:flex;flex-direction:column;gap:2px;margin-bottom:var(--s-3);font-size:12.5px;font-weight:600;color:var(--muted);}
+.dh-wkinfo-sum{font-size:12.5px;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dh-wkinfo-sum b{font-weight:650;color:var(--ink);}
+.dh-wkinfo-sum .over{color:var(--warn-ink);font-weight:600;}
+
+/* This week: Mon–Fri, booked against each day's capacity */
+.dh-week-days{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;}
+.dh-wd{display:flex;flex-direction:column;align-items:stretch;gap:4px;padding:0;border:0;background:none;cursor:pointer;font:inherit;color:inherit;border-radius:var(--r-sm);min-width:0;}
+.dh-wd:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
+.dh-wd-bar{position:relative;height:26px;border-radius:5px;overflow:hidden;background:var(--white);
+  box-shadow:inset 0 0 0 1px var(--faint);display:flex;flex-direction:column-reverse;
+  transition:transform var(--d-2) var(--ease-out),box-shadow var(--d-1);}
+.dh-wd:hover .dh-wd-bar{transform:translateY(-2px);box-shadow:inset 0 0 0 1px var(--border-strong);}
+.dh-wd-bar i{display:block;flex-shrink:0;transform-origin:bottom;}
+.dh-wd-bar i.d{background:var(--ok);}
+.dh-wd-bar i.t{background:color-mix(in srgb,var(--ink) 16%,transparent);}
+.dh-wd.over .dh-wd-bar{box-shadow:inset 0 0 0 1.5px var(--warn);}
+.dh-wd.over .dh-wd-bar i.t{background:color-mix(in srgb,var(--warn) 45%,transparent);}
+.dh-wd.off .dh-wd-bar{background:repeating-linear-gradient(135deg,var(--faint) 0 4px,transparent 4px 8px);}
+.dh-wd-l{display:flex;flex-direction:column;align-items:center;line-height:1.25;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.dh-wd-l b{font-weight:600;color:var(--ink-2);}
+.dh-wd.today .dh-wd-l b{color:var(--ink);}
+.dh-wd.today .dh-wd-l b::after{content:'';display:inline-block;width:4px;height:4px;margin-left:3px;vertical-align:2px;border-radius:50%;background:var(--red);}
+.dh-wd.past:not(.today) .dh-wd-l b{color:var(--muted);font-weight:500;}
+.dh-wd.over .dh-wd-l span{color:var(--warn-ink);}
+.ds-enter .dh-wd-bar i{animation:dhWd var(--d-4) var(--ease-out) 160ms backwards;}
+@keyframes dhWd{from{transform:scaleY(0);}}
+@media (prefers-reduced-motion:reduce){.ds-enter .dh-wd-bar i{animation:none;}.dh-wd:hover .dh-wd-bar{transform:none;}}
+
+@media (max-width:1240px){
+  .dh-hero{grid-template-columns:minmax(0,1fr);}
+  .dh-hero-main{grid-column:1;grid-row:1;}
+  .dh-hero-side.dh-glance{grid-column:1;grid-row:2;flex-direction:row;align-items:center;justify-content:stretch;gap:var(--s-8);
+    padding:var(--s-5) var(--s-6);border-top:1px solid var(--faint);}
+  .dh-glance .dh-day{flex:1 1 0;min-width:0;}
+  .dh-glance .dh-wkrow{flex:1 1 0;min-width:0;padding-top:0;border-top:0;padding-left:var(--s-8);border-left:1px solid var(--faint);}
+}
+@media (max-width:760px){
+  .dh-hero-side.dh-glance{flex-direction:column;align-items:stretch;gap:var(--s-5);}
+  .dh-glance .dh-wkrow{padding-left:0;border-left:0;padding-top:var(--s-5);border-top:1px solid var(--faint);}
+}
+</style>
+<script id="hero-r3-script">
+// ═══ Hero round 3 — "This week" bars for the dashboard hero's glance panel ══════════════════
+// One bar per weekday: done hours (green) and still-to-do hours (grey) from the same week
+// store the hero already reads (getWeekData), against that day's capacity from _dayCap
+// (0 on a leave day, via feat-c). Clicking a day opens To Do on this week.
+function _dhWeekHTML(wd,todayDow){
+  try{
+    const days=people[MY_PERSON]?.days||[1,2,3,4,5];
+    const isos=(typeof _ccWeekDates==='function')?_ccWeekDates(0):[];
+    const lbl=['Mon','Tue','Wed','Thu','Fri'],full=['Monday','Tuesday','Wednesday','Thursday','Friday'];
+    const cols=[1,2,3,4,5].map(d=>{
+      const ts=(wd&&wd[d])||[];
+      const doneH=ts.filter(t=>t.done).reduce((s,t)=>s+(t.hours||0),0);
+      const todoH=ts.filter(t=>!t.done).reduce((s,t)=>s+(t.hours||0),0);
+      const booked=doneH+todoH;
+      const cap=days.includes(d)?(_dayCap(MY_PERSON,isos[d-1])||0):0;
+      const off=cap===0&&booked===0;
+      const scale=Math.max(cap,booked)||1;
+      const pd=Math.round(doneH/scale*100),pt=Math.round(todoH/scale*100);
+      const over=cap>0&&booked>cap+0.01;
+      const cls=['dh-wd',off?'off':'',over?'over':'',d===todayDow?'today':'',todayDow&&d<todayDow?'past':''].filter(Boolean).join(' ');
+      const tip=`${full[d-1]}: ${off?'not working':`${formatHrs(booked)||'0h'} booked of ${formatHrs(cap)||'0h'}${doneH?` · ${formatHrs(doneH)} done`:''}${over?` · ${formatHrs(booked-cap)} over`:''}`}`;
+      return`<button type="button" class="${cls}" onclick="weekOffset=0;navTo('todo')" title="${esc(tip)}" aria-label="${esc(tip)}">
+        <span class="dh-wd-bar" aria-hidden="true">${pd?`<i class="d" style="height:${pd}%"></i>`:''}${pt?`<i class="t" style="height:${pt}%"></i>`:''}</span>
+        <span class="dh-wd-l"><b>${lbl[d-1]}</b><span>${off?'Off':formatHrs(booked)||'0h'}</span></span>
+      </button>`;
+    }).join('');
+    return`<div class="dh-week-days">${cols}</div>`;
+  }catch(e){return'';}
+}
 </script>
 </body>
 </html>
