@@ -3196,8 +3196,18 @@ const MY_PERSON=(()=>{try{return localStorage.getItem('cc_me')||'st_114330';}cat
 let currentPerson=MY_PERSON;
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
 if(!people[MY_PERSON])people[MY_PERSON]={name:MY_PERSON==='st_114330'?'Ronan Heal':'…',initials:MY_PERSON==='st_114330'?'RH':'?',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true,_stub:true};
-const APP_VERSION='2.44.0';
+const APP_VERSION='2.45.0';
 const CHANGELOG=[
+  {version:'2.45.0',date:'13 Nov 2026',title:'The big redesign',items:[
+    'A whole new look: one warm design system across every screen — clearer type, calmer cards, stronger contrast, and a warm charcoal dark mode.',
+    'A new Dashboard: today at a glance with your next task, a progress strip for your day, a week-booked ring, and one-click Add task or Start timer.',
+    'Motion that feels good: smooth view changes, cards that settle in on first visit, numbers that count up, and a little burst when you finish a task.',
+    'Every chart rebuilt — cleaner stacks, a capacity line on hours per week, invoiced vs paid by month, readable tooltips, and colours that work for everyone.',
+    'The sidebar expands on hover, every page shares one header, and lists share one toolbar and table style. Job pages get proper stat tiles; Invoices gets a summary strip.',
+    'To Do: busy days show on the day\'s meter instead of turning the whole header orange. Schedule shows a small hours meter per person per day.',
+    'Easier to use with a keyboard, and everything respects your system\'s reduced-motion setting.',
+    'Fixes: printed invoices show hours properly (5h 20m, not 5.3333h), and "What\'s new" no longer opens on top of "Who are you?".',
+  ]},
   {version:'2.44.0',date:'13 Nov 2026',title:'Reporting rebuilt, Manage teams, and a big round of fixes',items:[
     'Reporting rebuilt: numbers that read easily (2,196h, $342k), changes against the previous period, and every section as one consistent card with a sortable table and CSV export. Click any row to open the job, client or person.',
     'New reports: revenue by month, quote win rate and time to approval, aged receivables, unpaid invoices, budget watch, job and client profitability, utilisation by week per person and team, and work mix.',
