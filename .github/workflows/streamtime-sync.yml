@@ -25,10 +25,21 @@ jobs:
         with:
           ref: main
 
+      # AES-GCM for scripts/data_crypt.py (encrypted .json.enc copies, see docs/SETUP-AUTH.md)
+      - name: Install encryption library
+        run: |
+          python3 -c "import cryptography" 2>/dev/null \
+            || python3 -m pip install --quiet --user --break-system-packages cryptography \
+            || python3 -m pip install --quiet cryptography
+
       - name: Sync loop (fast sync every 15 min, full sync hourly, ~5.5h)
         run: bash scripts/sync_loop.sh
         env:
           STREAMTIME_API_KEY: ${{ secrets.STREAMTIME_API_KEY }}
+          # Unset → no encryption, exactly as before. 64 hex chars (openssl rand -hex 32).
+          DATA_KEY: ${{ secrets.DATA_KEY }}
+          # Repo variable; "false" stops publishing the readable copies once the site reads .enc.
+          PUBLISH_PLAINTEXT: ${{ vars.PUBLISH_PLAINTEXT || 'true' }}
 
       # Only on success, so a broken run (e.g. bad API key) can't spin in a tight loop —
       # the 2-hourly schedule above picks things back up instead.

@@ -2092,7 +2092,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
       <div class="s-btn" id="snav-theme" style="margin-top:auto;" onclick="toggleTheme()" title="Light / dark appearance"><i class="ti ti-moon" id="theme-icon"></i><span class="s-tip">Appearance</span></div>
       <div class="s-btn" id="snav-settings" onclick="navTo('settings')"><i class="ti ti-settings"></i><span class="s-tip">Settings</span></div>
     </div>
-    <div class="s-avatar" id="s-avatar" data-initials="RO" onclick="_askWhoAmI(true)" title="Switch user"><span class="s-tip" id="s-avatar-name">Ronan</span></div>
+    <div class="s-avatar" id="s-avatar" data-initials="RO" onclick="_avatarClick(event)" title="Switch user"><span class="s-tip" id="s-avatar-name">Ronan</span></div>
   </div>
 
   <div class="main">
@@ -2982,10 +2982,34 @@ function setBgImage(file){
   rd.readAsDataURL(file);
 }
 function clearBgImage(){try{localStorage.removeItem('cc_bg_image');}catch(e){}applyBgImage();toast('Wallpaper removed','info');}
+// ── Sign-in (production) ─────────────────────────────────────────────────────
+// On the live site every request is gated by middleware.js and identity comes from the signed
+// session (docs/SETUP-AUTH.md). The server also sets a readable cc_who cookie holding the same
+// email/name/personKey/admin so "me" can be known synchronously at load; it is a UI hint only —
+// every /api call re-checks the real session. On localhost / file:// there is no server: the old
+// per-browser "who am I" picker and raw-GitHub data path stay, so local testing works unchanged.
+const IS_LOCAL_DEV=location.protocol==='file:'||/^(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)$/.test(location.hostname);
+const AUTH=(()=>{
+  if(IS_LOCAL_DEV)return null;
+  try{
+    const m=document.cookie.match(/(?:^|;\s*)cc_who=([^;]+)/);if(!m)return {email:'',name:'',personKey:null,admin:false,_missing:true};
+    const j=JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g,'+').replace(/_/g,'/')))));
+    return {email:j.e||'',name:j.n||'',personKey:j.p||null,admin:!!j.a};
+  }catch(e){return {email:'',name:'',personKey:null,admin:false,_missing:true};}
+})();
+// Someone signed in whose email isn't linked to a Streamtime person still needs a people key.
+function _authGuestKey(){return 'acct_'+String(AUTH&&AUTH.email||'me').toLowerCase().replace(/[^a-z0-9]+/g,'_').slice(0,40);}
+function _authSignedOut(){if(AUTH){try{location.replace('/login.html');}catch(e){}}}
+async function authSignOut(){
+  try{await fetch('/api/auth/logout',{method:'POST',credentials:'same-origin'});}catch(e){}
+  try{localStorage.removeItem('cc_view_as');}catch(e){}
+  location.replace('/login.html');
+}
 // ── Who's using this browser ────────────────────────────────────────────────
-// No login exists yet (that's the Razor backend), so each browser picks its person once.
-// Everything "mine" — dashboard, To Do default, time logging, activity credit, My Profile —
-// keys off MY_PERSON, which is read from cc_me at load; switching reloads the app.
+// Locally (no sign-in) each browser picks its person once. Everything "mine" — dashboard,
+// To Do default, time logging, activity credit, My Profile — keys off MY_PERSON, which is
+// read at load; switching reloads the app. In production MY_PERSON is the signed-in person;
+// only admins may "view as" someone else (kept in cc_view_as), for support.
 function _syncSidebarAvatar(){
   const el=document.getElementById('s-avatar');const me=people[MY_PERSON];if(!el||!me)return;
   el.dataset.initials=me.initials||'?';
@@ -2993,6 +3017,7 @@ function _syncSidebarAvatar(){
   const nm=document.getElementById('s-avatar-name');if(nm)nm.textContent=(me.name||'').split(' ')[0]||'Me';
 }
 function _askWhoAmI(cancelable){
+  if(AUTH&&!AUTH.admin)return; // signed in: you are who you signed in as
   document.getElementById('whoami-modal')?.remove();
   const list=Object.entries(people)
     .filter(([k,p])=>!p._archived&&!p._stub&&p._stId&&stUsersById[p._stId]?.active!==false)
@@ -3001,9 +3026,9 @@ function _askWhoAmI(cancelable){
   const m=document.createElement('div');m.className='modal-bg on';m.id='whoami-modal';
   if(cancelable)m.addEventListener('click',e=>{if(e.target===m)m.remove();});
   m.innerHTML=`<div class="modal" style="max-width:520px;">
-    <div class="modal-hd"><span class="modal-hd-title">${cancelable?'Switch user':'Who are you?'}</span>${cancelable?`<button class="modal-x" onclick="document.getElementById('whoami-modal').remove()"><i class="ti ti-x"></i></button>`:''}</div>
+    <div class="modal-hd"><span class="modal-hd-title">${AUTH?'View as someone else':cancelable?'Switch user':'Who are you?'}</span>${cancelable?`<button class="modal-x" onclick="document.getElementById('whoami-modal').remove()"><i class="ti ti-x"></i></button>`:''}</div>
     <div class="modal-bd">
-      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Pick yourself so your dashboard, To Do board and logged time are yours. This is remembered on this browser — change it any time from your avatar at the bottom of the sidebar.</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;">${AUTH?`Admins only, for support: see the platform as this person sees it. You stay signed in as yourself, and anything you change is still done by you.${AUTH.personKey&&MY_PERSON!==AUTH.personKey?` <a href="#" onclick="event.preventDefault();_setWhoAmI('${AUTH.personKey}')" style="color:var(--ink);font-weight:500;">Back to me</a>`:''}`:'Pick yourself so your dashboard, To Do board and logged time are yours. This is remembered on this browser — change it any time from your avatar at the bottom of the sidebar.'}</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;max-height:52vh;overflow-y:auto;">
         ${list.map(([k,p])=>`<button onclick="_setWhoAmI('${k}')" style="display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid ${k===MY_PERSON&&cancelable?'var(--ink)':'var(--border)'};border-radius:10px;background:var(--white);cursor:pointer;font-family:var(--font);font-size:13px;color:var(--ink);text-align:left;">
           <span style="width:28px;height:28px;border-radius:50%;background:${p.color||'#999'};color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;">${esc(p.initials||'?')}</span>
@@ -3014,6 +3039,12 @@ function _askWhoAmI(cancelable){
   document.body.appendChild(m);
 }
 function _setWhoAmI(key){
+  if(AUTH){
+    if(!AUTH.admin)return;
+    try{if(key===AUTH.personKey)localStorage.removeItem('cc_view_as');else localStorage.setItem('cc_view_as',key);}catch(e){}
+    if(key===MY_PERSON){document.getElementById('whoami-modal')?.remove();return;}
+    location.reload();return;
+  }
   try{localStorage.setItem('cc_me',key);}catch(e){}
   if(key===MY_PERSON){document.getElementById('whoami-modal')?.remove();return;}
   location.reload();
@@ -3161,7 +3192,7 @@ const WORKSPACE_KEYS=['cc_people','cc_person_status','cc_clients','cc_boards','c
 // Back up every cc_* key (leave, rate cards, templates, counters, targets…), not just a fixed list —
 // the fixed list missed the invoice/PO/credit-note counters, so a restore could reissue numbers.
 // Secrets and per-device state stay out.
-const _WS_SKIP=['cc_gh_token','cc_me','cc_timer','cc_bg_image','cc_last_sync','cc_seen_version','cc_config_applied_at','cc_rollover_seen'];
+const _WS_SKIP=['cc_gh_token','cc_me','cc_view_as','cc_timer','cc_bg_image','cc_last_sync','cc_seen_version','cc_config_applied_at','cc_rollover_seen'];
 function _wsBackupAllowed(k){return /^cc_/.test(k)&&!_WS_SKIP.includes(k);}
 function _wsBackupKeys(){const out=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(_wsBackupAllowed(k))out.push(k);}}catch(e){}return out.length?out:WORKSPACE_KEYS;}
 function exportWorkspace(){
@@ -3192,10 +3223,21 @@ function importWorkspace(file){
 // Current user, chosen once per browser via the "Who are you?" picker (_askWhoAmI) and kept in
 // cc_me. Was hard-coded to Ronan, so every tester saw Ronan's dashboard, logged time as Ronan
 // and edited Ronan's profile (bug audit H5, Nov 2026). Ronan stays the fallback until chosen.
-const MY_PERSON=(()=>{try{return localStorage.getItem('cc_me')||'st_114330';}catch(e){return 'st_114330';}})();
+// In production it is the signed-in person (or, for an admin, whoever they chose to view as).
+const MY_PERSON=(()=>{
+  if(AUTH){
+    let v=null;if(AUTH.admin){try{v=localStorage.getItem('cc_view_as');}catch(e){}}
+    return v||AUTH.personKey||_authGuestKey();
+  }
+  try{return localStorage.getItem('cc_me')||'st_114330';}catch(e){return 'st_114330';}
+})();
 let currentPerson=MY_PERSON;
 // Ensure a minimal stub exists so first render doesn't crash on empty localStorage
-if(!people[MY_PERSON])people[MY_PERSON]={name:MY_PERSON==='st_114330'?'Ronan Heal':'…',initials:MY_PERSON==='st_114330'?'RH':'?',color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true,_stub:true};
+if(!people[MY_PERSON]){
+  const _an=AUTH&&MY_PERSON===(AUTH.personKey||_authGuestKey())?(AUTH.name||AUTH.email||''):'';
+  const _ai=_an?_an.split(/\s+/).filter(Boolean).map(w=>w[0]).join('').slice(0,2).toUpperCase():'';
+  people[MY_PERSON]={name:_an||(MY_PERSON==='st_114330'?'Ronan Heal':'…'),initials:_ai||(MY_PERSON==='st_114330'?'RH':'?'),color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true,_stub:true};
+}
 const APP_VERSION='2.45.0';
 const CHANGELOG=[
   {version:'2.45.0',date:'13 Nov 2026',title:'The big redesign',items:[
@@ -4031,7 +4073,10 @@ function applyNativeData(){
 try{localStorage.removeItem('cc_todo');}catch(e){}
 
 // ── Streamtime data ──────────────────────────────────────────────────────────
-const ST_BASE='https://raw.githubusercontent.com/ronanheal/CandCPlatform/streamtime-data';
+// Production: the signed-in proxy, which decrypts the .json.enc files (api/data/[file].js).
+// Localhost: the branch's plaintext files while they are still published; after cut-over
+// (PUBLISH_PLAINTEXT=false) local testing needs `vercel dev` with DATA_KEY — see docs/SETUP-AUTH.md.
+const ST_BASE=IS_LOCAL_DEV?'https://raw.githubusercontent.com/ronanheal/CandCPlatform/streamtime-data':'/api/data';
 let stLoggedTimes=[];
 let stInvoices=[];
 let stQuotes=[];
@@ -4284,6 +4329,8 @@ async function initStreamtime(silent){
       fetch(`${ST_BASE}/milestones.json${_v}`),
       fetch(`${ST_BASE}/scheduled_todos.json${_v}`),
     ]);
+    // Session expired or access removed: back to the sign-in page (production only).
+    if(AUTH&&[jobsRes,usersRes].some(r=>r.status===401||r.status===403)){_authSignedOut();return;}
     // Users — build lookup map first (needed for time entries)
     if(usersRes.ok){
       const rawU=await usersRes.json();
@@ -4451,7 +4498,7 @@ async function initStreamtime(silent){
   if(typeof renderTodo==='function'&&!document.getElementById('view-todo')?.classList.contains('hidden'))renderTodo();
   if(typeof renderReporting==='function'&&document.getElementById('view-reporting')&&!document.getElementById('view-reporting').classList.contains('hidden'))renderReporting();
   _syncSidebarAvatar();
-  try{if(!localStorage.getItem('cc_me')&&Object.keys(stUsersById).length)_askWhoAmI(false);}catch(e){}
+  try{if(!AUTH&&!localStorage.getItem('cc_me')&&Object.keys(stUsersById).length)_askWhoAmI(false);}catch(e){}
   try{_applyAdminUi();}catch(e){} // hide admin-only actions for non-admins
   try{_renderTimer();}catch(e){} // a running timer survives reloads
   try{_migrateTeamsCreative();}catch(e){}
@@ -7796,8 +7843,13 @@ function clearJobSelection(){toggleAllJobCbs(false);}
 // Soft permission: there's no login yet, so this guards the UI, not the data. Until anyone is
 // marked Admin (Settings → Team → person → Admin), everyone can do everything — no change
 // for teams that haven't set it up. Admin flags travel with the published team config.
+// Signed in (production): "am I admin" is the session's admin flag, enforced again on the server
+// for every admin endpoint. It also holds while an admin is viewing as someone else.
 function _hasAdmins(){return Object.values(people).some(p=>p&&p.admin&&!p._archived);}
-function _isAdmin(k){k=k||MY_PERSON;return !_hasAdmins()||!!people[k]?.admin;}
+function _isAdmin(k){
+  if(AUTH&&(!k||k===MY_PERSON))return !!AUTH.admin;
+  k=k||MY_PERSON;return !_hasAdmins()||!!people[k]?.admin;
+}
 function _needAdmin(what){
   if(_isAdmin())return true;
   const names=Object.values(people).filter(p=>p.admin&&!p._archived).map(p=>p.name.split(' ')[0]);
@@ -20578,7 +20630,7 @@ body.dark .zone-bucket.done-bucket{background:var(--ok-bg)!important;border-colo
   // ── First run: "Who are you?" first, "What's new" after — never both at once ─────────────
   let pendingCL=false;
   const whoOpen=()=>!!document.getElementById('whoami-modal');
-  const needWho=()=>{try{return !localStorage.getItem('cc_me');}catch(e){return false;}};
+  const needWho=()=>{if(AUTH)return false;try{return !localStorage.getItem('cc_me');}catch(e){return false;}};
   const _cl=window.showChangelog;
   if(typeof _cl==='function'){
     let tries=0;
@@ -20876,6 +20928,241 @@ function _dhWeekHTML(wd,todayDow){
     return`<div class="dh-week-days">${cols}</div>`;
   }catch(e){return'';}
 }
+</script>
+<style id="auth-ui-css">
+/* ═══ Sign-in UI: avatar menu, change password, Settings → Team → Access. ds-v3 tokens only. ═══ */
+.au-menu{position:fixed;z-index:9000;min-width:232px;max-width:300px;border-radius:14px;border:1px solid var(--border);background:var(--white);box-shadow:var(--e-3);padding:6px;animation:dsPop var(--d-2) var(--ease-out);}
+.au-menu-hd{padding:10px 10px 8px;border-bottom:1px solid var(--faint);margin-bottom:4px;}
+.au-menu-hd b{display:block;font-size:13px;font-weight:600;color:var(--ink);}
+.au-menu-hd small{display:block;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.au-menu-hd .au-viewing{margin-top:6px;display:inline-flex;font-size:11px;font-weight:500;padding:2px 8px;border-radius:999px;background:var(--warn-bg);color:var(--warn-ink);}
+.au-mi{display:flex;align-items:center;gap:9px;width:100%;padding:8px 10px;border:0;border-radius:var(--r-sm);background:transparent;color:var(--ink);font:400 13px var(--font);cursor:pointer;text-align:left;}
+.au-mi i{font-size:15px;color:var(--muted);}
+.au-mi:hover,.au-mi:focus-visible{background:var(--surface-2);}
+body.dark .au-mi:hover,body.dark .au-mi:focus-visible{background:rgba(255,255,255,.06);}
+.au-sep{height:1px;background:var(--faint);margin:5px 4px;}
+.au-fld{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+.au-fld>span{font-size:12px;font-weight:500;color:var(--ink-2);}
+.au-fld .form-inp{width:100%;}
+.au-fld small{font-size:11.5px;color:var(--muted);}
+.au-err{font-size:12.5px;line-height:1.45;padding:8px 10px;border-radius:var(--r-ctl);background:var(--danger-bg);color:var(--danger-ink);margin-bottom:12px;}
+.au-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 0;border-bottom:1px solid var(--faint);}
+.au-row:last-child{border-bottom:none;}
+.au-av{width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:600;color:#fff;flex-shrink:0;background:var(--subtle);}
+.au-who{flex:1 1 200px;min-width:0;}
+.au-who b{display:block;font-size:13px;font-weight:500;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.au-who small{display:block;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.au-tag{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;font-size:11px;font-weight:500;background:var(--faint);color:var(--muted);margin-left:6px;vertical-align:1px;}
+.au-tag.warn{background:var(--warn-bg);color:var(--warn-ink);}
+.au-row .cc-select{width:170px;flex-shrink:0;}
+.au-adm{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-2);flex-shrink:0;cursor:pointer;}
+.au-sec{font-size:12px;font-weight:600;color:var(--ink-2);margin:4px 0 4px;}
+.au-add{display:grid;grid-template-columns:1.3fr 1fr auto auto;gap:8px;align-items:center;margin-top:6px;}
+.au-add .form-inp,.au-add .cc-select{width:100%;min-width:0;}
+.au-temp{margin-top:12px;padding:12px 14px;border-radius:var(--r-ctl);background:var(--ok-bg);color:var(--ok-ink);font-size:12.5px;line-height:1.5;}
+.au-temp code{display:inline-block;margin:4px 6px 0 0;padding:4px 9px;border-radius:var(--r-sm);background:var(--white);color:var(--ink);font:600 14px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;user-select:all;}
+.au-empty{font-size:12.5px;color:var(--muted);padding:6px 0;}
+.au-foot{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted);}
+@media (max-width:760px){.au-add{grid-template-columns:1fr;}.au-row{flex-wrap:wrap;}.au-row .cc-select{width:100%;}}
+</style>
+<script id="auth-ui">
+// ═══ Sign-in UI (production only — AUTH is null on localhost) ═══════════════════════════════
+// Avatar menu (profile, change password, view as, sign out), the change-password modal, the
+// boot check against /api/me, and the Access card in Settings → Team for admins.
+function _avatarClick(ev){
+  if(!AUTH){_askWhoAmI(true);return;}
+  const open=document.getElementById('au-menu');if(open){open.remove();return;}
+  const me=people[MY_PERSON]||{};
+  const real=AUTH.personKey?people[AUTH.personKey]:null;
+  const viewing=AUTH.admin&&MY_PERSON!==(AUTH.personKey||_authGuestKey());
+  const m=document.createElement('div');m.className='au-menu';m.id='au-menu';m.setAttribute('role','menu');
+  m.innerHTML=`<div class="au-menu-hd"><b>${esc((real&&real.name)||AUTH.name||AUTH.email)}</b><small>${esc(AUTH.email)}</small>
+      ${viewing?`<span class="au-viewing">Viewing as ${esc(me.name||'someone else')}</span>`:''}</div>
+    <button class="au-mi" role="menuitem" data-a="profile"><i class="ti ti-user"></i>My profile</button>
+    <button class="au-mi" role="menuitem" data-a="password"><i class="ti ti-key"></i>Change password</button>
+    ${AUTH.admin?`<button class="au-mi" role="menuitem" data-a="viewas"><i class="ti ti-eye"></i>View as someone else</button>`:''}
+    ${viewing?`<button class="au-mi" role="menuitem" data-a="back"><i class="ti ti-arrow-back-up"></i>Back to me</button>`:''}
+    <div class="au-sep"></div>
+    <button class="au-mi" role="menuitem" data-a="signout"><i class="ti ti-logout"></i>Sign out</button>`;
+  document.body.appendChild(m);
+  const r=(ev&&ev.currentTarget||document.getElementById('s-avatar')).getBoundingClientRect();
+  m.style.left=Math.max(8,Math.min(r.right+8,innerWidth-m.offsetWidth-8))+'px';
+  m.style.top=Math.max(8,Math.min(r.bottom-m.offsetHeight,innerHeight-m.offsetHeight-8))+'px';
+  m.addEventListener('click',e=>{
+    const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;m.remove();
+    if(a==='profile'){navTo('settings');switchSettTab('profile');}
+    else if(a==='password')openChangePassword();
+    else if(a==='viewas')_askWhoAmI(true);
+    else if(a==='back')_setWhoAmI(AUTH.personKey||_authGuestKey());
+    else if(a==='signout')authSignOut();
+  });
+  setTimeout(()=>{
+    const close=e=>{if(!m.contains(e.target)){m.remove();document.removeEventListener('mousedown',close);document.removeEventListener('keydown',esc_);}};
+    const esc_=e=>{if(e.key==='Escape'){m.remove();document.removeEventListener('mousedown',close);document.removeEventListener('keydown',esc_);}};
+    document.addEventListener('mousedown',close);document.addEventListener('keydown',esc_);
+  });
+  m.querySelector('.au-mi')?.focus();
+}
+
+async function _authPost(url,body){
+  const r=await fetch(url,{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify(body||{})});
+  let j={};try{j=await r.json();}catch(e){}
+  if(r.status===401){_authSignedOut();throw new Error('Signed out');}
+  if(!r.ok)throw new Error(j.error||('Request failed ('+r.status+')'));
+  return j;
+}
+
+function openChangePassword(){
+  if(!AUTH)return;
+  document.getElementById('au-pw-modal')?.remove();
+  const m=document.createElement('div');m.className='modal-bg on';m.id='au-pw-modal';
+  m.addEventListener('click',e=>{if(e.target===m)m.remove();});
+  m.innerHTML=`<div class="modal" style="max-width:420px;" role="dialog" aria-modal="true" aria-labelledby="au-pw-t">
+    <div class="modal-hd"><span class="modal-hd-title" id="au-pw-t">Change password</span><button class="modal-x" data-x aria-label="Close"><i class="ti ti-x"></i></button></div>
+    <form class="modal-bd" id="au-pw-form" novalidate>
+      <label class="au-fld"><span>Current password</span><input class="form-inp" name="current" type="password" autocomplete="current-password" maxlength="200"></label>
+      <label class="au-fld"><span>New password</span><input class="form-inp" name="next" type="password" autocomplete="new-password" maxlength="200"><small>At least 10 characters.</small></label>
+      <label class="au-fld"><span>Confirm new password</span><input class="form-inp" name="confirm" type="password" autocomplete="new-password" maxlength="200"></label>
+      <div class="au-err" hidden></div>
+      <button type="submit" hidden></button>
+    </form>
+    <div class="modal-ft"><button class="modal-cancel" data-x>Cancel</button><button class="modal-ok" data-save>Save password</button></div>
+  </div>`;
+  document.body.appendChild(m);
+  const f=m.querySelector('#au-pw-form'),errEl=m.querySelector('.au-err'),btn=m.querySelector('[data-save]');
+  m.querySelectorAll('[data-x]').forEach(b=>b.addEventListener('click',()=>m.remove()));
+  const save=async()=>{
+    errEl.hidden=true;
+    const fail=msg=>{errEl.textContent=msg;errEl.hidden=false;};
+    if(f.next.value.length<10)return fail('Passwords need at least 10 characters.');
+    if(f.next.value!==f.confirm.value)return fail("The new passwords don't match.");
+    btn.disabled=true;
+    try{await _authPost('/api/auth/password',{current:f.current.value,next:f.next.value});m.remove();toast('Password changed','success');}
+    catch(e){fail(e.message);}finally{btn.disabled=false;}
+  };
+  btn.addEventListener('click',save);
+  f.addEventListener('submit',e=>{e.preventDefault();save();});
+  setTimeout(()=>f.current.focus(),30);
+}
+
+// Boot: confirm the session with the server (it also refreshes the cc_who hint cookie). If the
+// hint was missing or out of date (admin rights or linked person changed), reload once.
+(function(){
+  if(!AUTH)return;
+  const av=document.getElementById('s-avatar');if(av)av.title='Account';
+  fetch('/api/me',{credentials:'same-origin',cache:'no-store'}).then(async r=>{
+    if(r.status===401||r.status===403){_authSignedOut();return;}
+    if(!r.ok)return;
+    const me=await r.json();
+    const stale=AUTH._missing||me.personKey!==AUTH.personKey||!!me.admin!==AUTH.admin;
+    let again=false;try{again=sessionStorage.getItem('cc_me_reloaded')==='1';}catch(e){}
+    if(stale&&!again){try{sessionStorage.setItem('cc_me_reloaded','1');}catch(e){}location.reload();return;}
+    try{sessionStorage.removeItem('cc_me_reloaded');}catch(e){}
+    if(!me.admin){try{localStorage.removeItem('cc_view_as');}catch(e){}}
+  }).catch(()=>{});
+})();
+
+// ── Settings → Team → Access (admins, production) ────────────────────────────────────────
+let _acc=null,_accErr='',_accTemp=null;
+function _accPeopleOptions(sel){
+  const list=Object.values(stUsersById||{}).filter(u=>u.active!==false&&u.key).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  return `<option value="">Not linked</option>`+list.map(u=>`<option value="${esc(u.key)}"${u.key===sel?' selected':''}>${esc(u.name)}</option>`).join('');
+}
+function _accPersonName(k){return (k&&(people[k]?.name||Object.values(stUsersById||{}).find(u=>u.key===k)?.name))||'';}
+function _accAv(k,label){const p=k&&people[k];
+  const ini=p?.initials||String(label||'?').split(/[\s@.]+/).filter(Boolean).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  return `<span class="au-av" style="background:${p?.color||'var(--subtle)'}">${esc(ini||'?')}</span>`;}
+async function _accLoad(){
+  try{
+    const r=await fetch('/api/access',{credentials:'same-origin',cache:'no-store'});
+    if(r.status===401){_authSignedOut();return;}
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(j.error||('Could not load ('+r.status+')'));
+    _acc=j;_accErr='';
+  }catch(e){_accErr=e.message;}
+  _accRender();
+}
+async function _accDo(body,okMsg){
+  try{
+    const j=await _authPost('/api/access',body);
+    _acc={users:j.users,requests:j.requests};
+    if(j.tempPassword)_accTemp={email:body.email,pw:j.tempPassword};
+    if(okMsg)toast(okMsg,'success');
+  }catch(e){toast(e.message,'warn');}
+  _accRender();
+}
+function _accRender(){
+  const body=document.getElementById('au-access-body');if(!body)return;
+  if(_accErr){body.innerHTML=`<div class="au-err">${esc(_accErr)}</div>`;return;}
+  if(!_acc){body.innerHTML='<div class="au-empty">Loading…</div>';return;}
+  const reqs=_acc.requests||[],users=(_acc.users||[]).slice().sort((a,b)=>(a.name||a.email).localeCompare(b.name||b.email));
+  const hd=document.getElementById('au-access-n');if(hd)hd.textContent=users.length;
+  body.innerHTML=`
+    ${reqs.length?`<div class="au-sec">Waiting for approval</div>
+      ${reqs.map(r=>`<div class="au-row" data-email="${esc(r.email)}">${_accAv(r.personKey,r.name)}
+        <div class="au-who"><b>${esc(r.name||r.email)}<span class="au-tag warn">Request</span></b><small>${esc(r.email)}${r.givenName&&r.givenName.toLowerCase().replace(/\s+/g,' ').trim()!==String(r.name||'').toLowerCase()?` · typed “${esc(r.givenName)}”`:''}${r.at?` · ${esc(new Date(r.at).toLocaleDateString())}`:''}</small></div>
+        <button class="d-action primary" data-act="approve">Approve</button>
+        <button class="d-action" data-act="decline">Decline</button></div>`).join('')}
+      <div style="height:10px;"></div>`:''}
+    <div class="au-sec">People with access</div>
+    ${users.length?users.map(u=>{const isMe=u.email===AUTH.email;return`<div class="au-row" data-email="${esc(u.email)}">${_accAv(u.personKey,u.name||u.email)}
+        <div class="au-who"><b>${esc(u.name||u.email)}${isMe?'<span class="au-tag">You</span>':''}${u.owner?'<span class="au-tag">Owner</span>':''}${u.mustChangePassword?'<span class="au-tag warn">Temporary password</span>':''}</b><small>${esc(u.email)}</small></div>
+        <select class="cc-select" data-act="link" aria-label="Linked person">${_accPeopleOptions(u.personKey)}</select>
+        <label class="au-adm" title="${u.owner?'Set by ADMIN_EMAILS on the server':''}"><input type="checkbox" data-act="admin"${u.admin||u.owner?' checked':''}${u.owner||isMe?' disabled':''}> Admin</label>
+        <button class="rf-icon-btn" data-act="reset" title="Reset password" aria-label="Reset password"><i class="ti ti-key"></i></button>
+        <button class="rf-icon-btn" data-act="remove" title="Remove access" aria-label="Remove access"${isMe||u.owner?' disabled':''}><i class="ti ti-trash"></i></button></div>`;}).join(''):'<div class="au-empty">Nobody yet.</div>'}
+    <div style="height:14px;"></div>
+    <div class="au-sec">Add a person</div>
+    <form class="au-add" id="au-add-form" novalidate>
+      <input class="form-inp" name="email" type="email" placeholder="Email" maxlength="254" autocomplete="off" aria-label="Email">
+      <select class="cc-select" name="person" aria-label="Streamtime person">${_accPeopleOptions('')}</select>
+      <label class="au-adm"><input type="checkbox" name="admin"> Admin</label>
+      <button class="d-action primary" type="submit"><i class="ti ti-plus" style="font-size:12px"></i> Add</button>
+    </form>
+    ${_accTemp?`<div class="au-temp" role="status">Temporary password for <b>${esc(_accTemp.email)}</b> — pass it on now, it won't be shown again. They'll choose their own when they first sign in.<br><code>${esc(_accTemp.pw)}</code><button class="d-action" data-act="copytemp">Copy</button> <button class="d-action" data-act="hidetemp">Done</button></div>`:''}`;
+}
+function _accBind(card){
+  card.addEventListener('click',e=>{
+    const b=e.target.closest('[data-act]');if(!b||b.tagName==='SELECT'||b.type==='checkbox')return;
+    const act=b.dataset.act,email=b.closest('[data-email]')?.dataset.email;
+    if(act==='approve')_accDo({action:'approve',email},'Approved — they can sign in now');
+    else if(act==='decline')ccConfirm(`Decline the request from ${email}?`,()=>_accDo({action:'decline',email},'Request declined'),'Decline',true);
+    else if(act==='remove')ccConfirm(`Remove access for ${email}? They'll be signed out within a minute.`,()=>_accDo({action:'remove',email},'Access removed'),'Remove',true);
+    else if(act==='reset')ccConfirm(`Reset the password for ${email}? Their current password stops working and they're signed out.`,()=>_accDo({action:'resetPassword',email},'Password reset'),'Reset');
+    else if(act==='copytemp'){try{navigator.clipboard.writeText(_accTemp.pw);toast('Copied','success');}catch(err){}}
+    else if(act==='hidetemp'){_accTemp=null;_accRender();}
+  });
+  card.addEventListener('change',e=>{
+    const t=e.target,email=t.closest('[data-email]')?.dataset.email;if(!email)return;
+    if(t.dataset.act==='link')_accDo({action:'update',email,personKey:t.value||null,name:_accPersonName(t.value)||undefined},'Linked person updated');
+    else if(t.dataset.act==='admin')_accDo({action:'setAdmin',email,admin:t.checked},t.checked?'Now an admin':'No longer an admin');
+  });
+  card.addEventListener('submit',e=>{
+    if(e.target.id!=='au-add-form')return;e.preventDefault();
+    const f=e.target,email=f.email.value.trim().toLowerCase(),pk=f.person.value||null;
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){toast('Enter a valid email','warn');f.email.focus();return;}
+    _accDo({action:'add',email,personKey:pk,name:_accPersonName(pk)||email,admin:f.admin.checked},'Added');
+  });
+}
+(function(){
+  const _orig=renderSettings;
+  renderSettings=function(){
+    _orig.apply(this,arguments);
+    try{
+      if(!AUTH||!AUTH.admin||(_settActiveTab||'profile')!=='team')return;
+      const wrap=document.getElementById('settings-scroll');if(!wrap)return;
+      const card=document.createElement('div');card.className='sett-card';card.id='au-access-card';
+      card.innerHTML=`<div class="sett-card-hd">Access <span style="font-weight:400;color:var(--muted);" id="au-access-n"></span></div>
+        <div class="sett-card-body" style="padding:6px 20px 18px;">
+          <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin:6px 0 10px;">Who can sign in to the platform. New people get a temporary password; people already in Streamtime can also request access from the sign-in page.</div>
+          <div id="au-access-body"></div>
+        </div>`;
+      const sub=wrap.querySelector('.sett-tab-sub');
+      (sub&&sub.nextSibling)?wrap.insertBefore(card,sub.nextSibling):wrap.appendChild(card);
+      _accBind(card);_accRender();_accLoad();
+    }catch(e){console.warn('access card',e);}
+  };
+})();
 </script>
 </body>
 </html>

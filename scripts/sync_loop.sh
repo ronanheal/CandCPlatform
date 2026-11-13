@@ -21,27 +21,74 @@ FULL_EVERY=$((60 * 60))
 # "Publish config" button, generate-meta.yml, and vercel.json). Never restored or overwritten here.
 NOT_OURS="platform_config.json changelog.json platform_meta.json roadmap.json vercel.json"
 
+# Encryption (docs/SETUP-AUTH.md). With secret DATA_KEY set, every sync-owned file is also
+# published as <name>.json.enc (gzip + AES-256-GCM, scripts/data_crypt.py), which the site reads
+# through /api/data after sign-in. PUBLISH_PLAINTEXT=false (repo variable) then stops publishing
+# the readable copies. Without DATA_KEY nothing changes. The key is never printed.
+CRYPT="python3 scripts/data_crypt.py"
+ENCRYPT=0
+if [ -n "${DATA_KEY:-}" ]; then
+  echo "::add-mask::$DATA_KEY"
+  if $CRYPT check-key; then ENCRYPT=1; else echo "::error::DATA_KEY is set but invalid (needs 64 hex chars)"; exit 1; fi
+fi
+PLAINTEXT=1
+[ "$ENCRYPT" = 1 ] && [ "${PUBLISH_PLAINTEXT:-true}" = "false" ] && PLAINTEXT=0
+echo "encrypted copies: $([ "$ENCRYPT" = 1 ] && echo on || echo off), plaintext copies: $([ "$PLAINTEXT" = 1 ] && echo on || echo off)"
+
+is_ours() { case " $NOT_OURS " in *" $1 "*) return 1 ;; esac; return 0; }
+
 git config --global user.name "streamtime-sync[bot]"
 git config --global user.email "noreply@github.com"
 
 restore() {
   git fetch -q --depth=1 origin streamtime-data || return 1
   mkdir -p streamtime-data
-  rm -f streamtime-data/*.json
-  for f in $(git ls-tree --name-only FETCH_HEAD | grep '\.json$'); do
-    case " $NOT_OURS " in *" $f "*) continue ;; esac
+  rm -f streamtime-data/*.json streamtime-data/*.enc
+  local files f base
+  files=$(git ls-tree --name-only FETCH_HEAD)
+  for f in $(echo "$files" | grep '\.json$'); do
+    is_ours "$f" || continue
     git show "FETCH_HEAD:$f" > "streamtime-data/$f"
+  done
+  # Once plaintext is no longer published, the previous run's data only exists encrypted. Bring
+  # it back, or the sync would start from empty files and its "don't shrink" guards would compare
+  # against the wrong previous counts.
+  for f in $(echo "$files" | grep '\.json\.enc$'); do
+    base=${f%.enc}
+    is_ours "$base" || continue
+    [ -f "streamtime-data/$base" ] && continue
+    if [ "$ENCRYPT" != 1 ]; then
+      echo "::error::$f is on the branch but DATA_KEY is not set; refusing to sync from empty data"
+      return 1
+    fi
+    git show "FETCH_HEAD:$f" > "streamtime-data/$f"
+    $CRYPT decrypt "streamtime-data/$f" "streamtime-data/$base" || { echo "::error::could not decrypt $f"; return 1; }
+    rm -f "streamtime-data/$f"
   done
 }
 
 publish() {
-  local msg=$1 attempt base
+  local msg=$1 attempt base f
   for attempt in 1 2 3; do
     git fetch -q --depth=1 origin streamtime-data || continue
     base=$(git rev-parse FETCH_HEAD)
     rm -rf ../data-branch && git worktree prune
     git worktree add -q --detach ../data-branch "$base" || continue
-    cp streamtime-data/*.json ../data-branch/
+    if [ "$PLAINTEXT" = 1 ]; then
+      cp streamtime-data/*.json ../data-branch/
+    else
+      # Drop every readable sync-owned file; NOT_OURS files are left exactly as they are.
+      for f in ../data-branch/*.json; do
+        [ -e "$f" ] || continue
+        is_ours "$(basename "$f")" && rm -f "$f"
+      done
+    fi
+    if [ "$ENCRYPT" = 1 ]; then
+      for f in streamtime-data/*.json; do
+        is_ours "$(basename "$f")" || continue
+        $CRYPT encrypt "$f" "../data-branch/$(basename "$f").enc" || { echo "::warning::encrypt failed for $(basename "$f"), not publishing"; return 1; }
+      done
+    fi
     git -C ../data-branch add -A .
     if git -C ../data-branch diff --cached --quiet "$base"; then
       echo "  no data changes"

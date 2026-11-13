@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="robots" content="noindex"/>
+<title>Sign in · C&amp;C Platform</title>
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="%23ED1E24"/><text x="32" y="43" font-family="Georgia,serif" font-size="26" font-weight="700" fill="white" text-anchor="middle">C%26C</text></svg>'/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@500..800&display=swap" rel="stylesheet"/>
+<style>
+/* ds-v3 tokens (same values as index.html: light on :root, warm charcoal under .dark) */
+:root{
+  --red:#ED1E24;--red-ink:#C8161B;--desk:#E6E0D4;--off:#F4F1EA;--white:#FFFFFF;--surface-2:#FAF8F3;
+  --ink:#1C1A16;--ink-2:#4A463E;--muted:#6F6A5E;--subtle:#A39D90;--faint:#ECE7DE;--border:#E1DACD;--border-strong:#CBC3B4;
+  --danger-ink:#B3261E;--danger-bg:#FBE7E4;
+  --font:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;--display:'Inter Tight','Inter',-apple-system,sans-serif;
+  --r-ctl:10px;--r-lg:20px;--focus:color-mix(in srgb,var(--red) 70%,var(--ink));
+  --e-3:0 2px 6px rgba(46,36,20,.07),0 14px 36px rgba(46,36,20,.14);
+  --wash:#EFDCD3;
+  color-scheme:light;
+}
+.dark{
+  --red:#F04A4F;--red-ink:#FF8A8C;--desk:#0F0E0C;--off:#191714;--white:#221F1B;--surface-2:#282520;
+  --ink:#F2EEE6;--ink-2:#D3CDC2;--muted:#A9A296;--subtle:#6E685D;--faint:#2C2924;--border:#3A362F;--border-strong:#4F4A40;
+  --danger-ink:#FF8F86;--danger-bg:rgba(255,120,110,.15);
+  --e-3:0 4px 12px rgba(0,0,0,.45),0 18px 44px rgba(0,0,0,.5);
+  --wash:#2A1817;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{min-height:100%;}
+body{min-height:100vh;font-family:var(--font);color:var(--ink);background:radial-gradient(1200px 760px at 92% -10%,var(--wash) 0%,var(--desk) 58%) fixed;
+  font-feature-settings:"cv11","ss01","ss03";-webkit-font-smoothing:antialiased;display:flex;align-items:center;justify-content:center;padding:24px 16px;}
+.card{width:100%;max-width:420px;background:var(--off);border:1px solid color-mix(in srgb,var(--border) 80%,transparent);border-radius:var(--r-lg);
+  box-shadow:var(--e-3);padding:40px 36px 28px;display:flex;flex-direction:column;gap:24px;animation:rise .4s cubic-bezier(.16,1,.3,1);}
+@keyframes rise{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+@media (prefers-reduced-motion:reduce){.card{animation:none;}}
+.mark{display:flex;flex-direction:column;align-items:flex-start;gap:14px;}
+.mark svg{height:40px;width:auto;display:block;}
+.mark svg path{fill:var(--red);}
+.thread{width:72px;height:3px;border-radius:3px;background:var(--red);}
+h1{font-family:var(--display);font-size:28px;font-weight:700;letter-spacing:-.035em;line-height:1.15;}
+p{font-size:14px;line-height:1.55;color:var(--muted);}
+p strong{color:var(--ink);font-weight:600;}
+.lede{margin-bottom:4px;}
+.stack{display:flex;flex-direction:column;gap:12px;}
+.fld{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;color:var(--ink-2);}
+.fld input{height:42px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r-ctl);background:var(--white);color:var(--ink);
+  font:400 14px var(--font);caret-color:var(--red);transition:border-color .12s ease,box-shadow .12s ease;}
+.fld input:hover{border-color:var(--border-strong);}
+.fld input:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 22%,transparent);}
+.fld small{font-size:12px;font-weight:400;color:var(--muted);}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;height:44px;padding:0 18px;border-radius:var(--r-ctl);font:500 14px var(--font);
+  cursor:pointer;text-decoration:none;border:1px solid var(--border);background:var(--white);color:var(--ink);width:100%;
+  transition:border-color .12s ease,background .12s ease,transform .12s ease;}
+.btn:hover{border-color:var(--border-strong);}
+.btn:active{transform:translateY(1px);}
+.btn.primary{background:var(--ink);color:var(--off);border-color:var(--ink);margin-top:4px;}
+.btn.primary:hover{background:color-mix(in srgb,var(--ink) 88%,var(--red));}
+.btn.quiet{background:transparent;border-color:transparent;color:var(--muted);height:36px;}
+.btn.quiet:hover{color:var(--ink);background:var(--faint);}
+.btn[disabled]{opacity:.6;cursor:default;}
+.btn:focus-visible,.alt a:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
+.alt{text-align:center;font-size:13px;}
+.alt a{color:var(--ink);font-weight:500;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--border-strong);}
+.alt a:hover{text-decoration-color:var(--red);}
+.note{font-size:13px;line-height:1.5;padding:10px 12px;border-radius:var(--r-ctl);}
+.note.err{background:var(--danger-bg);color:var(--danger-ink);}
+.foot{font-size:12px;color:var(--subtle);text-align:center;}
+[hidden]{display:none!important;}
+@media (max-width:480px){.card{padding:32px 22px 24px;}h1{font-size:24px;}}
+</style>
+<script>
+// Dark mode: follow the app's own choice in this browser (cc_theme), else the system setting.
+(function(){var t=null;try{t=localStorage.getItem('cc_theme');}catch(e){}
+  var dark=t?t==='dark':(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
+  if(dark)document.documentElement.classList.add('dark');})();
+</script>
+</head>
+<body>
+<main class="card" aria-live="polite">
+  <div class="mark">
+    <svg viewBox="0 0 621.5 266.3" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Content &amp; Co"><path d="M546.7,26.9c14.2,0,24.7,10,28.4,37.9c0.5,9.5,5.3,16.9,14.2,16.9c13.2,0,32.1-12.6,32.1-29.5c0-25.3-25.3-44.8-63.7-44.8c-59,0-104.6,43.4-127.1,95c-12.6,28.9-20,62.7-16.6,94.2c2.1,19.5,9.9,39.1,24.9,51.7c-19.3,2.3-53.8-15.3-81.8-42.5c23.2-21.6,41.8-48,54.4-77c3.7-8.6,8.7-21.6,3.4-30.6c-4.2-7.2-14.6-6.8-21.4-4.2c-16,6.2-14.5,22.1-17.5,36.2c-4.8,23.3-13.2,46.3-29.7,63.9c-25.3-26.5-45.7-55.3-58.5-78.6c43.3-17.2,72.8-28.1,72.8-67c0-31.3-27.9-48.5-58-48.5c-35.7,0-67.3,26-67.3,70.2c0,15.5,4.3,30.7,11.9,44.1c-15.8,4.9-31.1,11.9-43.7,22.8c-13.9,12.1-24,28.8-35.2,43.3c-18,23.3-45.6,57.7-79.3,53.3c-31-4-35.8-37-35.8-62.8c0-64.2,35.8-145.3,80-145.3c14.2,0,24.7,10,28.4,37.9c0.5,9.5,5.3,16.8,14.2,16.8c13.2,0,32.1-12.6,32.1-29.5c0-25.3-25.2-44.8-63.7-44.8C54.2,6.2,0,102,0,181.5c0,59,34.7,80.6,71.6,80.6c37.2,0,76.4-13.5,108.2-56.8c4.6,29.1,28.5,55.4,72.6,55.4c29.7,0,51.3-8.4,77.4-30.5c0,0,11.3,8.7,12.4,9.5c19.4,12.8,42.6,19.4,65.3,22.9c25.4,3.9,51.4,5,77,2.5c0.3,0,0.5-0.1,0.8-0.1c23.3-2.4,46.9-7.5,67.2-20c19.5-12,35.3-29.2,47.6-48.4c3.3-5.1,2.4-11.9-2.1-16.1c-2.9-2.7-7.5-2.2-9.9,1c-11.6,15.7-27.3,32.4-44.7,43c-10.9,6.7-22.5,10.9-34.2,10.9c-35.3,0-42.7-29.5-42.7-63.2C466.7,108,502.5,26.9,546.7,26.9z M299.7,15.6c18.9,0,26.9,13.2,26.9,28.1c0,29.3-21.6,49.3-45.7,60.1c-8-12.4-13.2-30.9-13.2-45.3C267.7,32.9,283.3,15.6,299.7,15.6z M269.7,238.6c-31.7,0-52.1-23.7-52.1-50.5c0-38.5,30.9-57.3,37.7-58.1c18,30.9,38.1,62.1,63.7,89.8C305.3,231,290.5,238.6,269.7,238.6z"/></svg>
+    <span class="thread" aria-hidden="true"></span>
+  </div>
+
+  <!-- Sign in -->
+  <section id="v-signin" hidden>
+    <form class="stack" id="f-signin" novalidate>
+      <h1>Sign in</h1>
+      <p class="lede">Use the email and password your workspace admin set up for you.</p>
+      <label class="fld"><span>Email</span><input name="email" type="email" autocomplete="username" required maxlength="254"></label>
+      <label class="fld"><span>Password</span><input name="password" type="password" autocomplete="current-password" required maxlength="200"></label>
+      <div class="note err" data-err hidden></div>
+      <button class="btn primary" type="submit">Sign in</button>
+      <p class="alt">New here? <a href="#request" data-go="v-request">Request access</a></p>
+    </form>
+  </section>
+
+  <!-- Request access -->
+  <section id="v-request" hidden>
+    <form class="stack" id="f-request" novalidate>
+      <h1>Request access</h1>
+      <p class="lede">If you're in the team's system, an admin will approve you. Use your full name as it appears there.</p>
+      <label class="fld"><span>Full name</span><input name="fullname" autocomplete="name" required maxlength="120"></label>
+      <label class="fld"><span>Email</span><input name="email" type="email" autocomplete="email" required maxlength="254"></label>
+      <label class="fld"><span>Password</span><input name="password" type="password" autocomplete="new-password" required minlength="10" maxlength="200"><small>At least 10 characters.</small></label>
+      <label class="fld"><span>Confirm password</span><input name="confirm" type="password" autocomplete="new-password" required maxlength="200"></label>
+      <div class="note err" data-err hidden></div>
+      <button class="btn primary" type="submit">Request access</button>
+      <p class="alt">Already have an account? <a href="#" data-go="v-signin">Sign in</a></p>
+    </form>
+  </section>
+
+  <!-- Request sent -->
+  <section id="v-requested" class="stack" hidden>
+    <h1>Request sent</h1>
+    <p class="lede">An admin will approve it. Once they have, sign in with the email and password you just chose.</p>
+    <button class="btn" type="button" data-go="v-signin">Back to sign in</button>
+  </section>
+
+  <!-- Not found -->
+  <section id="v-unknown" class="stack" hidden>
+    <h1>We couldn't find you</h1>
+    <p class="lede">That name and email don't match anyone in the system. Ask an admin to add you, or check how your name is spelled there.</p>
+    <button class="btn" type="button" data-go="v-request">Try again</button>
+    <button class="btn quiet" type="button" data-go="v-signin">Back to sign in</button>
+  </section>
+
+  <!-- Bootstrap admin account created -->
+  <section id="v-approved" class="stack" hidden>
+    <h1>Your account is ready</h1>
+    <p class="lede">You're set up as an admin. Sign in with the email and password you just chose.</p>
+    <button class="btn primary" type="button" data-go="v-signin">Sign in</button>
+  </section>
+
+  <!-- Change password (forced after a temporary one) -->
+  <section id="v-change" hidden>
+    <form class="stack" id="f-change" novalidate>
+      <h1>Choose a new password</h1>
+      <p class="lede">You signed in with a temporary password. Pick your own to continue.</p>
+      <label class="fld"><span>Current password</span><input name="current" type="password" autocomplete="current-password" required maxlength="200"></label>
+      <label class="fld"><span>New password</span><input name="next" type="password" autocomplete="new-password" required minlength="10" maxlength="200"><small>At least 10 characters.</small></label>
+      <label class="fld"><span>Confirm new password</span><input name="confirm" type="password" autocomplete="new-password" required maxlength="200"></label>
+      <div class="note err" data-err hidden></div>
+      <button class="btn primary" type="submit">Save and continue</button>
+      <button class="btn quiet" type="button" data-signout>Sign out</button>
+    </form>
+  </section>
+
+  <!-- Already signed in -->
+  <section id="v-in" class="stack" hidden>
+    <h1>You're signed in</h1>
+    <p class="lede">Signed in as <strong id="in-mail"></strong>.</p>
+    <a class="btn primary" href="/">Open the platform</a>
+    <button class="btn quiet" type="button" data-signout>Sign out</button>
+  </section>
+
+  <div class="foot">Content &amp; Co workspace</div>
+</main>
+<script>
+(function(){
+  var VIEWS=['v-signin','v-request','v-requested','v-unknown','v-approved','v-change','v-in'];
+  function $(id){return document.getElementById(id);}
+  function show(id){
+    VIEWS.forEach(function(v){$(v).hidden=v!==id;});
+    var f=$(id).querySelector('input');if(f)setTimeout(function(){f.focus();},30);
+  }
+  function err(form,msg){var e=form.querySelector('[data-err]');e.textContent=msg||'';e.hidden=!msg;}
+  function busy(form,on,label){var b=form.querySelector('button[type=submit]');
+    if(on){b.dataset.lbl=b.textContent;b.textContent=label;b.disabled=true;}else{b.textContent=b.dataset.lbl||b.textContent;b.disabled=false;}}
+  function post(url,body){
+    return fetch(url,{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify(body||{})})
+      .then(function(r){return r.json().catch(function(){return {};}).then(function(j){return {ok:r.ok,status:r.status,j:j};});});
+  }
+  function signOut(){post('/api/auth/logout').catch(function(){}).then(function(){location.replace('/login.html');});}
+  Array.prototype.forEach.call(document.querySelectorAll('[data-signout]'),function(b){b.addEventListener('click',signOut);});
+  Array.prototype.forEach.call(document.querySelectorAll('[data-go]'),function(b){b.addEventListener('click',function(ev){ev.preventDefault();show(b.getAttribute('data-go'));});});
+
+  $('f-signin').addEventListener('submit',function(ev){
+    ev.preventDefault();var f=this;err(f,'');
+    var email=f.email.value.trim(),password=f.password.value;
+    if(!email||!password){err(f,'Enter your email and password.');return;}
+    busy(f,true,'Signing in…');
+    post('/api/auth/login',{email:email,password:password}).then(function(x){
+      if(!x.ok){busy(f,false);f.password.value='';err(f,(x.j&&x.j.error)||'Sign-in failed. Please try again.');return;}
+      if(x.j.mustChangePassword){busy(f,false);$('f-change').current.value=password;f.password.value='';show('v-change');$('f-change').next.focus();return;}
+      location.replace('/');
+    }).catch(function(){busy(f,false);err(f,'Network error. Please try again.');});
+  });
+
+  $('f-request').addEventListener('submit',function(ev){
+    ev.preventDefault();var f=this;err(f,'');
+    var name=f.fullname.value.trim(),email=f.email.value.trim(),pw=f.password.value;
+    if(name.length<2){err(f,'Enter your full name.');return;}
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){err(f,'Enter a valid email.');return;}
+    if(pw.length<10){err(f,'Passwords need at least 10 characters.');return;}
+    if(pw!==f.confirm.value){err(f,"The passwords don't match.");return;}
+    busy(f,true,'Sending…');
+    post('/api/auth/request',{name:name,email:email,password:pw}).then(function(x){
+      busy(f,false);
+      if(!x.ok){err(f,(x.j&&x.j.error)||'Request failed. Please try again.');return;}
+      f.password.value='';f.confirm.value='';
+      if(x.j.state==='approved'){$('f-signin').email.value=email;show('v-approved');}
+      else if(x.j.state==='unknown')show('v-unknown');
+      else{$('f-signin').email.value=email;show('v-requested');}
+    }).catch(function(){busy(f,false);err(f,'Network error. Please try again.');});
+  });
+
+  $('f-change').addEventListener('submit',function(ev){
+    ev.preventDefault();var f=this;err(f,'');
+    if(f.next.value.length<10){err(f,'Passwords need at least 10 characters.');return;}
+    if(f.next.value!==f.confirm.value){err(f,"The new passwords don't match.");return;}
+    busy(f,true,'Saving…');
+    post('/api/auth/password',{current:f.current.value,next:f.next.value}).then(function(x){
+      if(!x.ok){busy(f,false);err(f,(x.j&&x.j.error)||'Could not change the password.');return;}
+      location.replace('/');
+    }).catch(function(){busy(f,false);err(f,'Network error. Please try again.');});
+  });
+
+  if(location.hash==='#request')show('v-request');
+  fetch('/api/auth/status',{credentials:'same-origin',cache:'no-store'})
+    .then(function(r){return r.ok?r.json():{state:'signed-out'};})
+    .catch(function(){return {state:'signed-out'};})
+    .then(function(d){
+      if(d.state==='signed-in'&&d.mustChangePassword)show('v-change');
+      else if(d.state==='signed-in'){$('in-mail').textContent=d.email||'';show('v-in');}
+      else if(location.hash!=='#request')show('v-signin');
+    });
+})();
+</script>
+</body>
+</html>
