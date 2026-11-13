@@ -36,7 +36,7 @@ export async function handle(request, opts = {}) {
   try {
     const r = await fetchDataFile(file, o);
     if (r.gz) return new Response(r.gz, { status: 200, headers: { ...HEADERS, 'content-encoding': 'gzip', 'content-length': String(r.gz.length) } });
-    return new Response(r.plain.body, { status: 200, headers: HEADERS });
+    return new Response(r.plain, { status: 200, headers: HEADERS });
   } catch (e) {
     return errorResponse(e);
   }

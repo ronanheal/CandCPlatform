@@ -1,19 +1,20 @@
 // /api/auth/login     POST {email, password}          → session cookie
 // /api/auth/logout    POST                            → clears it
 // /api/auth/status    GET                             → {state:'signed-in'|'signed-out', email, name, mustChangePassword}
-// /api/auth/request   POST {name, email, password}    → pending request (or bootstrap admin account)
+// /api/auth/request   POST {name, email, token?}      → pending request (or, with the BOOTSTRAP_TOKEN, the first admin account)
 // /api/auth/password  POST {current, next}            → change own password (needs a session)
 //
 // One function for all five keeps the deployment small. All POSTs check Origin (CSRF).
-// Env: SESSION_SECRET, ADMIN_EMAILS, DATA_KEY, BLOB_READ_WRITE_TOKEN (Blob store connection).
+// Env: SESSION_SECRET, ADMIN_EMAILS, DATA_KEY, STORE_KEY, BOOTSTRAP_TOKEN (optional, first admin only),
+// BLOB_READ_WRITE_TOKEN (Blob store connection).
 
 import {
   SESSION_COOKIE, WHO_COOKIE, json, sameOrigin, clientIp, readSession, newSession, clearCookie,
   adminEmailSet, normEmail, isValidEmail, isValidPassword, cleanName, decideRequest, findUser, currentRights,
-  PASSWORD_MIN, PASSWORD_MAX, MAX_PENDING,
+  bootstrapTokenOk, PASSWORD_MIN, PASSWORD_MAX, MAX_PENDING,
 } from '../../lib/auth.js';
 import { getAccess, getStUsers, mutateAccess } from '../../lib/store.js';
-import { hashPassword, verifyPassword, dummyVerify, isLocked, recordFailure, clearFailures, allow, failDelay } from '../../lib/password.js';
+import { hashPassword, verifyPassword, dummyVerify, isLocked, recordFailure, clearFailures, allow, failDelay, tempPassword } from '../../lib/password.js';
 import { requireUser, errorResponse, readJsonBody } from '../../lib/guard.js';
 
 const GENERIC = 'Email or password is incorrect';
@@ -86,40 +87,45 @@ async function status(request, o) {
   }
 }
 
+// No password is asked for or stored here: whoever typed the email hasn't proved they own it.
+// An admin approves, the server makes a temporary password, and the admin sends it to that email.
 async function requestAccess(request, o) {
   const ip = clientIp(request);
   if (!allow('req:' + ip, 5)) { await failDelay(); return json({ error: 'Too many requests. Try again later.' }, 429); }
   const body = await readJsonBody(request, 4 * 1024);
   const name = cleanName(body.name);
   const email = normEmail(body.email);
-  const password = body.password;
   if (!name || name.length < 2) return json({ error: 'Please enter your full name' }, 400);
   if (!isValidEmail(email)) return json({ error: 'Please enter a valid email' }, 400);
-  if (!isValidPassword(password)) return json({ error: pwRule }, 400);
 
   const adminEmails = adminEmailSet(o.env);
+  const tokenGiven = typeof body.token === 'string' && body.token.trim() !== '';
+  const bootstrapOk = tokenGiven && adminEmails.has(email) && (await bootstrapTokenOk(body.token, o.env));
+  if (tokenGiven && !bootstrapOk) await failDelay();
   const users = await getStUsers(o);
-  const pw = await hashPassword(password);
+  let temp = null, tempHash = null;
+  if (bootstrapOk) { temp = tempPassword(); tempHash = await hashPassword(temp); }
   let outcome = null;
   await mutateAccess((doc) => {
-    const d = decideRequest({ email, name }, doc, users, adminEmails);
+    const d = decideRequest({ email, name }, doc, users, adminEmails, { bootstrapOk });
     outcome = d.status;
     if (d.status === 'bootstrap') {
-      return { ...doc, users: [...doc.users, { email, personKey: d.personKey, name: d.name, admin: true, pw, mustChangePassword: false, addedBy: 'ADMIN_EMAILS', addedAt: new Date().toISOString() }], requests: doc.requests.filter((r) => normEmail(r.email) !== email) };
+      return { ...doc, users: [...doc.users, { email, personKey: d.personKey, name: d.name, admin: true, pw: tempHash, mustChangePassword: true, addedBy: 'BOOTSTRAP_TOKEN', addedAt: new Date().toISOString() }], requests: doc.requests.filter((r) => normEmail(r.email) !== email) };
     }
     if (d.status === 'request') {
-      return { ...doc, requests: [...doc.requests, { email, name: d.name, givenName: name, personKey: d.personKey, pw, at: new Date().toISOString() }].slice(-MAX_PENDING) };
+      // Full: drop the oldest waiting request rather than refusing new ones.
+      return { ...doc, requests: [...doc.requests, { email, name: d.name, givenName: name, personKey: d.personKey, at: new Date().toISOString() }].slice(-MAX_PENDING) };
     }
     const e = new Error('no-write'); e.noWrite = true; throw e; // nothing to store
   }, 'access: request', o).catch((e) => { if (!e.noWrite) throw e; });
 
-  if (outcome === 'bootstrap') return json({ state: 'approved' });
+  // Shown once, to whoever holds the setup code; they must change it at first sign-in.
+  if (outcome === 'bootstrap') return json({ state: 'approved', tempPassword: temp });
   if (outcome === 'request' || outcome === 'pending' || outcome === 'exists') {
     // "exists" answers like a request so the form cannot be used to probe who has an account;
-    // an existing account's password is never touched here.
+    // an existing account is never touched here.
     return json({ state: 'requested' });
   }
-  if (outcome === 'full') return json({ error: 'There are too many pending requests. Ask an admin directly.' }, 429);
   await failDelay();
   return json({ state: 'unknown' });
 }
