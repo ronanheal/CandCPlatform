@@ -9075,12 +9075,12 @@ function renderMilestonesSection(){
       <span style="width:16px;text-align:center;">${delBtn}</span>
     </div>`;
   }).join('');
-  wrap.innerHTML=`<div style="margin-bottom:16px;border:1px solid var(--border);border-radius:6px;background:var(--white);padding:10px 14px;">
-    <div style="display:flex;align-items:center;margin-bottom:2px;">
-      <span style="font-size:13px;font-weight:500;flex:1;">Milestones</span>
-      <span style="font-size:11px;color:var(--muted);">${ms.length} milestone${ms.length!==1?'s':''}</span>
+  wrap.innerHTML=`<div class="ds-ms-card" style="margin-bottom:16px;border:1px solid color-mix(in srgb,var(--border) 85%,transparent);border-radius:var(--r-card);background:var(--white);box-shadow:var(--e-1);padding:14px 18px 10px;">
+    <div style="display:flex;align-items:center;margin-bottom:6px;">
+      <span style="font:700 15px/1.3 var(--display);letter-spacing:-.015em;flex:1;">Milestones</span>
+      <span style="font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;">${ms.length} milestone${ms.length!==1?'s':''}</span>
     </div>
-    ${rows||'<div style="padding:8px 0;font-size:12px;color:var(--muted);">No milestones yet.</div>'}
+    ${rows||'<div style="padding:6px 0 8px;font-size:12.5px;color:var(--muted);">No milestones yet.</div>'}
     <div class="add-e-row" style="margin-top:6px;" onclick="showAddMilestoneInline()"><i class="ti ti-plus" style="font-size:11px"></i> Add milestone</div>
   </div>`;
 }
@@ -9181,7 +9181,7 @@ function renderTimelineTab(){
   const barRows=rows.map(r=>{
     const left=pctFor(toDate(r.start)),right=pctFor(toDate(r.end));
     const width=Math.max(0.6,right-left);
-    const color=r.status==='complete'?'var(--ok)':r.paused?'var(--subtle)':'var(--ink-2)';
+    const color=r.status==='complete'?'var(--ok)':r.paused?'var(--subtle)':'var(--chart-1)';
     const label=r.start===r.end?_docFmtDate(r.start):`${_docFmtDate(r.start)} – ${_docFmtDate(r.end)}`;
     return `<div style="position:relative;height:34px;border-bottom:1px solid var(--faint);">
       <div style="position:absolute;left:${left}%;width:${width}%;top:9px;height:16px;background:${color};border-radius:5px;opacity:${r.paused?0.6:r.status==='complete'?0.75:1};" title="${r.name} · ${label}"></div>
@@ -9203,7 +9203,7 @@ function renderTimelineTab(){
       </div>
     </div>
     <div style="display:flex;gap:16px;margin-top:12px;font-size:11px;color:var(--muted);">
-      <span><span style="display:inline-block;width:10px;height:10px;background:var(--ink-2);border-radius:3px;vertical-align:-1px;"></span> Open</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--chart-1);border-radius:3px;vertical-align:-1px;"></span> Open</span>
       <span><span style="display:inline-block;width:10px;height:10px;background:var(--subtle);border-radius:3px;vertical-align:-1px;"></span> Paused</span>
       <span><span style="display:inline-block;width:10px;height:10px;background:var(--ok);opacity:.75;border-radius:3px;vertical-align:-1px;"></span> Complete</span>
     </div>`;
@@ -22020,8 +22020,9 @@ function _accBind(card){
   --tile-v:700 26px/1.05 var(--display);
   --hair:1px solid color-mix(in srgb,var(--border) 85%,transparent);
   --seg-bg:color-mix(in srgb,var(--ink) 5%,var(--off));
+  --chart-1:#5B6BAF;                  /* chart hero (dusk) — mirrors CV slot 0 set in ds-r5-script */
 }
-body.dark{--seg-bg:rgba(255,255,255,.05);}
+body.dark{--seg-bg:rgba(255,255,255,.05);--chart-1:#7383CC;}
 
 /* ── P1 · Page header: title (display) → one muted line → toolbar. Same gutter everywhere. ── */
 .view-title,.sett-tab-hd{font:750 30px/1.1 var(--display)!important;letter-spacing:-.04em!important;}
@@ -22132,29 +22133,42 @@ body.dark .wf-choice-row .wf-stage-btn.on,body.dark .ds-sheet .bill-choice.on{ba
 
 /* ── P9 · Modal shell: header (title + close), body, footer. The footer is a warm well with
    the destructive action quiet at the far left and the primary at the right. ────────────────── */
-.modal{border-radius:var(--r-lg)!important;overflow:hidden;}
-.modal .modal-hd{display:flex;align-items:center;gap:8px;padding:18px 16px 8px 24px!important;border-bottom:0!important;background:transparent!important;}
-.modal .modal-hd-title{flex:1;font:650 17px/1.3 var(--display)!important;letter-spacing:-.02em!important;color:var(--ink)!important;text-transform:none!important;}
-.modal .modal-hd .modal-x{width:30px!important;height:30px!important;min-width:30px!important;flex-basis:30px;font-size:17px!important;}
-.modal .modal-bd{padding:8px 24px 20px!important;}
-.modal .modal-ft{display:flex;align-items:center;justify-content:flex-end;gap:8px!important;padding:12px 16px!important;border-top:1px solid var(--faint)!important;background:var(--surface-2)!important;}
-.modal .modal-ft :is(.modal-cancel,.cancel-b){background:transparent!important;border-color:transparent!important;box-shadow:none!important;color:var(--ink-2)!important;}
-.modal .modal-ft :is(.modal-cancel,.cancel-b):hover{background:color-mix(in srgb,var(--ink) 6%,transparent)!important;}
-.modal .modal-ft :is(.modal-ok,.modal-save,.modal-cancel,.cancel-b,.save-b,.d-action){min-height:34px!important;height:34px;padding:0 14px!important;}
+.ds-m{border-radius:var(--r-lg)!important;overflow:hidden;}
+.ds-m .modal-hd{display:flex;align-items:center;gap:8px;padding:18px 16px 8px 24px!important;border-bottom:0!important;background:transparent!important;}
+.ds-m .modal-hd-title{flex:1;font:650 17px/1.3 var(--display)!important;letter-spacing:-.02em!important;color:var(--ink)!important;text-transform:none!important;}
+.ds-m .modal-hd .modal-x{width:30px!important;height:30px!important;min-width:30px!important;flex-basis:30px;font-size:17px!important;}
+.ds-m .modal-bd{padding:8px 24px 20px!important;}
+.ds-m .modal-ft{display:flex;align-items:center;justify-content:flex-end;gap:8px!important;padding:12px 16px!important;border-top:1px solid var(--faint)!important;background:var(--surface-2)!important;}
+.ds-m .modal-ft :is(.modal-cancel,.cancel-b){background:transparent!important;border-color:transparent!important;box-shadow:none!important;color:var(--ink-2)!important;}
+.ds-m .modal-ft :is(.modal-cancel,.cancel-b):hover{background:color-mix(in srgb,var(--ink) 6%,transparent)!important;}
+.ds-m .modal-ft :is(.modal-ok,.modal-save,.modal-cancel,.cancel-b,.save-b,.d-action){min-height:34px!important;height:34px;padding:0 14px!important;}
 /* The quiet destructive (tagged by ds-r5-script: Delete / Remove / Void… that isn't the confirm) */
-.modal .modal-ft .ds-ft-del,.inv-modal .ds-ft-del{order:-1;margin-right:auto!important;background:transparent!important;border-color:transparent!important;box-shadow:none!important;color:var(--muted)!important;font-weight:500!important;}
-.modal .modal-ft .ds-ft-del:hover,.inv-modal .ds-ft-del:hover{background:var(--danger-bg)!important;color:var(--danger-ink)!important;}
+.ds-m .modal-ft .ds-ft-del,.inv-modal .ds-ft-del{order:-1;margin-right:auto!important;background:transparent!important;border-color:transparent!important;box-shadow:none!important;color:var(--muted)!important;font-weight:500!important;}
+.ds-m .modal-ft .ds-ft-del:hover,.inv-modal .ds-ft-del:hover{background:var(--danger-bg)!important;color:var(--danger-ink)!important;}
 /* Confirm dialogs: a destructive confirm is danger-ink, not brand red */
 .modal-save.danger,.d-action.danger,.btn-danger,.modal-ok.danger{background:var(--danger-ink)!important;border-color:var(--danger-ink)!important;color:#fff!important;}
 body.dark :is(.modal-save.danger,.d-action.danger,.btn-danger,.modal-ok.danger){color:#1C1A16!important;}
 /* Labels + fields inside every modal: quiet sentence-case labels, 34px controls */
-.modal .field label,.modal label.fl,.modal .form-lbl{font:var(--lbl)!important;color:var(--muted)!important;letter-spacing:0!important;text-transform:none!important;}
-.modal .field{margin-bottom:14px;}
-.modal .field-row{gap:12px!important;}
-.modal .field input,.modal .field select{min-height:34px;}
+.ds-m .field label,.modal label.fl,.ds-m .form-lbl{font:var(--lbl)!important;color:var(--muted)!important;letter-spacing:0!important;text-transform:none!important;}
+.ds-m .field{margin-bottom:14px;}
+.ds-m .field-row{gap:12px!important;}
+.ds-m .field input,.ds-m .field select{min-height:34px;}
+
+/* Fields in every form modal read as a property grid: quiet label left, control right */
+.ds-m:not(.ds-sheet) .modal-bd :is(.field-row,div[style*="grid-template-columns"]):has(>.field){display:flex!important;flex-direction:column!important;gap:0!important;}
+.ds-m:not(.ds-sheet) .modal-bd .field:not(:has(>label input)){display:grid!important;grid-template-columns:132px minmax(0,1fr);column-gap:12px;align-items:center;margin:0 0 10px!important;flex:none!important;width:auto!important;}
+.ds-m:not(.ds-sheet) .modal-bd .field:not(:has(>label input))>label{grid-column:1;margin:0!important;}
+.ds-m:not(.ds-sheet) .modal-bd .field:not(:has(>label input))>:not(label){grid-column:2;min-width:0;}
+.ds-m:not(.ds-sheet) .modal-bd .field:has(textarea){align-items:start;}
+.ds-m:not(.ds-sheet) .modal-bd .field:has(textarea)>label{padding-top:9px;}
+.ds-m:not(.ds-sheet) .modal-bd[style*="gap"]{gap:0!important;}
+.ds-m .modal-ft .ds-ft-cancel{background:transparent!important;border-color:transparent!important;box-shadow:none!important;color:var(--ink-2)!important;}
+.ds-m .modal-ft .ds-ft-cancel:hover{background:color-mix(in srgb,var(--ink) 6%,transparent)!important;}
+@media (max-width:560px){.ds-m:not(.ds-sheet) .modal-bd .field{grid-template-columns:1fr!important;}.ds-m:not(.ds-sheet) .modal-bd .field>:not(label){grid-column:1!important;}}
+#cc-confirm-modal .modal-bd,#wf-confirm-modal .modal-bd{font:500 14.5px/1.55 var(--font)!important;letter-spacing:-.005em;padding:22px 24px 18px!important;color:var(--ink)!important;}
 /* What's new: neutral bullets (red is brand + danger only) */
 #changelog-modal li::marker{color:var(--subtle)!important;}
-#changelog-modal .modal{max-width:560px;}
+#changelog-modal .ds-m{max-width:560px;}
 
 /* ── The new job / new quote sheets (markup in place, IDs unchanged) ─────────────────────────── */
 .ds-sheet{width:540px!important;max-width:calc(100vw - 32px)!important;}
@@ -22162,6 +22176,20 @@ body.dark :is(.modal-save.danger,.d-action.danger,.btn-danger,.modal-ok.danger){
 .ds-sheet .modal-hd-title{font:600 12.5px/1.3 var(--font)!important;letter-spacing:0!important;color:var(--muted)!important;}
 .ds-sheet .modal-bd{padding:4px 22px 16px!important;overflow:visible!important;}
 .ds-sheet .combo-dd{z-index:30;}
+
+/* Invoice editor: a sheet header — the document name quiet at the left, status as a calm select,
+   one ink primary (Print / PDF), Xero as a secondary; labels in the body in sentence case. */
+.inv-modal{border-radius:var(--r-lg)!important;width:680px!important;}
+.inv-top{padding:12px 12px 12px 22px!important;gap:8px!important;background:var(--white)!important;border-bottom:1px solid var(--faint)!important;}
+.inv-top-t{flex:1;min-width:0;font:600 13px/1.35 var(--font)!important;letter-spacing:0!important;color:var(--muted)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.inv-top #inv-status{height:32px!important;min-height:32px!important;font-size:12.5px!important;margin:0 4px 0 auto!important;padding:0 10px!important;}
+.inv-act{display:inline-flex!important;align-items:center;gap:6px;height:32px;padding:0 12px!important;border-radius:var(--r-ctl)!important;font:500 12.5px/1 var(--font)!important;letter-spacing:0!important;text-transform:none!important;
+  background:var(--white)!important;color:var(--ink)!important;border:1px solid var(--border)!important;box-shadow:var(--e-1);transition:background-color var(--dur-1),border-color var(--dur-1);}
+.inv-act:hover{background:var(--surface-2)!important;border-color:var(--border-strong)!important;}
+.inv-top .inv-act:first-of-type{background:var(--ink)!important;color:var(--off)!important;border-color:var(--ink)!important;}
+body.dark .inv-top .inv-act:first-of-type{color:#191714!important;}
+.inv-ml,.c2-pay-hd,.c2-pay-hd span{font:var(--lbl)!important;letter-spacing:0!important;text-transform:none!important;color:var(--muted)!important;}
+.ds-m input[type=checkbox]{accent-color:var(--ink)!important;}
 
 /* ── P10 · Drawer: same anatomy as the sheet — muted eyebrow, display title, quiet body ─────── */
 .detail-drawer{background:var(--white)!important;}
@@ -22220,6 +22248,10 @@ body.dark .att-count{background:transparent!important;color:var(--muted)!importa
 .ph-add:hover{background:var(--white)!important;color:var(--ink)!important;border-color:var(--border-strong)!important;}
 #create-item-menu{border-radius:14px!important;padding:6px!important;box-shadow:var(--e-3)!important;}
 #create-item-menu .tcm-item{border-radius:var(--r-sm);}
+
+.detail-back{letter-spacing:0!important;text-transform:none!important;}
+/* Activity feed: day headers in the same quiet label voice as everything else */
+.act-date-hd{font:600 12.5px/1.3 var(--font)!important;letter-spacing:0!important;text-transform:none!important;color:var(--ink-2)!important;}
 
 /* ── Quotes / invoices documents (preview chrome only — the paper itself is the document) ──── */
 .inv-modal .inv-hd,.inv-modal-hd{border-bottom:1px solid var(--faint)!important;}
@@ -22287,21 +22319,35 @@ body.dark :is(.qd-opts,#dtab-quote,.inv-modal) input[type=checkbox]{accent-color
     }
   }catch(e){}
 
-  // 2 · Modal footers: a destructive action that isn't the confirm sits quiet at the far left.
-  const DEL=/^\s*(delete|remove|void|discard|archive)\b/i;
-  function tagFooters(root){
-    (root.querySelectorAll?root:document).querySelectorAll('.modal-ft button,.modal-ft .d-action').forEach(b=>{
-      if(b.classList.contains('ds-ft-del'))return;
-      if(b.matches('.modal-ok,.modal-save,.save-b,.primary,.danger,.btn-danger'))return;
-      const ft=b.closest('.modal-ft');if(!ft)return;
-      if(ft.querySelectorAll('button').length<2)return;
-      if(DEL.test(b.textContent||''))b.classList.add('ds-ft-del');
+  // 2 · Modal shell scope + footers. Modals on screens owned elsewhere (who-am-I, To Do
+  //     rollover / reallocate, Boards) keep their own styling; every other .modal gets .ds-m.
+  //     In a .ds-m footer, a destructive action that isn't the confirm sits quiet at the far
+  //     left, and a plain Cancel / Close reads as a ghost button.
+  const SKIP='#whoami-modal,#realloc-modal,#rollover-modal,#todo-modal,[id^="bv-"]';
+  const DEL=/^\s*(delete|remove|void|discard)\b/i, CANCEL=/^\s*(cancel|close|not now|keep)\s*$/i;
+  function tagModal(bg){
+    if(!bg||bg.matches(SKIP))return;
+    bg.querySelectorAll(':scope>.modal').forEach(m=>m.classList.add('ds-m'));
+    bg.querySelectorAll('.modal-ft').forEach(ft=>{
+      const bs=ft.querySelectorAll('button');if(bs.length<2)return;
+      bs.forEach(b=>{
+        if(b.matches('.modal-ok,.modal-save,.save-b,.primary,.danger,.btn-danger'))return;
+        const t=b.textContent||'';
+        if(DEL.test(t))b.classList.add('ds-ft-del');
+        else if(CANCEL.test(t))b.classList.add('ds-ft-cancel');
+      });
     });
   }
-  let pend=false;
-  new MutationObserver(()=>{if(pend)return;pend=true;requestAnimationFrame(()=>{pend=false;tagFooters(document);});})
+  function scan(n){
+    if(!n||n.nodeType!==1)return;
+    const bg=n.closest?n.closest('.modal-bg'):null; // cheap: most added nodes sit outside any modal
+    if(bg){tagModal(bg);return;}
+    if(n.matches&&n.matches('.modal-bg'))tagModal(n);
+    else if(n.getElementsByClassName){const l=n.getElementsByClassName('modal-bg');for(let i=0;i<l.length;i++)tagModal(l[i]);}
+  }
+  new MutationObserver(ms=>{for(const m of ms){if(m.type==='childList'){m.addedNodes.forEach(scan);if(m.target.closest&&m.target.closest('.modal-bg'))scan(m.target);}}})
     .observe(document.body,{childList:true,subtree:true});
-  tagFooters(document);
+  document.querySelectorAll('.modal-bg').forEach(tagModal);
 })();
 </script>
 </body>
