@@ -4808,9 +4808,10 @@ function renderDashboard(){
   const daySegs=[...todayDone,...todayTodo].map(t=>`<span class="dh-seg${t.done?' done':t.urgent?' urg':''}" style="flex-grow:${Math.max(.25,t.hours||0)}" title="${esc(t.title||'')}${t.hours?' · '+formatHrs(t.hours):''}"></span>`).join('');
   const R=46,C=2*Math.PI*R,ringFill=Math.min(1,weekBooked/(totalTarget||1));
   const ringState=weekPct>105?'over':weekPct>=85?'full':'';
-  const heroHTML=`<section class="dh-hero" aria-label="Today at a glance">
+  const _hpRow=_happinessCardHTML('hero');
+  const heroHTML=`<section class="dh-hero${_hpRow?' has-checkin':''}" aria-label="Today at a glance">
     <div class="dh-hero-main">
-      <div class="dh-date"><span class="dh-disc" aria-hidden="true">${now.getDate()}</span><span>${dayNames[now.getDay()]} ${now.getDate()} ${monthNames[now.getMonth()]}</span><span class="dh-wk">Week ${getWeekNum(now)}</span></div>
+      <div class="dh-date"><span class="dh-day-name">${dayNames[now.getDay()]} ${now.getDate()} ${monthNames[now.getMonth()]}</span><span class="dh-date-sep" aria-hidden="true">·</span><span class="dh-wk">Week ${getWeekNum(now)}</span></div>
       <h1 class="dash-greeting">${greetStr}, ${esc((p?.name||'Ronan').split(' ')[0])}.</h1>
       <p class="dh-line">${heroLine}</p>
       ${nextTask?`<div class="dh-next" role="button" tabindex="0" onclick="navTo('todo')"><span class="dh-next-lbl">${nextTask.urgent?'Urgent next':'Next up'}</span><span class="dh-next-t">${esc(nextTask.title||'Untitled task')}</span>${nextTask.hours?`<span class="dh-next-h">${formatHrs(nextTask.hours)}</span>`:''}</div>`:''}
@@ -4833,10 +4834,10 @@ function renderDashboard(){
         <div class="dh-ring-lbl">Week booked<span>${formatHrs(weekBooked)||'0h'}</span></div>
       </div>
     </div>
+    ${_hpRow?`<div class="dh-checkin">${_hpRow}</div>`:''}
   </section>`;
   wrap.innerHTML=`
     ${heroHTML}
-    ${_happinessCardHTML()}
     <div class="kpi-row">
       <div class="kpi"><div class="kpi-label">Billable booked this week</div><div class="kpi-val">${formatHrs(billH)||'0h'}</div><div class="kpi-sub">${formatHrs(billDoneH)||'0h'} done · ${formatHrs(billTodoH)||'0h'} planned · of ${totalTarget}h</div>${_wkTrend.bill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('bill')">${_sparkSVG(_wkTrend.bill,_sparkCol('bill'))}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${billPct}%;background:${billH>=(totalTarget||1)*1.2?'var(--red)':'var(--ok)'};"></div></div></div>
       <div class="kpi"><div class="kpi-label">Non-billable</div><div class="kpi-val">${formatHrs(nbillH)||'0h'}</div><div class="kpi-sub">internal & admin</div>${_wkTrend.nbill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('nbill')">${_sparkSVG(_wkTrend.nbill,_sparkCol('nbill'))}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${nbillPct}%;background:var(--cv-graphite);"></div></div></div>
@@ -4893,9 +4894,20 @@ function _faceSVG(v,size){
   return`<svg width="${size}" height="${size}" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="21" fill="${C[0]}"/><circle cx="22" cy="22" r="20.25" fill="none" stroke="${C[1]}" stroke-opacity=".35" stroke-width="1.5"/>${cheeks}${brows}${eyes}${m}</svg>`;
 }
 function _happinessAnswered(){return !!_getHappinessLog()[MY_PERSON]?.[getWeekKey(0)];}
-function _happinessCardHTML(){
+// variant 'hero': a compact row that lives inside the Dashboard hero (same faces, same actions)
+function _happinessCardHTML(variant){
   const e=_getHappinessLog()[MY_PERSON]?.[getWeekKey(0)];
   const FACES=[[1,'😞','Rough'],[2,'😕','Meh'],[3,'😐','OK'],[4,'🙂','Good'],[5,'😄','Great']];
+  if(variant==='hero'){
+    if(e){
+      if(!e.score)return'';
+      const f=FACES.find(x=>x[0]===e.score);
+      return`<div class="hpr hpr-done"><span class="hpr-face">${_faceSVG(e.score,24)}</span><span class="hpr-q">Your week: <strong>${f[2]}</strong>. Thanks for checking in.</span><button type="button" class="hpr-link" onclick="_hpUndo()">Change</button></div>`;
+    }
+    return`<div class="hpr"><span class="hpr-q">How's your week going?</span>
+      <div class="hpr-faces" role="group" aria-label="Weekly check-in">${FACES.map(([v,,l])=>`<button type="button" class="hp-card-face hpr-face-btn" title="${l}" aria-label="${l}" onclick="_hpQuick(${v})">${_faceSVG(v,30)}<small>${l}</small></button>`).join('')}</div>
+      <div class="hpr-links"><button type="button" class="hpr-link" onclick="maybeShowHappinessPromptNow()">Add a note</button><button type="button" class="hpr-link" onclick="skipHappinessWeek('${MY_PERSON}')">Skip this week</button></div></div>`;
+  }
   if(e){
     if(!e.score)return'';
     const f=FACES.find(x=>x[0]===e.score);
@@ -20547,6 +20559,41 @@ body.dark .zone-bucket.done-bucket{background:var(--ok-bg)!important;border-colo
   // When the picker closes without a reload (same person picked), show What's new next
   new MutationObserver(()=>{if(pendingCL&&!whoOpen()){pendingCL=false;setTimeout(()=>window.showChangelog(),350);}})
     .observe(document.body,{childList:true});
+})();
+</script>
+<style id="polish-r2">
+/* ═══ Polish round 2 — owner feedback on the v3 redesign. ds-v3 tokens only. ═══════════════ */
+
+/* ── Dashboard hero: date as one line of text; weekly check-in as the hero's footer row ──── */
+.dh-date{gap:6px!important;font-size:13px;color:var(--muted);}
+.dh-day-name{font-weight:600;color:var(--ink-2);}
+.dh-date-sep{color:var(--subtle);}
+.dh-date .dh-wk{padding:0;border:0;background:none;font-size:13px;font-weight:500;color:var(--muted);}
+.dh-hero.has-checkin{row-gap:var(--s-6);}
+.dh-checkin{grid-column:1/-1;position:relative;z-index:1;margin:0 calc(var(--s-10) * -1) calc(var(--s-8) * -1) calc(var(--s-8) * -1);
+  padding:var(--s-3) var(--s-10) var(--s-3) var(--s-8);border-top:1px solid var(--faint);
+  background:color-mix(in srgb,var(--surface-2) 70%,transparent);}
+.hpr{display:flex;align-items:center;gap:var(--s-4);flex-wrap:wrap;min-height:40px;}
+.hpr-q{font-size:13.5px;font-weight:600;color:var(--ink-2);}
+.hpr-q strong{color:var(--ink);font-weight:650;}
+.hpr-faces{display:flex;align-items:center;gap:var(--s-1);}
+.hpr .hpr-face-btn{position:relative;width:38px;height:38px;flex-direction:row!important;justify-content:center;border-radius:50%;
+  transition:background var(--d-1) ease;}
+.hpr .hpr-face-btn small{display:none;}
+.hpr .hpr-face-btn:hover{background:var(--faint)!important;}
+.hpr .hpr-face-btn svg{filter:drop-shadow(0 1px 1px rgba(35,28,18,.16));}
+.hpr .hpr-face-btn:focus-visible{outline:2px solid var(--focus);outline-offset:1px;}
+.hpr-links{margin-left:auto;display:flex;gap:2px;}
+.hpr-link{border:0;background:none;font:500 12.5px var(--font);color:var(--muted);padding:6px 10px;border-radius:var(--r-sm);cursor:pointer;
+  transition:background var(--d-1),color var(--d-1);}
+.hpr-link:hover{background:var(--faint);color:var(--ink);}
+.hpr-done .hpr-face{display:inline-flex;}
+.hpr-done .hpr-link{margin-left:-6px;}
+@media (max-width:1240px){.dh-checkin{margin:0 calc(var(--s-7) * -1) calc(var(--s-7) * -1);padding:var(--s-3) var(--s-7);}}
+</style>
+<script id="polish-r2-script">
+// ═══ Polish round 2 — behaviour for the polish-r2 CSS above ═══════════════════════════════
+(function(){
 })();
 </script>
 </body>
