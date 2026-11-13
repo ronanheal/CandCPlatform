@@ -14312,11 +14312,13 @@ function _c2PlanLines(j){
   const multi=phs.filter(p=>(p.items||[]).length).length>1;
   phs.forEach(ph=>(ph.items||[]).forEach(it=>{
     const h=_c2hrs(it.hours),rate=_c2num(it.rate),tot=_c2num(it.total);
-    let qty,unit;
-    if(h>0&&rate>0){qty=Math.round(h*10000)/10000;unit=rate;}
+    let qty,unit,mins=null;
+    // Hour lines carry exact minutes, like time lines: 8h 40m × $150 is $1,300, not 8.6667 × $150 = $1,300.01.
+    if(h>0&&rate>0){qty=Math.round(h*10000)/10000;unit=rate;mins=Math.round(h*60);}
     else if(tot>0){qty=1;unit=tot;}
     else return;
-    out.push({desc:(multi&&ph.name?ph.name+' — ':'')+(it.name||'Item'),qty,unit});
+    const o={desc:(multi&&ph.name?ph.name+' — ':'')+(it.name||'Item'),qty,unit};if(mins!=null)o.mins=mins;
+    out.push(o);
   }));
   return out;
 }
@@ -14419,7 +14421,7 @@ function _c2EdDiscount(id){
 // taxAmount, totalAmountIncTax. Streamtime quotes are never touched.
 function _c2ApplyQuoteLines(q,lines,discount){
   const t=_c2Totals(lines,discount);
-  q.lines=t.rows.map(r=>({desc:r.desc,qty:r.qty,unit:r.unit,amount:r.amount}));
+  q.lines=t.rows.map(r=>{const o={desc:r.desc,qty:r.qty,unit:r.unit,amount:r.amount};if(r.mins!=null)o.mins=r.mins;return o;});
   q.discount={type:discount?.type||'none',value:discount?.value||0};
   q.subtotalExTax=t.subtotal;q.discountExTax=t.discount;
   q.totalAmountExTax=t.ex;q.taxAmount=t.gst;q.totalAmountIncTax=t.inc;
@@ -14734,7 +14736,7 @@ function _c2JobQuotes(j){
   ].filter(_c2QuoteApproved);
 }
 function _c2QuoteInvLines(q){
-  const lines=_c2QuoteLinesOf(q).map(l=>({desc:l.desc,qty:_c2num(l.qty),unit:_c2num(l.unit)}));
+  const lines=_c2QuoteLinesOf(q).map(l=>{const o={desc:l.desc,qty:_c2num(l.qty),unit:_c2num(l.unit)};if(l.mins!=null&&isFinite(+l.mins))o.mins=+l.mins;return o;});
   const t=_c2Totals(lines,q.discount);
   if(t.discount)lines.push({desc:_c2DiscLabel(q.discount)||'Discount',qty:1,unit:-t.discount});
   return lines;
