@@ -4643,12 +4643,12 @@ function renderDashboard(){
     const isDone=t.done;const isUrgent=t.urgent&&!isDone;
     const metaArr=[];if(t.job)metaArr.push(t.job);if(t.item)metaArr.push(t.item);if(t.hours)metaArr.push(formatHrs(t.hours));
     return`<div class="my-todo-item" onclick="navTo('todo')">
-      <div class="todo-check${isDone?' done-c':isUrgent?' urg-c':''}">${isDone?'<i class="ti ti-check" style="font-size:10px;color:var(--done-ink);"></i>':''}</div>
-      <div style="flex:1;min-width:0;">
-        <div style="${isDone?'text-decoration:line-through;opacity:.5;':''}font-size:13px;">${esc(t.title)}</div>
-        ${metaArr.length?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${esc(metaArr.join(' · '))}</div>`:''}
+      <div class="todo-check${isDone?' done-c':isUrgent?' urg-c':''}">${isDone?'<i class="ti ti-check"></i>':''}</div>
+      <div class="dh-ti${isDone?' done':''}">
+        <div class="dh-ti-t">${esc(t.title)}</div>
+        ${metaArr.length?`<div class="dh-ti-m">${esc(metaArr.join(' · '))}</div>`:''}
       </div>
-      ${isUrgent?`<div class="todo-meta" style="color:var(--red);flex-shrink:0;">Urgent</div>`:''}
+      ${isUrgent?`<span class="dh-urg">Urgent</span>`:''}
     </div>`;
   }).join('');
   // Team cards — grouped by each person's team when teams are defined
@@ -4664,10 +4664,10 @@ function renderDashboard(){
     const totalBooked=todoH+doneH;
     return`<div class="team-card" onclick="viewTeamTodo('${k}')">
       <div class="tc-head"><div class="tc-av" style="background:${tp.color};">${tp.initials}</div><div><div class="tc-name">${tp.name}</div></div><div class="tc-meta">${formatHrs(totalBooked)||'0h'} booked</div>
-        <button onclick="event.stopPropagation();weekOffset=0;openTodoModal(null,null,'${k}')" title="Add task for ${tp.name}" style="margin-left:8px;background:transparent;border:1px solid var(--border);border-radius:8px;width:22px;height:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted);font-size:13px;"><i class="ti ti-plus" style="font-size:11px;"></i></button>
+        <button class="dh-tc-add" onclick="event.stopPropagation();weekOffset=0;openTodoModal(null,null,'${k}')" title="Add task for ${tp.name}"><i class="ti ti-plus"></i></button>
       </div>
-      <div class="tc-timeline">${taskBlocks||'<div style="font-size:12px;color:var(--muted);padding:4px 0;">No tasks today</div>'}</div>
-      <div class="tc-footer"><div class="tc-stat">Done <span>${formatHrs(doneH)||'0h'}</span></div><div class="tc-stat">To do <span>${formatHrs(todoH)||'0h'}</span></div>${urgCnt?`<div class="tc-stat" style="margin-left:auto;color:var(--red);font-size:11px;">${urgCnt} urgent</div>`:'<div class="tc-stat" style="margin-left:auto;font-size:11px;color:var(--muted);">On track</div>'}</div>
+      <div class="tc-timeline">${taskBlocks||'<div class="dh-tc-none">No tasks today</div>'}</div>
+      <div class="tc-footer"><div class="tc-stat">Done <span>${formatHrs(doneH)||'0h'}</span></div><div class="tc-stat">To do <span>${formatHrs(todoH)||'0h'}</span></div>${urgCnt?`<div class="tc-stat dh-tc-flag urg">${urgCnt} urgent</div>`:'<div class="tc-stat dh-tc-flag">On track</div>'}</div>
     </div>`;
   };
   let otherKeys=Object.keys(people).filter(k=>k!==MY_PERSON&&!people[k]._archived);
@@ -4678,10 +4678,10 @@ function renderDashboard(){
   if(teamNames.length){
     teamHTML=teamNames.map(tn=>{
       const members=otherKeys.filter(k=>people[k].team===tn);
-      return`<div style="grid-column:1/-1;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:4px 0 -6px;">${tn}</div>${members.map(_teamCard).join('')}`;
+      return`<div class="dh-group">${esc(tn)}<span>${members.length}</span></div>${members.map(_teamCard).join('')}`;
     }).join('');
     const unassigned=otherKeys.filter(k=>!people[k].team);
-    if(unassigned.length)teamHTML+=`<div style="grid-column:1/-1;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:4px 0 -6px;">No team</div>`+unassigned.map(_teamCard).join('');
+    if(unassigned.length)teamHTML+=`<div class="dh-group">No team<span>${unassigned.length}</span></div>`+unassigned.map(_teamCard).join('');
   }else{
     teamHTML=otherKeys.map(_teamCard).join('');
   }
@@ -4693,7 +4693,7 @@ function renderDashboard(){
   const totalSell=jobs.reduce((s,j)=>s+(j._sellUsed||0),0);
   const fmtDollar=n=>n>=1000000?`$${(n/1000000).toFixed(1)}m`:n>=1000?`$${(n/1000).toFixed(0)}k`:`$${n.toLocaleString()}`;
   const stKPIs=jobs.length?`
-    <div class="section-label" style="margin-top:28px;margin-bottom:12px;">Business overview</div>
+    <div class="dh-sec"><h2 class="section-label">Business overview</h2></div>
     <div class="kpi-row">
       <div class="kpi"><div class="kpi-label">Active jobs</div><div class="kpi-val">${liveJobs.length}</div><div class="kpi-sub">of ${jobs.length} total</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${Math.min(100,Math.round(liveJobs.length/jobs.length*100))}%;background:var(--red);"></div></div></div>
       <div class="kpi"><div class="kpi-label">Invoiced</div><div class="kpi-val">${fmtDollar(totalInvoiced)}</div><div class="kpi-sub">${fmtDollar(totalPaid)} paid · ${fmtDollar(totalAwaiting)} awaiting</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${totalInvoiced>0?Math.min(100,Math.round(totalPaid/totalInvoiced*100)):0}%;background:var(--ok);"></div></div></div>
@@ -4714,9 +4714,9 @@ function renderDashboard(){
     const clColor=clColors[clrIdx];
     const jobPills=cjobs.slice(0,4).map(j=>{
       const wl=j.workflowStatus==='quote'?'Q':j.workflowStatus==='completed'?'✓':j.workflowStatus==='invoiced'?'$':'';
-      return`<span onclick="event.stopPropagation();openJobDetail('${j.id}')" style="display:inline-block;background:var(--off);border:1px solid var(--border);border-radius:6px;padding:2px 7px;font-size:10px;cursor:pointer;white-space:nowrap;margin:2px 2px 0 0;" title="${esc(j.id+' '+j.name)}">${wl?wl+' ':''}<span style="color:var(--muted);">${j.id}</span> ${esc(j.name.slice(0,18))}${j.name.length>18?'…':''}</span>`;
+      return`<span class="dh-jobpill" onclick="event.stopPropagation();openJobDetail('${j.id}')" title="${esc(j.id+' '+j.name)}">${wl?wl+' ':''}<span>${j.id}</span> ${esc(j.name.slice(0,18))}${j.name.length>18?'…':''}</span>`;
     }).join('');
-    const moreCount=cjobs.length>4?`<span style="font-size:11px;color:var(--muted);margin-top:4px;display:block;">+${cjobs.length-4} more</span>`:'';
+    const moreCount=cjobs.length>4?`<span class="dh-more">+${cjobs.length-4} more</span>`:'';
     return`<div class="team-card" onclick="navTo('clients')">
       <div class="tc-head"><div class="tc-av" style="background:${clColor};">${initials}</div><div><div class="tc-name">${cl?.nickname?`${esc(cl.nickname)} <span style='font-size:11px;color:var(--muted);font-weight:400;'>${esc(co)}</span>`:esc(co)}</div></div><div class="tc-meta">${cjobs.length} job${cjobs.length!==1?'s':''}</div></div>
       <div class="tc-timeline">${jobPills}${moreCount}</div>
@@ -4776,25 +4776,62 @@ function renderDashboard(){
     _attCard('Uninvoiced work',uninvoiced.map(j=>({label:esc(j.name),sub:_jobSub(j),meta:fmtDollar((j._sellUsed||0)-(j._stInvoiced||0)),jid:j.id})),'#7E57C2','ti-coin','uninv'),
     _attCard('Quiet clients',quietClients.map(c=>({label:esc(c.label),meta:c.meta})),'#8A857C','ti-moon','quiet'),
   ].filter(Boolean).join(''):'';
-  wrap.innerHTML=`
-    <div style="margin-bottom:28px;">
-      <div class="dash-greeting">${greetStr}, ${p?.name||'Ronan'}.</div>
-      <div class="dash-date">${dateStr}</div>
-      <div class="dash-rule"></div>
+  // ── Hero: today at a glance — the day as a strip of tasks, what's next, the week's load ──
+  const todayH=todayTasks.reduce((s,t)=>s+(t.hours||0),0);
+  const todayDoneH=todayDone.reduce((s,t)=>s+(t.hours||0),0);
+  const todayLeftH=Math.max(0,todayH-todayDoneH);
+  const nextTask=todayTodo.find(t=>t.urgent)||todayTodo[0]||null;
+  const weekBooked=billH+nbillH;
+  const weekPct=Math.round(weekBooked/(totalTarget||1)*100);
+  const _timer=(typeof _getTimer==='function')?_getTimer():null;
+  const heroLine=todayDow===0?`It's the weekend. Nothing is booked for today.`
+    :!todayTasks.length?`Nothing is booked for today yet.`
+    :!todayTodo.length?`All ${todayDone.length} task${todayDone.length!==1?'s':''} done today. Nice work.`
+    :`<strong>${todayTodo.length} task${todayTodo.length!==1?'s':''} left</strong>${todayLeftH?`, about ${formatHrs(todayLeftH)}`:''}. ${todayDone.length?`${todayDone.length} done so far.`:`Nothing ticked off yet.`}`;
+  const daySegs=[...todayDone,...todayTodo].map(t=>`<span class="dh-seg${t.done?' done':t.urgent?' urg':''}" style="flex-grow:${Math.max(.25,t.hours||0)}" title="${esc(t.title||'')}${t.hours?' · '+formatHrs(t.hours):''}"></span>`).join('');
+  const R=46,C=2*Math.PI*R,ringFill=Math.min(1,weekBooked/(totalTarget||1));
+  const ringState=weekPct>105?'over':weekPct>=85?'full':'';
+  const heroHTML=`<section class="dh-hero" aria-label="Today at a glance">
+    <div class="dh-hero-main">
+      <div class="dh-date"><span class="dh-disc" aria-hidden="true">${now.getDate()}</span><span>${dayNames[now.getDay()]} ${now.getDate()} ${monthNames[now.getMonth()]}</span><span class="dh-wk">Week ${getWeekNum(now)}</span></div>
+      <h1 class="dash-greeting">${greetStr}, ${esc((p?.name||'Ronan').split(' ')[0])}.</h1>
+      <p class="dh-line">${heroLine}</p>
+      ${nextTask?`<div class="dh-next" role="button" tabindex="0" onclick="navTo('todo')"><span class="dh-next-lbl">${nextTask.urgent?'Urgent next':'Next up'}</span><span class="dh-next-t">${esc(nextTask.title||'Untitled task')}</span>${nextTask.hours?`<span class="dh-next-h">${formatHrs(nextTask.hours)}</span>`:''}</div>`:''}
+      <div class="dh-actions">
+        <button class="d-action primary" onclick="weekOffset=0;openTodoModal(null,null,'${MY_PERSON}')"><i class="ti ti-plus"></i> Add task</button>
+        ${_timer?`<button class="d-action dh-timing" onclick="stopTimer()"><span class="dh-live"></span> Stop timer and log</button>`
+          :nextTask?`<button class="d-action" onclick="_dhStartNext('${esc(String(nextTask.id))}',${todayDow})"><i class="ti ti-player-play"></i> Start timer on next</button>`:''}
+        <button class="d-action dh-ghost" onclick="navTo('todo')">Open To Do <i class="ti ti-arrow-right"></i></button>
+      </div>
     </div>
+    <div class="dh-hero-side">
+      <div class="dh-day">
+        <div class="dh-day-hd"><span>Your day</span><strong>${formatHrs(todayDoneH)||'0h'} <em>of ${formatHrs(todayH)||'0h'}</em></strong></div>
+        <div class="dh-strip${todayTasks.length?'':' empty'}">${daySegs||'<span class="dh-seg-empty">A clear day</span>'}</div>
+        <div class="dh-legend"><span><i class="done"></i>Done</span><span><i></i>To do</span>${urgentCount?`<span><i class="urg"></i>${urgentCount} urgent</span>`:''}</div>
+      </div>
+      <div class="dh-ring ${ringState}" title="Booked this week against your capacity">
+        <svg viewBox="0 0 112 112" aria-hidden="true"><circle cx="56" cy="56" r="${R}" class="dh-ring-track"/><circle cx="56" cy="56" r="${R}" class="dh-ring-fill" style="stroke-dasharray:${C.toFixed(1)};--dh-off:${(C*(1-ringFill)).toFixed(1)};stroke-dashoffset:${(C*(1-ringFill)).toFixed(1)}"/></svg>
+        <div class="dh-ring-c"><span class="dh-ring-val">${weekPct}%</span><span class="dh-ring-sub">of ${totalTarget}h</span></div>
+        <div class="dh-ring-lbl">Week booked<span>${formatHrs(weekBooked)||'0h'}</span></div>
+      </div>
+    </div>
+  </section>`;
+  wrap.innerHTML=`
+    ${heroHTML}
     ${_happinessCardHTML()}
     <div class="kpi-row">
       <div class="kpi"><div class="kpi-label">Billable booked this week</div><div class="kpi-val">${formatHrs(billH)||'0h'}</div><div class="kpi-sub">${formatHrs(billDoneH)||'0h'} done · ${formatHrs(billTodoH)||'0h'} planned · of ${totalTarget}h</div>${_wkTrend.bill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('bill')">${_sparkSVG(_wkTrend.bill,'#4CAF50')}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${billPct}%;background:${billH>=(totalTarget||1)*1.2?'var(--red)':'var(--ok)'};"></div></div></div>
       <div class="kpi"><div class="kpi-label">Non-billable</div><div class="kpi-val">${formatHrs(nbillH)||'0h'}</div><div class="kpi-sub">internal & admin</div>${_wkTrend.nbill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('nbill')">${_sparkSVG(_wkTrend.nbill,'#FF9800')}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${nbillPct}%;background:var(--warn);"></div></div></div>
       <div class="kpi"><div class="kpi-label">My tasks today</div><div class="kpi-val">${todayTodo.length}</div><div class="kpi-sub">${urgentCount?urgentCount+' urgent · ':''}${todayDone.length} done</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:${todayTasks.length?Math.round(todayDone.length/todayTasks.length*100):0}%;background:${urgentCount?'var(--red)':'var(--ok)'};"></div></div></div>
     </div>
-    <div class="section-label" style="margin-bottom:12px;">Your day <button onclick="weekOffset=0;openTodoModal(null,null,'${MY_PERSON}')" title="Add task" style="background:transparent;border:1px solid var(--border);border-radius:8px;padding:1px 8px;cursor:pointer;font-size:11px;color:var(--muted);font-family:var(--font);margin-left:8px;vertical-align:middle;">+ Add task</button></div>
-    <div class="my-todos" style="margin-bottom:28px;">${todoRows||'<div class="my-todo-item" style="color:var(--muted);font-size:13px;"><i class="ti ti-sun" style="font-size:16px;margin-right:10px;"></i>No tasks scheduled today.</div>'}</div>
-    ${deadlinesHTML?`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Needs attention</div><div class="att-grid">${deadlinesHTML}</div>`:''}
-    ${_show('team')&&teamHTML?`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Team · today</div><div class="team-grid">${teamHTML}</div>`:''}
+    <div class="dh-sec"><h2 class="section-label">Today's tasks</h2><span class="dh-sec-meta">${todayTasks.length?`${todayDone.length} of ${todayTasks.length} done`:''}</span><button class="dh-sec-btn" onclick="weekOffset=0;openTodoModal(null,null,'${MY_PERSON}')"><i class="ti ti-plus"></i> Add task</button></div>
+    <div class="my-todos">${todoRows||`<div class="dh-empty"><span class="dh-empty-art" aria-hidden="true"><i class="ti ti-sun"></i></span><div><strong>${todayDow===0?'Enjoy the weekend':'A clear day'}</strong><span>${todayDow===0?'Nothing is booked. See you Monday.':'No tasks are scheduled for today. Add one, or plan the week in To Do.'}</span></div></div>`}</div>
+    ${deadlinesHTML?`<div class="dh-sec"><h2 class="section-label">Needs attention</h2></div><div class="att-grid">${deadlinesHTML}</div>`:''}
+    ${_show('team')&&teamHTML?`<div class="dh-sec"><h2 class="section-label">Team today</h2><span class="dh-sec-meta">${otherKeys.length} ${otherKeys.length===1?'person':'people'}</span></div><div class="team-grid">${teamHTML}</div>`:''}
     ${_show('kpis')?stKPIs:''}
-    ${_show('clients')&&_clientsHTML?`<div class="section-label" style="margin-top:28px;margin-bottom:14px;">Active clients</div><div class="team-grid">${_clientsHTML}</div>`:''}
-    ${alerts?`<div style="margin-top:28px;"><div class="section-label" style="margin-bottom:14px;">Over budget</div><div class="alert-list">${alerts}</div></div>`:''}
+    ${_show('clients')&&_clientsHTML?`<div class="dh-sec"><h2 class="section-label">Active clients</h2><span class="dh-sec-meta">${_clientCards.length}</span></div><div class="team-grid">${_clientsHTML}</div>`:''}
+    ${alerts?`<div class="dh-sec"><h2 class="section-label">Over budget</h2></div><div class="alert-list">${alerts}</div>`:''}
   `;
   _renderIcons();
 }
@@ -19511,8 +19548,8 @@ html.ds-theming *,html.ds-theming *::before,html.ds-theming *::after{transition:
   window.dsCountUp=countUp;
 
   // ── First-paint choreography: stagger cards + count up numbers, once per view per session ──
-  const STAG='.kpi,.hp-card,.att-card,.my-todos,.time-stat,.rv-kpi,.rv-card,.sett-card,.client-card-full,.bv-tile,.bv-tpl,.team-card,.rf-ts-card,.jobs-table-wrap,.time-table-wrap,#invoices-list,#quotes-list,#exp-list-wrap,.section-label';
-  const NUMS='.kpi-val,.time-stat .ts-val,.rv-kpi-v,.r-kpi-val';
+  const STAG='.dh-hero,.kpi,.hp-card,.att-card,.my-todos,.time-stat,.rv-kpi,.rv-card,.sett-card,.client-card-full,.bv-tile,.bv-tpl,.team-card,.rf-ts-card,.jobs-table-wrap,.time-table-wrap,#invoices-list,#quotes-list,#exp-list-wrap,.section-label';
+  const NUMS='.dh-ring-val,.kpi-val,.time-stat .ts-val,.rv-kpi-v,.r-kpi-val';
   const seen=new Set();
   function choreograph(root){
     let i=0;root.querySelectorAll(STAG).forEach(el=>{if(el.offsetParent!==null&&i<14)el.style.setProperty('--ds-i',i++);});
@@ -19636,6 +19673,179 @@ html.ds-theming *,html.ds-theming *::before,html.ds-theming *::after{transition:
   // The boot render may already have happened — choreograph it when the splash lifts
   window.addEventListener('load',()=>setTimeout(()=>{const ve=document.getElementById('view-dashboard');
     if(ve&&!ve.classList.contains('hidden')&&ve.querySelector('.kpi'))enter(ve,'view:dashboard');},620));
+})();
+</script>
+<style id="screens-v3">
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+   SCREENS v3 — the screen-by-screen redesign on top of ds-v3 (tokens + components above).
+   Only ds-v3 tokens are used here; nothing new at :root. One section per screen.
+   ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Dashboard ──────────────────────────────────────────────────────────────────────────── */
+.dh-hero{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--s-10);align-items:center;
+  background:var(--white);border:1px solid color-mix(in srgb,var(--border) 85%,transparent);border-radius:var(--r-lg);
+  padding:var(--s-8) var(--s-10) var(--s-8) var(--s-8);box-shadow:var(--e-1);margin-bottom:var(--s-6);overflow:hidden;}
+.dh-hero::after{content:'';position:absolute;right:-120px;top:-160px;width:420px;height:420px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(closest-side,color-mix(in srgb,var(--red) 7%,transparent),transparent);}
+body.dark .dh-hero::after{background:radial-gradient(closest-side,color-mix(in srgb,var(--red) 10%,transparent),transparent);}
+.dh-hero-main{min-width:0;position:relative;z-index:1;}
+.dh-date{display:flex;align-items:center;gap:var(--s-2);font-size:13px;color:var(--muted);margin-bottom:var(--s-3);}
+.dh-disc{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--red);color:#fff;
+  font:700 12px/1 var(--display);letter-spacing:-.02em;box-shadow:0 2px 8px color-mix(in srgb,var(--red) 35%,transparent);}
+.dh-wk{padding:2px 9px;border-radius:var(--r-pill);background:var(--surface-2);border:1px solid var(--faint);font-size:12px;font-weight:500;color:var(--ink-2);}
+.dh-hero .dash-greeting{margin:0 0 var(--s-2)!important;}
+.dh-line{margin:0;font-size:16px;line-height:1.5;color:var(--ink-2);max-width:56ch;}
+.dh-line strong{color:var(--ink);font-weight:650;}
+.dh-next{display:flex;align-items:center;gap:var(--s-3);margin-top:var(--s-4);padding:10px 14px;max-width:560px;border-radius:var(--r-ctl);
+  background:var(--surface-2);border:1px solid var(--faint);cursor:pointer;transition:border-color var(--d-1),background var(--d-1),transform var(--d-2) var(--ease-out);}
+.dh-next:hover{border-color:var(--border-strong);background:var(--white);transform:translateX(2px);}
+.dh-next-lbl{flex-shrink:0;font-size:11.5px;font-weight:600;color:var(--muted);}
+.dh-next-t{flex:1;min-width:0;font-size:13.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dh-next-h{flex-shrink:0;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.dh-actions{display:flex;flex-wrap:wrap;gap:var(--s-2);margin-top:var(--s-5);}
+.dh-actions .d-action{height:var(--ctl-h);display:inline-flex;align-items:center;gap:6px;}
+.dh-actions .d-action i{font-size:15px;}
+.dh-ghost{background:transparent!important;border-color:transparent!important;box-shadow:none!important;color:var(--ink-2)!important;}
+.dh-ghost:hover{background:var(--surface-2)!important;color:var(--ink)!important;}
+.dh-ghost i{transition:transform var(--d-2) var(--ease-out);}
+.dh-ghost:hover i{transform:translateX(3px);}
+.dh-live{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 0 0 color-mix(in srgb,var(--red) 45%,transparent);animation:dhLive 1.6s ease-out infinite;}
+@keyframes dhLive{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--red) 45%,transparent);}100%{box-shadow:0 0 0 9px transparent;}}
+
+.dh-hero-side{position:relative;z-index:1;display:flex;align-items:center;gap:var(--s-8);}
+.dh-day{width:300px;}
+.dh-day-hd{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:var(--s-3);font-size:12.5px;font-weight:600;color:var(--muted);}
+.dh-day-hd strong{font:750 22px/1 var(--display);letter-spacing:-.04em;color:var(--ink);font-variant-numeric:tabular-nums;}
+.dh-day-hd em{font:500 12.5px var(--font);font-style:normal;color:var(--muted);letter-spacing:0;}
+.dh-strip{display:flex;gap:3px;height:34px;}
+.dh-seg{flex-basis:0;min-width:6px;border-radius:6px;background:color-mix(in srgb,var(--ink) 13%,transparent);transform-origin:left center;
+  transition:transform var(--d-2) var(--ease-out),filter var(--d-1);}
+.dh-seg.done{background:var(--ok);}
+.dh-seg.urg{background:var(--red);}
+.dh-seg:hover{transform:translateY(-2px);filter:brightness(1.06);}
+.dh-strip.empty{align-items:center;justify-content:center;border:1.5px dashed var(--border);border-radius:8px;}
+.dh-seg-empty{font-size:12px;color:var(--muted);}
+.dh-legend{display:flex;gap:var(--s-4);margin-top:var(--s-3);font-size:12px;color:var(--muted);}
+.dh-legend span{display:inline-flex;align-items:center;gap:6px;}
+.dh-legend i{width:9px;height:9px;border-radius:3px;background:color-mix(in srgb,var(--ink) 13%,transparent);}
+.dh-legend i.done{background:var(--ok);}.dh-legend i.urg{background:var(--red);}
+
+.dh-ring{position:relative;display:flex;flex-direction:column;align-items:center;gap:var(--s-2);}
+.dh-ring svg{width:112px;height:112px;transform:rotate(-90deg);}
+.dh-ring circle{fill:none;stroke-width:10;}
+.dh-ring-track{stroke:var(--faint);}
+.dh-ring-fill{stroke:var(--ink);stroke-linecap:round;transition:stroke-dashoffset var(--d-4) var(--ease-out);}
+.dh-ring.full .dh-ring-fill{stroke:var(--ok);}
+.dh-ring.over .dh-ring-fill{stroke:var(--warn);}
+.dh-ring-c{position:absolute;top:0;left:0;width:112px;height:112px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.dh-ring-val{font:750 26px/1 var(--display);letter-spacing:-.045em;color:var(--ink);font-variant-numeric:tabular-nums;}
+.dh-ring-sub{font-size:11.5px;color:var(--muted);margin-top:3px;}
+.dh-ring-lbl{display:flex;flex-direction:column;align-items:center;font-size:12px;font-weight:600;color:var(--muted);}
+.dh-ring-lbl span{font-weight:500;color:var(--ink-2);font-variant-numeric:tabular-nums;}
+/* Entrance: the strip fills left to right, the ring draws — first visit only (ds-enter) */
+.ds-enter .dh-seg{animation:dhSeg var(--d-4) var(--ease-out) backwards;}
+.ds-enter .dh-seg:nth-child(2){animation-delay:40ms}.ds-enter .dh-seg:nth-child(3){animation-delay:80ms}.ds-enter .dh-seg:nth-child(4){animation-delay:120ms}
+.ds-enter .dh-seg:nth-child(5){animation-delay:160ms}.ds-enter .dh-seg:nth-child(6){animation-delay:200ms}.ds-enter .dh-seg:nth-child(n+7){animation-delay:240ms}
+@keyframes dhSeg{from{transform:scaleX(0);opacity:0;}}
+.ds-enter .dh-ring-fill{animation:dhRing 900ms var(--ease-out) 120ms backwards;}
+@keyframes dhRing{from{stroke-dashoffset:289;}}
+.ds-enter .dh-hero{animation:dsRise var(--d-4) var(--ease-out) backwards;}
+
+/* Section headers: title, quiet count, action on the right */
+.dh-sec{display:flex;align-items:center;gap:var(--s-3);margin:var(--s-10) 0 var(--s-4);}
+.dh-sec .section-label{margin:0!important;}
+.dh-sec .section-label::after{display:none!important;}
+.dh-sec-meta{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.dh-sec-btn{margin-left:auto;display:inline-flex;align-items:center;gap:5px;height:var(--ctl-h-sm);padding:0 12px;border-radius:var(--r-pill);
+  border:1px solid var(--border);background:var(--white);color:var(--ink-2);font:500 12.5px var(--font);cursor:pointer;box-shadow:var(--e-1);
+  transition:border-color var(--d-1),background var(--d-1);}
+.dh-sec-btn:hover{border-color:var(--border-strong);background:var(--surface-2);color:var(--ink);}
+.dh-sec-btn i{font-size:14px;}
+#view-dashboard .kpi-row{margin-bottom:0!important;}
+#view-dashboard .hp-card{margin:0 0 var(--s-6)!important;}
+#rf-ts-block .section-label{margin-top:var(--s-10)!important;}
+
+/* Today's tasks list */
+.dh-ti{flex:1;min-width:0;}
+.dh-ti-t{font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dh-ti-m{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dh-ti.done .dh-ti-t{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--subtle);}
+.dh-ti.done .dh-ti-m{color:var(--subtle);}
+.my-todo-item .todo-check{width:18px;height:18px;}
+.my-todo-item .todo-check i{font-size:11px;}
+.dh-urg{flex-shrink:0;font-size:11px;font-weight:600;padding:2px 9px;border-radius:var(--r-pill);background:var(--danger-bg);color:var(--danger-ink);}
+.dh-empty{display:flex;align-items:center;gap:var(--s-4);padding:var(--s-5) var(--s-5);}
+.dh-empty strong{display:block;font:700 15px var(--display);letter-spacing:-.015em;color:var(--ink);}
+.dh-empty span:not(.dh-empty-art){font-size:13px;color:var(--muted);}
+.dh-empty-art{position:relative;flex-shrink:0;width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  background:var(--warn-bg);color:var(--warn-ink);font-size:24px;transform:rotate(-6deg);}
+.dh-empty-art i{animation:dhSpin 14s linear infinite;}
+@keyframes dhSpin{to{transform:rotate(360deg);}}
+
+/* Team + clients cards */
+.dh-group{grid-column:1/-1;display:flex;align-items:center;gap:var(--s-2);margin:var(--s-2) 0 calc(var(--s-1) * -1);font-size:12.5px;font-weight:600;color:var(--ink-2);}
+.dh-group span{font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums;}
+.dh-tc-add{margin-left:var(--s-2);width:26px;height:26px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r-sm);
+  border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:background var(--d-1),color var(--d-1),border-color var(--d-1);}
+.dh-tc-add:hover{background:var(--ink);border-color:var(--ink);color:var(--white);}
+.dh-tc-add i{font-size:13px;}
+.dh-tc-none{font-size:12.5px;color:var(--muted);padding:4px 0;}
+.dh-tc-flag{margin-left:auto;font-size:12px!important;color:var(--muted);}
+.dh-tc-flag.urg{color:var(--red-ink);font-weight:600;}
+.dh-jobpill{display:inline-block;margin:2px 4px 0 0;padding:3px 9px;border-radius:var(--r-pill);background:var(--surface-2);border:1px solid var(--faint);
+  font-size:11.5px;color:var(--ink-2);white-space:nowrap;cursor:pointer;transition:border-color var(--d-1),background var(--d-1);}
+.dh-jobpill span{color:var(--muted);font-variant-numeric:tabular-nums;}
+.dh-jobpill:hover{border-color:var(--border-strong);background:var(--white);}
+.dh-more{display:block;margin-top:6px;font-size:12px;color:var(--muted);}
+.tc-block.urgent{background:var(--danger-bg)!important;border-color:color-mix(in srgb,var(--danger-ink) 22%,transparent)!important;color:var(--danger-ink)!important;}
+.tc-block.done{background:var(--ok-bg)!important;border-color:color-mix(in srgb,var(--ok) 30%,transparent)!important;color:var(--ok-ink)!important;}
+.tc-block.todo{background:var(--surface-2)!important;border-color:var(--faint)!important;}
+
+@media (max-width:1240px){
+  .dh-hero{grid-template-columns:1fr;gap:var(--s-6);padding:var(--s-7);}
+  .dh-hero-side{justify-content:space-between;padding-top:var(--s-5);border-top:1px solid var(--faint);}
+  .dh-day{flex:1;width:auto;max-width:520px;}
+  .dh-ring{flex-direction:row;gap:var(--s-4);}
+  .dh-ring-lbl{align-items:flex-start;}
+}
+</style>
+<script id="screens-v3-script">
+// ═══ Screens v3 — behaviour for the screen-by-screen redesign (see screens-v3 CSS) ══════════
+(function(){
+  // ── Dashboard: start the timer on the next task straight from the hero ───────────────────
+  window._dhStartNext=function(id,day){
+    try{const wd=getWeekData(MY_PERSON,0);const t=(wd[day]||[]).find(x=>String(x.id)===String(id));
+      if(!t){navTo('todo');return;}
+      _startTaskTimer(t,MY_PERSON,0,day);}catch(e){console.warn('[screens-v3] timer',e);}
+  };
+  // Re-render the hero when a timer starts or stops anywhere
+  const _st=window._setTimer;
+  if(typeof _st==='function'){window._setTimer=function(){const r=_st.apply(this,arguments);
+    try{if(!document.getElementById('view-dashboard')?.classList.contains('hidden'))renderDashboard();}catch(e){}return r;};}
+
+  // ── First run: "Who are you?" first, "What's new" after — never both at once ─────────────
+  let pendingCL=false;
+  const whoOpen=()=>!!document.getElementById('whoami-modal');
+  const needWho=()=>{try{return !localStorage.getItem('cc_me');}catch(e){return false;}};
+  const _cl=window.showChangelog;
+  if(typeof _cl==='function'){
+    let tries=0;
+    const attempt=function(){
+      if(whoOpen()){pendingCL=true;return;}
+      // Team list may still be loading — give the picker a moment to claim the screen first
+      if(needWho()&&tries++<10){setTimeout(attempt,800);return;}
+      pendingCL=false;_cl();
+    };
+    window.showChangelog=function(){tries=0;attempt();};
+  }
+  const _who=window._askWhoAmI;
+  if(typeof _who==='function'){window._askWhoAmI=function(cancelable){
+    const cm=document.getElementById('changelog-modal');
+    if(!cancelable&&cm&&cm.classList.contains('on')){cm.classList.remove('on');pendingCL=true;}
+    return _who.apply(this,arguments);};}
+  // When the picker closes without a reload (same person picked), show What's new next
+  new MutationObserver(()=>{if(pendingCL&&!whoOpen()){pendingCL=false;setTimeout(()=>window.showChangelog(),350);}})
+    .observe(document.body,{childList:true});
 })();
 </script>
 </body>
