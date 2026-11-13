@@ -4097,6 +4097,35 @@ let stScheduledTodos=[];  // scheduled ToDo blocks (view 8, status=Scheduled) �
 let stSweepState=null;    // logged_times_sweep.json — when the sync last completed a full pass of logged time
 let stUsersById={};   // userId → {name,initials,color,key,capacityH,billableRate}
 let _stIdToJobNum={}; // Streamtime internal job ID → job number string
+// ── Load performance (perf-r4) ──────────────────────────────────────────────────────────────
+// The 5-minute poll used to re-download ~15 MB and remap everything in a few long main-thread
+// tasks even when nothing had changed (the sync only publishes every 15 min). Now:
+//  · a background refresh reads the tiny sync_meta.json first and stops there when it is the
+//    same text as the last good load (only the admin-published config is re-checked);
+//  · real work yields to the browser between files and between job chunks (_stYield);
+//  · only the view on screen re-renders; hidden Jobs sub-tabs re-render when you go back.
+// _stLoad is the progress state the indicator in #perf-r4-script draws (defined there later).
+const _stLoad={phase:'idle',label:'',frac:0,silent:false,_subs:[],set(p){Object.assign(this,p);this._subs.forEach(f=>{try{f(this);}catch(e){}});}};
+let _stMetaSig=null;   // sync_meta.json text of the last complete, consistent load
+let _stMetaDay=null;   // local date of that load (a new day always re-renders)
+let _stFullAt=0;       // when that load finished; a full reload is forced after an hour regardless
+const _stStale=new Set(); // Jobs sub-tabs whose data changed while hidden
+// Text of sync_meta.json + logged_times_sweep.json (null on failure, 401 if signed out).
+async function _stSigFetch(v){
+  try{
+    const [m,s]=await Promise.all([fetch(`${ST_BASE}/sync_meta.json${v}`),fetch(`${ST_BASE}/logged_times_sweep.json${v}`)]);
+    if(AUTH&&[m,s].some(r=>r.status===401||r.status===403))return 401;
+    if(!m.ok||!s.ok)return null;
+    return (await m.text())+'\u0000'+(await s.text());
+  }catch(e){return null;}
+}
+function _stYield(){
+  try{if(globalThis.scheduler&&typeof scheduler.yield==='function')return scheduler.yield();}catch(e){}
+  return new Promise(r=>{const c=new MessageChannel();c.port1.onmessage=()=>{c.port1.close();r();};c.port2.postMessage(0);});
+}
+// Number#toLocaleString() builds a new Intl formatter per call; _mapStJob called it ~17k times
+// per load (~85 ms). A cached default-locale Intl.NumberFormat returns the identical string.
+const _stNumFmt=new Intl.NumberFormat();
 function _stFmtH(mins){return mins>=60?`${Math.floor(mins/60)}h${mins%60?mins%60+'m':''}`:mins>0?mins+'m':'0h';}
 // Returns ST logged entries for a person this week, grouped by day number 1-5 (Mon-Fri)
 function _getStWeekEntries(personKey,offset){
@@ -4257,7 +4286,7 @@ function _mapStJob(j){
         const rate=it.sellRate||0;
         const usedSell=Math.round(logM/60*rate);const planSell=Math.round(planM/60*rate);
         const stStatus=it.jobItemStatus?.name||'';
-        return{id:'st-it-'+it.id,name:it.name||'Item',hours:planM>0?_stFmtH(planM):'—',rate:rate?'$'+rate:'—',used:usedSell?'$'+usedSell.toLocaleString():'$0',total:planSell?'$'+planSell.toLocaleString():'—',status:stStatus==='Complete'?'complete':stStatus==='Paused'?'paused':(stStatus==='In Progress'||logM>0)?'inprogress':'open',description:it.description||'',_stId:it.id,_planMins:planM,_logMins:logM,startDate:it.estimatedStartDate||it.earliestStartDate||null,dueDate:it.estimatedEndDate||it.latestEndDate||null};
+        return{id:'st-it-'+it.id,name:it.name||'Item',hours:planM>0?_stFmtH(planM):'—',rate:rate?'$'+rate:'—',used:usedSell?'$'+_stNumFmt.format(usedSell):'$0',total:planSell?'$'+_stNumFmt.format(planSell):'—',status:stStatus==='Complete'?'complete':stStatus==='Paused'?'paused':(stStatus==='In Progress'||logM>0)?'inprogress':'open',description:it.description||'',_stId:it.id,_planMins:planM,_logMins:logM,startDate:it.estimatedStartDate||it.earliestStartDate||null,dueDate:it.estimatedEndDate||it.latestEndDate||null};
       };
       const mapped=(j.phases||[]).map(ph=>{
         const mappedItems=(ph.items||[]).map(_mapItem);
@@ -4314,23 +4343,54 @@ async function initStreamtime(silent){
     const w=[72,54,63,80,58,68,50,75][i];
     return`<tr style="pointer-events:none;"><td style="padding:14px 18px;"></td><td style="padding:14px 18px;"><span class="skel" style="width:${w}%;"></span><br><span class="skel" style="width:${Math.round(w*.45)}%;height:9px;margin-top:5px;"></span></td><td style="padding:14px 18px;"><span class="skel" style="width:60%;"></span></td><td style="padding:14px 18px;"><span class="skel" style="width:85%;"></span></td><td style="padding:14px 18px;"><span class="skel" style="width:70%;"></span></td><td style="padding:14px 18px;"><span class="skel" style="width:45%;"></span></td><td style="padding:14px 18px;"><span class="skel" style="width:56%;height:18px;border-radius:10px;"></span></td></tr>`;
   }).join('');
+  // perf-r4: background refresh — read the two small files every sync rewrites first
+  // (sync_meta.json: hourly full sync; logged_times_sweep.json: every 15-min fast sync). Same
+  // text as the last good load means nothing new was published, so skip the ~15 MB download and
+  // the remap. A manual reload (not silent), a new day, or an hour since the last full load
+  // always reloads. When only the sweep changed (a fast sync: sync_meta.json untouched), only the
+  // three files the fast sync writes are re-read; jobs, people, clients, invoices, quotes,
+  // expenses and milestones are only ever written by the hourly full sync, which changes the meta.
+  let _sigPre=null,_partial=false;
+  if(silent&&_stMetaSig!==null&&_stMetaDay===_localISO()&&Date.now()-_stFullAt<60*60*1000){
+    _sigPre=await _stSigFetch('?v='+Date.now());
+    if(_sigPre===401){_authSignedOut();return;}
+    if(_sigPre!==null&&_sigPre===_stMetaSig){
+      let applied=false;
+      try{applied=await _stApplyPlatformConfig('?v='+Date.now());}catch(e){}
+      if(applied)_stRenderViews(true);
+      _stLoad.set({phase:'idle',unchanged:true,checkedAt:Date.now()});
+      return;
+    }
+    if(typeof _sigPre==='string'&&_sigPre.split('\u0000')[0]===_stMetaSig.split('\u0000')[0])_partial=true;
+  }
+  _stLoad.set({phase:'loading',silent:!!silent,frac:.04,label:'Loading jobs…',unchanged:false,error:false});
+  let _stOk=false,_stCounts=null;
+  _stMetaSig=null; // until this load completes, the next poll must not skip
   try{
     const _v='?v='+Date.now();
+    // Each response bumps the progress line (headers in; bodies are read below).
+    let _got=0;const _tick=r=>{_got++;_stLoad.set({frac:.04+_got/11*.36});return r;};
+    // The change signature as it stood when this load started (already read on a background poll).
+    const _sigStartP=_sigPre!==null?Promise.resolve(_sigPre):_stSigFetch(_v).catch(()=>null);
+    // On a fast-sync refresh the files it never writes come back as "not ok", so every block
+    // below that reads them is skipped and the data already in memory stays as it is.
+    const _skipped={ok:false,status:0};
+    const _get=(f,fast)=>_partial&&!fast?Promise.resolve(_skipped):fetch(`${ST_BASE}/${f}.json${_v}`);
     const [jobsRes,coRes,ltRes,invRes,qtRes,usersRes,ctRes,expRes,assignRes,msRes,schedRes]=await Promise.all([
-      fetch(`${ST_BASE}/jobs.json${_v}`),
-      fetch(`${ST_BASE}/companies.json${_v}`),
-      fetch(`${ST_BASE}/logged_times.json${_v}`),
-      fetch(`${ST_BASE}/invoices.json${_v}`),
-      fetch(`${ST_BASE}/quotes.json${_v}`),
-      fetch(`${ST_BASE}/users.json${_v}`),
-      fetch(`${ST_BASE}/contacts.json${_v}`),
-      fetch(`${ST_BASE}/expenses.json${_v}`),
-      fetch(`${ST_BASE}/job_assignments.json${_v}`),
-      fetch(`${ST_BASE}/milestones.json${_v}`),
-      fetch(`${ST_BASE}/scheduled_todos.json${_v}`),
-    ]);
+      _get('jobs'),
+      _get('companies'),
+      _get('logged_times',1),
+      _get('invoices'),
+      _get('quotes'),
+      _get('users'),
+      _get('contacts'),
+      _get('expenses'),
+      _get('job_assignments',1),
+      _get('milestones'),
+      _get('scheduled_todos',1),
+    ].map(p=>p.then(_tick)));
     // Session expired or access removed: back to the sign-in page (production only).
-    if(AUTH&&[jobsRes,usersRes].some(r=>r.status===401||r.status===403)){_authSignedOut();return;}
+    if(AUTH&&[jobsRes,usersRes,ltRes].some(r=>r.status===401||r.status===403)){_authSignedOut();return;}
     // Users — build lookup map first (needed for time entries)
     if(usersRes.ok){
       const rawU=await usersRes.json();
@@ -4382,7 +4442,17 @@ async function initStreamtime(silent){
     if(jobsRes.ok){
       const raw=await jobsRes.json();
       _stTakenNums=new Set(raw.map(j=>j.number).filter(Boolean).map(String));
-      jobs=raw.map(_mapStJob);
+      // Map in chunks that yield to the browser, into a local array; `jobs` is swapped and the
+      // native overlay applied below in one synchronous step, so nothing sees a half-built list.
+      const _mapped=[];
+      for(let i=0;i<raw.length;i+=400){
+        const end=Math.min(i+400,raw.length);
+        for(let k=i;k<end;k++)_mapped.push(_mapStJob(raw[k]));
+        _stLoad.set({frac:.42+end/raw.length*.18});
+        if(end<raw.length)await _stYield();
+      }
+      _stCounts={jobs:raw.length};
+      jobs=_mapped;
       // Streamtime has a few duplicate job numbers (archived 2023 retainers 4474/4483/4438).
       // id = number, so the second of each pair couldn't be opened — give it a suffixed id (L14).
       {const _seen=new Set();jobs.forEach(j=>{if(_seen.has(j.id)){let n=2;while(_seen.has(j.id+'-'+n))n++;j.id=j.id+'-'+n;}_seen.add(j.id);});}
@@ -4415,6 +4485,8 @@ async function initStreamtime(silent){
         }
       });
     }
+    _stLoad.set({frac:.62,label:'Loading time…'});
+    await _stYield();
     // Logged times
     if(ltRes.ok)stLoggedTimes=await ltRes.json();
     // Re-append natively-logged time entries (Log Time on mark-done). The fetch above just
@@ -4434,10 +4506,13 @@ async function initStreamtime(silent){
       const b=document.getElementById('st-data-warn');
       if(b)b.style.display='flex';
     }
+    _stLoad.set({frac:.74,label:'Loading invoices…'});
+    await _stYield();
     // Invoices
     if(invRes.ok)stInvoices=await invRes.json();
     // Quotes
     if(qtRes.ok)stQuotes=await qtRes.json();
+    await _stYield();
     // Expenses
     if(expRes.ok)stExpenses=await expRes.json();
     // Job assignments (planned hours per person per item)
@@ -4449,17 +4524,52 @@ async function initStreamtime(silent){
     // Logged-time sweep state — how recently the sync last re-read ALL of Streamtime's logged
     // time. Drives the To Do "data through…" indicator (see renderTodo). Optional: absent
     // until the sweep-based sync has run, in which case the indicator falls back.
+    let _sweepTxt=null;
     try{
       const swRes=await fetch(`${ST_BASE}/logged_times_sweep.json${_v}`);
-      stSweepState=swRes.ok?await swRes.json():null;
+      _sweepTxt=swRes.ok?await swRes.text():null;
+      stSweepState=_sweepTxt!==null?JSON.parse(_sweepTxt):null;
     }catch(e){stSweepState=null;}
     // When the GitHub sync last wrote the data branch — shown in Settings → Data (L10)
+    let _metaTxt=null;
     try{
       const mRes=await fetch(`${ST_BASE}/sync_meta.json${_v}`);
-      const meta=mRes.ok?await mRes.json():null;
+      _metaTxt=mRes.ok?await mRes.text():null;
+      const meta=_metaTxt!==null?JSON.parse(_metaTxt):null;
       if(meta?.last_synced)localStorage.setItem('cc_last_sync',String(Date.parse(meta.last_synced)));
+      // perf-r4: remember this signature as "already loaded" only if it did not change while the
+      // data files were downloading (a sync landing mid-load is then picked up next poll) and
+      // jobs.json agrees with the meta's job count (guards against a stale CDN copy).
+      const _sigEnd=_metaTxt!==null&&_sweepTxt!==null?_metaTxt+'\u0000'+_sweepTxt:null;
+      const _sigStart=await _sigStartP;
+      _stOk=!!(ltRes.ok&&_sigEnd!==null&&_sigStart===_sigEnd&&(_partial||(jobsRes.ok&&_stCounts&&(meta?.record_counts?.jobs??_stCounts.jobs)===_stCounts.jobs)));
+      _metaTxt=_sigEnd;
     }catch(e){}
+    if((jobsRes.ok||_partial)&&ltRes.ok)_stLoad.set({fetched:true});
     // Platform config (people, labels, item types) published by admin
+    await _stApplyPlatformConfig(_v);
+    _stMetaSig=_stOk?_metaTxt:null;
+    if(!_partial){_stMetaDay=_localISO();_stFullAt=Date.now();}
+  }catch(e){console.warn('Streamtime fetch failed:',e);}
+  const _stFailed=!_stLoad.fetched;_stLoad.fetched=false;
+  // ST data is now loaded — re-seed the To Do board from it. Background polls keep any
+  // week the user has edited (see resetTodoStore).
+  resetTodoStore(!!silent);
+  _stLoad.set({frac:.9,label:'Updating views…'});
+  await _stYield(); // let the indicator paint before the (single) render of the visible view
+  _stRenderViews(!!silent);
+  _syncSidebarAvatar();
+  try{if(!AUTH&&!localStorage.getItem('cc_me')&&Object.keys(stUsersById).length)_askWhoAmI(false);}catch(e){}
+  try{_applyAdminUi();}catch(e){} // hide admin-only actions for non-admins
+  try{_renderTimer();}catch(e){} // a running timer survives reloads
+  try{_migrateTeamsCreative();}catch(e){}
+  _stLoad.set(_stFailed?{phase:'error',error:true,frac:1}:{phase:'done',frac:1,doneAt:Date.now()});
+}
+// Platform config (people, labels, item types) published by admin. Returns true when a new
+// version was applied (callers re-render). Factored out of initStreamtime unchanged so the
+// cheap "nothing new from the sync" refresh can still pick up a fresh publish.
+async function _stApplyPlatformConfig(_v){
+    let applied=false;
     try{
       const cfgRes=await fetch(`${ST_BASE}/platform_config.json${_v}`);
       if(cfgRes.ok){
@@ -4481,27 +4591,65 @@ async function initStreamtime(silent){
           if(cfg.EXPENSE_ITEMS?.length){EXPENSE_ITEMS=cfg.EXPENSE_ITEMS;try{localStorage.setItem('cc_expense_items',JSON.stringify(EXPENSE_ITEMS));}catch(e){}}
           if(Array.isArray(cfg.teams)){try{localStorage.setItem('cc_teams',JSON.stringify(cfg.teams));}catch(e){}}
           savePeople();
+          applied=true;
         }
       }
     }catch(e){console.warn('platform_config fetch failed:',e);}
-  }catch(e){console.warn('Streamtime fetch failed:',e);}
-  // ST data is now loaded — re-seed the To Do board from it. Background polls keep any
-  // week the user has edited (see resetTodoStore).
-  resetTodoStore(!!silent);
-  // Re-render open views
-  if(typeof renderDashboard==='function'&&!document.getElementById('view-dashboard')?.classList.contains('hidden'))renderDashboard();
-  if(typeof renderJobs==='function')renderJobs();
-  if(typeof renderTime==='function'&&document.querySelector('#jt-time')?.style.display!=='none'){initTimeFilters();renderTime();}
-  if(typeof renderInvoices==='function'&&document.querySelector('#jt-invoices')?.style.display!=='none')renderInvoices();
-  if(typeof renderQuotes==='function'&&document.querySelector('#jt-quotes')?.style.display!=='none')renderQuotes();
-  if(typeof renderClients==='function'&&!document.getElementById('view-jobs')?.classList.contains('hidden'))renderClients();
-  if(typeof renderTodo==='function'&&!document.getElementById('view-todo')?.classList.contains('hidden'))renderTodo();
-  if(typeof renderReporting==='function'&&document.getElementById('view-reporting')&&!document.getElementById('view-reporting').classList.contains('hidden'))renderReporting();
-  _syncSidebarAvatar();
-  try{if(!AUTH&&!localStorage.getItem('cc_me')&&Object.keys(stUsersById).length)_askWhoAmI(false);}catch(e){}
-  try{_applyAdminUi();}catch(e){} // hide admin-only actions for non-admins
-  try{_renderTimer();}catch(e){} // a running timer survives reloads
-  try{_migrateTeamsCreative();}catch(e){}
+    return applied;
+}
+// Re-render after a Streamtime load — only what is on screen (perf-r4). Hidden Jobs sub-tabs are
+// marked stale and redrawn when Jobs is opened again (see navTo wrapper in #perf-r4-script);
+// Dashboard, To Do and Reporting already redraw themselves on navTo. A background refresh never
+// redraws under an open modal or while someone is typing in the view: it waits until they stop.
+// Scroll positions inside the visible view are kept.
+let _stRenderTimer=null;
+function _stViewOn(id){const v=document.getElementById(id);return !!v&&!v.classList.contains('hidden');}
+function _stPanelOn(id){const p=document.getElementById(id);return !!p&&p.style.display!=='none';}
+function _stRenderBusy(){
+  if(document.querySelector('.modal-bg.on,.inv-bg.on,#detail-drawer.open,#doc-preview-modal'))return true;
+  const a=document.activeElement;
+  if(a&&a!==document.body&&(a.matches('input,textarea,select')||a.isContentEditable)){const v=a.closest('.view');if(v&&!v.classList.contains('hidden'))return true;}
+  return false;
+}
+function _stScrollKeep(){
+  const root=document.querySelector('.view:not(.hidden)');if(!root)return()=>{};
+  const keyOf=el=>el.id?'#'+el.id:el.tagName+'.'+(typeof el.className==='string'?el.className:'');
+  const saved=[],count={};
+  [document.scrollingElement,...document.querySelectorAll('.main,.content'),root,...root.querySelectorAll('*')].forEach(el=>{
+    if(!el)return;const k=keyOf(el);const n=count[k]=(count[k]||0)+1;
+    if(el.scrollTop>0||el.scrollLeft>0)saved.push([k,n,el.scrollTop,el.scrollLeft]);
+  });
+  return()=>{
+    if(!saved.length)return;
+    const cnt={},idx={};
+    [document.scrollingElement,...document.querySelectorAll('.main,.content'),root,...root.querySelectorAll('*')].forEach(el=>{if(!el)return;const k=keyOf(el);const n=cnt[k]=(cnt[k]||0)+1;idx[k+'|'+n]=el;});
+    saved.forEach(([k,n,t,l])=>{const el=idx[k+'|'+n];if(el){el.scrollTop=t;el.scrollLeft=l;}});
+  };
+}
+const _stJobsSubs=[
+  ['time','jt-time',()=>{if(typeof renderTime==='function'){initTimeFilters();renderTime();}}],
+  ['invoices','jt-invoices',()=>{if(typeof renderInvoices==='function')renderInvoices();}],
+  ['quotes','jt-quotes',()=>{if(typeof renderQuotes==='function')renderQuotes();}],
+];
+function _stRenderViews(silent){
+  clearTimeout(_stRenderTimer);
+  if(_stRenderBusy()&&(silent||document.activeElement?.matches?.('input,textarea'))){_stRenderTimer=setTimeout(()=>_stRenderViews(true),1500);return;}
+  const restore=silent?_stScrollKeep():null;
+  const jobsOn=_stViewOn('view-jobs');
+  if(typeof renderDashboard==='function'&&_stViewOn('view-dashboard'))renderDashboard();
+  if(typeof renderJobs==='function'&&jobsOn)renderJobs();
+  _stJobsSubs.forEach(([tag,panel,fn])=>{if(!_stPanelOn(panel))return;if(jobsOn)fn();else _stStale.add(tag);});
+  if(typeof renderClients==='function'){if(jobsOn)renderClients();else if(_stPanelOn('jt-clients'))_stStale.add('clients');}
+  if(typeof renderTodo==='function'&&_stViewOn('view-todo'))renderTodo();
+  if(typeof renderReporting==='function'&&_stViewOn('view-reporting'))renderReporting();
+  if(restore)try{restore();}catch(e){}
+}
+// Called by the navTo wrapper when Jobs is opened: redraw sub-tabs that went stale while hidden.
+function _stFlushStale(){
+  if(!_stStale.size||!_stViewOn('view-jobs'))return;
+  _stJobsSubs.forEach(([tag,panel,fn])=>{if(_stStale.has(tag)&&_stPanelOn(panel))fn();});
+  if(_stStale.has('clients')&&typeof renderClients==='function')renderClients();
+  _stStale.clear();
 }
 // One-time team change (Nov 2026, requested by Ronan): the Design team is now "Creative" and
 // Harry Ross sits in it. Runs once per browser after Streamtime + the published config load,
@@ -21162,6 +21310,97 @@ function _accBind(card){
       _accBind(card);_accRender();_accLoad();
     }catch(e){console.warn('access card',e);}
   };
+})();
+</script>
+<style id="perf-r4">
+/* Data-loading indicator (perf-r4). Everything that moves is transform/opacity only, so it keeps
+   animating on the compositor while the main thread is busy parsing or rendering. */
+#perf-line{position:fixed;top:0;left:0;right:0;height:2px;z-index:100000;pointer-events:none;overflow:hidden;opacity:0;transition:opacity var(--d-3) ease;}
+#perf-line.on{opacity:1;}
+#perf-line .perf-line-bar{position:absolute;inset:0;background:color-mix(in srgb,var(--ink) 55%,transparent);transform-origin:0 50%;transform:scaleX(0);transition:transform .45s var(--ease-out);will-change:transform;}
+#perf-line .perf-line-sheen{position:absolute;top:0;bottom:0;left:0;width:28%;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--white) 75%,transparent),transparent);transform:translateX(-100%);animation:perfSheen 1.15s linear infinite;will-change:transform;}
+@keyframes perfSheen{to{transform:translateX(360%);}}
+#perf-pill{position:fixed;left:86px;bottom:16px;z-index:9000;display:flex;align-items:center;gap:8px;min-height:30px;padding:0 12px 0 10px;border-radius:var(--r-pill);background:var(--white);border:1px solid var(--border);box-shadow:var(--e-2);font:500 12px/1 var(--font);color:var(--ink-2);letter-spacing:-.003em;opacity:0;transform:translateY(6px);transition:opacity var(--d-3) var(--ease-out),transform var(--d-3) var(--ease-out);pointer-events:none;}
+#perf-pill.on{opacity:1;transform:none;pointer-events:auto;}
+#perf-pill .perf-spin{flex:none;width:12px;height:12px;border-radius:50%;border:1.5px solid var(--faint);border-top-color:var(--ink-2);animation:perfSpin .8s linear infinite;will-change:transform;}
+@keyframes perfSpin{to{transform:rotate(360deg);}}
+#perf-pill .perf-dot{flex:none;width:6px;height:6px;border-radius:50%;background:var(--ok);margin:0 3px;}
+#perf-pill .perf-dot.warn{background:var(--warn);}
+#perf-pill .perf-retry{margin-left:2px;border:0;background:none;color:var(--ink);font:600 12px/1 var(--font);padding:5px 6px;border-radius:var(--r-xs);cursor:pointer;}
+#perf-pill .perf-retry:hover{background:var(--surface-2);}
+#perf-pill .perf-retry:focus-visible{outline:none;box-shadow:var(--ring);}
+#perf-pill .perf-x{border:0;background:none;color:var(--muted);width:20px;height:20px;margin-right:-6px;border-radius:50%;cursor:pointer;display:grid;place-items:center;font-size:13px;padding:0;}
+#perf-pill .perf-x:hover{background:var(--surface-2);color:var(--ink);}
+#perf-pill .perf-x:focus-visible{outline:none;box-shadow:var(--ring);}
+#cc-splash .perf-splash-msg{min-height:16px;font:500 12px/16px var(--font);color:var(--muted);letter-spacing:-.003em;}
+@media (max-width:700px){#perf-pill{left:16px;}}
+@media (prefers-reduced-motion:reduce){
+  #perf-line .perf-line-sheen{display:none;}
+  #perf-pill .perf-spin{animation:none;border-color:var(--muted);border-top-color:var(--muted);opacity:.6;}
+  #perf-line,#perf-line .perf-line-bar,#perf-pill{transition:none;}
+}
+</style>
+<script id="perf-r4-script">
+// Draws _stLoad (defined with the Streamtime loader) as a 2px top progress line plus a small
+// status pill by the sidebar. First load / manual reload: names the step ("Loading jobs…",
+// "Loading time…", "Loading invoices…", "Updating views…"), also under the splash logo.
+// Background refresh: nothing for the cheap "no new sync" check; "Syncing…" only when real work
+// runs for more than ~0.4 s. Then "Updated just now" briefly, or a quiet "Couldn't refresh · Retry".
+(function(){
+  if(typeof _stLoad==='undefined')return;
+  const line=document.createElement('div');line.id='perf-line';line.setAttribute('aria-hidden','true');
+  line.innerHTML='<div class="perf-line-bar"></div><div class="perf-line-sheen"></div>';
+  const pill=document.createElement('div');pill.id='perf-pill';pill.setAttribute('role','status');pill.setAttribute('aria-live','polite');
+  document.body.append(line,pill);
+  const bar=line.firstChild,SPIN='<span class="perf-spin" aria-hidden="true"></span>';
+  let pillTimer=null,hideTimer=null,lineTimer=null,lastHtml='';
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  function setPill(html){if(html!==lastHtml){pill.innerHTML=html;lastHtml=html;}pill.classList.add('on');}
+  function hidePill(){pill.classList.remove('on');}
+  function splashMsg(t){
+    const s=document.getElementById('cc-splash');if(!s||s.classList.contains('out'))return;
+    let m=s.querySelector('.perf-splash-msg');
+    if(!m){if(!t)return;m=document.createElement('div');m.className='perf-splash-msg';s.appendChild(m);}
+    m.textContent=t;
+  }
+  function draw(st){
+    if(st.phase==='loading'){
+      clearTimeout(hideTimer);clearTimeout(lineTimer);
+      line.classList.add('on');
+      bar.style.transform='scaleX('+Math.max(.04,Math.min(1,+st.frac||0)).toFixed(3)+')';
+      const label=st.silent?'Syncing…':(st.label||'Loading…');
+      if(!st.silent){splashMsg(label);setPill(SPIN+esc(label));}
+      else if(pill.classList.contains('on')&&lastHtml.indexOf('perf-spin')>=0)setPill(SPIN+esc(label));
+      else if(!pillTimer)pillTimer=setTimeout(()=>{pillTimer=null;if(_stLoad.phase==='loading')setPill(SPIN+'Syncing…');},400);
+      return;
+    }
+    clearTimeout(pillTimer);pillTimer=null;
+    if(st.phase==='done'){
+      bar.style.transform='scaleX(1)';
+      lineTimer=setTimeout(()=>{line.classList.remove('on');setTimeout(()=>{if(_stLoad.phase!=='loading')bar.style.transform='scaleX(0)';},300);},380);
+      splashMsg('');
+      setPill('<span class="perf-dot" aria-hidden="true"></span>Updated just now');
+      clearTimeout(hideTimer);hideTimer=setTimeout(hidePill,2600);
+    }else if(st.phase==='error'){
+      line.classList.remove('on');bar.style.transform='scaleX(0)';
+      splashMsg('');
+      clearTimeout(hideTimer);
+      setPill('<span class="perf-dot warn" aria-hidden="true"></span>Couldn’t refresh data<button type="button" class="perf-retry" onclick="_stRefreshNow()">Retry</button><button type="button" class="perf-x" aria-label="Dismiss" onclick="this.parentNode.classList.remove(\'on\')"><i class="ti ti-x" aria-hidden="true"></i></button>');
+    }
+  }
+  _stLoad._subs.push(draw);
+  draw(_stLoad);
+  // Retry, sharing the poll's in-flight guard so two loads never overlap.
+  window._stRefreshNow=async function(){
+    if(typeof _stPollInFlight!=='undefined'&&_stPollInFlight)return;
+    try{_stPollInFlight=true;}catch(e){}
+    try{await initStreamtime(true);}finally{try{_stPollInFlight=false;}catch(e){}}
+  };
+  // Jobs sub-tabs that changed while hidden are redrawn when Jobs is opened again.
+  if(typeof navTo==='function'){
+    const _navPrev=navTo;
+    navTo=function(v){const r=_navPrev.apply(this,arguments);if(v==='jobs')try{_stFlushStale();}catch(e){}return r;};
+  }
 })();
 </script>
 </body>
