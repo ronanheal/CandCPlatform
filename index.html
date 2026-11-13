@@ -5071,15 +5071,15 @@ function renderSchedule(){
       }).join('');
       return`<td class="sched-cell${isToday?' sched-today':''}${over?' sched-over':''}"
           ondragover="_scheduleDragOver(event)" ondragleave="_scheduleDragLeave(event)" ondrop="_scheduleDrop(event,'${k}',${dayN})">
-        <div style="font-size:10px;font-weight:600;color:${over?'var(--red)':totalH>0?'var(--muted)':'#ccc'};margin-bottom:4px;">${totalH>0?formatHrs(totalH):'—'}${over?' ↑':''}</div>
+        <div class="sc-cap${over?' over':totalH>0?'':' none'}" title="${totalH>0?formatHrs(totalH)+' of '+formatHrs(capH):'Nothing booked'}"><span class="sc-h">${totalH>0?formatHrs(totalH):'—'}${over?' over':''}</span><span class="sc-bar"><i style="width:${Math.min(100,Math.round(totalH/(capH||1)*100))}%"></i></span></div>
         ${cardsHTML}
       </td>`;
     }).join('');
     return`<tr>
-      <td style="padding:10px 10px;vertical-align:top;border-bottom:1px solid var(--border);overflow:hidden;">
-        <div style="display:flex;align-items:center;gap:6px;min-width:0;">
-          <div style="width:24px;height:24px;border-radius:50%;background:${p.color||'#999'};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#fff;flex-shrink:0;">${p.initials||'?'}</div>
-          <div style="min-width:0;overflow:hidden;"><div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</div><div style="font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.role||''}</div></div>
+      <td class="sc-person">
+        <div class="sc-person-in">
+          <div class="sc-av" style="background:${p.color||'#999'};">${p.initials||'?'}</div>
+          <div class="sc-pt"><div class="sc-pn">${p.name}</div><div class="sc-pr">${p.role||''}</div></div>
         </div>
       </td>
       ${cells}
@@ -19978,6 +19978,40 @@ body.dark .zone-bucket.done-bucket{background:var(--ok-bg)!important;border-colo
 #time-empty::before{content:'';display:block;width:56px;height:56px;margin:0 auto 14px;border-radius:16px;transform:rotate(-6deg);box-shadow:var(--e-2);
   background:var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A39D90' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8.5'/%3E%3Cpath d='M12 7.5V12l3 2'/%3E%3C/svg%3E") center/26px no-repeat;}
 @media (max-width:1240px){.ls-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+/* ── Schedule ───────────────────────────────────────────────────────────────────────────── */
+#schedule-scroll{padding:var(--s-5) var(--gutter)!important;}
+.sched-over{background:transparent!important;}
+.sched-today{background:color-mix(in srgb,var(--red) 3.5%,transparent)!important;}
+.sched-cell{padding:8px!important;border-color:var(--faint)!important;}
+.sc-cap{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+.sc-h{font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums;}
+.sc-cap.none .sc-h{color:var(--subtle);font-weight:500;}
+.sc-cap.over .sc-h{color:var(--warn-ink);}
+.sc-bar{flex:1;height:4px;border-radius:var(--r-pill);background:var(--faint);overflow:hidden;min-width:16px;}
+.sc-bar i{display:block;height:100%;border-radius:inherit;background:color-mix(in srgb,var(--ink) 45%,transparent);}
+.sc-cap.over .sc-bar i{background:var(--warn);}
+.sc-cap.none .sc-bar{opacity:.6;}
+.sc-person{padding:12px 12px!important;vertical-align:top;border-bottom:1px solid var(--faint);overflow:hidden;background:var(--white);position:sticky;left:0;z-index:1;}
+.sc-person-in{display:flex;align-items:center;gap:10px;min-width:0;}
+.sc-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:600;color:#fff;flex-shrink:0;box-shadow:0 0 0 2px var(--white);}
+.sc-pt{min-width:0;overflow:hidden;}
+.sc-pn{font:700 13.5px var(--display);letter-spacing:-.01em;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sc-pr{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;}
+.sched-card{font-size:12px!important;padding:5px 8px!important;border-color:var(--border)!important;border-radius:var(--r-sm)!important;transition:box-shadow var(--d-1),border-color var(--d-1),transform var(--d-2) var(--ease-out)!important;}
+.sched-card:hover{box-shadow:var(--e-2)!important;transform:translateY(-1px);}
+.sched-card-h{font-size:11px!important;font-variant-numeric:tabular-nums;}
+/* Done: readable in both themes — a check and muted ink rather than half opacity */
+.sched-card.sched-done{opacity:1!important;background:var(--surface-2)!important;border-color:var(--faint)!important;}
+.sched-card.sched-done .sched-card-t{text-decoration:none!important;color:var(--muted)!important;}
+.sched-card.sched-done .sched-card-t::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ok);margin-right:6px;vertical-align:1px;}
+.sched-card.sched-done .sched-card-h{color:var(--subtle)!important;}
+/* Drag dock (To Do): no 8–10px type */
+.ss-day .ssd-name{font-size:11px!important;letter-spacing:.06em!important;}
+.ss-person .ssp-name{font-size:11px!important;max-width:56px!important;}
+.ss-person{width:58px!important;}
+.ss-day.drop-ok,.ss-person.drop-ok{background:var(--red-wash)!important;}
+.tao-team-hdr{font-size:11.5px!important;letter-spacing:0!important;text-transform:none!important;font-weight:600!important;}
 </style>
 <script id="screens-v3-script">
 // ═══ Screens v3 — behaviour for the screen-by-screen redesign (see screens-v3 CSS) ══════════
