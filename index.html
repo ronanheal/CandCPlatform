@@ -8698,7 +8698,7 @@ function _docLineItemsHTML(job){
     items.forEach(i=>{
       const hrsNum=parseHrsInput(i.hours||'0h');
       const totalNum=_num(i.total);
-      rows+=`<tr style="border-bottom:1px solid var(--faint);"><td style="padding:7px 14px;font-size:12px;">${i.name}${i.note?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${i.note}</div>`:''}</td><td style="padding:7px 14px;font-size:12px;text-align:right;color:var(--muted);">${hrsNum>0?hrsNum+'h':'—'}</td><td style="padding:7px 14px;font-size:12px;text-align:right;">$${totalNum.toLocaleString()}</td></tr>`;
+      rows+=`<tr style="border-bottom:1px solid var(--faint);"><td style="padding:7px 14px;font-size:12px;">${i.name}${i.note?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${i.note}</div>`:''}</td><td style="padding:7px 14px;font-size:12px;text-align:right;color:var(--muted);">${hrsNum>0?formatHrs(hrsNum):'—'}</td><td style="padding:7px 14px;font-size:12px;text-align:right;">$${totalNum.toLocaleString()}</td></tr>`;
     });
   });
   return rows;
@@ -8968,7 +8968,7 @@ function renderQuoteTab(){
       const totalNum=_num(i.total);
       const cols=[];
       cols.push(`<td style="padding:8px 14px;font-size:12px;">${i.name}${opts.showDescriptions&&i.note?`<div style="font-size:11px;color:var(--muted);margin-top:2px;">${i.note}</div>`:''}</td>`);
-      if(opts.showQty)cols.push(`<td style="padding:8px 14px;font-size:12px;text-align:right;color:var(--muted);">${hrsNum>0?hrsNum+'h':'—'}</td>`);
+      if(opts.showQty)cols.push(`<td style="padding:8px 14px;font-size:12px;text-align:right;color:var(--muted);">${hrsNum>0?formatHrs(hrsNum):'—'}</td>`);
       if(opts.showUnitRate)cols.push(`<td style="padding:8px 14px;font-size:12px;text-align:right;color:var(--muted);">${i.rate||'—'}</td>`);
       if(opts.showSubtotals)cols.push(`<td style="padding:8px 14px;font-size:12px;text-align:right;font-weight:500;">$${totalNum.toLocaleString()}</td>`);
       return`<tr style="border-bottom:1px solid var(--faint);">${cols.join('')}</tr>`;
@@ -14265,7 +14265,7 @@ function _c2QuoteLinesSection(q){
   const linked=q.jobNumber?jobs.find(j=>j.id===String(q.jobNumber)):null;
   return`<div class="dd-section" id="c2-dd-qlines">
     <div class="dd-section-lbl">Line items</div>
-    ${lines.length?`<table class="c2-dd-lines">${t.rows.map(r=>`<tr><td>${esc(r.desc)}<div class="sub" style="font-size:11px;color:var(--muted);">${esc(_c2qty(r.qty))} × ${_c2m2(r.unit)}</div></td><td class="num">${_c2m2(r.amount)}</td></tr>`).join('')}
+    ${lines.length?`<table class="c2-dd-lines">${t.rows.map(r=>`<tr><td>${esc(r.desc)}<div class="sub" style="font-size:11px;color:var(--muted);">${esc(_c2QtyLabel(r))} × ${_c2m2(r.unit)}</div></td><td class="num">${_c2m2(r.amount)}</td></tr>`).join('')}
       <tr><td class="sub">Subtotal</td><td class="num">${_c2m2(t.subtotal)}</td></tr>
       ${t.discount?`<tr><td class="sub">${esc(_c2DiscLabel(q.discount))}</td><td class="num">${_c2m2(-t.discount)}</td></tr>`:''}
       <tr><td><strong>Total ex GST</strong></td><td class="num"><strong>${_c2m2(t.ex)}</strong></td></tr>
@@ -14307,7 +14307,7 @@ function _c2QuoteLinesSection(q){
     const contact=cl&&cl.contact?`${cl.contact}${cl.contactTitle?` — ${cl.contactTitle}`:''}`:'';
     const meta=`<div style="flex:1;"><div style="font-size:10px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Prepared for</div><div style="font-weight:500;font-size:13px;">${esc(q.company||'—')}</div>${contact?`<div style="color:var(--muted);margin-top:2px;">${esc(contact)}</div>`:''}${job?`<div style="color:var(--muted);margin-top:2px;">Job #${esc(job.id)} · ${esc(job.name)}</div>`:''}</div>
       <div style="text-align:right;color:var(--muted);"><div><strong style="color:var(--ink);">Quote #:</strong> ${esc(q.quoteNumber||q.id)}</div><div><strong style="color:var(--ink);">Issued:</strong> ${_docFmtDate(q.quoteDate)}</div><div><strong style="color:var(--ink);">Sent:</strong> ${_docFmtDate(q.sentDate)}</div>${q.approvedDate?`<div><strong style="color:var(--ink);">Approved:</strong> ${_docFmtDate(q.approvedDate)}</div>`:''}</div>`;
-    const rows=t.rows.map(r=>`<tr style="border-bottom:1px solid var(--faint);"><td style="padding:7px 14px;font-size:12px;">${esc(r.desc)}</td><td style="padding:7px 14px;font-size:12px;text-align:right;color:var(--muted);white-space:nowrap;">${esc(_c2qty(r.qty))} × ${_c2m2(r.unit)}</td><td style="padding:7px 14px;font-size:12px;text-align:right;white-space:nowrap;">${_c2m2(r.amount)}</td></tr>`).join('');
+    const rows=t.rows.map(r=>`<tr style="border-bottom:1px solid var(--faint);"><td style="padding:7px 14px;font-size:12px;">${esc(r.desc)}</td><td style="padding:7px 14px;font-size:12px;text-align:right;color:var(--muted);white-space:nowrap;">${esc(_c2QtyLabel(r))} × ${_c2m2(r.unit)}</td><td style="padding:7px 14px;font-size:12px;text-align:right;white-space:nowrap;">${_c2m2(r.amount)}</td></tr>`).join('');
     const tr=(l,v,strong)=>`<tr${strong?' style="border-top:1px solid var(--border);"':''}><td style="padding:${strong?'7px':'5px'} 10px;${strong?'font-weight:600;':'color:var(--muted);'}">${l}</td><td style="padding:${strong?'7px':'5px'} 10px;text-align:right;${strong?'font-weight:600;':''}">${v}</td></tr>`;
     const totals=tr('Subtotal',_c2m2(t.subtotal))
       +(t.discount?tr(esc(_c2DiscLabel(q.discount)),_c2m2(-t.discount)):'')
@@ -17237,7 +17237,7 @@ function _fdPill(label){
   return`<span style="display:inline-block;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:500;background:${sc}22;color:${sc};border:1px solid ${sc}44;">${esc(label)}</span>`;
 }
 function _fdLineRows(rows){
-  return rows.map(r=>`<tr style="border-bottom:1px solid var(--faint);"><td style="padding:7px 14px;font-size:12px;">${esc(r.desc)}</td><td style="padding:7px 14px;font-size:12px;text-align:right;color:var(--muted);white-space:nowrap;">${esc(_c2qty(r.qty))} × ${_c2m2(r.unit)}</td><td style="padding:7px 14px;font-size:12px;text-align:right;white-space:nowrap;">${_c2m2(r.amount)}</td></tr>`).join('');
+  return rows.map(r=>`<tr style="border-bottom:1px solid var(--faint);"><td style="padding:7px 14px;font-size:12px;">${esc(r.desc)}</td><td style="padding:7px 14px;font-size:12px;text-align:right;color:var(--muted);white-space:nowrap;">${esc(_c2QtyLabel(r))} × ${_c2m2(r.unit)}</td><td style="padding:7px 14px;font-size:12px;text-align:right;white-space:nowrap;">${_c2m2(r.amount)}</td></tr>`).join('');
 }
 function _fdTotRow(l,v,strong,big){
   return`<tr${strong?' style="border-top:1px solid var(--border);"':''}><td style="padding:${strong?'7px':'5px'} 10px;${strong?'font-weight:600;':'color:var(--muted);'}">${l}</td><td style="padding:${strong?'7px':'5px'} 10px;text-align:right;white-space:nowrap;${strong?'font-weight:600;':''}${big?'font-family:var(--display);font-size:15px;':''}">${v}</td></tr>`;
