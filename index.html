@@ -21858,11 +21858,182 @@ body.dark .r5-wip-b:hover{background:rgba(255,255,255,.09);}
 .r5-imp input[type=file]{font:inherit;font-size:12px;}
 .r5-imp-sum{color:var(--ink);line-height:1.5;}
 .r5-imp-err{color:var(--bv-red);}
+.r5-imp-merge{display:flex;flex-direction:column;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--faint);}
+.r5-imp-merge label{display:flex;align-items:center;gap:8px;cursor:pointer;}
+.r5-imp-prev{margin-left:24px;color:var(--muted);}
+.r5-pin{color:var(--muted);}
 .bv-kind.is-off{opacity:.55;}
 body.dark .r5-add .r5-ta{background:rgba(255,255,255,.05);}
 body.dark .r5-add .r5-ta:focus,body.dark .r5-ta,body.dark .r5-ci-t:focus,body.dark .r5-ci-add:focus,body.dark .r5-inl:focus,body.dark .r5-cl-t:focus,body.dark .r5-title-inp{background:rgba(255,255,255,.07);}
 body.dark .r5-line time{background:rgba(255,255,255,.07);}
 </style>
+<script id="boards-merge-script">
+// ═══ Boards: merge an imported board file into an existing board ═══════════════════════════
+// Pure: no DOM, no globals. Everything app-specific comes in through `h` (helpers), so
+// scripts/test_board_merge.mjs extracts this block from index.html and tests the real code.
+//   bvMergeBoard(target, srcBoard, h) mutates `target` and returns counts. For a preview, pass a
+//   JSON clone of the board. Importing the same file twice adds nothing the second time.
+// h: {uid(prefix), newCard(fields), newCol(name,color), clientCard(name, fields),
+//     findPerson(srcCard)->personRef|null, personName(card)->display name,
+//     personEmail(card)->email incl. the linked record's, now}
+// Rules
+//   lists     matched by name (case-insensitive); missing ones are appended
+//   people    matched by personRef, then email, then full name, then first name (if unique);
+//             notes appended line by line (exact duplicate lines skipped), role/email filled
+//             only when empty; unmatched people become new person cards
+//   notes     matched by title; "November" matches "November 2026" (month-name prefix);
+//             checklist items appended (duplicates by text skipped); an existing empty
+//             checklist (a template placeholder) takes the items instead of a second list
+//   client/job cards matched by link or title; duplicates skipped
+function bvMergeBoard(target,src,h){
+  const MON=['january','february','march','april','may','june','july','august','september','october','november','december'];
+  const now=h.now||Date.now();
+  const norm=s=>String(s==null?'':s).toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();
+  const loose=s=>norm(s).replace(/[^a-z0-9@. ]+/g,' ').replace(/\s+/g,' ').trim();
+  const n={notes:0,people:0,peopleAdded:0,items:0,noteCards:0,columns:0,clients:0,jobs:0,filled:0,skipped:0};
+  const touchedPeople=new Set(),touched=new Set();
+  target.columns=Array.isArray(target.columns)?target.columns:[];
+  const all=()=>target.columns.flatMap(c=>(c.cards||[]).map(card=>({col:c,card})));
+  const kind=c=>c.type==='person'?'person':c.type==='client'?'client':(c.kind==='job'||c.jobRef)?'job':'note';
+  const srcKind=c=>c.type==='person'?'person':c.type==='client'?'client':(c.type==='job'||c.jobNumber||c.jobRef)?'job':'note';
+  const txt=i=>String(typeof i==='string'?i:(i&&i.text)||'').trim();
+  const srcLists=c=>{
+    if(Array.isArray(c.checklists))return c.checklists.filter(l=>l&&typeof l==='object').map(l=>({title:String(l.title||''),items:(Array.isArray(l.items)?l.items:[]).filter(i=>txt(i)).map(i=>({text:txt(i),done:!!(i&&i.done)}))}));
+    if(Array.isArray(c.checklist)&&c.checklist.length)return[{title:String(c.checklistTitle||''),items:c.checklist.filter(i=>txt(i)).map(i=>({text:txt(i),done:!!(i&&i.done)}))}];
+    return[];
+  };
+  const lists=c=>{
+    if(!Array.isArray(c.checklists))c.checklists=(Array.isArray(c.checklist)&&c.checklist.length)?[{id:h.uid('cl'),title:'',items:c.checklist}]:[];
+    return c.checklists;
+  };
+  const flat=c=>{if(Array.isArray(c.checklists))c.checklist=c.checklists.flatMap(l=>l.items||[]);};
+  const touch=c=>{touched.add(c);c.updatedAt=Math.max(now,(c.updatedAt||0)+1);};
+  // Append the lines of `text` that the card doesn't have yet. Returns how many were added.
+  function addLines(card,text){
+    const have=new Set(String(card.desc||'').split('\n').map(l=>l.trim()).filter(Boolean));
+    const out=[];let added=0;
+    String(text||'').replace(/\r\n?/g,'\n').split('\n').forEach(l=>{
+      const t=l.trim();
+      if(!t){if(out.length&&out[out.length-1]!=='')out.push('');return;}
+      if(have.has(t))return;
+      have.add(t);out.push(l.replace(/\s+$/,''));added++;
+    });
+    while(out.length&&out[out.length-1]==='')out.pop();
+    if(!added)return 0;
+    const cur=String(card.desc||'').replace(/\s+$/,'');
+    card.desc=cur?cur+'\n'+out.join('\n'):out.join('\n');
+    return added;
+  }
+  // Append checklist items the card doesn't have (by text, across all its lists).
+  function addItems(card,sls){
+    const ls=lists(card);
+    const have=new Set(ls.flatMap(l=>(l.items||[]).map(i=>norm(i.text))));
+    let added=0;
+    sls.forEach(sl=>{
+      const fresh=sl.items.filter(i=>{const k=norm(i.text);if(!k||have.has(k))return false;have.add(k);return true;});
+      if(!fresh.length)return;
+      let dest=sl.title?ls.find(l=>norm(l.title)===norm(sl.title)):null;
+      if(!dest)dest=ls.find(l=>!(l.items||[]).length);                 // empty placeholder
+      if(!dest&&!sl.title&&ls.length)dest=ls[0];
+      if(!dest){dest={id:h.uid('cl'),title:sl.title,items:[]};ls.push(dest);}
+      dest.items=dest.items||[];
+      fresh.forEach(i=>dest.items.push({id:h.uid('ck'),text:i.text,done:i.done}));
+      added+=fresh.length;
+    });
+    if(added)flat(card);
+    return added;
+  }
+  const monthMatch=(a,b)=>{const A=loose(a),B=loose(b);if(!A||!B)return false;if(A===B)return true;
+    return(MON.includes(A)&&B.startsWith(A+' '))||(MON.includes(B)&&A.startsWith(B+' '));};
+  function findPersonCard(s,ref){
+    const ps=all().filter(x=>kind(x.card)==='person');
+    if(ref){const m=ps.find(x=>x.card.personRef===ref);if(m)return m;}
+    const em=norm(s.email);
+    if(em){const m=ps.find(x=>norm(x.card.email)===em||norm(h.personEmail(x.card))===em);if(m)return m;}
+    const nm=loose(s.title||s.name);if(!nm)return null;
+    const full=ps.find(x=>loose(h.personName(x.card))===nm||loose(x.card.title)===nm);if(full)return full;
+    const first=nm.split(' ')[0];
+    const byFirst=ps.filter(x=>{const o=loose(h.personName(x.card)||x.card.title);if(!o)return false;
+      const of=o.split(' ')[0];return of===first&&(!nm.includes(' ')||!o.includes(' '));});
+    return byFirst.length===1?byFirst[0]:null;
+  }
+  (Array.isArray(src&&src.columns)?src.columns:[]).forEach((scol,ci)=>{
+    if(!scol||typeof scol!=='object')return;
+    const cname=String(scol.name||'Untitled list');
+    let col=target.columns.find(c=>norm(c.name)===norm(cname));
+    if(!col){col=h.newCol(cname,scol.color||null,ci);col.cards=col.cards||[];col.updatedAt=now;target.columns.push(col);n.columns++;}
+    (Array.isArray(scol.cards)?scol.cards:[]).forEach(s=>{
+      if(!s||typeof s!=='object'||Array.isArray(s))return;
+      const k=srcKind(s),sls=srcLists(s);
+      if(k==='person'){
+        const ref=h.findPerson(s)||null;
+        const m=findPersonCard(s,ref);
+        if(m){
+          const c=m.card;let ch=false;
+          const a=addLines(c,s.desc);if(a){n.notes+=a;touchedPeople.add(c);ch=true;}
+          if(s.role&&!String(c.role||'').trim()){c.role=String(s.role);n.filled++;ch=true;}
+          if(s.email&&!String(c.email||'').trim()&&!h.personEmail(c)){c.email=String(s.email);n.filled++;ch=true;}
+          if(ref&&!c.personRef){c.personRef=ref;ch=true;}
+          const it=addItems(c,sls);if(it){n.items+=it;ch=true;}
+          if(ch)touch(c);else n.skipped++;
+        }else{
+          const c=h.newCard({type:'person',...(ref?{personRef:ref}:{}),title:String(s.title||s.name||''),desc:'',checklists:[]});
+          if(s.role)c.role=String(s.role);if(s.email)c.email=String(s.email);if(s.collapsed)c.collapsed=true;
+          {const a=addLines(c,s.desc);n.notes+=a;if(a)touchedPeople.add(c);}n.items+=addItems(c,sls);flat(c);
+          col.cards.push(c);touched.add(c);n.peopleAdded++;
+        }
+        return;
+      }
+      if(k==='client'){
+        const name=String(s.clientName||s.title||'').trim();
+        const dup=all().some(x=>kind(x.card)==='client'&&(loose(x.card.clientRef)===loose(name)||loose(x.card.title)===loose(name)||(s.clientId&&x.card.clientId===s.clientId)));
+        if(dup||!name){n.skipped++;return;}
+        const c=h.clientCard(name,{desc:String(s.desc||''),checklists:[]});addItems(c,sls);col.cards.push(c);touched.add(c);n.clients++;return;
+      }
+      if(k==='job'){
+        const num=String(s.jobNumber||s.jobRef||'').trim();
+        const dup=all().some(x=>kind(x.card)==='job'&&((num&&String(x.card.jobRef||'')===num)||(!num&&s.title&&loose(x.card.title)===loose(s.title))));
+        if(dup){n.skipped++;return;}
+        const c=h.newCard({kind:'job',...(num?{jobRef:num}:{}),title:String(s.title||''),desc:String(s.desc||''),checklists:[]});addItems(c,sls);col.cards.push(c);touched.add(c);n.jobs++;return;
+      }
+      // note
+      const title=String(s.title||'');
+      const cands=all().filter(x=>kind(x.card)==='note'&&monthMatch(x.card.title,title));
+      const m=title.trim()?(cands.find(x=>x.col===col&&loose(x.card.title)===loose(title))||cands.find(x=>x.col===col)||cands.find(x=>loose(x.card.title)===loose(title))||cands[0]):null;
+      if(m){
+        const c=m.card;let ch=false;
+        const it=addItems(c,sls);if(it){n.items+=it;ch=true;}
+        const a=addLines(c,s.desc);if(a){n.notes+=a;ch=true;}
+        if(ch)touch(c);else n.skipped++;
+      }else{
+        const c=h.newCard({kind:'note',title,desc:'',checklists:[]});
+        if(s.collapsed)c.collapsed=true;
+        addLines(c,s.desc);n.items+=addItems(c,sls);flat(c);
+        col.cards.push(c);touched.add(c);n.noteCards++;
+      }
+    });
+  });
+  n.people=touchedPeople.size;
+  n.changed=touched.size+n.columns;
+  if(n.changed)target.updatedAt=Math.max(now,(target.updatedAt||0)+1);
+  return n;
+}
+// One-line summary for the import preview / toast.
+function bvMergeSummary(n){
+  const p=(k,one,many)=>`${k} ${k===1?one:many}`;
+  const parts=[];
+  if(n.notes)parts.push(`${p(n.notes,'note','notes')} to ${p(n.people,'person','people')}`);
+  if(n.items)parts.push(p(n.items,'checklist item','checklist items'));
+  if(n.peopleAdded)parts.push(p(n.peopleAdded,'new person','new people'));
+  if(n.noteCards)parts.push(p(n.noteCards,'new note card','new note cards'));
+  if(n.clients)parts.push(p(n.clients,'client','clients'));
+  if(n.jobs)parts.push(p(n.jobs,'job','jobs'));
+  if(n.columns)parts.push(p(n.columns,'new list','new lists'));
+  if(n.filled)parts.push(p(n.filled,'empty role/email filled','empty roles/emails filled'));
+  return parts.length?'Will add '+parts.join(', '):'Nothing new — everything in this file is already on the board';
+}
+if(typeof module!=='undefined'&&module.exports)module.exports={bvMergeBoard,bvMergeSummary};
+</script>
 <script id="boards-r5-script">
 // ═══ Boards round 5 ═══════════════════════════════════════════════════════════════════════
 // 1. The derived "Business / Team WIP" views are renamed "Live jobs by status / by person" —
@@ -21921,7 +22092,7 @@ function _r5NoteCard(title,x){return _bvNewCard({kind:'note',title:title||'',...
 function _r5PersonCard(key,x){return _bvNewCard({type:'person',personRef:key,desc:'',...(x||{})});}
 function _r5BuildBizWip(name){
   const t=Date.now();
-  const b={id:uid('b'),v:2,type:'custom',template:'bizwip',name:name||'Business WIP',createdAt:t,updatedAt:t,openedAt:t,sort:'manual',visibility:'everyone'};
+  const b={id:uid('b'),v:2,type:'custom',template:'wip-business',name:name||'Business WIP',createdAt:t,updatedAt:t,openedAt:t,sort:'manual',visibility:'everyone'};
   const opps=_bvNewCol('Place for wider client opps','blue');
   opps.cards=R5_BIZ_CLIENTS.map(n=>_r5ClientCard(n));
   const road=_bvNewCol('C&C roadmap + marketing','green');
@@ -21932,7 +22103,7 @@ function _r5BuildBizWip(name){
 }
 function _r5BuildTeamWip(name){
   const t=Date.now();
-  const b={id:uid('b'),v:2,type:'custom',template:'teamwip',name:name||'Team WIP',createdAt:t,updatedAt:t,openedAt:t,sort:'manual',visibility:'admins'};
+  const b={id:uid('b'),v:2,type:'custom',template:'wip-team',name:name||'Team WIP',createdAt:t,updatedAt:t,openedAt:t,sort:'manual',visibility:'admins'};
   const perf=_bvNewCol('Performance','pink');
   perf.cards=_bvPeopleKeys().filter(k=>!String(k).startsWith('acct_')).map(k=>_r5PersonCard(k));
   const acts=_bvNewCol('Performance actions','purple');
@@ -21943,6 +22114,16 @@ function _r5BuildTeamWip(name){
   }
   b.columns=[perf,acts];
   return b;
+}
+
+// Which hand-made WIP board this is: by its template marker (older boards: 'bizwip'/'teamwip'),
+// or by name. null for anything else.
+function _r5WipOf(b){
+  if(!b||b.type!=='custom')return null;
+  if(b.template==='wip-business'||b.template==='bizwip')return'biz';
+  if(b.template==='wip-team'||b.template==='teamwip')return'team';
+  const n=String(b.name||'').trim().toLowerCase();
+  return n==='business wip'?'biz':n==='team wip'?'team':null;
 }
 
 // ── 3. Card model helpers ────────────────────────────────────────────────────────────────
@@ -22121,7 +22302,8 @@ function _r5Editing(){
 }
 const _r5OrigTypeMeta=_bvTypeMeta;
 _bvTypeMeta=function(b){
-  if(b.type==='custom'&&(b.template==='bizwip'||b.template==='teamwip'))return{icon:b.template==='teamwip'?'ti-users-group':'ti-briefcase',label:'WIP board'};
+  const w=_r5WipOf(b);
+  if(w)return{icon:w==='team'?'ti-users-group':'ti-briefcase',label:'WIP board'};
   if(b.type==='custom'&&b.template==='import')return{icon:'ti-file-import',label:'Imported board'};
   return _r5OrigTypeMeta(b);
 };
@@ -22379,10 +22561,10 @@ _bvCloneBoard=function(src){const b=_r5OrigClone(src);delete b.shared;delete b.d
   (b.columns||[]).forEach(col=>(col.cards||[]).forEach(c=>(c.checklists||[]).forEach(l=>{l.id=uid('cl');(l.items||[]).forEach(i=>i.id=uid('ck'));})));return b;};
 
 // ── 7. New board: templates, import ────────────────────────────────────────────────────
-let _r5Imp=null;
+let _r5Imp=null,_r5ImpTarget=null,_r5ImpMode='merge';
 const _r5OrigOpenCreate=bvOpenCreate;
 bvOpenCreate=function(kind){
-  _r5Imp=null;
+  _r5Imp=null;_r5ImpTarget=null;_r5ImpMode='merge';
   _r5OrigOpenCreate(kind);
   const kinds=document.querySelector('#bv-create .bv-kinds');
   if(kinds&&R5_ADMIN){
@@ -22424,6 +22606,8 @@ bvCreateBoard=function(){
   if(k==='import'){
     if(!R5_ADMIN){toast('Only admins can import boards','warn');return;}
     if(!_r5Imp||!_r5Imp.board){toast('Choose a board file first','warn');return;}
+    const tgt=_r5ImpMerge();
+    if(tgt&&_r5ImpMode==='merge')return _r5ApplyMerge(tgt);
     const b=_r5BuildImport(_r5Imp,name);
     return _r5AddNewBoard(b,`Imported “${esc(b.name)}”`);
   }
@@ -22463,8 +22647,57 @@ function bvR5ReadImport(file){
     const words={person:'person',client:'client',job:'job',note:'note'};
     sum.innerHTML=`<b>${esc(bd.name||'Untitled board')}</b><br>${bd.columns.length} list${bd.columns.length!==1?'s':''} · ${cards.length} card${cards.length!==1?'s':''}${cards.length?' ('+Object.entries(by).map(([k,n])=>`${n} ${n!==1?(k==='person'?'people':words[k]+'s'):words[k]}`).join(', ')+')':''}${pc?`<br>${linked} of ${pc} people matched to team members`:''}${R5_PROD?`<br>Will be shared · ${bd.visibility==='everyone'?'everyone can see it':'admins only'}`:'<br>Saved in this browser only (local)'}`;
     _bvCreateNameTouched=false;_bvSyncCreateName();
+    _r5ImpChoice();
   };
   rd.readAsText(file);
+}
+// ── Import into an existing board (merge) ──────────────────────────────────────────────
+// The rules live in bvMergeBoard (boards-merge-script); these are the app's helpers for it.
+function _r5MergeHelpers(){
+  return{uid,now:Date.now(),
+    newCard:x=>_bvNewCard(x),
+    newCol:(name,color,ci)=>_bvNewCol(name,BV_COLORS.includes(color)?color:BV_COLORS[((ci||0)+1)%BV_COLORS.length]),
+    clientCard:(name,x)=>_r5ClientCard(name,x),
+    findPerson:c=>_r5FindPerson(c),
+    personName:c=>(c.personRef||c.title)?_r5Person(c).name:'',
+    personEmail:c=>_r5Person(c).recEmail||''};
+}
+// The board this file would merge into: the one Import notes… was opened from, else a board
+// with the same name (case-insensitive).
+function _r5ImpMerge(){
+  if(_r5ImpTarget){const b=_bvBoard(_r5ImpTarget);if(b&&b.type==='custom')return b;}
+  const nm=String(_r5Imp?.board?.name||'').trim().toLowerCase();if(!nm)return null;
+  return boardsList.find(b=>b&&b.type==='custom'&&!b.removedAt&&String(b.name).trim().toLowerCase()===nm)||null;
+}
+function _r5ImpChoice(){
+  const sum=document.getElementById('r5-imp-sum');if(!sum||!_r5Imp)return;
+  sum.querySelector('.r5-imp-merge')?.remove();
+  const tgt=_r5ImpMerge(),save=document.querySelector('#bv-create .modal-save'),nameRow=document.getElementById('bv-nb-name');
+  if(!tgt){if(save)save.textContent='Create board';return;}
+  let prev;try{prev=bvMergeSummary(bvMergeBoard(JSON.parse(JSON.stringify(tgt)),_r5Imp.board,_r5MergeHelpers()));}catch(e){prev='Couldn’t preview the merge';}
+  const m=_r5ImpMode==='merge',A=_r5A(tgt.name);
+  sum.insertAdjacentHTML('beforeend',`<div class="r5-imp-merge" role="radiogroup" aria-label="Where to import">
+    <label><input type="radio" name="r5-imp-mode" value="merge"${m?' checked':''} onchange="bvR5ImpMode('merge')"> Merge into existing <b>${esc(tgt.name)}</b></label>
+    <div class="r5-imp-prev">${esc(prev)}${/^Will/.test(prev)?'.':''}</div>
+    ${_r5ImpTarget?'':`<label><input type="radio" name="r5-imp-mode" value="new"${m?'':' checked'} onchange="bvR5ImpMode('new')"> Create a separate board</label>`}</div>`);
+  if(save)save.textContent=m?'Merge':'Create board';
+  if(nameRow)nameRow.disabled=m;
+}
+function bvR5ImpMode(v){_r5ImpMode=v==='new'?'new':'merge';_r5ImpChoice();}
+function _r5ApplyMerge(b){
+  const n=bvMergeBoard(b,_r5Imp.board,_r5MergeHelpers());
+  if(n.changed)saveBoardsData();
+  document.getElementById('bv-create')?.remove();
+  openBoard(b.id);
+  toast(n.changed?`Merged into “${esc(b.name)}”: ${esc(bvMergeSummary(n).replace(/^Will add /,'added '))}`:`Nothing new to add to “${esc(b.name)}” — it already has everything in that file`,n.changed?'success':'info',7000);
+}
+// Team WIP header (admins): Import notes… opens Import straight into merge mode for this board.
+function bvR5ImportNotes(id){
+  if(!R5_ADMIN)return;const b=_bvBoard(id);if(!b)return;
+  bvOpenCreate('import');_r5ImpTarget=id;_r5ImpMode='merge';
+  const sum=document.getElementById('r5-imp-sum');
+  if(sum)sum.innerHTML=`Choose a notes file (.json board export). It merges into <b>${esc(b.name)}</b>: notes are added to matching people, checklist items to matching months — nothing is duplicated.`;
+  const save=document.querySelector('#bv-create .modal-save');if(save)save.textContent='Merge';
 }
 function _r5FindPerson(c){
   if(c.personRef&&(people[c.personRef]||_r5StUser(c.personRef)))return c.personRef;   // our own export
@@ -22661,7 +22894,7 @@ function _r5Redraw(id){
   if(activeBoardId===id){_bvRenderBoard();if(document.getElementById('bv-drawer'))_bvRenderDrawer();}
   else if(!activeBoardId)_r5RedrawLanding();
 }
-function _r5RedrawLanding(){if(!activeBoardId&&document.getElementById('boards-landing')?.style.display!=='none'){_r5OrigRenderList();_r5Landing();}}
+function _r5RedrawLanding(){if(!activeBoardId&&document.getElementById('boards-landing')?.style.display!=='none'){_r5OrigRenderList();_r5Landing();_r5PinWip();}}
 document.addEventListener('focusout',()=>{if(R5S.redraw)setTimeout(()=>{if(R5S.redraw&&!_r5Editing()){R5S.redraw=false;if(activeBoardId)_bvRenderBoard();else _r5RedrawLanding();}},250);});
 async function _r5Pull(force){
   if(!R5_PROD)return;
@@ -22686,6 +22919,7 @@ async function _r5Pull(force){
         if(gone.some(b=>b.id===activeBoardId)){toast('That board was removed or is no longer shared with you','info');closeBoardDetail();}
       }
       if(landingChanged)_r5RedrawLanding();
+      R5S.pulledOk=true;if(_r5BoardsSeen)_r5AutoWip();
       if(R5S.queue.size)_r5Schedule();
       if(R5S.status==='offline'||R5S.status==='error'){if(!R5S.queue.size){R5S.err='';_r5SetStatus('saved');}}
     }catch(e){if(e.status!==401){R5S.err=e.message;if(!R5S.queue.size)_r5SetStatus(navigator.onLine===false?'offline':'loadfail');}}
@@ -22758,10 +22992,16 @@ _bvRenderBoard=function(){
   _r5OrigRenderBoard();
   const b=_bvCur();const tag=document.querySelector('#bv-head .bv-tag');
   if(b&&tag)tag.insertAdjacentHTML('afterend',_r5SyncHTML(b));
+  if(b&&R5_ADMIN&&_r5WipOf(b)==='team'){
+    const opt=document.querySelector('#bv-head .bv-head-actions > .bv-ibtn[title="Board options"]');
+    if(opt)opt.insertAdjacentHTML('beforebegin',`<button class="d-action" onclick="bvR5ImportNotes(${_r5A(b.id)})" title="Merge a notes file (.json) into this board"><i class="ti ti-file-import"></i> Import notes…</button>`);
+  }
 };
 const _r5OrigTile=_bvTileHTML;
 _bvTileHTML=function(b){
   let h=_r5OrigTile(b);
+  const w=_r5WipOf(b);
+  if(w)h=h.replace('<div class="bv-tile"',`<div class="bv-tile r5-pinned" data-r5wip="${w}"`).replace('<div class="bv-tile-top">','<div class="bv-tile-top"><span class="r5-tile-ic r5-pin" title="Pinned"><i class="ti ti-pin"></i></span>');
   if(R5_PROD&&b.type==='custom'){
     const ic=b.shared?(b.visibility==='admins'?`<span class="r5-tile-ic" title="Shared · admins only"><i class="ti ti-lock"></i></span>`:`<span class="r5-tile-ic" title="Shared with the team"><i class="ti ti-users"></i></span>`):`<span class="r5-tile-ic" title="Only in this browser"><i class="ti ti-device-laptop"></i></span>`;
     h=h.replace('<button class="bv-ibtn sm" title="Board options"',ic+'<button class="bv-ibtn sm" title="Board options"');
@@ -22769,7 +23009,7 @@ _bvTileHTML=function(b){
   return h;
 };
 const _r5OrigRenderList=renderBoardsList;
-renderBoardsList=function(){_r5OrigRenderList();_r5Landing();_r5Pull();_r5RemovedList();};
+renderBoardsList=function(){_r5BoardsSeen=true;_r5OrigRenderList();_r5Landing();_r5PinWip();_r5Pull();_r5RemovedList();if(!R5_PROD||R5S.pulledOk)_r5AutoWip();};
 // Admins: "Recently removed" under the board grid, with Restore (GET /api/boards?removed=1).
 let _r5Rm={at:0,list:null};
 async function _r5RemovedList(force){
@@ -22818,6 +23058,36 @@ if(R5_PROD){
   window.addEventListener('pagehide',()=>{if(R5S.queue.size)_r5PersistQueue();});
   setTimeout(()=>{_r5Pull(true);if(R5S.queue.size||R5S.removed.size)_r5Flush();},1200);
 }
+// ── 9. The two WIP boards are just there ─────────────────────────────────────────────────
+// When an admin opens Boards (production: after the shared list has loaded), any missing
+// "Business WIP" (everyone) / "Team WIP" (admins) board is made from its template and saved
+// through the normal shared-save path. A board counts as existing if its name matches
+// (case-insensitive) or it carries the template marker, archived or not. Once per session;
+// if the shared list never loaded, nothing is created. On localhost it goes to local boards.
+let _r5BoardsSeen=false,_r5AutoDone=false;
+function _r5AutoWip(){
+  if(_r5AutoDone||!R5_ADMIN)return;
+  if(R5_PROD&&(!AUTH||!AUTH.admin||!R5S.pulledOk))return;
+  _r5AutoDone=true;
+  const have=boardsList.filter(b=>b&&b.type==='custom'&&!b.removedAt&&!R5S.removed.has(b.id)&&(!R5_PROD||b.shared));
+  const has=k=>have.some(b=>_r5WipOf(b)===k);
+  const made=[];
+  _bvJM=new Map(jobs.map(j=>[String(j.id),j]));
+  if(!has('biz'))made.push(_r5BuildBizWip());
+  if(!has('team'))made.push(_r5BuildTeamWip());
+  if(!made.length)return;
+  made.forEach(b=>{b.openedAt=0;if(R5_PROD){b.shared=true;b.visibilityAt=Date.now();}else delete b.visibility;boardsList.push(b);});
+  saveBoardsData();
+  if(R5_PROD){made.forEach(b=>{R5S.snap.delete(b.id);R5S.queue.add(b.id);});_r5Stamp();_r5Flush();}
+  _r5RedrawLanding();
+  toast(`${made.map(b=>'“'+esc(b.name)+'”').join(' and ')} ${made.length>1?'boards are':'board is'} ready${R5_PROD?' for the team':''}`,'success');
+}
+// Pinned first on the landing: Business WIP, then Team WIP.
+function _r5PinWip(){
+  const g=document.getElementById('bv-grid');if(!g)return;
+  ['team','biz'].forEach(w=>g.querySelectorAll(`.bv-tile[data-r5wip="${w}"]`).forEach(el=>g.prepend(el)));
+}
+
 // Other tabs: when another tab writes cc_boards (an edit there, or its pull), re-read it and
 // re-render Boards if it's on screen, instead of reloading the whole tab. Boards this tab still
 // has unsent edits for keep this tab's copy.
