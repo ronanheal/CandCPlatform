@@ -22067,6 +22067,10 @@ body.dark .qinv-toolbar .filter-btn input[type=checkbox]{accent-color:var(--ink)
 .qinv-card-num,.qinv-card-job,.inv-td.ci-num{font-variant-numeric:tabular-nums;color:var(--muted);}
 .qinv-card-val,.inv-td.ci-amt{font-variant-numeric:tabular-nums;font-weight:600;}
 #invoices-list,#quotes-list,#exp-list-wrap,.jobs-table-wrap,.time-table-wrap{background:var(--white)!important;}
+/* Invoices: the PO column was hogging width while job names wrapped to three lines */
+#invoices-list .inv-table th.ci-po{width:110px;}
+#invoices-list .inv-table th.ci-job{width:28%;}
+#invoices-list .inv-table td.ci-po{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;}
 #jobs-footer-bar{background:var(--white)!important;border:var(--hair)!important;box-shadow:var(--e-1)!important;}
 /* Job plan tables sit on the same white as their phase card (they used the window cream) */
 .items-t thead th{position:static;}
@@ -22358,6 +22362,17 @@ body.dark :is(.qd-opts,#dtab-quote,.inv-modal) input[type=checkbox]{accent-color
   new MutationObserver(ms=>{for(const m of ms){if(m.type==='childList'){m.addedNodes.forEach(scan);if(m.target.closest&&m.target.closest('.modal-bg'))scan(m.target);}}})
     .observe(document.body,{childList:true,subtree:true});
   document.querySelectorAll('.modal-bg').forEach(tagModal);
+
+  // 3 · Sidebar: a job opened from anywhere (Reporting, ⌘K, a dashboard row) belongs to Jobs, so
+  //     the rail marks Jobs instead of keeping the previous page lit.
+  if(typeof openJobDetail==='function'){
+    const _ojd=openJobDetail;
+    openJobDetail=function(){
+      const r=_ojd.apply(this,arguments);
+      try{const d=document.getElementById('view-detail');if(d&&!d.classList.contains('hidden')){document.querySelectorAll('.s-btn[id]').forEach(el=>el.classList.toggle('on',el.id==='snav-jobs'));}}catch(e){}
+      return r;
+    };
+  }
 })();
 </script>
 </body>
