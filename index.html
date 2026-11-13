@@ -23573,6 +23573,10 @@ body.dark #view-todo .drawer-task-chip{background:var(--surface-2)!important;}
   --chart-1:#5B6BAF;                  /* chart hero (dusk) — mirrors CV slot 0 set in ds-r5-script */
 }
 body.dark{--seg-bg:rgba(255,255,255,.05);--chart-1:#7383CC;}
+/* Tokens built from other tokens resolve where they are declared: on :root they kept the LIGHT
+   --border / --red / --ink, so in dark mode every hairline card border was a pale line and the
+   focus ring a dark red. Re-declared on body, where body.dark's palette applies. */
+body{--hair:1px solid color-mix(in srgb,var(--border) 85%,transparent);--focus:color-mix(in srgb,var(--red) 70%,var(--ink));}
 
 /* ── P1 · Page header: title (display) → one muted line → toolbar. Same gutter everywhere. ── */
 .view-title,.sett-tab-hd{font:750 30px/1.1 var(--display)!important;letter-spacing:-.04em!important;}
