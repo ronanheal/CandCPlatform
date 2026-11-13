@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 # Round-trip test for the encrypted publish/restore in scripts/sync_loop.sh, against a throwaway
-# local "origin". Needs a python3 with the cryptography package on PATH.
+# local "origin". Needs a python3 with the cryptography package: on PATH, or point PYTHON at one
+# (e.g. a venv's bin/python); its directory is then put first on PATH (it must hold a python3).
 #   bash scripts/test_sync_crypt.sh
+#   PYTHON=/path/to/venv/bin/python bash scripts/test_sync_crypt.sh
 set -uo pipefail
 HERE=$(cd "$(dirname "$0")/.." && pwd)
+if [ -n "${PYTHON:-}" ]; then
+  export PATH="$(cd "$(dirname "$PYTHON")" && pwd):$PATH"
+fi
+python3 -c 'import cryptography' 2>/dev/null || { echo "needs python3 with the cryptography package (set PYTHON)"; exit 1; }
 T=$(mktemp -d)
 trap 'rm -rf "$T"' EXIT
 export HOME="$T" GIT_CONFIG_GLOBAL="$T/gitconfig"   # sync_loop.sh sets git config --global
@@ -73,8 +79,29 @@ echo "5. no DATA_KEY after cut-over refuses to sync from empty"
 ( unset DATA_KEY; source "$T/funcs.sh" >/dev/null; restore ) >/dev/null 2>&1; rc=$?
 check "restore fails"                '[ $rc -ne 0 ]'
 
+check "missing key is a decrypt failure (2), not a fetch hiccup" '[ $rc -eq 2 ]'
+
 echo "6. wrong key"
-( export DATA_KEY=$(python3 -c 'print("ab"*32)'); source "$T/funcs.sh" >/dev/null; restore ) >/dev/null 2>&1; rc=$?
-check "restore fails"                '[ $rc -ne 0 ]'
+WRONG=$(python3 -c 'print("ab"*32)')
+( export DATA_KEY=$WRONG; source "$T/funcs.sh" >/dev/null; restore ) >/dev/null 2>&1; rc=$?
+check "restore fails with 2 (decrypt)" '[ $rc -eq 2 ]'
+
+echo "7. the loop itself fails the run on a decrypt failure"
+# Runs the real script: restore is the first thing a cycle does, so a wrong key must end the run
+# at once with an ::error:: annotation and a non-zero exit (a bug here would sleep 15 min, so it
+# is killed after 60 s and counted as a failure).
+( DATA_KEY=$WRONG bash "$HERE/scripts/sync_loop.sh" > "$T/loop.out" 2>&1; echo $? > "$T/loop.rc" ) &
+lp=$!
+for _ in $(seq 1 60); do [ -e "$T/loop.rc" ] && break; sleep 1; done
+[ -e "$T/loop.rc" ] || { kill $lp 2>/dev/null; pkill -f "$HERE/scripts/sync_loop.sh" 2>/dev/null; echo 124 > "$T/loop.rc"; }
+check "exits non-zero"               '[ "$(cat "$T/loop.rc")" != 0 ]'
+check "::error:: annotation"         'grep -q "::error::stopping" "$T/loop.out"'
+check "no sync was started"          '! grep -q "── \(full\|fast\) sync" "$T/loop.out"'
+check "key only in the ::add-mask:: line" '! grep -v "^::add-mask::" "$T/loop.out" | grep -q "$WRONG"'
+
+echo "8. a plain fetch failure is a hiccup (1), retried next cycle"
+( export DATA_KEY=$KEY; source "$T/funcs.sh" >/dev/null; git remote set-url origin "$T/missing.git"; restore ) >/dev/null 2>&1; rc=$?
+git remote set-url origin "$T/origin.git"
+check "restore returns 1"            '[ $rc -eq 1 ]'
 
 [ $fail = 0 ] && echo "all sync crypto checks passed" || { echo "SOME CHECKS FAILED"; exit 1; }

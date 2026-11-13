@@ -2986,7 +2986,11 @@ function clearBgImage(){try{localStorage.removeItem('cc_bg_image');}catch(e){}ap
 // email/name/personKey/admin so "me" can be known synchronously at load; it is a UI hint only —
 // every /api call re-checks the real session. On localhost / file:// there is no server: the old
 // per-browser "who am I" picker and raw-GitHub data path stay, so local testing works unchanged.
-const IS_LOCAL_DEV=location.protocol==='file:'||/^(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)$/.test(location.hostname);
+// Override for `vercel dev` (or any local server that runs /api): ?api=1 in the URL, or
+// localStorage cc_use_api='1', makes localhost behave like the live site (signed-in identity,
+// /api/data, shared boards). docs/SETUP-AUTH.md → Local testing.
+const IS_LOCAL_DEV=(location.protocol==='file:'||/^(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)$/.test(location.hostname))
+  &&!(location.protocol!=='file:'&&(/(?:^|[?&])api=1(?:&|$)/.test(location.search)||(()=>{try{return localStorage.getItem('cc_use_api')==='1';}catch(e){return false;}})()));
 const AUTH=(()=>{
   if(IS_LOCAL_DEV)return null;
   try{
@@ -13105,14 +13109,19 @@ initStreamtime().then(()=>{
 // landed "all at once" rather than throughout the day — the data was fine, the browser
 // just never asked for it again. Skipped while a modal/drawer is open so a background
 // refresh can't yank the UI out from under an in-progress edit.
-let _stPollInFlight=false;
-setInterval(async()=>{
+// Background tabs skip the poll (no point fetching ~17 files nobody is looking at) and catch
+// up when they become visible again, if a poll was missed.
+let _stPollInFlight=false,_stPollAt=Date.now(),_stPollMissed=false;
+async function _stPoll(){
   if(_stPollInFlight)return;
+  if(document.hidden){_stPollMissed=true;return;}
   const modalOpen=document.querySelector('.modal-bg.on,.inv-bg.on,#detail-drawer.open,#doc-preview-modal');
   if(modalOpen)return;
-  _stPollInFlight=true;
+  _stPollInFlight=true;_stPollMissed=false;_stPollAt=Date.now();
   try{await initStreamtime(true);}finally{_stPollInFlight=false;}
-},5*60*1000);
+}
+setInterval(_stPoll,5*60*1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&(_stPollMissed||Date.now()-_stPollAt>5*60*1000))_stPoll();});
 
 // Cross-tab live sync — when another open tab writes native data (archive a job, log time,
 // edit a client, create a quote…), refresh this tab so the change appears without a manual
@@ -13120,7 +13129,9 @@ setInterval(async()=>{
 // double-apply risk of merging onto already-merged jobs. Debounced, and deferred while the
 // user is mid-edit (open modal/drawer/search or a focused field) so it never interrupts them.
 let _xtabTimer=null;
-const _xtabKeys=['cc_native_jobs','cc_job_overlay','cc_native_time','cc_local_quotes','cc_clients','cc_people','cc_boards'];
+// cc_boards is not here: a shared-board pull rewrites it often, and a reload would interrupt the
+// other tabs. Boards re-reads it and re-renders instead (boards-r5-script, "Other tabs").
+const _xtabKeys=['cc_native_jobs','cc_job_overlay','cc_native_time','cc_local_quotes','cc_clients','cc_people'];
 window.addEventListener('storage',e=>{
   if(!e.key||!_xtabKeys.includes(e.key))return;
   clearTimeout(_xtabTimer);
@@ -15549,8 +15560,8 @@ body.dark .modal-bg.bv-drawer-bg{background:rgba(0,0,0,.35);}
 // ═══════════════════════════════════════════════════════════════════════════
 // BOARDS v2 — the whole Boards engine (landing, custom kanban, client/people live views).
 //
-// Storage: per-browser, localStorage 'cc_boards' (also included in Workspace backup and the
-// cross-tab reload). NOTE: sharing boards across the team needs Razor's backend (a boards
+// Storage: per-browser, localStorage 'cc_boards' (also included in Workspace backup; other tabs
+// re-read it and re-render, see "Other tabs" in boards-r5-script). NOTE: sharing boards across the team needs Razor's backend (a boards
 // table + /api/boards) — until that exists every browser keeps its own boards.
 //
 // Shapes (v:2)
@@ -15575,6 +15586,10 @@ function saveBoardsData(){
 }
 
 const BV_COLORS=['grey','blue','amber','purple','green','red','teal','pink'];
+// Board data can come from other people (shared boards): anything that lands in a class/style
+// attribute or a number field goes through these, never straight from the board.
+const _bvColor=c=>BV_COLORS.includes(c)?c:'grey';
+const _bvWip=col=>{const n=parseInt(col&&col.wip,10);return n>0&&n<=9999?n:0;};
 const BV_STAGES=[{key:'quote',label:'Quote',color:'amber'},{key:'live',label:'Live',color:'green'},{key:'completed',label:'Completed',color:'blue'},{key:'invoiced',label:'Invoiced',color:'purple'}];
 const BV_TEMPLATES={
   studio:{name:'Studio pipeline',icon:'ti-briefcase',color:'green',desc:'Every live job by workflow stage. Moving a card updates the job’s stage.'},
@@ -15747,7 +15762,7 @@ function bvLandSearch(q){
 }
 function _bvTileHTML(b){
   const meta=_bvTypeMeta(b);let mini='',stats='';
-  const miniCol=(color,n,label)=>`<div class="bv-mini-col" style="--col:var(--bv-${esc(color||'grey')})" title="${esc(label)}: ${n}"><span class="bv-mini-dot"></span>${'<span class="bv-mini-card"></span>'.repeat(Math.min(n,3))}${n>3?`<span class="bv-mini-n">${n}</span>`:''}</div>`;
+  const miniCol=(color,n,label)=>`<div class="bv-mini-col" style="--col:var(--bv-${_bvColor(color)})" title="${esc(label)}: ${n}"><span class="bv-mini-dot"></span>${'<span class="bv-mini-card"></span>'.repeat(Math.min(n,3))}${n>3?`<span class="bv-mini-n">${n}</span>`:''}</div>`;
   if(b.type==='client'){
     const js=jobs.filter(j=>j.company===b.clientFilter&&j.status!=='archived');
     mini=BV_STAGES.map(s=>miniCol(s.color,js.filter(j=>(j.workflowStatus||'live')===s.key).length,s.label)).join('');
@@ -15951,10 +15966,10 @@ function _bvRenderBody(){
 function _bvColHTML(b,col,f,fa){
   const all=(col.cards||[]).filter(c=>!c.archived);
   const vis=_bvSorted(b,all.filter(c=>_bvMatch(c,col,f)));
-  const n=all.length,over=col.wip>0&&n>col.wip;
-  const countTxt=fa?`${vis.length}<span class="bv-of">/${n}</span>`:col.wip>0?`${n}<span class="bv-of">/${col.wip}</span>`:`${n}`;
+  const wip=_bvWip(col),n=all.length,over=wip>0&&n>wip;
+  const countTxt=fa?`${vis.length}<span class="bv-of">/${n}</span>`:wip>0?`${n}<span class="bv-of">/${wip}</span>`:`${n}`;
   const dnd=` ondragover="bvDragOver(event,${_bvA(col.id)})" ondrop="bvDrop(event,${_bvA(col.id)})" ondragleave="bvDragLeave(event)"`;
-  const style=`style="--col:var(--bv-${esc(col.color||'grey')})"`;
+  const style=`style="--col:var(--bv-${_bvColor(col.color)})"`;
   if(col.collapsed)return`<section class="bv-col is-collapsed${over?' is-over':''}" data-col="${esc(col.id)}" ${style}${dnd}><button class="bv-col-collapsed" onclick="bvColSet(${_bvA(col.id)},'collapsed',false)" title="Expand ${esc(col.name)}"><span class="bv-dot"></span><span class="bv-col-count${over?' warn':''}">${n}</span><span class="bv-col-vname">${esc(col.name)}</span></button></section>`;
   const limit=_bvShowAll[col.id]?Infinity:BV_COL_PAGE;
   const cards=vis.slice(0,limit).map(c=>_bvCardHTML(b,col,c)).join('');
@@ -15965,7 +15980,7 @@ function _bvColHTML(b,col,f,fa){
       <span class="bv-dot"></span>
       <span class="bv-col-name" title="Double-click to rename" ondblclick="bvRenameColInline(${_bvA(col.id)})">${esc(col.name)}</span>
       ${col.stage?`<i class="ti ti-refresh bv-col-sync" title="Linked to job stage: ${esc(_bvStageLabel(col.stage))}"></i>`:''}
-      <span class="bv-col-count${over?' warn':''}" title="${col.wip>0?`WIP limit ${col.wip}${over?' — over limit':''}`:fa?'Matching / total':'Cards'}">${countTxt}</span>
+      <span class="bv-col-count${over?' warn':''}" title="${wip>0?`WIP limit ${wip}${over?' — over limit':''}`:fa?'Matching / total':'Cards'}">${countTxt}</span>
       <span class="bv-sp"></span>
       <button class="bv-ibtn sm" title="Add card to top" draggable="false" onclick="bvQuickAdd(${_bvA(col.id)},'top')"><i class="ti ti-plus"></i></button>
       <button class="bv-ibtn sm" title="Column options" draggable="false" onclick="bvColMenu(this,${_bvA(col.id)})"><i class="ti ti-dots"></i></button>
@@ -16140,7 +16155,7 @@ function bvColMenu(anchor,colId){
     <div class="bv-mi-sep"></div>
     <div class="bv-pop-sec">Colour</div>
     <div class="bv-swatches">${BV_COLORS.map(c=>`<button class="bv-sw${col.color===c?' on':''}" style="--col:var(--bv-${c})" title="${c}" onclick="bvColSet(${A},'color','${c}');_bvClosePop();"></button>`).join('')}</div>
-    <div class="bv-pop-row"><span style="flex:1">WIP limit</span><input type="number" min="0" class="form-inp" placeholder="None" value="${col.wip||''}" onchange="bvColSet(${A},'wip',this.value)" onkeydown="if(event.key==='Enter'){this.blur();_bvClosePop();}"></div>
+    <div class="bv-pop-row"><span style="flex:1">WIP limit</span><input type="number" min="0" class="form-inp" placeholder="None" value="${esc(String(_bvWip(col)||''))}" onchange="bvColSet(${A},'wip',this.value)" onkeydown="if(event.key==='Enter'){this.blur();_bvClosePop();}"></div>
     <button class="bv-mi${col.done?' on':''}" onclick="bvColSet(${A},'done',${!col.done});_bvClosePop();"><i class="ti ti-circle-check"></i><span>Done column</span><i class="ti ti-check bv-mi-ck"></i></button>
     ${col.stage?`<div class="bv-pop-empty"><i class="ti ti-refresh"></i> Linked to job stage “${esc(_bvStageLabel(col.stage))}”</div>`:''}
     ${_bvMI('ti-layout-sidebar-left-collapse','Collapse column',`bvColSet(${A},'collapsed',true)`)}
@@ -16205,7 +16220,7 @@ function _bvAddCard(colId,title,pos,extra){
   if(pos==='top')col.cards.unshift(card);else col.cards.push(card);
   _bvTouch(b,card);_bvRenderBody();
   if(!_bvMatch(card,col,_bvF()))toast('Card added — it’s hidden by the current filters','info');
-  if(col.wip>0){const n=col.cards.filter(c=>!c.archived).length;if(n>col.wip)toast(`${esc(col.name)} is over its WIP limit (${n}/${col.wip})`,'warn');}
+  const wip=_bvWip(col);if(wip>0){const n=col.cards.filter(c=>!c.archived).length;if(n>wip)toast(`${esc(col.name)} is over its WIP limit (${n}/${wip})`,'warn');}
   return card;
 }
 function _bvMoveCard(b,cardId,toColId,ref){
@@ -16223,7 +16238,7 @@ function _bvMoveCard(b,cardId,toColId,ref){
 }
 function _bvAfterMove(b,card,to){
   const n=to.cards.filter(c=>!c.archived).length;
-  if(to.wip>0&&n>to.wip)toast(`${esc(to.name)} is over its WIP limit (${n}/${to.wip})`,'warn');
+  const wip=_bvWip(to);if(wip>0&&n>wip)toast(`${esc(to.name)} is over its WIP limit (${n}/${wip})`,'warn');
   // Studio pipeline only: a stage column move writes the job's workflow stage (local overlay via dbUpdateJob)
   if(b.studio&&to.stage&&card.jobRef){
     const j=jobs.find(x=>String(x.id)===String(card.jobRef));
@@ -16272,7 +16287,7 @@ function bvArchivedCards(){
   const m=document.createElement('div');m.className='modal-bg on';m.id='bv-arch-modal';
   m.innerHTML=`<div class="modal bv-modal" style="max-width:560px;">
     <div class="modal-hd"><span class="modal-hd-title">Archived cards</span><button class="modal-x" onclick="document.getElementById('bv-arch-modal').remove()"><i class="ti ti-x"></i></button></div>
-    <div class="modal-bd">${rows.length?`<div class="bv-bulk-list">${rows.map(({col,c})=>`<div class="bv-bulk-row" style="cursor:default"><span class="bv-dot" style="--col:var(--bv-${esc(col.color||'grey')})"></span><span class="bv-bn">${esc(_bvTitle(c))}</span><span class="bv-bc">${esc(col.name)} · ${_bvAgo(c.archivedAt)}</span><button class="d-action sm" onclick="bvRestoreCard(${_bvA(c.id)})">Restore</button><button class="bv-ibtn sm" title="Delete for good" onclick="bvDeleteCard(${_bvA(c.id)})"><i class="ti ti-trash"></i></button></div>`).join('')}</div>`:'<div class="bv-pop-empty" style="text-align:center;padding:24px;">No archived cards on this board.</div>'}</div>
+    <div class="modal-bd">${rows.length?`<div class="bv-bulk-list">${rows.map(({col,c})=>`<div class="bv-bulk-row" style="cursor:default"><span class="bv-dot" style="--col:var(--bv-${_bvColor(col.color)})"></span><span class="bv-bn">${esc(_bvTitle(c))}</span><span class="bv-bc">${esc(col.name)} · ${_bvAgo(c.archivedAt)}</span><button class="d-action sm" onclick="bvRestoreCard(${_bvA(c.id)})">Restore</button><button class="bv-ibtn sm" title="Delete for good" onclick="bvDeleteCard(${_bvA(c.id)})"><i class="ti ti-trash"></i></button></div>`).join('')}</div>`:'<div class="bv-pop-empty" style="text-align:center;padding:24px;">No archived cards on this board.</div>'}</div>
     <div class="modal-ft"><button class="modal-cancel" onclick="document.getElementById('bv-arch-modal').remove()">Close</button></div></div>`;
   m.addEventListener('mousedown',e=>{if(e.target===m)m.remove();});
   document.body.appendChild(m);
@@ -16511,7 +16526,7 @@ function _bvDrawerHTML({b,col,card:c}){
     ?`<div class="bv-cm">${_bvAv(x.m.by,'')||'<span class="bv-av more">?</span>'}<div class="bv-cm-b"><div class="bv-cm-h"><b>${esc(people[x.m.by]?.name||'Someone')}</b><span>${_bvAgo(x.m.ts)}</span>${x.m.by===MY_PERSON?`<button class="bv-linkbtn" onclick="bvDelComment(${_bvA(x.m.id)})">Delete</button>`:''}</div><div class="bv-cm-t">${linkify(esc(x.m.text))}</div></div></div>`
     :`<div class="bv-act"><i class="ti ti-point"></i><span>${esc(people[x.a.by]?.name?.split(' ')[0]||'Someone')} · ${esc(x.a.text)} · ${_bvAgo(x.a.ts)}</span></div>`).join('');
   return`<div class="bv-dr-top">
-      <span class="bv-dr-col" style="--col:var(--bv-${esc(col.color||'grey')})"><span class="bv-dot"></span><select class="cc-select" title="Move to column" onchange="bvMoveOpenCard(this.value)">${colOpts}</select></span>
+      <span class="bv-dr-col" style="--col:var(--bv-${_bvColor(col.color)})"><span class="bv-dot"></span><select class="cc-select" title="Move to column" onchange="bvMoveOpenCard(this.value)">${colOpts}</select></span>
       <span class="bv-sp"></span>
       <button class="bv-ibtn" title="Duplicate card" onclick="bvDuplicateCard(${_bvA(c.id)})"><i class="ti ti-copy"></i></button>
       <button class="bv-ibtn" title="Archive card" onclick="bvArchiveCard(${_bvA(c.id)})"><i class="ti ti-archive"></i></button>
@@ -21177,7 +21192,7 @@ function _bvLiveColHTML(c,q){
   const more=vis.length>limit?`<button class="bv-more" onclick="_bvShowAll[${_bvA(c.key)}]=true;_bvRenderBody()">Show ${vis.length-limit} more</button>`:'';
   const empty=vis.length?'':`<div class="bv-col-empty">${q&&all.length?'No jobs match the search':'No jobs'}</div>`;
   const count=q?`${vis.length}<span class="bv-of">/${all.length}</span>`:`${all.length}`;
-  const col=c.raw?esc(c.raw):`var(--bv-${esc(c.color||'grey')})`;
+  const col=c.raw?esc(c.raw):`var(--bv-${_bvColor(c.color)})`;
   return`<section class="bv-col bv-live-col" data-col="${esc(c.key)}" style="--col:${col}">
     <header class="bv-col-h is-static">${c.lead||'<span class="bv-dot"></span>'}<span class="bv-col-name" title="${esc(c.name)}">${esc(c.name)}</span><i class="ti ti-refresh bv-col-sync" title="Live from synced jobs"></i><span class="bv-col-count" title="${q?'Matching / total':'Jobs'}">${count}</span><span class="bv-sp"></span></header>
     <div class="bv-col-list" data-col="${esc(c.key)}">${cards}${empty}${more}</div><div class="bv-col-pad"></div>
@@ -22521,14 +22536,16 @@ function bvR5Export(id){
 // ── 8. Shared boards (production only) ─────────────────────────────────────────────────
 const R5S={status:'idle',queue:new Set(),inflight:new Set(),removed:new Map(),snap:new Map(),timer:null,retryTimer:null,retry:0,err:'',lastPull:0,pulling:null};
 function _r5Fp(b){
-  const cols=new Map(),cards=new Map();
+  const cols=new Map(),cards=new Map(),colU=new Map();
   (b.columns||[]).forEach(col=>{
     const{cards:cc,updatedAt:_u,...rest}=col;
     cols.set(col.id,JSON.stringify(rest)+'|'+(cc||[]).map(k=>k.id).join(','));
-    (cc||[]).forEach(k=>{const{updatedAt:_k,...kr}=k;cards.set(k.id,{j:JSON.stringify(kr),col:col.id});});
+    colU.set(col.id,col.updatedAt||0);
+    (cc||[]).forEach(k=>{const{updatedAt:_k,...kr}=k;cards.set(k.id,{j:JSON.stringify(kr),col:col.id,u:k.updatedAt||0});});
   });
   const{columns:_c,openedAt:_o,updatedAt:_b,deleted:_d,shared:_s,...meta}=b;
-  return{cols,cards,meta:JSON.stringify(meta)};
+  // order: reordering columns is a change too (the server takes the newer board's order)
+  return{cols,cards,colU,order:(b.columns||[]).map(c=>c.id).join(','),meta:JSON.stringify(meta)};
 }
 // Stamp what changed since the last look: card/column updatedAt, tombstones for removed ids.
 function _r5Stamp(){
@@ -22538,16 +22555,20 @@ function _r5Stamp(){
     const prev=R5S.snap.get(b.id),cur=_r5Fp(b);
     R5S.snap.set(b.id,cur);
     if(!prev)return;
-    let ch=prev.meta!==cur.meta;
+    let ch=prev.meta!==cur.meta||prev.order!==cur.order;
     const cardObj=new Map();(b.columns||[]).forEach(col=>(col.cards||[]).forEach(k=>cardObj.set(k.id,k)));
     cur.cards.forEach((v,id)=>{const p=prev.cards.get(id);if(!p||p.j!==v.j||p.col!==v.col){ch=true;const k=cardObj.get(id);if(k)k.updatedAt=Math.max(now,(k.updatedAt||0)+1);}});
     cur.cols.forEach((v,id)=>{const p=prev.cols.get(id);if(p!==v){ch=true;const pp=p&&p.split('|')[0],vv=v.split('|')[0];if(pp!==vv){const col=_bvColOf(b,id);if(col)col.updatedAt=now;}}});
-    prev.cards.forEach((_,id)=>{if(!cur.cards.has(id)){(b.deleted=b.deleted||{})[id]=now;ch=true;}});
-    prev.cols.forEach((_,id)=>{if(!cur.cols.has(id)){(b.deleted=b.deleted||{})[id]=now;ch=true;}});
+    // A tombstone must outrank the last edit it deletes, even one stamped ahead of this clock.
+    prev.cards.forEach((p,id)=>{if(!cur.cards.has(id)){(b.deleted=b.deleted||{})[id]=Math.max(now,(p.u||0)+1);ch=true;}});
+    prev.cols.forEach((_,id)=>{if(!cur.cols.has(id)){(b.deleted=b.deleted||{})[id]=Math.max(now,((prev.colU&&prev.colU.get(id))||0)+1);ch=true;}});
     if(ch){b.updatedAt=Math.max(now,b.updatedAt||0);R5S.queue.add(b.id);}
   });
 }
-function _r5PersistQueue(){try{localStorage.setItem('cc_boards_dirty',JSON.stringify([...R5S.queue]));}catch(e){}}
+function _r5PersistQueue(){try{
+  localStorage.setItem('cc_boards_dirty',JSON.stringify([...R5S.queue]));
+  if(R5S.removed.size)localStorage.setItem('cc_boards_removed',JSON.stringify([...R5S.removed]));else localStorage.removeItem('cc_boards_removed');
+}catch(e){}}
 const _r5OrigSave=saveBoardsData;
 saveBoardsData=function(){
   if(R5_PROD)_r5Stamp();
@@ -22559,8 +22580,8 @@ function _r5Schedule(){
   if(R5S.status!=='saving')_r5SetStatus('pending');
   R5S.timer=setTimeout(_r5Flush,800);
 }
-async function _r5Req(method,body){
-  const r=await fetch('/api/boards',{method,credentials:'same-origin',cache:'no-store',headers:body?{'content-type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
+async function _r5Req(method,body,query){
+  const r=await fetch('/api/boards'+(query||''),{method,credentials:'same-origin',cache:'no-store',headers:body?{'content-type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
   let j={};try{j=await r.json();}catch(e){}
   if(r.status===401){try{_authSignedOut();}catch(e){}}
   if(!r.ok){const e=new Error(j.error||('Request failed ('+r.status+')'));e.status=r.status;throw e;}
@@ -22583,12 +22604,19 @@ async function _r5Flush(){
       const cur=_bvBoard(id);
       if(cur&&cur.updatedAt===sentAt&&!R5S.queue.has(id))_r5Apply(j.board);
     }catch(e){
-      if(e.status===403){toast(`Couldn’t save “${esc(b.name)}”: ${esc(e.message)}`,'warn');}
+      if(_r5Refused(e))_r5KeepLocal(id,e);
       else{failed=e;R5S.queue.add(id);}
     }finally{R5S.inflight.delete(id);}
   }
   for(const[id,b]of[...R5S.removed]){
-    try{await _r5Req('PUT',{board:_r5Clean(b)});R5S.removed.delete(id);}catch(e){if(e.status===403||e.status===400)R5S.removed.delete(id);else failed=e;}
+    try{await _r5Req('PUT',{board:_r5Clean(b)});R5S.removed.delete(id);}
+    catch(e){
+      if(_r5Refused(e)){
+        // Not allowed to delete it (only its creator or an admin can): it stays for everyone.
+        R5S.removed.delete(id);R5S.lastPull=0;setTimeout(()=>_r5Pull(true),0);
+        toast(`Couldn’t delete “${esc(b.name)}”: ${esc(e.message)}`,'warn',7000);
+      }else failed=e;
+    }
   }
   _r5PersistQueue();
   if(failed){
@@ -22602,6 +22630,19 @@ async function _r5Flush(){
   }
 }
 function bvR5Retry(){R5S.retry=0;_r5Flush();}
+// 400/403/404/413: the server will refuse this save every time (no access any more, the board
+// became admins-only, it's too large or invalid). Retrying would loop, and dropping the board
+// would lose the edits, so they move to a local-only copy in this browser and the person is told.
+// The shared original comes back from the server on the next pull if they can still see it.
+const _r5Refused=e=>[400,403,404,413].includes(e&&e.status);
+function _r5KeepLocal(id,e){
+  const b=_bvBoard(id);R5S.queue.delete(id);R5S.snap.delete(id);if(!b)return;
+  const copy=_bvCloneBoard(b);copy.name=String(b.name+' (my copy)').slice(0,200);
+  const i=boardsList.indexOf(b);if(i>=0)boardsList.splice(i,1,copy);else boardsList.push(copy);
+  _r5OrigSave();_r5PersistQueue();R5S.lastPull=0;
+  if(activeBoardId===id){if(!_r5Editing())openBoard(copy.id);}else _r5RedrawLanding();
+  toast(`Couldn’t save “${esc(b.name)}”: ${esc(e.message)}. Your changes are kept in “${esc(copy.name)}”, in this browser only.`,'warn',10000);
+}
 // Put a server copy into boardsList (keeps this browser's openedAt). Re-render if it changed.
 function _r5Apply(sb){
   if(!sb||!sb.id)return false;
@@ -22703,9 +22744,10 @@ const _r5OrigDeleteBoard=bvDeleteBoard;
 bvDeleteBoard=function(id){
   const b=_bvBoard(id);if(!b)return;
   if(!b.shared)return _r5OrigDeleteBoard(id);
+  if(R5_PROD&&!AUTH.admin&&(!b.createdBy||b.createdBy!==AUTH.email)){toast('Only the person who created this board, or an admin, can delete it for everyone. You can archive it instead.','warn',7000);return;}
   ccConfirm(`Delete “${esc(b.name)}” for everyone? Its lists and cards are removed for the whole team — archive it instead if you might want it back.`,()=>{
-    const t=Date.now();R5S.removed.set(id,{...JSON.parse(JSON.stringify(b)),removedAt:t,updatedAt:t});
-    R5S.queue.delete(id);boardsList=boardsList.filter(x=>x.id!==id);R5S.snap.delete(id);_r5OrigSave();_r5Flush();
+    const t=Date.now();R5S.removed.set(id,{...JSON.parse(JSON.stringify(b)),removedAt:t,updatedAt:Math.max(t,(b.updatedAt||0)+1)});
+    R5S.queue.delete(id);boardsList=boardsList.filter(x=>x.id!==id);R5S.snap.delete(id);_r5OrigSave();_r5PersistQueue();_r5Flush();
     if(activeBoardId===id)closeBoardDetail();else renderBoardsList();
     toast('Board deleted for everyone','info');
   },'Delete board',true);
@@ -22727,7 +22769,32 @@ _bvTileHTML=function(b){
   return h;
 };
 const _r5OrigRenderList=renderBoardsList;
-renderBoardsList=function(){_r5OrigRenderList();_r5Landing();_r5Pull();};
+renderBoardsList=function(){_r5OrigRenderList();_r5Landing();_r5Pull();_r5RemovedList();};
+// Admins: "Recently removed" under the board grid, with Restore (GET /api/boards?removed=1).
+let _r5Rm={at:0,list:null};
+async function _r5RemovedList(force){
+  if(!R5_PROD||!AUTH||!AUTH.admin)return;
+  _r5RemovedHTML();
+  if(!force&&_r5Rm.list&&Date.now()-_r5Rm.at<30000)return;
+  _r5Rm.at=Date.now();
+  try{const j=await _r5Req('GET',null,'?removed=1');_r5Rm.list=(j.boards||[]).sort((a,b)=>(b.removedAt||0)-(a.removedAt||0));}catch(e){return;}
+  _r5RemovedHTML();
+}
+function _r5RemovedHTML(){
+  const land=document.getElementById('boards-landing');if(!land||activeBoardId||land.style.display==='none')return;
+  const open=!!land.querySelector('#r5-removed[open]');land.querySelector('#r5-removed')?.remove();
+  const list=(_r5Rm.list||[]).filter(b=>b&&!_bvBoard(b.id));if(!list.length)return;
+  land.insertAdjacentHTML('beforeend',`<details class="bv-archived" id="r5-removed"${open?' open':''}><summary><i class="ti ti-chevron-right"></i> Recently removed (${list.length})</summary><div class="bv-arch-list">${list.slice(0,30).map(b=>`<div class="bv-arch-row"><i class="ti ti-trash bv-muted"></i><span class="bv-arch-name">${esc(b.name)}</span><span class="bv-muted">${_bvAgo(b.removedAt)}</span><button class="d-action sm" onclick="bvR5Restore(${_r5A(b.id)})">Restore</button></div>`).join('')}</div></details>`);
+}
+async function bvR5Restore(id){
+  try{
+    const j=await _r5Req('POST',{action:'restore',id});
+    R5S.removed.delete(id);_r5PersistQueue();
+    if(_r5Rm.list)_r5Rm.list=_r5Rm.list.filter(b=>b.id!==id);
+    _r5Apply(j.board);_r5RedrawLanding();_r5RemovedHTML();
+    toast(`“${esc(j.board&&j.board.name||'Board')}” is back for everyone`,'success');
+  }catch(e){toast(`Couldn’t restore: ${esc(e.message)}`,'warn');}
+}
 // "Start from Streamtime WIP": the hand-made WIP boards (templates) + import, up front on the landing.
 function _r5Landing(){
   const land=document.getElementById('boards-landing');if(!land||land.querySelector('.r5-wip'))return;
@@ -22744,12 +22811,30 @@ const _r5OrigOpenBoard=openBoard;
 openBoard=function(id){_r5EditDesc=null;_r5EditTitle=null;_r5OrigOpenBoard(id);const b=_bvBoard(id);if(b&&b.shared)_r5Pull();};
 if(R5_PROD){
   try{JSON.parse(localStorage.getItem('cc_boards_dirty')||'[]').forEach(id=>{if(_bvBoard(id)?.shared)R5S.queue.add(id);});}catch(e){}
+  try{JSON.parse(localStorage.getItem('cc_boards_removed')||'[]').forEach(x=>{if(Array.isArray(x)&&typeof x[0]==='string'&&x[1]&&typeof x[1]==='object')R5S.removed.set(x[0],x[1]);});}catch(e){}
   boardsList.forEach(b=>{if(b&&b.shared)R5S.snap.set(b.id,_r5Fp(b));});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){_r5Pull();if(R5S.queue.size)_r5Flush();}});
   window.addEventListener('online',()=>{if(R5S.queue.size||R5S.removed.size)bvR5Retry();_r5Pull(true);});
   window.addEventListener('pagehide',()=>{if(R5S.queue.size)_r5PersistQueue();});
-  setTimeout(()=>{_r5Pull(true);if(R5S.queue.size)_r5Flush();},1200);
+  setTimeout(()=>{_r5Pull(true);if(R5S.queue.size||R5S.removed.size)_r5Flush();},1200);
 }
+// Other tabs: when another tab writes cc_boards (an edit there, or its pull), re-read it and
+// re-render Boards if it's on screen, instead of reloading the whole tab. Boards this tab still
+// has unsent edits for keep this tab's copy.
+window.addEventListener('storage',e=>{
+  if(e.key!=='cc_boards'||e.storageArea!==localStorage)return;
+  let v;try{v=JSON.parse(e.newValue||'[]');}catch(err){return;}
+  if(!Array.isArray(v))return;
+  const keep=new Set([...R5S.queue,...R5S.inflight]);
+  const mine=new Map(boardsList.filter(b=>b&&keep.has(b.id)).map(b=>[b.id,b]));
+  boardsList=v.filter(b=>b&&typeof b==='object'&&b.id&&!R5S.removed.has(b.id)).map(b=>mine.get(b.id)||b);
+  mine.forEach((b,id)=>{if(!boardsList.some(x=>x.id===id))boardsList.push(b);});
+  boardsList.forEach(b=>{if(b.shared&&!keep.has(b.id))R5S.snap.set(b.id,_r5Fp(b));});
+  const view=document.getElementById('view-boards');if(!view||view.classList.contains('hidden'))return;
+  if(_r5Editing()||_r5Ci||_bvDrag){R5S.redraw=true;return;}
+  if(activeBoardId){if(_bvBoard(activeBoardId)){_bvRenderBoard();if(document.getElementById('bv-drawer'))_bvRenderDrawer();}else closeBoardDetail();}
+  else _r5RedrawLanding();
+});
 </script>
 <style id="auth-ui-css">
 /* ═══ Sign-in UI: avatar menu, change password, Settings → Team → Access. ds-v3 tokens only. ═══ */
@@ -22889,7 +22974,7 @@ function _accPeopleOptions(sel){
 function _accPersonName(k){return (k&&(people[k]?.name||Object.values(stUsersById||{}).find(u=>u.key===k)?.name))||'';}
 function _accAv(k,label){const p=k&&people[k];
   const ini=p?.initials||String(label||'?').split(/[\s@.]+/).filter(Boolean).map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  return `<span class="au-av" style="background:${p?.color||'var(--subtle)'}">${esc(ini||'?')}</span>`;}
+  return `<span class="au-av" style="background:${esc(p?.color||'var(--subtle)')}">${esc(ini||'?')}</span>`;}
 async function _accLoad(){
   try{
     const r=await fetch('/api/access',{credentials:'same-origin',cache:'no-store'});
@@ -22904,7 +22989,7 @@ async function _accDo(body,okMsg){
   try{
     const j=await _authPost('/api/access',body);
     _acc={users:j.users,requests:j.requests};
-    if(j.tempPassword)_accTemp={email:body.email,pw:j.tempPassword};
+    if(j.tempPassword)_accTemp={email:body.email,pw:j.tempPassword,approved:body.action==='approve'};
     if(okMsg)toast(okMsg,'success');
   }catch(e){toast(e.message,'warn');}
   _accRender();
@@ -22918,7 +23003,7 @@ function _accRender(){
   body.innerHTML=`
     ${reqs.length?`<div class="au-sec">Waiting for approval</div>
       ${reqs.map(r=>`<div class="au-row" data-email="${esc(r.email)}">${_accAv(r.personKey,r.name)}
-        <div class="au-who"><b>${esc(r.name||r.email)}<span class="au-tag warn">Request</span></b><small>${esc(r.email)}${r.givenName&&r.givenName.toLowerCase().replace(/\s+/g,' ').trim()!==String(r.name||'').toLowerCase()?` · typed “${esc(r.givenName)}”`:''}${r.at?` · ${esc(new Date(r.at).toLocaleDateString())}`:''}</small></div>
+        <div class="au-who"><b>${esc(r.name||r.email)}<span class="au-tag warn">Request</span><span class="au-tag" title="Anyone can type any email. Send the temporary password to this address, so only its owner gets in.">Email not verified</span></b><small>${esc(r.email)}${r.givenName&&r.givenName.toLowerCase().replace(/\s+/g,' ').trim()!==String(r.name||'').toLowerCase()?` · typed “${esc(r.givenName)}”`:''}${r.at?` · ${esc(new Date(r.at).toLocaleDateString())}`:''}</small></div>
         <button class="d-action primary" data-act="approve">Approve</button>
         <button class="d-action" data-act="decline">Decline</button></div>`).join('')}
       <div style="height:10px;"></div>`:''}
@@ -22937,16 +23022,16 @@ function _accRender(){
       <label class="au-adm"><input type="checkbox" name="admin"> Admin</label>
       <button class="d-action primary" type="submit"><i class="ti ti-plus" style="font-size:12px"></i> Add</button>
     </form>
-    ${_accTemp?`<div class="au-temp" role="status">Temporary password for <b>${esc(_accTemp.email)}</b> — pass it on now, it won't be shown again. They'll choose their own when they first sign in.<br><code>${esc(_accTemp.pw)}</code><button class="d-action" data-act="copytemp">Copy</button> <button class="d-action" data-act="hidetemp">Done</button></div>`:''}`;
+    ${_accTemp?`<div class="au-temp" role="status">Temporary password for <b>${esc(_accTemp.email)}</b> — ${_accTemp.approved?'email it to that address now (it wasn’t verified, so only its owner should get this)':'pass it on now'}, it won't be shown again. They'll choose their own when they first sign in.<br><code>${esc(_accTemp.pw)}</code><button class="d-action" data-act="copytemp">Copy</button> <button class="d-action" data-act="hidetemp">Done</button></div>`:''}`;
 }
 function _accBind(card){
   card.addEventListener('click',e=>{
     const b=e.target.closest('[data-act]');if(!b||b.tagName==='SELECT'||b.type==='checkbox')return;
     const act=b.dataset.act,email=b.closest('[data-email]')?.dataset.email;
-    if(act==='approve')_accDo({action:'approve',email},'Approved — they can sign in now');
-    else if(act==='decline')ccConfirm(`Decline the request from ${email}?`,()=>_accDo({action:'decline',email},'Request declined'),'Decline',true);
-    else if(act==='remove')ccConfirm(`Remove access for ${email}? They'll be signed out within a minute.`,()=>_accDo({action:'remove',email},'Access removed'),'Remove',true);
-    else if(act==='reset')ccConfirm(`Reset the password for ${email}? Their current password stops working and they're signed out.`,()=>_accDo({action:'resetPassword',email},'Password reset'),'Reset');
+    if(act==='approve')_accDo({action:'approve',email},'Approved — send them the temporary password');
+    else if(act==='decline')ccConfirm(`Decline the request from ${esc(email)}?`,()=>_accDo({action:'decline',email},'Request declined'),'Decline',true);
+    else if(act==='remove')ccConfirm(`Remove access for ${esc(email)}? They'll be signed out within a minute.`,()=>_accDo({action:'remove',email},'Access removed'),'Remove',true);
+    else if(act==='reset')ccConfirm(`Reset the password for ${esc(email)}? Their current password stops working and they're signed out.`,()=>_accDo({action:'resetPassword',email},'Password reset'),'Reset');
     else if(act==='copytemp'){try{navigator.clipboard.writeText(_accTemp.pw);toast('Copied','success');}catch(err){}}
     else if(act==='hidetemp'){_accTemp=null;_accRender();}
   });
@@ -22972,7 +23057,7 @@ function _accBind(card){
       const card=document.createElement('div');card.className='sett-card';card.id='au-access-card';
       card.innerHTML=`<div class="sett-card-hd">Access <span style="font-weight:400;color:var(--muted);" id="au-access-n"></span></div>
         <div class="sett-card-body" style="padding:6px 20px 18px;">
-          <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin:6px 0 10px;">Who can sign in to the platform. New people get a temporary password; people already in Streamtime can also request access from the sign-in page.</div>
+          <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin:6px 0 10px;">Who can sign in to the platform. New people get a temporary password; people already in Streamtime can also request access from the sign-in page, and get a temporary password from you once you approve them.</div>
           <div id="au-access-body"></div>
         </div>`;
       const sub=wrap.querySelector('.sett-tab-sub');

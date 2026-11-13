@@ -28,7 +28,7 @@ NOT_OURS="platform_config.json changelog.json platform_meta.json roadmap.json ve
 CRYPT="python3 scripts/data_crypt.py"
 ENCRYPT=0
 if [ -n "${DATA_KEY:-}" ]; then
-  echo "::add-mask::$DATA_KEY"
+  echo "::add-mask::$DATA_KEY"  # GitHub hides it in the log (the line itself is consumed)
   if $CRYPT check-key; then ENCRYPT=1; else echo "::error::DATA_KEY is set but invalid (needs 64 hex chars)"; exit 1; fi
 fi
 PLAINTEXT=1
@@ -40,6 +40,9 @@ is_ours() { case " $NOT_OURS " in *" $1 "*) return 1 ;; esac; return 0; }
 git config --global user.name "streamtime-sync[bot]"
 git config --global user.email "noreply@github.com"
 
+# Returns 0 on success, 1 when the branch couldn't be fetched (a network hiccup: skip this cycle
+# and try again next time), 2 when encrypted data is there but can't be decrypted (wrong or
+# missing DATA_KEY: retrying won't help, so the loop fails the run).
 restore() {
   git fetch -q --depth=1 origin streamtime-data || return 1
   mkdir -p streamtime-data
@@ -59,10 +62,10 @@ restore() {
     [ -f "streamtime-data/$base" ] && continue
     if [ "$ENCRYPT" != 1 ]; then
       echo "::error::$f is on the branch but DATA_KEY is not set; refusing to sync from empty data"
-      return 1
+      return 2
     fi
     git show "FETCH_HEAD:$f" > "streamtime-data/$f"
-    $CRYPT decrypt "streamtime-data/$f" "streamtime-data/$base" || { echo "::error::could not decrypt $f"; return 1; }
+    $CRYPT decrypt "streamtime-data/$f" "streamtime-data/$base" || { echo "::error::could not decrypt $f (is DATA_KEY the key it was encrypted with?)"; return 2; }
     rm -f "streamtime-data/$f"
   done
 }
@@ -115,7 +118,11 @@ while :; do
   cycle=$(date +%s)
   [ $((cycle - start)) -ge "$RUN_FOR" ] && break
 
-  if ! restore; then
+  restore; rc=$?
+  if [ "$rc" = 2 ]; then
+    echo "::error::stopping: the encrypted data on streamtime-data can't be decrypted with this DATA_KEY"
+    exit 1
+  elif [ "$rc" != 0 ]; then
     echo "::warning::could not fetch streamtime-data, skipping cycle"
   elif [ $((cycle - last_full)) -ge "$FULL_EVERY" ]; then
     # The full sync re-fetches everything the fast sync does, so it replaces that cycle.

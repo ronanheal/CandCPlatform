@@ -102,11 +102,10 @@ p strong{color:var(--ink);font-weight:600;}
   <section id="v-request" hidden>
     <form class="stack" id="f-request" novalidate>
       <h1>Request access</h1>
-      <p class="lede">If you're in the team's system, an admin will approve you. Use your full name as it appears there.</p>
+      <p class="lede">If you're in the team's system, an admin will approve you and email you a temporary password. Use your full name as it appears there.</p>
       <label class="fld"><span>Full name</span><input name="fullname" autocomplete="name" required maxlength="120"></label>
       <label class="fld"><span>Email</span><input name="email" type="email" autocomplete="email" required maxlength="254"></label>
-      <label class="fld"><span>Password</span><input name="password" type="password" autocomplete="new-password" required minlength="10" maxlength="200"><small>At least 10 characters.</small></label>
-      <label class="fld"><span>Confirm password</span><input name="confirm" type="password" autocomplete="new-password" required maxlength="200"></label>
+      <label class="fld" id="setup-fld" hidden><span>Setup code (optional)</span><input name="token" autocomplete="off" spellcheck="false" maxlength="512"><small>Only for creating the first admin account. Leave empty otherwise.</small></label>
       <div class="note err" data-err hidden></div>
       <button class="btn primary" type="submit">Request access</button>
       <p class="alt">Already have an account? <a href="#" data-go="v-signin">Sign in</a></p>
@@ -116,7 +115,7 @@ p strong{color:var(--ink);font-weight:600;}
   <!-- Request sent -->
   <section id="v-requested" class="stack" hidden>
     <h1>Request sent</h1>
-    <p class="lede">An admin will approve it. Once they have, sign in with the email and password you just chose.</p>
+    <p class="lede">An admin will check it. Once they approve it, they'll send a temporary password to the email you entered. Sign in with it, then choose your own.</p>
     <button class="btn" type="button" data-go="v-signin">Back to sign in</button>
   </section>
 
@@ -128,10 +127,11 @@ p strong{color:var(--ink);font-weight:600;}
     <button class="btn quiet" type="button" data-go="v-signin">Back to sign in</button>
   </section>
 
-  <!-- Bootstrap admin account created -->
+  <!-- Bootstrap admin account created (setup code) -->
   <section id="v-approved" class="stack" hidden>
     <h1>Your account is ready</h1>
-    <p class="lede">You're set up as an admin. Sign in with the email and password you just chose.</p>
+    <p class="lede">You're set up as an admin. Your temporary password is below. It's shown only once. Sign in with it, then choose your own.</p>
+    <p class="note" style="background:var(--surface-2);color:var(--ink);font:600 15px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;text-align:center;user-select:all;" id="boot-pw"></p>
     <button class="btn primary" type="button" data-go="v-signin">Sign in</button>
   </section>
 
@@ -162,6 +162,8 @@ p strong{color:var(--ink);font-weight:600;}
 <script>
 (function(){
   var VIEWS=['v-signin','v-request','v-requested','v-unknown','v-approved','v-change','v-in'];
+  // First-admin setup: /login.html?setup=1 shows the "Setup code" field (BOOTSTRAP_TOKEN).
+  var SETUP=/(?:^|[?&])setup=1(?:&|$)/.test(location.search);
   function $(id){return document.getElementById(id);}
   function show(id){
     VIEWS.forEach(function(v){$(v).hidden=v!==id;});
@@ -192,17 +194,16 @@ p strong{color:var(--ink);font-weight:600;}
 
   $('f-request').addEventListener('submit',function(ev){
     ev.preventDefault();var f=this;err(f,'');
-    var name=f.fullname.value.trim(),email=f.email.value.trim(),pw=f.password.value;
+    var name=f.fullname.value.trim(),email=f.email.value.trim(),token=SETUP?f.token.value.trim():'';
     if(name.length<2){err(f,'Enter your full name.');return;}
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){err(f,'Enter a valid email.');return;}
-    if(pw.length<10){err(f,'Passwords need at least 10 characters.');return;}
-    if(pw!==f.confirm.value){err(f,"The passwords don't match.");return;}
     busy(f,true,'Sending…');
-    post('/api/auth/request',{name:name,email:email,password:pw}).then(function(x){
+    var body={name:name,email:email};if(token)body.token=token;
+    post('/api/auth/request',body).then(function(x){
       busy(f,false);
       if(!x.ok){err(f,(x.j&&x.j.error)||'Request failed. Please try again.');return;}
-      f.password.value='';f.confirm.value='';
-      if(x.j.state==='approved'){$('f-signin').email.value=email;show('v-approved');}
+      f.token.value='';
+      if(x.j.state==='approved'&&x.j.tempPassword){$('f-signin').email.value=email;$('boot-pw').textContent=x.j.tempPassword;show('v-approved');}
       else if(x.j.state==='unknown')show('v-unknown');
       else{$('f-signin').email.value=email;show('v-requested');}
     }).catch(function(){busy(f,false);err(f,'Network error. Please try again.');});
@@ -219,14 +220,15 @@ p strong{color:var(--ink);font-weight:600;}
     }).catch(function(){busy(f,false);err(f,'Network error. Please try again.');});
   });
 
-  if(location.hash==='#request')show('v-request');
+  if(SETUP)$('setup-fld').hidden=false;
+  if(location.hash==='#request'||SETUP)show('v-request');
   fetch('/api/auth/status',{credentials:'same-origin',cache:'no-store'})
     .then(function(r){return r.ok?r.json():{state:'signed-out'};})
     .catch(function(){return {state:'signed-out'};})
     .then(function(d){
       if(d.state==='signed-in'&&d.mustChangePassword)show('v-change');
       else if(d.state==='signed-in'){$('in-mail').textContent=d.email||'';show('v-in');}
-      else if(location.hash!=='#request')show('v-signin');
+      else if(location.hash!=='#request'&&!SETUP)show('v-signin');
     });
 })();
 </script>

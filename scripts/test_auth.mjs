@@ -25,7 +25,8 @@ const SECRET = 'x'.repeat(64);
 const KEYHEX = 'a1'.repeat(32);
 const KEY = Buffer.from(KEYHEX, 'hex');
 const ORIGIN = 'https://cc.example.test';
-const env = { SESSION_SECRET: SECRET, DATA_KEY: KEYHEX, ADMIN_EMAILS: 'owner@cc.test', DATA_BASE_URL: 'https://raw.test/data' };
+const BOOT = 'setup-code-0123456789abcdef';
+const env = { SESSION_SECRET: SECRET, DATA_KEY: KEYHEX, ADMIN_EMAILS: 'owner@cc.test,owner2@cc.test', BOOTSTRAP_TOKEN: BOOT, DATA_BASE_URL: 'https://raw.test/data' };
 process.env.SESSION_SECRET = SECRET; // the middleware reads process.env
 
 let passed = 0, failed = 0;
@@ -68,12 +69,15 @@ const ST_USERS = [
 ];
 function mockFetch(files) {
   return async (url) => {
+    fetchCount++;
     const name = url.replace(env.DATA_BASE_URL + '/', '');
     if (!url.startsWith(env.DATA_BASE_URL + '/') || !files.has(name)) return new Response('404: Not Found', { status: 404 });
     return new Response(files.get(name), { status: 200 });
   };
 }
 const encFile = (obj) => C.encrypt(gzipSync(Buffer.from(JSON.stringify(obj))), KEY);
+// Counts upstream fetches, to check the per-instance data cache.
+let fetchCount = 0;
 
 function req(path, { method = 'GET', cookie = '', body, origin = ORIGIN, headers = {} } = {}) {
   const h = new Headers(headers);
@@ -183,10 +187,30 @@ await t('decideRequest outcomes', async () => {
   assert.equal(A.decideRequest({ email: 'r@x.y', name: 'Ronan Heal' }, doc, ST_USERS, admins).status, 'pending');
   assert.equal(A.decideRequest({ email: 'new@x.y', name: 'Ronan Heal' }, doc, ST_USERS, admins).status, 'request');
   assert.equal(A.decideRequest({ email: 'new@x.y', name: 'Nobody Here' }, doc, ST_USERS, admins).status, 'unknown');
-  assert.equal(A.decideRequest({ email: 'owner@cc.test', name: 'whoever' }, doc, ST_USERS, admins).status, 'bootstrap');
-  assert.equal(A.decideRequest({ email: 'owner@cc.test', name: 'whoever' }, { users: [{ email: 'owner@cc.test' }] }, ST_USERS, admins).status, 'exists');
+  // ADMIN_EMAILS without the bootstrap token: just a request (or unknown), never an account.
+  assert.equal(A.decideRequest({ email: 'owner@cc.test', name: 'Owner Person' }, doc, ST_USERS, admins).status, 'request');
+  assert.equal(A.decideRequest({ email: 'owner@cc.test', name: 'whoever' }, doc, ST_USERS, admins).status, 'request', 'matched by email');
+  assert.equal(A.decideRequest({ email: 'owner@cc.test', name: 'whoever' }, doc, ST_USERS, admins, { bootstrapOk: true }).status, 'bootstrap');
+  assert.equal(A.decideRequest({ email: 'owner@cc.test', name: 'whoever' }, { users: [{ email: 'owner@cc.test' }] }, ST_USERS, admins, { bootstrapOk: true }).status, 'exists');
+  // Once any admin exists the bootstrap is ignored entirely.
+  const withAdmin = { users: [{ email: 'boss@x.y', admin: true }], requests: [] };
+  assert.equal(A.decideRequest({ email: 'owner@cc.test', name: 'Owner Person' }, withAdmin, ST_USERS, admins, { bootstrapOk: true }).status, 'request');
+  const withOwner = { users: [{ email: 'owner@cc.test' }], requests: [] };
+  assert.equal(A.decideRequest({ email: 'owner2@cc.test', name: 'Ann Lee' }, withOwner, ST_USERS, new Set(['owner@cc.test', 'owner2@cc.test']), { bootstrapOk: true }).status, 'request');
+  // A full list no longer refuses: the handler drops the oldest.
   const full = { users: [], requests: Array.from({ length: 50 }, (_, i) => ({ email: i + '@x.y' })) };
-  assert.equal(A.decideRequest({ email: 'new@x.y', name: 'Ronan Heal' }, full, ST_USERS, admins).status, 'full');
+  assert.equal(A.decideRequest({ email: 'new@x.y', name: 'Ronan Heal' }, full, ST_USERS, admins).status, 'request');
+});
+await t('bootstrap token: constant-time compare, off when unset or short', async () => {
+  assert.equal(await A.bootstrapTokenOk(BOOT, env), true);
+  assert.equal(await A.bootstrapTokenOk(' ' + BOOT + ' ', env), true, 'pasted with spaces');
+  assert.equal(await A.bootstrapTokenOk(BOOT + 'x', env), false);
+  assert.equal(await A.bootstrapTokenOk('', env), false);
+  assert.equal(await A.bootstrapTokenOk(undefined, env), false);
+  assert.equal(await A.bootstrapTokenOk(BOOT, { ...env, BOOTSTRAP_TOKEN: '' }), false, 'unset → off');
+  assert.equal(await A.bootstrapTokenOk('short', { ...env, BOOTSTRAP_TOKEN: 'short' }), false, 'too short → off');
+  assert.equal(await A.safeEqual('a', 'a'), true);
+  assert.equal(await A.safeEqual('a', 'b'), false);
 });
 await t('currentRights follows the list and the password version', async () => {
   const doc = { users: [{ email: 'ann@cc.test', pw: 'scrypt$1$abcdefghijkl', admin: false }] };
@@ -202,15 +226,17 @@ await t('applyAccessAction validates and never takes a browser password', async 
   assert.throws(() => A.applyAccessAction(d, { action: 'add', email: 'new@x.y', pw: 'H' }, 'o@x.y', admins), /already/);
   assert.throws(() => A.applyAccessAction(d, { action: 'add', email: 'bad', pw: 'H' }, 'o@x.y', admins), /valid email/);
   assert.throws(() => A.applyAccessAction(d, { action: 'add', email: 'z@x.y', personKey: '../x', pw: 'H' }, 'o@x.y', admins), /Unknown person/);
-  d = A.applyAccessAction(d, { action: 'approve', email: 'r@x.y' }, 'owner@cc.test', admins);
-  assert.equal(d.users[1].pw, 'REQHASH'); assert.equal(d.users[1].mustChangePassword, false); assert.equal(d.requests.length, 0);
+  assert.throws(() => A.applyAccessAction(d, { action: 'approve', email: 'r@x.y' }, 'owner@cc.test', admins), /Missing password/, 'never falls back to a requester password');
+  d = A.applyAccessAction(d, { action: 'approve', email: 'r@x.y', pw: 'TEMPHASH' }, 'owner@cc.test', admins);
+  assert.equal(d.users[1].pw, 'TEMPHASH'); assert.equal(d.users[1].mustChangePassword, true); assert.equal(d.requests.length, 0);
   assert.throws(() => A.applyAccessAction(d, { action: 'remove', email: 'owner@cc.test' }, 'owner@cc.test', admins), /Not on the list/);
   d.users.push({ email: 'me@x.y', admin: true, pw: 'M' });
   assert.throws(() => A.applyAccessAction(d, { action: 'remove', email: 'me@x.y' }, 'me@x.y', admins), /yourself/);
   assert.throws(() => A.applyAccessAction(d, { action: 'setAdmin', email: 'me@x.y', admin: false }, 'me@x.y', admins), /own admin/);
   assert.throws(() => A.applyAccessAction(d, { action: 'nuke', email: 'me@x.y' }, 'me@x.y', admins), /Unknown action/);
-  const pub = A.publicAccess(d, admins);
+  const pub = A.publicAccess({ ...d, requests: [{ email: 'q@x.y', pw: 'OLD' }] }, admins);
   assert.ok(pub.users.every((u) => !('pw' in u)));
+  assert.ok(!('pw' in pub.requests[0])); assert.equal(pub.requests[0].emailVerified, false);
 });
 
 // ── 5. passwords ──────────────────────────────────────────────────────────────────────────
@@ -277,14 +303,53 @@ await t('request access: unknown name/email', async () => {
   assert.equal((await r.json()).state, 'unknown');
   assert.equal(blob.calls.put, 0);
 });
-await t('bootstrap: ADMIN_EMAILS email + matching record creates an admin account', async () => {
-  const r = await auth('request', { method: 'POST', body: { name: 'Owner Person', email: 'Owner@cc.test', password: 'owner-password-1' } });
-  assert.equal((await r.json()).state, 'approved');
+let ownerTemp;
+await t('bootstrap: ADMIN_EMAILS email WITHOUT the setup code is only a request', async () => {
+  P._resetThrottle();
+  const r = await auth('request', { method: 'POST', body: { name: 'Owner Person', email: 'Owner@cc.test', password: 'attacker-chosen-1' } });
+  const j = await r.json();
+  assert.equal(j.state, 'requested'); assert.equal(j.tempPassword, undefined);
+  const wrong = await auth('request', { method: 'POST', body: { name: 'Owner Person', email: 'owner@cc.test', token: BOOT + 'x' } });
+  assert.equal((await wrong.json()).state, 'requested');
+  const unset = await authHandle(req('/api/auth/request', { method: 'POST', body: { name: 'Owner Person', email: 'owner@cc.test', token: BOOT } }), { ...O, env: { ...env, BOOTSTRAP_TOKEN: '' } });
+  assert.equal((await unset.json()).state, 'requested', 'BOOTSTRAP_TOKEN unset → no bootstrap');
   fresh();
   const doc = await S.getAccess(O);
-  assert.equal(doc.users[0].admin, true);
-  assert.match(doc.users[0].pw, /^scrypt\$/);
+  assert.equal(doc.users.length, 0, 'no account was created');
+  assert.ok(!JSON.stringify(doc).includes('scrypt'), 'no requester password stored');
+  assert.equal((await auth('login', { method: 'POST', body: { email: 'owner@cc.test', password: 'attacker-chosen-1' } })).status, 401);
+});
+await t('bootstrap: with the setup code, creates the admin with a one-time temporary password', async () => {
+  P._resetThrottle();
+  const r = await auth('request', { method: 'POST', body: { name: 'Owner Person', email: 'Owner@cc.test', token: BOOT, password: 'ignored-password' } });
+  const j = await r.json();
+  assert.equal(j.state, 'approved');
+  ownerTemp = j.tempPassword; assert.equal(ownerTemp.length, 14);
+  fresh();
+  const doc = await S.getAccess(O);
+  assert.equal(doc.users.length, 1);
+  assert.equal(doc.users[0].admin, true); assert.equal(doc.users[0].mustChangePassword, true);
+  assert.ok(await P.verifyPassword(ownerTemp, doc.users[0].pw));
+  assert.ok(!(await P.verifyPassword('ignored-password', doc.users[0].pw)));
+  assert.equal(doc.requests.length, 0, 'the earlier plain request is cleared');
   assert.ok(!blob.files.get('auth/access.json.enc').body.toString('latin1').includes('owner@cc.test'), 'stored encrypted');
+  const l = await auth('login', { method: 'POST', body: { email: 'owner@cc.test', password: ownerTemp } });
+  assert.equal((await l.json()).mustChangePassword, true);
+  const ch = await auth('password', { method: 'POST', cookie: cookieFrom(l), body: { current: ownerTemp, next: 'owner-password-1' } });
+  assert.equal(ch.status, 200);
+});
+await t('bootstrap: ignored once an admin exists (single use in effect)', async () => {
+  P._resetThrottle();
+  const again = await auth('request', { method: 'POST', body: { name: 'Owner Person', email: 'owner@cc.test', token: BOOT } });
+  assert.equal((await again.json()).state, 'requested', 'existing account answers like a request');
+  const second = await auth('request', { method: 'POST', body: { name: 'Ann Lee', email: 'owner2@cc.test', token: BOOT } });
+  const j = await second.json();
+  assert.equal(j.state, 'requested'); assert.equal(j.tempPassword, undefined);
+  fresh();
+  const doc = await S.getAccess(O);
+  assert.equal(doc.users.length, 1);
+  assert.ok(doc.requests.some((r) => r.email === 'owner2@cc.test'), 'went through the normal request flow');
+  await S.mutateAccess((d) => ({ ...d, requests: [] }), 'x', O);
 });
 await t('sign in: right password → session; wrong password and unknown email get the same answer', async () => {
   const ok = await auth('login', { method: 'POST', body: { email: 'owner@cc.test', password: 'owner-password-1' } });
@@ -350,22 +415,33 @@ await t('non-admin cannot use /api/access', async () => {
   assert.equal((await access({ cookie: annCookie })).status, 403);
   assert.equal((await access({ method: 'POST', cookie: annCookie, body: { action: 'setAdmin', email: 'ann@cc.test', admin: true } })).status, 403);
 });
-await t('request access → admin approves → requester signs in with their own password', async () => {
+await t('request access → admin approves → a temporary password, never the requester\'s', async () => {
   P._resetThrottle();
-  const r = await auth('request', { method: 'POST', body: { name: 'ronan heal', email: 'ronan.personal@x.y', password: 'ronans-password' } });
+  const r = await auth('request', { method: 'POST', body: { name: 'ronan heal', email: 'ronan.personal@x.y', password: 'requester-password' } });
   assert.equal((await r.json()).state, 'requested');
   const dup = await auth('request', { method: 'POST', body: { name: 'Ronan Heal', email: 'ronan.personal@x.y', password: 'attacker-password' } });
   assert.equal((await dup.json()).state, 'requested');
   const ex = await auth('request', { method: 'POST', body: { name: 'Ann Lee', email: 'ann@cc.test', password: 'attacker-password' } });
   assert.equal((await ex.json()).state, 'requested', 'existing account answers like a request');
   fresh();
+  assert.ok(!JSON.stringify((await S.getAccess(O)).requests).includes('scrypt'), 'no password stored with a request');
   const lst = await (await access({ cookie: ownerCookie })).json();
   assert.equal(lst.requests.length, 1); assert.equal(lst.requests[0].personKey, 'st_114330');
-  assert.ok(!('pw' in lst.requests[0]));
-  await access({ method: 'POST', cookie: ownerCookie, body: { action: 'approve', email: 'ronan.personal@x.y' } });
-  assert.equal((await auth('login', { method: 'POST', body: { email: 'ronan.personal@x.y', password: 'attacker-password' } })).status, 401);
-  assert.equal((await auth('login', { method: 'POST', body: { email: 'ronan.personal@x.y', password: 'ronans-password' } })).status, 200);
+  assert.ok(!('pw' in lst.requests[0])); assert.equal(lst.requests[0].emailVerified, false);
+  const ap = await (await access({ method: 'POST', cookie: ownerCookie, body: { action: 'approve', email: 'ronan.personal@x.y', pw: 'browser-chosen' } })).json();
+  assert.equal(ap.tempPassword.length, 14, 'temporary password returned once to the admin');
+  assert.equal(ap.requests.length, 0);
+  for (const pw of ['requester-password', 'attacker-password', 'browser-chosen']) {
+    assert.equal((await auth('login', { method: 'POST', body: { email: 'ronan.personal@x.y', password: pw } })).status, 401, pw);
+  }
+  const ok = await auth('login', { method: 'POST', body: { email: 'ronan.personal@x.y', password: ap.tempPassword } });
+  assert.equal(ok.status, 200); assert.equal((await ok.json()).mustChangePassword, true);
   assert.equal((await auth('login', { method: 'POST', body: { email: 'ann@cc.test', password: 'ann-own-password' } })).status, 200, 'request did not touch an existing password');
+  // Approving a request for an email that already has an account creates nothing and returns no password.
+  await S.mutateAccess((d) => ({ ...d, requests: [{ email: 'ann@cc.test', name: 'Ann Lee', personKey: 'st_2' }] }), 'x', O);
+  const ap2 = await (await access({ method: 'POST', cookie: ownerCookie, body: { action: 'approve', email: 'ann@cc.test' } })).json();
+  assert.equal(ap2.tempPassword, undefined);
+  assert.equal((await auth('login', { method: 'POST', body: { email: 'ann@cc.test', password: 'ann-own-password' } })).status, 200);
 });
 await t('request access is rate-limited per IP and capped at 50 pending', async () => {
   P._resetThrottle();
@@ -373,8 +449,14 @@ await t('request access is rate-limited per IP and capped at 50 pending', async 
   let last;
   for (let i = 0; i < 6; i++) last = await auth('request', { method: 'POST', headers: h, body: { name: 'Nobody', email: i + '@q.z', password: 'longenough1' } });
   assert.equal(last.status, 429);
-  const many = { users: [], requests: Array.from({ length: 50 }, (_, i) => ({ email: i + '@x.y' })) };
-  assert.equal(A.decideRequest({ email: 'n@x.y', name: 'Ann Lee' }, many, ST_USERS, admins).status, 'full');
+  // 50 waiting: a new request drops the oldest instead of being refused.
+  await S.mutateAccess((d) => ({ ...d, requests: Array.from({ length: 50 }, (_, i) => ({ email: 'old' + i + '@x.y', name: 'X', at: String(i) })) }), 'x', O);
+  const nr = await auth('request', { method: 'POST', headers: { 'x-forwarded-for': '203.0.113.11' }, body: { name: 'Ann Lee', email: 'ann.other@x.y' } });
+  assert.equal((await nr.json()).state, 'requested');
+  fresh();
+  const reqs = (await S.getAccess(O)).requests;
+  assert.equal(reqs.length, 50); assert.equal(reqs[0].email, 'old1@x.y'); assert.equal(reqs.at(-1).email, 'ann.other@x.y');
+  await S.mutateAccess((d) => ({ ...d, requests: [] }), 'x', O);
   const big = await auth('request', { method: 'POST', headers: { 'x-forwarded-for': '203.0.113.10' }, body: { name: 'A'.repeat(5000), email: 'a@b.c', password: 'longenough1' } });
   assert.equal(big.status, 413);
 });
@@ -440,10 +522,71 @@ await t('realistic logged_times.json (~15 MB raw) stays well under the 4.5 MB re
   assert.ok(body.length < 4.5e6, 'response under 4.5 MB');
   assert.equal(JSON.parse(gunzipSync(body)).length, rows.length);
 });
+await t('data files are cached per instance for about a minute', async () => {
+  S._resetCaches();
+  const before = fetchCount;
+  for (let i = 0; i < 3; i++) assert.equal((await dataHandle(req('/api/data/jobs.json', { cookie: ownerCookie }), O)).status, 200);
+  assert.equal(fetchCount - before, 1, 'one upstream fetch for three loads');
+  const pc1 = await dataHandle(req('/api/data/platform_config.json', { cookie: ownerCookie }), O);
+  const pc2 = await dataHandle(req('/api/data/platform_config.json', { cookie: ownerCookie }), O);
+  assert.deepEqual(await pc1.json(), await pc2.json(), 'cached plain files can be served twice');
+});
+await t('GitHub 429 → 503 with Retry-After', async () => {
+  S._resetCaches();
+  const limited = async () => new Response('slow down', { status: 429, headers: { 'retry-after': '42' } });
+  const r = await dataHandle(req('/api/data/jobs.json', { cookie: ownerCookie }), { ...O, fetchImpl: async (u) => (u.includes('users.json') ? fetchImpl(u) : limited()) });
+  assert.equal(r.status, 503);
+  assert.equal(r.headers.get('retry-after'), '42');
+  S._resetCaches();
+});
 await t('missing DATA_KEY fails closed', async () => {
   fresh();
   const r = await dataHandle(req('/api/data/jobs.json', { cookie: ownerCookie }), { ...O, env: { ...env, DATA_KEY: '' } });
   assert.equal(r.status, 503);
+});
+
+console.log('store key');
+await t('STORE_KEY unset → the Blob store uses DATA_KEY (nothing breaks before it is set)', async () => {
+  fresh();
+  assert.deepEqual(C.storeKey({ DATA_KEY: KEYHEX }), KEY);
+  const raw = blob.files.get('auth/access.json.enc').body;
+  assert.ok(C.decryptJson(raw, KEY).users.length > 0, 'access.json is encrypted with DATA_KEY');
+  assert.throws(() => C.storeKey({ STORE_KEY: 'nope', DATA_KEY: KEYHEX }), /STORE_KEY/);
+  assert.throws(() => C.storeKey({}), /STORE_KEY/);
+});
+await t('STORE_KEY set but not the key the store was written with → 500 "Store key mismatch", nothing overwritten', async () => {
+  fresh();
+  const OTHER = 'c3'.repeat(32);
+  const O2 = { ...O, env: { ...env, STORE_KEY: OTHER } };
+  const before = blob.files.get('auth/access.json.enc').etag;
+  const errs = []; const ce = console.error; console.error = (m) => errs.push(String(m));
+  try {
+    const r = await meHandle(req('/api/me', { cookie: ownerCookie }), O2);
+    assert.equal(r.status, 500);
+    assert.deepEqual(await r.json(), { error: 'Store key mismatch' });
+    fresh();
+    const a = await accessHandle(req('/api/access', { cookie: ownerCookie }), O2);
+    assert.equal(a.status, 500); assert.deepEqual(await a.json(), { error: 'Store key mismatch' });
+    fresh();
+    const l = await authHandle(req('/api/auth/login', { method: 'POST', body: { email: 'owner@cc.test', password: 'owner-password-1' } }), O2);
+    assert.equal(l.status, 500);
+    fresh();
+    const q = await authHandle(req('/api/auth/request', { method: 'POST', headers: { 'x-forwarded-for': '203.0.113.50' }, body: { name: 'Ann Lee', email: 'zz@x.y' } }), O2);
+    assert.equal(q.status, 500, 'a write never replaces an unreadable store');
+  } finally { console.error = ce; }
+  assert.equal(blob.files.get('auth/access.json.enc').etag, before);
+  assert.equal(errs.filter((m) => /store key mismatch/i.test(m)).length, 1, 'logged once');
+  assert.ok(!errs.join(' ').includes(OTHER) && !errs.join(' ').includes(KEYHEX), 'keys never logged');
+});
+await t('STORE_KEY set to its own key: a store written with it reads back', async () => {
+  fresh();
+  const OTHER = 'd4'.repeat(32);
+  const b2 = mockBlob();
+  const O3 = { env: { ...env, STORE_KEY: OTHER }, blob: b2, fetchImpl };
+  await S.mutateAccess((d) => ({ ...d, users: [{ email: 'k@x.y' }] }), 'x', O3);
+  assert.deepEqual(C.decryptJson(b2.files.get('auth/access.json.enc').body, Buffer.from(OTHER, 'hex')).users[0].email, 'k@x.y');
+  assert.throws(() => C.decryptJson(b2.files.get('auth/access.json.enc').body, KEY), 'not DATA_KEY');
+  fresh();
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);
