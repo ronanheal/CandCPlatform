@@ -24323,5 +24323,162 @@ body.dark :is(.qd-opts,#dtab-quote,.inv-modal) input[type=checkbox]{accent-color
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',tidy);else tidy();
 })();
 </script>
+<style id="tabs-r7">
+/* ── Jobs area: one page-header geometry on all eight sub-tabs (tabs-r7) ─────────────────────
+   Under the tab bar: 24px → title (30px display) → 6px → one muted line → 18px → a 34px toolbar
+   row → 16px → the first card or table. Jobs set the standard; Time had lost its top padding,
+   Items/Clients/Deadlines stacked a second 22px wrapper padding on top of their own. */
+#view-jobs #jt-items .fe-wrap,#view-jobs #clients-list-view{padding-top:0!important;}
+#view-jobs #jt-items .fe-wrap>div:first-child,
+#view-jobs #clients-list-view>div:first-child{padding:24px var(--gutter) 0!important;margin:0!important;}
+/* Time: title block, then the filters as the toolbar row */
+#view-jobs #jt-time .time-head-bar{padding:24px var(--gutter) 0!important;gap:0!important;margin:0!important;}
+#view-jobs #jt-time .time-head-bar>div:last-child{padding:18px 0 16px!important;margin:0!important;flex-wrap:nowrap!important;min-width:0;}
+#view-jobs #jt-time .time-stats-strip{margin-top:0!important;}
+/* Time toolbar, as Reporting (rep-r6): one standard filter width that truncates, one row where it
+   fits, Export at the right. */
+#view-jobs #jt-time .time-head-bar .cc-select{width:168px!important;min-width:0!important;max-width:168px!important;flex:0 1 168px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#view-jobs #jt-time .cc-time-tools{margin-left:auto;flex:0 1 auto;min-width:0;gap:8px!important;}
+#view-jobs #jt-time .cc-time-tools .d-action{flex-shrink:0;}
+@media (max-width:1000px){#view-jobs #jt-time .time-head-bar>div:last-child{flex-wrap:wrap!important;}#view-jobs #jt-time .cc-time-tools{margin-left:0;}}
+/* Items has the longest toolbar: same standard-width filters so it stays one row at 1440 */
+#view-jobs #jt-items .qinv-toolbar{flex-wrap:nowrap!important;}
+#view-jobs #jt-items .qinv-toolbar .jobs-search{flex:1 1 200px!important;min-width:150px!important;}
+#view-jobs #jt-items .qinv-toolbar .cc-select{width:168px!important;max-width:168px!important;min-width:104px!important;flex:0 1 168px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#view-jobs #jt-items .qinv-toolbar>.jobs-count{order:1;}
+#view-jobs #jt-items .qinv-toolbar>.d-action:last-of-type{order:2;}
+@media (max-width:1200px){#view-jobs #jt-items .qinv-toolbar{flex-wrap:wrap!important;}}
+/* Clients: the toolbar lives inside the scroller */
+#view-jobs #clients-wrap{padding-top:18px!important;}
+#view-jobs #clients-wrap>.clients-toolbar{margin:0 0 16px!important;gap:8px!important;}
+/* Deadlines: title block on its own line, month controls on the toolbar row below it */
+#view-jobs #jt-deadlines{padding:0 var(--gutter) 40px!important;}
+#view-jobs #jt-deadlines>div:first-child{flex-wrap:wrap!important;align-items:center!important;gap:0 8px!important;padding:24px 0 0!important;margin:0!important;}
+#view-jobs #jt-deadlines>div:first-child>div:first-child{flex:1 0 100%;}
+#view-jobs #jt-deadlines>div:first-child>div:last-child{margin-left:0!important;padding:18px 0 16px;}
+
+/* ── Tab / view transition loader ───────────────────────────────────────────────────────────
+   A skeleton of the target page over the content area. It is in the DOM from the click, but only
+   fades in after 120ms, so instant switches never flash it. Opacity/transform only, so it keeps
+   animating on the compositor while the main thread renders. Never takes pointer events. */
+#r7-load{position:fixed;z-index:60;pointer-events:none;overflow:hidden;background:var(--off);opacity:0;
+  animation:r7In var(--d-2) var(--ease-out) 120ms both;will-change:opacity;contain:strict;}
+@keyframes r7In{from{opacity:0}to{opacity:1}}
+#r7-load .r7-hd{padding:24px var(--gutter) 0;}
+#r7-load .r7-t{font:750 30px/1.1 var(--display);letter-spacing:-.04em;color:var(--ink);white-space:nowrap;}
+#r7-load .r7-s{display:flex;align-items:center;gap:8px;margin-top:6px;font:400 13.5px/17px var(--font);color:var(--muted);}
+#r7-load .r7-cap{display:flex;align-items:center;gap:8px;padding:18px var(--gutter) 0;font:400 13.5px/17px var(--font);color:var(--muted);}
+#r7-load .r7-spin{flex:none;width:12px;height:12px;border-radius:50%;border:1.5px solid var(--border);border-top-color:var(--ink-2);animation:r7Spin .8s linear infinite;will-change:transform;}
+@keyframes r7Spin{to{transform:rotate(360deg)}}
+#r7-load .r7-tb{display:flex;gap:8px;padding:18px var(--gutter) 16px;}
+#r7-load .r7-tb i{height:var(--ctl-h);width:168px;border-radius:var(--r-ctl);}
+#r7-load .r7-tb i:first-child{width:240px;}
+#r7-load .r7-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:0 var(--gutter) 16px;}
+#r7-load .r7-cards i{height:96px;border-radius:var(--r-card);}
+#r7-load .r7-rows{margin:0 var(--gutter);border-radius:var(--r-card);background:var(--white);border:1px solid color-mix(in srgb,var(--border) 85%,transparent);overflow:hidden;}
+#r7-load .r7-row{display:flex;align-items:center;gap:24px;height:44px;padding:0 18px;border-bottom:1px solid var(--faint);}
+#r7-load .r7-row:last-child{border-bottom:0;}
+#r7-load .r7-row i{height:10px;border-radius:5px;flex:0 0 auto;}
+#r7-load .r7-row i:nth-child(1){width:22%;}#r7-load .r7-row i:nth-child(2){width:14%;}#r7-load .r7-row i:nth-child(3){width:30%;}#r7-load .r7-row i:nth-child(4){width:8%;margin-left:auto;}
+#r7-load .r7-tb i,#r7-load .r7-cards i,#r7-load .r7-row i{display:block;position:relative;overflow:hidden;background:color-mix(in srgb,var(--ink) 6%,transparent);}
+#r7-load .r7-tb i::after,#r7-load .r7-cards i::after,#r7-load .r7-row i::after{content:'';position:absolute;inset:0;transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--white) 55%,transparent),transparent);animation:r7Sheen 1.3s ease-in-out infinite;will-change:transform;}
+body.dark #r7-load .r7-tb i::after,body.dark #r7-load .r7-cards i::after,body.dark #r7-load .r7-row i::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);}
+@keyframes r7Sheen{to{transform:translateX(100%)}}
+/* The new tab reads as selected in the very frame of the click: colour transitions run on the main
+   thread, which the render is about to hold, so they are skipped for that switch. */
+.r7-now>*,.r7-now .s-btn{transition:none!important;}
+/* The perf-r4 2px top line, borrowed while a switch renders (indeterminate: a part-filled bar + sheen) */
+#perf-line.r7{animation:r7In var(--d-2) var(--ease-out) 120ms both;}
+#perf-line.r7:not(.on) .perf-line-bar{transform:scaleX(.62)!important;}
+@media (max-width:700px){#r7-load .r7-cards{grid-template-columns:repeat(2,1fr);}}
+@media (prefers-reduced-motion:reduce){
+  #r7-load,#perf-line.r7{animation:r7Show 0s linear 120ms both;}
+  @keyframes r7Show{from{opacity:0}to{opacity:1}}
+  #r7-load .r7-spin{animation:none;border-top-color:var(--border);opacity:.7;}
+  #r7-load i::after{display:none;}
+}
+</style>
+<script id="tabs-r7-script">
+// Transition loader for sidebar views, Jobs sub-tabs and Reporting tabs (tabs-r7).
+// It works at the click, not by wrapping navTo / switchJobsTab / switchReportTab: a user click on
+// one of those controls is held in the capture phase, the new tab is marked selected and the
+// skeleton mounted in the same frame, the browser is given one paint, and then the very same
+// click is replayed so the element's own onclick (and every existing wrapper: perf-r4, ds-v3,
+// ux-r4, rep-r6, the FE tabs) runs exactly once, unchanged. Programmatic calls (search, links,
+// view restore) stay synchronous and never see a loader.
+(function(){
+  const SEL='.s-btn[id^="snav-"],#view-jobs .jobs-subnav .jsn-tab[data-tab],#view-reporting .r-subtab';
+  let replaying=false,pending=null,timer=0,box=null;
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const label=el=>(el.querySelector('.s-tip,.rt-lbl')?.textContent||el.getAttribute('aria-label')||el.textContent||'').trim();
+
+  function target(el){
+    if(el.matches('.s-btn')){
+      const v=el.id.slice(5),ve=document.getElementById('view-'+v);
+      if(!ve||!/navTo\(/.test(el.getAttribute('onclick')||''))return null;
+      if(!ve.classList.contains('hidden'))return null;          // already there
+      return {kind:'view',el,name:label(el),region:document.querySelector('.content')||ve.parentElement};
+    }
+    if(el.matches('.jsn-tab')){
+      if(el.classList.contains('on'))return null;
+      const nav=el.closest('.jobs-subnav'),vj=document.getElementById('view-jobs');
+      return {kind:'jobs',el,name:label(el),region:vj,top:nav.getBoundingClientRect().bottom};
+    }
+    if(el.matches('.r-subtab')){
+      if(el.classList.contains('on'))return null;
+      return {kind:'rep',el,name:label(el),region:document.getElementById('r-scroll')||document.getElementById('view-reporting')};
+    }
+    return null;
+  }
+  function select(t){
+    if(t.kind==='view'){t.el.parentElement.classList.add('r7-now');document.querySelectorAll('.s-btn[id]').forEach(b=>b.classList.toggle('on',b===t.el));}
+    else{const sib=t.kind==='jobs'?'.jsn-tab':'.r-subtab';
+      t.el.parentElement.classList.add('r7-now');
+      if(t.kind==='jobs')try{const l=document.getElementById('jobs-primary-lbl');if(l)l.textContent=(_JOBS_PRIMARY[t.el.dataset.tab]||['New job'])[0];}catch(e){}
+      t.el.parentElement.querySelectorAll(sib).forEach(b=>{b.classList.toggle('on',b===t.el);if(b.hasAttribute('aria-selected'))b.setAttribute('aria-selected',b===t.el?'true':'false');});}
+  }
+  function mount(t){
+    unmount();
+    const r=t.region.getBoundingClientRect(),top=t.top!=null?t.top:r.top;
+    if(r.width<10||r.bottom-top<10)return;
+    box=document.createElement('div');box.id='r7-load';box.setAttribute('role','status');box.setAttribute('aria-live','polite');
+    Object.assign(box.style,{left:r.left+'px',top:top+'px',width:r.width+'px',height:(r.bottom-top)+'px'});
+    const main=document.querySelector('.main'),rad=main?getComputedStyle(main).borderBottomLeftRadius:'0px';
+    box.style.borderRadius=t.kind==='view'?rad:'0 0 '+rad+' '+rad;
+    const msg=t.kind==='view'?'Loading…':'Loading '+t.name.toLowerCase()+(t.kind==='rep'?' report…':'…');
+    const sp='<span class="r7-spin" aria-hidden="true"></span>';
+    const row='<div class="r7-row"><i></i><i></i><i></i><i></i></div>';
+    box.innerHTML=(t.kind==='rep'?'<div class="r7-cap">'+sp+esc(msg)+'</div><div style="height:16px"></div>'
+        :'<div class="r7-hd"><div class="r7-t">'+esc(t.name)+'</div><div class="r7-s">'+sp+esc(msg)+'</div></div><div class="r7-tb" aria-hidden="true"><i></i><i></i><i></i><i></i></div>')
+      +'<div class="r7-cards" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="r7-rows" aria-hidden="true">'+row.repeat(8)+'</div>';
+    document.body.appendChild(box);
+    document.getElementById('perf-line')?.classList.add('r7');
+  }
+  function unmount(){
+    if(box){box.remove();box=null;}
+    document.querySelectorAll('.r7-now').forEach(n=>n.classList.remove('r7-now'));
+    document.getElementById('perf-line')?.classList.remove('r7');
+  }
+  function run(){
+    timer=0;const t=pending;pending=null;if(!t)return;
+    replaying=true;
+    try{t.el.click();}catch(e){console.warn('[tabs-r7]',e);}
+    finally{replaying=false;}
+    // Reporting and Boards render on a 50ms timer inside navTo: wait it out before revealing.
+    const late=t.kind==='view'&&/^snav-(reporting|boards)$/.test(t.el.id);
+    setTimeout(()=>requestAnimationFrame(()=>{if(!pending)unmount();}),late?70:0);
+  }
+  window.addEventListener('click',e=>{
+    if(replaying||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;
+    const el=e.target.closest&&e.target.closest(SEL);if(!el)return;
+    const t=target(el);if(!t)return;
+    e.stopPropagation();e.preventDefault();
+    pending=t;select(t);mount(t);
+    // Let the selection + skeleton paint, then run the real render.
+    if(!timer)timer=1,requestAnimationFrame(()=>{timer=setTimeout(run,0);});
+  },true);
+})();
+</script>
 </body>
 </html>
