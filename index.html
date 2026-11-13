@@ -15504,6 +15504,7 @@ function _bvProgHTML(st){
 function _bvTypeMeta(b){
   if(b.type==='client')return{icon:'ti-building',label:'Client · live view'};
   if(b.type==='people')return{icon:'ti-users',label:'People · live view'};
+  if(b.type==='wip')return _bvWipMeta(b);
   if(b.studio)return{icon:'ti-refresh',label:'Studio pipeline'};
   const t=BV_TEMPLATES[b.template];return{icon:t?t.icon:'ti-layout-kanban',label:t&&b.template!=='blank'?t.name:'Board'};
 }
@@ -15572,6 +15573,10 @@ function _bvTileHTML(b){
     const js=jobs.filter(j=>j.company===b.clientFilter&&j.status!=='archived');
     mini=BV_STAGES.map(s=>miniCol(s.color,js.filter(j=>(j.workflowStatus||'live')===s.key).length,s.label)).join('');
     const n=js.filter(j=>j.status==='inplay').length;stats=`${n} active job${n!==1?'s':''}`;
+  }else if(b.type==='wip'){
+    const cols=_bvWipCols(b);const n=_bvWipJobs(b).length;
+    mini=cols.slice(0,6).map(c=>miniCol(c.color,c.jobs.length,c.name)).join('')+(cols.length>6?`<span class="bv-mini-more">+${cols.length-6}</span>`:'');
+    stats=`${n} live job${n!==1?'s':''} · by ${esc(_bvWipGroupLabel(b).toLowerCase())}`;
   }else if(b.type==='people'){
     const ks=_bvPeopleKeys();mini=`<div class="bv-mini-people">${ks.slice(0,9).map(k=>_bvAv(k)).join('')}</div>`;stats=`${ks.length} team members`;
   }else{
@@ -15590,7 +15595,7 @@ function _bvTileHTML(b){
 
 // ── Create board ─────────────────────────────────────────────────────────────
 let _bvCreateKind='blank',_bvCreateNameTouched=false;
-const BV_LIVE_KINDS={clientview:{name:'Client live view',icon:'ti-building',color:'grey',desc:'Read-only: one client’s jobs by stage, always current.'},people:{name:'People live view',icon:'ti-users',color:'grey',desc:'One lane per person with this week’s hours and notes.'}};
+const BV_LIVE_KINDS={clientview:{name:'Client live view',icon:'ti-building',color:'grey',desc:'Read-only: one client’s jobs by stage, always current.'},people:{name:'People live view',icon:'ti-users',color:'grey',desc:'One lane per person with this week’s hours and notes.'},bwip:{name:'Business WIP',icon:'ti-briefcase',color:'green',desc:'Every live job by job status — the Streamtime business WIP, always current.'},twip:{name:'Team WIP',icon:'ti-users-group',color:'blue',desc:'Every live job by the people on it — the Streamtime team WIP, always current.'}};
 function openCreateBoard(){bvOpenCreate();}
 function bvOpenCreate(kind){
   _bvClosePop();
@@ -15618,14 +15623,14 @@ function bvOpenCreate(kind){
 function _bvSyncCreateName(){
   const inp=document.getElementById('bv-nb-name');if(!inp||_bvCreateNameTouched)return;
   const k=_bvCreateKind,cl=document.getElementById('bv-nb-client')?.value||'';
-  inp.value=k==='clientview'?(cl||''):k==='campaign'?(cl?cl+' campaign':'Client campaign'):k==='people'?'Team':BV_TEMPLATES[k]?.name==='Blank board'?'Untitled board':(BV_TEMPLATES[k]?.name||'');
+  inp.value=k==='bwip'?'Business WIP':k==='twip'?'Team WIP':k==='clientview'?(cl||''):k==='campaign'?(cl?cl+' campaign':'Client campaign'):k==='people'?'Team':BV_TEMPLATES[k]?.name==='Blank board'?'Untitled board':(BV_TEMPLATES[k]?.name||'');
 }
 function bvSelectKind(k){
   _bvCreateKind=k;
   document.querySelectorAll('#bv-create .bv-kind').forEach(el=>el.classList.toggle('on',el.dataset.kind===k));
   const cf=document.getElementById('bv-nb-client-f');if(cf)cf.style.display=(k==='campaign'||k==='clientview')?'':'none';
   const first=document.querySelector('#bv-nb-client option[value=""]');if(first)first.textContent=k==='clientview'?'Choose a client…':'No client';
-  const hints={studio:'Adds every non-archived job, grouped into Quote, Live, Completed and Invoiced. Moving a card to another stage updates that job’s workflow stage in C&C.',campaign:'Columns: Briefed, In progress, In review, Approved, Delivered. Picking a client adds their active jobs and makes them the default in “Add jobs”.',week:'Columns: Up next, Doing (WIP limit 6), Waiting on client, Done.',blank:'Three starter columns you can rename, recolour and reorder.',clientview:'Shows the client’s non-archived jobs by stage. Nothing to maintain — it mirrors the job list.',people:'One lane per active team member with this week’s planned, done and billable hours.'};
+  const hints={studio:'Adds every non-archived job, grouped into Quote, Live, Completed and Invoiced. Moving a card to another stage updates that job’s workflow stage in C&C.',campaign:'Columns: Briefed, In progress, In review, Approved, Delivered. Picking a client adds their active jobs and makes them the default in “Add jobs”.',week:'Columns: Up next, Doing (WIP limit 6), Waiting on client, Done.',blank:'Three starter columns you can rename, recolour and reorder.',clientview:'Shows the client’s non-archived jobs by stage. Nothing to maintain — it mirrors the job list.',people:'One lane per active team member with this week’s planned, done and billable hours.',bwip:'Live jobs (In play, Paused, Complete) in one column per job status. Switch to stage or client columns on the board.',twip:'Live jobs in one column per person on the job (plus Unassigned). Switch to one column per team on the board.'};
   const h=document.getElementById('bv-nb-hint');if(h)h.textContent=hints[k]||'';
   _bvSyncCreateName();
 }
@@ -15647,6 +15652,7 @@ function _bvBuild(k,name,client){
   const t=Date.now();const base={id:uid('b'),v:2,createdAt:t,updatedAt:t,openedAt:t,sort:'manual'};
   if(k==='clientview')return{...base,type:'client',name:name||client,clientFilter:client};
   if(k==='people')return{...base,type:'people',name:name||'Team',notes:{}};
+  if(k==='bwip'||k==='twip')return _bvNewWipBoard(k==='bwip'?'business':'team',name,base);
   const tpl=BV_TEMPLATES[k]?k:'blank';
   const b={...base,type:'custom',template:tpl,name:name||(tpl==='blank'?'Untitled board':BV_TEMPLATES[tpl].name)};
   if(tpl==='studio'){
@@ -15719,7 +15725,7 @@ function _bvRenderBoard(){
       <button class="d-action" id="bv-filter-btn" onclick="bvFilterMenu(this)"></button>
       <button class="d-action" id="bv-sort-btn" onclick="bvSortMenu(this)"></button>
       <button class="d-action" onclick="bvBulkAddJobs()"><i class="ti ti-briefcase"></i> Add jobs</button>
-      <button class="d-action" onclick="bvAddColumn()"><i class="ti ti-layout-columns"></i> Add column</button>`:''}
+      <button class="d-action" onclick="bvAddColumn()"><i class="ti ti-layout-columns"></i> Add column</button>`:b.type==='wip'?_bvWipHeadHTML(b,f):''}
       <button class="bv-ibtn" title="Board options" onclick="bvBoardMenu(this,${_bvA(b.id)})"><i class="ti ti-dots"></i></button>
     </div>`;
   _bvRenderBody();
@@ -15735,6 +15741,7 @@ function _bvRenderSubbar(){
   const f=_bvF();const chips=[];
   if(b.studio)chips.push(`<span class="bv-note"><i class="ti ti-refresh"></i>Synced with job stages — moving a card to Quote, Live, Completed or Invoiced updates the job in C&amp;C.</span>`);
   if(b.type==='client')chips.push(`<span class="bv-note"><i class="ti ti-eye"></i>Live view of ${esc(b.clientFilter)}’s non-archived jobs. Click a card to open the job.</span>`);
+  if(b.type==='wip')chips.push(..._bvWipSubbar(b,f));
   if(b.type==='custom'&&b.sort&&b.sort!=='manual')chips.push(`<span class="bv-note"><i class="ti ti-arrows-sort" style="color:var(--muted)"></i>Sorted by ${esc(BV_SORTS[b.sort].toLowerCase())} — drag still moves cards between columns.</span>`);
   if(b.type==='custom'){
     const fc=(label,clear)=>`<span class="bv-fchip">${label}<button title="Remove filter" onclick="${clear}"><i class="ti ti-x"></i></button></span>`;
@@ -15751,6 +15758,7 @@ function _bvRenderBody(){
   _bvJM=new Map(jobs.map(j=>[String(j.id),j]));_bvStats=new Map();
   _bvUpdateHeadBtns();_bvRenderSubbar();
   if(b.type==='client')return _bvRenderClientView(b,body);
+  if(b.type==='wip')return _bvRenderWip(b,body);
   if(b.type==='people')return renderPeopleBoard(b,body);
   const old=body.querySelector('.bv-cols');const sx=old?old.scrollLeft:0;const sy={};
   body.querySelectorAll('.bv-col-list').forEach(el=>{sy[el.dataset.col]=el.scrollTop;});
@@ -15814,20 +15822,19 @@ function _bvCardHTML(b,col,c){
   let jobLine='',prog='';
   if(c.jobRef){
     if(j){
-      const wf=j.workflowStatus||'live';
-      jobLine=`<div class="bv-card-job"><span class="bv-jid">${esc(j.id)}</span>${j.company?`<span class="bv-sep">·</span><span class="bv-co">${esc(j.company)}</span>`:''}${b.studio&&col.stage?'':`<span class="bv-sp"></span><span class="bv-stage s-${esc(wf)}">${esc(_bvStageLabel(wf))}</span>`}</div>`;
+      jobLine=_bvJobLineHTML(j,!(b.studio&&col.stage));
       prog=_bvProgHTML(_bvStat(j));
     }else jobLine=`<div class="bv-card-job missing"><i class="ti ti-link-off"></i> Job ${esc(c.jobRef)} isn’t loaded</div>`;
   }
   const due=_bvDue(c),ds=_bvDueState(due,col);
-  const dueChip=due?`<span class="bv-chip due ${ds}${col.done?' done':''}" title="${c.due?'Due':'Job due'} ${esc(fmtDate(due))}${ds==='over'?' — overdue':''}"><i class="ti ti-calendar-event"></i>${esc(_bvFmtD(due))}</span>`:'';
+  const dueChip=_bvDueChipHTML(due,ds,col.done,c.due?'Due':'Job due');
   const ck=c.checklist||[],ckd=ck.filter(i=>i.done).length;
   const ckChip=ck.length?`<span class="bv-chip${ckd===ck.length?' ok':''}" title="Checklist"><i class="ti ti-square-check"></i>${ckd}/${ck.length}</span>`:'';
   const cm=(c.comments||[]).length;
   const cmChip=cm?`<span class="bv-chip" title="Comments"><i class="ti ti-message-circle"></i>${cm}</span>`:'';
   const dsc=c.desc&&c.desc.trim()?`<span class="bv-chip ico" title="Has notes"><i class="ti ti-align-left"></i></span>`:'';
   const as=_bvAssignees(c);
-  const avs=as.slice(0,3).map(k=>_bvAv(k)).join('')+(as.length>3?`<span class="bv-av more">+${as.length-3}</span>`:'');
+  const avs=_bvAvsHTML(as);
   const foot=(dueChip||ckChip||cmChip||dsc||avs)?`<div class="bv-card-foot">${dueChip}${ckChip}${cmChip}${dsc}<span class="bv-sp"></span><span class="bv-avs">${avs}</span></div>`:'';
   return`<article class="bv-card${col.done?' is-done':''}" data-card="${esc(c.id)}" tabindex="0" ${drag} onclick="bvOpenCard(${_bvA(c.id)})" onkeydown="if(event.key==='Enter'&&event.target===this)bvOpenCard(${_bvA(c.id)})">
     ${lbls?`<div class="bv-card-lbls">${lbls}</div>`:''}${jobLine}
@@ -15836,23 +15843,9 @@ function _bvCardHTML(b,col,c){
 
 // ── Client live view (read-only, by workflow stage) ─────────────────────────
 function _bvRenderClientView(b,body){
+  // Same column + card components as the studio pipeline (see _bvLiveColHTML / _bvLiveJobCardHTML in boards-r4)
   const js=jobs.filter(j=>j.company===b.clientFilter&&j.status!=='archived');
-  const t=_localISO();
-  const cols=BV_STAGES.map(s=>{
-    const list=js.filter(j=>(j.workflowStatus||'live')===s.key);
-    const done=s.key==='completed'||s.key==='invoiced';
-    const cards=list.map(j=>{
-      const due=j.dueDate?String(j.dueDate).slice(0,10):'';const ds=due&&!done?(due<t?'over':due<=_bvAddDays(3)?'soon':''):'';
-      const L=(j.labels||[]).slice(0,3).map(l=>`<span class="bv-lbl" style="--lc:${esc(labelColor(l))}">${esc(l)}</span>`).join('');
-      const m=(j.members||[]).slice(0,3).map(k=>_bvAv(k)).join('');
-      return`<article class="bv-card${done?' is-done':''}" tabindex="0" onclick="bvOpenJob(${_bvA(j.id)})" onkeydown="if(event.key==='Enter')bvOpenJob(${_bvA(j.id)})">
-        ${L?`<div class="bv-card-lbls">${L}</div>`:''}<div class="bv-card-job"><span class="bv-jid">${esc(j.id)}</span></div>
-        <div class="bv-card-title">${esc(j.name)}</div>${_bvProgHTML(_bvStat(j))}
-        ${due||m?`<div class="bv-card-foot">${due?`<span class="bv-chip due ${ds}"><i class="ti ti-calendar-event"></i>${esc(_bvFmtD(due))}</span>`:''}<span class="bv-sp"></span><span class="bv-avs">${m}</span></div>`:''}</article>`;
-    }).join('');
-    return`<section class="bv-col" style="--col:var(--bv-${s.color})"><header class="bv-col-h" style="cursor:default"><span class="bv-dot"></span><span class="bv-col-name">${s.label}</span><span class="bv-col-count">${list.length}</span></header><div class="bv-col-list">${cards||'<div class="bv-col-empty">No jobs</div>'}</div><div style="height:8px"></div></section>`;
-  }).join('');
-  body.innerHTML=`<div class="bv-cols">${cols}</div>`;
+  _bvRenderLiveCols(b,body,BV_STAGES.map(s=>({key:s.key,name:s.label,color:s.color,done:s.key==='completed'||s.key==='invoiced',jobs:js.filter(j=>(j.workflowStatus||'live')===s.key)})));
 }
 
 // ── People live view ─────────────────────────────────────────────────────────
@@ -16537,10 +16530,11 @@ window.addEventListener('keydown',e=>{
     if(dr&&!document.querySelector('.modal-bg.on:not(#bv-drawer)')){bvCloseCard();e.stopPropagation();}
     return;
   }
-  const b=_bvCur();if(!b||b.type!=='custom')return;
+  const b=_bvCur();if(!b||(b.type!=='custom'&&b.type!=='wip'))return;
   const ae=document.activeElement;
   if(ae&&(/INPUT|TEXTAREA|SELECT/.test(ae.tagName)||ae.isContentEditable))return;
   if(e.metaKey||e.ctrlKey||e.altKey||document.querySelector('.modal-bg.on'))return;
+  if(b.type!=='custom'&&e.key!=='/')return;
   if(e.key==='/'){e.preventDefault();e.stopPropagation();const q=document.getElementById('bv-q');if(q){q.focus();q.select();}}
   else if(e.key==='n'||e.key==='N'){
     e.preventDefault();e.stopPropagation();
@@ -20928,6 +20922,178 @@ function _dhWeekHTML(wd,todayDow){
     return`<div class="dh-week-days">${cols}</div>`;
   }catch(e){return'';}
 }
+</script>
+<style id="boards-r4">
+/* ═══ Boards round 4 — one job card + one column for every board ═══════════════════════════
+   The studio pipeline's job card and stage column are the model. Client live views and the
+   Business / Team WIP boards render through the same markup (bv-col / bv-card), so these
+   rules only cover what read-only columns need on top of boards-v2. */
+#view-boards .bv-col-h.is-static{cursor:default;}
+#view-boards .bv-col-h.is-static:active{cursor:default;}
+#view-boards .bv-col-pad{height:8px;flex-shrink:0;}
+#view-boards .bv-col-av{width:18px;height:18px;font-size:8px;box-shadow:none;}
+#view-boards .bv-stage.s-paused{background:var(--warn-bg);color:var(--warn-ink);}
+#view-boards .bv-stage.s-complete{background:color-mix(in srgb,var(--bv-blue) 15%,transparent);color:var(--bv-blue);}
+/* Group-by segmented control in the WIP board header */
+.bv-seg{display:inline-flex;align-items:center;gap:2px;height:32px;padding:3px;border-radius:var(--r-ctl);background:var(--faint);}
+.bv-seg-lbl{font-size:11.5px;color:var(--muted);padding:0 6px 0 8px;white-space:nowrap;}
+.bv-seg button{height:26px;padding:0 10px;border:none;border-radius:calc(var(--r-ctl) - 3px);background:transparent;color:var(--muted);font:inherit;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background var(--d-1,.12s) ease,color var(--d-1,.12s) ease,box-shadow var(--d-1,.12s) ease;}
+.bv-seg button:hover{color:var(--ink);}
+.bv-seg button[aria-pressed="true"]{background:var(--white);color:var(--ink);box-shadow:var(--e-1,0 1px 2px rgba(0,0,0,.08));}
+.bv-seg button:focus-visible{outline:2px solid var(--focus,var(--ink));outline-offset:1px;}
+body.dark .bv-seg{background:rgba(255,255,255,.06);}
+body.dark .bv-seg button[aria-pressed="true"]{background:rgba(255,255,255,.13);color:var(--ink);box-shadow:none;}
+@media (max-width:900px){.bv-seg-lbl{display:none;}}
+</style>
+<script id="boards-r4-script">
+// ═══ Boards round 4 ═══════════════════════════════════════════════════════════════════════
+// 1. Shared job card pieces (job line, due chip, avatar stack). _bvCardHTML in boards-v2 uses
+//    them for linked-job cards; client live views and WIP boards use _bvLiveJobCardHTML, which
+//    is the same card minus board-only extras (labels, checklist, comments).
+// 2. Shared read-only column (_bvLiveColHTML) — same section/header/list as a pipeline column.
+// 3. Business WIP and Team WIP: built-in live boards (type 'wip') mirroring the Streamtime WIP
+//    boards. Computed from the synced jobs on every render — nothing is copied into the board.
+//    Business = non-archived jobs by job status (In play / Paused / Complete);
+//    Team = the same jobs in one column per person on the job (jobs average ~5 people, so
+//    grouping by team puts most jobs in every team column; Team is still one click away).
+//    Both can regroup by status, stage, client, team or person.
+
+function _bvJobLineHTML(j,showStage,pill){
+  const wf=j.workflowStatus||'live';
+  return`<div class="bv-card-job"><span class="bv-jid">${esc(j.id)}</span>${j.company?`<span class="bv-sep">·</span><span class="bv-co">${esc(j.company)}</span>`:''}${showStage?`<span class="bv-sp"></span><span class="bv-stage s-${esc(wf)}">${esc(_bvStageLabel(wf))}</span>`:pill?`<span class="bv-sp"></span>${pill}`:''}</div>`;
+}
+function _bvDueChipHTML(due,ds,done,what){
+  if(!due)return'';
+  return`<span class="bv-chip due ${ds||''}${done?' done':''}" title="${esc(what||'Due')} ${esc(fmtDate(due))}${ds==='over'?' — overdue':''}"><i class="ti ti-calendar-event"></i>${esc(_bvFmtD(due))}</span>`;
+}
+function _bvAvsHTML(keys){
+  const as=(keys||[]).filter(k=>people[k]);
+  return as.slice(0,3).map(k=>_bvAv(k)).join('')+(as.length>3?`<span class="bv-av more" title="${esc(as.slice(3).map(k=>people[k].name).join(', '))}">+${as.length-3}</span>`:'');
+}
+// A synced job as a pipeline card: "6879 · Client", name, hours bar, due chip, people.
+function _bvLiveJobCardHTML(j,done,pill){
+  const due=j.dueDate?String(j.dueDate).slice(0,10):null;
+  const ds=_bvDueState(due,{done});
+  const dueChip=_bvDueChipHTML(due,ds,done,'Job due');
+  const avs=_bvAvsHTML(j.members);
+  const foot=(dueChip||avs)?`<div class="bv-card-foot">${dueChip}<span class="bv-sp"></span><span class="bv-avs">${avs}</span></div>`:'';
+  return`<article class="bv-card bv-live-card${done?' is-done':''}" data-job="${esc(j.id)}" tabindex="0" title="Open job ${esc(j.id)}" onclick="bvOpenJob(${_bvA(j.id)})" onkeydown="if(event.key==='Enter'&&event.target===this)bvOpenJob(${_bvA(j.id)})">
+    ${_bvJobLineHTML(j,false,pill)}<div class="bv-card-title">${esc(j.name)}</div>${_bvProgHTML(_bvStat(j))}${foot}</article>`;
+}
+function _bvLiveSort(a,b){
+  const da=a.dueDate?String(a.dueDate).slice(0,10):'9999',db=b.dueDate?String(b.dueDate).slice(0,10):'9999';
+  return da<db?-1:da>db?1:(Number(b.id)||0)-(Number(a.id)||0);
+}
+function _bvLiveMatch(j,q){
+  if(!q)return true;q=q.toLowerCase();
+  if(String(j.id).includes(q)||(j.name||'').toLowerCase().includes(q)||(j.company||'').toLowerCase().includes(q))return true;
+  return(j.members||[]).some(k=>(people[k]?.name||'').toLowerCase().includes(q));
+}
+// c: {key,name,color|raw,done,jobs,lead?,pill?(job)=>html}
+function _bvLiveColHTML(c,q){
+  const all=c.jobs,vis=q?all.filter(j=>_bvLiveMatch(j,q)):all;
+  const limit=_bvShowAll[c.key]?Infinity:BV_COL_PAGE;
+  const cards=[...vis].sort(_bvLiveSort).slice(0,limit).map(j=>_bvLiveJobCardHTML(j,!!c.done,c.pill?c.pill(j):'')).join('');
+  const more=vis.length>limit?`<button class="bv-more" onclick="_bvShowAll[${_bvA(c.key)}]=true;_bvRenderBody()">Show ${vis.length-limit} more</button>`:'';
+  const empty=vis.length?'':`<div class="bv-col-empty">${q&&all.length?'No jobs match the search':'No jobs'}</div>`;
+  const count=q?`${vis.length}<span class="bv-of">/${all.length}</span>`:`${all.length}`;
+  const col=c.raw?esc(c.raw):`var(--bv-${esc(c.color||'grey')})`;
+  return`<section class="bv-col bv-live-col" data-col="${esc(c.key)}" style="--col:${col}">
+    <header class="bv-col-h is-static">${c.lead||'<span class="bv-dot"></span>'}<span class="bv-col-name" title="${esc(c.name)}">${esc(c.name)}</span><i class="ti ti-refresh bv-col-sync" title="Live from synced jobs"></i><span class="bv-col-count" title="${q?'Matching / total':'Jobs'}">${count}</span><span class="bv-sp"></span></header>
+    <div class="bv-col-list" data-col="${esc(c.key)}">${cards}${empty}${more}</div><div class="bv-col-pad"></div>
+  </section>`;
+}
+function _bvRenderLiveCols(b,body,cols){
+  const old=body.querySelector('.bv-cols');const sx=old?old.scrollLeft:0;const sy={};
+  body.querySelectorAll('.bv-col-list').forEach(el=>{sy[el.dataset.col]=el.scrollTop;});
+  const q=(_bvF().q||'').trim();
+  body.innerHTML=`<div class="bv-cols bv-live-cols">${cols.map(c=>_bvLiveColHTML(c,q)).join('')||'<div class="bv-col-empty" style="width:288px">No live jobs</div>'}</div>`;
+  const nc=body.querySelector('.bv-cols');if(nc)nc.scrollLeft=sx;
+  body.querySelectorAll('.bv-col-list').forEach(el=>{if(sy[el.dataset.col])el.scrollTop=sy[el.dataset.col];});
+}
+
+// ── Business / Team WIP ──────────────────────────────────────────────────────
+const BV_WIP_GROUPS={status:'Status',stage:'Stage',client:'Client',team:'Team',person:'Person'};
+const _bvHueCols=['blue','teal','purple','amber','green','pink','grey'];
+function _bvHue(s){let h=0;s=String(s||'');for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return _bvHueCols[Math.abs(h)%_bvHueCols.length];}
+function _bvNewWipBoard(kind,name,base){
+  const t=Date.now();base=base||{id:uid('b'),v:2,createdAt:t,updatedAt:t,openedAt:t,sort:'manual'};
+  return{...base,type:'wip',wip:kind,groupBy:kind==='team'?'person':'status',name:name||(kind==='team'?'Team WIP':'Business WIP')};
+}
+function _bvWipMeta(b){return{icon:b.wip==='team'?'ti-users-group':'ti-briefcase',label:(b.wip==='team'?'Team':'Business')+' WIP · live view'};}
+function _bvWipGroup(b){return BV_WIP_GROUPS[b.groupBy]?b.groupBy:(b.wip==='team'?'person':'status');}
+function _bvWipGroupLabel(b){return BV_WIP_GROUPS[_bvWipGroup(b)];}
+// "Live" = every job that isn't archived (In play, Paused, Complete) — the same set as
+// Streamtime's default jobs search, so the board's total matches theirs.
+function _bvWipJobs(b){return jobs.filter(j=>j.status!=='archived'&&(!b.hideInternal||j.billable!==false));}
+function _bvWipStatus(j){return j.paused?'paused':j.status==='complete'?'complete':'inplay';}
+function _bvActiveMembers(j){return(j.members||[]).filter(k=>people[k]&&!people[k]._archived);}
+function _bvWipCols(b){
+  const js=_bvWipJobs(b),g=_bvWipGroup(b);
+  const statusPill=j=>{const s=_bvWipStatus(j);return s==='paused'?'<span class="bv-stage s-paused">Paused</span>':s==='complete'?'<span class="bv-stage s-complete">Complete</span>':'';};
+  if(g==='status'){
+    return[['inplay','In play','green',false],['paused','Paused','amber',false],['complete','Complete','blue',true]]
+      .map(([key,name,color,done])=>({key:'st-'+key,name,color,done,jobs:js.filter(j=>_bvWipStatus(j)===key)}));
+  }
+  if(g==='stage'){
+    return BV_STAGES.map(s=>({key:'wf-'+s.key,name:s.label,color:s.color,done:s.key==='completed'||s.key==='invoiced',pill:statusPill,jobs:js.filter(j=>(j.workflowStatus||'live')===s.key)}));
+  }
+  if(g==='client'){
+    const by=new Map();js.forEach(j=>{const c=j.company||'No client';if(!by.has(c))by.set(c,[]);by.get(c).push(j);});
+    return[...by.entries()].sort((a,b)=>b[1].length-a[1].length||a[0].localeCompare(b[0]))
+      .map(([c,list])=>({key:'co-'+c,name:c,color:_bvHue(c),pill:statusPill,jobs:list}));
+  }
+  if(g==='team'){
+    const teams=typeof _rfTeamList==='function'?_rfTeamList():[...new Set(Object.values(people).map(p=>p&&!p._archived&&p.team).filter(Boolean))].sort();
+    const by=new Map(teams.map(t=>[t,[]]));const none=[];
+    js.forEach(j=>{
+      const ts=[...new Set(_bvActiveMembers(j).map(k=>people[k].team).filter(Boolean))];
+      if(!ts.length){none.push(j);return;}
+      ts.forEach(t=>{if(!by.has(t))by.set(t,[]);by.get(t).push(j);});
+    });
+    const cols=[...by.entries()].map(([t,list])=>({key:'tm-'+t,name:t,color:_bvHue(t),pill:statusPill,jobs:list}));
+    if(none.length)cols.push({key:'tm-none',name:'No team',color:'grey',pill:statusPill,jobs:none});
+    return cols;
+  }
+  // person: one column per active person with live jobs, then Unassigned
+  const keys=_bvPeopleKeys();const none=[];
+  const by=new Map(keys.map(k=>[k,[]]));
+  js.forEach(j=>{const ms=_bvActiveMembers(j);if(!ms.length){none.push(j);return;}ms.forEach(k=>by.get(k)?.push(j));});
+  const cols=keys.filter(k=>by.get(k).length).map(k=>({key:'pp-'+k,name:people[k].name||k,raw:people[k].color||'',lead:_bvAv(k,'bv-col-av'),pill:statusPill,jobs:by.get(k)}));
+  if(none.length)cols.push({key:'pp-none',name:'Unassigned',color:'grey',pill:statusPill,jobs:none});
+  return cols;
+}
+function _bvRenderWip(b,body){_bvRenderLiveCols(b,body,_bvWipCols(b));}
+function _bvWipHeadHTML(b,f){
+  const g=_bvWipGroup(b);
+  return`<label class="bv-search" title="Search jobs (/)"><i class="ti ti-search"></i><input id="bv-q" placeholder="Search jobs" aria-label="Search jobs, clients or people" value="${esc(f.q)}" oninput="bvSearch(this.value)" onkeydown="if(event.key==='Escape'){this.value='';bvSearch('');this.blur();event.stopPropagation();}"><kbd>/</kbd></label>
+    <div class="bv-seg" role="group" aria-label="Columns by"><span class="bv-seg-lbl">Columns by</span>${Object.entries(BV_WIP_GROUPS).map(([k,l])=>`<button type="button" aria-pressed="${k===g}" onclick="bvWipSet('groupBy','${k}')">${l}</button>`).join('')}</div>`;
+}
+function _bvWipSubbar(b,f){
+  const internal=jobs.filter(j=>j.status!=='archived'&&j.billable===false).length,n=_bvWipJobs(b).length;
+  const out=[`<span class="bv-note"><i class="ti ti-refresh"></i>Live from synced Streamtime jobs: ${n} non-archived job${n!==1?'s':''}, one column per ${esc(_bvWipGroupLabel(b).toLowerCase())}. Click a card to open the job.</span>`];
+  if(internal)out.push(`<button class="bv-linkbtn" onclick="bvWipSet('hideInternal',${b.hideInternal?'false':'true'})">${b.hideInternal?`Show non-billable jobs (${internal})`:`Hide non-billable jobs (${internal})`}</button>`);
+  if(f.q)out.push(`<span class="bv-fchip">Search: “${esc(f.q)}”<button title="Clear search" onclick="bvSearch('');const i=document.getElementById('bv-q');if(i)i.value='';"><i class="ti ti-x"></i></button></span>`);
+  return out;
+}
+function bvWipSet(k,v){
+  const b=_bvCur();if(!b||b.type!=='wip')return;
+  b[k]=v;_bvShowAll={};_bvTouch(b);
+  if(k==='groupBy'){const nc=document.querySelector('#board-detail-body .bv-cols');if(nc)nc.scrollLeft=0;}
+  _bvRenderBoard();
+}
+// Built in: both WIP boards appear once per browser (deleting one is respected; they can be
+// re-created from New board → Live views). createdAt 1/2 keeps them first on the landing.
+(function _bvSeedWip(){
+  try{if(localStorage.getItem('cc_bv_wip_seeded'))return;}catch(e){return;}
+  let added=0;
+  [['business',1],['team',2]].forEach(([k,ts])=>{
+    if(boardsList.some(b=>b&&b.type==='wip'&&b.wip===k))return;
+    boardsList.push(_bvNewWipBoard(k,'',{id:uid('b'),v:2,createdAt:ts,updatedAt:Date.now(),openedAt:0,sort:'manual'}));added++;
+  });
+  if(added)saveBoardsData();
+  try{localStorage.setItem('cc_bv_wip_seeded','1');}catch(e){}
+})();
 </script>
 <style id="auth-ui-css">
 /* ═══ Sign-in UI: avatar menu, change password, Settings → Team → Access. ds-v3 tokens only. ═══ */
