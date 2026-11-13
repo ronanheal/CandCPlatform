@@ -20027,6 +20027,14 @@ body.dark .zone-bucket.done-bucket{background:var(--ok-bg)!important;border-colo
 .tm-panel-field input:hover,.tm-panel-field select:hover{border-color:var(--border-strong)!important;}
 .tm-panel-field input:focus,.tm-panel-field select:focus,.tm-panel-field textarea:focus{border-color:color-mix(in srgb,var(--red) 55%,var(--border))!important;box-shadow:var(--ring)!important;outline:none;}
 .tm-panel-field label{font-size:12px!important;font-weight:500!important;color:var(--muted)!important;letter-spacing:0!important;text-transform:none!important;}
+
+/* ── Modals and ⌘K ──────────────────────────────────────────────────────────────────────── */
+/* ⌘K: neutral icon tiles; the selected row carries the red signal */
+.gs-ico{background:var(--surface-2)!important;color:var(--ink-2)!important;border:1px solid var(--faint)!important;transition:background var(--d-1),color var(--d-1),transform var(--d-2) var(--ease-spring);}
+.gs-item.sel .gs-ico{background:var(--red-wash)!important;color:var(--red-ink)!important;border-color:transparent!important;transform:scale(1.06);}
+/* New job: billing tiles never break "Non-billable" */
+.bill-choice{padding:10px 12px!important;gap:8px!important;min-width:0;}
+.bc-choice-title{white-space:nowrap;}
 </style>
 <script id="screens-v3-script">
 // ═══ Screens v3 — behaviour for the screen-by-screen redesign (see screens-v3 CSS) ══════════
