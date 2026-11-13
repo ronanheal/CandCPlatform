@@ -2623,7 +2623,8 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
     </div>
     <!-- Body -->
     <div class="tm-bd">
-      <input type="text" class="tm-title-inp" id="td-task" placeholder="What needs doing?">
+      <textarea class="tm-title-inp" id="td-task" rows="1" placeholder="What needs doing?" aria-describedby="td-task-hint" spellcheck="true"></textarea>
+      <div class="tm-title-hint" id="td-task-hint"><kbd>Enter</kbd> new line · <kbd>⌘</kbd><kbd>Enter</kbd> save</div>
       <!-- Assign to (hidden in personal mode) -->
       <div id="td-assign-section">
         <div class="tm-lbl">Assigned to</div>
@@ -20596,6 +20597,18 @@ body.dark .zone-bucket.done-bucket{background:var(--ok-bg)!important;border-colo
    plain grid it was before. */
 .att-grid.is-masonry{grid-auto-rows:1px;row-gap:0!important;column-gap:var(--s-4)!important;align-items:start;}
 .att-grid.is-masonry>.att-card{align-self:start;}
+
+/* ── Task title: a multi-line field that grows with its copy ─────────────────────────────── */
+textarea.tm-title-inp{display:block;width:100%;resize:none;overflow:hidden;line-height:1.4!important;font-family:var(--font);
+  min-height:44px;max-height:40vh;margin-bottom:6px!important;}
+textarea.tm-title-inp.is-scroll{overflow-y:auto;}
+.tm-title-hint{display:flex;align-items:center;gap:4px;justify-content:flex-end;margin:0 2px 14px;font-size:11.5px;color:var(--subtle);
+  opacity:0;transition:opacity var(--d-2);}
+#todo-modal:focus-within .tm-title-inp:focus+.tm-title-hint{opacity:1;}
+.tm-title-hint kbd{font:500 11px var(--font);color:var(--muted);padding:0 5px;border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;background:var(--surface-2);}
+.tm-title-hint kbd+kbd{margin-left:-2px;}
+/* Line breaks typed into a title show as line breaks (cards stay clamped) */
+.tc-title,.tt-title,.fli-title{white-space:pre-line;}
 </style>
 <script id="polish-r2-script">
 // ═══ Polish round 2 — behaviour for the polish-r2 CSS above ═══════════════════════════════
@@ -20603,6 +20616,21 @@ body.dark .zone-bucket.done-bucket{background:var(--ok-bg)!important;border-colo
   // ── Needs attention masonry: span = card height + one gap, in 1px grid rows. Grid
   // auto-placement then puts each card in the first free slot, i.e. the shortest column,
   // keeping the priority order reading left to right. Re-measures when a card resizes.
+  // ── Task title textarea: grow to fit, re-measure whenever the modal opens or the value is
+  // set from code (open/edit/prefill all assign .value, which fires no input event).
+  const MAXH=()=>Math.round(innerHeight*.4);
+  function grow(el){if(!el)return;el.style.height='auto';const h=el.scrollHeight+2;
+    el.style.height=Math.min(h,MAXH())+'px';el.classList.toggle('is-scroll',h>MAXH());}
+  const ti=document.getElementById('td-task');
+  if(ti){
+    ti.addEventListener('input',()=>grow(ti));
+    ti.addEventListener('focus',()=>grow(ti));
+    const desc=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value');
+    Object.defineProperty(ti,'value',{configurable:true,get(){return desc.get.call(this);},
+      set(v){desc.set.call(this,v);setTimeout(()=>grow(ti),0);}});
+    const tm=document.getElementById('todo-modal');
+    if(tm)new MutationObserver(()=>{if(tm.classList.contains('on'))setTimeout(()=>grow(ti),0);}).observe(tm,{attributes:true,attributeFilter:['class']});
+  }
   const GAP=16;
   let ro=null;
   function pack(grid){
