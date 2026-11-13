@@ -4949,7 +4949,7 @@ function renderDashboard(){
   const _fmtDay=d=>{const x=new Date(d);return`${x.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][x.getMonth()]}`;};
   const _liveJobs=jobs.filter(j=>j.status==='inplay');
   const dueJobs=_liveJobs.filter(j=>j.dueDate&&_inDays(j.dueDate)<=7).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate)).slice(0,12);
-  const overdueInv=(stInvoices||[]).filter(i=>{const s=(i.invoiceStatus?.name||'').toLowerCase();return i.dueDate&&_pDate(i.dueDate)<_t0&&s!=='paid'&&s!=='voided';}).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate)).slice(0,12);
+  const overdueInv=(stInvoices||[]).filter(i=>{const s=(i.invoiceStatus?.name||'').toLowerCase();return i.dueDate&&_pDate(i.dueDate)<_t0&&s!=='paid'&&s!=='voided'&&s!=='draft';}).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate)).slice(0,12);
   const awaitingQuotes=(stQuotes||[]).filter(q=>{const s=(typeof q.quoteStatus==='string'?q.quoteStatus:q.quoteStatus?.name||'').toLowerCase();return s.includes('pending')&&q.sentDate&&_inDays(q.sentDate)<=-7;}).sort((a,b)=>new Date(a.sentDate)-new Date(b.sentDate)).slice(0,12);
   const uninvoiced=_liveJobs.filter(j=>(j._sellUsed||0)-(j._stInvoiced||0)>=500&&(j._bPct||0)>=80).sort((a,b)=>((b._sellUsed||0)-(b._stInvoiced||0))-((a._sellUsed||0)-(a._stInvoiced||0))).slice(0,10);
   // Deadline risk: live jobs not yet overdue, but whose remaining planned hours can't
@@ -13067,8 +13067,30 @@ function toggleQinvDetail(cardId){
   if(chv)chv.style.transform=isOpen?'rotate(180deg)':'';
 }
 
+// A cross-tab refresh (the storage listener below reloads this tab when another tab saves) used
+// to land on the Dashboard, so any screen the user was on — Reporting, an open board, a job —
+// was lost whenever another tab finished loading Streamtime. Put them back where they were.
+const _xtabRestore=(()=>{try{const s=sessionStorage.getItem('cc_xtab_restore');sessionStorage.removeItem('cc_xtab_restore');return s?JSON.parse(s):null;}catch(e){return null;}})();
+function _xtabRestoreView(r){
+  if(!r||!r.v||r.v==='dashboard'||!document.getElementById('view-'+(r.v==='detail'?'jobs':r.v)))return;
+  if(!document.querySelector('#view-dashboard:not(.hidden)'))return; // the user has already moved on
+  navTo(r.v==='detail'?'jobs':r.v);
+  if((r.v==='jobs'||r.v==='detail')&&r.jobsTab&&r.jobsTab!=='jobs')try{switchJobsTab(r.jobsTab);}catch(e){}
+  if(r.v==='reporting'&&r.rep&&r.rep!=='business')try{switchReportTab(r.rep);}catch(e){}
+  if(r.v==='settings'&&r.sett)try{switchSettTab(r.sett);}catch(e){}
+  if(r.v==='boards'&&r.board)setTimeout(()=>{try{openBoard(r.board);}catch(e){}},120); // openBoard ignores a board that no longer exists
+}
 navTo('dashboard');
-initStreamtime();
+if(_xtabRestore){
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>_xtabRestoreView(_xtabRestore),{once:true});
+  else _xtabRestoreView(_xtabRestore);
+}
+initStreamtime().then(()=>{
+  // An open job needs the Streamtime jobs first; only reopen it if the user is still on Jobs.
+  const r=_xtabRestore;
+  if(r&&r.v==='detail'&&r.job&&document.querySelector('#view-jobs:not(.hidden)')&&typeof jobs!=='undefined'&&jobs.some(j=>String(j.id)===String(r.job)))
+    try{openJobDetail(r.job);}catch(e){}
+}).catch(()=>{});
 // Auto-refresh from Streamtime every 5 min — previously this only ever fetched once on
 // page load, so anything completed in Streamtime after that (e.g. dragging a To Do into
 // Done, which logs its time) never appeared until someone manually reloaded the tab. Most
@@ -13098,6 +13120,12 @@ window.addEventListener('storage',e=>{
   const tryRefresh=()=>{
     const busy=document.querySelector('.modal-bg.on,.inv-bg.on,#detail-drawer.open,.gs-bg.on,#doc-preview-modal')||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName);
     if(busy){_xtabTimer=setTimeout(tryRefresh,4000);return;}
+    // Remember the screen so the reload comes back to it (see _xtabRestoreView).
+    try{
+      const v=(document.querySelector('.view:not(.hidden)')?.id||'').replace(/^view-/,'');
+      sessionStorage.setItem('cc_xtab_restore',JSON.stringify({v,jobsTab:typeof _jobsTab!=='undefined'?_jobsTab:'',job:v==='detail'?activeJobId:null,
+        rep:typeof _reportTab!=='undefined'?_reportTab:'',sett:typeof _settActiveTab!=='undefined'?_settActiveTab:'',board:typeof activeBoardId!=='undefined'?activeBoardId:null}));
+    }catch(e){}
     location.reload();
   };
   _xtabTimer=setTimeout(tryRefresh,1500);
