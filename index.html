@@ -2606,14 +2606,14 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
   </div>
 </div>
 
-<!-- ADD TODO MODAL -->
+<!-- ADD TODO MODAL (ux-r4: compact task sheet — title as the hero, a property grid, one footer.
+     Every id/handler the task JS reads is unchanged; see the ux-r4 block for its styles.) -->
 <div class="modal-bg" id="todo-modal">
-  <div class="tm-modal">
+  <div class="tm-modal ux-tm" role="dialog" aria-modal="true" aria-labelledby="td-modal-title">
     <!-- Header -->
     <div class="tm-hd">
-
       <div class="tm-hd-title" id="td-modal-title">New task</div>
-      <button class="tm-x" onclick="closeTodoModal()"><i class="ti ti-x"></i></button>
+      <button class="tm-x" onclick="closeTodoModal()" aria-label="Close" title="Close (Esc)"><i class="ti ti-x"></i></button>
     </div>
     <!-- Personal hero (shown when personal is checked) -->
     <div class="tm-personal-hero" id="td-personal-hero">
@@ -2622,41 +2622,135 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
     </div>
     <!-- Body -->
     <div class="tm-bd">
-      <textarea class="tm-title-inp" id="td-task" rows="1" placeholder="What needs doing?" aria-describedby="td-task-hint" spellcheck="true"></textarea>
+      <textarea class="tm-title-inp" id="td-task" rows="1" placeholder="What needs doing?" aria-label="Task" aria-describedby="td-task-hint" spellcheck="true"></textarea>
       <div class="tm-title-hint" id="td-task-hint"><kbd>Enter</kbd> new line · <kbd>⌘</kbd><kbd>Enter</kbd> save</div>
-      <!-- Assign to (hidden in personal mode) -->
-      <div id="td-assign-section">
-        <div class="tm-lbl">Assigned to</div>
-        <div class="tm-assign-row" id="tm-assign-row" onclick="openTodoAssignMenu()">
-          <div class="tm-pav" id="td-pav" style="background:var(--red);">RO</div>
-          <span class="tm-pname" id="td-pname">Ronan</span>
-          <div class="tm-assign-chevron"><i class="ti ti-chevron-down" style="font-size:11px;"></i></div>
-          <div class="tm-assign-menu" id="tm-assign-menu"></div>
+      <div class="ux-props">
+        <!-- Assign to (hidden in personal mode) -->
+        <div id="td-assign-section" class="ux-prop-sec">
+          <div class="ux-prop">
+            <div class="tm-lbl ux-prop-l" id="td-assign-lbl"><i class="ti ti-user-circle" aria-hidden="true"></i>Person</div>
+            <div class="tm-assign-row" id="tm-assign-row" onclick="openTodoAssignMenu()" role="button" tabindex="0" aria-haspopup="listbox" aria-labelledby="td-assign-lbl td-pname">
+              <div class="tm-pav" id="td-pav" style="background:var(--red);">RO</div>
+              <span class="tm-pname" id="td-pname">Ronan</span>
+              <div class="tm-assign-chevron"><i class="ti ti-selector" aria-hidden="true"></i></div>
+              <div class="tm-assign-menu" id="tm-assign-menu"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Job + Item (hidden in personal mode) -->
+        <div id="td-job-section" class="ux-prop-sec">
+          <div class="ux-prop">
+            <div class="tm-lbl ux-prop-l"><i class="ti ti-briefcase" aria-hidden="true"></i><span id="td-job-lbl">Job</span></div>
+            <div class="ux-job-cell">
+              <!-- Searchable job combo (recents + full list). The hidden #td-job input keeps the
+                   old select's .value contract for all readers. -->
+              <div style="position:relative;" id="td-job-wrap">
+                <button type="button" class="tm-field-sel td-item-btn" id="td-job-btn" onclick="toggleJobPicker(event)" aria-haspopup="listbox">
+                  <span class="ux-job-txt"><span id="td-job-label" style="color:var(--muted);">— Personal / no job —</span><span class="ux-job-co" id="ux-job-co"></span></span>
+                  <i class="ti ti-selector ux-sel-ico" aria-hidden="true"></i>
+                </button>
+                <div id="td-job-dropdown" class="item-pick-dd"></div>
+              </div>
+              <div class="ux-job-acts" id="ux-job-acts" hidden>
+                <button type="button" class="ux-ibtn" onclick="uxCopyJob(document.getElementById('td-job').value)" title="Copy job number and name" aria-label="Copy job number and name"><i class="ti ti-copy" aria-hidden="true"></i></button>
+                <button type="button" class="ux-ibtn" onclick="uxOpenJobFromTask()" title="Open job" aria-label="Open job"><i class="ti ti-arrow-up-right" aria-hidden="true"></i></button>
+              </div>
+            </div>
+          </div>
+          <input type="hidden" id="td-job" value="">
+          <div class="ux-prop">
+            <div class="tm-lbl ux-prop-l"><i class="ti ti-list-details" aria-hidden="true"></i>Item</div>
+            <div style="position:relative;" id="td-item-wrap">
+              <button type="button" class="tm-field-sel td-item-btn" id="td-item-btn" onclick="toggleItemPicker(event)" aria-haspopup="listbox">
+                <span id="td-item-label" style="color:var(--muted);flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">— No item —</span>
+                <i class="ti ti-selector ux-sel-ico" aria-hidden="true"></i>
+              </button>
+              <div id="td-item-dropdown" class="item-pick-dd"></div>
+            </div>
+          </div>
+          <input type="hidden" id="td-item" value="">
+          <input type="hidden" id="td-item-id" value="">
+        </div>
+        <!-- When: hours, day, date and repeat on one row -->
+        <div class="ux-prop">
+          <div class="tm-lbl ux-prop-l"><i class="ti ti-clock" aria-hidden="true"></i><span id="td-hours-lbl">Scheduled</span></div>
+          <div class="ux-when">
+            <input class="tm-hours-inp" type="text" id="td-hours" placeholder="2h" aria-labelledby="td-hours-lbl" autocomplete="off">
+            <select class="tm-day-sel cc-select" id="td-day" onchange="_updateDateLabel()" aria-label="Day">
+              <option value="1">Monday</option>
+              <option value="2">Tuesday</option>
+              <option value="3">Wednesday</option>
+              <option value="4">Thursday</option>
+              <option value="5" selected>Friday</option>
+            </select>
+            <button type="button" class="tm-date-btn" onclick="toggleMiniCal()" id="td-date-display" title="Pick a date" aria-label="Pick a date">
+              <i class="ti ti-calendar" aria-hidden="true"></i>
+              <span id="td-date-label">—</span>
+            </button>
+            <button type="button" class="tm-repeat-btn" id="td-repeat-btn" onclick="toggleRepeatSection()">
+              <i class="ti ti-repeat" aria-hidden="true"></i>
+              <span id="td-repeat-label">Repeat</span>
+            </button>
+          </div>
         </div>
       </div>
-      <!-- Job + Item (hidden in personal mode) -->
-      <div id="td-job-section">
-        <div class="tm-lbl" id="td-job-lbl" style="margin-top:16px;">Job</div>
-        <!-- Searchable job combo (recents + full list) — same pattern as the item picker below.
-             The hidden #td-job input keeps the old select's .value contract for all readers. -->
-        <div style="position:relative;" id="td-job-wrap">
-          <button type="button" class="tm-field-sel td-item-btn" id="td-job-btn" onclick="toggleJobPicker(event)">
-            <span id="td-job-label" style="color:var(--muted);flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">— Personal / no job —</span>
-            <i class="ti ti-chevron-down" style="font-size:11px;color:var(--muted);flex-shrink:0;margin-left:6px;"></i>
-          </button>
-          <div id="td-job-dropdown" class="item-pick-dd"></div>
+      <!-- Mini calendar popover -->
+      <div class="mini-cal-wrap" id="td-mini-cal" style="display:none;">
+        <div class="mini-cal-nav">
+          <button type="button" class="mini-cal-nav-btn" onclick="miniCalNav(-1)" aria-label="Previous month"><i class="ti ti-chevron-left"></i></button>
+          <span class="mini-cal-month" id="mc-month-lbl">—</span>
+          <button type="button" class="mini-cal-nav-btn" onclick="miniCalNav(1)" aria-label="Next month"><i class="ti ti-chevron-right"></i></button>
         </div>
-        <input type="hidden" id="td-job" value="">
-        <div class="tm-lbl" style="margin-top:16px;">Item</div>
-        <div style="position:relative;" id="td-item-wrap">
-          <button type="button" class="tm-field-sel td-item-btn" id="td-item-btn" onclick="toggleItemPicker(event)">
-            <span id="td-item-label" style="color:var(--muted);flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">— No item —</span>
-            <i class="ti ti-chevron-down" style="font-size:11px;color:var(--muted);flex-shrink:0;margin-left:6px;"></i>
-          </button>
-          <div id="td-item-dropdown" class="item-pick-dd"></div>
+        <div class="mini-cal-days-hd">
+          <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
         </div>
-        <input type="hidden" id="td-item" value="">
-        <input type="hidden" id="td-item-id" value="">
+        <div class="mini-cal-grid" id="mc-grid"></div>
+      </div>
+      <!-- Repeat config (hidden by default) -->
+      <div class="tm-repeat-config" id="td-repeat-config">
+        <div class="ux-rep-row">
+          <span class="ux-rep-l">Every</span>
+          <input type="number" id="td-rep-n" value="1" min="1" max="52" class="tm-hours-inp ux-num" aria-label="Repeat every">
+          <select id="td-rep-unit" class="tm-day-sel cc-select" onchange="_updateRepeatLabel()" aria-label="Repeat unit">
+            <option value="day">Day</option>
+            <option value="week" selected>Week</option>
+            <option value="month">Month</option>
+          </select>
+        </div>
+        <div class="ux-rep-row">
+          <span class="ux-rep-l">Ends</span>
+          <div class="ux-rep-chips">
+            <button type="button" class="rep-end-chip on" id="rep-end-never" onclick="setRepeatEnd('never')">Never</button>
+            <button type="button" class="rep-end-chip" id="rep-end-after" onclick="setRepeatEnd('after')">After</button>
+            <button type="button" class="rep-end-chip" id="rep-end-date" onclick="setRepeatEnd('date')">On date</button>
+          </div>
+          <div id="rep-end-after-row" style="display:none;align-items:center;gap:8px;">
+            <input type="number" id="td-rep-count" value="4" min="1" max="52" class="tm-hours-inp ux-num" aria-label="Number of repeats">
+            <span id="rep-count-unit-lbl" class="ux-rep-l">weeks</span>
+          </div>
+          <div id="rep-end-date-row" style="display:none;">
+            <input type="date" id="td-rep-end-date" class="tm-hours-inp" aria-label="End date">
+          </div>
+        </div>
+        <div id="rep-preview" class="ux-rep-prev"></div>
+      </div>
+      <!-- Toggles: one segmented row -->
+      <div class="tm-urgent-row ux-seg" role="group" aria-label="Task options">
+        <label class="tm-urgent-lbl" id="td-urgent-lbl">
+          <input type="checkbox" id="td-urgent" onchange="document.getElementById('td-urgent-lbl').classList.toggle('on',this.checked)">
+          <i class="ti ti-alert-circle" aria-hidden="true"></i>
+          Urgent
+        </label>
+        <label class="tm-urgent-lbl tm-done-lbl" id="td-done-lbl">
+          <input type="checkbox" id="td-done" onchange="_tdDoneChanged()">
+          <i class="ti ti-circle-check" aria-hidden="true"></i>
+          Log as done
+        </label>
+        <label class="tm-urgent-lbl" id="td-personal-lbl">
+          <input type="checkbox" id="td-personal" onchange="togglePersonalMode(this.checked);document.getElementById('td-personal-lbl').classList.toggle('on',this.checked)">
+          <i class="ti ti-lock" aria-hidden="true"></i>
+          Personal
+        </label>
       </div>
       <!-- Job brief (read-only, shown when a job with notes is selected) -->
       <div id="td-job-brief-wrap" class="tm-job-brief-wrap" style="display:none;">
@@ -2664,106 +2758,19 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
         <div id="td-job-brief" class="tm-job-brief"></div>
       </div>
       <!-- Paused warning -->
-      <div id="td-pause-warn" class="paused-warn"><i class="ti ti-pause" style="font-size:13px;margin-right:6px;vertical-align:middle;"></i>This job or phase is paused — time cannot be logged against it.</div>
-      <!-- Urgent toggle -->
-      <div class="tm-urgent-row">
-        <label class="tm-urgent-lbl" id="td-urgent-lbl">
-          <input type="checkbox" id="td-urgent" onchange="document.getElementById('td-urgent-lbl').classList.toggle('on',this.checked)">
-          <i class="ti ti-alert-circle" style="font-size:13px;"></i>
-          Mark as urgent
-        </label>
-        <label class="tm-urgent-lbl tm-done-lbl" id="td-done-lbl">
-          <input type="checkbox" id="td-done" onchange="_tdDoneChanged()">
-          <i class="ti ti-circle-check" style="font-size:13px;"></i>
-          Log as done
-        </label>
-        <label class="tm-urgent-lbl" id="td-personal-lbl">
-          <input type="checkbox" id="td-personal" onchange="togglePersonalMode(this.checked);document.getElementById('td-personal-lbl').classList.toggle('on',this.checked)">
-          <i class="ti ti-user" style="font-size:13px;"></i>
-          Personal
-        </label>
-      </div>
-      <hr class="tm-dash">
-      <!-- Hours + Scheduled -->
-      <div class="tm-2col" style="margin-bottom:16px;">
-        <div>
-          <div class="tm-col-lbl" id="td-hours-lbl">Scheduled</div>
-          <input class="tm-hours-inp" type="text" id="td-hours" placeholder="e.g. 2h or 45m">
-        </div>
-        <div style="flex:1;">
-          <div class="tm-col-lbl">Day</div>
-          <select class="tm-day-sel" id="td-day" onchange="_updateDateLabel()">
-            <option value="1">Monday</option>
-            <option value="2">Tuesday</option>
-            <option value="3">Wednesday</option>
-            <option value="4">Thursday</option>
-            <option value="5" selected>Friday</option>
-          </select>
-        </div>
-      </div>
-      <!-- Date display + Repeat row -->
-      <div class="tm-date-repeat-row">
-        <button class="tm-date-btn" onclick="toggleMiniCal()" id="td-date-display">
-          <i class="ti ti-calendar" style="font-size:14px;"></i>
-          <span id="td-date-label">—</span>
-        </button>
-        <button class="tm-repeat-btn" id="td-repeat-btn" onclick="toggleRepeatSection()">
-          <i class="ti ti-repeat" style="font-size:13px;"></i>
-          <span id="td-repeat-label">Repeat</span>
-        </button>
-      </div>
-      <!-- Repeat config (hidden by default) -->
-      <div class="tm-repeat-config" id="td-repeat-config">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-          <span style="font-size:12px;color:var(--muted);white-space:nowrap;">Every</span>
-          <input type="number" id="td-rep-n" value="1" min="1" max="52" class="tm-hours-inp" style="width:44px;text-align:center;">
-          <select id="td-rep-unit" class="tm-day-sel cc-select" style="font-size:12px;" onchange="_updateRepeatLabel()">
-            <option value="day">Day</option>
-            <option value="week" selected>Week</option>
-            <option value="month">Month</option>
-          </select>
-        </div>
-        <div style="margin-bottom:10px;">
-          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">Ends</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="rep-end-chip on" id="rep-end-never" onclick="setRepeatEnd('never')">Never</button>
-            <button class="rep-end-chip" id="rep-end-after" onclick="setRepeatEnd('after')">After</button>
-            <button class="rep-end-chip" id="rep-end-date" onclick="setRepeatEnd('date')">On date</button>
-          </div>
-        </div>
-        <div id="rep-end-after-row" style="display:none;align-items:center;gap:8px;margin-bottom:8px;">
-          <input type="number" id="td-rep-count" value="4" min="1" max="52" class="tm-hours-inp" style="width:44px;text-align:center;">
-          <span id="rep-count-unit-lbl" style="font-size:12px;color:var(--muted);">weeks</span>
-        </div>
-        <div id="rep-end-date-row" style="display:none;margin-bottom:8px;">
-          <input type="date" id="td-rep-end-date" class="tm-hours-inp" style="width:140px;font-size:12px;">
-        </div>
-        <div id="rep-preview" style="font-size:11px;color:var(--muted);margin-top:4px;"></div>
-      </div>
-      <!-- Mini calendar popover -->
-      <div class="mini-cal-wrap" id="td-mini-cal" style="display:none;">
-        <div class="mini-cal-nav">
-          <button class="mini-cal-nav-btn" onclick="miniCalNav(-1)"><i class="ti ti-chevron-left"></i></button>
-          <span class="mini-cal-month" id="mc-month-lbl">—</span>
-          <button class="mini-cal-nav-btn" onclick="miniCalNav(1)"><i class="ti ti-chevron-right"></i></button>
-        </div>
-        <div class="mini-cal-days-hd">
-          <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
-        </div>
-        <div class="mini-cal-grid" id="mc-grid"></div>
-      </div>
+      <div id="td-pause-warn" class="paused-warn"><i class="ti ti-player-pause" aria-hidden="true"></i>This job or phase is paused, so time can't be logged against it.</div>
       <!-- Timestamps (edit mode only) -->
       <div id="td-timestamps" style="display:none;">
-        <hr class="tm-dash">
         <div class="tm-meta" id="td-ts-text"></div>
       </div>
     </div>
-    <!-- Footer -->
+    <!-- Footer: a quiet delete on the left, the actions on the right -->
     <div class="tm-ft">
-      <button class="tm-btn-cancel" onclick="closeTodoModal()">Cancel</button>
-      <button class="tm-btn-delete" id="edit-task-btn" onclick="deleteTodo()">Delete</button>
-      <button class="tm-btn-timer" id="td-timer-btn" onclick="startTimerFromTask()" title="Save the task and start timing it"><i class="ti ti-player-play" style="font-size:12px;"></i> Start timer</button>
-      <button class="tm-btn-save" id="td-save-btn" onclick="saveTodo()">
+      <button type="button" class="tm-btn-delete ux-del" id="edit-task-btn" onclick="uxConfirmDeleteTask()" title="Delete task" aria-label="Delete task"><i class="ti ti-trash" aria-hidden="true"></i><span>Delete</span></button>
+      <span class="ux-ft-sp"></span>
+      <button type="button" class="tm-btn-cancel" onclick="closeTodoModal()">Cancel</button>
+      <button type="button" class="tm-btn-timer" id="td-timer-btn" onclick="startTimerFromTask()" title="Save the task and start timing it"><i class="ti ti-player-play" aria-hidden="true"></i> Start timer</button>
+      <button type="button" class="tm-btn-save" id="td-save-btn" onclick="saveTodo()">
         <span id="td-save-lbl">Add task</span>
         <i class="ti ti-chevron-down" style="font-size:11px;"></i>
       </button>
@@ -4908,13 +4915,13 @@ function renderDashboard(){
         <div class="dh-legend"><span><i class="done"></i>Done</span><span><i></i>To do</span>${urgentCount?`<span><i class="urg"></i>${urgentCount} urgent</span>`:''}</div>
       </div>
       <div class="dh-wkrow">
-        <div class="dh-ring ${ringState}" title="Booked this week against your capacity">
-          <svg viewBox="0 0 112 112" aria-hidden="true"><circle cx="56" cy="56" r="${R}" class="dh-ring-track"/><circle cx="56" cy="56" r="${R}" class="dh-ring-fill" style="stroke-dasharray:${C.toFixed(1)};--dh-off:${(C*(1-ringFill)).toFixed(1)};stroke-dashoffset:${(C*(1-ringFill)).toFixed(1)}"/></svg>
-          <div class="dh-ring-c"><span class="dh-ring-val">${weekPct}%</span><span class="dh-ring-sub">of ${totalTarget}h</span></div>
-        </div>
         <div class="dh-wkinfo">
           <div class="dh-wkinfo-hd"><span>This week</span><span class="dh-wkinfo-sum"><b>${formatHrs(weekBooked)||'0h'} booked</b>${totalTarget>0?` · <span class="${weekBooked>totalTarget?'over':''}">${weekBooked>totalTarget?`${formatHrs(weekBooked-totalTarget)} over`:weekBooked<totalTarget?`${formatHrs(totalTarget-weekBooked)} free`:'full'}</span>`:''}</span></div>
           ${typeof _dhWeekHTML==='function'?_dhWeekHTML(wd,todayDow):''}
+        </div>
+        <div class="dh-ring ${ringState}" title="Booked this week against your capacity">
+          <svg viewBox="0 0 112 112" aria-hidden="true"><circle cx="56" cy="56" r="${R}" class="dh-ring-track"/><circle cx="56" cy="56" r="${R}" class="dh-ring-fill" style="stroke-dasharray:${C.toFixed(1)};--dh-off:${(C*(1-ringFill)).toFixed(1)};stroke-dashoffset:${(C*(1-ringFill)).toFixed(1)}"/></svg>
+          <div class="dh-ring-c"><span class="dh-ring-val">${weekPct}%</span><span class="dh-ring-sub">of ${totalTarget}h</span></div>
         </div>
       </div>
     </div>
@@ -6427,7 +6434,7 @@ function showTaskContextMenu(e,t,day){
 
   window._ctxTask=t;window._ctxDay=day;
   setTimeout(()=>document.addEventListener('click',closeTaskContextMenu,{once:true}),10);
-  document.addEventListener('keydown',_ctxEscClose);
+  // Escape is handled by the one app-wide handler (uxEscape, ux-r4)
 }
 function tcmShowReassign(btn){
   document.getElementById('tcm-reassign-panel')?.remove();
@@ -11816,6 +11823,9 @@ document.addEventListener('keydown',e=>{
     return;
   }
   if(e.key==='Escape'){
+    // One ordered Escape stack for the whole app (top-most overlay → field → focus mode → back
+    // one screen) lives in ux-r4's uxEscape; this is the only place it is called from.
+    if(typeof window.uxEscape==='function'){window.uxEscape(e);return;}
     if(closeAnyOpenModal()){e.stopPropagation();return;}
     if(document.querySelector('.todo-view.focus-today'))toggleFocusToday();
     return;
@@ -21091,6 +21101,427 @@ function bvWipSet(k,v){
   });
   if(added)saveBoardsData();
   try{localStorage.setItem('cc_bv_wip_seeded','1');}catch(e){}
+})();
+</script>
+<style id="ux-r4">
+/* ═══ UX round 4 — wide-screen hero, copy job, equal reporting rows, task cards that use their
+   height, the task sheet, one Escape stack, and calmer motion. ds-v3 tokens only. ═════════════ */
+
+/* ── Motion tokens. The ds-v3 --d-* scale now routes through these, so every transition that
+   already used a token slows and softens together. Entrances ease out softly; exits ease in-out. */
+:root{
+  --dur-1:160ms;   /* hovers, presses                         */
+  --dur-2:260ms;   /* menus, popovers, toggles                */
+  --dur-3:420ms;   /* modals, drawers, view changes           */
+  --dur-4:650ms;   /* charts, number count-ups                */
+  --ease-out:cubic-bezier(.22,1,.36,1);
+  --ease-in-out:cubic-bezier(.65,0,.35,1);
+  --ease-exit:cubic-bezier(.4,0,.7,.2);
+  --ease-spring:cubic-bezier(.34,1.2,.64,1);
+  --d-1:var(--dur-1);--d-2:var(--dur-2);--d-3:340ms;--d-4:var(--dur-3);
+}
+
+/* ── 1 · Dashboard hero: a balanced two-column grid inside the 1400px content cap ─────────────
+   The panel grows with the space (about 45% of the hero) instead of a fixed 400px pinned right,
+   so 1440 / 1920 / 2560 all read as one composed block. Section headers share the cards' edges. */
+.dash-scroll>.dh-sec{margin-left:auto!important;margin-right:auto!important;}
+@media (min-width:1241px){
+  .dh-hero{grid-template-columns:minmax(0,1.1fr) minmax(380px,.9fr)!important;column-gap:var(--s-10)!important;}
+  .dh-hero-side.dh-glance{padding:var(--s-6)!important;gap:var(--s-6)!important;}
+  .dh-glance .dh-strip{height:30px;}
+  .dh-glance .dh-week-days{gap:6px;}
+  .dh-glance .dh-wd-bar{height:30px;}
+}
+@media (max-width:760px){
+  .dh-glance .dh-ring{width:80px;height:80px;}
+  .dh-glance .dh-ring svg{width:80px;height:80px;}
+  .dh-glance .dh-ring-val{font-size:19px;}
+}
+
+/* ── 2 · Copy job number + name: a quiet icon that appears on hover or keyboard focus ──────── */
+.ux-copy{display:inline-flex;align-items:center;justify-content:center;flex:none;width:20px;height:20px;padding:0;margin:0 0 0 2px;border:0;border-radius:6px;
+  background:transparent;color:var(--muted);cursor:pointer;opacity:0;transform:scale(.9);
+  transition:opacity var(--dur-1) var(--ease-out),transform var(--dur-1) var(--ease-out),background-color var(--dur-1),color var(--dur-1);}
+.ux-copy i{font-size:13px;line-height:1;}
+.ux-copy:hover{background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--ink);}
+.ux-copy:focus-visible{opacity:1;transform:none;outline:2px solid var(--focus);outline-offset:1px;}
+.ux-copy.is-done{color:var(--ok);opacity:1;transform:none;}
+.task-card:hover .ux-copy,.task-card:focus-within .ux-copy,.dt-titleblock:hover .ux-copy,#d-meta-line:focus-within .ux-copy{opacity:1;transform:none;}
+.task-card .tc-meta .ux-copy{width:18px;height:18px;margin:0 0 0 auto;}
+.task-card .tc-meta .tc-item-tag{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.task-card .tc-meta .ux-copy i{font-size:12px;}
+#d-meta-line .ux-copy{margin-left:-2px;}
+@media (hover:none){.ux-copy{opacity:.7;transform:none;}}
+
+/* ── 3 · Reporting: cards that share a row share a height ─────────────────────────────────── */
+.rv-grid2{align-items:stretch!important;}
+.rv-grid2>.rv-card{display:flex;flex-direction:column;height:auto;min-width:0;}
+.rv-grid2>.rv-card>.rv-chart{flex:1 1 auto;}
+
+/* ── 4 · Task cards: the title uses the card's height (ux-r4 sets the line clamp per card) ── */
+.task-card .tc-title.ux-fill{-webkit-line-clamp:var(--ux-lines,2);}
+
+/* ── 6 · The task sheet (Add / Edit task) ─────────────────────────────────────────────────── */
+#todo-modal .ux-tm{width:540px!important;max-width:calc(100vw - 32px)!important;max-height:min(90vh,780px)!important;display:flex;flex-direction:column;overflow:hidden!important;}
+#todo-modal .ux-tm .tm-hd{display:flex;align-items:center;gap:var(--s-2);padding:14px 14px 0 22px!important;border-bottom:0!important;background:transparent!important;}
+#todo-modal .ux-tm .tm-hd-title{flex:1;font:600 12.5px/1.3 var(--font)!important;letter-spacing:0!important;color:var(--muted)!important;text-align:left!important;}
+#todo-modal .ux-tm .tm-x{width:30px!important;height:30px!important;min-width:30px!important;flex-basis:30px;font-size:17px!important;}
+#todo-modal .ux-tm .tm-personal-hero{padding:10px 22px 0;gap:10px;}
+#todo-modal .ux-tm .tm-pav-lg{width:32px;height:32px;font-size:11px;}
+#todo-modal .ux-tm .tm-pname-lg{font-size:13.5px;font-weight:500;text-transform:none;}
+#todo-modal .ux-tm .tm-bd{flex:1 1 auto;min-height:0;overflow:visible;padding:4px 22px 16px!important;}
+/* Dropdowns (job, item) float over the sheet rather than scrolling inside it, so the sheet itself
+   never clips or grows a scrollbar; only very short windows fall back to a scrolling body. */
+#todo-modal .ux-tm{overflow:visible!important;}
+#todo-modal .ux-tm .item-pick-dd{z-index:20;box-shadow:var(--e-3);}
+@media (max-height:700px){#todo-modal .ux-tm{overflow:hidden!important;}#todo-modal .ux-tm .tm-bd{overflow-y:auto;overflow-x:hidden;}}
+/* Title: the hero of the sheet */
+#todo-modal .ux-tm textarea.tm-title-inp{display:block;width:100%;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;
+  padding:2px 0 4px!important;margin:0!important;min-height:0!important;font:650 20px/1.32 var(--display)!important;letter-spacing:-.022em!important;color:var(--ink)!important;caret-color:var(--red);}
+#todo-modal .ux-tm textarea.tm-title-inp::placeholder{color:var(--subtle);font-weight:600;}
+#todo-modal .ux-tm textarea.tm-title-inp:focus{outline:none!important;box-shadow:none!important;}
+#todo-modal .ux-tm .tm-title-hint{justify-content:flex-start;margin:2px 0 12px;min-height:18px;}
+/* Property grid: label column + quiet controls that fill on hover */
+.ux-props{display:flex;flex-direction:column;gap:2px;padding:var(--s-2) 0;margin:0 0 var(--s-3);border-top:1px solid var(--faint);border-bottom:1px solid var(--faint);}
+.ux-prop-sec{display:flex;flex-direction:column;gap:2px;}
+.ux-prop{display:grid;grid-template-columns:92px minmax(0,1fr);align-items:center;column-gap:var(--s-2);min-height:38px;}
+#todo-modal .ux-prop-l{display:flex!important;align-items:center;gap:7px;margin:0!important;font-size:12.5px!important;font-weight:500!important;color:var(--muted)!important;letter-spacing:0!important;text-transform:none!important;white-space:nowrap;}
+.ux-prop-l i{font-size:15px;color:var(--subtle);}
+#todo-modal .ux-tm :is(.tm-assign-row,.tm-field-sel){display:flex!important;align-items:center;gap:8px;width:100%;min-height:34px!important;margin:0!important;padding:0 10px!important;
+  background:transparent!important;border:1px solid transparent!important;border-radius:var(--r-sm)!important;box-shadow:none!important;
+  font:500 13.5px/1.2 var(--font)!important;color:var(--ink)!important;text-align:left;cursor:pointer;
+  transition:background-color var(--dur-1) var(--ease-out),border-color var(--dur-1) var(--ease-out)!important;}
+#todo-modal .ux-tm :is(.tm-assign-row,.tm-field-sel):hover{background:var(--surface-2)!important;border-color:var(--faint)!important;}
+#todo-modal .ux-tm :is(.tm-assign-row,.tm-field-sel):focus-visible{outline:2px solid var(--focus);outline-offset:1px;}
+#todo-modal .ux-tm .tm-pav{width:22px;height:22px;font-size:9.5px;font-weight:600;}
+#todo-modal .ux-tm .tm-pname{font-size:13.5px;font-weight:500;}
+#todo-modal .ux-tm .tm-assign-chevron,.ux-sel-ico{margin-left:auto;flex:none;color:var(--subtle);font-size:14px;}
+.ux-job-cell{display:flex;align-items:center;gap:2px;min-width:0;}
+.ux-job-cell>#td-job-wrap{flex:1 1 auto;min-width:0;}
+.ux-job-txt{flex:1 1 auto;min-width:0;display:flex;align-items:baseline;gap:8px;overflow:hidden;white-space:nowrap;}
+#td-job-label{min-width:0;overflow:hidden;text-overflow:ellipsis;}
+.ux-job-co{flex:0 1 auto;max-width:45%;overflow:hidden;text-overflow:ellipsis;font-size:12px;font-weight:500;color:var(--muted);}
+.ux-job-co:empty{display:none;}
+.ux-job-acts{display:flex;gap:2px;flex:none;}
+.ux-job-acts[hidden]{display:none;}
+.ux-ibtn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;border:0;border-radius:var(--r-sm);background:transparent;color:var(--muted);cursor:pointer;
+  transition:background-color var(--dur-1) var(--ease-out),color var(--dur-1) var(--ease-out);}
+.ux-ibtn i{font-size:15px;}
+.ux-ibtn:hover{background:var(--surface-2);color:var(--ink);}
+.ux-ibtn:focus-visible{outline:2px solid var(--focus);outline-offset:1px;}
+/* When: hours · day · date · repeat on one row */
+.ux-when{display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-width:0;}
+#todo-modal .ux-tm .ux-when :is(.tm-hours-inp,.tm-day-sel){width:auto!important;min-height:32px!important;height:32px;padding:0 10px!important;font:500 13px/1 var(--font)!important;
+  background-color:var(--surface-2)!important;border:1px solid var(--faint)!important;border-radius:var(--r-sm)!important;box-shadow:none!important;color:var(--ink)!important;}
+#todo-modal .ux-tm .ux-when .tm-hours-inp{width:64px!important;font-variant-numeric:tabular-nums;}
+#todo-modal .ux-tm .ux-when .tm-day-sel{padding-right:28px!important;background-position:right 9px center!important;cursor:pointer;-webkit-appearance:none;appearance:none;}
+#todo-modal .ux-tm .ux-when :is(.tm-hours-inp,.tm-day-sel):hover{border-color:var(--border)!important;}
+#todo-modal .ux-tm .ux-when :is(.tm-hours-inp,.tm-day-sel):focus{background-color:var(--white)!important;border-color:color-mix(in srgb,var(--red) 55%,var(--border))!important;box-shadow:var(--ring)!important;}
+#todo-modal .ux-tm :is(.tm-date-btn,.tm-repeat-btn){display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 8px;margin:0;border:1px solid transparent;border-radius:var(--r-sm);background:transparent;
+  font:500 13px/1 var(--font);color:var(--ink-2);white-space:nowrap;cursor:pointer;transition:background-color var(--dur-1) var(--ease-out),color var(--dur-1),border-color var(--dur-1);}
+#todo-modal .ux-tm :is(.tm-date-btn,.tm-repeat-btn) i{font-size:14px;color:var(--muted);}
+#todo-modal .ux-tm :is(.tm-date-btn,.tm-repeat-btn):hover{background:var(--surface-2);border-color:var(--faint);color:var(--ink);}
+#todo-modal .ux-tm .tm-repeat-btn.on{background:var(--red-wash);color:var(--red-ink);border-color:transparent;}
+#todo-modal .ux-tm .tm-repeat-btn.on i{color:var(--red-ink);}
+#todo-modal .ux-tm :is(.tm-date-btn,.tm-repeat-btn):focus-visible{outline:2px solid var(--focus);outline-offset:1px;}
+/* Calendar + repeat settings open inline under the grid */
+#todo-modal .ux-tm .mini-cal-wrap{width:260px;margin:0 0 var(--s-3) 100px;padding:10px;border-radius:var(--r-ctl);border:1px solid var(--border);background:var(--white);box-shadow:var(--e-2);animation:uxPop var(--dur-2) var(--ease-out);transform-origin:top left;}
+#todo-modal .ux-tm .tm-repeat-config{margin:0 0 var(--s-3)!important;padding:12px 12px 10px!important;border-radius:var(--r-ctl)!important;background:var(--surface-2)!important;border:1px solid var(--faint)!important;}
+#todo-modal .ux-tm .tm-repeat-config.on{animation:uxPop var(--dur-2) var(--ease-out);transform-origin:top center;}
+.ux-rep-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+.ux-rep-l{font-size:12.5px;color:var(--muted);min-width:40px;}
+.ux-rep-chips{display:flex;gap:4px;}
+#todo-modal .ux-tm .tm-repeat-config :is(.tm-hours-inp,.tm-day-sel){width:auto!important;min-height:30px!important;height:30px;padding:0 8px!important;font-size:13px!important;background-color:var(--white)!important;}
+#todo-modal .ux-tm .tm-repeat-config .ux-num{width:56px!important;text-align:center;}
+#todo-modal .ux-tm .tm-repeat-config .cc-select{padding-right:28px!important;}
+#todo-modal .ux-tm .rep-end-chip{height:28px;padding:0 11px;font-size:12.5px;border-radius:var(--r-pill)!important;background:var(--white);border:1px solid var(--border);color:var(--ink-2);}
+#todo-modal .ux-tm .rep-end-chip.on{background:var(--ink);border-color:var(--ink);color:var(--off);}
+.ux-rep-prev{font-size:12px;color:var(--muted);}
+/* Options: one segmented row of independent toggles */
+#todo-modal .ux-tm .ux-seg{display:inline-flex!important;flex-wrap:nowrap!important;gap:2px!important;margin:0!important;padding:3px!important;border-radius:var(--r-ctl);
+  background:color-mix(in srgb,var(--ink) 5%,var(--off));box-shadow:inset 0 1px 2px rgba(46,36,20,.06);}
+#todo-modal .ux-tm .ux-seg .tm-urgent-lbl{position:relative;display:inline-flex!important;align-items:center;gap:6px;height:30px;padding:0 12px 0 10px!important;margin:0;
+  border:0!important;border-radius:calc(var(--r-ctl) - 3px)!important;background:transparent!important;box-shadow:none;font:500 12.5px/1 var(--font)!important;color:var(--muted)!important;cursor:pointer;
+  transition:background-color var(--dur-2) var(--ease-out),color var(--dur-1),box-shadow var(--dur-2) var(--ease-out)!important;}
+#todo-modal .ux-tm .ux-seg .tm-urgent-lbl i{font-size:14px;transition:color var(--dur-1);}
+#todo-modal .ux-tm .ux-seg .tm-urgent-lbl:hover{color:var(--ink)!important;}
+#todo-modal .ux-tm .ux-seg .tm-urgent-lbl.on{background:var(--white)!important;color:var(--ink)!important;box-shadow:var(--e-1),0 0 0 1px color-mix(in srgb,var(--border) 70%,transparent)!important;}
+#todo-modal .ux-tm .ux-seg #td-urgent-lbl.on i{color:var(--red);}
+#todo-modal .ux-tm .ux-seg #td-done-lbl.on i{color:var(--ok);}
+#todo-modal .ux-tm .ux-seg #td-personal-lbl.on i{color:var(--info-ink,var(--ink));}
+#todo-modal .ux-tm .ux-seg .tm-urgent-lbl:has(input:focus-visible){outline:2px solid var(--focus);outline-offset:1px;}
+body.dark #todo-modal .ux-tm .ux-seg{background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px var(--faint);}
+body.dark #todo-modal .ux-tm .ux-seg .tm-urgent-lbl.on{background:var(--surface-2)!important;box-shadow:0 0 0 1px var(--border)!important;}
+/* Brief, paused note, timestamps */
+#todo-modal .ux-tm .tm-job-brief-wrap{margin-top:var(--s-3);}
+#todo-modal .ux-tm .paused-warn{margin-top:var(--s-3);border-radius:var(--r-sm);}
+#todo-modal .ux-tm .paused-warn i{margin-right:6px;vertical-align:-1px;}
+#todo-modal .ux-tm #td-timestamps .tm-meta{margin-top:var(--s-3);font-size:11.5px;}
+/* Footer: quiet delete far left, actions right */
+#todo-modal .ux-tm .tm-ft{flex:none;display:flex;align-items:center;gap:8px!important;padding:12px 16px 12px 12px!important;border-top:1px solid var(--faint)!important;background:var(--surface-2);border-radius:0 0 var(--r-lg) var(--r-lg);}
+#todo-modal .ux-tm .ux-ft-sp{flex:1;}
+#todo-modal .ux-tm .tm-ft .tm-btn-cancel{margin:0!important;}
+#todo-modal .ux-tm .tm-ft .tm-btn-delete.ux-del{margin:0!important;padding:0 10px!important;gap:6px;min-height:34px!important;height:34px;background:transparent!important;border:1px solid transparent!important;box-shadow:none!important;
+  color:var(--muted)!important;font:500 12.5px/1 var(--font)!important;text-decoration:none!important;
+  transition:background-color var(--dur-1) var(--ease-out),color var(--dur-1)!important;}
+#todo-modal .ux-tm .tm-ft .tm-btn-delete.ux-del i{font-size:15px;}
+#todo-modal .ux-tm .tm-ft .tm-btn-delete.ux-del:hover{background:var(--danger-bg)!important;color:var(--danger-ink)!important;}
+#todo-modal .ux-tm .tm-ft .tm-btn-delete.ux-del:focus-visible{outline:2px solid var(--focus);outline-offset:1px;}
+#todo-modal .ux-tm .tm-ft :is(.tm-btn-cancel,.tm-btn-timer,.tm-btn-save){min-height:34px!important;height:34px;padding:0 14px!important;}
+#todo-modal .ux-tm .tm-ft .tm-btn-cancel{background:transparent!important;border-color:transparent!important;box-shadow:none!important;color:var(--ink-2)!important;}
+#todo-modal .ux-tm .tm-ft .tm-btn-cancel:hover{background:color-mix(in srgb,var(--ink) 6%,transparent)!important;}
+#todo-modal .ux-tm .tm-ft .tm-btn-timer i{font-size:13px;}
+@media (max-width:560px){
+  .ux-prop{grid-template-columns:76px minmax(0,1fr);}
+  #todo-modal .ux-tm .mini-cal-wrap{margin-left:0;}
+  #todo-modal .ux-tm .tm-ft .tm-btn-delete.ux-del span{display:none;}
+  #todo-modal .ux-tm .tm-ft .tm-btn-timer{padding:0 10px!important;}
+}
+
+/* ── 8 · Motion: exits, origins, list rows ────────────────────────────────────────────────── */
+/* Modals and palettes: enter with a soft scale + fade, leave the same way (not an instant cut) */
+@keyframes dsModalIn{from{opacity:0;transform:translateY(8px) scale(.98);}to{opacity:1;transform:none;}}
+.modal-bg.on .modal,.modal-bg.on .tm-modal,.modal-bg.on .cl-modal,.cb-overlay.on .cb-modal,.gs-bg.on .gs-panel,.inv-bg.on .inv-modal{animation:dsModalIn var(--dur-3) var(--ease-out)!important;}
+.modal-bg.on,.gs-bg.on,.cb-overlay.on,.inv-bg.on{animation:dsFade var(--dur-2) var(--ease-out)!important;}
+:is(.modal-bg,.gs-bg,.inv-bg,.cb-overlay).ux-closing{display:flex!important;pointer-events:none!important;animation:uxFadeOut var(--dur-2) var(--ease-in-out) forwards!important;}
+:is(.modal-bg,.gs-bg,.inv-bg,.cb-overlay).ux-closing :is(.modal,.tm-modal,.cl-modal,.inv-modal,.cb-modal,.gs-panel){animation:uxSheetOut var(--dur-2) var(--ease-in-out) forwards!important;}
+@keyframes uxFadeOut{from{opacity:1;}to{opacity:0;}}
+@keyframes uxSheetOut{from{opacity:1;transform:none;}to{opacity:0;transform:translateY(6px) scale(.985);}}
+/* Side drawers slide on transform (not on `right`), in and out */
+.detail-drawer,.tm-detail-panel{right:0!important;transform:translateX(calc(100% + 32px));transition:transform var(--dur-3) var(--ease-in-out)!important;}
+.detail-drawer.open,.tm-detail-panel.open{transform:none;transition:transform var(--dur-3) var(--ease-out)!important;}
+/* Popovers grow from the edge they are anchored to */
+@keyframes uxPop{from{opacity:0;transform:translateY(-4px) scale(.97);}to{opacity:1;transform:none;}}
+@keyframes uxPopUp{from{opacity:0;transform:translateY(4px) scale(.97);}to{opacity:1;transform:none;}}
+.ctx,.pctx,.task-ctx-menu{transform-origin:top left;}
+.ps-menu,.item-pick-dd,.combo-dd,.cal-popup{transform-origin:top center;}
+.tm-assign-menu{transform-origin:top center;}
+.tm-assign-menu.open[style*="bottom:"]{transform-origin:bottom center;animation-name:uxPopUp!important;}
+.item-pick-dd.on{animation:uxPop var(--dur-2) var(--ease-out);}
+.ctx.on,.pctx.on,.ps-menu.on,.cal-popup.on,.vsp.on,.task-ctx-menu,.combo-dd,.tm-assign-menu.open{animation-duration:var(--dur-2)!important;animation-timing-function:var(--ease-out)!important;}
+/* View switches: a calm cross-fade with a slight rise */
+@keyframes dsViewIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.view{animation:dsViewIn var(--dur-3) var(--ease-out)!important;}
+/* First visit only (.ds-enter): rows in the dashboard and job lists arrive in a short cascade */
+.ds-enter .my-todos>.my-todo-item{animation:dsRise var(--dur-3) var(--ease-out) backwards;}
+.ds-enter .my-todos>.my-todo-item:nth-child(2){animation-delay:30ms}.ds-enter .my-todos>.my-todo-item:nth-child(3){animation-delay:60ms}
+.ds-enter .my-todos>.my-todo-item:nth-child(4){animation-delay:90ms}.ds-enter .my-todos>.my-todo-item:nth-child(5){animation-delay:120ms}
+.ds-enter .my-todos>.my-todo-item:nth-child(6){animation-delay:150ms}.ds-enter .my-todos>.my-todo-item:nth-child(n+7){animation-delay:180ms}
+.ds-enter .jobs-table tbody tr:nth-child(-n+14){animation:uxRowIn var(--dur-3) var(--ease-out) backwards;}
+.ds-enter .jobs-table tbody tr:nth-child(2){animation-delay:20ms}.ds-enter .jobs-table tbody tr:nth-child(3){animation-delay:40ms}
+.ds-enter .jobs-table tbody tr:nth-child(4){animation-delay:60ms}.ds-enter .jobs-table tbody tr:nth-child(5){animation-delay:80ms}
+.ds-enter .jobs-table tbody tr:nth-child(n+6){animation-delay:100ms}
+@keyframes uxRowIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+/* Task check-off: the tick lands with a little give, the card settles */
+.todo-check.ds-pop{animation:dsCheckPop var(--dur-3) var(--ease-spring)!important;}
+.task-card.ds-just-done{animation:dsDonePulse var(--dur-4) var(--ease-out)!important;}
+/* Toasts: rise in, slide away */
+.cc-toast{transition:opacity var(--dur-2) var(--ease-out),transform var(--dur-3) var(--ease-out)!important;}
+.cc-toast.ds-out{transition:opacity var(--dur-2) var(--ease-in-out),transform var(--dur-2) var(--ease-in-out)!important;}
+/* Legacy hover transitions that still snapped at 100–150ms */
+.item-pick-opt,.tcm-item,.ctx-r,.pctx-r,.tm-assign-opt,.rep-end-chip,.mc-day,.s-btn,.jsn-tab,.d-tab{transition:background-color var(--dur-1) var(--ease-out),color var(--dur-1) var(--ease-out),border-color var(--dur-1) var(--ease-out)!important;}
+@media (prefers-reduced-motion:reduce){
+  :is(.modal-bg,.gs-bg,.inv-bg,.cb-overlay).ux-closing{display:none!important;}
+  .detail-drawer,.tm-detail-panel,.detail-drawer.open,.tm-detail-panel.open{transition:none!important;}
+  .ux-copy{transition:none;}
+}
+</style>
+<script id="ux-r4-script">
+// ═══ UX round 4 — copy job, open job from a task, delete with a confirm, task-card fill,
+// one Escape stack, a little navigation memory, and modal exit motion. Defensive and additive:
+// wraps existing globals after they exist; never blocks input. ═════════════════════════════════
+(function(){
+  const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)');
+  const still=()=>!!(RM&&RM.matches);
+  const $=id=>document.getElementById(id);
+  const _esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  // ── 2 · Copy "7291 ST Project Ro" ───────────────────────────────────────────────────────
+  function jobText(id){
+    const j=(typeof jobs!=='undefined'&&id)?jobs.find(x=>String(x.id)===String(id)):null;
+    return j?`${j.id} ${j.name||''}`.trim():(id?String(id):'');
+  }
+  async function writeClip(text){
+    try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(text);return true;}}catch(e){}
+    try{const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;left:-9999px;top:0;opacity:0;';
+      document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();return ok;}catch(e){return false;}
+  }
+  window.uxCopyJob=async function(id,btn){
+    const text=jobText(id);if(!text)return;
+    const ok=await writeClip(text);
+    if(ok){toast(`Copied “${_esc(text)}”`,'success',2200);
+      if(btn&&btn.classList){const i=btn.querySelector('i');btn.classList.add('is-done');if(i)i.className='ti ti-check';
+        setTimeout(()=>{btn.classList.remove('is-done');if(i)i.className='ti ti-copy';},1400);}}
+    else toast('Couldn’t copy. Your browser blocked the clipboard','warn');
+  };
+  const copyBtn=(id,label)=>`<button type="button" class="ux-copy" data-ux-copy="${_esc(id)}" title="Copy job number and name" aria-label="Copy ${_esc(label||'job number and name')}"><i class="ti ti-copy" aria-hidden="true"></i></button>`;
+  // Delegated: works for every copy button however its host was rendered. Capture phase so
+  // the card / row click handlers underneath never see it.
+  document.addEventListener('click',e=>{
+    const b=e.target.closest&&e.target.closest('[data-ux-copy]');if(!b)return;
+    e.preventDefault();e.stopPropagation();uxCopyJob(b.dataset.uxCopy,b);
+  },true);
+  ['mousedown','dragstart'].forEach(ev=>document.addEventListener(ev,e=>{if(e.target.closest&&e.target.closest('[data-ux-copy]')){e.stopPropagation();if(e.type==='dragstart')e.preventDefault();}},true));
+
+  // Job detail header: the copy button sits right after the job number
+  function decorateDetail(){
+    const ml=$('d-meta-line');if(!ml)return;
+    const num=ml.querySelector('.dt-num');if(!num||ml.querySelector('.ux-copy'))return;
+    const id=typeof activeJobId!=='undefined'?activeJobId:num.textContent.trim();
+    num.insertAdjacentHTML('afterend',copyBtn(id,jobText(id)));
+  }
+
+  // ── 4 + 2 · Task cards: copy on the job line; the title uses the height the card already has ──
+  const LINE=13*1.35;
+  function decorateCard(card,t){
+    if(!card||!card.querySelector)return;
+    const jEl=card.querySelector('.tc-job.clickable');
+    if(jEl&&jEl.dataset.jid&&!card.querySelector('.ux-copy'))jEl.parentNode.insertAdjacentHTML('beforeend',copyBtn(jEl.dataset.jid,jobText(jEl.dataset.jid)));
+    const title=card.querySelector('.tc-title');const H=parseFloat(card.style.height)||0;
+    if(title&&H){
+      const meta=card.querySelector('.tc-meta')?17:0,note=card.querySelector('.tc-note')?20:0;
+      const lines=Math.floor((H-18-meta-note)/LINE);
+      if(lines>2){title.classList.add('ux-fill');title.style.setProperty('--ux-lines',String(lines));}
+    }
+  }
+
+  // ── 5 · Open the job from the task sheet ────────────────────────────────────────────────
+  window.uxOpenJobFromTask=function(){
+    const id=$('td-job')?.value;if(!id)return;
+    closeTodoModal();
+    setTimeout(()=>openJobDetail(id),0);
+  };
+  // ── 6 · Delete asks first ──────────────────────────────────────────────────────────────
+  window.uxConfirmDeleteTask=function(){
+    if(typeof editingTaskId==='undefined'||!editingTaskId)return;
+    const name=($('td-task')?.value||'').trim().split('\n')[0];
+    ccConfirm(`<strong style="display:block;font-size:15px;margin-bottom:4px;">Delete this task?</strong>${name?`“${_esc(name.length>80?name.slice(0,80)+'…':name)}” will be removed. `:''}This can’t be undone.`,()=>deleteTodo(),'Delete task',true);
+    setTimeout(()=>document.querySelector('#cc-confirm-modal .modal-cancel')?.focus(),30);
+  };
+  // Job field shows "number name" plus the client; copy + open appear once a job is chosen
+  function syncJobField(){
+    const id=$('td-job')?.value||'';
+    const j=id&&typeof jobs!=='undefined'?jobs.find(x=>String(x.id)===String(id)):null;
+    const co=$('ux-job-co');if(co)co.textContent=j&&j.company?j.company:'';
+    const acts=$('ux-job-acts');if(acts)acts.hidden=!id;
+    const btn=$('td-job-btn');if(btn)btn.title=j?`${j.id} ${j.name}${j.company?' · '+j.company:''}`:'';
+  }
+
+  // ── 7 · Escape: one ordered stack ────────────────────────────────────────────────────────
+  const isEditable=el=>!!el&&el.nodeType===1&&(/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)||el.isContentEditable);
+  const shown=el=>!!el&&el.isConnected&&el.getClientRects().length>0&&getComputedStyle(el).visibility!=='hidden';
+  let pre=null;
+  // Note what had focus before any inline handler ran; if a field's own Escape already blurred
+  // or removed it (rename inputs, label picker…), the global stack stays out of the way.
+  window.addEventListener('keydown',e=>{if(e.key==='Escape')pre={t:e.target,ed:isEditable(e.target)&&document.activeElement===e.target};},true);
+  const refocus=id=>{const el=$(id);if(el&&shown(el))try{el.focus({preventScroll:true});}catch(e){}};
+  // Small overlays first: menus, dropdowns, popovers, hover cards
+  const POPS=[
+    ['.au-menu',el=>el.remove()],
+    ['#cc-confirm-modal',el=>el.remove()],
+    ['#task-ctx-menu',()=>closeTaskContextMenu()],
+    ['.task-ctx-menu',el=>el.remove()],
+    ['#label-picker',()=>closeLabelPicker()],
+    ['#tm-assign-menu.open',el=>{el.classList.remove('open');refocus('tm-assign-row');}],
+    ['#td-job-dropdown.on',el=>{el.classList.remove('on');refocus('td-job-btn');}],
+    ['#td-item-dropdown.on',el=>{el.classList.remove('on');refocus('td-item-btn');}],
+    ['.item-pick-dd.on',el=>el.classList.remove('on')],
+    ['#td-mini-cal',el=>{el.style.display='none';refocus('td-date-display');}],
+    ['#create-item-menu',()=>closeCreateItemMenu()],
+    ['#ctx.on,#pctx.on,#inv-ctx.on,#ps-menu.on',el=>el.classList.remove('on')],
+    ['#task-tooltip.on',()=>{try{hideTodoTooltip();}catch(e){$('task-tooltip')?.classList.remove('on');}}],
+  ];
+  const SHEETS='.modal-bg.on,.gs-bg.on,.inv-bg.on,.cb-overlay.on,#fup.on';
+  const CLOSERS={'todo-modal':()=>closeTodoModal(),'gsearch':()=>closeGlobalSearch(),'starred-panel':()=>closeStarredPanel(),
+    'inv-modal':()=>closeInvoice(),'fup':()=>closeFup(false)};
+  function closeSheet(el){
+    if(CLOSERS[el.id]){CLOSERS[el.id]();return;}
+    const x=el.querySelector('.modal-x,.tm-x,.inv-x,.ds-close,.cb-close,.cl-x');
+    if(x&&shown(x)){x.click();if(!el.classList.contains('on'))return;}
+    el.classList.remove('on');
+  }
+  function topSheet(){
+    const list=[...document.querySelectorAll(SHEETS)].filter(shown);
+    if(!list.length)return null;
+    const z=el=>parseInt(getComputedStyle(el).zIndex,10)||0;
+    return list.reduce((a,b)=>z(b)>=z(a)?b:a);
+  }
+  const curView=()=>{const v=document.querySelector('.view:not(.hidden)');return v?v.id.replace(/^view-/,''):'';};
+  let prevView=null;
+  function goBack(){
+    const v=curView();
+    if(v==='detail'){navTo('jobs');return true;}
+    if(v==='jobs'){const cd=$('client-detail-view');if(cd&&cd.style.display!=='none'&&shown(cd)){closeClientDetail();return true;}}
+    if(v==='boards'){const bd=$('board-detail');if(bd&&bd.style.display!=='none'&&typeof closeBoardDetail==='function'){closeBoardDetail();return true;}}
+    if(v==='todo'&&typeof MY_PERSON!=='undefined'&&currentPerson!==MY_PERSON){
+      const back=prevView&&prevView!=='todo'?prevView:null;
+      switchBackToMe();if(back)navTo(back);return true;}
+    return false;
+  }
+  window.uxEscape=function(e){
+    const tgt=e.target;
+    // A field's own Escape handler already dealt with it (blurred, reset or removed the field)
+    if(pre&&pre.t===tgt&&pre.ed&&(document.activeElement!==tgt||!tgt.isConnected)){pre=null;return;}
+    pre=null;
+    for(const [sel,close] of POPS){
+      const els=[...document.querySelectorAll(sel)].filter(shown);
+      if(els.length){close(els[els.length-1]);e.preventDefault();e.stopPropagation();return;}
+    }
+    // Typing on the page: Escape only lets go of the field. Inside a sheet it closes the sheet.
+    if(isEditable(tgt)&&document.activeElement===tgt&&!tgt.closest('.modal-bg,.gs-bg,.inv-bg,.cb-overlay,#fup,.detail-drawer,.tm-detail-panel')){
+      tgt.blur();e.preventDefault();return;}
+    const sheet=topSheet();
+    if(sheet){closeSheet(sheet);e.preventDefault();e.stopPropagation();return;}
+    const dd=$('detail-drawer');if(dd&&dd.classList.contains('open')){closeDetailDrawer();e.preventDefault();return;}
+    const tp=$('tm-panel');if(tp&&tp.classList.contains('open')){closeTeamPanel();e.preventDefault();return;}
+    if(document.querySelector('.todo-view.focus-today')){toggleFocusToday();e.preventDefault();return;}
+    if(e.repeat)return; // holding Escape never walks back through several screens
+    if(goBack())e.preventDefault();
+  };
+
+  // ── 8 · Modal exit: keep a closing sheet painted for one short fade instead of cutting it ──
+  const EXIT_MS=280;
+  function watchSheet(el){
+    if(el._uxWatch)return;el._uxWatch=1;
+    new MutationObserver(recs=>{for(const r of recs){
+      const was=/(^|\s)on(\s|$)/.test(r.oldValue||''),now=el.classList.contains('on');
+      if(now){if(el.classList.contains('ux-closing')){el.classList.remove('ux-closing');clearTimeout(el._uxT);}continue;}
+      if(was&&!still()){el.classList.add('ux-closing');clearTimeout(el._uxT);el._uxT=setTimeout(()=>el.classList.remove('ux-closing'),EXIT_MS);}
+    }}).observe(el,{attributes:true,attributeFilter:['class'],attributeOldValue:true});
+  }
+  function watchAll(){document.querySelectorAll('.modal-bg,.gs-bg,.inv-bg,.cb-overlay').forEach(watchSheet);}
+
+  function hook(){
+    // Task cards (wraps the feat-e wrapper, which wraps the original)
+    const oc=window.createTaskCard;
+    if(typeof oc==='function'&&!oc._ux){
+      const w=function(t,day,isDone){const card=oc.apply(this,arguments);try{decorateCard(card,t);}catch(err){}return card;};
+      w._ux=1;window.createTaskCard=createTaskCard=w;
+    }
+    // Job picker label → client + actions
+    const sj=window._setJobPickerValue;
+    if(typeof sj==='function'&&!sj._ux){const w=function(){const r=sj.apply(this,arguments);try{syncJobField();}catch(e){}return r;};w._ux=1;window._setJobPickerValue=_setJobPickerValue=w;}
+    // The date chip sits beside the day select, so it carries the date only ("13 Nov")
+    const ud=window._updateDateLabel;
+    if(typeof ud==='function'&&!ud._ux){const w=function(){const r=ud.apply(this,arguments);
+      try{const l=$('td-date-label');if(l)l.textContent=l.textContent.replace(/^[A-Z][a-z]{2}\s+/,'');}catch(e){}return r;};
+      w._ux=1;window._updateDateLabel=_updateDateLabel=w;}
+    // Navigation memory for Escape → back
+    const nt=window.navTo;
+    if(typeof nt==='function'&&!nt._ux){const w=function(v){const from=curView();const r=nt.apply(this,arguments);if(from&&from!==v)prevView=from;return r;};
+      w._ux=1;w._ds=nt._ds;window.navTo=w;}
+    // Job detail header
+    const ml=$('d-meta-line');
+    if(ml){new MutationObserver(decorateDetail).observe(ml,{childList:true});decorateDetail();}
+    // Sheets
+    watchAll();
+    new MutationObserver(recs=>{for(const r of recs)r.addedNodes.forEach(n=>{if(n.nodeType===1&&n.matches&&n.matches('.modal-bg,.gs-bg,.inv-bg,.cb-overlay'))watchSheet(n);});})
+      .observe(document.body,{childList:true});
+    syncJobField();
+    // Person row answers the keyboard like the button it looks like
+    $('tm-assign-row')?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.id==='tm-assign-row'){e.preventDefault();openTodoAssignMenu();}});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',hook);else hook();
 })();
 </script>
 <style id="auth-ui-css">
