@@ -20621,6 +20621,13 @@ textarea.tm-title-inp.is-scroll{overflow-y:auto;}
    only gets roomier than DONE_PAD_PX assumes, so no fit / bucket maths changes. */
 .day-todo{padding-top:4px!important;padding-bottom:8px!important;}
 .day-done{padding-top:30px!important;}
+/* ── Page titles: one anchor everywhere — the gutter on the left, the same distance below what sits
+   above (30px below the window edge, or below the Jobs-area tab bar: 8px gap + 22px). Jobs set the standard; the other Jobs
+   tabs stacked a second 20px header padding inside their scroll wrapper, landing 20px lower. */
+.jt-panel>div:first-child :is(div,.time-head-bar):has(>.view-title),
+.jt-panel>div:first-child .time-head-bar:has(.view-title){padding-top:0!important;}
+#view-reporting>div:first-child,#schedule-scroll,#boards-landing,#settings-scroll{padding-top:30px!important;}
+#jt-deadlines{padding-top:0!important;}
 /* Line breaks typed into a title show as line breaks (cards stay clamped) */
 .tc-title,.tt-title,.fli-title{white-space:pre-line;}
 </style>
