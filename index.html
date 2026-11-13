@@ -20590,10 +20590,38 @@ body.dark .zone-bucket.done-bucket{background:var(--ok-bg)!important;border-colo
 .hpr-done .hpr-face{display:inline-flex;}
 .hpr-done .hpr-link{margin-left:-6px;}
 @media (max-width:1240px){.dh-checkin{margin:0 calc(var(--s-7) * -1) calc(var(--s-7) * -1);padding:var(--s-3) var(--s-7);}}
+
+/* ── Needs attention: masonry — each card drops into the shortest column, no holes ─────────
+   polish-r2-script sets each card's row span from its height (1px rows); without JS it is the
+   plain grid it was before. */
+.att-grid.is-masonry{grid-auto-rows:1px;row-gap:0!important;column-gap:var(--s-4)!important;align-items:start;}
+.att-grid.is-masonry>.att-card{align-self:start;}
 </style>
 <script id="polish-r2-script">
 // ═══ Polish round 2 — behaviour for the polish-r2 CSS above ═══════════════════════════════
 (function(){
+  // ── Needs attention masonry: span = card height + one gap, in 1px grid rows. Grid
+  // auto-placement then puts each card in the first free slot, i.e. the shortest column,
+  // keeping the priority order reading left to right. Re-measures when a card resizes.
+  const GAP=16;
+  let ro=null;
+  function pack(grid){
+    grid.classList.add('is-masonry');
+    [...grid.children].forEach(c=>{const h=c.getBoundingClientRect().height;
+      if(h)c.style.gridRowEnd='span '+Math.round(h+GAP);});
+  }
+  function bind(){
+    const grid=document.querySelector('#view-dashboard .att-grid');
+    if(!grid||grid.dataset.masonry)return;
+    grid.dataset.masonry='1';
+    if(ro)ro.disconnect();
+    ro=('ResizeObserver' in window)?new ResizeObserver(()=>setTimeout(()=>pack(grid),0)):null;
+    if(ro){ro.observe(grid);[...grid.children].forEach(c=>ro.observe(c));}
+    pack(grid);
+  }
+  const dash=document.getElementById('view-dashboard');
+  if(dash){let q=0;new MutationObserver(()=>{if(q)return;q=setTimeout(()=>{q=0;bind();},0);})
+    .observe(dash,{childList:true,subtree:true});bind();}
 })();
 </script>
 </body>
