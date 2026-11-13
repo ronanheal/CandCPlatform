@@ -21672,6 +21672,1058 @@ body.dark #todo-modal .ux-tm .ux-seg .tm-urgent-lbl.on{background:var(--surface-
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',hook);else hook();
 })();
 </script>
+<style id="boards-r5">
+/* ═══ Boards round 5 — WIP-style cards (client, job, note, person) + shared boards ═══════════
+   Same card shell as the pipeline card (bv-card); these rules add the typed headers, the
+   person notes area, inline checklists and the quiet sync state in the board header. */
+#view-boards .r5-card{gap:8px;cursor:default;}
+#view-boards .r5-card.r5-click{cursor:pointer;}
+.r5-top{display:flex;align-items:center;gap:4px;min-height:22px;margin:-2px -6px 0 0;}
+.r5-tag{--tc:var(--muted);display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:999px;font-size:11px;font-weight:600;color:var(--tc);background:color-mix(in srgb,var(--tc) 13%,transparent);white-space:nowrap;}
+.r5-tag i{font-size:12px;}
+.r5-tag.pink{--tc:var(--bv-pink);}
+.r5-tag.amber{--tc:var(--bv-amber);}
+.r5-tag.blue{--tc:var(--bv-blue);}
+.r5-ib{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border:none;border-radius:7px;background:transparent;color:var(--muted);cursor:pointer;font-size:14px;flex-shrink:0;transition:background var(--d-1,.12s) ease,color var(--d-1,.12s) ease,opacity var(--d-1,.12s) ease;}
+.r5-ib:hover{background:var(--faint);color:var(--ink);}
+.r5-ib:focus-visible,.r5-link:focus-visible,.r5-card:focus-visible{outline:2px solid var(--focus,var(--ink));outline-offset:1px;}
+.r5-card .r5-hov{opacity:0;}
+.r5-card:hover .r5-hov,.r5-card:focus-within .r5-hov{opacity:1;}
+@media (hover:none){.r5-card .r5-hov{opacity:1;}}
+.r5-title{font-size:13.5px;font-weight:600;line-height:1.35;color:var(--ink);word-break:break-word;cursor:pointer;}
+.r5-title:hover{text-decoration:underline;text-decoration-color:var(--border);text-underline-offset:3px;}
+.r5-title.empty{color:var(--muted);font-weight:500;}
+.r5-title-inp{width:100%;border:1px solid var(--border);border-radius:8px;padding:5px 8px;font:inherit;font-size:13.5px;font-weight:600;color:var(--ink);background:var(--white);outline:none;}
+.r5-title-inp:focus{border-color:var(--ink);}
+/* person */
+.r5-ph{display:flex;align-items:flex-start;gap:10px;min-width:0;}
+.r5-av{width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:600;flex-shrink:0;letter-spacing:.02em;}
+.r5-av.sm{width:22px;height:22px;font-size:9px;}
+.r5-av.lg{width:44px;height:44px;font-size:14px;}
+.r5-role{color:var(--muted);font-weight:500;}
+.r5-foot{display:flex;align-items:center;gap:6px;margin-top:-2px;}
+.r5-lt{flex:1;min-width:0;}
+.r5-line{display:flex;align-items:flex-start;gap:4px;}
+.r5-ldel{width:20px;height:20px;font-size:12px;opacity:0;}
+.r5-line:hover .r5-ldel,.r5-ldel:focus-visible{opacity:1;}
+.r5-wip{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:16px;background:var(--white);border:1px solid color-mix(in srgb,var(--border) 60%,transparent);box-shadow:var(--shadow-s);margin:4px 0 22px;}
+.r5-wip-hd{display:flex;align-items:center;gap:12px;}
+.r5-wip-hd .r5-cico{width:36px;height:36px;border-radius:10px;font-size:18px;}
+.r5-wip-t{font-size:15px;font-weight:600;color:var(--ink);}
+.r5-wip-s{font-size:12.5px;color:var(--muted);margin-top:1px;}
+.r5-wip-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;}
+.r5-wip-b{display:flex;align-items:center;gap:10px;text-align:left;padding:10px 12px;border-radius:12px;border:none;background:var(--off);color:var(--ink);font:inherit;cursor:pointer;transition:background var(--d-1,.12s) ease;}
+.r5-wip-b:hover{background:var(--faint);}
+.r5-wip-b:focus-visible{outline:2px solid var(--focus,var(--ink));outline-offset:1px;}
+.r5-wip-b>i:first-child{font-size:18px;color:var(--muted);}
+.r5-wip-b span{flex:1;min-width:0;display:flex;flex-direction:column;}
+.r5-wip-b b{font-size:13px;font-weight:600;}
+.r5-wip-b small{font-size:11.5px;color:var(--muted);}
+.r5-wip-go{color:var(--muted);font-size:15px;}
+.r5-wip-b.is-off{opacity:.5;cursor:not-allowed;}
+body.dark .r5-wip{background:rgba(255,255,255,.03);}
+body.dark .r5-wip-b{background:rgba(255,255,255,.05);}
+body.dark .r5-wip-b:hover{background:rgba(255,255,255,.09);}
+.r5-pm{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;}
+.r5-pname{font-size:14px;font-weight:600;color:var(--ink);line-height:1.3;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.r5-pname:hover{text-decoration:underline;text-decoration-color:var(--border);text-underline-offset:3px;}
+.r5-inl{width:100%;min-width:0;border:1px solid transparent;border-radius:6px;background:transparent;font:inherit;font-size:12px;color:var(--muted);padding:1px 5px;margin-left:-6px;outline:none;box-shadow:none!important;text-overflow:ellipsis;}
+.r5-inl:hover{background:var(--off);}
+.r5-inl:focus{background:var(--white);border-color:var(--border);color:var(--ink);}
+.r5-inl::placeholder{color:color-mix(in srgb,var(--muted) 60%,transparent);}
+.r5-mail{display:flex;align-items:center;gap:2px;min-width:0;}
+.r5-mail a{font-size:12px;color:var(--ink);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--ink) 30%,transparent);text-underline-offset:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.r5-mail a:hover{color:var(--ink);text-decoration:underline;}
+.r5-mail .r5-ib{width:20px;height:20px;font-size:12px;}
+.r5-notes{display:flex;flex-direction:column;gap:6px;border-top:1px dashed color-mix(in srgb,var(--border) 90%,transparent);padding-top:8px;margin-top:2px;}
+.r5-sec{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.01em;}
+.r5-sec .bv-sp{flex:1;}
+.r5-text{font-size:12.5px;line-height:1.5;color:var(--ink);border-radius:8px;padding:3px 6px;margin:0 -6px;cursor:text;word-break:break-word;}
+.r5-text:hover{background:var(--off);}
+.r5-line{min-height:1.5em;}
+.r5-line time{display:inline-block;font-size:11px;font-weight:500;font-variant-numeric:tabular-nums;color:var(--muted);background:var(--off);border-radius:5px;padding:0 5px;margin-right:6px;line-height:1.6;vertical-align:1px;}
+.r5-text:hover .r5-line time{background:var(--white);}
+.r5-line.h{font-weight:600;}
+.r5-gap{height:6px;}
+.r5-ta{width:100%;border:1px solid var(--border);border-radius:8px;background:var(--white);font:inherit;font-size:12.5px;line-height:1.5;color:var(--ink);padding:6px 8px;resize:none;outline:none;overflow:hidden;display:block;}
+.r5-ta:focus{border-color:var(--ink);}
+.r5-add{position:relative;}
+.r5-add .r5-ta{background:var(--off);border-color:transparent;min-height:32px;}
+.r5-add .r5-ta:hover{border-color:var(--border);}
+.r5-add .r5-ta:focus{background:var(--white);border-color:var(--ink);}
+.r5-add-ft{display:none;align-items:center;gap:6px;margin-top:5px;}
+.r5-add:focus-within .r5-add-ft{display:flex;}
+.r5-hint{font-size:11px;color:var(--muted);}
+.r5-hint kbd{font:inherit;font-size:10.5px;padding:0 4px;border-radius:4px;background:var(--faint);}
+.r5-link{display:inline-flex;align-items:center;gap:5px;align-self:flex-start;border:none;background:transparent;color:var(--muted);font:inherit;font-size:12px;font-weight:500;padding:3px 6px;margin-left:-6px;border-radius:6px;cursor:pointer;}
+.r5-link:hover{background:var(--faint);color:var(--ink);}
+.r5-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+/* one-line (collapsed) */
+.r5-one{display:flex;align-items:center;gap:8px;min-width:0;}
+.r5-one .r5-oname{flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.r5-one .r5-osub{font-weight:400;color:var(--muted);font-size:12px;margin-left:4px;}
+#view-boards .r5-card.is-one{padding:7px 8px 7px 10px;}
+/* client */
+.r5-cico{width:28px;height:28px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--bv-blue) 13%,transparent);color:var(--bv-blue);font-size:15px;flex-shrink:0;}
+.r5-cn{flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.r5-cn small{display:block;font-size:11px;font-weight:400;color:var(--muted);}
+.r5-desc-sm{font-size:12px;line-height:1.45;color:var(--muted);white-space:pre-wrap;word-break:break-word;}
+/* checklists */
+.r5-cl{display:flex;flex-direction:column;gap:2px;}
+.r5-cl+.r5-cl{margin-top:4px;}
+.r5-cl-h{display:flex;align-items:center;gap:4px;}
+.r5-cl-h>i{font-size:14px;color:var(--muted);}
+.r5-cl-t{flex:1;min-width:0;border:1px solid transparent;border-radius:6px;background:transparent;font:inherit;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:2px 5px;outline:none;box-shadow:none!important;}
+.r5-cl-t:hover{background:var(--off);}
+.r5-cl-t:focus{background:var(--white);border-color:var(--border);}
+.r5-cl-t::placeholder{color:var(--muted);font-weight:500;}
+.r5-cl-n{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.r5-cl-n.ok{color:var(--bv-green);}
+.r5-prog{height:3px;border-radius:2px;background:var(--faint);overflow:hidden;margin:1px 0 3px;}
+.r5-prog i{display:block;height:100%;background:var(--ink);border-radius:2px;transition:width var(--d-2,.2s) ease;}
+.r5-prog.ok i{background:var(--bv-green);}
+.r5-cis{display:flex;flex-direction:column;gap:1px;min-height:2px;}
+.r5-ci{display:flex;align-items:flex-start;gap:4px;border-radius:7px;padding:1px 2px;margin:0 -4px;}
+.r5-ci:hover{background:var(--off);}
+.r5-ci.is-dragging{opacity:.4;}
+.r5-grip{display:inline-flex;align-items:center;justify-content:center;width:14px;height:24px;color:var(--muted);cursor:grab;opacity:0;flex-shrink:0;font-size:13px;}
+.r5-ci:hover .r5-grip{opacity:.8;}
+.r5-ci input[type=checkbox]{width:14px;height:14px;margin:5px 2px 0;accent-color:var(--ink);cursor:pointer;flex-shrink:0;}
+.r5-ci-t{flex:1;min-width:0;border:1px solid transparent;border-radius:5px;background:transparent;font:inherit;font-size:12.5px;line-height:1.4;color:var(--ink);padding:3px 4px;outline:none;resize:none;overflow:hidden;box-shadow:none!important;}
+.r5-ci-t:focus{background:var(--white);border-color:var(--border);}
+.r5-ci.done .r5-ci-t{color:var(--muted);text-decoration:line-through;}
+.r5-ci .r5-ib{width:22px;height:22px;opacity:0;font-size:13px;}
+.r5-ci:hover .r5-ib,.r5-ci:focus-within .r5-ib{opacity:1;}
+.r5-ci-add{width:100%;border:1px solid transparent;border-radius:7px;background:transparent;font:inherit;font-size:12px;color:var(--ink);padding:4px 6px 4px 22px;outline:none;box-shadow:none!important;}
+.r5-ci-add:hover{background:var(--off);}
+.r5-ci-add:focus{background:var(--white);border-color:var(--border);}
+.r5-ci-add::placeholder{color:var(--muted);}
+/* drawer header for person / client cards */
+.r5-dr-h{display:flex;align-items:flex-start;gap:12px;margin:2px 0 16px;}
+.r5-dr-h .r5-av{width:44px;height:44px;font-size:14px;}
+.r5-dr-h .r5-pname{font-size:18px;white-space:normal;cursor:default;}
+.r5-dr-h .r5-pname:hover{text-decoration:none;}
+.r5-dr-h .r5-inl{font-size:13px;}
+.r5-dr-lists{display:flex;flex-direction:column;gap:6px;}
+/* sync state + sharing */
+.r5-sync{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 4px;font-size:11.5px;color:var(--muted);white-space:nowrap;}
+.r5-sync i{font-size:14px;}
+.r5-sync.err{color:var(--bv-red);}
+.r5-sync button{border:none;background:transparent;font:inherit;font-size:11.5px;font-weight:600;color:var(--ink);text-decoration:underline;text-underline-offset:2px;cursor:pointer;padding:0 2px;}
+.r5-spin{animation:r5spin 1s linear infinite;}
+@keyframes r5spin{to{transform:rotate(360deg);}}
+@media (prefers-reduced-motion:reduce){.r5-spin{animation:none;}}
+.r5-tile-ic{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--muted);margin-left:auto;margin-right:2px;}
+.r5-tile-ic i{font-size:13px;}
+.r5-imp{display:flex;flex-direction:column;gap:8px;margin-top:10px;padding:12px;border-radius:12px;background:var(--off);font-size:12.5px;}
+.r5-imp input[type=file]{font:inherit;font-size:12px;}
+.r5-imp-sum{color:var(--ink);line-height:1.5;}
+.r5-imp-err{color:var(--bv-red);}
+.bv-kind.is-off{opacity:.55;}
+body.dark .r5-add .r5-ta{background:rgba(255,255,255,.05);}
+body.dark .r5-add .r5-ta:focus,body.dark .r5-ta,body.dark .r5-ci-t:focus,body.dark .r5-ci-add:focus,body.dark .r5-inl:focus,body.dark .r5-cl-t:focus,body.dark .r5-title-inp{background:rgba(255,255,255,.07);}
+body.dark .r5-line time{background:rgba(255,255,255,.07);}
+</style>
+<script id="boards-r5-script">
+// ═══ Boards round 5 ═══════════════════════════════════════════════════════════════════════
+// 1. The derived "Business / Team WIP" views are renamed "Live jobs by status / by person" —
+//    the real WIP boards are hand-made boards (Streamtime has no boards API to sync from).
+// 2. Card types on custom boards, all inline-editable and openable in the card drawer:
+//      client  {type:'client', clientRef, clientId?}            compact row → opens the client
+//      job     {type:'card', kind:'job', jobRef}                 pipeline card → opens the job
+//      note    {type:'card', kind:'note', title, desc}           text + checklists
+//      person  {type:'person', personRef?, title?, role?, email?, desc}  header + notes
+//    Any card may carry checklists:[{id,title,items:[{id,text,done}]}] and collapsed:true.
+//    card.checklist (flat) is kept in step for the older chips and filters.
+// 3. Shared boards (production, signed in): boards with shared:true live on the server
+//    (/api/boards, one encrypted blob each), are pulled on open and when the tab comes back,
+//    and are saved ~800ms after the last edit. Edits are stamped per card and deletes become
+//    tombstones (board.deleted) so the server can merge two browsers' saves. localStorage
+//    stays the cache. On localhost nothing changes: boards stay per browser.
+// 4. Templates "Business WIP" and "Team WIP" (New board → Templates), Import / Export board.
+
+const R5_PROD=!!(typeof AUTH!=='undefined'&&AUTH);
+const R5_ADMIN=!R5_PROD||!!AUTH.admin;
+const _r5A=_bvA;
+const _r5Mon=['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+// ── 1. Live views renamed ────────────────────────────────────────────────────────────────
+BV_LIVE_KINDS.bwip={name:'Live jobs by status',icon:'ti-briefcase',color:'green',desc:'Read-only: every live job by job status, always current.'};
+BV_LIVE_KINDS.twip={name:'Live jobs by person',icon:'ti-users-group',color:'blue',desc:'Read-only: every live job in one column per person on it.'};
+_bvWipMeta=function(b){return{icon:b.wip==='team'?'ti-users-group':'ti-briefcase',label:b.wip==='team'?'Live jobs by person':'Live jobs by status'};};
+const _r5NewWip=_bvNewWipBoard;
+_bvNewWipBoard=function(kind,name,base){return _r5NewWip(kind,name||(kind==='team'?'Live jobs by person':'Live jobs by status'),base);};
+(function _r5RenameLive(){
+  let ch=false;
+  boardsList.forEach(b=>{if(b&&b.type==='wip'){
+    if(b.name==='Business WIP'){b.name='Live jobs by status';ch=true;}
+    if(b.name==='Team WIP'){b.name='Live jobs by person';ch=true;}
+  }});
+  if(ch)saveBoardsData();
+})();
+
+// ── 2. Templates ─────────────────────────────────────────────────────────────────────────
+BV_TEMPLATES.bizwip={name:'Business WIP',icon:'ti-briefcase',color:'green',desc:'Wider client opportunities and the C&C roadmap.'+(R5_PROD?' Shared with the team.':'')};
+BV_TEMPLATES.teamwip={name:'Team WIP',icon:'ti-users-group',color:'pink',desc:'A card per team member for notes and check-ins, plus monthly people actions.'};
+const R5_BIZ_CLIENTS=['Dairyworks','Avalanche Coffee Limited','Delmaine Fine Foods','Otaika Valley Eggs','JCL','Ziwi Pets','Silver Fern Farms','Sanford - Sanford and Sons','Sanford - Big Glory Bay','Comvita New Zealand Ltd','Boyd Visuals','Gibbons Management Ltd'];
+const _r5Norm=s=>String(s||'').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g,'').replace(/\b(limited|ltd|nz|new zealand|co|company)\b/g,' ').replace(/[^a-z0-9]+/g,' ').trim();
+function _r5AllClients(){return[...new Set([...(clientsData||[]).map(c=>c.name),...jobs.map(j=>j.company)].filter(Boolean))].sort((a,b)=>a.localeCompare(b));}
+// Our client record (or job company) for a name: exact, then normalised, then prefix.
+function _r5MatchClient(name){
+  const n=_r5Norm(name);if(!n)return null;
+  const all=_r5AllClients();
+  const hit=all.find(c=>c===name)||all.find(c=>_r5Norm(c)===n)||all.find(c=>{const m=_r5Norm(c);return m&&(m.startsWith(n+' ')||n.startsWith(m+' '));});
+  if(!hit)return null;
+  const rec=(clientsData||[]).find(c=>c.name===hit);
+  return{name:hit,id:rec?rec.id:null};
+}
+function _r5ClientCard(name,x){const m=_r5MatchClient(name);return _bvNewCard({type:'client',clientRef:m?m.name:String(name),...(m&&m.id?{clientId:m.id}:{}),...(x||{})});}
+function _r5NoteCard(title,x){return _bvNewCard({kind:'note',title:title||'',...(x||{})});}
+function _r5PersonCard(key,x){return _bvNewCard({type:'person',personRef:key,desc:'',...(x||{})});}
+function _r5BuildBizWip(name){
+  const t=Date.now();
+  const b={id:uid('b'),v:2,type:'custom',template:'bizwip',name:name||'Business WIP',createdAt:t,updatedAt:t,openedAt:t,sort:'manual',visibility:'everyone'};
+  const opps=_bvNewCol('Place for wider client opps','blue');
+  opps.cards=R5_BIZ_CLIENTS.map(n=>_r5ClientCard(n));
+  const road=_bvNewCol('C&C roadmap + marketing','green');
+  if(_bvJob('4659')||jobs.some(j=>String(j.id)==='4659'))road.cards.push(_bvNewCard({kind:'job',jobRef:'4659'}));
+  road.cards.push(_r5NoteCard('C&C marketing'));
+  b.columns=[opps,road];
+  return b;
+}
+function _r5BuildTeamWip(name){
+  const t=Date.now();
+  const b={id:uid('b'),v:2,type:'custom',template:'teamwip',name:name||'Team WIP',createdAt:t,updatedAt:t,openedAt:t,sort:'manual',visibility:'admins'};
+  const perf=_bvNewCol('Performance','pink');
+  perf.cards=_bvPeopleKeys().filter(k=>!String(k).startsWith('acct_')).map(k=>_r5PersonCard(k));
+  const acts=_bvNewCol('Performance actions','purple');
+  const d=new Date();
+  for(let i=0;i<3;i++){
+    const m=new Date(d.getFullYear(),d.getMonth()+i,1);
+    acts.cards.push(_r5NoteCard(`${_r5Mon[m.getMonth()]} ${m.getFullYear()}`,{checklists:[{id:uid('cl'),title:'People actions',items:[]}]}));
+  }
+  b.columns=[perf,acts];
+  return b;
+}
+
+// ── 3. Card model helpers ────────────────────────────────────────────────────────────────
+function _r5Lists(c){
+  if(Array.isArray(c.checklists))return c.checklists;
+  return(c.checklist&&c.checklist.length)?[{id:'_flat',title:'',items:c.checklist}]:[];
+}
+function _r5ListsW(c){
+  if(!Array.isArray(c.checklists)){c.checklists=(c.checklist&&c.checklist.length)?[{id:uid('cl'),title:'',items:c.checklist}]:[];}
+  return c.checklists;
+}
+function _r5Flat(c){if(Array.isArray(c.checklists))c.checklist=c.checklists.flatMap(l=>l.items||[]);}
+function _r5Kind(c){
+  if(c.type==='person')return'person';
+  if(c.type==='client')return'client';
+  if(c.kind==='note')return'note';
+  if(c.kind==='job')return'job';
+  return'card';
+}
+function _r5StUser(key){return Object.values(stUsersById||{}).find(u=>u.key===key)||null;}
+function _r5Person(c){
+  const p=c.personRef&&people[c.personRef]||null,st=c.personRef?_r5StUser(c.personRef):null;
+  const name=(p&&p.name)||(st&&st.name)||c.title||'Team member';
+  const ini=(p&&p.initials)||(st&&st.initials)||name.split(/\s+/).filter(Boolean).map(w=>w[0]).join('').slice(0,2).toUpperCase()||'?';
+  return{name,ini,color:(p&&p.color)||(st&&st.color)||'var(--bv-pink)',
+    role:c.role!=null&&c.role!==''?c.role:((p&&p.role)||''),recRole:(p&&p.role)||'',
+    email:c.email!=null&&c.email!==''?c.email:((p&&p.email)||(st&&st.email)||''),recEmail:(p&&p.email)||(st&&st.email)||'',
+    linked:!!(p||st)};
+}
+const _r5OrigTitle=_bvTitle;
+_bvTitle=function(card){
+  if(card.type==='person'&&!card.title)return _r5Person(card).name;
+  if(card.type==='person')return(card.personRef&&people[card.personRef]?.name)||card.title;
+  return _r5OrigTitle(card);
+};
+function _r5Today(){const d=new Date();return`${d.getDate()} ${_bvMonths[d.getMonth()]} ${d.getFullYear()}`;}
+const R5_DATE_RE=/^((?:\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?(?:\s+\d{2,4})?)|(?:(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?)|(?:\d{4}-\d{2}-\d{2})|(?:\d{1,2}[\/.]\d{1,2}(?:[\/.]\d{2,4})?))(?:\s*[·:\-–—]\s*|\s+|$)/i;
+function _r5TextHTML(txt,id){
+  const del=i=>id?`<button class="r5-ib r5-ldel" title="Delete line" aria-label="Delete line" onclick="event.stopPropagation();bvR5DelLine(${_r5A(id)},${i})"><i class="ti ti-trash"></i></button>`:'';
+  return String(txt||'').replace(/\s+$/,'').split('\n').map((line,i)=>{
+    if(!line.trim())return'<div class="r5-gap"></div>';
+    const m=line.match(R5_DATE_RE);
+    if(m){const rest=line.slice(m[0].length);return`<div class="r5-line"><span class="r5-lt"><time>${esc(m[1])}</time>${linkify(esc(rest))}</span>${del(i)}</div>`;}
+    const h=line.length<48&&(/:\s*$/.test(line)||(/[A-Z]/.test(line)&&line===line.toUpperCase()));
+    return`<div class="r5-line${h?' h':''}"><span class="r5-lt">${linkify(esc(line))}</span>${del(i)}</div>`;
+  }).join('');
+}
+function bvR5DelLine(id,i){
+  const ctx=_r5Ctx(id);if(!ctx)return;const ls=String(ctx.card.desc||'').split('\n');if(i<0||i>=ls.length)return;
+  const gone=ls.splice(i,1)[0];ctx.card.desc=ls.join('\n').replace(/^\n+/,'').replace(/\n{3,}/g,'\n\n');
+  _r5Changed(ctx);
+  toast(`Line deleted · <a href="#" onclick="event.preventDefault();bvR5UndoLine(${_r5A(id)},${i},${_r5A(gone)})" style="color:inherit;font-weight:600;">Undo</a>`,'info',5000);
+}
+function bvR5UndoLine(id,i,text){const ctx=_r5Ctx(id);if(!ctx)return;const ls=String(ctx.card.desc||'').split('\n');ls.splice(Math.min(i,ls.length),0,text);ctx.card.desc=ls.join('\n');_r5Changed(ctx);}
+
+// ── 4. Rendering ─────────────────────────────────────────────────────────────────────────
+let _r5EditDesc=null,_r5EditTitle=null;   // card id being edited inline
+function _r5MenuBtn(id){return`<button class="r5-ib r5-hov" title="Card options" aria-label="Card options" draggable="false" onclick="event.stopPropagation();bvR5CardMenu(this,${_r5A(id)})"><i class="ti ti-dots-vertical"></i></button>`;}
+function _r5FoldBtn(c){return`<button class="r5-ib" title="${c.collapsed?'Expand':'Collapse to one line'}" aria-label="${c.collapsed?'Expand':'Collapse'}" aria-expanded="${!c.collapsed}" draggable="false" onclick="event.stopPropagation();bvR5Fold(${_r5A(c.id)})"><i class="ti ti-chevron-${c.collapsed?'right':'down'}"></i></button>`;}
+function _r5ListsHTML(c,scope){
+  const A=_r5A(c.id);
+  return _r5Lists(c).map(l=>{
+    const items=l.items||[],n=items.length,d=items.filter(i=>i.done).length,pct=n?Math.round(d/n*100):0,L=_r5A(l.id);
+    const rows=items.map(i=>{const I=_r5A(i.id);return`<div class="r5-ci${i.done?' done':''}" data-ci="${esc(i.id)}" ondragstart="bvR5CiStart(event,${A},${I})" ondragend="bvR5CiEnd(event)">
+      <input type="checkbox"${i.done?' checked':''} aria-label="Done" onclick="event.stopPropagation()" onchange="bvR5CiToggle(${A},${L},${I})">
+      <textarea class="r5-ci-t" rows="1" data-grow aria-label="Checklist item" oninput="_bvGrow(this)" onchange="bvR5CiEdit(${A},${L},${I},this.value)" onkeydown="_r5Key(event)">${esc(i.text)}</textarea>
+      <span class="r5-grip" title="Drag to reorder" aria-hidden="true" onmousedown="this.parentNode.draggable=true" onmouseup="this.parentNode.draggable=false"><i class="ti ti-grip-vertical"></i></span>
+      <button class="r5-ib" title="Delete item" aria-label="Delete item" onclick="event.stopPropagation();bvR5CiDel(${A},${L},${I})"><i class="ti ti-x"></i></button></div>`;}).join('');
+    return`<div class="r5-cl" data-cl="${esc(l.id)}">
+      <div class="r5-cl-h"><i class="ti ti-checklist"></i><input class="r5-cl-t" value="${esc(l.title||'')}" placeholder="Checklist" aria-label="Checklist heading" data-r5f="clt-${esc(l.id)}" onchange="bvR5ClTitle(${A},${L},this.value)" onkeydown="_r5Key(event)">${n?`<span class="r5-cl-n${d===n?' ok':''}">${d}/${n}</span>`:''}<button class="r5-ib r5-hov" title="Delete checklist" aria-label="Delete checklist" onclick="event.stopPropagation();bvR5ClDel(${A},${L})"><i class="ti ti-trash"></i></button></div>
+      ${n?`<div class="r5-prog${pct===100?' ok':''}"><i style="width:${pct}%"></i></div>`:''}
+      <div class="r5-cis" ondragover="bvR5CiOver(event)" ondrop="bvR5CiDrop(event,${A})">${rows}</div>
+      <input class="r5-ci-add" placeholder="Add an item" aria-label="Add an item" data-r5f="cia-${esc(l.id)}-${scope}" onkeydown="if(event.key==='Enter'){event.preventDefault();bvR5CiAdd(${A},${L},this.value,'${scope}');}else _r5Key(event)"></div>`;
+  }).join('');
+}
+function _r5DescHTML(c,scope,ph){
+  const A=_r5A(c.id);
+  if(_r5EditDesc===c.id+':'+scope)return`<textarea class="r5-ta" data-grow data-r5f="desc-${esc(c.id)}-${scope}" rows="3" placeholder="${esc(ph)}" oninput="_bvGrow(this)" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();this.blur();}else if(event.key==='Escape'){event.preventDefault();event.stopPropagation();_r5EditDesc=null;_r5Rerender();}" onblur="bvR5SaveDesc(${A},this.value)">${esc(c.desc||'')}</textarea>`;
+  if(!(c.desc||'').trim())return'';
+  return`<div class="r5-text" tabindex="0" role="button" title="Click to edit" onclick="event.stopPropagation();bvR5EditDesc(${A},'${scope}')" onkeydown="if(event.key==='Enter'){event.preventDefault();bvR5EditDesc(${A},'${scope}');}">${_r5TextHTML(c.desc,c.id)}</div>`;
+}
+function _r5AddNoteHTML(c,scope,ph){
+  const A=_r5A(c.id);
+  return`<div class="r5-add"><textarea class="r5-ta" rows="1" data-grow data-r5f="add-${esc(c.id)}-${scope}" placeholder="${esc(ph||'Add a note')}" aria-label="Add a note" oninput="_bvGrow(this)" onkeydown="_r5AddKey(event,${A},'${scope}')"></textarea>
+    <div class="r5-add-ft"><button class="d-action primary sm" onmousedown="event.preventDefault()" onclick="event.stopPropagation();bvR5AddNote(${A},this.closest('.r5-add').querySelector('textarea').value,'${scope}')">Add note</button><span class="r5-hint"><kbd>${/Mac|iPhone|iPad/.test(navigator.platform)?'⌘':'Ctrl'}</kbd>+<kbd>Enter</kbd> to save · dated today</span></div></div>`;
+}
+function _r5CardShell(b,col,c,cls,inner,extra){
+  const drag=`draggable="true" ondragstart="bvCardDragStart(event,${_r5A(c.id)})" ondragend="bvDragEnd()"`;
+  return`<article class="bv-card r5-card ${cls}${c.collapsed?' is-one':''}${col.done?' is-done':''}" data-card="${esc(c.id)}" tabindex="0" ${drag} ${extra||''}>${inner}</article>`;
+}
+function _r5TitleHTML(c,ph){
+  const A=_r5A(c.id);
+  if(_r5EditTitle===c.id)return`<input class="r5-title-inp" data-r5f="title-${esc(c.id)}" value="${esc(c.title||'')}" placeholder="${esc(ph)}" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}else if(event.key==='Escape'){event.preventDefault();event.stopPropagation();this.dataset.cancel='1';this.blur();}" onblur="bvR5SaveTitle(${A},this.value,this.dataset.cancel==='1')">`;
+  return`<div class="r5-title${c.title?'':' empty'}" onclick="event.stopPropagation();bvOpenCard(${A})">${esc(c.title||ph)}</div>`;
+}
+function _r5PersonHTML(b,col,c){
+  const P=_r5Person(c),A=_r5A(c.id),av=`<span class="r5-av${c.collapsed?' sm':''}" style="background:${esc(P.color)}" aria-hidden="true">${esc(P.ini)}</span>`;
+  const lines=(c.desc||'').split('\n').filter(l=>l.trim()).length,ck=_r5Lists(c).reduce((s,l)=>s+(l.items||[]).length,0);
+  if(c.collapsed)return _r5CardShell(b,col,c,'r5-person',`<div class="r5-one">${_r5FoldBtn(c)}${av}<span class="r5-oname" onclick="event.stopPropagation();bvOpenCard(${A})">${esc(P.name)}${P.role?`<span class="r5-osub">${esc(P.role)}</span>`:''}</span>${lines?`<span class="bv-chip" title="Notes"><i class="ti ti-notes"></i>${lines}</span>`:''}${_r5MenuBtn(c.id)}</div>`);
+  const mail=P.email?`<div class="r5-mail"><a href="mailto:${esc(P.email)}" onclick="event.stopPropagation()" draggable="false" title="Email ${esc(P.name)}">${esc(P.email)}</a></div>`:`<input class="r5-inl" placeholder="Add email" aria-label="Email" type="email" onchange="bvR5Set(${A},'email',this.value)" onkeydown="_r5Key(event)">`;
+  return _r5CardShell(b,col,c,'r5-person',`
+    <div class="r5-top"><span class="r5-tag pink"><i class="ti ti-user"></i>Team member</span><span class="bv-sp"></span>${_r5FoldBtn(c)}${_r5MenuBtn(c.id)}</div>
+    <div class="r5-ph"><div class="r5-pm"><div class="r5-pname" onclick="event.stopPropagation();bvOpenCard(${A})" title="Open card">${esc(P.name)}</div>
+      <input class="r5-inl r5-role" value="${esc(c.role!=null&&c.role!==''?c.role:'')}" placeholder="${esc(P.recRole||'Add role or title')}" aria-label="Role" onchange="bvR5Set(${A},'role',this.value)" onkeydown="_r5Key(event)">
+      ${mail}</div>${av.replace('class="r5-av','class="r5-av lg')}</div>
+    <div class="r5-notes">
+      ${_r5DescHTML(c,'b','Notes about '+P.name)}${_r5ListsHTML(c,'b')}${_r5AddNoteHTML(c,'b','Add a note')}</div>
+    <div class="r5-foot"><button class="r5-link" onclick="event.stopPropagation();bvR5AddList(${A},'b')"><i class="ti ti-checklist"></i>Add checklist</button></div>`);
+}
+function _r5NoteHTML(b,col,c){
+  const A=_r5A(c.id),ls=_r5Lists(c),n=ls.reduce((s,l)=>s+(l.items||[]).length,0),d=ls.reduce((s,l)=>s+(l.items||[]).filter(i=>i.done).length,0);
+  if(c.collapsed)return _r5CardShell(b,col,c,'r5-note',`<div class="r5-one">${_r5FoldBtn(c)}<span class="r5-oname" onclick="event.stopPropagation();bvOpenCard(${A})">${esc(c.title||'Untitled note')}</span>${n?`<span class="bv-chip${d===n?' ok':''}"><i class="ti ti-square-check"></i>${d}/${n}</span>`:''}${_r5MenuBtn(c.id)}</div>`);
+  const L=c.labels||[];
+  const lbls=L.length?`<div class="bv-card-lbls">${L.slice(0,4).map(l=>`<span class="bv-lbl" style="--lc:${esc(labelColor(l))}">${esc(l)}</span>`).join('')}</div>`:'';
+  const due=c.due?_bvDueChipHTML(c.due,_bvDueState(c.due,col),col.done,'Due'):'',avs=_bvAvsHTML(c.assignees||[]);
+  return _r5CardShell(b,col,c,'r5-note',`
+    <div class="r5-top"><span class="r5-tag amber"><i class="ti ti-pencil"></i>Note</span><span class="bv-sp"></span>${_r5FoldBtn(c)}${_r5MenuBtn(c.id)}</div>
+    ${lbls}${_r5TitleHTML(c,'Untitled note')}
+    ${_r5DescHTML(c,'b','Write the note')}
+    ${!(c.desc||'').trim()&&_r5EditDesc!==c.id+':b'?`<button class="r5-link" onclick="event.stopPropagation();bvR5EditDesc(${A},'b')"><i class="ti ti-align-left"></i>Add text</button>`:''}
+    ${_r5ListsHTML(c,'b')}
+    <div class="r5-foot"><button class="r5-link" onclick="event.stopPropagation();bvR5AddList(${A},'b')"><i class="ti ti-checklist"></i>Add checklist</button><span class="bv-sp"></span>${due}<span class="bv-avs">${avs}</span></div>`);
+}
+function _r5ClientHTML(b,col,c){
+  const A=_r5A(c.id),name=c.clientRef||c.title||'Client';
+  const act=jobs.filter(j=>j.company===c.clientRef&&j.status==='inplay').length;
+  const rec=_r5ClientRec(c);
+  const ls=_r5Lists(c),hasMore=(c.desc||'').trim()||ls.length;
+  return _r5CardShell(b,col,c,'r5-client r5-click'+(hasMore&&!c.collapsed?'':' is-one'),`
+    <div class="r5-one"><span class="r5-cico" aria-hidden="true"><i class="ti ti-briefcase"></i></span><span class="r5-cn">${esc(name)}<small>${act?`${act} active job${act!==1?'s':''}`:rec?'No active jobs':'Not in Clients'}</small></span>${_r5MenuBtn(c.id)}<i class="ti ti-chevron-right" style="color:var(--muted);font-size:15px;" aria-hidden="true"></i></div>
+    ${hasMore&&!c.collapsed?`${(c.desc||'').trim()?`<div class="r5-desc-sm">${linkify(esc(c.desc))}</div>`:''}${_r5ListsHTML(c,'b')}`:''}`,
+    `title="Open ${esc(name)} in Clients" onclick="bvR5OpenClient(${A})" onkeydown="if(event.key==='Enter'&&event.target===this)bvR5OpenClient(${A})"`);
+}
+let _r5HideAvs=false;
+const _r5OrigWipCols=_bvWipCols;
+_bvWipCols=function(b){const cols=_r5OrigWipCols(b);cols.forEach(c=>{if(String(c.key).startsWith('pp-')&&c.key!=='pp-none')c.hideAvs=true;});return cols;};
+const _r5OrigLiveCol=_bvLiveColHTML;
+_bvLiveColHTML=function(c,q){_r5HideAvs=!!c.hideAvs;try{return _r5OrigLiveCol(c,q);}finally{_r5HideAvs=false;}};
+const _r5OrigLiveCard=_bvLiveJobCardHTML;
+_bvLiveJobCardHTML=function(j,done,pill){return _r5OrigLiveCard(_r5HideAvs?{...j,members:[]}:j,done,pill);};
+function _r5JobHTML(b,col,c){
+  let h=_r5OrigCardHTML(b,col,c);
+  h=h.replace(`onclick="bvOpenCard(`,`onclick="bvR5CardClick(`).replace(`onkeydown="if(event.key==='Enter'&&event.target===this)bvOpenCard(`,`onkeydown="if(event.key==='Enter'&&event.target===this)bvR5CardClick(`);
+  return h.replace(/(<div class="bv-card-job">)/,`<div class="r5-top" style="margin-bottom:-4px"><span class="r5-tag blue"><i class="ti ti-briefcase"></i>Job</span><span class="bv-sp"></span>${_r5MenuBtn(c.id)}</div>$1`);
+}
+const _r5OrigCardHTML=_bvCardHTML;
+_bvCardHTML=function(b,col,c){
+  if(!b||b.type!=='custom')return _r5OrigCardHTML(b,col,c);
+  const k=_r5Kind(c);
+  if(k==='person')return _r5PersonHTML(b,col,c);
+  if(k==='client')return _r5ClientHTML(b,col,c);
+  if(k==='note')return _r5NoteHTML(b,col,c);
+  if(k==='job'&&c.jobRef)return _r5JobHTML(b,col,c);
+  return _r5OrigCardHTML(b,col,c);
+};
+// Column header: + opens the card-type menu, a delete button (with confirm); footer: "Add job card ▾".
+const _r5OrigColHTML=_bvColHTML;
+_bvColHTML=function(b,col,f,fa){
+  let h=_r5OrigColHTML(b,col,f,fa);
+  if(col.collapsed)return h;
+  const A=_r5A(col.id);
+  h=h.replace(/<button class="bv-ibtn sm" title="Add card to top"[^>]*>/,`<button class="bv-ibtn sm" title="Add a card" aria-label="Add a card" draggable="false" onclick="bvR5AddMenu(this,${A},'top')">`);
+  h=h.replace(/(<button class="bv-ibtn sm" title="Column options")/,`<button class="bv-ibtn sm" title="Delete column" aria-label="Delete column" draggable="false" onclick="bvR5DeleteCol(${A})"><i class="ti ti-trash"></i></button>$1`);
+  h=h.replace(/<div class="bv-col-ft">[\s\S]*?<\/div>\s*<\/section>$/,`<div class="bv-col-ft"><button class="bv-add-card" onclick="bvR5JobPicker(this,${A})"><i class="ti ti-plus"></i> Add job card</button><button class="bv-ibtn sm" title="Add another kind of card" aria-label="Add another kind of card" onclick="bvR5AddMenu(this,${A},'bottom')"><i class="ti ti-chevron-down"></i></button></div>\n  </section>`);
+  return h;
+};
+
+// ── 5. Card actions ──────────────────────────────────────────────────────────────────────
+function _r5Ctx(id){const b=_bvCur();const loc=_bvLoc(b,id);return loc?{b,...loc}:null;}
+function _r5Changed(ctx,focusKey){
+  ctx.card.updatedAt=Date.now();_r5Flat(ctx.card);_bvTouch(ctx.b,ctx.card);_r5Rerender(focusKey);
+}
+function _r5Editing(){
+  const ae=document.activeElement;
+  return!!(ae&&ae.closest&&(ae.closest('#board-detail')||ae.closest('#bv-drawer'))&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName));
+}
+const _r5OrigTypeMeta=_bvTypeMeta;
+_bvTypeMeta=function(b){
+  if(b.type==='custom'&&(b.template==='bizwip'||b.template==='teamwip'))return{icon:b.template==='teamwip'?'ti-users-group':'ti-briefcase',label:'WIP board'};
+  if(b.type==='custom'&&b.template==='import')return{icon:'ti-file-import',label:'Imported board'};
+  return _r5OrigTypeMeta(b);
+};
+// Multi-line checklist items and note fields size to their text after every board render.
+const _r5OrigRenderBody=_bvRenderBody;
+_bvRenderBody=function(){_r5OrigRenderBody();document.querySelectorAll('#board-detail-body textarea[data-grow]').forEach(_bvGrow);};
+function _r5Rerender(focusKey){
+  _bvRenderBody();
+  if(document.getElementById('bv-drawer'))_bvRenderDrawer();
+  // Focus synchronously so fast typing (add a note, next checklist item) never lands on a removed field.
+  if(focusKey){const go=()=>{const el=document.querySelector(`[data-r5f="${CSS.escape(focusKey)}"]`);if(el){el.focus();if(el.select&&el.tagName==='INPUT'&&el.value)el.select();return true;}return false;};if(!go())setTimeout(go,0);}
+}
+function _r5Key(e){
+  if(e.key==='Enter'&&e.target.tagName!=='TEXTAREA'){e.preventDefault();e.target.blur();}
+  else if(e.key==='Enter'&&e.target.classList.contains('r5-ci-t')){e.preventDefault();e.target.blur();}
+  else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();e.target.blur();}
+}
+function _r5AddKey(e,id,scope){
+  if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();bvR5AddNote(id,e.target.value,scope);}
+  else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();e.target.value='';e.target.blur();}
+}
+function bvR5Set(id,key,val){
+  const ctx=_r5Ctx(id);if(!ctx)return;val=String(val??'').trim();
+  if((ctx.card[key]||'')===val)return;
+  if(val)ctx.card[key]=val;else delete ctx.card[key];
+  _r5Changed(ctx);
+}
+function bvR5Fold(id){const ctx=_r5Ctx(id);if(!ctx)return;ctx.card.collapsed=!ctx.card.collapsed;if(!ctx.card.collapsed)delete ctx.card.collapsed;_r5Changed(ctx);}
+function bvR5EditDesc(id,scope){_r5EditDesc=id+':'+scope;_r5Rerender('desc-'+id+'-'+scope);}
+function bvR5SaveDesc(id,v){
+  _r5EditDesc=null;const ctx=_r5Ctx(id);if(!ctx)return;
+  v=String(v||'').replace(/\s+$/,'');
+  if((ctx.card.desc||'')===v){_r5Rerender();return;}
+  ctx.card.desc=v;_r5Changed(ctx);
+}
+function bvR5SaveTitle(id,v,cancel){
+  _r5EditTitle=null;const ctx=_r5Ctx(id);if(!ctx)return;
+  v=String(v||'').replace(/\s+/g,' ').trim();
+  if(cancel||v===(ctx.card.title||'')){
+    if(!ctx.card.title&&!v&&!(ctx.card.desc||'').trim()&&!_r5Lists(ctx.card).length&&ctx.card._fresh){ctx.col.cards.splice(ctx.idx,1);_bvTouch(ctx.b);}
+    delete ctx.card._fresh;_r5Rerender();return;
+  }
+  ctx.card.title=v;delete ctx.card._fresh;_bvLog(ctx.card,'Renamed');_r5Changed(ctx);
+}
+function bvR5AddNote(id,text,scope){
+  const ctx=_r5Ctx(id);if(!ctx)return;text=String(text||'').replace(/\s+$/,'').replace(/^\s*\n/,'');if(!text.trim())return;
+  const line=R5_DATE_RE.test(text.trim())?text.trim():`${_r5Today()} · ${text.trim()}`;
+  const cur=(ctx.card.desc||'').replace(/\s+$/,'');
+  ctx.card.desc=cur?cur+'\n'+line:line;
+  _r5Changed(ctx,'add-'+id+'-'+scope);
+}
+function bvR5AddList(id,scope){
+  const ctx=_r5Ctx(id);if(!ctx)return;
+  const l={id:uid('cl'),title:'',items:[]};_r5ListsW(ctx.card).push(l);
+  if(ctx.card.collapsed)delete ctx.card.collapsed;
+  _r5Changed(ctx,'clt-'+l.id);
+}
+function _r5List(ctx,lid){return _r5ListsW(ctx.card).find(l=>l.id===lid)||(lid==='_flat'?_r5ListsW(ctx.card)[0]:null);}
+function bvR5ClTitle(id,lid,v){const ctx=_r5Ctx(id);if(!ctx)return;const l=_r5List(ctx,lid);if(!l)return;l.title=String(v||'').trim();_r5Changed(ctx);}
+function bvR5ClDel(id,lid){
+  const ctx=_r5Ctx(id);if(!ctx)return;const l=_r5List(ctx,lid);if(!l)return;
+  const go=()=>{const c2=_r5Ctx(id);if(!c2)return;c2.card.checklists=_r5ListsW(c2.card).filter(x=>x!==l);_r5Changed(c2);};
+  if((l.items||[]).length)ccConfirm(`Delete the checklist${l.title?` “${esc(l.title)}”`:''} and its ${l.items.length} item${l.items.length!==1?'s':''}?`,go,'Delete checklist',true);else go();
+}
+function bvR5CiAdd(id,lid,text,scope){
+  const ctx=_r5Ctx(id);if(!ctx)return;text=String(text||'').trim();if(!text)return;
+  const l=_r5List(ctx,lid);if(!l)return;(l.items=l.items||[]).push({id:uid('ck'),text,done:false});
+  _r5Changed(ctx,'cia-'+l.id+'-'+scope);
+}
+function _r5Item(ctx,lid,iid){const l=_r5List(ctx,lid);return l?{l,i:(l.items||[]).find(x=>x.id===iid)}:{};}
+function bvR5CiToggle(id,lid,iid){const ctx=_r5Ctx(id);if(!ctx)return;const{i}=_r5Item(ctx,lid,iid);if(!i)return;i.done=!i.done;if(i.done)_bvLog(ctx.card,`Checked “${i.text}”`);_r5Changed(ctx);}
+function bvR5CiEdit(id,lid,iid,v){const ctx=_r5Ctx(id);if(!ctx)return;const{i}=_r5Item(ctx,lid,iid);if(!i)return;v=String(v||'').trim();if(!v)return bvR5CiDel(id,lid,iid);if(v===i.text)return;i.text=v;_r5Changed(ctx);}
+function bvR5CiDel(id,lid,iid){const ctx=_r5Ctx(id);if(!ctx)return;const l=_r5List(ctx,lid);if(!l)return;l.items=(l.items||[]).filter(x=>x.id!==iid);_r5Changed(ctx);}
+// Checklist item drag (within one card, across its checklists). The card's own drag is not started.
+let _r5Ci=null;
+function bvR5CiStart(e,id,iid){
+  e.stopPropagation();const row=e.currentTarget;
+  if(!row.draggable){e.preventDefault();return;}
+  _r5Ci={id,iid,row,scope:row.closest('#bv-drawer')?'dr':'b'};
+  e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',iid);
+  setTimeout(()=>row.classList.add('is-dragging'),0);
+}
+function bvR5CiOver(e){
+  if(!_r5Ci)return;
+  const list=e.currentTarget,host=list.closest('[data-card]');
+  if(!host||host.dataset.card!==_r5Ci.id||(list.closest('#bv-drawer')?'dr':'b')!==_r5Ci.scope)return;
+  e.preventDefault();e.stopPropagation();e.dataTransfer.dropEffect='move';
+  let before=null;
+  for(const r of list.querySelectorAll('.r5-ci')){if(r===_r5Ci.row)continue;const bb=r.getBoundingClientRect();if(e.clientY<bb.top+bb.height/2){before=r;break;}}
+  if(before){if(_r5Ci.row.nextElementSibling!==before)list.insertBefore(_r5Ci.row,before);}
+  else if(list.lastElementChild!==_r5Ci.row)list.appendChild(_r5Ci.row);
+}
+function bvR5CiDrop(e,id){
+  if(!_r5Ci||_r5Ci.id!==id)return;e.preventDefault();e.stopPropagation();
+  const host=e.currentTarget.closest('[data-card]');const ctx=_r5Ctx(id);
+  if(ctx&&host){
+    const lists=_r5ListsW(ctx.card);const all=new Map(lists.flatMap(l=>(l.items||[]).map(i=>[i.id,i])));
+    host.querySelectorAll('.r5-cl').forEach(clEl=>{
+      const l=lists.find(x=>x.id===clEl.dataset.cl)||(clEl.dataset.cl==='_flat'?lists[0]:null);if(!l)return;
+      l.items=[...clEl.querySelectorAll('.r5-ci')].map(r=>all.get(r.dataset.ci)).filter(Boolean);
+    });
+    _r5Ci.done=true;_r5Changed(ctx);
+  }
+}
+function bvR5CiEnd(){
+  const d=_r5Ci;_r5Ci=null;if(!d)return;
+  d.row.draggable=false;d.row.classList.remove('is-dragging');
+  if(!d.done)_r5Rerender();
+}
+// Inputs inside draggable cards: switch the card's drag off while typing so text can be selected.
+document.addEventListener('focusin',e=>{const c=e.target.closest&&e.target.closest('#board-detail .bv-card');if(c&&/INPUT|TEXTAREA/.test(e.target.tagName))c.draggable=false;});
+document.addEventListener('focusout',e=>{const c=e.target.closest&&e.target.closest('#board-detail .bv-card');if(c)c.draggable=true;});
+document.addEventListener('mousedown',e=>{const t=e.target;if(t.matches&&t.matches('#board-detail .bv-card input,#board-detail .bv-card textarea')){const c=t.closest('.bv-card');if(c)c.draggable=false;}},true);
+
+function bvR5CardClick(id){
+  const ctx=_r5Ctx(id);if(!ctx||_bvDrag)return;
+  if(_r5Kind(ctx.card)==='job'&&_bvJob(ctx.card.jobRef))return bvOpenJob(ctx.card.jobRef);
+  bvOpenCard(id);
+}
+function _r5ClientRec(c){
+  if(c.clientId){const r=(clientsData||[]).find(x=>x.id===c.clientId);if(r)return r;}
+  const n=_r5Norm(c.clientRef);return(clientsData||[]).find(x=>x.name===c.clientRef)||(clientsData||[]).find(x=>_r5Norm(x.name)===n)||null;
+}
+function bvR5OpenClient(id){
+  if(_bvDrag)return;const ctx=_r5Ctx(id);if(!ctx)return;
+  const rec=_r5ClientRec(ctx.card);
+  if(!rec){toast(`${esc(ctx.card.clientRef||'This client')} isn’t in Clients — open the card to link it`,'info');bvOpenCard(id);return;}
+  bvCloseCard();_bvClosePop();navTo('jobs');if(typeof switchJobsTab==='function')switchJobsTab('clients');openClientDetail(rec.id);
+}
+function bvR5CardMenu(anchor,id){
+  if(_bvPopToggle(anchor))return;
+  const ctx=_r5Ctx(id);if(!ctx)return;const c=ctx.card,k=_r5Kind(c),A=_r5A(id);
+  _bvPop(anchor,`${_bvMI('ti-layout-sidebar-right','Open card',`bvOpenCard(${A})`)}
+    ${k==='client'?_bvMI('ti-building','Open client',`bvR5OpenClient(${A})`):''}
+    ${k==='job'&&c.jobRef?_bvMI('ti-arrow-up-right','Open job',`bvOpenJob(${_r5A(c.jobRef)})`):''}
+    ${k==='person'&&c.personRef&&people[c.personRef]?_bvMI('ti-checklist','Open their week',`currentPerson=${_r5A(c.personRef)};navTo('todo')`):''}
+    ${k==='note'?_bvMI('ti-pencil','Rename',`bvR5StartTitle(${A})`):''}
+    ${_bvMI(c.collapsed?'ti-chevron-down':'ti-chevron-up',c.collapsed?'Expand':'Collapse to one line',`bvR5Fold(${A})`)}
+    ${_bvMI('ti-checklist','Add checklist',`bvR5AddList(${A},'b')`)}
+    <div class="bv-mi-sep"></div>
+    ${_bvMI('ti-copy','Duplicate',`bvDuplicateCard(${A})`)}
+    ${_bvMI('ti-archive','Archive',`bvArchiveCard(${A})`)}
+    ${_bvMI('ti-trash','Delete',`bvDeleteCard(${A})`,'danger')}`,'right');
+}
+function bvR5StartTitle(id){_r5EditTitle=id;_r5Rerender('title-'+id);}
+// Column menus
+function bvR5AddMenu(anchor,colId,pos){
+  if(_bvPopToggle(anchor))return;const A=_r5A(colId),P=_r5A(pos||'bottom');
+  _bvPop(anchor,`<div class="bv-pop-sec">Add a card</div>
+    ${_bvMI('ti-building','Client card',`bvR5ClientPicker(${A},${P})`)}
+    ${_bvMI('ti-briefcase','Job card',`bvR5JobPicker(null,${A},${P})`)}
+    ${_bvMI('ti-note','Note card',`bvR5NewNote(${A},${P})`)}
+    ${_bvMI('ti-user','Person card',`bvR5PersonPicker(${A},${P})`)}
+    <div class="bv-mi-sep"></div>
+    ${_bvMI('ti-square-plus','Plain card',`bvQuickAdd(${A},${P})`)}
+    ${_bvMI('ti-list-check','Add several jobs…',`bvBulkAddJobs(${A})`)}`,pos==='top'?'right':'');
+}
+function _r5Anchor(colId,a){if(a&&a.isConnected)return a;const s=_bvSec(colId);return s?.querySelector('.bv-col-ft .bv-add-card')||s?.querySelector('.bv-col-h .bv-ibtn')||document.body;}
+function _r5Insert(colId,card,pos){
+  const b=_bvCur();const col=_bvColOf(b,colId);if(!col)return null;
+  if(col.collapsed)col.collapsed=false;
+  _bvLog(card,`Created in ${col.name}`);
+  if(pos==='top')col.cards.unshift(card);else col.cards.push(card);
+  _bvTouch(b,card);return card;
+}
+function bvR5JobPicker(anchor,colId,pos){
+  _bvClosePop();const b=_bvCur();
+  _bvPickerPop(_r5Anchor(colId,anchor),'Search jobs by number, name or client',q=>{
+    const on=new Set();(b?.columns||[]).forEach(c=>c.cards.forEach(x=>{if(x.jobRef&&!x.archived)on.add(String(x.jobRef));}));
+    let pool=jobs.filter(j=>j.status!=='archived');
+    if(q)pool=jobs.filter(j=>`${j.id} ${j.name} ${j.company}`.toLowerCase().includes(q));
+    pool=[...pool].sort((x,y)=>(parseInt(y.id)||0)-(parseInt(x.id)||0));
+    return pool.slice(0,50).map(j=>({on:on.has(String(j.id)),html:`<span class="bv-jid">${esc(j.id)}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(j.name)}<br><span class="bv-muted" style="font-size:11px">${esc(j.company||'')}</span></span>`,act:`bvR5AddJob(${_r5A(colId)},${_r5A(j.id)},${_r5A(pos||'bottom')})`}));
+  });
+}
+function bvR5AddJob(colId,jobId,pos){const c=_r5Insert(colId,_bvNewCard({kind:'job',jobRef:String(jobId)}),pos);if(c){_bvRenderBody();toast(`Job ${esc(jobId)} added`,'success');}}
+function bvR5ClientPicker(colId,pos){
+  _bvPickerPop(_r5Anchor(colId),'Search clients',(q,raw)=>{
+    const list=_r5AllClients().filter(c=>!q||c.toLowerCase().includes(q)).slice(0,60).map(c=>({html:`<i class="ti ti-building"></i><span>${esc(c)}</span>`,act:`bvR5AddClient(${_r5A(colId)},${_r5A(c)},${_r5A(pos||'bottom')})`}));
+    if(raw&&!list.length)list.push({html:`<i class="ti ti-plus"></i><span>Add “${esc(raw)}” as a card</span>`,act:`bvR5AddClient(${_r5A(colId)},${_r5A(raw)},${_r5A(pos||'bottom')})`});
+    return list;
+  });
+}
+function bvR5AddClient(colId,name,pos){if(_r5Insert(colId,_r5ClientCard(name),pos))_bvRenderBody();}
+function bvR5PersonPicker(colId,pos){
+  _bvPickerPop(_r5Anchor(colId),'Search team members',q=>_bvPeopleKeys().filter(k=>!q||(people[k].name||'').toLowerCase().includes(q)).map(k=>({html:`${_bvAv(k)}<span>${esc(people[k].name)}${people[k].role?` <span class="bv-muted">· ${esc(people[k].role)}</span>`:''}</span>`,act:`bvR5AddPerson(${_r5A(colId)},${_r5A(k)},${_r5A(pos||'bottom')})`})));
+}
+function bvR5AddPerson(colId,key,pos){const c=_r5Insert(colId,_r5PersonCard(key),pos);if(c)_r5Rerender('add-'+c.id+'-b');}
+function bvR5NewNote(colId,pos){const c=_r5Insert(colId,_r5NoteCard('',{_fresh:true}),pos);if(!c)return;_r5EditTitle=c.id;_r5Rerender('title-'+c.id);}
+function bvR5DeleteCol(colId){
+  const b=_bvCur();const col=_bvColOf(b,colId);if(!col)return;
+  const n=(col.cards||[]).length;
+  ccConfirm(`Delete the list “${esc(col.name)}”${n?` and its ${n} card${n!==1?'s':''}`:''}? This can’t be undone.`,()=>{
+    if(b.studio)(col.cards||[]).forEach(c=>{if(c.jobRef)(b.ignoreJobs=b.ignoreJobs||[]).push(String(c.jobRef));});
+    b.columns=b.columns.filter(c=>c.id!==colId);_bvTouch(b);_bvRenderBody();
+  },'Delete list',true);
+}
+
+// ── 6. Drawer: every card type opens; person/client get their own header; multi-checklists ─
+bvOpenCard=function(id){
+  if(_bvDrag)return;
+  const b=_bvCur();const loc=_bvLoc(b,id);if(!loc)return;
+  _bvClosePop();_bvOpenCardId=id;
+  let bg=document.getElementById('bv-drawer');
+  if(!bg){
+    bg=document.createElement('div');bg.id='bv-drawer';bg.className='modal-bg bv-drawer-bg';bg.innerHTML='<aside class="bv-drawer" role="dialog" aria-modal="true" aria-label="Card"></aside>';
+    bg.addEventListener('mousedown',e=>{if(e.target===bg)bvCloseCard();});
+    document.body.appendChild(bg);
+  }
+  bg.classList.add('on');
+  _bvRenderDrawer(true);
+  document.querySelectorAll('#board-detail .bv-card.is-open').forEach(el=>el.classList.remove('is-open'));
+  document.querySelector(`#board-detail .bv-card[data-card="${CSS.escape(id)}"]`)?.classList.add('is-open');
+};
+const _r5OrigDrawer=_bvDrawerHTML;
+_bvDrawerHTML=function(ctx){
+  let h=_r5OrigDrawer(ctx);const c=ctx.card,k=_r5Kind(c),A=_r5A(c.id);
+  const ckAt=h.indexOf('<div class="bv-sec"><div class="bv-sec-h">Checklist'),actAt=h.indexOf('<div class="bv-sec"><div class="bv-sec-h">Activity');
+  if(ckAt>0&&actAt>ckAt){
+    h=h.slice(0,ckAt)+`<div class="bv-sec"><div class="bv-sec-h">Checklists</div><div class="r5-dr-lists" data-card="${esc(c.id)}">${_r5ListsHTML(c,'dr')}<button class="r5-link" onclick="bvR5AddList(${A},'dr')"><i class="ti ti-checklist"></i>Add checklist</button></div></div>`+h.slice(actAt);
+  }
+  if(k==='person'||k==='client'){
+    const tAt=h.indexOf('<textarea class="bv-dr-title"'),dAt=h.indexOf('<div class="bv-sec"><div class="bv-sec-h">Description');
+    let head='';
+    if(k==='person'){
+      const P=_r5Person(c);
+      head=`<div class="r5-dr-h"><span class="r5-av" style="background:${esc(P.color)}" aria-hidden="true">${esc(P.ini)}</span><div class="r5-pm"><div class="r5-pname">${esc(P.name)}</div>
+        <input class="r5-inl" value="${esc(c.role||'')}" placeholder="${esc(P.recRole||'Add role or title')}" aria-label="Role" onchange="bvR5Set(${A},'role',this.value)" onkeydown="_r5Key(event)">
+        <input class="r5-inl" type="email" value="${esc(c.email||'')}" placeholder="${esc(P.recEmail||'Add email')}" aria-label="Email" onchange="bvR5Set(${A},'email',this.value)" onkeydown="_r5Key(event)">
+        ${P.email?`<div class="r5-mail"><a href="mailto:${esc(P.email)}"><i class="ti ti-mail"></i> Email ${esc(P.name.split(' ')[0])}</a></div>`:''}
+        ${P.linked?'':`<span class="bv-muted" style="font-size:11.5px;">Not linked to a team member</span>`}</div>
+        ${c.personRef&&people[c.personRef]?`<button class="d-action sm" onclick="bvCloseCard();currentPerson=${_r5A(c.personRef)};navTo('todo')"><i class="ti ti-checklist"></i> Week</button>`:''}</div>`;
+    }else{
+      const rec=_r5ClientRec(c);const act=jobs.filter(j=>j.company===c.clientRef&&j.status==='inplay').length;
+      head=`<div class="r5-dr-h"><span class="r5-cico" style="width:44px;height:44px;font-size:20px;border-radius:12px;"><i class="ti ti-briefcase"></i></span><div class="r5-pm"><div class="r5-pname">${esc(c.clientRef||'Client')}</div><span class="bv-muted">${rec?`${act} active job${act!==1?'s':''}`:'Not in Clients yet'}</span></div>
+        <button class="d-action sm" onclick="bvR5RelinkClient(this,${A})"><i class="ti ti-switch-horizontal"></i> Change</button>${rec?`<button class="d-action sm primary" onclick="bvR5OpenClient(${A})"><i class="ti ti-arrow-up-right"></i> Open client</button>`:''}</div>`;
+    }
+    if(tAt>0&&dAt>tAt)h=h.slice(0,tAt)+head+h.slice(dAt);
+    if(k==='person'){
+      h=h.replace('<div class="bv-sec"><div class="bv-sec-h">Description</div>',`<div class="bv-sec"><div class="bv-sec-h">Notes</div><div class="r5-notes" style="border:0;padding:0;margin:0 0 10px;">${_r5AddNoteHTML(c,'dr','Add a dated note')}</div>`)
+        .replace('placeholder="Add notes, links, the brief…"','placeholder="Birthday, anniversary, check-ins, reviews…"');
+    }
+  }
+  if(ctx.b.shared)h=h.replace('comments are saved in this browser only',`shared with ${visibilityLabel(ctx.b).toLowerCase()}`);
+  return h;
+};
+function visibilityLabel(b){return b.visibility==='admins'?'Admins only':'Everyone';}
+function bvR5RelinkClient(anchor,id){
+  _bvPickerPop(anchor,'Search clients',q=>_r5AllClients().filter(c=>!q||c.toLowerCase().includes(q)).slice(0,60).map(c=>({html:`<i class="ti ti-building"></i><span>${esc(c)}</span>`,act:`bvR5SetClient(${_r5A(id)},${_r5A(c)})`})));
+}
+function bvR5SetClient(id,name){const ctx=_r5Ctx(id);if(!ctx)return;const m=_r5MatchClient(name);ctx.card.clientRef=m?m.name:name;if(m&&m.id)ctx.card.clientId=m.id;else delete ctx.card.clientId;_r5Changed(ctx);}
+// Duplicates and clones must not inherit sharing
+const _r5OrigClone=_bvCloneBoard;
+_bvCloneBoard=function(src){const b=_r5OrigClone(src);delete b.shared;delete b.deleted;delete b.removedAt;delete b.visibilityAt;b.visibility='everyone';
+  (b.columns||[]).forEach(col=>(col.cards||[]).forEach(c=>(c.checklists||[]).forEach(l=>{l.id=uid('cl');(l.items||[]).forEach(i=>i.id=uid('ck'));})));return b;};
+
+// ── 7. New board: templates, import ────────────────────────────────────────────────────
+let _r5Imp=null;
+const _r5OrigOpenCreate=bvOpenCreate;
+bvOpenCreate=function(kind){
+  _r5Imp=null;
+  _r5OrigOpenCreate(kind);
+  const kinds=document.querySelector('#bv-create .bv-kinds');
+  if(kinds&&R5_ADMIN){
+    kinds.insertAdjacentHTML('beforeend',`<div class="bv-kinds-lbl">From a file</div><button type="button" class="bv-kind" data-kind="import" onclick="bvSelectKind('import')"><span class="bv-tpl-ico" style="--col:var(--bv-grey)"><i class="ti ti-file-import"></i></span><span><span class="bv-tpl-name">Import board</span><span class="bv-tpl-desc">From a board export (.json)${R5_PROD?' — shared, admins only by default':''}.</span></span></button>`);
+  }
+  if(R5_PROD&&!AUTH.admin)document.querySelector('#bv-create .bv-kind[data-kind="teamwip"]')?.classList.add('is-off');
+  const hint=document.getElementById('bv-nb-hint');
+  if(hint)hint.insertAdjacentHTML('afterend',`<div class="r5-imp" id="r5-imp" hidden><input type="file" accept=".json,application/json" aria-label="Board file" onchange="bvR5ReadImport(this.files[0])"><div class="r5-imp-sum" id="r5-imp-sum">Choose a board export. Nothing is created until you press Create board.</div></div>`);
+  if(kind)bvSelectKind(kind);
+};
+const _r5OrigSelectKind=bvSelectKind;
+bvSelectKind=function(k){
+  _r5OrigSelectKind(k);
+  const h=document.getElementById('bv-nb-hint'),imp=document.getElementById('r5-imp');
+  if(imp)imp.hidden=k!=='import';
+  const sh=R5_PROD?' Shared with the team — everyone sees the same board.':'';
+  if(h&&k==='bizwip')h.textContent=`Lists “Place for wider client opps” (a client card for each of ${R5_BIZ_CLIENTS.length} clients, linked to Clients) and “C&C roadmap + marketing”.${sh}`;
+  if(h&&k==='teamwip')h.textContent=(R5_PROD&&!AUTH.admin)?'Only admins can create Team WIP — it holds people notes.':`Lists “Performance” (a card per active team member with empty notes) and “Performance actions” (a note per month with an empty checklist).${R5_PROD?' Visible to admins only; you can change that from the board menu.':''}`;
+  if(h&&k==='import')h.textContent='';
+  if(h&&k==='bwip')h.textContent='Live jobs (In play, Paused, Complete) in one column per job status. Read-only, always current.';
+  if(h&&k==='twip')h.textContent='Live jobs in one column per person on the job (plus Unassigned). Read-only, always current.';
+};
+const _r5OrigSyncName=_bvSyncCreateName;
+_bvSyncCreateName=function(){
+  const inp=document.getElementById('bv-nb-name');const k=_bvCreateKind;
+  if(inp&&!_bvCreateNameTouched){
+    if(k==='bwip'){inp.value='Live jobs by status';return;}
+    if(k==='twip'){inp.value='Live jobs by person';return;}
+    if(k==='bizwip'||k==='teamwip'){inp.value=BV_TEMPLATES[k].name;return;}
+    if(k==='import'){inp.value=_r5Imp?.board?.name||'';return;}
+  }
+  _r5OrigSyncName();
+};
+const _r5OrigCreate=bvCreateBoard;
+bvCreateBoard=function(){
+  const k=_bvCreateKind;
+  if(k!=='bizwip'&&k!=='teamwip'&&k!=='import')return _r5OrigCreate();
+  const name=(document.getElementById('bv-nb-name')?.value||'').trim();
+  if(k==='import'){
+    if(!R5_ADMIN){toast('Only admins can import boards','warn');return;}
+    if(!_r5Imp||!_r5Imp.board){toast('Choose a board file first','warn');return;}
+    const b=_r5BuildImport(_r5Imp,name);
+    return _r5AddNewBoard(b,`Imported “${esc(b.name)}”`);
+  }
+  if(k==='teamwip'&&R5_PROD&&!AUTH.admin){toast('Only admins can create Team WIP','warn');return;}
+  const nm=name||BV_TEMPLATES[k].name;
+  const ex=boardsList.find(b=>b.type==='custom'&&!b.removedAt&&String(b.name).trim().toLowerCase()===nm.toLowerCase());
+  if(ex){document.getElementById('bv-create')?.remove();openBoard(ex.id);toast(`“${esc(ex.name)}” already exists — opening it`,'info');return;}
+  _bvJM=new Map(jobs.map(j=>[String(j.id),j]));
+  const b=k==='bizwip'?_r5BuildBizWip(nm):_r5BuildTeamWip(nm);
+  _r5AddNewBoard(b,`${esc(b.name)} created`);
+};
+function _r5AddNewBoard(b,msg){
+  if(R5_PROD){b.shared=true;if(!AUTH.admin)b.visibility='everyone';b.visibilityAt=Date.now();}
+  else delete b.visibility;
+  boardsList.push(b);saveBoardsData();
+  if(R5_PROD){R5S.snap.delete(b.id);_r5Stamp();R5S.queue.add(b.id);_r5Flush();}
+  document.getElementById('bv-create')?.remove();
+  openBoard(b.id);toast(msg,'success');
+}
+// Import: {format:'cc-board-import', v:1, board:{name, visibility, columns:[{name, color?, cards:[…]}]}}
+function bvR5ReadImport(file){
+  const sum=document.getElementById('r5-imp-sum');_r5Imp=null;
+  if(!file)return;
+  if(file.size>5e6){sum.innerHTML='<span class="r5-imp-err">That file is too big for a board (over 5 MB).</span>';return;}
+  const rd=new FileReader();
+  rd.onload=()=>{
+    let j;try{j=JSON.parse(String(rd.result||''));}catch(e){sum.innerHTML='<span class="r5-imp-err">That isn’t a JSON file.</span>';return;}
+    const bd=j&&j.format==='cc-board-import'&&j.board;
+    if(!bd||!Array.isArray(bd.columns)){sum.innerHTML='<span class="r5-imp-err">Not a board export — expected format “cc-board-import”.</span>';return;}
+    _r5Imp=j;
+    const cards=bd.columns.flatMap(c=>Array.isArray(c.cards)?c.cards:[]);
+    const by={};cards.forEach(c=>{const t=['person','client','job'].includes(c.type)?c.type:'note';by[t]=(by[t]||0)+1;});
+    const linked=cards.filter(c=>c.type==='person'&&_r5FindPerson(c)).length,pc=by.person||0;
+    const words={person:'person',client:'client',job:'job',note:'note'};
+    sum.innerHTML=`<b>${esc(bd.name||'Untitled board')}</b><br>${bd.columns.length} list${bd.columns.length!==1?'s':''} · ${cards.length} card${cards.length!==1?'s':''}${cards.length?' ('+Object.entries(by).map(([k,n])=>`${n} ${words[k]}${n!==1?'s':''}`).join(', ')+')':''}${pc?`<br>${linked} of ${pc} people matched to team members`:''}${R5_PROD?`<br>Will be shared · ${bd.visibility==='everyone'?'everyone can see it':'admins only'}`:'<br>Saved in this browser only (local)'}`;
+    _bvCreateNameTouched=false;_bvSyncCreateName();
+  };
+  rd.readAsText(file);
+}
+function _r5FindPerson(c){
+  if(c.personRef&&(people[c.personRef]||_r5StUser(c.personRef)))return c.personRef;   // our own export
+  const em=String(c.email||'').trim().toLowerCase();
+  if(em){const u=Object.values(stUsersById||{}).find(u=>u.email&&u.email.toLowerCase()===em&&u.key);if(u)return u.key;
+    const k=Object.keys(people).find(k=>String(people[k].email||'').toLowerCase()===em);if(k)return k;}
+  const n=_r5Norm(c.title||c.name);if(!n)return null;
+  const keys=Object.keys(people);
+  return keys.find(k=>!people[k]._archived&&_r5Norm(people[k].name)===n)||keys.find(k=>_r5Norm(people[k].name)===n)
+    ||(!n.includes(' ')&&(()=>{const act=keys.filter(k=>!people[k]._archived&&_r5Norm(people[k].name).split(' ')[0]===n);if(act.length===1)return act[0];
+      const all=keys.filter(k=>_r5Norm(people[k].name).split(' ')[0]===n);return!act.length&&all.length===1?all[0]:null;})())||null;
+}
+function _r5ImpLists(c){
+  if(Array.isArray(c.checklists))return c.checklists.map(l=>({id:uid('cl'),title:String(l.title||''),items:(Array.isArray(l.items)?l.items:[]).map(i=>({id:uid('ck'),text:String(i.text||''),done:!!i.done})).filter(i=>i.text)}));
+  if(Array.isArray(c.checklist)&&c.checklist.length)return[{id:uid('cl'),title:String(c.checklistTitle||''),items:c.checklist.map(i=>({id:uid('ck'),text:String(typeof i==='string'?i:i.text||''),done:!!(i&&i.done)})).filter(i=>i.text)}];
+  return[];
+}
+function _r5BuildImport(j,name){
+  const bd=j.board,t=Date.now();
+  const b={id:uid('b'),v:2,type:'custom',template:'import',name:name||String(bd.name||'Imported board'),createdAt:t,updatedAt:t,openedAt:t,sort:'manual',
+    visibility:bd.visibility==='everyone'?'everyone':'admins'};
+  b.columns=bd.columns.map((col,ci)=>{
+    const c=_bvNewCol(String(col.name||'Untitled list'),BV_COLORS.includes(col.color)?col.color:BV_COLORS[(ci+1)%BV_COLORS.length]);
+    c.cards=(Array.isArray(col.cards)?col.cards:[]).map(src=>{
+      const base={desc:String(src.desc||''),checklists:_r5ImpLists(src),...(src.collapsed?{collapsed:true}:{}),...(Array.isArray(src.labels)?{labels:src.labels.map(String)}:{}),...(src.due?{due:String(src.due).slice(0,10)}:{})};
+      let card;
+      if(src.type==='person'){
+        const key=_r5FindPerson(src);
+        card=_bvNewCard({type:'person',...(key?{personRef:key}:{}),title:String(src.title||''),...base});
+        if(src.role)card.role=String(src.role);if(src.email)card.email=String(src.email);
+      }else if(src.type==='client'){
+        card=_r5ClientCard(src.clientName||src.title,base);
+      }else if(src.type==='job'||src.jobNumber){
+        const num=String(src.jobNumber||'').trim();
+        card=_bvNewCard(num?{kind:'job',jobRef:num,title:String(src.title&&!jobs.some(x=>String(x.id)===num)?src.title:''),...base}:{kind:'note',title:String(src.title||''),...base});
+      }else card=_bvNewCard({kind:'note',title:String(src.title||''),...base});
+      _r5Flat(card);_bvLog(card,'Imported');
+      return card;
+    });
+    return c;
+  });
+  return b;
+}
+// Export: the same format, plus checklist headings (read back by Import)
+function bvR5Export(id){
+  const b=_bvBoard(id);if(!b)return;
+  const out={format:'cc-board-import',v:1,source:'C&C Boards export',exportedAt:new Date().toISOString(),board:{name:b.name,visibility:b.visibility||'everyone',columns:(b.columns||[]).map(col=>({name:col.name,color:col.color,
+    cards:(col.cards||[]).filter(c=>!c.archived).map(c=>{
+      const k=_r5Kind(c),o={type:k==='note'?'card':k==='job'?'job':k==='card'?(c.jobRef?'job':'card'):k};
+      const title=k==='person'?_r5Person(c).name:k==='client'?(c.clientRef||''):(c.title||'');
+      if(title)o.title=title;if(c.desc)o.desc=c.desc;
+      if(k==='person'){const P=_r5Person(c);if(P.role)o.role=P.role;if(P.email)o.email=P.email;if(c.personRef)o.personRef=c.personRef;}
+      if(k==='client')o.clientName=c.clientRef||'';
+      if(c.jobRef)o.jobNumber=String(c.jobRef);
+      if(c.collapsed)o.collapsed=true;
+      const ls=_r5Lists(c);
+      if(ls.length===1&&!ls[0].title)o.checklist=(ls[0].items||[]).map(i=>({text:i.text,done:!!i.done}));
+      else if(ls.length)o.checklists=ls.map(l=>({title:l.title||'',items:(l.items||[]).map(i=>({text:i.text,done:!!i.done}))}));
+      if((c.labels||[]).length)o.labels=c.labels;if(c.due)o.due=c.due;
+      return o;
+    })}))}};
+  const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=(String(b.name).replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'').toLowerCase()||'board')+'.json';
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+  toast('Board exported','success');
+}
+
+// ── 8. Shared boards (production only) ─────────────────────────────────────────────────
+const R5S={status:'idle',queue:new Set(),inflight:new Set(),removed:new Map(),snap:new Map(),timer:null,retryTimer:null,retry:0,err:'',lastPull:0,pulling:null};
+function _r5Fp(b){
+  const cols=new Map(),cards=new Map();
+  (b.columns||[]).forEach(col=>{
+    const{cards:cc,updatedAt:_u,...rest}=col;
+    cols.set(col.id,JSON.stringify(rest)+'|'+(cc||[]).map(k=>k.id).join(','));
+    (cc||[]).forEach(k=>{const{updatedAt:_k,...kr}=k;cards.set(k.id,{j:JSON.stringify(kr),col:col.id});});
+  });
+  const{columns:_c,openedAt:_o,updatedAt:_b,deleted:_d,shared:_s,...meta}=b;
+  return{cols,cards,meta:JSON.stringify(meta)};
+}
+// Stamp what changed since the last look: card/column updatedAt, tombstones for removed ids.
+function _r5Stamp(){
+  const now=Date.now();
+  boardsList.forEach(b=>{
+    if(!b||!b.shared)return;
+    const prev=R5S.snap.get(b.id),cur=_r5Fp(b);
+    R5S.snap.set(b.id,cur);
+    if(!prev)return;
+    let ch=prev.meta!==cur.meta;
+    const cardObj=new Map();(b.columns||[]).forEach(col=>(col.cards||[]).forEach(k=>cardObj.set(k.id,k)));
+    cur.cards.forEach((v,id)=>{const p=prev.cards.get(id);if(!p||p.j!==v.j||p.col!==v.col){ch=true;const k=cardObj.get(id);if(k)k.updatedAt=Math.max(now,(k.updatedAt||0)+1);}});
+    cur.cols.forEach((v,id)=>{const p=prev.cols.get(id);if(p!==v){ch=true;const pp=p&&p.split('|')[0],vv=v.split('|')[0];if(pp!==vv){const col=_bvColOf(b,id);if(col)col.updatedAt=now;}}});
+    prev.cards.forEach((_,id)=>{if(!cur.cards.has(id)){(b.deleted=b.deleted||{})[id]=now;ch=true;}});
+    prev.cols.forEach((_,id)=>{if(!cur.cols.has(id)){(b.deleted=b.deleted||{})[id]=now;ch=true;}});
+    if(ch){b.updatedAt=Math.max(now,b.updatedAt||0);R5S.queue.add(b.id);}
+  });
+}
+function _r5PersistQueue(){try{localStorage.setItem('cc_boards_dirty',JSON.stringify([...R5S.queue]));}catch(e){}}
+const _r5OrigSave=saveBoardsData;
+saveBoardsData=function(){
+  if(R5_PROD)_r5Stamp();
+  _r5OrigSave();
+  if(R5_PROD&&R5S.queue.size){_r5PersistQueue();_r5Schedule();}
+};
+function _r5Schedule(){
+  clearTimeout(R5S.timer);
+  if(R5S.status!=='saving')_r5SetStatus('pending');
+  R5S.timer=setTimeout(_r5Flush,800);
+}
+async function _r5Req(method,body){
+  const r=await fetch('/api/boards',{method,credentials:'same-origin',cache:'no-store',headers:body?{'content-type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
+  let j={};try{j=await r.json();}catch(e){}
+  if(r.status===401){try{_authSignedOut();}catch(e){}}
+  if(!r.ok){const e=new Error(j.error||('Request failed ('+r.status+')'));e.status=r.status;throw e;}
+  return j;
+}
+function _r5Clean(b){const o=JSON.parse(JSON.stringify(b));delete o.openedAt;delete o.shared;
+  (o.columns||[]).forEach(c=>(c.cards||[]).forEach(k=>{delete k._fresh;}));return o;}
+async function _r5Flush(){
+  if(!R5_PROD)return;
+  clearTimeout(R5S.timer);clearTimeout(R5S.retryTimer);
+  const ids=[...R5S.queue].filter(id=>!R5S.inflight.has(id));
+  if(!ids.length&&!R5S.removed.size){if(!R5S.inflight.size)_r5SetStatus(R5S.err?'error':'saved');return;}
+  _r5SetStatus('saving');
+  let failed=null;
+  for(const id of ids){
+    const b=_bvBoard(id);if(!b||!b.shared){R5S.queue.delete(id);continue;}
+    const sentAt=b.updatedAt;R5S.queue.delete(id);R5S.inflight.add(id);
+    try{
+      const j=await _r5Req('PUT',{board:_r5Clean(b)});
+      const cur=_bvBoard(id);
+      if(cur&&cur.updatedAt===sentAt&&!R5S.queue.has(id))_r5Apply(j.board);
+    }catch(e){
+      if(e.status===403){toast(`Couldn’t save “${esc(b.name)}”: ${esc(e.message)}`,'warn');}
+      else{failed=e;R5S.queue.add(id);}
+    }finally{R5S.inflight.delete(id);}
+  }
+  for(const[id,b]of[...R5S.removed]){
+    try{await _r5Req('PUT',{board:_r5Clean(b)});R5S.removed.delete(id);}catch(e){if(e.status===403||e.status===400)R5S.removed.delete(id);else failed=e;}
+  }
+  _r5PersistQueue();
+  if(failed){
+    R5S.err=failed.message||'error';
+    _r5SetStatus(navigator.onLine===false?'offline':'error');
+    R5S.retry=Math.min(R5S.retry+1,5);
+    R5S.retryTimer=setTimeout(_r5Flush,[0,5,15,30,60,120][R5S.retry]*1000);
+  }else{
+    R5S.err='';R5S.retry=0;
+    if(R5S.queue.size)_r5Schedule();else _r5SetStatus('saved');
+  }
+}
+function bvR5Retry(){R5S.retry=0;_r5Flush();}
+// Put a server copy into boardsList (keeps this browser's openedAt). Re-render if it changed.
+function _r5Apply(sb){
+  if(!sb||!sb.id)return false;
+  const i=boardsList.findIndex(b=>b&&b.id===sb.id),local=i>=0?boardsList[i]:null;
+  const nb={...sb,shared:true,openedAt:local?.openedAt||0};
+  if(!nb.v)nb.v=2;
+  const same=local&&JSON.stringify(_r5Clean(local))===JSON.stringify(_r5Clean(nb));
+  if(!same){if(i>=0)boardsList[i]=nb;else boardsList.push(nb);}
+  R5S.snap.set(nb.id,_r5Fp(same?local:nb));
+  if(!same){_r5OrigSave();_r5Redraw(nb.id);}
+  return!same;
+}
+function _r5Redraw(id){
+  const view=document.getElementById('view-boards');if(!view||view.classList.contains('hidden'))return;
+  if(_r5Editing()||_r5Ci||_bvDrag){R5S.redraw=true;return;}
+  if(activeBoardId===id){_bvRenderBoard();if(document.getElementById('bv-drawer'))_bvRenderDrawer();}
+  else if(!activeBoardId)_r5RedrawLanding();
+}
+function _r5RedrawLanding(){if(!activeBoardId&&document.getElementById('boards-landing')?.style.display!=='none'){_r5OrigRenderList();_r5Landing();}}
+document.addEventListener('focusout',()=>{if(R5S.redraw)setTimeout(()=>{if(R5S.redraw&&!_r5Editing()){R5S.redraw=false;if(activeBoardId)_bvRenderBoard();else _r5RedrawLanding();}},250);});
+async function _r5Pull(force){
+  if(!R5_PROD)return;
+  if(R5S.pulling)return R5S.pulling;
+  if(!force&&Date.now()-R5S.lastPull<10000)return;
+  R5S.lastPull=Date.now();
+  R5S.pulling=(async()=>{
+    try{
+      const j=await _r5Req('GET');
+      const seen=new Set();let landingChanged=false;
+      (j.boards||[]).forEach(sb=>{
+        seen.add(sb.id);
+        if(R5S.queue.has(sb.id)||R5S.inflight.has(sb.id)||R5S.removed.has(sb.id))return;
+        const local=_bvBoard(sb.id);
+        if(local&&local.shared&&(local.updatedAt||0)>(sb.updatedAt||0)){R5S.queue.add(sb.id);return;}
+        if(activeBoardId===sb.id&&(_r5Editing()||_r5Ci||_bvDrag)){R5S.lastPull=0;return;}
+        if(_r5Apply(sb))landingChanged=true;
+      });
+      const gone=boardsList.filter(b=>b&&b.shared&&!seen.has(b.id)&&!R5S.queue.has(b.id)&&!R5S.inflight.has(b.id));
+      if(gone.length){
+        boardsList=boardsList.filter(b=>!gone.includes(b));gone.forEach(b=>R5S.snap.delete(b.id));_r5OrigSave();landingChanged=true;
+        if(gone.some(b=>b.id===activeBoardId)){toast('That board was removed or is no longer shared with you','info');closeBoardDetail();}
+      }
+      if(landingChanged)_r5RedrawLanding();
+      if(R5S.queue.size)_r5Schedule();
+      if(R5S.status==='offline'||R5S.status==='error'){if(!R5S.queue.size){R5S.err='';_r5SetStatus('saved');}}
+    }catch(e){if(e.status!==401){R5S.err=e.message;if(!R5S.queue.size)_r5SetStatus(navigator.onLine===false?'offline':'loadfail');}}
+    finally{R5S.pulling=null;}
+  })();
+  return R5S.pulling;
+}
+function _r5SyncHTML(b){
+  if(!R5_PROD||!b||b.type!=='custom')return'';
+  if(!b.shared)return`<span class="r5-sync" id="r5-sync"><i class="ti ti-device-laptop"></i>Only in this browser<button onclick="bvR5Share(${_r5A(b.id)})">Share with the team</button></span>`;
+  const vis=b.visibility==='admins'?`<i class="ti ti-lock" title="Admins only"></i>Admins only · `:`<i class="ti ti-users" title="Shared with everyone"></i>`;
+  const s=R5S.status;
+  const st=s==='saving'||s==='pending'?`<i class="ti ti-loader-2 r5-spin"></i>Saving…`
+    :s==='error'?`<i class="ti ti-cloud-off"></i>Not saved<button onclick="bvR5Retry()">Retry</button>`
+    :s==='offline'?`<i class="ti ti-wifi-off"></i>Offline — changes kept here<button onclick="bvR5Retry()">Retry</button>`
+    :s==='loadfail'?`<i class="ti ti-cloud-off"></i>Couldn’t refresh<button onclick="_r5Pull(true)">Retry</button>`
+    :'Saved';
+  return`<span class="r5-sync${s==='error'||s==='offline'||s==='loadfail'?' err':''}" id="r5-sync" role="status" aria-live="polite">${vis}${st}</span>`;
+}
+function _r5SetStatus(s){R5S.status=s;const el=document.getElementById('r5-sync');const b=_bvCur();if(el&&b)el.outerHTML=_r5SyncHTML(b);}
+function bvR5Share(id){
+  const b=_bvBoard(id);if(!b||b.shared)return;
+  ccConfirm(`Share “${esc(b.name)}” with the team? It moves from this browser to the shared space: everyone signed in sees it and edits go to everyone.`,()=>{
+    b.shared=true;b.visibility='everyone';b.visibilityAt=Date.now();b.updatedAt=Date.now();
+    R5S.snap.delete(b.id);_r5OrigSave();_r5Stamp();R5S.queue.add(b.id);_r5Flush();
+    if(activeBoardId===id)_bvRenderBoard();else renderBoardsList();
+    toast(`“${esc(b.name)}” is shared with the team`,'success');
+  },'Share board');
+}
+function bvR5SetVisibility(id,v){
+  const b=_bvBoard(id);if(!b||!b.shared||!AUTH||!AUTH.admin)return;
+  if((b.visibility||'everyone')===v)return;
+  b.visibility=v;b.visibilityAt=Date.now();_bvTouch(b);
+  if(activeBoardId===id)_bvRenderBoard();else renderBoardsList();
+  toast(v==='admins'?'Only admins can see this board now':'Everyone signed in can see this board now','success');
+}
+// Board menu: share / visibility / export
+const _r5OrigBoardMenu=bvBoardMenu;
+bvBoardMenu=function(anchor,id,fromTile){
+  if(_bvPopToggle(anchor))return;
+  _r5OrigBoardMenu(anchor,id,fromTile);
+  const p=document.getElementById('bv-pop'),b=_bvBoard(id);if(!p||!b||b.type!=='custom')return;
+  const A=_r5A(id);let extra='';
+  if(R5_PROD&&!b.shared)extra+=_bvMI('ti-users','Share this board with the team',`bvR5Share(${A})`);
+  if(R5_PROD&&b.shared&&AUTH.admin){
+    const v=b.visibility||'everyone';
+    extra+=`<div class="bv-pop-sec">Who can see it</div><button class="bv-mi${v==='everyone'?' on':''}" onclick="_bvClosePop();bvR5SetVisibility(${A},'everyone')"><i class="ti ti-users"></i><span>Everyone</span><i class="ti ti-check bv-mi-ck"></i></button><button class="bv-mi${v==='admins'?' on':''}" onclick="_bvClosePop();bvR5SetVisibility(${A},'admins')"><i class="ti ti-lock"></i><span>Admins only</span><i class="ti ti-check bv-mi-ck"></i></button><div class="bv-mi-sep"></div>`;
+  }
+  extra+=_bvMI('ti-download','Export board',`bvR5Export(${A})`);
+  p.insertAdjacentHTML('afterbegin',extra+'<div class="bv-mi-sep"></div>');
+  // keep it on screen after growing
+  const r=p.getBoundingClientRect();if(r.bottom>innerHeight-12)p.style.top=Math.max(12,innerHeight-12-r.height)+'px';
+};
+// Deleting a shared board removes it for everyone (kept server-side as a tombstone).
+const _r5OrigDeleteBoard=bvDeleteBoard;
+bvDeleteBoard=function(id){
+  const b=_bvBoard(id);if(!b)return;
+  if(!b.shared)return _r5OrigDeleteBoard(id);
+  ccConfirm(`Delete “${esc(b.name)}” for everyone? Its lists and cards are removed for the whole team — archive it instead if you might want it back.`,()=>{
+    const t=Date.now();R5S.removed.set(id,{...JSON.parse(JSON.stringify(b)),removedAt:t,updatedAt:t});
+    R5S.queue.delete(id);boardsList=boardsList.filter(x=>x.id!==id);R5S.snap.delete(id);_r5OrigSave();_r5Flush();
+    if(activeBoardId===id)closeBoardDetail();else renderBoardsList();
+    toast('Board deleted for everyone','info');
+  },'Delete board',true);
+};
+// Header status + landing tile badges
+const _r5OrigRenderBoard=_bvRenderBoard;
+_bvRenderBoard=function(){
+  _r5OrigRenderBoard();
+  const b=_bvCur();const tag=document.querySelector('#bv-head .bv-tag');
+  if(b&&tag)tag.insertAdjacentHTML('afterend',_r5SyncHTML(b));
+};
+const _r5OrigTile=_bvTileHTML;
+_bvTileHTML=function(b){
+  let h=_r5OrigTile(b);
+  if(R5_PROD&&b.type==='custom'){
+    const ic=b.shared?(b.visibility==='admins'?`<span class="r5-tile-ic" title="Shared · admins only"><i class="ti ti-lock"></i></span>`:`<span class="r5-tile-ic" title="Shared with the team"><i class="ti ti-users"></i></span>`):`<span class="r5-tile-ic" title="Only in this browser"><i class="ti ti-device-laptop"></i></span>`;
+    h=h.replace('<button class="bv-ibtn sm" title="Board options"',ic+'<button class="bv-ibtn sm" title="Board options"');
+  }
+  return h;
+};
+const _r5OrigRenderList=renderBoardsList;
+renderBoardsList=function(){_r5OrigRenderList();_r5Landing();_r5Pull();};
+// "Start from Streamtime WIP": the hand-made WIP boards (templates) + import, up front on the landing.
+function _r5Landing(){
+  const land=document.getElementById('boards-landing');if(!land||land.querySelector('.r5-wip'))return;
+  const lbl=[...land.querySelectorAll('.bv-sec-lbl')].find(el=>/template/i.test(el.textContent));if(!lbl)return;
+  const find=n=>boardsList.find(b=>b&&b.type==='custom'&&!b.archived&&String(b.name).trim().toLowerCase()===n.toLowerCase());
+  const biz=find('Business WIP'),team=find('Team WIP');
+  const teamOff=R5_PROD&&!AUTH.admin&&!team;
+  const btn=(ex,k,icon,label,sub,off)=>`<button class="r5-wip-b${off?' is-off':''}" ${off?'disabled title="Only admins can create Team WIP"':''} onclick="${ex?`openBoard(${_r5A(ex.id)})`:`bvOpenCreate('${k}')`}"><i class="ti ${icon}"></i><span><b>${ex?'Open ':''}${esc(label)}</b><small>${esc(sub)}</small></span><i class="ti ti-${ex?'arrow-right':'plus'} r5-wip-go"></i></button>`;
+  lbl.insertAdjacentHTML('beforebegin',`<section class="r5-wip" aria-label="Streamtime WIP boards">
+    <div class="r5-wip-hd"><span class="r5-cico" style="background:color-mix(in srgb,var(--bv-pink) 14%,transparent);color:var(--bv-pink)"><i class="ti ti-layout-kanban"></i></span><div><div class="r5-wip-t">Start from Streamtime WIP</div><div class="r5-wip-s">Your hand-made WIP boards: client opportunities, people notes and monthly actions${R5_PROD?', shared with the team':''}.</div></div></div>
+    <div class="r5-wip-row">${btn(biz,'bizwip','ti-briefcase','Business WIP','Client opps + C&C roadmap')}${btn(team,'teamwip','ti-users-group','Team WIP','Person cards with notes',teamOff)}${R5_ADMIN?btn(null,'import','ti-file-import','Import a board','From a .json export'):''}</div></section>`);
+}
+const _r5OrigOpenBoard=openBoard;
+openBoard=function(id){_r5EditDesc=null;_r5EditTitle=null;_r5OrigOpenBoard(id);const b=_bvBoard(id);if(b&&b.shared)_r5Pull();};
+if(R5_PROD){
+  try{JSON.parse(localStorage.getItem('cc_boards_dirty')||'[]').forEach(id=>{if(_bvBoard(id)?.shared)R5S.queue.add(id);});}catch(e){}
+  boardsList.forEach(b=>{if(b&&b.shared)R5S.snap.set(b.id,_r5Fp(b));});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){_r5Pull();if(R5S.queue.size)_r5Flush();}});
+  window.addEventListener('online',()=>{if(R5S.queue.size||R5S.removed.size)bvR5Retry();_r5Pull(true);});
+  window.addEventListener('pagehide',()=>{if(R5S.queue.size)_r5PersistQueue();});
+  setTimeout(()=>{_r5Pull(true);if(R5S.queue.size)_r5Flush();},1200);
+}
+</script>
 <style id="auth-ui-css">
 /* ═══ Sign-in UI: avatar menu, change password, Settings → Team → Access. ds-v3 tokens only. ═══ */
 .au-menu{position:fixed;z-index:9000;min-width:232px;max-width:300px;border-radius:14px;border:1px solid var(--border);background:var(--white);box-shadow:var(--e-3);padding:6px;animation:dsPop var(--d-2) var(--ease-out);}
