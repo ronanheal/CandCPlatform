@@ -20614,6 +20614,13 @@ textarea.tm-title-inp.is-scroll{overflow-y:auto;}
 #todo-modal:focus-within .tm-title-inp:focus+.tm-title-hint{opacity:1;}
 .tm-title-hint kbd{font:500 11px var(--font);color:var(--muted);padding:0 5px;border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;background:var(--surface-2);}
 .tm-title-hint kbd+kbd{margin-left:-2px;}
+/* ── To Do: equal breathing room either side of the Done divider ──────────────────────────
+   Planned cards sit on the divider (flex-end), so the gap above it is .day-todo's bottom
+   padding; the gap below is .day-done's top padding minus the 22px rail. 8px each side.
+   The to-do zone keeps 12px of vertical padding in total (ZONE_PAD_PX) and the done zone
+   only gets roomier than DONE_PAD_PX assumes, so no fit / bucket maths changes. */
+.day-todo{padding-top:4px!important;padding-bottom:8px!important;}
+.day-done{padding-top:30px!important;}
 /* Line breaks typed into a title show as line breaks (cards stay clamped) */
 .tc-title,.tt-title,.fli-title{white-space:pre-line;}
 </style>
