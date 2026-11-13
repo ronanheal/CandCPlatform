@@ -4163,6 +4163,14 @@ function _getStWeekAssignments(personKey,offset){
   });
   return result;
 }
+// Some old archived jobs have no number field; their number is the start of the name
+// ("4445 Supply of…"). Use it unless another job already owns that number, else the ST id.
+let _stTakenNums=new Set();
+function _stJobNum(j){
+  if(j.number)return String(j.number);
+  const m=/^\[?(\d{3,5})\]?(?!\d)/.exec(j.name||'');
+  return m&&!_stTakenNums.has(m[1])?m[1]:String(j.id);
+}
 function _mapStJob(j){
   const statusMap={'In Play':'inplay','Complete':'complete','Paused':'inplay','Archived':'archived'};
   const sName=j.jobStatus?.name||'In Play';
@@ -4181,7 +4189,7 @@ function _mapStJob(j){
   const hPct=plannedMins>0?Math.round(loggedMins/plannedMins*100):0;
   const bPct=plannedSell>0?Math.round(sellUsed/plannedSell*100):0;
   return{
-    id:String(j.number||j.id),
+    id:_stJobNum(j),
     _stId:j.id,
     _streamtime:true,
     name:j.name||'',
@@ -4326,6 +4334,7 @@ async function initStreamtime(silent){
     // Jobs
     if(jobsRes.ok){
       const raw=await jobsRes.json();
+      _stTakenNums=new Set(raw.map(j=>j.number).filter(Boolean).map(String));
       jobs=raw.map(_mapStJob);
       // Streamtime has a few duplicate job numbers (archived 2023 retainers 4474/4483/4438).
       // id = number, so the second of each pair couldn't be opened — give it a suffixed id (L14).

@@ -35,6 +35,7 @@ from pathlib import Path
 
 import logged_times_sweep as lts  # scripts/ is sys.path[0] when run as scripts/streamtime_sync.py
 from jobs_slim import slim_job
+from record_slim import slim_record
 
 API_BASE = "https://api.streamtime.net/v1"
 ST_SUBDOMAIN = "https://contentco.app.streamtime.net/api/v1"
@@ -334,14 +335,25 @@ sweep_state_path = OUT_DIR / "logged_times_sweep.json"
 lt_by_id = {lt["id"]: lts.slim(lt) for lt in prev_logged_times if lt.get("id") is not None}
 lts.probe_recent_queries(API_BASE, HEADERS, sweep_state_path, errors)
 lts.recent(API_BASE, HEADERS, sweep_state_path, lt_by_id, errors)
-sweep_state = lts.sweep(API_BASE, HEADERS, sweep_state_path, lt_by_id, max_pages=40, errors=errors)
+sweep_state = lts.sweep(API_BASE, HEADERS, sweep_state_path, lt_by_id, max_pages=40, errors=errors,
+                        prune_scope=lts.live_job_scope(fresh_jobs))
+# Second, slower pass over the last ~13 months on EVERY job status: view 8's default scope
+# skips archived jobs, so time on a job archived before the main sweep reached it was never
+# fetched (~200 h Aug-Nov 2026). ~45k entries / ~100 pages, a few pages an hour.
+archive_state = lts.sweep_archive(API_BASE, HEADERS, OUT_DIR / "logged_times_sweep_all.json", lt_by_id,
+                                  max_pages=lts.ARCHIVE_PAGES_PER_CYCLE, errors=errors)
 logged_times = list(lt_by_id.values())
 # Note: search view 10 = quotes, view 11 = invoices (do not swap these)
-quotes       = search(10)
-invoices     = search(11)
+# Views 9/10/11 only return records on NON-archived jobs unless the query says otherwise, and
+# almost every job ends up Archived — so an unfiltered fetch dropped 98% of invoices (46 of
+# 2,457), including $180k of unpaid ones, the moment their job was archived. Same filter as
+# view 7. See docs/review/2026-11-data-reconciliation.md. Slimmed (record_slim.py) so the
+# ~50x bigger lists stay cheap for the browser to download.
+quotes       = [slim_record(r) for r in search(10, query=ALL_STATUSES)]
+invoices     = [slim_record(r) for r in search(11, query=ALL_STATUSES)]
 companies    = search(12)
 contacts     = search(13)
-expenses     = search(9)   # view 9 = logged expenses (cost entries against jobs)
+expenses     = [slim_record(r) for r in search(9, query=ALL_STATUSES)]  # view 9 = logged expenses
 
 # View 17 = job_item_users: per-person planned assignments against active job items.
 # Filter to active jobs only (~2500 records vs 28k total) using underscore-separated field name.
@@ -406,6 +418,9 @@ meta = {
         "last_complete_pass_at", "passes_completed", "total", "offset",
         "skipped_pages_last_pass", "last_cycle_stop")},
     "logged_times_recent_query": sweep_state.get("recent_query"),
+    "logged_times_archive_sweep": {k: archive_state.get(k) for k in (
+        "last_complete_pass_at", "passes_completed", "total", "offset", "since",
+        "last_cycle_stop", "last_pruned")},
     "errors": errors,
 }
 (OUT_DIR / "sync_meta.json").write_text(json.dumps(meta, indent=2))

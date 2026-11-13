@@ -138,7 +138,8 @@ prev_assignments = load_existing("job_assignments.json")
 _sweep_state = OUT_DIR / "logged_times_sweep.json"
 _by_id = {lt["id"]: lts.slim(lt) for lt in prev_logged_times if lt.get("id") is not None}
 lts.recent(API_BASE, HEADERS, _sweep_state, _by_id, errors)
-lts.sweep(API_BASE, HEADERS, _sweep_state, _by_id, max_pages=25, errors=errors)
+lts.sweep(API_BASE, HEADERS, _sweep_state, _by_id, max_pages=25, errors=errors,
+          prune_scope=lts.live_job_scope(load_existing("jobs.json")))
 logged_times = list(_by_id.values())
 
 raw_scheduled = search(8, query="logged_time_status = 1", timeout=120)
