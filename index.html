@@ -3207,6 +3207,11 @@ const CHANGELOG=[
     'To Do: busy days show on the day\'s meter instead of turning the whole header orange. Schedule shows a small hours meter per person per day.',
     'Easier to use with a keyboard, and everything respects your system\'s reduced-motion setting.',
     'Fixes: printed invoices show hours properly (5h 20m, not 5.3333h), and "What\'s new" no longer opens on top of "Who are you?".',
+    'The weekly check-in now lives inside the Dashboard\'s top card, and Needs attention packs neatly with no gaps.',
+    'Task titles can span several lines — press Enter for a new line, ⌘/Ctrl+Enter to save.',
+    'Job pages: a clearer header, and the time and money tiles now lead the Progress tab.',
+    'Every page title lines up, close buttons behave, the gap around the To Do divider is even, and To Do cards keep their billable / non-billable / urgent colour stripe (also in dark mode).',
+    'Teams: Design is now Creative, and Harry Ross has moved into it.',
   ]},
   {version:'2.44.0',date:'13 Nov 2026',title:'Reporting rebuilt, Manage teams, and a big round of fixes',items:[
     'Reporting rebuilt: numbers that read easily (2,196h, $342k), changes against the previous period, and every section as one consistent card with a sortable table and CSV export. Click any row to open the job, client or person.',
@@ -20699,6 +20704,13 @@ body.dark .task-card.done-c{background:color-mix(in srgb,var(--surface-2) 55%,va
 .dt-status .paused-badge[onclick]:focus-visible,.dt-status .wf-badge>span:focus-visible,.dt-status .wf-badge>i:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:var(--r-pill);}
 /* Line breaks typed into a title show as line breaks (cards stay clamped) */
 .tc-title,.tt-title,.fli-title{white-space:pre-line;}
+
+/* Task cards keep their meaning stripe (billable green · non-billable amber · urgent red) —
+   the v3 border reset hid it; it also gives dark-mode cards a touch of colour. */
+html body .task-card.tc-bill,html body.dark .task-card.tc-bill{border-left:3px solid var(--ok)!important;}
+html body .task-card.tc-nonbill,html body.dark .task-card.tc-nonbill{border-left:3px solid var(--warn)!important;}
+html body .task-card.tc-urgent,html body.dark .task-card.tc-urgent{border-left:3px solid var(--red)!important;}
+html body .task-card.done-c,html body.dark .task-card.done-c{border-left-color:color-mix(in srgb,var(--ok) 55%,var(--border))!important;}
 </style>
 <script id="polish-r2-script">
 // ═══ Polish round 2 — behaviour for the polish-r2 CSS above ═══════════════════════════════
