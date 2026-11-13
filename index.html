@@ -5384,7 +5384,7 @@ function renderExpensesList(){
         <td style="padding:10px 14px;text-align:center;"><span class="exp-badg ${esc(e.status)}">${esc(e.status)}</span></td>
       </tr>`;
     }).join('')}</tbody>
-    <tfoot><tr style="border-top:2px solid var(--border);background:var(--off);"><td colspan="3" style="padding:10px 14px;font-size:12px;color:var(--muted);">${filtered.length} expense${filtered.length!==1?'s':''}</td><td style="padding:10px 14px;text-align:right;font-weight:600;">$${totalCost.toLocaleString()}</td><td style="padding:10px 14px;text-align:right;font-weight:600;">$${totalSell.toLocaleString()}</td><td></td></tr></tfoot>
+    <tfoot><tr style="border-top:2px solid var(--border);background:var(--off);"><td colspan="3" style="padding:10px 14px;font-size:12px;color:var(--muted);">${filtered.length} expense${filtered.length!==1?'s':''}</td><td style="padding:10px 14px;text-align:right;font-weight:600;">${_money(Math.round(totalCost*100)/100)}</td><td style="padding:10px 14px;text-align:right;font-weight:600;">${_money(Math.round(totalSell*100)/100)}</td><td></td></tr></tfoot>
   </table>`;
 }
 // ── Expense detail modal — opened from the cross-job Expenses list, same editing
@@ -8464,7 +8464,7 @@ function _jobStatTilesHTML(j){
   const billLabel=j.billable!==false?'Billable':'Non-billable';
   return ''+
     _statBlock('Time used / planned',`${logStr} <span class="stat-of">/ ${planStr}</span>`,plannedMins>0?`${hPct}% of plan`:null,plannedMins>0?hPct:null,hCol)+
-    _statBlock('Sell used / planned',`$${sellUsed.toLocaleString()} <span class="stat-of">/ $${plannedSell.toLocaleString()}</span>`,plannedSell>0?`${bPct}% of plan`:null,plannedSell>0?bPct:null,bCol)+
+    _statBlock('Sell used / planned',`$${Math.round(sellUsed).toLocaleString()} <span class="stat-of">/ $${Math.round(plannedSell).toLocaleString()}</span>`,plannedSell>0?`${bPct}% of plan`:null,plannedSell>0?bPct:null,bCol)+
     _statBlock('Budget from quote',plannedSell>0?`$${plannedSell.toLocaleString()}`:'—',billLabel,null)+
     _statBlock('Invoiced ex GST',j._streamtime?(j._stInvoiced>0?`$${j._stInvoiced.toLocaleString()}`:'—'):((j.invStatus==='sent'||j.invStatus==='paid')&&(j.invTotal||plannedSell)?`$${(j.invTotal||plannedSell).toLocaleString()}`:'—'),j._streamtime?(j._stInvoiced>0?(j._stPaid>=j._stInvoiced?'Paid':j._stAwaitingPayment>0?'Awaiting payment':'Sent'):null):((j.invStatus==='sent'||j.invStatus==='paid')?(j.invStatus==='paid'?'Paid':'Sent'):null),null)+
     _statBlock('Expenses',`$${Math.round(expUsed).toLocaleString()}`,null,null);
@@ -9754,7 +9754,9 @@ function saveItem(phId){
   const total='$'+(Math.round(h*r)).toLocaleString();
   const ph=phases.find(p=>p.id===phId);ph.items.push({id:uid('i'),name,hours,rate,used:'$0',total,status:'open'});
   logActivity(activeJobId,MY_PERSON,'item_add',`Added <strong>${esc(name)}</strong> to <strong>${esc(ph.name)}</strong>`);
-  renderPhases();saveData();setTimeout(()=>document.getElementById('fup').classList.add('on'),700);
+  // No follow-up prompt here: adding a plan item is not finishing a task, and the prompt's
+  // "Yes" acted on the last completed task (_fupTask), logging its time a second time.
+  renderPhases();saveData();
 }
 function showAddExpenseInline(afterPhaseId){
   if(!activeJobId)return;
@@ -12653,7 +12655,7 @@ function _qtVersionsHTML(qt){
   const fmtD=iso=>{if(!iso)return'—';const d=new Date(iso);return`${d.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]} ${d.getFullYear()}`;};
   const revs=_getQtVersions(qt.id);
   const v1Value=qt.totalAmountExTax!=null?`$${Math.round(qt.totalAmountExTax).toLocaleString()} ex GST`:'—';
-  const rows=[`<div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid var(--faint);"><span><strong>v1</strong> · ${fmtD(qt.quoteDate)} <span style="color:var(--muted);">(Streamtime)</span></span><span>${v1Value}</span></div>`]
+  const rows=[`<div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid var(--faint);"><span><strong>v1</strong> · ${fmtD(qt.quoteDate)} ${qt._local?"":`<span style="color:var(--muted);">(Streamtime)</span>`}</span><span>${v1Value}</span></div>`]
     .concat(revs.map((r,i)=>`<div style="display:flex;justify-content:space-between;align-items:flex-start;font-size:12px;padding:6px 0;border-bottom:1px solid var(--faint);"><span><strong>v${i+2}</strong> · ${fmtD(r.date)}${r.note?`<div style="color:var(--muted);font-size:11px;margin-top:1px;">${r.note}</div>`:''}</span><span style="display:flex;align-items:center;gap:6px;">$${Math.round(r.valueExTax).toLocaleString()} ex GST<i class="ti ti-x" style="cursor:pointer;color:var(--muted);font-size:11px;" title="Remove this version" onclick="event.stopPropagation();deleteQtVersion('${qt.id}',${i})"></i></span></div>`));
   return`<div class="dd-section-lbl">Version history</div>${rows.join('')}
     <div id="dd-qt-revise-form" style="margin-top:10px;"></div>
@@ -12883,7 +12885,7 @@ function renderInvoices(){
   const jobByStId={};jobs.forEach(j=>{if(j._stId)jobByStId[j._stId]=j;});
 
   const _invNow=new Date();_invNow.setHours(0,0,0,0);
-  const _getInvStatus=i=>{const s=(i.invoiceStatus?.name||i.status||'').toLowerCase();if(s==='paid')return'paid';if(s==='voided')return'voided';const due=i.dueDate?_pDate(i.dueDate):null;if(due&&due<_invNow)return'overdue';if(s.includes('awaiting'))return'awaiting';if(i.sentDate)return'sent';return'draft';};
+  const _getInvStatus=i=>{const s=(i.invoiceStatus?.name||i.status||'').toLowerCase();if(s==='paid')return'paid';if(s==='voided')return'voided';if(s==='draft')return'draft';const due=i.dueDate?_pDate(i.dueDate):null;if(due&&due<_invNow)return'overdue';if(s.includes('awaiting'))return'awaiting';if(i.sentDate)return'sent';return'draft';};
 
   // Invoices raised in the platform live on their job (invNum, invStatus, invLines, invPayments).
   // Shape them like Streamtime invoices so search, filters, sorting, totals and DSO all just work.
