@@ -2364,8 +2364,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
             <div class="detail-title-row">
               <div class="dt-titleblock"><div class="dt-meta" id="d-meta-line"></div><div class="detail-title" id="d-title-text">—</div></div>
               <div class="detail-actions">
-                <button class="d-action dt-ibtn" onclick="openJobSettingsModal()" title="Job settings"><i class="ti ti-settings"></i></button>
-                <button class="d-action dt-ibtn" onclick="showJobDotMenu(event)" title="More actions"><i class="ti ti-dots"></i></button>
+                <span class="dt-iconset"><button class="d-action dt-ibtn" onclick="openJobSettingsModal()" title="Job settings" aria-label="Job settings"><i class="ti ti-settings"></i></button><button class="d-action dt-ibtn" onclick="showJobDotMenu(event)" title="More actions" aria-label="More actions"><i class="ti ti-dots"></i></button></span>
                 <button class="d-action" onclick="openInvoice()"><i class="ti ti-file-invoice" style="font-size:13px"></i> Invoice</button>
                 <div class="create-item-wrap" style="position:relative;display:inline-block;">
                   <button class="d-action primary" onclick="toggleCreateItemMenu(event)"><i class="ti ti-plus" style="font-size:12px"></i> Create <i class="ti ti-chevron-down" style="font-size:10px;margin-left:2px;"></i></button>
@@ -2384,11 +2383,12 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
               </div>
             </div>
             <div class="detail-meta-line">
-              <div style="display:flex;" id="d-members-row"><!-- populated by openJobDetail --></div>
+              <div class="dt-status" id="d-status"><!-- status + dates, populated by openJobDetail --></div>
+              <div class="dt-team" id="d-members-row"><!-- populated by openJobDetail --></div>
+              <div class="labels-row" id="labels-row">
+                <div class="label-add-btn" onclick="addLabel(event)"><i class="ti ti-plus" style="font-size:11px"></i> Add label</div>
+              </div>
               <span id="d-hours-sell" class="dt-hours-sell"></span>
-            </div>
-            <div class="labels-row" id="labels-row">
-              <div class="label-add-btn" onclick="addLabel(event)"><i class="ti ti-plus" style="font-size:11px"></i> Add label</div>
             </div>
             <div id="job-notes-row" style="padding:0 0 10px;display:none;">
               <textarea id="job-notes-inp" placeholder="Add a brief or notes for this job…" style="width:100%;border:1px solid transparent;border-radius:8px;background:var(--off);font-family:var(--font);font-size:12.5px;color:var(--ink);resize:none;outline:none;padding:10px 14px;line-height:1.55;box-sizing:border-box;transition:border-color .15s,background .15s;" onfocus="this.style.borderColor='var(--border)';this.style.background='var(--white)'" onblur="this.style.borderColor='transparent';this.style.background='var(--off)';_fitNotes(this)" rows="1" oninput="updateJobNotes(this.value);_fitNotes(this)"></textarea>
@@ -7839,7 +7839,11 @@ function openJobDetail(id){
   // label to set status directly (editJobStatusField), click the → to advance the workflow
   // stage (advanceWorkflow). Both behaviours preserved, no duplication.
   const _statusCtl=` &nbsp;<span class="wf-badge ${wfCls}" style="user-select:none;padding-right:3px;"><span style="cursor:pointer;" title="Click to set status" onclick="editJobStatusField('${id}')">${wfLabel}</span><i class="ti ti-arrow-right" title="Advance workflow stage" onclick="advanceWorkflow('${id}')" style="font-size:10px;vertical-align:middle;margin-left:5px;padding:1px 3px;cursor:pointer;"></i></span>`;
-  document.getElementById('d-meta-line').innerHTML=`${j.id} · ${esc(j.company)} · ${leadHtml}${j.billable?'Billable':'Non-billable'}${j.po?` · PO ${j.po}`:''}`+_statusCtl+(j.paused?' &nbsp;<span class="paused-badge"><i class="ti ti-pause" style="font-size:10px;"></i> Paused</span>':'')+archivedBadge+_datesBadge;
+  // Header: identity above the title (number, client, lead, billing); state below it
+  // (status, dates) in one row with the team and labels.
+  document.getElementById('d-meta-line').innerHTML=`<span class="dt-num">${esc(String(j.id))}</span><span class="dt-co">${esc(j.company||'No client')}</span>${leadHtml?`<span class="dt-lead">${leadHtml}</span>`:''}<span class="dt-bill${j.billable?'':' nb'}">${j.billable?'Billable':'Non-billable'}</span>${j.po?`<span class="dt-po">PO ${esc(j.po)}</span>`:''}`;
+  const _stEl=document.getElementById('d-status');
+  if(_stEl)_stEl.innerHTML=(_statusCtl+(j.paused?' &nbsp;<span class="paused-badge"><i class="ti ti-pause" style="font-size:10px;"></i> Paused</span>':'')+archivedBadge+_datesBadge).replace(/ &nbsp;/g,'');
   let _titleEl=document.getElementById('d-title-text');
   if(_titleEl.tagName!=='DIV'){
     const _div=document.createElement('div');
@@ -10033,7 +10037,7 @@ async function saveJobDates(jobId){
 }
 function editJobStatusField(jobId){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
-  const el=document.querySelector(`#d-meta-line [onclick="editJobStatusField('${jobId}')"]`);if(!el)return;
+  const el=document.querySelector(`.detail-head [onclick="editJobStatusField('${jobId}')"]`);if(!el)return;
   const opts=[['inplay','In play'],['complete','Complete'],['archived','Archived']].filter(([v])=>v!=='archived'||_isAdmin()||j.status==='archived');
   const sel=document.createElement('select');
   sel.className='filter-btn';sel.style.cssText='font-size:11px;padding:1px 4px;';
@@ -20628,6 +20632,45 @@ textarea.tm-title-inp.is-scroll{overflow-y:auto;}
 .jt-panel>div:first-child .time-head-bar:has(.view-title){padding-top:0!important;}
 #view-reporting>div:first-child,#schedule-scroll,#boards-landing,#settings-scroll{padding-top:30px!important;}
 #jt-deadlines{padding-top:0!important;}
+/* ── Job detail header: identity → title → state row (status · dates | team | labels) ──── */
+.detail-title-row{align-items:flex-end!important;gap:var(--s-6)!important;padding-top:var(--s-4)!important;}
+#d-meta-line{gap:var(--s-2)!important;margin-bottom:var(--s-2)!important;font-size:13px!important;}
+.dt-num{font:650 12px/1 var(--display);letter-spacing:.01em;font-variant-numeric:tabular-nums;color:var(--ink-2);
+  padding:4px 8px;border-radius:var(--r-xs);background:var(--surface-2);border:1px solid var(--border);}
+.dt-co{font-weight:600;color:var(--ink-2);}
+.dt-lead,.dt-bill,.dt-po{display:inline-flex;align-items:center;gap:var(--s-2);color:var(--muted);}
+.dt-lead::before,.dt-bill::before,.dt-po::before{content:'';width:3px;height:3px;border-radius:50%;background:var(--subtle);}
+.dt-lead>span{font-size:13px!important;}
+.detail-title{padding-bottom:2px;}
+.detail-meta-line{flex-wrap:wrap;align-items:center!important;gap:var(--s-3) var(--s-4)!important;padding:var(--s-3) 0 var(--s-4)!important;font-size:13px!important;}
+.dt-status{display:flex;align-items:center;gap:var(--s-2);flex-wrap:wrap;}
+.dt-status:empty{display:none;}
+.dt-team,.detail-meta-line .labels-row{display:flex;align-items:center;padding-left:var(--s-4);border-left:1px solid var(--border);min-height:26px;}
+.detail-meta-line .labels-row{gap:6px;padding-bottom:0!important;}
+.dt-team .d-av{box-shadow:0 0 0 2px var(--off);transition:transform var(--d-2) var(--ease-out);}
+.dt-team .d-av:hover{transform:translateY(-2px);z-index:1;}
+/* Status pill: a dot + label, the advance arrow as its own small hit area */
+.dt-status .wf-badge{display:inline-flex!important;align-items:center;gap:6px;height:28px;padding:0 4px 0 11px!important;font-size:12.5px!important;}
+.dt-status .wf-badge::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.85;}
+.dt-status .wf-badge>span{cursor:pointer;}
+.dt-status .wf-badge>i{display:inline-flex!important;align-items:center;justify-content:center;width:22px;height:22px;margin:0!important;padding:0!important;border-radius:50%;font-size:12px!important;
+  transition:background var(--d-1);}
+.dt-status .wf-badge>i:hover{background:color-mix(in srgb,currentColor 16%,transparent);}
+.dt-status .paused-badge{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px;border-radius:var(--r-pill);font-size:12.5px;letter-spacing:0;
+  background:var(--white);border:1px solid var(--border);color:var(--ink-2);}
+.dt-status .paused-badge i{font-size:13px!important;color:var(--muted);}
+.dt-status .paused-badge[onclick]:hover{border-color:var(--border-strong);background:var(--surface-2);color:var(--ink);}
+body.dark .dt-status .paused-badge{background:var(--surface-2);border-color:var(--border);color:var(--ink-2);}
+.detail-meta-line .label-add-btn{height:26px;display:inline-flex;align-items:center;gap:4px;color:var(--muted);border:1px dashed var(--border)!important;background:transparent!important;}
+.detail-meta-line .label-add-btn:hover{color:var(--ink);border-color:var(--border-strong)!important;border-style:solid!important;}
+.detail-meta-line .label-chip{height:26px;display:inline-flex;align-items:center;gap:4px;}
+.dt-hours-sell:empty{display:none;}
+/* Actions: quiet icon pair, then the two text actions */
+.detail-actions{align-items:center;gap:var(--s-2)!important;}
+.dt-iconset{display:inline-flex;gap:2px;margin-right:var(--s-1);}
+.dt-iconset .dt-ibtn{background:transparent!important;border-color:transparent!important;box-shadow:none!important;color:var(--muted)!important;}
+.dt-iconset .dt-ibtn:hover{background:color-mix(in srgb,var(--ink) 6%,transparent)!important;color:var(--ink)!important;}
+#job-notes-row{padding-bottom:var(--s-3)!important;}
 /* Line breaks typed into a title show as line breaks (cards stay clamped) */
 .tc-title,.tt-title,.fli-title{white-space:pre-line;}
 </style>
