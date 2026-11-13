@@ -33,38 +33,39 @@
 html{min-height:100%;}
 body{min-height:100vh;font-family:var(--font);color:var(--ink);background:radial-gradient(1200px 760px at 92% -10%,var(--wash) 0%,var(--desk) 58%) fixed;
   font-feature-settings:"cv11","ss01","ss03";-webkit-font-smoothing:antialiased;display:flex;align-items:center;justify-content:center;padding:24px 16px;}
-.card{width:100%;max-width:420px;background:var(--off);border:1px solid color-mix(in srgb,var(--border) 80%,transparent);border-radius:var(--r-lg);
+.card{width:100%;max-width:420px;background:var(--white);border:1px solid color-mix(in srgb,var(--border) 80%,transparent);border-radius:var(--r-lg);
   box-shadow:var(--e-3);padding:40px 36px 28px;display:flex;flex-direction:column;gap:24px;animation:rise .4s cubic-bezier(.16,1,.3,1);}
 @keyframes rise{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 @media (prefers-reduced-motion:reduce){.card{animation:none;}}
 .mark{display:flex;flex-direction:column;align-items:flex-start;gap:14px;}
 .mark svg{height:40px;width:auto;display:block;}
 .mark svg path{fill:var(--red);}
-h1{font-family:var(--display);font-size:28px;font-weight:700;letter-spacing:-.035em;line-height:1.15;}
+h1{font-family:var(--display);font-size:28px;font-weight:750;letter-spacing:-.04em;line-height:1.12;}
 p{font-size:14px;line-height:1.55;color:var(--muted);}
 p strong{color:var(--ink);font-weight:600;}
 .lede{margin-bottom:4px;}
 .stack{display:flex;flex-direction:column;gap:12px;}
-.fld{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;color:var(--ink-2);}
-.fld input{height:42px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r-ctl);background:var(--white);color:var(--ink);
+.fld{display:flex;flex-direction:column;gap:6px;font-size:12.5px;font-weight:500;color:var(--muted);}
+.fld input{height:40px;padding:0 12px;border:1px solid var(--border);border-radius:var(--r-ctl);background:var(--white);color:var(--ink);
   font:400 14px var(--font);caret-color:var(--red);transition:border-color .12s ease,box-shadow .12s ease;}
 .fld input:hover{border-color:var(--border-strong);}
-.fld input:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 22%,transparent);}
+.fld input:focus{outline:none;border-color:color-mix(in srgb,var(--red) 55%,var(--border));box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 22%,transparent);}
 .fld small{font-size:12px;font-weight:400;color:var(--muted);}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;height:44px;padding:0 18px;border-radius:var(--r-ctl);font:500 14px var(--font);
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;height:40px;padding:0 18px;border-radius:var(--r-ctl);font:500 14px var(--font);
   cursor:pointer;text-decoration:none;border:1px solid var(--border);background:var(--white);color:var(--ink);width:100%;
   transition:border-color .12s ease,background .12s ease,transform .12s ease;}
 .btn:hover{border-color:var(--border-strong);}
 .btn:active{transform:translateY(1px);}
-.btn.primary{background:var(--ink);color:var(--off);border-color:var(--ink);margin-top:4px;}
-.btn.primary:hover{background:color-mix(in srgb,var(--ink) 88%,var(--red));}
+.btn.primary{background:var(--ink);color:var(--off);border-color:var(--ink);margin-top:4px;font-weight:600;box-shadow:0 1px 2px rgba(28,26,22,.25),inset 0 1px 0 rgba(255,255,255,.12);}
+.dark .btn.primary{color:#191714;}
+.btn.primary:hover{background:color-mix(in srgb,var(--ink) 90%,var(--white));}
 .btn.quiet{background:transparent;border-color:transparent;color:var(--muted);height:36px;}
 .btn.quiet:hover{color:var(--ink);background:var(--faint);}
 .btn[disabled]{opacity:.6;cursor:default;}
 .btn:focus-visible,.alt a:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
 .alt{text-align:center;font-size:13px;}
 .alt a{color:var(--ink);font-weight:500;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--border-strong);}
-.alt a:hover{text-decoration-color:var(--red);}
+.alt a:hover{text-decoration-color:var(--ink);}
 .note{font-size:13px;line-height:1.5;padding:10px 12px;border-radius:var(--r-ctl);}
 .note.err{background:var(--danger-bg);color:var(--danger-ink);}
 .foot{font-size:12px;color:var(--subtle);text-align:center;}
