@@ -4440,6 +4440,24 @@ async function initStreamtime(silent){
   try{if(!localStorage.getItem('cc_me')&&Object.keys(stUsersById).length)_askWhoAmI(false);}catch(e){}
   try{_applyAdminUi();}catch(e){} // hide admin-only actions for non-admins
   try{_renderTimer();}catch(e){} // a running timer survives reloads
+  try{_migrateTeamsCreative();}catch(e){}
+}
+// One-time team change (Nov 2026, requested by Ronan): the Design team is now "Creative" and
+// Harry Ross sits in it. Runs once per browser after Streamtime + the published config load,
+// and carries the rename into team targets, the stored team list and dashboard team filters.
+function _migrateTeamsCreative(){
+  if(localStorage.getItem('cc_mig_creative_v1'))return;
+  if(!Object.keys(people||{}).length)return;
+  let changed=false;
+  Object.values(people).forEach(p=>{
+    if(p.team==='Design'){p.team='Creative';changed=true;}
+    if(/^harry ross$/i.test((p.name||'').trim())&&!p._archived&&p.team!=='Creative'){p.team='Creative';changed=true;}
+    if(Array.isArray(p.dashTeams)&&p.dashTeams.includes('Design')){p.dashTeams=[...new Set(p.dashTeams.map(t=>t==='Design'?'Creative':t))];changed=true;}
+  });
+  try{const t=JSON.parse(localStorage.getItem('cc_team_targets')||'{}');if(t.Design!=null){if(t.Creative==null)t.Creative=t.Design;delete t.Design;localStorage.setItem('cc_team_targets',JSON.stringify(t));}}catch(e){}
+  try{const l=JSON.parse(localStorage.getItem('cc_teams')||'[]');if(Array.isArray(l)&&l.includes('Design')){localStorage.setItem('cc_teams',JSON.stringify([...new Set(l.map(t=>t==='Design'?'Creative':t))]));}}catch(e){}
+  if(changed){savePeople();try{populatePersonSwitcher();}catch(e){}}
+  localStorage.setItem('cc_mig_creative_v1','1');
 }
 
 // Seed the global label list from any labels already on jobs
