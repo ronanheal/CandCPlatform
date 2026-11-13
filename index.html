@@ -5741,8 +5741,8 @@ function _todoUsableH(){
 function buildZoneBucket(type,cards,isToday){
   const totalHrs=zoneCardHours(cards);
   const isDone=type==='done';
-  const label=isDone?'Done':'To Do';
-  const countText=isDone?`${cards.length} Done`:`${cards.length} To Do${cards.length!==1?"'s":''}`;
+  const label=isDone?'Done':'To do';
+  const countText=`${cards.length} task${cards.length!==1?'s':''}`;
   const action=isDone?'shrinkDoneToFit()':'expandTodoToFit()';
   const actionText=isDone?'View done':'View todos';
   const bk=document.createElement('div');
@@ -5827,7 +5827,7 @@ function showSumTip(el){
   const weekMon=new Date();const _wd2=(weekMon.getDay()+6)%7;
   weekMon.setDate(weekMon.getDate()-_wd2+(weekOffset*7));weekMon.setHours(0,0,0,0);
   let rows='<div style="display:grid;grid-template-columns:auto 70px 70px;gap:4px 16px;align-items:center;">';
-  rows+=`<div style="color:#888;font-size:10px;letter-spacing:.08em;text-transform:uppercase;">Day</div><div style="color:#888;font-size:10px;letter-spacing:.08em;text-transform:uppercase;text-align:right;">To Do</div><div style="color:#888;font-size:10px;letter-spacing:.08em;text-transform:uppercase;text-align:right;">Done</div>`;
+  rows+=`<div class="sumtip-h">Day</div><div class="sumtip-h r">To do</div><div class="sumtip-h r">Done</div>`;
   [1,2,3,4,5].forEach((d,i)=>{
     const tasks=data[d]||[];
     const todoH=tasks.filter(t=>!t.done).reduce((s,t)=>s+(t.hours||0),0);
@@ -5979,14 +5979,14 @@ function renderTodo(){
     let capHTML='';
     if(isWork){
       const label=dayTotalH>0?(isOver?`<span class="day-cap-info over">${formatHrs(dayTotalH)} / ${formatHrs(DAY_CAP)} · over</span>`:`<span class="day-cap-info">${formatHrs(dayTodoH)||'0h'} to do · ${formatHrs(dayDoneH)||'0h'} done</span>`):'<span class="day-cap-info">No tasks</span>';
-      capHTML=`<div class="day-cap">${label}<div class="day-cap-bar"><div class="dcb-done" style="width:${bDoneW}%;"></div><div class="dcb-nbill-done" style="width:${nDoneW}%;"></div><div class="dcb-todo" style="width:${bTodoW}%;${isOver?'background:var(--red);':''}"></div><div class="dcb-nbill-todo" style="width:${nTodoW}%;${isOver?'background:var(--red);opacity:.6':''}"></div></div></div>`;
+      capHTML=`<div class="day-cap">${label}<div class="day-cap-bar${isOver?' over':''}"><div class="dcb-done" style="width:${bDoneW}%;"></div><div class="dcb-nbill-done" style="width:${nDoneW}%;"></div><div class="dcb-todo" style="width:${bTodoW}%;"></div><div class="dcb-nbill-todo" style="width:${nTodoW}%;"></div></div></div>`;
     }
 
     col.innerHTML=`
-      <div class="day-head"${isWork&&isOver?' style="background:var(--warn-bg);"':''}>
+      <div class="day-head${isWork&&isOver?' over':''}">
         <div class="day-head-row">
           <div><div class="day-name">${DAY_NAMES[i]}</div><div class="day-num ${isToday?'today-red':''}">${calDate}</div></div>
-          ${isWork?`<button class="day-add-btn" onclick="openTodoModal(null,${d})"><i class="ti ti-plus" style="font-size:10px"></i> Add task</button>`:''}
+          ${isWork?`<button class="day-add-btn" onclick="openTodoModal(null,${d})"><i class="ti ti-plus"></i> Add task</button>`:''}
         </div>
         ${capHTML}
       </div>
@@ -6003,14 +6003,14 @@ function renderTodo(){
     // Always render cards; checkTodoOverflow/checkDoneOverflow collapse a zone to a
     // bucket only when it's genuinely cramped (cards can't fit at a readable size).
     if(todoTasks.length===0){
-      todoEl.innerHTML='<div class="day-done-empty">—</div>';
+      todoEl.innerHTML='<div class="day-done-empty">Nothing planned</div>';
     } else {
       todoTasks.forEach(t=>todoEl.appendChild(createTaskCard(t,d,false)));
       todoEl.scrollTop=todoEl.scrollHeight;
     }
 
     if(doneTasks.length===0){
-      doneEl.innerHTML='<div class="day-done-empty">—</div>';
+      doneEl.innerHTML='<div class="day-done-empty">Nothing done yet</div>';
     } else {
       doneTasks.forEach(t=>doneEl.appendChild(createTaskCard(t,d,true)));
     }
@@ -6389,7 +6389,7 @@ function renderTodoHeader(day){
   const cap=col.querySelector('.day-cap');
   if(!cap)return;
   const label=total>0?(isOver?`<span class="day-cap-info over">${formatHrs(total)} / ${formatHrs(DAY_CAP)} · over</span>`:`<span class="day-cap-info">${formatHrs(todoH)||'0h'} to do · ${formatHrs(doneH)||'0h'} done</span>`):'<span class="day-cap-info">No tasks</span>';
-  cap.innerHTML=`${label}<div class="day-cap-bar"><div class="dcb-done" style="width:${bDW}%;"></div><div class="dcb-nbill-done" style="width:${nDW}%;"></div><div class="dcb-todo" style="width:${bTW}%;${isOver?'background:var(--red);':''}"></div><div class="dcb-nbill-todo" style="width:${nTW}%;${isOver?'background:var(--red);opacity:.6':''}"></div></div>`;
+  cap.innerHTML=`${label}<div class="day-cap-bar${isOver?' over':''}"><div class="dcb-done" style="width:${bDW}%;"></div><div class="dcb-nbill-done" style="width:${nDW}%;"></div><div class="dcb-todo" style="width:${bTW}%;"></div><div class="dcb-nbill-todo" style="width:${nTW}%;"></div></div>`;
 }
 
 // Drop indicator helpers
@@ -19808,6 +19808,70 @@ body.dark .dh-hero::after{background:radial-gradient(closest-side,color-mix(in s
   .dh-ring{flex-direction:row;gap:var(--s-4);}
   .dh-ring-lbl{align-items:flex-start;}
 }
+
+/* ── To Do (styling only — card heights, drag, resize and the divider are untouched) ────── */
+/* Over capacity: the meter says it, not a tinted header row */
+.day-head.over{background:var(--white)!important;}
+.day-head{background:var(--white)!important;}
+.day-col.today .day-head{background:linear-gradient(180deg,color-mix(in srgb,var(--red) 5%,var(--white)) 0%,var(--white) 100%)!important;}
+.day-name{font-size:11px!important;font-weight:600!important;letter-spacing:.08em!important;color:var(--muted)!important;}
+.day-col.today .day-name{color:var(--red-ink)!important;}
+.day-num{font-family:var(--display)!important;font-weight:750!important;letter-spacing:-.04em!important;}
+.day-add-btn{height:24px;padding:0 9px!important;font-size:11.5px!important;font-weight:500!important;color:var(--muted)!important;border-color:transparent!important;background:transparent!important;opacity:.8;transition:opacity var(--d-1),background var(--d-1),color var(--d-1),border-color var(--d-1)!important;}
+.day-add-btn i{font-size:12px;}
+.day-col:hover .day-add-btn{opacity:1;border-color:var(--border)!important;background:var(--white)!important;}
+.day-add-btn:hover{color:var(--ink)!important;border-color:var(--border-strong)!important;}
+.day-cap{gap:8px!important;margin-top:6px!important;}
+.day-cap-info{font-size:11px!important;color:var(--muted)!important;font-variant-numeric:tabular-nums;}
+.day-cap-info.over{color:var(--warn-ink)!important;font-weight:600!important;}
+.day-cap-bar{height:4px!important;border-radius:var(--r-pill)!important;background:var(--faint)!important;}
+.dcb-nbill-todo{background:color-mix(in srgb,var(--ink) 22%,transparent)!important;}
+.dcb-nbill-done{background:color-mix(in srgb,var(--ok) 45%,transparent)!important;}
+.day-cap-bar.over .dcb-todo{background:var(--warn)!important;}
+.day-cap-bar.over .dcb-nbill-todo{background:color-mix(in srgb,var(--warn) 55%,transparent)!important;}
+.day-cap-bar.over{box-shadow:0 0 0 1px color-mix(in srgb,var(--warn) 35%,transparent);}
+.day-done-empty{font-size:11.5px!important;color:var(--subtle)!important;padding:10px 0!important;}
+body.dark .day-done-empty{color:var(--subtle)!important;}
+/* Done divider: a quiet labelled rail with a grip */
+.global-divider{background:var(--surface-2)!important;border-color:var(--border)!important;box-shadow:none!important;}
+.global-divider:hover{background:var(--white)!important;}
+.global-divider .gd-label{font-size:12px!important;font-weight:600!important;letter-spacing:0!important;text-transform:none!important;color:var(--ok-ink)!important;opacity:1!important;display:inline-flex;align-items:center;gap:6px;}
+.global-divider .gd-label::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--ok);}
+.global-divider .gd-handle{color:var(--subtle)!important;}
+.global-divider.div-drop-hi{background:var(--ok-bg)!important;border-color:var(--ok)!important;}
+body.dark .global-divider{background:var(--surface-2)!important;border-color:var(--border)!important;}
+/* Collapsed zones */
+.zone-bucket{background:var(--surface-2)!important;border:1px solid var(--border)!important;border-radius:var(--r-ctl)!important;}
+.zone-bucket.done-bucket{background:color-mix(in srgb,var(--ok-bg) 70%,var(--white))!important;border-color:color-mix(in srgb,var(--ok) 28%,transparent)!important;border-left:3px solid var(--ok)!important;}
+body.dark .zone-bucket,body.dark .zone-bucket.todo-bucket{background:var(--surface-2)!important;border-color:var(--border)!important;}
+body.dark .zone-bucket.done-bucket{background:var(--ok-bg)!important;border-color:color-mix(in srgb,var(--ok) 30%,transparent)!important;}
+.zb-kind{font-size:11.5px!important;letter-spacing:0!important;text-transform:none!important;font-weight:600!important;color:var(--muted)!important;}
+.done-bucket .zb-kind{color:var(--ok-ink)!important;}
+.zb-count{font-family:var(--display);font-size:17px!important;font-weight:700!important;letter-spacing:-.02em;}
+.zb-view{border-radius:var(--r-pill)!important;font-size:12px!important;padding:4px 11px!important;background:var(--white)!important;}
+/* Week summary tooltip */
+.sumtip-h{font-size:11.5px;font-weight:600;color:#A9A296;}
+.sumtip-h.r{text-align:right;}
+/* My items panel */
+#cc-mi-panel{background:var(--surface-2)!important;border-left:1px solid var(--border)!important;}
+.cc-mi-hd{background:var(--white);padding:16px 16px 12px!important;}
+.cc-mi-title{font-family:var(--display);font-size:15px!important;font-weight:700!important;letter-spacing:-.015em;}
+.cc-mi-sub{font-size:12px!important;line-height:1.45;}
+.cc-mi-job{font-size:11.5px!important;letter-spacing:0!important;text-transform:none!important;padding:14px 16px 6px!important;}
+.cc-mi-job>span:first-child{font-variant-numeric:tabular-nums;font-weight:600;}
+.cc-mi-row{margin:4px 12px!important;transition:border-color var(--d-1),box-shadow var(--d-2),transform var(--d-2) var(--ease-out);}
+.cc-mi-row:hover{border-color:var(--border-strong)!important;box-shadow:var(--e-2)!important;transform:translateY(-1px);}
+.cc-mi-row-name{font-size:13px!important;}
+.cc-mi-row-meta{font-size:11.5px!important;}
+.cc-mi-row-meta .over,.cc-mi-bar>span.over{color:var(--warn-ink);}
+.cc-mi-bar>span.over{background:var(--warn)!important;}
+.cc-mi-empty{font-size:13px!important;padding:40px 24px!important;}
+.cc-mi-empty::before{content:'';display:block;width:44px;height:44px;margin:0 auto 14px;border-radius:14px;transform:rotate(-6deg);
+  background:var(--ok-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233E9B48' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E") center/22px no-repeat;}
+.cc-away-chip{font-size:11px!important;}
+/* "Viewing someone else's To Do" banner, data warning */
+#st-data-warn{background:var(--warn-bg)!important;border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)!important;color:var(--warn-ink)!important;border-radius:var(--r-ctl)!important;}
+#st-data-warn button{color:var(--warn-ink)!important;}
 </style>
 <script id="screens-v3-script">
 // ═══ Screens v3 — behaviour for the screen-by-screen redesign (see screens-v3 CSS) ══════════
