@@ -4395,6 +4395,9 @@ async function initStreamtime(silent){
         if(userStatus!=='Active'&&people[key]&&!people[key]._keepActive&&key!==MY_PERSON)people[key]._archived=true;
       });
       savePeople();
+      // The To Do person switcher is built once at DOMContentLoaded, before Streamtime users
+      // arrive — on a first visit it listed only you until the page was reloaded.
+      try{populatePersonSwitcher();}catch(e){}
     }
     // Resilience: if users.json failed or came back empty this load (hourly sync mid-write),
     // rebuild a minimal user map from the cached people store — otherwise the Todo board,
@@ -6533,7 +6536,7 @@ function showTaskContextMenu(e,t,day){
     <div class="tcm-item" onclick="closeTaskContextMenu();toggleTaskDone(window._ctxTask.id)"><i class="ti ${isDone?'ti-refresh':'ti-circle-check'} tcm-icon"></i> ${isDone?'Mark undone':'Mark done'}</div>
     ${jid?`<div class="tcm-item" onclick="closeTaskContextMenu();openJobDetail('${jid}')"><i class="ti ti-external-link tcm-icon"></i> Go to job</div>`:''}
     <div class="tcm-sep"></div>
-    <div class="tcm-item danger" onclick="closeTaskContextMenu();deleteTodoById(window._ctxTask.id,window._ctxDay)"><i class="ti ti-trash tcm-icon"></i> Delete task</div>`;
+    <div class="tcm-item danger" onclick="closeTaskContextMenu();_ctxConfirmDelete(window._ctxTask,window._ctxDay)"><i class="ti ti-trash tcm-icon"></i> Delete task</div>`;
 
   // Position
   let x=e.clientX,y=e.clientY;
@@ -6572,6 +6575,13 @@ function duplicateTask(t,day){
   const clone={...t,id:uid('t')};
   arr.splice(idx+1,0,clone);
   saveData();renderTodo();toast('Task duplicated');
+}
+// The right-click Delete asks first, like the task sheet's Delete (it used to remove the task outright).
+function _ctxConfirmDelete(t,day){
+  if(!t)return;
+  const name=String(t.title||'').trim().split('\n')[0];
+  ccConfirm(`<strong style="display:block;font-size:15px;margin-bottom:4px;">Delete this task?</strong>${name?`“${esc(name.length>80?name.slice(0,80)+'…':name)}” will be removed. `:''}This can’t be undone.`,()=>deleteTodoById(t.id,day),'Delete task',true);
+  setTimeout(()=>document.querySelector('#cc-confirm-modal .modal-cancel')?.focus(),30);
 }
 function deleteTodoById(id,day){
   const wd=getWeekData(currentPerson);
@@ -21335,7 +21345,7 @@ function bvWipSet(k,v){
 .ux-when{display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-width:0;}
 #todo-modal .ux-tm .ux-when :is(.tm-hours-inp,.tm-day-sel){width:auto!important;min-height:32px!important;height:32px;padding:0 10px!important;font:500 13px/1 var(--font)!important;
   background-color:var(--surface-2)!important;border:1px solid var(--faint)!important;border-radius:var(--r-sm)!important;box-shadow:none!important;color:var(--ink)!important;}
-#todo-modal .ux-tm .ux-when .tm-hours-inp{width:64px!important;font-variant-numeric:tabular-nums;}
+#todo-modal .ux-tm .ux-when .tm-hours-inp{width:80px!important;font-variant-numeric:tabular-nums;}
 #todo-modal .ux-tm .ux-when .tm-day-sel{padding-right:28px!important;background-position:right 9px center!important;cursor:pointer;-webkit-appearance:none;appearance:none;}
 #todo-modal .ux-tm .ux-when :is(.tm-hours-inp,.tm-day-sel):hover{border-color:var(--border)!important;}
 #todo-modal .ux-tm .ux-when :is(.tm-hours-inp,.tm-day-sel):focus{background-color:var(--white)!important;border-color:color-mix(in srgb,var(--red) 55%,var(--border))!important;box-shadow:var(--ring)!important;}
