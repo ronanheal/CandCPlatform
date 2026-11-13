@@ -2364,8 +2364,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
             <div class="detail-title-row">
               <div class="dt-titleblock"><div class="dt-meta" id="d-meta-line"></div><div class="detail-title" id="d-title-text">—</div></div>
               <div class="detail-actions">
-                <button class="d-action dt-ibtn" onclick="openJobSettingsModal()" title="Job settings"><i class="ti ti-settings"></i></button>
-                <button class="d-action dt-ibtn" onclick="showJobDotMenu(event)" title="More actions"><i class="ti ti-dots"></i></button>
+                <span class="dt-iconset"><button class="d-action dt-ibtn" onclick="openJobSettingsModal()" title="Job settings" aria-label="Job settings"><i class="ti ti-settings"></i></button><button class="d-action dt-ibtn" onclick="showJobDotMenu(event)" title="More actions" aria-label="More actions"><i class="ti ti-dots"></i></button></span>
                 <button class="d-action" onclick="openInvoice()"><i class="ti ti-file-invoice" style="font-size:13px"></i> Invoice</button>
                 <div class="create-item-wrap" style="position:relative;display:inline-block;">
                   <button class="d-action primary" onclick="toggleCreateItemMenu(event)"><i class="ti ti-plus" style="font-size:12px"></i> Create <i class="ti ti-chevron-down" style="font-size:10px;margin-left:2px;"></i></button>
@@ -2384,11 +2383,12 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
               </div>
             </div>
             <div class="detail-meta-line">
-              <div style="display:flex;" id="d-members-row"><!-- populated by openJobDetail --></div>
+              <div class="dt-status" id="d-status"><!-- status + dates, populated by openJobDetail --></div>
+              <div class="dt-team" id="d-members-row"><!-- populated by openJobDetail --></div>
+              <div class="labels-row" id="labels-row">
+                <div class="label-add-btn" onclick="addLabel(event)"><i class="ti ti-plus" style="font-size:11px"></i> Add label</div>
+              </div>
               <span id="d-hours-sell" class="dt-hours-sell"></span>
-            </div>
-            <div class="labels-row" id="labels-row">
-              <div class="label-add-btn" onclick="addLabel(event)"><i class="ti ti-plus" style="font-size:11px"></i> Add label</div>
             </div>
             <div id="job-notes-row" style="padding:0 0 10px;display:none;">
               <textarea id="job-notes-inp" placeholder="Add a brief or notes for this job…" style="width:100%;border:1px solid transparent;border-radius:8px;background:var(--off);font-family:var(--font);font-size:12.5px;color:var(--ink);resize:none;outline:none;padding:10px 14px;line-height:1.55;box-sizing:border-box;transition:border-color .15s,background .15s;" onfocus="this.style.borderColor='var(--border)';this.style.background='var(--white)'" onblur="this.style.borderColor='transparent';this.style.background='var(--off)';_fitNotes(this)" rows="1" oninput="updateJobNotes(this.value);_fitNotes(this)"></textarea>
@@ -2402,7 +2402,6 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
             </div>
           </div>
           <div id="dtab-plan" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
-            <div class="stats-strip" id="d-stats"></div>
             <div class="plan-area">
               <div class="plan-actions">
                 <button class="p-btn" onclick="addPhase()"><i class="ti ti-layout-rows" style="font-size:12px"></i> New phase</button>
@@ -2623,7 +2622,8 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
     </div>
     <!-- Body -->
     <div class="tm-bd">
-      <input type="text" class="tm-title-inp" id="td-task" placeholder="What needs doing?">
+      <textarea class="tm-title-inp" id="td-task" rows="1" placeholder="What needs doing?" aria-describedby="td-task-hint" spellcheck="true"></textarea>
+      <div class="tm-title-hint" id="td-task-hint"><kbd>Enter</kbd> new line · <kbd>⌘</kbd><kbd>Enter</kbd> save</div>
       <!-- Assign to (hidden in personal mode) -->
       <div id="td-assign-section">
         <div class="tm-lbl">Assigned to</div>
@@ -4826,9 +4826,10 @@ function renderDashboard(){
   const daySegs=[...todayDone,...todayTodo].map(t=>`<span class="dh-seg${t.done?' done':t.urgent?' urg':''}" style="flex-grow:${Math.max(.25,t.hours||0)}" title="${esc(t.title||'')}${t.hours?' · '+formatHrs(t.hours):''}"></span>`).join('');
   const R=46,C=2*Math.PI*R,ringFill=Math.min(1,weekBooked/(totalTarget||1));
   const ringState=weekPct>105?'over':weekPct>=85?'full':'';
-  const heroHTML=`<section class="dh-hero" aria-label="Today at a glance">
+  const _hpRow=_happinessCardHTML('hero');
+  const heroHTML=`<section class="dh-hero${_hpRow?' has-checkin':''}" aria-label="Today at a glance">
     <div class="dh-hero-main">
-      <div class="dh-date"><span class="dh-disc" aria-hidden="true">${now.getDate()}</span><span>${dayNames[now.getDay()]} ${now.getDate()} ${monthNames[now.getMonth()]}</span><span class="dh-wk">Week ${getWeekNum(now)}</span></div>
+      <div class="dh-date"><span class="dh-day-name">${dayNames[now.getDay()]} ${now.getDate()} ${monthNames[now.getMonth()]}</span><span class="dh-date-sep" aria-hidden="true">·</span><span class="dh-wk">Week ${getWeekNum(now)}</span></div>
       <h1 class="dash-greeting">${greetStr}, ${esc((p?.name||'Ronan').split(' ')[0])}.</h1>
       <p class="dh-line">${heroLine}</p>
       ${nextTask?`<div class="dh-next" role="button" tabindex="0" onclick="navTo('todo')"><span class="dh-next-lbl">${nextTask.urgent?'Urgent next':'Next up'}</span><span class="dh-next-t">${esc(nextTask.title||'Untitled task')}</span>${nextTask.hours?`<span class="dh-next-h">${formatHrs(nextTask.hours)}</span>`:''}</div>`:''}
@@ -4851,10 +4852,10 @@ function renderDashboard(){
         <div class="dh-ring-lbl">Week booked<span>${formatHrs(weekBooked)||'0h'}</span></div>
       </div>
     </div>
+    ${_hpRow?`<div class="dh-checkin">${_hpRow}</div>`:''}
   </section>`;
   wrap.innerHTML=`
     ${heroHTML}
-    ${_happinessCardHTML()}
     <div class="kpi-row">
       <div class="kpi"><div class="kpi-label">Billable booked this week</div><div class="kpi-val">${formatHrs(billH)||'0h'}</div><div class="kpi-sub">${formatHrs(billDoneH)||'0h'} done · ${formatHrs(billTodoH)||'0h'} planned · of ${totalTarget}h</div>${_wkTrend.bill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('bill')">${_sparkSVG(_wkTrend.bill,_sparkCol('bill'))}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${billPct}%;background:${billH>=(totalTarget||1)*1.2?'var(--red)':'var(--ok)'};"></div></div></div>
       <div class="kpi"><div class="kpi-label">Non-billable</div><div class="kpi-val">${formatHrs(nbillH)||'0h'}</div><div class="kpi-sub">internal & admin</div>${_wkTrend.nbill.some(v=>v)?`<div class="kpi-spark" style="cursor:pointer;" title="Click for the expanded trend" onclick="openTrendModal('nbill')">${_sparkSVG(_wkTrend.nbill,_sparkCol('nbill'))}<span class="ks-lbl">8-wk trend ↗</span></div>`:''}<div class="kpi-bar"><div class="kpi-bar-fill" style="width:${nbillPct}%;background:var(--cv-graphite);"></div></div></div>
@@ -4911,9 +4912,20 @@ function _faceSVG(v,size){
   return`<svg width="${size}" height="${size}" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="21" fill="${C[0]}"/><circle cx="22" cy="22" r="20.25" fill="none" stroke="${C[1]}" stroke-opacity=".35" stroke-width="1.5"/>${cheeks}${brows}${eyes}${m}</svg>`;
 }
 function _happinessAnswered(){return !!_getHappinessLog()[MY_PERSON]?.[getWeekKey(0)];}
-function _happinessCardHTML(){
+// variant 'hero': a compact row that lives inside the Dashboard hero (same faces, same actions)
+function _happinessCardHTML(variant){
   const e=_getHappinessLog()[MY_PERSON]?.[getWeekKey(0)];
   const FACES=[[1,'😞','Rough'],[2,'😕','Meh'],[3,'😐','OK'],[4,'🙂','Good'],[5,'😄','Great']];
+  if(variant==='hero'){
+    if(e){
+      if(!e.score)return'';
+      const f=FACES.find(x=>x[0]===e.score);
+      return`<div class="hpr hpr-done"><span class="hpr-face">${_faceSVG(e.score,24)}</span><span class="hpr-q">Your week: <strong>${f[2]}</strong>. Thanks for checking in.</span><button type="button" class="hpr-link" onclick="_hpUndo()">Change</button></div>`;
+    }
+    return`<div class="hpr"><span class="hpr-q">How's your week going?</span>
+      <div class="hpr-faces" role="group" aria-label="Weekly check-in">${FACES.map(([v,,l])=>`<button type="button" class="hp-card-face hpr-face-btn" title="${l}" aria-label="${l}" onclick="_hpQuick(${v})">${_faceSVG(v,30)}<small>${l}</small></button>`).join('')}</div>
+      <div class="hpr-links"><button type="button" class="hpr-link" onclick="maybeShowHappinessPromptNow()">Add a note</button><button type="button" class="hpr-link" onclick="skipHappinessWeek('${MY_PERSON}')">Skip this week</button></div></div>`;
+  }
   if(e){
     if(!e.score)return'';
     const f=FACES.find(x=>x[0]===e.score);
@@ -7844,7 +7856,11 @@ function openJobDetail(id){
   // label to set status directly (editJobStatusField), click the → to advance the workflow
   // stage (advanceWorkflow). Both behaviours preserved, no duplication.
   const _statusCtl=` &nbsp;<span class="wf-badge ${wfCls}" style="user-select:none;padding-right:3px;"><span style="cursor:pointer;" title="Click to set status" onclick="editJobStatusField('${id}')">${wfLabel}</span><i class="ti ti-arrow-right" title="Advance workflow stage" onclick="advanceWorkflow('${id}')" style="font-size:10px;vertical-align:middle;margin-left:5px;padding:1px 3px;cursor:pointer;"></i></span>`;
-  document.getElementById('d-meta-line').innerHTML=`${j.id} · ${esc(j.company)} · ${leadHtml}${j.billable?'Billable':'Non-billable'}${j.po?` · PO ${j.po}`:''}`+_statusCtl+(j.paused?' &nbsp;<span class="paused-badge"><i class="ti ti-pause" style="font-size:10px;"></i> Paused</span>':'')+archivedBadge+_datesBadge;
+  // Header: identity above the title (number, client, lead, billing); state below it
+  // (status, dates) in one row with the team and labels.
+  document.getElementById('d-meta-line').innerHTML=`<span class="dt-num">${esc(String(j.id))}</span><span class="dt-co">${esc(j.company||'No client')}</span>${leadHtml?`<span class="dt-lead">${leadHtml}</span>`:''}<span class="dt-bill${j.billable?'':' nb'}">${j.billable?'Billable':'Non-billable'}</span>${j.po?`<span class="dt-po">PO ${esc(j.po)}</span>`:''}`;
+  const _stEl=document.getElementById('d-status');
+  if(_stEl)_stEl.innerHTML=(_statusCtl+(j.paused?' &nbsp;<span class="paused-badge"><i class="ti ti-pause" style="font-size:10px;"></i> Paused</span>':'')+archivedBadge+_datesBadge).replace(/ &nbsp;/g,'');
   let _titleEl=document.getElementById('d-title-text');
   if(_titleEl.tagName!=='DIV'){
     const _div=document.createElement('div');
@@ -8233,15 +8249,21 @@ function computeJobProfit(j){
   return{...s,staffCost,expCost,expSell,revenue,cost,margin,marginPct,costEstimated};
 }
 
+// Job KPI tiles (time, sell, budget, invoiced, expenses; over-plan tiles turn red). They lead
+// the Progress tab; renderStats keeps them live wherever they're on screen.
 function renderStats(j){
-  const s=document.getElementById('d-stats');
+  const s=document.getElementById('prog-stats');
+  if(!s||!j)return;
+  s.innerHTML=_jobStatTilesHTML(j);
+}
+function _jobStatTilesHTML(j){
   const{plannedMins,plannedSell,loggedMins,sellUsed,expUsed,hPct,bPct,fmtH}=computeJobStats(j);
   const logStr=fmtH(loggedMins);
   const planStr=plannedMins>0?fmtH(plannedMins):'—';
   const hCol=hPct>=100?'var(--red)':hPct>=80?'#FF9800':'#4CAF50';
   const bCol=bPct>=100?'var(--red)':bPct>=80?'#FF9800':'#4CAF50';
   const billLabel=j.billable!==false?'Billable':'Non-billable';
-  s.innerHTML=
+  return ''+
     _statBlock('Time used / planned',`${logStr} <span class="stat-of">/ ${planStr}</span>`,plannedMins>0?`${hPct}% of plan`:null,plannedMins>0?hPct:null,hCol)+
     _statBlock('Sell used / planned',`$${sellUsed.toLocaleString()} <span class="stat-of">/ $${plannedSell.toLocaleString()}</span>`,plannedSell>0?`${bPct}% of plan`:null,plannedSell>0?bPct:null,bCol)+
     _statBlock('Budget from quote',plannedSell>0?`$${plannedSell.toLocaleString()}`:'—',billLabel,null)+
@@ -8391,27 +8413,12 @@ function renderProgressTab(){
   const j=jobs.find(x=>x.id===activeJobId);if(!j){el.innerHTML='';return;}
   const stats=computeJobStats(j);
   const entries=_jobTimeEntries(j.id);
-  const doneRows=entries.filter(r=>r.done);
-  const schedRows=entries.filter(r=>!r.done);
-  const schedMins=schedRows.reduce((s,r)=>s+Math.round(r.hours*60),0);
-  const unschedMins=Math.max(0,stats.plannedMins-stats.loggedMins-schedMins);
   const fmtH=stats.fmtH;
   const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const fmtD=d=>`${String(d.getDate()).padStart(2,'0')} ${MONTHS[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`;
-  const hCol=stats.hPct>=100?'var(--red)':stats.hPct>=80?'#FF9800':'#4C7DAF';
-  const bCol=stats.bPct>=100?'var(--red)':stats.bPct>=80?'#FF9800':'#4C7DAF';
-  const expTotal=Math.round(stats.expUsed);
-  const quoteStatus=j.quoteStatus||'draft';
 
-  // ── Summary bars ──
-  const barsHTML=`<div class="prog-card">
-    <div class="prog-card-hd">Progress</div>
-    ${_progBar('Time (h)',`<strong>${fmtH(stats.loggedMins)}</strong> <span class="prog-of">/ ${fmtH(stats.plannedMins)}</span>`,stats.hPct,hCol)}
-    ${_progBar('Time ($)',`<strong>$${stats.sellUsed.toLocaleString()}</strong> <span class="prog-of">/ $${stats.plannedSell.toLocaleString()}</span>`,stats.bPct,bCol)}
-    ${_progBar('Scheduled',`<strong>${fmtH(schedMins)}</strong> <span class="prog-of">booked · ${fmtH(unschedMins)} unscheduled</span>`,stats.plannedMins>0?Math.round(((stats.loggedMins+schedMins)/stats.plannedMins)*100):0,'#9A9A9A')}
-    ${_progBar('Expenses',`<strong>$${expTotal.toLocaleString()}</strong>`,expTotal>0?100:0,'#4CAF50')}
-    ${_progBar('Quote',`<strong>$${stats.plannedSell.toLocaleString()}</strong> <span class="prog-of">${quoteStatus}</span>`,quoteStatus==='approved'?100:quoteStatus==='sent'?50:0,'#C4956A')}
-  </div>`;
+  // ── Summary: the job's KPI tiles (moved here from the Job plan tab) ──
+  const barsHTML=`<div class="stats-strip prog-stats" id="prog-stats">${_jobStatTilesHTML(j)}</div>`;
 
   // ── Time table grouped by person ──
   const byPerson={};
@@ -10038,7 +10045,7 @@ async function saveJobDates(jobId){
 }
 function editJobStatusField(jobId){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
-  const el=document.querySelector(`#d-meta-line [onclick="editJobStatusField('${jobId}')"]`);if(!el)return;
+  const el=document.querySelector(`.detail-head [onclick="editJobStatusField('${jobId}')"]`);if(!el)return;
   const opts=[['inplay','In play'],['complete','Complete'],['archived','Archived']].filter(([v])=>v!=='archived'||_isAdmin()||j.status==='archived');
   const sel=document.createElement('select');
   sel.className='filter-btn';sel.style.cssText='font-size:11px;padding:1px 4px;';
@@ -11166,7 +11173,7 @@ function openTeamMember(key){
       <div style="font-size:12px;color:var(--muted);margin-top:2px;">${esc(p.role||"No role set")}${p.team?" · "+esc(p.team):""}</div>
       ${stU?`<div style="font-size:11px;color:var(--muted);margin-top:2px;">Synced from Streamtime</div>`:''}
     </div>
-    <button onclick="closeTeamPanel()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;font-size:18px;"><i class="ti ti-x"></i></button>`;
+    <button class="ds-close" title="Close" aria-label="Close" onclick="closeTeamPanel()"><i class="ti ti-x"></i></button>`;
   body.innerHTML=`
     <div class="tm-panel-section">
       <div class="tm-panel-section-lbl">Identity</div>
@@ -13152,7 +13159,7 @@ setTimeout(_renderIcons,50);
       <div class="detail-drawer-title" id="dd-title">—</div>
       <div class="detail-drawer-sub" id="dd-sub"></div>
     </div>
-    <button onclick="closeDetailDrawer()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;font-size:18px;line-height:1;flex-shrink:0;"><i class="ti ti-x"></i></button>
+    <button class="ds-close" title="Close" aria-label="Close" onclick="closeDetailDrawer()"><i class="ti ti-x"></i></button>
   </div>
   <div class="detail-drawer-body" id="dd-body"></div>
 </div>
@@ -13603,7 +13610,7 @@ function _ccRenderMyItems(){
   if(!show){panel?.remove();return;}
   if(!panel){
     panel=document.createElement('aside');panel.id='cc-mi-panel';
-    panel.innerHTML=`<div class="cc-mi-hd"><div class="cc-mi-hd-row"><span class="cc-mi-title">My items</span><button class="cc-icon-btn" title="Close" onclick="toggleMyItems()"><i class="ti ti-x"></i></button></div>
+    panel.innerHTML=`<div class="cc-mi-hd"><div class="cc-mi-hd-row"><span class="cc-mi-title">My items</span><button class="ds-close" title="Close" aria-label="Close" onclick="toggleMyItems()"><i class="ti ti-x"></i></button></div>
       <div class="cc-mi-sub" id="cc-mi-sub"></div>
       <input class="form-inp cc-mi-search" id="cc-mi-q" placeholder="Filter by job or item…" oninput="_ccMiQuery=this.value;_ccRenderMyItemsList()"></div>
       <div class="cc-mi-list" id="cc-mi-list"></div>`;
@@ -16266,7 +16273,7 @@ function _bvDrawerHTML({b,col,card:c}){
       <button class="bv-ibtn" title="Duplicate card" onclick="bvDuplicateCard(${_bvA(c.id)})"><i class="ti ti-copy"></i></button>
       <button class="bv-ibtn" title="Archive card" onclick="bvArchiveCard(${_bvA(c.id)})"><i class="ti ti-archive"></i></button>
       <button class="bv-ibtn" title="Delete card" onclick="bvDeleteCard(${_bvA(c.id)})"><i class="ti ti-trash"></i></button>
-      <button class="bv-ibtn" title="Close (Esc)" onclick="bvCloseCard()"><i class="ti ti-x"></i></button>
+      <button class="bv-ibtn ds-close" title="Close (Esc)" aria-label="Close" onclick="bvCloseCard()"><i class="ti ti-x"></i></button>
     </div>
     <div class="bv-dr-scroll">
       <textarea class="bv-dr-title" rows="1" data-grow placeholder="${esc(j?j.name:'Card title')}" oninput="_bvGrow(this)" onchange="bvSetField('title',this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">${esc(c.title||'')}</textarea>
@@ -19868,8 +19875,15 @@ body.dark .modal-bg,body.dark .gs-bg,body.dark .cb-overlay,body.dark .inv-bg{bac
 @keyframes dsModalIn{from{opacity:0;transform:translateY(14px) scale(.965);}to{opacity:1;transform:none;}}
 .modal-hd,.tm-hd{padding:22px 24px 14px!important;border-bottom:1px solid var(--faint)!important;background:var(--white)!important;color:var(--ink)!important;}
 .modal-hd-title,.tm-hd-title{font:700 18px/1.25 var(--display)!important;letter-spacing:-.025em!important;}
-.modal-x,.tm-x,.inv-x,.bv-card-x{width:32px;height:32px;border-radius:var(--r-sm)!important;display:inline-flex;align-items:center;justify-content:center;color:var(--muted)!important;transition:background var(--d-1),color var(--d-1),transform var(--d-2) var(--ease-spring)!important;}
-.modal-x:hover,.tm-x:hover,.inv-x:hover,.bv-card-x:hover{background:var(--surface-2)!important;color:var(--ink)!important;transform:rotate(90deg);}
+/* Close buttons: one 32px circle; hover fills it, nothing moves (see polish-r2 for the full set) */
+.modal-x,.tm-x,.inv-x,.ds-close,.cb-close{flex:0 0 32px;width:32px!important;height:32px!important;min-width:32px!important;padding:0!important;margin:0;border:0!important;border-radius:50%!important;
+  display:inline-flex!important;align-items:center;justify-content:center!important;background:transparent!important;color:var(--muted)!important;font-size:18px!important;line-height:1!important;cursor:pointer;
+  transform:none!important;transition:background-color var(--d-1) ease,color var(--d-1) ease!important;}
+.modal-x:hover,.tm-x:hover,.inv-x:hover,.ds-close:hover,.cb-close:hover{background:color-mix(in srgb,var(--ink) 7%,transparent)!important;color:var(--ink)!important;}
+.modal-x:active,.tm-x:active,.inv-x:active,.ds-close:active{background:color-mix(in srgb,var(--ink) 12%,transparent)!important;}
+.modal-x i,.tm-x i,.inv-x i,.ds-close i,.cb-close i{font-size:18px;line-height:1;display:block;}
+.bv-card-x{width:24px;height:24px;border-radius:50%!important;color:var(--muted)!important;transition:background-color var(--d-1),color var(--d-1)!important;}
+.bv-card-x:hover{background:var(--faint)!important;color:var(--ink)!important;}
 .modal-bd{padding:20px 24px!important;}
 .modal-ft{padding:14px 24px 18px!important;border-top:1px solid var(--faint)!important;gap:8px!important;}
 .detail-drawer,.tm-detail-panel{border-radius:var(--r-lg) 0 0 var(--r-lg)!important;box-shadow:var(--e-4)!important;border-left:1px solid var(--border)!important;transition:right var(--d-4) var(--ease-out)!important;}
@@ -20565,6 +20579,179 @@ body.dark .zone-bucket.done-bucket{background:var(--ok-bg)!important;border-colo
   // When the picker closes without a reload (same person picked), show What's new next
   new MutationObserver(()=>{if(pendingCL&&!whoOpen()){pendingCL=false;setTimeout(()=>window.showChangelog(),350);}})
     .observe(document.body,{childList:true});
+})();
+</script>
+<style id="polish-r2">
+/* ═══ Polish round 2 — owner feedback on the v3 redesign. ds-v3 tokens only. ═══════════════ */
+
+/* ── Dashboard hero: date as one line of text; weekly check-in as the hero's footer row ──── */
+.dh-date{gap:6px!important;font-size:13px;color:var(--muted);}
+.dh-day-name{font-weight:600;color:var(--ink-2);}
+.dh-date-sep{color:var(--subtle);}
+.dh-date .dh-wk{padding:0;border:0;background:none;font-size:13px;font-weight:500;color:var(--muted);}
+.dh-hero.has-checkin{row-gap:var(--s-6);}
+.dh-checkin{grid-column:1/-1;position:relative;z-index:1;margin:0 calc(var(--s-10) * -1) calc(var(--s-8) * -1) calc(var(--s-8) * -1);
+  padding:var(--s-3) var(--s-10) var(--s-3) var(--s-8);border-top:1px solid var(--faint);
+  background:color-mix(in srgb,var(--surface-2) 70%,transparent);}
+.hpr{display:flex;align-items:center;gap:var(--s-4);flex-wrap:wrap;min-height:40px;}
+.hpr-q{font-size:13.5px;font-weight:600;color:var(--ink-2);}
+.hpr-q strong{color:var(--ink);font-weight:650;}
+.hpr-faces{display:flex;align-items:center;gap:var(--s-1);}
+.hpr .hpr-face-btn{position:relative;width:38px;height:38px;flex-direction:row!important;justify-content:center;border-radius:50%;
+  transition:background var(--d-1) ease;}
+.hpr .hpr-face-btn small{display:none;}
+.hpr .hpr-face-btn:hover{background:var(--faint)!important;}
+.hpr .hpr-face-btn svg{filter:drop-shadow(0 1px 1px rgba(35,28,18,.16));}
+.hpr .hpr-face-btn:focus-visible{outline:2px solid var(--focus);outline-offset:1px;}
+.hpr-links{margin-left:auto;display:flex;gap:2px;}
+.hpr-link{border:0;background:none;font:500 12.5px var(--font);color:var(--muted);padding:6px 10px;border-radius:var(--r-sm);cursor:pointer;
+  transition:background var(--d-1),color var(--d-1);}
+.hpr-link:hover{background:var(--faint);color:var(--ink);}
+.hpr-done .hpr-face{display:inline-flex;}
+.hpr-done .hpr-link{margin-left:-6px;}
+@media (max-width:1240px){.dh-checkin{margin:0 calc(var(--s-7) * -1) calc(var(--s-7) * -1);padding:var(--s-3) var(--s-7);}}
+
+/* ── Needs attention: masonry — each card drops into the shortest column, no holes ─────────
+   polish-r2-script sets each card's row span from its height (1px rows); without JS it is the
+   plain grid it was before. */
+.att-grid.is-masonry{grid-auto-rows:1px;row-gap:0!important;column-gap:var(--s-4)!important;align-items:start;}
+.att-grid.is-masonry>.att-card{align-self:start;}
+
+/* ── Task title: a multi-line field that grows with its copy ─────────────────────────────── */
+textarea.tm-title-inp{display:block;width:100%;resize:none;overflow:hidden;line-height:1.4!important;font-family:var(--font);
+  min-height:44px;max-height:40vh;margin-bottom:6px!important;}
+textarea.tm-title-inp.is-scroll{overflow-y:auto;}
+.tm-title-hint{display:flex;align-items:center;gap:4px;justify-content:flex-end;margin:0 2px 14px;font-size:11.5px;color:var(--subtle);
+  opacity:0;transition:opacity var(--d-2);}
+#todo-modal:focus-within .tm-title-inp:focus+.tm-title-hint{opacity:1;}
+.tm-title-hint kbd{font:500 11px var(--font);color:var(--muted);padding:0 5px;border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;background:var(--surface-2);}
+.tm-title-hint kbd+kbd{margin-left:-2px;}
+/* ── To Do: equal breathing room either side of the Done divider ──────────────────────────
+   Planned cards sit on the divider (flex-end), so the gap above it is .day-todo's bottom
+   padding; the gap below is .day-done's top padding minus the 22px rail. 8px each side.
+   The to-do zone keeps 12px of vertical padding in total (ZONE_PAD_PX) and the done zone
+   only gets roomier than DONE_PAD_PX assumes, so no fit / bucket maths changes. */
+.day-todo{padding-top:4px!important;padding-bottom:8px!important;}
+.day-done{padding-top:30px!important;}
+/* ── Page titles: one anchor everywhere — the gutter on the left, the same distance below what sits
+   above (30px below the window edge, or below the Jobs-area tab bar: 8px gap + 22px). Jobs set the standard; the other Jobs
+   tabs stacked a second 20px header padding inside their scroll wrapper, landing 20px lower. */
+.jt-panel>div:first-child :is(div,.time-head-bar):has(>.view-title),
+.jt-panel>div:first-child .time-head-bar:has(.view-title){padding-top:0!important;}
+#view-reporting>div:first-child,#schedule-scroll,#boards-landing,#settings-scroll{padding-top:30px!important;}
+#jt-deadlines{padding-top:0!important;}
+/* ── Job detail header: identity → title → state row (status · dates | team | labels) ──── */
+.detail-title-row{align-items:flex-end!important;gap:var(--s-6)!important;padding-top:var(--s-4)!important;}
+#d-meta-line{gap:var(--s-2)!important;margin-bottom:var(--s-2)!important;font-size:13px!important;}
+.dt-num{font:650 12px/1 var(--display);letter-spacing:.01em;font-variant-numeric:tabular-nums;color:var(--ink-2);
+  padding:4px 8px;border-radius:var(--r-xs);background:var(--surface-2);border:1px solid var(--border);}
+.dt-co{font-weight:600;color:var(--ink-2);}
+.dt-lead,.dt-bill,.dt-po{display:inline-flex;align-items:center;gap:var(--s-2);color:var(--muted);}
+.dt-lead::before,.dt-bill::before,.dt-po::before{content:'';width:3px;height:3px;border-radius:50%;background:var(--subtle);}
+.dt-lead>span{font-size:13px!important;}
+.detail-title{padding-bottom:2px;}
+.detail-meta-line{flex-wrap:wrap;align-items:center!important;gap:var(--s-3) var(--s-4)!important;padding:var(--s-3) 0 var(--s-4)!important;font-size:13px!important;}
+.dt-status{display:flex;align-items:center;gap:var(--s-2);flex-wrap:wrap;}
+.dt-status:empty{display:none;}
+.dt-team,.detail-meta-line .labels-row{display:flex;align-items:center;padding-left:var(--s-4);border-left:1px solid var(--border);min-height:26px;}
+.detail-meta-line .labels-row{gap:6px;padding-bottom:0!important;}
+.dt-team .d-av{box-shadow:0 0 0 2px var(--off);transition:transform var(--d-2) var(--ease-out);}
+.dt-team .d-av:hover{transform:translateY(-2px);z-index:1;}
+/* Status pill: a dot + label, the advance arrow as its own small hit area */
+.dt-status .wf-badge{display:inline-flex!important;align-items:center;gap:6px;height:28px;padding:0 4px 0 11px!important;font-size:12.5px!important;}
+.dt-status .wf-badge::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.85;}
+.dt-status .wf-badge>span{cursor:pointer;}
+.dt-status .wf-badge>i{display:inline-flex!important;align-items:center;justify-content:center;width:22px;height:22px;margin:0!important;padding:0!important;border-radius:50%;font-size:12px!important;
+  transition:background var(--d-1);}
+.dt-status .wf-badge>i:hover{background:color-mix(in srgb,currentColor 16%,transparent);}
+.dt-status .paused-badge{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px;border-radius:var(--r-pill);font-size:12.5px;letter-spacing:0;
+  background:var(--white);border:1px solid var(--border);color:var(--ink-2);}
+.dt-status .paused-badge i{font-size:13px!important;color:var(--muted);}
+.dt-status .paused-badge[onclick]:hover{border-color:var(--border-strong);background:var(--surface-2);color:var(--ink);}
+body.dark .dt-status .paused-badge{background:var(--surface-2);border-color:var(--border);color:var(--ink-2);}
+.detail-meta-line .label-add-btn{height:26px;display:inline-flex;align-items:center;gap:4px;color:var(--muted);border:1px dashed var(--border)!important;background:transparent!important;}
+.detail-meta-line .label-add-btn:hover{color:var(--ink);border-color:var(--border-strong)!important;border-style:solid!important;}
+.detail-meta-line .label-chip{height:26px;display:inline-flex;align-items:center;gap:4px;}
+.dt-hours-sell:empty{display:none;}
+/* Actions: quiet icon pair, then the two text actions */
+.detail-actions{align-items:center;gap:var(--s-2)!important;}
+.dt-iconset{display:inline-flex;gap:2px;margin-right:var(--s-1);}
+.dt-iconset .dt-ibtn{background:transparent!important;border-color:transparent!important;box-shadow:none!important;color:var(--muted)!important;}
+.dt-iconset .dt-ibtn:hover{background:color-mix(in srgb,var(--ink) 6%,transparent)!important;color:var(--ink)!important;}
+#job-notes-row{padding-bottom:var(--s-3)!important;}
+/* ── Progress tab: the job KPI tiles lead the page (they replaced the old progress bars) ── */
+#dtab-progress .prog-stats{padding:0!important;margin:0 0 var(--s-5);}
+/* ── Dark mode To Do cards: lift them off the board — a step lighter surface, a hairline
+   that reads on charcoal, a faint top highlight and a deeper shadow. Done cards stay a step
+   quieter. Light mode is untouched. */
+body.dark .task-card{background:var(--surface-2)!important;border-color:rgba(255,246,230,.085)!important;
+  box-shadow:inset 0 1px 0 rgba(255,246,230,.04),0 1px 2px rgba(0,0,0,.45),0 3px 10px rgba(0,0,0,.2)!important;}
+body.dark .task-card:hover{border-color:rgba(255,246,230,.16)!important;
+  box-shadow:inset 0 1px 0 rgba(255,246,230,.05),0 2px 4px rgba(0,0,0,.45),0 8px 22px rgba(0,0,0,.3)!important;}
+body.dark .task-card.done-c{background:color-mix(in srgb,var(--surface-2) 55%,var(--white))!important;border-color:rgba(255,246,230,.06)!important;
+  box-shadow:0 1px 2px rgba(0,0,0,.35)!important;}
+/* ── Small finishes ─────────────────────────────────────────────────────────────────────── */
+/* Masonry rows carry one gap below the last card; give it back so the next section keeps its rhythm */
+.att-grid.is-masonry{margin-bottom:calc(var(--s-4) * -1);}
+/* Keyboard focus is visible on the controls added or reshaped in this round */
+:is(.modal-x,.tm-x,.inv-x,.ds-close,.hpr-link,.dt-iconset .dt-ibtn):focus-visible{outline:2px solid var(--focus)!important;outline-offset:2px;}
+.dt-status .paused-badge[onclick],.dt-status .wf-badge>span,.dt-status .wf-badge>i{outline:none;}
+.dt-status .paused-badge[onclick]:focus-visible,.dt-status .wf-badge>span:focus-visible,.dt-status .wf-badge>i:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:var(--r-pill);}
+/* Line breaks typed into a title show as line breaks (cards stay clamped) */
+.tc-title,.tt-title,.fli-title{white-space:pre-line;}
+</style>
+<script id="polish-r2-script">
+// ═══ Polish round 2 — behaviour for the polish-r2 CSS above ═══════════════════════════════
+(function(){
+  // ── Needs attention masonry: span = card height + one gap, in 1px grid rows. Grid
+  // auto-placement then puts each card in the first free slot, i.e. the shortest column,
+  // keeping the priority order reading left to right. Re-measures when a card resizes.
+  // ── Task title textarea: grow to fit, re-measure whenever the modal opens or the value is
+  // set from code (open/edit/prefill all assign .value, which fires no input event).
+  const MAXH=()=>Math.round(innerHeight*.4);
+  function grow(el){if(!el)return;el.style.height='auto';const h=el.scrollHeight+2;
+    el.style.height=Math.min(h,MAXH())+'px';el.classList.toggle('is-scroll',h>MAXH());}
+  const ti=document.getElementById('td-task');
+  if(ti){
+    ti.addEventListener('input',()=>grow(ti));
+    ti.addEventListener('focus',()=>grow(ti));
+    const desc=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value');
+    Object.defineProperty(ti,'value',{configurable:true,get(){return desc.get.call(this);},
+      set(v){desc.set.call(this,v);setTimeout(()=>grow(ti),0);}});
+    const tm=document.getElementById('todo-modal');
+    if(tm)new MutationObserver(()=>{if(tm.classList.contains('on'))setTimeout(()=>grow(ti),0);}).observe(tm,{attributes:true,attributeFilter:['class']});
+  }
+  // Shortcut hint speaks the platform's language (⌘ on Mac, Ctrl elsewhere)
+  try{if(!/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent||'')){
+    document.querySelectorAll('#td-task-hint kbd').forEach(k=>{if(k.textContent==='⌘')k.textContent='Ctrl';});}}catch(e){}
+  // Job header state controls are spans with click handlers — make them reachable by keyboard
+  const det=document.getElementById('view-detail');
+  if(det){
+    const kb=()=>det.querySelectorAll('#d-status .wf-badge>span,#d-status .wf-badge>i,#d-status .paused-badge[onclick]').forEach(el=>{
+      if(el.tabIndex>=0)return;el.tabIndex=0;el.setAttribute('role','button');
+      const t=el.textContent.trim();el.setAttribute('aria-label',el.matches('.wf-badge>span')?'Status: '+t+'. Change status':el.matches('.paused-badge')?'Dates: '+t+'. Edit dates':(el.getAttribute('title')||t));});
+    new MutationObserver(()=>kb()).observe(det,{childList:true,subtree:true});
+    det.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('#d-status [role="button"]')){e.preventDefault();e.target.click();}});
+  }
+  const GAP=16;
+  let ro=null;
+  function pack(grid){
+    grid.classList.add('is-masonry');
+    [...grid.children].forEach(c=>{const h=c.getBoundingClientRect().height;
+      if(h)c.style.gridRowEnd='span '+Math.round(h+GAP);});
+  }
+  function bind(){
+    const grid=document.querySelector('#view-dashboard .att-grid');
+    if(!grid||grid.dataset.masonry)return;
+    grid.dataset.masonry='1';
+    if(ro)ro.disconnect();
+    ro=('ResizeObserver' in window)?new ResizeObserver(()=>setTimeout(()=>pack(grid),0)):null;
+    if(ro){ro.observe(grid);[...grid.children].forEach(c=>ro.observe(c));}
+    pack(grid);
+  }
+  const dash=document.getElementById('view-dashboard');
+  if(dash){let q=0;new MutationObserver(()=>{if(q)return;q=setTimeout(()=>{q=0;bind();},0);})
+    .observe(dash,{childList:true,subtree:true});bind();}
 })();
 </script>
 </body>
