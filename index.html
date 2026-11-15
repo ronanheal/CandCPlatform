@@ -23077,11 +23077,17 @@ const _r5OrigTile=_bvTileHTML;
 _bvTileHTML=function(b){
   let h=_r5OrigTile(b);
   const w=_r5WipOf(b);
-  if(w)h=h.replace('<div class="bv-tile"',`<div class="bv-tile r5-pinned" data-r5wip="${w}"`).replace('<div class="bv-tile-top">','<div class="bv-tile-top"><span class="r5-tile-ic r5-pin" title="Pinned"><i class="ti ti-pin"></i></span>');
+  if(w)h=h.replace('<div class="bv-tile"',`<div class="bv-tile r5-pinned" data-r5wip="${w}"`);
+  // Right-hand meta: who can see it (icon + short label), then a quiet pin for the WIP boards.
+  let meta='';
   if(R5_PROD&&b.type==='custom'){
-    const ic=b.shared?(b.visibility==='admins'?`<span class="r5-tile-ic" title="Shared · admins only"><i class="ti ti-lock"></i></span>`:`<span class="r5-tile-ic" title="Shared with the team"><i class="ti ti-users"></i></span>`):`<span class="r5-tile-ic" title="Only in this browser"><i class="ti ti-device-laptop"></i></span>`;
-    h=h.replace('<button class="bv-ibtn sm" title="Board options"',ic+'<button class="bv-ibtn sm" title="Board options"');
+    meta+=b.shared?(b.visibility==='admins'
+      ?`<span class="r5-vis" title="Shared with admins only"><i class="ti ti-lock"></i>Admins</span>`
+      :`<span class="r5-vis" title="Shared with the whole team"><i class="ti ti-users"></i>Team</span>`)
+      :`<span class="r5-vis" title="Only in this browser"><i class="ti ti-device-laptop"></i>This browser</span>`;
   }
+  if(w)meta+=`<span class="r5-pin" title="Pinned to the top"><i class="ti ti-pinned"></i></span>`;
+  if(meta)h=h.replace('<button class="bv-ibtn sm" title="Board options"',`<span class="r5-tile-meta">${meta}</span><button class="bv-ibtn sm" title="Board options"`);
   return h;
 };
 const _r5OrigRenderList=renderBoardsList;
@@ -24799,18 +24805,18 @@ body.dark #ob-tour{--ob-dim:rgba(0,0,0,.62);}
 
   // ── Steps ───────────────────────────────────────────────────────────────────────────────
   function steps(r){
+    // Same order as the sidebar; admin-only steps sit where their screen does.
+    const A=r==='admin';
     const s=[
       {eyebrow:'Welcome',title:'Welcome to the C&C Platform',body:'This is C&amp;C’s home for jobs, time, To Do and boards. The data comes from Streamtime, so the numbers match what you already know. Here’s a one-minute look around.'},
       {target:'#snav-dashboard',view:'dashboard',title:'Your Dashboard',body:'Your day and your week at a glance: today’s tasks, the hours you’ve booked, and anything that needs attention.'},
       {target:'#snav-todo',view:'todo',title:'To Do',body:'Plan your week as tasks. Press <span class="ob-kbd">L</span> or the plus to open the task sheet, start the timer when you begin, and use Log as done to record the time.'},
       {target:'#snav-jobs',view:'jobs',title:'Jobs',body:'Every job and its plan. Open one to see the details, copy its job number, or log time against it.'},
+      A&&{target:'#snav-reporting',view:'reporting',eyebrow:'For admins',title:'Reporting',body:'Business, team, people, job and client reports, plus WIP and Team happiness. Pick a period at the top; tables export to CSV.'},
       {target:'#snav-boards',view:'boards',title:'Boards',body:'Shared boards for the team, like Team Wip &amp; Workflow. Everyone sees the same cards, so a change you make is there for the whole team.'},
-    ];
-    if(r==='admin')s.push(
-      {target:'#snav-reporting',view:'reporting',eyebrow:'For admins',title:'Reporting',body:'Business, team, people, job and client reports, plus WIP and Team happiness. Pick a period at the top; tables export to CSV.'},
-      {target:()=>document.getElementById('au-access-body')?.closest('.sett-card')||'#snav-settings',view:'settings',sett:'team',eyebrow:'For admins',title:'Settings → Team → Access',body:'Approve access requests and add people here. Each new account gets a temporary password, shown once: send it to them and they choose their own at first sign-in.'},
-      {target:'#snav-boards',view:'boards',eyebrow:'For admins',title:'Business boards and data',body:'Boards can be shared with admins only, like Business WIP. Job, time and money figures come from Streamtime; boards, To Do and notes live here.'},
-    );
+      A&&{target:'#snav-boards',view:'boards',eyebrow:'For admins',title:'Business boards and data',body:'Boards can be shared with admins only, like Business WIP. Job, time and money figures come from Streamtime; boards, To Do and notes live here.'},
+      A&&{target:()=>document.getElementById('au-access-body')?.closest('.sett-card')||'#snav-settings',view:'settings',sett:'team',eyebrow:'For admins',title:'Settings → Team → Access',body:'Approve access requests and add people here. Each new account gets a temporary password, shown once: send it to them and they choose their own at first sign-in.'},
+    ].filter(Boolean);
     s.push({target:'#s-avatar',eyebrow:'Last thing',title:'A few quick tips',body:'',tips:true});
     return s;
   }
@@ -25531,5 +25537,17 @@ body.cc-member #view-detail .item-note-inp[readonly]{background:transparent;}
   }catch(e){}
 })();
 </script>
+<style id="boards-r12">
+/* Board tiles: type chip on the left; visibility label + pin grouped on the right, one baseline. */
+#view-boards .bv-tile-top{display:flex;align-items:center;gap:8px;margin:-2px -6px 2px 0;}
+#view-boards .bv-tile-top .bv-tag{margin-right:auto;}
+#view-boards .r5-tile-meta{display:inline-flex;align-items:center;gap:6px;color:var(--muted);}
+#view-boards .r5-vis{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:99px;background:color-mix(in srgb,var(--ink) 5%,transparent);font:500 11.5px/1 var(--font);color:var(--muted);white-space:nowrap;}
+#view-boards .r5-vis i{font-size:12.5px;}
+#view-boards .r5-pin{display:inline-flex;align-items:center;color:var(--muted);opacity:.8;}
+#view-boards .r5-pin i{font-size:14px;}
+#view-boards .bv-tile-top .bv-ibtn{flex-shrink:0;}
+body.dark #view-boards .r5-vis{background:rgba(255,255,255,.06);}
+</style>
 </body>
 </html>
