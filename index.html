@@ -24480,5 +24480,108 @@ body.dark #r7-load .r7-tb i::after,body.dark #r7-load .r7-cards i::after,body.da
   },true);
 })();
 </script>
+<style id="todo-r8">
+/* ═══ To Do round 8 — empty states follow the date, a deliberate Done divider with the week's
+   totals over a faintly green done zone, and Focus at the Dashboard's width. ds-v3 tokens only;
+   the divider keeps its drag, its drop target and its place (it sits inside the done zone's
+   30px top padding, so no card math changes). ═══════════════════════════════════════════════ */
+
+/* ── 1 · Done divider: a soft green band, a clear rule, the label with the week's totals ──── */
+#view-todo .global-divider{height:28px!important;padding:0 14px 0 20px!important;gap:10px;
+  background:color-mix(in srgb,var(--ok) 9%,var(--off))!important;
+  border-top:1.5px solid color-mix(in srgb,var(--ok) 45%,transparent)!important;
+  border-bottom:1px solid color-mix(in srgb,var(--ok) 16%,transparent)!important;
+  box-shadow:none!important;
+  transition:background-color var(--dur-1) var(--ease-out);}
+#view-todo .global-divider:hover{background:color-mix(in srgb,var(--ok) 13%,var(--off))!important;}
+#view-todo .global-divider.div-drop-hi{background:color-mix(in srgb,var(--ok) 20%,var(--off))!important;border-top-color:var(--ok)!important;}
+#view-todo .global-divider .gd-label{gap:8px!important;font:600 12.5px/1 var(--font)!important;color:var(--ok-ink)!important;white-space:nowrap;}
+#view-todo .global-divider .gd-label::before{width:8px!important;height:8px!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 18%,transparent);}
+#view-todo .global-divider .r8-gd-meta{font-weight:500;color:var(--ink-2);font-variant-numeric:tabular-nums;}
+#view-todo .global-divider .r8-gd-meta b{font-weight:600;color:var(--ink);}
+#view-todo .global-divider .gd-handle{display:inline-flex;align-items:center;justify-content:center;width:24px;height:20px;border-radius:var(--r-sm);
+  color:color-mix(in srgb,var(--ok-ink) 70%,var(--muted))!important;font-size:13px!important;transition:background-color var(--dur-1) var(--ease-out);}
+#view-todo .global-divider:hover .gd-handle{background:color-mix(in srgb,var(--ok) 14%,transparent);}
+/* The done zone reads as its own place: the faintest green wash under the band */
+#view-todo .day-done{background:color-mix(in srgb,var(--ok) 5%,var(--off))!important;}
+body.dark #view-todo .day-done{background:color-mix(in srgb,var(--ok) 5%,color-mix(in srgb,#000 12%,var(--off)))!important;}
+body.dark #view-todo .global-divider{background:color-mix(in srgb,var(--ok) 11%,var(--off))!important;}
+body.dark #view-todo .global-divider:hover{background:color-mix(in srgb,var(--ok) 15%,var(--off))!important;}
+
+/* ── 2 · Empty states: quiet text that names the day's state; past and future get none ───── */
+#view-todo .day-done .day-done-empty{color:var(--subtle)!important;}
+#view-todo .r8-planned-none{display:flex;align-items:center;justify-content:center;min-height:44px;font:500 12px/1 var(--font);color:var(--subtle);}
+
+/* ── 3 · Focus: the Dashboard's content width and gutters (its hero: 1400px max, centred) ─── */
+#view-todo .r5-focus{padding:32px var(--gutter,28px) 72px!important;scrollbar-gutter:stable;}
+#view-todo .r5f-sheet{max-width:1400px;}
+#view-todo .r5f-hd{padding-left:32px;}
+#view-todo .r5f-hero{padding-left:32px;padding-right:32px;}
+#view-todo .r5f-meter,#view-todo .r5f-props,#view-todo .r5f-sec{margin-left:32px;margin-right:32px;}
+#view-todo .r5f-list{padding:8px 20px;}
+#view-todo .r5f-ft{padding-left:32px;padding-right:20px;}
+/* Rows: job and item on one line now there's room; long names ellipsize instead of wrapping */
+#view-todo .r5f-meta{flex-wrap:nowrap;gap:2px 18px;}
+#view-todo .r5f-meta span{display:block;flex:0 1 auto;max-width:60%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+#view-todo .r5f-meta span i{vertical-align:-2px;margin-right:5px;}
+#view-todo .r5f-row .r5f-hrs{min-width:56px;}
+@media (min-width:1100px){
+  /* Wide: the hero on the left, the day's properties beside it, the meter stretched below */
+  #view-todo .r5f-sheet{display:grid;grid-template-columns:minmax(0,1fr) auto;}
+  #view-todo .r5f-sheet>*{grid-column:1/-1;}
+  #view-todo .r5f-sheet>.r5f-hd{grid-row:1;}
+  #view-todo .r5f-sheet>.r5f-hero{grid-row:2;grid-column:1;}
+  #view-todo .r5f-sheet>.r5f-props{grid-row:2;grid-column:2;align-self:end;margin:0 32px 2px 0;padding:0;border:0;gap:6px 26px;}
+  #view-todo .r5f-sheet>.r5f-meter{grid-row:3;height:8px;margin-top:20px;}
+  #view-todo .r5f-sheet>.r5f-props+.r5f-list{margin-top:18px;padding-top:10px;background:linear-gradient(var(--faint),var(--faint)) 32px 0/calc(100% - 64px) 1px no-repeat;}
+}
+@media (prefers-reduced-motion:reduce){
+  #view-todo .global-divider,#view-todo .global-divider .gd-handle{transition:none!important;}
+}
+</style>
+<script id="todo-r8-script">
+// ═══ To Do round 8 — empty states that follow the date, and the Done divider's totals.
+// Wraps renderTodo after every earlier wrapper; the board, its handlers and the divider's
+// drag/drop listeners are untouched. "Today" is the board's own _localISO(). ════════════════
+(function(){
+  if(typeof window.renderTodo!=='function')return;
+  // The board's Monday for the week on screen (the same formula renderTodo uses)
+  const weekMonday=()=>{const m=new Date();const wd=(m.getDay()+6)%7;m.setDate(m.getDate()-wd+(weekOffset*7));m.setHours(0,0,0,0);return m;};
+  const colISO=d=>{const c=weekMonday();c.setDate(c.getDate()+(d-1));return _localISO(c);};
+  function emptyStates(){
+    const today=_localISO();
+    document.querySelectorAll('#day-cols .day-col.workday').forEach(col=>{
+      const d=+col.dataset.day;if(!d)return;
+      const iso=colISO(d),past=iso<today,future=iso>today;
+      col.dataset.date=iso;
+      // Planned: an add slot only today and ahead; past days stay blank
+      const planned=col.querySelector('.day-todo > .r5-empty, .day-todo > .day-done-empty');
+      if(planned){
+        if(past)planned.remove();
+        else if(!col.querySelector('.day-add-btn')&&planned.classList.contains('r5-empty')){
+          const t=document.createElement('div');t.className='r8-planned-none';t.textContent='Nothing planned';planned.replaceWith(t);
+        }
+      }
+      // Done: only today and behind; "yet" only today
+      const done=col.querySelector('.day-done > .day-done-empty');
+      if(done){if(future)done.remove();else done.textContent=past?'Nothing done':'Nothing done yet';}
+    });
+  }
+  function dividerTotals(){
+    const lbl=document.querySelector('#global-divider .gd-label');if(!lbl)return;
+    let n=0,h=0;
+    try{const data=getWeekData(currentPerson);[1,2,3,4,5].forEach(d=>(data[d]||[]).forEach(t=>{if(t.done){n++;h+=t.hours||0;}}));}catch(e){}
+    const hrs=formatHrs(h);
+    lbl.innerHTML=`Done<span class="r8-gd-meta">· <b>${n}</b> task${n===1?'':'s'}${hrs?` · <b>${hrs}</b>`:''}</span>`;
+    lbl.parentElement.title='Drag to resize · drop a task here to mark it done';
+  }
+  const _rt=window.renderTodo;
+  window.renderTodo=function(){
+    const r=_rt.apply(this,arguments);
+    try{if(!window._focusToday&&_todoViewMode!=='calendar'){emptyStates();dividerTotals();}}catch(e){console.warn('todo-r8 board',e);}
+    return r;
+  };
+})();
+</script>
 </body>
 </html>
