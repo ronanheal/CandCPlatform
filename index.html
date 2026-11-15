@@ -7476,11 +7476,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
   populatePersonSwitcher();
   updateWeekLabel();
-  // Show changelog if new version
-  const seenVer=localStorage.getItem('cc_seen_version');
-  if(seenVer!==APP_VERSION){
-    setTimeout(()=>showChangelog(),600);
-  }
+  // What's new no longer opens by itself (onboard-r11): it's in the avatar menu and Settings → About.
   // Rollover prompt: show once per Monday after ST data loads
   const _now=new Date();
   if(_now.getDay()===1){
@@ -24671,5 +24667,541 @@ html body.dark .task-card.tc-urgent:not(.done-c){background:color-mix(in srgb,va
 html body .task-card.tc-urgent:not(.done-c) .tc-hrs{background:color-mix(in srgb,var(--red) 14%,transparent)!important;color:var(--red)!important;font-weight:600!important;}
 html body .task-card.tc-urgent:not(.done-c) .tc-hrs::before{content:'Urgent · ';font-weight:600;}
 </style>
+<style id="onboard-r11">
+/* ═══ Onboarding r11 — the welcome tour (member + admin), "X has joined the team!", and the Team
+   happiness report. Task-sheet language: muted small header, the title as hero, calm footer with
+   the quiet action left and the primary right. ds-v3 tokens only; dark mode via body.dark tokens;
+   no motion under prefers-reduced-motion. ═══════════════════════════════════════════════════ */
+
+/* ── 1 · Tour: a dimmed backdrop with a cut-out around the real UI, and a card beside it ──── */
+#ob-tour{position:fixed;inset:0;z-index:9600;--ob-dim:rgba(28,24,18,.55);}
+body.dark #ob-tour{--ob-dim:rgba(0,0,0,.62);}
+#ob-tour .ob-block{position:absolute;inset:0;background:transparent;}
+#ob-tour.ob-free .ob-block{background:var(--ob-dim);}
+#ob-tour .ob-hole{position:absolute;border-radius:14px;pointer-events:none;box-shadow:0 0 0 200vmax var(--ob-dim),0 0 0 2px color-mix(in srgb,var(--white) 70%,transparent);
+  transition:top var(--d-4) var(--ease-out),left var(--d-4) var(--ease-out),width var(--d-4) var(--ease-out),height var(--d-4) var(--ease-out),opacity var(--d-2) var(--ease-std);}
+#ob-tour.ob-free .ob-hole{opacity:0;}
+#ob-tour .ob-card{position:absolute;width:376px;max-width:calc(100vw - 32px);background:var(--white);color:var(--ink);border:1px solid var(--border);border-radius:var(--r-lg);
+  box-shadow:var(--e-4);padding:16px 22px 16px;outline:none;
+  transition:top var(--d-4) var(--ease-out),left var(--d-4) var(--ease-out);animation:obIn var(--d-3) var(--ease-out);}
+@keyframes obIn{from{opacity:0;transform:translateY(6px) scale(.985);}to{opacity:1;transform:none;}}
+.ob-hd{display:flex;align-items:center;justify-content:space-between;gap:var(--s-2);margin-bottom:10px;}
+.ob-eyebrow{font:600 12.5px/1.3 var(--font);color:var(--muted);}
+.ob-count{font:500 12px/1 var(--font);color:var(--muted);font-variant-numeric:tabular-nums;}
+.ob-title{margin:0 0 6px;font:650 20px/1.3 var(--display);letter-spacing:-.022em;color:var(--ink);}
+.ob-body{margin:0;font:400 13.5px/1.55 var(--font);color:var(--ink-2);}
+.ob-tips{list-style:none;margin:10px 0 0;padding:8px 0;display:flex;flex-direction:column;gap:2px;border-top:1px solid var(--faint);border-bottom:1px solid var(--faint);}
+.ob-tips li{display:grid;grid-template-columns:28px minmax(0,1fr);align-items:center;min-height:30px;font:400 13px/1.35 var(--font);color:var(--ink-2);}
+.ob-tips li i{font-size:16px;color:var(--subtle);}
+.ob-kbd{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:20px;padding:0 5px;margin-right:2px;border-radius:var(--r-xs);border:1px solid var(--border);border-bottom-width:2px;background:var(--surface-2);font:600 11px/1 var(--font);color:var(--ink);}
+.ob-note{margin:10px 0 0;font:500 12.5px/1.45 var(--font);color:var(--muted);}
+.ob-ft{display:flex;align-items:center;gap:var(--s-2);margin-top:16px;}
+.ob-skip{margin-right:auto;border:0;background:none;padding:6px 2px;font:500 12.5px var(--font);color:var(--muted);cursor:pointer;border-radius:var(--r-xs);}
+.ob-skip:hover{color:var(--ink);}
+.ob-dots{display:flex;gap:5px;margin-right:6px;}
+.ob-dots span{width:6px;height:6px;border-radius:50%;background:var(--faint);transition:background-color var(--d-2),width var(--d-2) var(--ease-out);}
+.ob-dots span.on{width:16px;border-radius:999px;background:var(--ink);}
+.ob-btn{display:inline-flex;align-items:center;gap:6px;height:var(--ctl-h);padding:0 14px;border-radius:var(--r-ctl);border:1px solid var(--border);background:var(--white);color:var(--ink);font:500 13px var(--font);cursor:pointer;
+  transition:background-color var(--d-1) var(--ease-out),border-color var(--d-1) var(--ease-out),transform var(--d-1) var(--ease-out);}
+.ob-btn:hover{border-color:var(--border-strong);background:var(--surface-2);}
+.ob-btn.primary{background:var(--ink);border-color:var(--ink);color:var(--on-ink,#fff);}
+.ob-btn.primary:hover{background:color-mix(in srgb,var(--ink) 88%,var(--white));}
+.ob-btn:active{transform:scale(.98);}
+.ob-btn[hidden]{display:none;}
+:is(.ob-btn,.ob-skip,.ob-x):focus-visible,#ob-tour .ob-card:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
+
+/* ── 2 · "X has joined the team!" — confetti canvas (never takes clicks) and a small card ─── */
+#ob-confetti{position:fixed;inset:0;width:100vw;height:100vh;z-index:9690;pointer-events:none;}
+#ob-joy{position:fixed;top:22px;left:50%;z-index:9700;transform:translateX(-50%);display:flex;align-items:center;gap:14px;max-width:calc(100vw - 32px);
+  padding:14px 14px 14px 16px;background:var(--white);color:var(--ink);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e-4);
+  animation:obJoyIn var(--d-4) var(--ease-spring);transition:opacity var(--d-4) var(--ease-std),transform var(--d-4) var(--ease-std);will-change:opacity,transform;}
+#ob-joy.out{opacity:0;transform:translate(-50%,-8px);pointer-events:none;}
+@keyframes obJoyIn{from{opacity:0;transform:translate(-50%,-12px) scale(.97);}to{opacity:1;transform:translateX(-50%);}}
+.ob-joy-avs{display:flex;flex:none;}
+.ob-joy-av{width:40px;height:40px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font:600 13px/1 var(--font);color:#fff;background:var(--subtle);box-shadow:0 0 0 3px var(--white);}
+.ob-joy-av+.ob-joy-av{margin-left:-12px;}
+.ob-joy-txt{min-width:0;}
+.ob-joy-txt b{display:block;font:650 16px/1.3 var(--display);letter-spacing:-.015em;color:var(--ink);}
+.ob-joy-txt small{display:block;margin-top:2px;font:400 12.5px/1.4 var(--font);color:var(--muted);}
+.ob-x{flex:none;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:var(--r-sm);background:transparent;color:var(--muted);cursor:pointer;}
+.ob-x:hover{background:var(--surface-2);color:var(--ink);}
+.ob-x i{font-size:16px;}
+
+/* ── 3 · Settings → About: help row ─────────────────────────────────────────────────────── */
+.ob-help-acts{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* ── 4 · Reporting → Team happiness ─────────────────────────────────────────────────────── */
+.hp-spread{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;align-items:end;}
+.hp-sp{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;}
+.hp-sp-bar{width:100%;height:96px;display:flex;align-items:flex-end;justify-content:center;border-radius:var(--r-sm);background:var(--surface-2);overflow:hidden;}
+.hp-sp-bar i{display:block;width:100%;background:var(--sp-c,var(--subtle));border-radius:var(--r-sm) var(--r-sm) 0 0;min-height:0;}
+.hp-sp-n{font:650 16px/1 var(--display);color:var(--ink);font-variant-numeric:tabular-nums;}
+.hp-sp-l{font:500 12px/1.2 var(--font);color:var(--muted);}
+.hp-notes{display:flex;flex-direction:column;}
+.hp-note{display:grid;grid-template-columns:28px minmax(0,1fr);gap:4px 12px;padding:12px 0;border-bottom:1px solid var(--faint);}
+.hp-note:last-child{border-bottom:0;}
+.hp-note-hd{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font:600 13px/1.3 var(--font);color:var(--ink);}
+.hp-note-hd small{font:500 12px var(--font);color:var(--muted);}
+.hp-note p{grid-column:2;margin:0;font:400 13px/1.5 var(--font);color:var(--ink-2);white-space:pre-wrap;overflow-wrap:anywhere;}
+.hp-empty{font:400 13px/1.5 var(--font);color:var(--muted);padding:6px 0;}
+.hp-local{margin:-6px 0 16px;font:500 12.5px/1.4 var(--font);color:var(--muted);}
+
+@media (prefers-reduced-motion:reduce){
+  #ob-tour .ob-hole,#ob-tour .ob-card,.ob-dots span,.ob-btn,#ob-joy{transition:none!important;animation:none!important;}
+}
+</style>
+<script id="onboard-r11-script">
+// ═══ Onboarding r11 ═══════════════════════════════════════════════════════════════════════════
+// 1. What's new no longer opens at boot: it's in the avatar menu and Settings → About.
+// 2. Welcome tour, member and admin versions. Shown when the person's recorded tour role
+//    (`onboarded`, on their access-list record via POST /api/me; localStorage on localhost)
+//    differs from their role now: first sign-in, and again after a member↔admin change.
+//    "Take the tour again" in the avatar menu and Settings → About. Role = _isAdmin().
+// 3. "X has joined the team!": GET /api/team/joins (names only, last 30 days, never yourself),
+//    compared with a per-viewer "last seen" time in localStorage (cc_join_seen:<email>). A first
+//    ever visit only sets that baseline. Local preview: window.__ccDemoJoin('Name').
+// 4. Weekly check-in to the server (POST /api/happiness) in production, plus Reporting → Team
+//    happiness for admins (GET /api/happiness: admins get the team). Localhost stays local.
+(function(){
+  const LS={get(k){try{return localStorage.getItem(k);}catch(e){return null;}},set(k,v){try{localStorage.setItem(k,v);}catch(e){}}};
+  const SS={get(k){try{return sessionStorage.getItem(k);}catch(e){return null;}},set(k,v){try{sessionStorage.setItem(k,v);}catch(e){}}};
+  const reduced=()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}};
+  const E=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const role=()=>{try{return _isAdmin()?'admin':'member';}catch(e){return 'member';}};
+  const who=()=>AUTH?('u:'+String(AUTH.email||'').toLowerCase()):('local:'+MY_PERSON);
+  const isMac=/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent||'');
+  let meCache=null;
+  async function fetchMe(){
+    if(meCache)return meCache;
+    const r=await fetch('/api/me',{credentials:'same-origin',cache:'no-store'});
+    if(!r.ok)throw new Error('me '+r.status);
+    return meCache=await r.json();
+  }
+
+  // ── Steps ───────────────────────────────────────────────────────────────────────────────
+  function steps(r){
+    const s=[
+      {eyebrow:'Welcome',title:'Welcome to the C&C Platform',body:'This is C&amp;C’s home for jobs, time, To Do and boards. The data comes from Streamtime, so the numbers match what you already know. Here’s a one-minute look around.'},
+      {target:'#snav-dashboard',view:'dashboard',title:'Your Dashboard',body:'Your day and your week at a glance: today’s tasks, the hours you’ve booked, and anything that needs attention.'},
+      {target:'#snav-todo',view:'todo',title:'To Do',body:'Plan your week as tasks. Press <span class="ob-kbd">L</span> or the plus to open the task sheet, start the timer when you begin, and use Log as done to record the time.'},
+      {target:'#snav-jobs',view:'jobs',title:'Jobs',body:'Every job and its plan. Open one to see the details, copy its job number, or log time against it.'},
+      {target:'#snav-boards',view:'boards',title:'Boards',body:'Shared boards for the team, like Team Wip &amp; Workflow. Everyone sees the same cards, so a change you make is there for the whole team.'},
+    ];
+    if(r==='admin')s.push(
+      {target:'#snav-reporting',view:'reporting',eyebrow:'For admins',title:'Reporting',body:'Business, team, people, job and client reports, plus WIP and Team happiness. Pick a period at the top; tables export to CSV.'},
+      {target:()=>document.getElementById('au-access-body')?.closest('.sett-card')||'#snav-settings',view:'settings',sett:'team',eyebrow:'For admins',title:'Settings → Team → Access',body:'Approve access requests and add people here. Each new account gets a temporary password, shown once: send it to them and they choose their own at first sign-in.'},
+      {target:'#snav-boards',view:'boards',eyebrow:'For admins',title:'Business boards and data',body:'Boards can be shared with admins only, like Business WIP. Job, time and money figures come from Streamtime; boards, To Do and notes live here.'},
+    );
+    s.push({target:'#s-avatar',eyebrow:'Last thing',title:'A few quick tips',body:'',tips:true});
+    return s;
+  }
+  function tipsHTML(){
+    return`<ul class="ob-tips">
+      <li><i class="ti ti-search" aria-hidden="true"></i><span><span class="ob-kbd">${isMac?'⌘':'Ctrl'}</span><span class="ob-kbd">K</span> searches everything</span></li>
+      <li><i class="ti ti-arrow-back-up" aria-hidden="true"></i><span><span class="ob-kbd">Esc</span> closes whatever is open</span></li>
+      <li><i class="ti ti-keyboard" aria-hidden="true"></i><span><span class="ob-kbd">?</span> shows every keyboard shortcut</span></li>
+      <li><i class="ti ti-moon" aria-hidden="true"></i><span>The moon icon switches to dark mode</span></li>
+      <li><i class="ti ti-key" aria-hidden="true"></i><span>Change your password from your avatar menu</span></li>
+    </ul><p class="ob-note">This is a test version. If something looks off, tell us.</p>`;
+  }
+
+  // ── Tour ────────────────────────────────────────────────────────────────────────────────
+  const T={el:null,i:0,steps:[],role:'member',startView:null,onEnd:null};
+  function activeView(){const v=[...document.querySelectorAll('.content > .view')].find(x=>!x.classList.contains('hidden'));return v?v.id.replace(/^view-/,''):null;}
+  function targetEl(st){
+    let t=typeof st.target==='function'?st.target():st.target;
+    if(typeof t==='string')t=document.querySelector(t);
+    if(!t)return null;
+    const r=t.getBoundingClientRect();
+    if(r.width<4||r.height<4||r.bottom<0||r.right<0||r.top>innerHeight||r.left>innerWidth)return null;
+    const cs=getComputedStyle(t);if(cs.visibility==='hidden'||cs.display==='none')return null;
+    return t;
+  }
+  function place(){
+    if(!T.el)return;
+    const st=T.steps[T.i],card=T.el.querySelector('.ob-card'),hole=T.el.querySelector('.ob-hole');
+    const t=st.target?targetEl(st):null;
+    const cw=card.offsetWidth,ch=card.offsetHeight,M=16;
+    T.el.classList.toggle('ob-free',!t);
+    if(!t){
+      card.style.left=Math.round((innerWidth-cw)/2)+'px';card.style.top=Math.round(Math.max(M,(innerHeight-ch)/2))+'px';return;
+    }
+    const r=t.getBoundingClientRect(),pad=6;
+    Object.assign(hole.style,{left:(r.left-pad)+'px',top:(r.top-pad)+'px',width:(r.width+pad*2)+'px',height:(r.height+pad*2)+'px'});
+    let left,top;
+    if(r.right+pad+M+cw<=innerWidth-M){left=r.right+pad+M;top=r.top+r.height/2-ch/2;}
+    else if(r.bottom+pad+M+ch<=innerHeight-M){left=r.left+r.width/2-cw/2;top=r.bottom+pad+M;}
+    else if(r.left-pad-M-cw>=M){left=r.left-pad-M-cw;top=r.top+r.height/2-ch/2;}
+    else{left=r.left+r.width/2-cw/2;top=r.top-pad-M-ch;}
+    card.style.left=Math.round(Math.max(M,Math.min(left,innerWidth-cw-M)))+'px';
+    card.style.top=Math.round(Math.max(M,Math.min(top,innerHeight-ch-M)))+'px';
+  }
+  function go(i){
+    if(!T.el)return;
+    T.i=Math.max(0,Math.min(T.steps.length-1,i));
+    const st=T.steps[T.i],n=T.steps.length,last=T.i===n-1;
+    try{if(st.view&&activeView()!==st.view)navTo(st.view);}catch(e){}
+    try{if(st.sett&&typeof switchSettTab==='function')switchSettTab(st.sett);}catch(e){}
+    const card=T.el.querySelector('.ob-card');
+    card.innerHTML=`<div class="ob-hd"><span class="ob-eyebrow">${E(st.eyebrow||'Welcome tour')}</span><span class="ob-count">${T.i+1} of ${n}</span></div>
+      <h2 class="ob-title" id="ob-title">${E(st.title)}</h2>
+      ${st.body?`<p class="ob-body" id="ob-body">${st.body}</p>`:''}${st.tips?tipsHTML():''}
+      <div class="ob-ft"><button type="button" class="ob-skip" data-ob="skip"${last?' style="visibility:hidden" tabindex="-1"':''}>Skip tour</button>
+        <span class="ob-dots" aria-hidden="true">${T.steps.map((_,k)=>`<span class="${k===T.i?'on':''}"></span>`).join('')}</span>
+        <button type="button" class="ob-btn" data-ob="back"${T.i?'':' hidden'}>Back</button>
+        <button type="button" class="ob-btn primary" data-ob="next">${last?'Done':T.i?'Next':'Show me around'}</button></div>`;
+    card.setAttribute('aria-describedby',st.body?'ob-body':'');
+    place();
+    // The view switch can move things for a frame (gliding nav marker, view fade): place again.
+    requestAnimationFrame(()=>requestAnimationFrame(place));setTimeout(place,260);
+    card.querySelector('[data-ob="next"]').focus({preventScroll:true});
+  }
+  function onKey(e){
+    if(!T.el)return;
+    if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();end();return;}
+    if(e.target&&/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))return;
+    if(e.key==='ArrowRight'){e.preventDefault();e.stopImmediatePropagation();T.i<T.steps.length-1?go(T.i+1):end();return;}
+    if(e.key==='ArrowLeft'){e.preventDefault();e.stopImmediatePropagation();go(T.i-1);return;}
+    if(e.key==='Tab'){
+      const f=[...T.el.querySelectorAll('button:not([hidden]):not([tabindex="-1"])')];if(!f.length)return;
+      const k=f.indexOf(document.activeElement);e.preventDefault();e.stopImmediatePropagation();
+      f[(k+(e.shiftKey?-1:1)+f.length)%f.length].focus();return;
+    }
+    // Every other app shortcut waits until the tour is over
+    if(!e.metaKey&&!e.ctrlKey&&e.key.length===1){e.stopImmediatePropagation();}
+  }
+  function start(r,opts){
+    opts=opts||{};
+    if(T.el)return;
+    document.getElementById('au-menu')?.remove();
+    T.role=r||role();T.steps=steps(T.role);T.i=0;T.startView=activeView();T.onEnd=opts.onEnd||null;T.auto=!!opts.auto;T.preview=!!opts.preview;
+    const el=document.createElement('div');el.id='ob-tour';
+    el.innerHTML=`<div class="ob-block"></div><div class="ob-hole"></div><div class="ob-card" role="dialog" aria-modal="true" aria-labelledby="ob-title" tabindex="-1"></div>`;
+    el.addEventListener('click',e=>{const a=e.target.closest('[data-ob]')?.dataset.ob;if(!a)return;
+      if(a==='next'){T.i<T.steps.length-1?go(T.i+1):end();}else if(a==='back')go(T.i-1);else if(a==='skip')end();});
+    document.body.appendChild(el);T.el=el;
+    window.addEventListener('keydown',onKey,true);addEventListener('resize',place);
+    if(T.auto)SS.set('cc_ob_shown','1');
+    go(0);
+  }
+  function end(){
+    if(!T.el)return;
+    const r=T.role,back=T.startView,cb=T.onEnd,preview=T.preview;
+    window.removeEventListener('keydown',onKey,true);removeEventListener('resize',place);
+    T.el.remove();T.el=null;
+    try{if(back&&activeView()!==back)navTo(back);}catch(e){}
+    if(!preview)markDone(r); // ?tour= previews never change the stored flag
+    if(cb)setTimeout(cb,500);
+  }
+  async function markDone(r){
+    LS.set('cc_onboarded:'+who(),r);
+    if(!AUTH)return;
+    try{
+      const res=await fetch('/api/me',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({action:'onboarded',role:r})});
+      if(res.ok&&meCache)meCache.onboarded=r;
+    }catch(e){}
+  }
+
+  // ── "X has joined the team!" ──────────────────────────────────────────────────────────
+  const seenKey=()=>'cc_join_seen:'+who();
+  function demoJoins(){try{return JSON.parse(LS.get('cc_demo_joins')||'[]');}catch(e){return[];}}
+  async function loadJoins(){
+    if(!AUTH)return demoJoins();
+    const r=await fetch('/api/team/joins',{credentials:'same-origin',cache:'no-store'});
+    if(!r.ok)return[];
+    const j=await r.json();return Array.isArray(j.joins)?j.joins:[];
+  }
+  async function checkJoins(){
+    const seen=+LS.get(seenKey())||0;
+    if(!seen){LS.set(seenKey(),String(Date.now()));return;} // first ever visit: baseline only
+    let list=[];try{list=await loadJoins();}catch(e){return;}
+    const own=AUTH?(AUTH.personKey||null):MY_PERSON;
+    const fresh=list.filter(j=>j&&j.name&&Date.parse(j.joinedAt)>seen&&!(own&&j.personKey===own));
+    if(!fresh.length)return;
+    LS.set(seenKey(),String(Math.max(...fresh.map(j=>Date.parse(j.joinedAt)))));
+    celebrate(fresh);
+  }
+  const first=n=>String(n||'').trim().split(/\s+/)[0]||n;
+  function joinedLine(list){
+    if(list.length===1)return`${list[0].name} has joined the team!`;
+    const names=list.map(j=>first(j.name));
+    if(names.length===2)return`${names[0]} and ${names[1]} have joined the team!`;
+    if(names.length===3)return`${names[0]}, ${names[1]} and ${names[2]} have joined the team!`;
+    return`${names[0]}, ${names[1]} and ${names.length-2} others have joined the team!`;
+  }
+  function avatarHTML(j){
+    const p=j.personKey&&typeof people!=='undefined'?people[j.personKey]:null;
+    const ini=(p&&p.initials)||String(j.name||'?').split(/\s+/).filter(Boolean).map(w=>w[0]).join('').slice(0,2).toUpperCase()||'?';
+    const PAL=['#C8161B','#6B7FA3','#5F8A6A','#B07A45','#8B4F8A','#C46A1E'];
+    const h=[...String(j.name||'')].reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7);
+    return`<span class="ob-joy-av" style="background:${E((p&&p.color)||PAL[h%PAL.length])}" aria-hidden="true">${E(ini)}</span>`;
+  }
+  let joyTimer=null;
+  function celebrate(list){
+    document.getElementById('ob-joy')?.remove();clearTimeout(joyTimer);
+    const card=document.createElement('div');card.id='ob-joy';card.setAttribute('role','status');card.setAttribute('aria-live','polite');
+    card.innerHTML=`<span class="ob-joy-avs">${list.slice(0,3).map(avatarHTML).join('')}</span>
+      <span class="ob-joy-txt"><b>${E(joinedLine(list))}</b><small>${list.length===1?'Say hello when you see them.':'Say hello when you see them.'}</small></span>
+      <button type="button" class="ob-x" aria-label="Dismiss"><i class="ti ti-x" aria-hidden="true"></i></button>`;
+    document.body.appendChild(card);
+    const close=()=>{clearTimeout(joyTimer);card.classList.add('out');setTimeout(()=>card.remove(),reduced()?0:360);};
+    card.querySelector('.ob-x').addEventListener('click',close);
+    const arm=()=>{clearTimeout(joyTimer);joyTimer=setTimeout(close,5200);};
+    card.addEventListener('mouseenter',()=>clearTimeout(joyTimer));card.addEventListener('mouseleave',arm);
+    arm();
+    if(!reduced())confetti();
+  }
+  // Lightweight canvas confetti: two corner bursts, ~2.2 s, then the canvas is removed.
+  function confetti(){
+    document.getElementById('ob-confetti')?.remove();
+    const cv=document.createElement('canvas');cv.id='ob-confetti';cv.setAttribute('aria-hidden','true');
+    const dpr=Math.min(2,devicePixelRatio||1),W=innerWidth,H=innerHeight;
+    cv.width=W*dpr;cv.height=H*dpr;document.body.appendChild(cv);
+    const ctx=cv.getContext('2d');if(!ctx){cv.remove();return;}ctx.scale(dpr,dpr);
+    const cs=getComputedStyle(document.body),tok=(n,f)=>(cs.getPropertyValue(n)||'').trim()||f;
+    const cols=[tok('--red','#ED1E24'),tok('--ink','#1C1A16'),tok('--desk','#E6E0D4'),tok('--ok','#3E9B48'),tok('--red','#ED1E24'),tok('--ok','#3E9B48')];
+    const edge=tok('--border-strong','#CBC3B4');
+    const P=[],N=Math.round(Math.min(170,Math.max(90,W/10)));
+    for(let k=0;k<N;k++){
+      const left=k%2===0,a=(left?-58:-122)+(Math.random()*40-20);const sp=13+Math.random()*11;
+      P.push({x:left?-10:W+10,y:H*0.62+Math.random()*H*0.1,vx:Math.cos(a*Math.PI/180)*sp,vy:Math.sin(a*Math.PI/180)*sp,
+        w:5+Math.random()*6,h:7+Math.random()*8,r:Math.random()*6.28,vr:(Math.random()-.5)*.35,c:cols[Math.floor(Math.random()*cols.length)],round:Math.random()<.22,flip:Math.random()*6.28});
+    }
+    const T0=performance.now(),DUR=2200;
+    function frame(now){
+      const t=now-T0;ctx.clearRect(0,0,W,H);
+      const fade=t>DUR-450?Math.max(0,(DUR-t)/450):1;
+      for(const p of P){
+        p.vx*=.985;p.vy=p.vy*.985+.32;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;p.flip+=.18;
+        if(p.y>H+20)continue;
+        ctx.save();ctx.globalAlpha=fade;ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.scale(1,Math.cos(p.flip));
+        ctx.fillStyle=p.c;
+        if(p.round){ctx.beginPath();ctx.arc(0,0,p.w/2,0,6.28);ctx.fill();}
+        else{ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);if(p.c===cols[2]){ctx.strokeStyle=edge;ctx.lineWidth=.8;ctx.strokeRect(-p.w/2,-p.h/2,p.w,p.h);}}
+        ctx.restore();
+      }
+      if(t<DUR)requestAnimationFrame(frame);else cv.remove();
+    }
+    requestAnimationFrame(frame);
+  }
+  if(IS_LOCAL_DEV){
+    // Local preview only: simulate someone joining, e.g. __ccDemoJoin('Maya Brown')
+    window.__ccDemoJoin=function(name,personKey){
+      if(!LS.get(seenKey()))LS.set(seenKey(),String(Date.now()-1000));
+      const list=demoJoins().filter(j=>Date.now()-Date.parse(j.joinedAt)<30*864e5);
+      list.push({name:String(name||'New teammate').slice(0,120),personKey:personKey||null,joinedAt:new Date().toISOString()});
+      LS.set('cc_demo_joins',JSON.stringify(list.slice(-10)));
+      return checkJoins();
+    };
+  }
+
+  // ── Boot: tour if this role hasn't had it, otherwise the joins check ─────────────────────
+  function appReady(){
+    return new Promise(res=>{
+      const t0=Date.now();
+      const tick=()=>{
+        const sp=document.getElementById('cc-splash');
+        const splash=sp&&!sp.classList.contains('out')&&getComputedStyle(sp).display!=='none';
+        const modal=document.querySelector('.modal-bg.on,#au-pw-modal,#happiness-modal');
+        if((!splash&&!modal)||Date.now()-t0>30000)setTimeout(res,700);else setTimeout(tick,400);
+      };
+      tick();
+    });
+  }
+  // ?tour=1 (anyone) or ?tour=member / ?tour=admin (admins only): run the tour on demand as a
+  // preview, without touching the stored flag. The parameter is dropped from the address bar.
+  function tourParam(){
+    let q=null;try{q=new URLSearchParams(location.search).get('tour');}catch(e){}
+    if(!q)return null;
+    try{const u=new URL(location.href);u.searchParams.delete('tour');history.replaceState(history.state,'',u.pathname+u.search+u.hash);}catch(e){}
+    if(q==='member'||q==='admin')return role()==='admin'?q:null;
+    return q==='1'||q==='true'?role():null;
+  }
+  const ASKED=tourParam();
+  async function boot(){
+    await appReady();
+    if(ASKED){start(ASKED,{preview:true,onEnd:checkJoins});return;}
+    const r=role();
+    let done=LS.get('cc_onboarded:'+who());
+    if(AUTH){try{done=(await fetchMe()).onboarded||null;}catch(e){done=r;}} // can't tell: don't nag
+    // No recorded value (accounts made before the tour existed) counts as never onboarded.
+    if(done!==r&&!SS.get('cc_ob_shown'))start(r,{auto:true,onEnd:checkJoins});
+    else checkJoins();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,300));else setTimeout(boot,300);
+
+  // ── Entry points: avatar menu and Settings → About ───────────────────────────────────────
+  const _av=window._avatarClick;
+  if(typeof _av==='function'){
+    window._avatarClick=function(ev){
+      const res=_av.apply(this,arguments);
+      const m=document.getElementById('au-menu');if(!m||m.querySelector('[data-ob-a]'))return res;
+      const items=document.createElement('div');
+      items.innerHTML=`<button class="au-mi" role="menuitem" data-ob-a="new"><i class="ti ti-sparkles"></i>What’s new</button>
+        <button class="au-mi" role="menuitem" data-ob-a="tour"><i class="ti ti-route"></i>Take the tour again</button>`;
+      const sep=m.querySelector('.au-sep');
+      [...items.children].forEach(b=>sep?m.insertBefore(b,sep):m.appendChild(b));
+      m.addEventListener('click',e=>{const a=e.target.closest('[data-ob-a]')?.dataset.obA;if(!a)return;m.remove();
+        if(a==='new')showChangelog();else start(role());});
+      const r=document.getElementById('s-avatar')?.getBoundingClientRect();
+      if(r)m.style.top=Math.max(8,Math.min(r.bottom-m.offsetHeight,innerHeight-m.offsetHeight-8))+'px';
+      return res;
+    };
+  }
+  const _rs=window.renderSettings;
+  if(typeof _rs==='function'){
+    window.renderSettings=renderSettings=function(){
+      const res=_rs.apply(this,arguments);
+      try{
+        const wrap=document.getElementById('settings-scroll');
+        if((_settActiveTab||'profile')==='about'&&wrap&&!wrap.querySelector('#ob-help')){
+          const c=document.createElement('div');c.className='sett-card';c.id='ob-help';
+          c.innerHTML=`<div class="sett-card-hd">Help</div><div class="sett-card-body" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+            <div><div style="font-size:13px;font-weight:500;">New here, or want a refresher?</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">A one-minute tour of the platform${role()==='admin'?', including the admin tools':''}.</div></div>
+            <div class="ob-help-acts"><button class="d-action" data-ob-h="new"><i class="ti ti-sparkles" style="font-size:12px"></i> What’s new</button><button class="d-action primary" data-ob-h="tour"><i class="ti ti-route" style="font-size:12px"></i> Take the tour again</button></div></div>`;
+          c.addEventListener('click',e=>{const a=e.target.closest('[data-ob-h]')?.dataset.obH;if(a==='new')showChangelog();else if(a==='tour')start(role());});
+          wrap.appendChild(c);
+        }
+      }catch(e){}
+      return res;
+    };
+  }
+  window.ccStartTour=r=>start(r||role());
+
+  // ── Weekly check-in → server (production) ───────────────────────────────────────────────
+  function isoWeekOfLocal(d){
+    d=d||new Date();
+    const day=Date.UTC(d.getFullYear(),d.getMonth(),d.getDate());
+    const thu=day+(3-((new Date(day).getUTCDay()+6)%7))*864e5;
+    const y=new Date(thu).getUTCFullYear();
+    const j4=Date.UTC(y,0,4),w1=j4-((new Date(j4).getUTCDay()+6)%7)*864e5;
+    return`${y}-W${String(1+Math.floor((thu-w1)/(7*864e5))).padStart(2,'0')}`;
+  }
+  function weekMonday(w){
+    const m=/^(\d{4})-W(\d{2})$/.exec(w);if(!m)return null;
+    const j4=Date.UTC(+m[1],0,4),w1=j4-((new Date(j4).getUTCDay()+6)%7)*864e5;
+    return new Date(w1+(+m[2]-1)*7*864e5);
+  }
+  const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const wkLabel=w=>{const d=weekMonday(w);return d?`${d.getUTCDate()} ${MON[d.getUTCMonth()]}`:w;};
+  const _sub=window.submitHappiness;
+  if(typeof _sub==='function'){
+    window.submitHappiness=submitHappiness=function(personKey){
+      const score=typeof _hpSelectedFace!=='undefined'?_hpSelectedFace:null;
+      const note=(document.getElementById('hp-note')?.value||'').trim().slice(0,500);
+      const res=_sub.apply(this,arguments); // keeps the local copy (the person's own 8-week trend)
+      const mine=AUTH&&personKey===MY_PERSON&&MY_PERSON===(AUTH.personKey||_authGuestKey());
+      if(score&&mine){
+        fetch('/api/happiness',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},
+          body:JSON.stringify({week:isoWeekOfLocal(),score,...(note?{note}:{})})})
+          .then(r=>{if(!r.ok)throw 0;HP.data=null;})
+          .catch(()=>toast('Saved on this device, but it didn’t reach the team report. Try again later.','warn'));
+      }
+      return res;
+    };
+  }
+
+  // ── Reporting → Team happiness (admins) ─────────────────────────────────────────────────
+  const HP={data:null,at:0,loading:false,err:''};
+  const FACE_L={1:'Rough',2:'Meh',3:'OK',4:'Good',5:'Great'};
+  const FACE_C={1:'#E3876B',2:'#EDB46C',3:'#D9C08E',4:'#A9C484',5:'#7FBA8B'};
+  function localData(){
+    // This browser's check-ins only (localhost has no shared store)
+    const log=(typeof _getHappinessLog==='function'?_getHappinessLog():{})||{};
+    const weeks=[];for(let i=11;i>=0;i--)weeks.push(isoWeekOfLocal(new Date(Date.now()-i*7*864e5)));
+    const want=new Set(weeks),out=[];
+    Object.entries(log).forEach(([pk,wks])=>Object.entries(wks||{}).forEach(([k,e])=>{
+      if(!e||!e.score)return;const d=new Date(k+'T12:00:00');d.setDate(d.getDate()+3);
+      const w=isoWeekOfLocal(d);if(!want.has(w))return;
+      out.push({name:people[pk]?.name||pk,personKey:pk,week:w,score:e.score,note:e.note||'',at:e.ts?new Date(e.ts).toISOString():null});
+    }));
+    out.sort((a,b)=>a.week<b.week?1:a.week>b.week?-1:String(b.at).localeCompare(String(a.at)));
+    return{weeks,responses:out,people:Object.values(people).filter(p=>p&&!p._archived&&!p._stub).length||1,local:true};
+  }
+  async function load(force){
+    if(!AUTH){HP.data=localData();return;}
+    if(!force&&HP.data&&Date.now()-HP.at<60000)return;
+    const r=await fetch('/api/happiness?weeks=12',{credentials:'same-origin',cache:'no-store'});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(j.error||('Could not load ('+r.status+')'));
+    HP.data=j;HP.at=Date.now();
+  }
+  const f1=v=>v==null||!isFinite(v)?'—':v.toFixed(1);
+  async function render(){
+    const el=document.getElementById('rp-happy');if(!el)return;
+    if(!role()||role()!=='admin'){el.innerHTML=`<div class="hp-empty">Team happiness is for admins.</div>`;return;}
+    if(!HP.data){el.innerHTML=`<div class="hp-empty">Loading check-ins…</div>`;}
+    try{await load();}catch(e){el.innerHTML=`<div class="hp-empty">${E(e.message)}</div>`;return;}
+    if(_reportTab!=='happy')return;
+    const D=HP.data,weeks=D.weeks||[],R=D.responses||[],ppl=Math.max(1,D.people||1);
+    const by={};weeks.forEach(w=>by[w]=[]);R.forEach(x=>{if(by[x.week])by[x.week].push(x);});
+    const avg=a=>a.length?a.reduce((s,x)=>s+x.score,0)/a.length:null;
+    const cur=weeks[weeks.length-1],curR=by[cur]||[];
+    const latestW=[...weeks].reverse().find(w=>by[w].length)||cur,latR=by[latestW]||[];
+    const answered=weeks.filter(w=>by[w].length);
+    const rate12=answered.length?answered.reduce((s,w)=>s+Math.min(1,new Set(by[w].map(x=>x.personKey||x.name)).size/ppl),0)/answered.length*100:null;
+    const curPeople=new Set(curR.map(x=>x.personKey||x.name)).size;
+    const notes=R.filter(x=>x.note);
+    const kpis=`<div class="rv-kpis">
+      ${_rvKpi('Team average',`${f1(avg(R))}<span style="font-size:14px;color:var(--muted);font-weight:500;"> / 5</span>`,`last ${weeks.length} weeks · ${_rvN(R.length)} check-ins`)}
+      ${_rvKpi('This week',curR.length?`${f1(avg(curR))}<span style="font-size:14px;color:var(--muted);font-weight:500;"> / 5</span>`:'—',curR.length?`${FACE_L[Math.round(avg(curR))]} on average`:'No check-ins yet')}
+      ${_rvKpi('Response rate',_rvP(curPeople/ppl*100),`${curPeople} of ${ppl} ${ppl===1?'person':'people'} this week · ${_rvP(rate12)} on average`)}
+      ${_rvKpi('Notes',_rvN(notes.length),'left with a check-in')}
+    </div>`;
+    const spread=[1,2,3,4,5].map(v=>{const n=latR.filter(x=>x.score===v).length;const max=Math.max(1,...[1,2,3,4,5].map(s=>latR.filter(x=>x.score===s).length));
+      return`<div class="hp-sp" title="${FACE_L[v]}: ${n}"><div class="hp-sp-bar"><i style="height:${Math.round(n/max*100)}%;--sp-c:${FACE_C[v]}"></i></div>${_faceSVG(v,28)}<span class="hp-sp-n">${n}</span><span class="hp-sp-l">${FACE_L[v]}</span></div>`;}).join('');
+    const notesHTML=notes.length?notes.slice(0,30).map(x=>`<div class="hp-note">${_faceSVG(x.score,26)}<div class="hp-note-hd">${E(x.name)}<small>Week of ${E(wkLabel(x.week))} · ${FACE_L[x.score]}</small></div><p>${E(x.note)}</p></div>`).join('')
+      :`<div class="hp-empty">No notes in the last ${weeks.length} weeks.</div>`;
+    el.innerHTML=`${D.local?`<div class="hp-local">Local preview: these are this browser’s check-ins. On the live site this shows the whole team.</div>`:''}${kpis}
+      ${_rvChartSec('rc-happy-trend','Team average by week','Average check-in, from 1 (rough) to 5 (great). Weeks without check-ins are left empty.')}
+      <div class="rv-grid2">
+        ${_rvSec('Spread',`Week of ${E(wkLabel(latestW))} · ${latR.length} check-in${latR.length===1?'':'s'}`,latR.length?`<div class="hp-spread">${spread}</div>`:`<div class="hp-empty">No check-ins yet.</div>`)}
+        ${_rvSec('Latest notes','Newest first',`<div class="hp-notes">${notesHTML}</div>`)}
+      </div>`;
+    const vals=weeks.map(w=>{const a=avg(by[w]);return a==null?null:Math.round(a*100)/100;});
+    const tk=CV.t();
+    const opts=_rvBarOpts({single:true,singleLabel:'Average',title:i=>'Week of '+wkLabel(weeks[i]),extra:i=>[['Check-ins',String(by[weeks[i]].length)]]});
+    opts.scales.y=CV.valueAxis({fmt:v=>String(Math.round(v)),max:5});opts.scales.y.max=5;
+    if(opts.plugins.cvTip)opts.plugins.cvTip.fmt=v=>v==null?'—':f1(+v)+' of 5';
+    _makeChart('rc-happy-trend',{type:'bar',cvEmpty:'No check-ins in the last 12 weeks.',data:{labels:weeks.map(wkLabel),datasets:[{label:'Average',data:vals,backgroundColor:tk.graphite}]},options:opts});
+  }
+  HP.render=render;
+  function installTab(){
+    if(role()!=='admin')return;
+    const tabs=document.querySelector('#view-reporting .r-tabs');if(!tabs||document.getElementById('rt-happy'))return;
+    const b=document.createElement('button');b.className='tvt-btn r-subtab';b.id='rt-happy';b.setAttribute('onclick',"switchReportTab('happy')");
+    b.innerHTML='<i class="ti ti-mood-smile" style="font-size:13px;"></i>Team happiness';
+    tabs.appendChild(b);
+    const host=document.getElementById('rp-clients')?.parentElement;
+    if(host&&!document.getElementById('rp-happy')){const p=document.createElement('div');p.id='rp-happy';p.style.display='none';host.appendChild(p);}
+  }
+  installTab();
+  const _sw=window.switchReportTab;
+  window.switchReportTab=switchReportTab=function(tab){
+    const hp=document.getElementById('rp-happy');
+    if(tab!=='happy'){if(hp)hp.style.display='none';return _sw.apply(this,arguments);}
+    if(role()!=='admin')return _sw.call(this,'business');
+    _reportTab='happy';
+    document.querySelectorAll('.r-subtab').forEach(b=>b.classList.toggle('on',b.id==='rt-happy'));
+    document.querySelectorAll('#r-scroll > [id^="rp-"]').forEach(p=>p.style.display=p.id==='rp-happy'?'':'none');
+    try{_periodVis(false);}catch(e){['r-period','r-custom-range'].forEach(id=>{const x=document.getElementById(id);if(x)x.style.display='none';});}
+    const f=document.getElementById('r-tab-filters');if(f)f.innerHTML='';
+    renderReporting();
+  };
+  const _rr=window.renderReporting;
+  window.renderReporting=renderReporting=function(){
+    if(_reportTab==='happy'){const s=document.getElementById('r-sub');if(s)s.textContent='Team happiness · last 12 weeks';return render();}
+    return _rr.apply(this,arguments);
+  };
+  const _ex=window.exportReportTab;
+  window.exportReportTab=exportReportTab=function(){
+    if(_reportTab!=='happy')return _ex.apply(this,arguments);
+    const R=(HP.data&&HP.data.responses)||[];if(!R.length){toast('Nothing to export','warn');return;}
+    const q=v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+    const csv=['Name,Week,Week of,Score,Mood,Note'].concat(R.map(x=>[x.name,x.week,wkLabel(x.week),x.score,FACE_L[x.score],x.note].map(q).join(','))).join('\n');
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='team_happiness.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  };
+})();
+</script>
 </body>
 </html>
