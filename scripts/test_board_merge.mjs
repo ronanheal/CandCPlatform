@@ -11,7 +11,7 @@ const m = html.match(/<script id="boards-merge-script">([\s\S]*?)<\/script>/);
 assert.ok(m, 'boards-merge-script block not found in index.html');
 const sandbox = { module: { exports: {} } };
 vm.runInNewContext(m[1], sandbox);
-const { bvMergeBoard, bvMergeSummary } = sandbox.module.exports;
+const { bvMergeBoard, bvMergeSummary, bvLinkText, bvIsEmptyTeamWip } = sandbox.module.exports;
 
 let passed = 0, failed = 0;
 function t(name, fn) {
@@ -83,6 +83,7 @@ function notesFile() {
     ],
   };
 }
+const names = (b) => [...b.columns].map((c) => c.name);   // plain array: the merge runs in another realm
 const card = (b, id) => b.columns.flatMap((c) => c.cards).find((k) => k.id === id);
 
 t('people: matched by email/name/first name; notes appended, duplicates skipped', () => {
@@ -126,9 +127,9 @@ t('notes: month prefix match, empty placeholder checklist filled, duplicates ski
   assert.equal(r.items, 2 + 1 + 1); assert.equal(r.noteCards, 1);
 });
 
-t('columns: matched case-insensitively, missing ones appended', () => {
+t('columns: matched case-insensitively; a new list after the last matched one lands at the end', () => {
   const b = teamWip(); const r = bvMergeBoard(b, notesFile(), H());
-  assert.deepEqual(b.columns.map((c) => c.name), ['Performance', 'Performance actions', 'Clients']);
+  assert.deepEqual(names(b), ['Performance', 'Performance actions', 'Clients']);
   assert.equal(r.columns, 1);
 });
 
@@ -170,6 +171,110 @@ t('bad input is skipped, not thrown', () => {
   const b = teamWip();
   const r = bvMergeBoard(b, { columns: [null, 'x', { name: 'Performance', cards: [null, [], 'y', { type: 'person' }] }] }, H());
   assert.equal(r.notes, 0);
+});
+
+// ── List order (made-up list names) ──
+const cols = (...names) => ({ id: 'bo', columns: names.map((nm, i) => ({ id: 'col' + i, name: nm, cards: [] })) });
+const file = (...names) => ({ columns: names.map((nm) => ({ name: nm, cards: [] })) });
+
+t('order: missing lists go where the file has them, not at the end', () => {
+  const b = cols('Bravo', 'Delta');
+  const r = bvMergeBoard(b, file('Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo'), H());
+  assert.deepEqual(names(b), ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo']);
+  assert.equal(r.columns, 3); assert.equal(r.reordered, false);
+  assert.equal(b.columns[1].id, 'col0'); assert.equal(b.columns[3].id, 'col1');   // matched lists are the same objects
+});
+
+t('order: every board list is in the file, so the board takes the file order', () => {
+  const b = cols('Delta', 'bravo');
+  const r = bvMergeBoard(b, file('Alpha', 'Bravo', 'Charlie', 'Delta'), H());
+  assert.deepEqual(names(b), ['Alpha', 'bravo', 'Charlie', 'Delta']);
+  assert.equal(r.reordered, true); assert.ok(r.changed > 0);
+  assert.match(bvMergeSummary(r), /file’s order/);
+});
+
+t('order: only a reorder still counts as a change, and a second merge is a no-op', () => {
+  const b = cols('Bravo', 'Alpha');
+  const r = bvMergeBoard(b, file('Alpha', 'Bravo'), H());
+  assert.deepEqual(names(b), ['Alpha', 'Bravo']); assert.equal(r.columns, 0); assert.equal(r.changed, 1);
+  const r2 = bvMergeBoard(b, file('Alpha', 'Bravo'), H());
+  assert.equal(r2.changed, 0); assert.equal(r2.reordered, false);
+});
+
+t('order: extra board lists stay put, matched lists keep their place', () => {
+  const b = cols('Delta', 'Mine', 'Bravo');
+  const r = bvMergeBoard(b, file('Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo'), H());
+  // Alpha before Bravo, Charlie after Bravo (its file neighbour), Echo after Delta
+  assert.deepEqual(names(b), ['Delta', 'Echo', 'Mine', 'Alpha', 'Bravo', 'Charlie']);
+  assert.equal(r.reordered, false);
+});
+
+t('order: nothing matched and the board has lists — new ones appended in file order', () => {
+  const b = cols('Mine');
+  bvMergeBoard(b, file('Alpha', 'Bravo'), H());
+  assert.deepEqual(names(b), ['Mine', 'Alpha', 'Bravo']);
+});
+
+t('order: an 11-list file into a 2-list board of the same family ends in file order, nothing duplicated', () => {
+  const L = ['L1', 'L2', 'Opps', 'Roadmap', 'L5', 'L6', 'L7', 'L8', 'L9', 'L10', 'L11'];
+  const b = cols('Opps', 'Roadmap');
+  b.columns[0].cards.push({ id: 'cx', type: 'client', clientRef: 'Example Co' });
+  const f = file(...L); f.columns[2].cards.push({ type: 'client', clientName: 'Example Co' });
+  bvMergeBoard(b, f, H());
+  assert.deepEqual(names(b), L);
+  assert.equal(b.columns[2].cards.length, 1);
+  const again = bvMergeBoard(b, f, H()); assert.equal(again.changed, 0);
+});
+
+t('order: a file listing the same list twice does not duplicate it', () => {
+  const b = cols('Alpha');
+  bvMergeBoard(b, file('Bravo', 'alpha', 'ALPHA'), H());
+  assert.deepEqual(names(b), ['Bravo', 'Alpha']);
+});
+
+// ── Links in note text / checklist items ──
+t('links: http(s) URLs become safe links; text is escaped', () => {
+  const h = bvLinkText('See https://example.test/a?b=1&c=2. Then <b>bold</b>');
+  assert.equal(h, 'See <a class="bv-url" href="https://example.test/a?b=1&amp;c=2" target="_blank" rel="noopener noreferrer" title="https://example.test/a?b=1&amp;c=2" draggable="false" onclick="event.stopPropagation()">https://example.test/a?b=1&amp;c=2</a>. Then &lt;b&gt;bold&lt;/b&gt;');
+});
+
+t('links: javascript:, data: and other schemes are never linked', () => {
+  for (const bad of ['javascript:alert(1)', 'JavaScript:alert(document.cookie)', 'data:text/html,<script>alert(1)</script>', 'vbscript:x', 'ftp://example.test', 'java\tscript:alert(1)']) {
+    const h = bvLinkText(bad);
+    assert.doesNotMatch(h, /<a /, bad);
+    assert.doesNotMatch(h, /<script/i, bad);
+  }
+});
+
+t('links: attribute breakouts stay escaped', () => {
+  const h = bvLinkText('https://example.test/"onmouseover="alert(1) and https://example.test/x\'y');
+  assert.doesNotMatch(h, /href="[^"]*"onmouseover/);
+  assert.equal((h.match(/<a /g) || []).length, 2);
+  assert.doesNotMatch(h, /'/);
+  assert.equal(bvLinkText('(see https://example.test/wiki/A_(b))'), '(see <a class="bv-url" href="https://example.test/wiki/A_(b)" target="_blank" rel="noopener noreferrer" title="https://example.test/wiki/A_(b)" draggable="false" onclick="event.stopPropagation()">https://example.test/wiki/A_(b)</a>)');
+  assert.equal(bvLinkText('https://'), 'https://');
+  assert.equal(bvLinkText(null), '');
+});
+
+// ── Old auto-made Team WIP: offered for removal only when untouched ──
+t('old Team WIP: empty template board is removable; any added content is not', () => {
+  const tpl = () => ({ columns: [
+    { name: 'Performance', cards: [{ type: 'person', personRef: 'p_ada', desc: '' }, { type: 'person', personRef: 'p_alan', desc: '' }] },
+    { name: 'Performance actions', cards: [{ kind: 'note', title: 'November 2026', checklists: [{ title: 'People actions', items: [] }] }, { kind: 'note', title: 'December 2026', checklists: [{ title: 'People actions', items: [] }] }] },
+  ] });
+  assert.equal(bvIsEmptyTeamWip(tpl()), true);
+  const edits = [
+    (b) => { b.columns[0].cards[0].desc = '1 Jan · note'; },
+    (b) => { b.columns[1].cards[0].checklists[0].items.push({ text: 'x' }); },
+    (b) => { b.columns[0].cards[1].comments = [{ text: 'hi' }]; },
+    (b) => { b.columns[1].cards.push({ kind: 'note', title: 'Ideas' }); },
+    (b) => { b.columns[1].cards.push({ kind: 'job', jobRef: '1' }); },
+    (b) => { b.columns.push({ name: 'Extra', cards: [] }); },
+    (b) => { b.columns[0].cards[0].role = 'Lead'; },
+    (b) => { b.columns[1].cards[1].checklist = [{ text: 'y' }]; },
+  ];
+  edits.forEach((f, i) => { const b = tpl(); f(b); assert.equal(bvIsEmptyTeamWip(b), false, 'edit ' + i); });
+  assert.equal(bvIsEmptyTeamWip(null), false);
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

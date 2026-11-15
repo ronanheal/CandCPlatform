@@ -21837,6 +21837,18 @@ body.dark .r5-wip-b:hover{background:rgba(255,255,255,.09);}
 .r5-ci-add:hover{background:var(--off);}
 .r5-ci-add:focus{background:var(--white);border-color:var(--border);}
 .r5-ci-add::placeholder{color:var(--muted);}
+.r5-ci-v{flex:1;min-width:0;font-size:12.5px;line-height:1.4;color:var(--ink);padding:4px 5px;border-radius:5px;cursor:text;white-space:pre-wrap;word-break:break-word;}
+.r5-ci-v[hidden],.r5-ci-t[hidden]{display:none;}
+.r5-ci.done .r5-ci-v{color:var(--muted);text-decoration:line-through;}
+.r5-cl.bare{margin-top:2px;}
+/* Links in board text: http(s) only (bvLinkText); long URLs cut with an ellipsis, full URL in the title */
+.bv-url{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom;color:var(--bv-blue,#2563eb);text-decoration:underline;text-underline-offset:2px;}
+.bv-url:hover{text-decoration-thickness:2px;}
+.r5-jobmiss{background:transparent;border-style:dashed;box-shadow:none;}
+.r5-jobmiss .r5-one>i{color:var(--muted);font-size:15px;}
+.r5-jobmiss .r5-oname{font-weight:500;color:var(--muted);}
+.r5-wip-old{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:12.5px;color:var(--muted);}
+.r5-wip-old>span{flex:1;min-width:180px;}
 /* drawer header for person / client cards */
 .r5-dr-h{display:flex;align-items:flex-start;gap:12px;margin:2px 0 16px;}
 .r5-dr-h .r5-av{width:44px;height:44px;font-size:14px;}
@@ -21877,7 +21889,10 @@ body.dark .r5-line time{background:rgba(255,255,255,.07);}
 //     findPerson(srcCard)->personRef|null, personName(card)->display name,
 //     personEmail(card)->email incl. the linked record's, now}
 // Rules
-//   lists     matched by name (case-insensitive); missing ones are appended
+//   lists     matched by name (case-insensitive). Missing ones are inserted where the file has
+//             them, next to their nearest matched neighbour (not appended at the end). If every
+//             list the board has is in the file, the board's lists take the file's order;
+//             otherwise matched lists keep their place and extra lists stay where they are.
 //   people    matched by personRef, then email, then full name, then first name (if unique);
 //             notes appended line by line (exact duplicate lines skipped), role/email filled
 //             only when empty; unmatched people become new person cards
@@ -21957,11 +21972,13 @@ function bvMergeBoard(target,src,h){
       const of=o.split(' ')[0];return of===first&&(!nm.includes(' ')||!o.includes(' '));});
     return byFirst.length===1?byFirst[0]:null;
   }
+  const origCols=target.columns.slice(),seq=[],fresh=new Set();
   (Array.isArray(src&&src.columns)?src.columns:[]).forEach((scol,ci)=>{
     if(!scol||typeof scol!=='object')return;
     const cname=String(scol.name||'Untitled list');
     let col=target.columns.find(c=>norm(c.name)===norm(cname));
-    if(!col){col=h.newCol(cname,scol.color||null,ci);col.cards=col.cards||[];col.updatedAt=now;target.columns.push(col);n.columns++;}
+    if(!col){col=h.newCol(cname,scol.color||null,ci);col.cards=col.cards||[];col.updatedAt=now;target.columns.push(col);fresh.add(col);n.columns++;}
+    if(!seq.includes(col))seq.push(col);
     (Array.isArray(scol.cards)?scol.cards:[]).forEach(s=>{
       if(!s||typeof s!=='object'||Array.isArray(s))return;
       const k=srcKind(s),sls=srcLists(s);
@@ -22013,8 +22030,24 @@ function bvMergeBoard(target,src,h){
       }
     });
   });
+  // List order: see "lists" above.
+  let order;
+  if(origCols.every(c=>seq.includes(c)))order=seq.slice();
+  else{
+    order=origCols.slice();
+    seq.forEach((c,i)=>{
+      if(!fresh.has(c))return;
+      let at=-1;
+      for(let j=i-1;j>=0&&at<0;j--){const p=order.indexOf(seq[j]);if(p>=0)at=p+1;}
+      for(let j=i+1;j<seq.length&&at<0;j++){const p=order.indexOf(seq[j]);if(p>=0)at=p;}
+      order.splice(at<0?order.length:at,0,c);
+    });
+  }
+  const kept=order.filter(c=>!fresh.has(c));
+  n.reordered=kept.some((c,i)=>c!==origCols[i]);
+  target.columns=order;
   n.people=touchedPeople.size;
-  n.changed=touched.size+n.columns;
+  n.changed=touched.size+n.columns+(n.reordered?1:0);
   if(n.changed)target.updatedAt=Math.max(now,(target.updatedAt||0)+1);
   return n;
 }
@@ -22030,9 +22063,49 @@ function bvMergeSummary(n){
   if(n.jobs)parts.push(p(n.jobs,'job','jobs'));
   if(n.columns)parts.push(p(n.columns,'new list','new lists'));
   if(n.filled)parts.push(p(n.filled,'empty role/email filled','empty roles/emails filled'));
+  if(n.reordered)parts.push(parts.length?'and put the lists in the file’s order':'nothing else — the lists will be put in the file’s order');
   return parts.length?'Will add '+parts.join(', '):'Nothing new — everything in this file is already on the board';
 }
-if(typeof module!=='undefined'&&module.exports)module.exports={bvMergeBoard,bvMergeSummary};
+// Plain text → HTML with http(s) URLs as links. Everything is escaped; only http:// and https://
+// become links (javascript:, data: and the rest stay text). Long URLs are cut visually by CSS
+// (.bv-url, ellipsis); the title shows the whole URL. Trailing punctuation stays outside the link.
+function bvLinkText(raw){
+  const e=x=>String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const t=String(raw==null?'':raw);let out='',last=0;
+  for(const m of t.matchAll(/\bhttps?:\/\/[^\s<>"'`]+/gi)){
+    let url=m[0];
+    while(/[.,;:!?)\]}*]$/.test(url)){
+      if(url.endsWith(')')&&(url.match(/\(/g)||[]).length>=(url.match(/\)/g)||[]).length)break;
+      url=url.slice(0,-1);
+    }
+    if(!/^https?:\/\/[a-z0-9[]/i.test(url))continue;
+    const u=e(url);
+    out+=e(t.slice(last,m.index))+`<a class="bv-url" href="${u}" target="_blank" rel="noopener noreferrer" title="${u}" draggable="false" onclick="event.stopPropagation()">${u}</a>`;
+    last=m.index+url.length;
+  }
+  return out+e(t.slice(last));
+}
+// The old auto-made "Team WIP" board, untouched: only the template's lists (Performance,
+// Performance actions), only person cards and month notes, and nobody has added a note, a
+// checklist item, a comment, a label, a due date, an assignee or a card of another kind.
+function bvIsEmptyTeamWip(b){
+  if(!b||!Array.isArray(b.columns))return false;
+  const MON=/^(january|february|march|april|may|june|july|august|september|october|november|december)( \d{4})?$/i;
+  const okCol=/^performance( actions)?$/i;
+  for(const col of b.columns){
+    if(!col||!okCol.test(String(col.name||'').trim()))return false;
+    for(const c of (Array.isArray(col.cards)?col.cards:[])){
+      if(!c)continue;
+      const person=c.type==='person',month=c.kind==='note'&&MON.test(String(c.title||'').trim());
+      if(!person&&!month)return false;
+      if(String(c.desc||'').trim()||(c.comments||[]).length||(c.labels||[]).length||(c.assignees||[]).length||c.due)return false;
+      if((c.checklist||[]).length||(Array.isArray(c.checklists)&&c.checklists.some(l=>l&&(l.items||[]).length)))return false;
+      if(person&&(String(c.role||'').trim()||String(c.email||'').trim()))return false;
+    }
+  }
+  return true;
+}
+if(typeof module!=='undefined'&&module.exports)module.exports={bvMergeBoard,bvMergeSummary,bvLinkText,bvIsEmptyTeamWip};
 </script>
 <script id="boards-r5-script">
 // ═══ Boards round 5 ═══════════════════════════════════════════════════════════════════════
@@ -22050,7 +22123,9 @@ if(typeof module!=='undefined'&&module.exports)module.exports={bvMergeBoard,bvMe
 //    and are saved ~800ms after the last edit. Edits are stamped per card and deletes become
 //    tombstones (board.deleted) so the server can merge two browsers' saves. localStorage
 //    stays the cache. On localhost nothing changes: boards stay per browser.
-// 4. Templates "Business WIP" and "Team WIP" (New board → Templates), Import / Export board.
+// 4. Template "Business WIP" (New board → Templates), Import / Export board. The owner's second
+//    Streamtime board, "Team Wip & Workflow", has no template: it comes from its import file.
+//    The old "Team WIP" template is gone; an untouched old Team WIP board can be removed by an admin.
 
 const R5_PROD=!!(typeof AUTH!=='undefined'&&AUTH);
 const R5_ADMIN=!R5_PROD||!!AUTH.admin;
@@ -22073,8 +22148,12 @@ _bvNewWipBoard=function(kind,name,base){return _r5NewWip(kind,name||(kind==='tea
 })();
 
 // ── 2. Templates ─────────────────────────────────────────────────────────────────────────
-BV_TEMPLATES.bizwip={name:'Business WIP',icon:'ti-briefcase',color:'green',desc:'Wider client opportunities and the C&C roadmap.'+(R5_PROD?' Shared with the team.':'')};
-BV_TEMPLATES.teamwip={name:'Team WIP',icon:'ti-users-group',color:'pink',desc:'A card per team member for notes and check-ins, plus monthly people actions.'};
+BV_TEMPLATES.bizwip={name:'Business WIP',icon:'ti-briefcase',color:'green',desc:'The Streamtime Business WIP lists: agenda, focus, client opps, roadmap, performance and more.'+(R5_PROD?' Shared, admins only by default.':'')};
+delete BV_TEMPLATES.teamwip;
+// Business WIP's lists, in Streamtime's order. Only the structure: the Performance lists hold HR
+// notes, so the board is admins-only by default and the notes come from an import, never from here.
+const R5_BIZ_LISTS=[['Agenda','grey'],['Quarterly focus','purple'],['Place for wider client opps','blue'],['C&C roadmap + marketing','green'],['Performance','pink'],['Performance actions','purple'],['Enabling: training/strengths','amber'],['Operation excellence','teal'],['Enabling','amber'],['Awards','green'],['Relationships','blue']];
+const R5_FLOW_NAME='Team Wip & Workflow';
 const R5_BIZ_CLIENTS=['Dairyworks','Avalanche Coffee Limited','Delmaine Fine Foods','Otaika Valley Eggs','JCL','Ziwi Pets','Silver Fern Farms','Sanford - Sanford and Sons','Sanford - Big Glory Bay','Comvita New Zealand Ltd','Boyd Visuals','Gibbons Management Ltd'];
 const _r5Norm=s=>String(s||'').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g,'').replace(/\b(limited|ltd|nz|new zealand|co|company)\b/g,' ').replace(/[^a-z0-9]+/g,' ').trim();
 function _r5AllClients(){return[...new Set([...(clientsData||[]).map(c=>c.name),...jobs.map(j=>j.company)].filter(Boolean))].sort((a,b)=>a.localeCompare(b));}
@@ -22092,27 +22171,13 @@ function _r5NoteCard(title,x){return _bvNewCard({kind:'note',title:title||'',...
 function _r5PersonCard(key,x){return _bvNewCard({type:'person',personRef:key,desc:'',...(x||{})});}
 function _r5BuildBizWip(name){
   const t=Date.now();
-  const b={id:uid('b'),v:2,type:'custom',template:'wip-business',name:name||'Business WIP',createdAt:t,updatedAt:t,openedAt:t,sort:'manual',visibility:'everyone'};
-  const opps=_bvNewCol('Place for wider client opps','blue');
-  opps.cards=R5_BIZ_CLIENTS.map(n=>_r5ClientCard(n));
-  const road=_bvNewCol('C&C roadmap + marketing','green');
-  if(_bvJob('4659')||jobs.some(j=>String(j.id)==='4659'))road.cards.push(_bvNewCard({kind:'job',jobRef:'4659'}));
-  road.cards.push(_r5NoteCard('C&C marketing'));
-  b.columns=[opps,road];
-  return b;
-}
-function _r5BuildTeamWip(name){
-  const t=Date.now();
-  const b={id:uid('b'),v:2,type:'custom',template:'wip-team',name:name||'Team WIP',createdAt:t,updatedAt:t,openedAt:t,sort:'manual',visibility:'admins'};
-  const perf=_bvNewCol('Performance','pink');
-  perf.cards=_bvPeopleKeys().filter(k=>!String(k).startsWith('acct_')).map(k=>_r5PersonCard(k));
-  const acts=_bvNewCol('Performance actions','purple');
-  const d=new Date();
-  for(let i=0;i<3;i++){
-    const m=new Date(d.getFullYear(),d.getMonth()+i,1);
-    acts.cards.push(_r5NoteCard(`${_r5Mon[m.getMonth()]} ${m.getFullYear()}`,{checklists:[{id:uid('cl'),title:'People actions',items:[]}]}));
-  }
-  b.columns=[perf,acts];
+  const b={id:uid('b'),v:2,type:'custom',template:'wip-business',name:name||'Business WIP',createdAt:t,updatedAt:t,openedAt:t,sort:'manual',visibility:'admins'};
+  b.columns=R5_BIZ_LISTS.map(([n,c])=>{
+    const col=_bvNewCol(n,BV_COLORS.includes(c)?c:'grey');
+    if(n==='Place for wider client opps')col.cards=R5_BIZ_CLIENTS.map(x=>_r5ClientCard(x));
+    if(n==='C&C roadmap + marketing')col.cards=[_bvNewCard({kind:'job',jobRef:'4659'}),_r5NoteCard('C&C marketing')];
+    return col;
+  });
   return b;
 }
 
@@ -22123,7 +22188,7 @@ function _r5WipOf(b){
   if(b.template==='wip-business'||b.template==='bizwip')return'biz';
   if(b.template==='wip-team'||b.template==='teamwip')return'team';
   const n=String(b.name||'').trim().toLowerCase();
-  return n==='business wip'?'biz':n==='team wip'?'team':null;
+  return n==='business wip'?'biz':n==='team wip'?'team':n===R5_FLOW_NAME.toLowerCase()?'flow':null;
 }
 
 // ── 3. Card model helpers ────────────────────────────────────────────────────────────────
@@ -22166,9 +22231,9 @@ function _r5TextHTML(txt,id){
   return String(txt||'').replace(/\s+$/,'').split('\n').map((line,i)=>{
     if(!line.trim())return'<div class="r5-gap"></div>';
     const m=line.match(R5_DATE_RE);
-    if(m){const rest=line.slice(m[0].length);return`<div class="r5-line"><span class="r5-lt"><time>${esc(m[1])}</time>${linkify(esc(rest))}</span>${del(i)}</div>`;}
+    if(m){const rest=line.slice(m[0].length);return`<div class="r5-line"><span class="r5-lt"><time>${esc(m[1])}</time>${bvLinkText(rest)}</span>${del(i)}</div>`;}
     const h=line.length<48&&(/:\s*$/.test(line)||(/[A-Z]/.test(line)&&line===line.toUpperCase()));
-    return`<div class="r5-line${h?' h':''}"><span class="r5-lt">${linkify(esc(line))}</span>${del(i)}</div>`;
+    return`<div class="r5-line${h?' h':''}"><span class="r5-lt">${bvLinkText(line)}</span>${del(i)}</div>`;
   }).join('');
 }
 function bvR5DelLine(id,i){
@@ -22189,16 +22254,23 @@ function _r5ListsHTML(c,scope){
     const items=l.items||[],n=items.length,d=items.filter(i=>i.done).length,pct=n?Math.round(d/n*100):0,L=_r5A(l.id);
     const rows=items.map(i=>{const I=_r5A(i.id);return`<div class="r5-ci${i.done?' done':''}" data-ci="${esc(i.id)}" ondragstart="bvR5CiStart(event,${A},${I})" ondragend="bvR5CiEnd(event)">
       <input type="checkbox"${i.done?' checked':''} aria-label="Done" onclick="event.stopPropagation()" onchange="bvR5CiToggle(${A},${L},${I})">
-      <textarea class="r5-ci-t" rows="1" data-grow aria-label="Checklist item" oninput="_bvGrow(this)" onchange="bvR5CiEdit(${A},${L},${I},this.value)" onkeydown="_r5Key(event)">${esc(i.text)}</textarea>
+      ${R5_URL_RE.test(i.text)?`<div class="r5-ci-v" tabindex="0" role="button" title="Click to edit" onclick="event.stopPropagation();bvR5CiShow(this)" onkeydown="if(event.key==='Enter'&&event.target===this){event.preventDefault();bvR5CiShow(this);}">${bvLinkText(i.text)}</div>`:''}<textarea class="r5-ci-t" rows="1" data-grow aria-label="Checklist item"${R5_URL_RE.test(i.text)?' hidden onblur="bvR5CiHide(this)"':''} oninput="_bvGrow(this)" onchange="bvR5CiEdit(${A},${L},${I},this.value)" onkeydown="_r5Key(event)">${esc(i.text)}</textarea>
       <span class="r5-grip" title="Drag to reorder" aria-hidden="true" onmousedown="this.parentNode.draggable=true" onmouseup="this.parentNode.draggable=false"><i class="ti ti-grip-vertical"></i></span>
       <button class="r5-ib" title="Delete item" aria-label="Delete item" onclick="event.stopPropagation();bvR5CiDel(${A},${L},${I})"><i class="ti ti-x"></i></button></div>`;}).join('');
-    return`<div class="r5-cl" data-cl="${esc(l.id)}">
-      <div class="r5-cl-h"><i class="ti ti-checklist"></i><input class="r5-cl-t" value="${esc(l.title||'')}" placeholder="Checklist" aria-label="Checklist heading" data-r5f="clt-${esc(l.id)}" onchange="bvR5ClTitle(${A},${L},this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();setTimeout(()=>document.querySelector('[data-r5f=&quot;cia-${esc(l.id)}-${scope}&quot;]')?.focus(),0);}else _r5Key(event)">${n?`<span class="r5-cl-n${d===n?' ok':''}">${d}/${n}</span>`:''}<button class="r5-ib r5-hov" title="Delete checklist" aria-label="Delete checklist" onclick="event.stopPropagation();bvR5ClDel(${A},${L})"><i class="ti ti-trash"></i></button></div>
-      ${n?`<div class="r5-prog${pct===100?' ok':''}"><i style="width:${pct}%"></i></div>`:''}
+    // A list without a heading (imported notes: the card title is the heading) shows no
+    // heading row on the board once it has items; the drawer keeps it so it can be named.
+    const bare=scope==='b'&&!String(l.title||'').trim()&&n>0;
+    return`<div class="r5-cl${bare?' bare':''}" data-cl="${esc(l.id)}">
+      ${bare?'':`<div class="r5-cl-h"><i class="ti ti-checklist"></i><input class="r5-cl-t" value="${esc(l.title||'')}" placeholder="Checklist" aria-label="Checklist heading" data-r5f="clt-${esc(l.id)}" onchange="bvR5ClTitle(${A},${L},this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();setTimeout(()=>document.querySelector('[data-r5f=&quot;cia-${esc(l.id)}-${scope}&quot;]')?.focus(),0);}else _r5Key(event)">${n?`<span class="r5-cl-n${d===n?' ok':''}">${d}/${n}</span>`:''}<button class="r5-ib r5-hov" title="Delete checklist" aria-label="Delete checklist" onclick="event.stopPropagation();bvR5ClDel(${A},${L})"><i class="ti ti-trash"></i></button></div>`}
+      ${n&&!bare?`<div class="r5-prog${pct===100?' ok':''}"><i style="width:${pct}%"></i></div>`:''}
       <div class="r5-cis" ondragover="bvR5CiOver(event)" ondrop="bvR5CiDrop(event,${A})">${rows}</div>
       <input class="r5-ci-add" placeholder="Add an item" aria-label="Add an item" data-r5f="cia-${esc(l.id)}-${scope}" onkeydown="if(event.key==='Enter'){event.preventDefault();bvR5CiAdd(${A},${L},this.value,'${scope}');}else _r5Key(event)"></div>`;
   }).join('');
 }
+const R5_URL_RE=/\bhttps?:\/\/[a-z0-9[]/i;
+// Checklist items with a link show as text with live links; a click (not on a link) edits.
+function bvR5CiShow(v){const ta=v.nextElementSibling;if(!ta)return;v.hidden=true;ta.hidden=false;_bvGrow(ta);ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);}
+function bvR5CiHide(ta){const v=ta.previousElementSibling;if(v&&v.classList.contains('r5-ci-v')&&ta.isConnected){ta.hidden=true;v.hidden=false;}}
 function _r5DescHTML(c,scope,ph){
   const A=_r5A(c.id);
   if(_r5EditDesc===c.id+':'+scope)return`<textarea class="r5-ta" data-grow data-r5f="desc-${esc(c.id)}-${scope}" rows="3" placeholder="${esc(ph)}" oninput="_bvGrow(this)" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){event.preventDefault();this.blur();}else if(event.key==='Escape'){event.preventDefault();event.stopPropagation();_r5EditDesc=null;_r5Rerender();}" onblur="bvR5SaveDesc(${A},this.value)">${esc(c.desc||'')}</textarea>`;
@@ -22235,7 +22307,7 @@ function _r5PersonHTML(b,col,c){
 }
 function _r5NoteHTML(b,col,c){
   const A=_r5A(c.id),ls=_r5Lists(c),n=ls.reduce((s,l)=>s+(l.items||[]).length,0),d=ls.reduce((s,l)=>s+(l.items||[]).filter(i=>i.done).length,0);
-  if(c.collapsed)return _r5CardShell(b,col,c,'r5-note',`<div class="r5-one">${_r5FoldBtn(c)}<span class="r5-oname" onclick="event.stopPropagation();bvOpenCard(${A})">${esc(c.title||'Untitled note')}</span>${n?`<span class="bv-chip${d===n?' ok':''}"><i class="ti ti-square-check"></i>${d}/${n}</span>`:''}${_r5MenuBtn(c.id)}</div>`);
+  if(c.collapsed)return _r5CardShell(b,col,c,'r5-note',`<div class="r5-one">${_r5FoldBtn(c)}<span class="r5-oname" title="Expand" onclick="event.stopPropagation();bvR5Fold(${A})">${esc(c.title||'Untitled note')}</span>${n?`<span class="bv-chip${d===n?' ok':''}"><i class="ti ti-square-check"></i>${d}/${n}</span>`:''}${_r5MenuBtn(c.id)}</div>`);
   const L=c.labels||[];
   const lbls=L.length?`<div class="bv-card-lbls">${L.slice(0,4).map(l=>`<span class="bv-lbl" style="--lc:${esc(labelColor(l))}">${esc(l)}</span>`).join('')}</div>`:'';
   const due=c.due?_bvDueChipHTML(c.due,_bvDueState(c.due,col),col.done,'Due'):'',avs=_bvAvsHTML(c.assignees||[]);
@@ -22254,7 +22326,7 @@ function _r5ClientHTML(b,col,c){
   const ls=_r5Lists(c),hasMore=(c.desc||'').trim()||ls.length;
   return _r5CardShell(b,col,c,'r5-client r5-click'+(hasMore&&!c.collapsed?'':' is-one'),`
     <div class="r5-one"><span class="r5-cico" aria-hidden="true"><i class="ti ti-briefcase"></i></span><span class="r5-cn">${esc(name)}<small>${act?`${act} active job${act!==1?'s':''}`:rec?'No active jobs':'Not in Clients'}</small></span>${_r5MenuBtn(c.id)}<i class="ti ti-chevron-right" style="color:var(--muted);font-size:15px;" aria-hidden="true"></i></div>
-    ${hasMore&&!c.collapsed?`${(c.desc||'').trim()?`<div class="r5-desc-sm">${linkify(esc(c.desc))}</div>`:''}${_r5ListsHTML(c,'b')}`:''}`,
+    ${hasMore&&!c.collapsed?`${(c.desc||'').trim()?`<div class="r5-desc-sm">${bvLinkText(c.desc)}</div>`:''}${_r5ListsHTML(c,'b')}`:''}`,
     `title="Open ${esc(name)} in Clients" onclick="bvR5OpenClient(${A})" onkeydown="if(event.key==='Enter'&&event.target===this)bvR5OpenClient(${A})"`);
 }
 let _r5HideAvs=false;
@@ -22265,6 +22337,10 @@ _bvLiveColHTML=function(c,q){_r5HideAvs=!!c.hideAvs;try{return _r5OrigLiveCol(c,
 const _r5OrigLiveCard=_bvLiveJobCardHTML;
 _bvLiveJobCardHTML=function(j,done,pill){return _r5OrigLiveCard(_r5HideAvs?{...j,members:[]}:j,done,pill);};
 function _r5JobHTML(b,col,c){
+  if(!_bvJob(c.jobRef)){
+    const t=String(c.title||'').trim();
+    return _r5CardShell(b,col,c,'r5-jobmiss',`<div class="r5-one"><i class="ti ti-link-off" aria-hidden="true"></i><span class="r5-oname" onclick="event.stopPropagation();bvOpenCard(${_r5A(c.id)})">Job #${esc(c.jobRef)} not found${t?`<span class="r5-osub">${esc(t)}</span>`:''}</span>${_r5MenuBtn(c.id)}</div>`);
+  }
   let h=_r5OrigCardHTML(b,col,c);
   h=h.replace(`onclick="bvOpenCard(`,`onclick="bvR5CardClick(`).replace(`onkeydown="if(event.key==='Enter'&&event.target===this)bvOpenCard(`,`onkeydown="if(event.key==='Enter'&&event.target===this)bvR5CardClick(`);
   return h.replace(/(<div class="bv-card-job">)/,`<div class="r5-top" style="margin-bottom:-4px"><span class="r5-tag blue"><i class="ti ti-briefcase"></i>Job</span><span class="bv-sp"></span>${_r5MenuBtn(c.id)}</div>$1`);
@@ -22303,7 +22379,7 @@ function _r5Editing(){
 const _r5OrigTypeMeta=_bvTypeMeta;
 _bvTypeMeta=function(b){
   const w=_r5WipOf(b);
-  if(w)return{icon:w==='team'?'ti-users-group':'ti-briefcase',label:'WIP board'};
+  if(w)return{icon:w==='biz'?'ti-briefcase':'ti-users-group',label:'WIP board'};
   if(b.type==='custom'&&b.template==='import')return{icon:'ti-file-import',label:'Imported board'};
   return _r5OrigTypeMeta(b);
 };
@@ -22561,16 +22637,16 @@ _bvCloneBoard=function(src){const b=_r5OrigClone(src);delete b.shared;delete b.d
   (b.columns||[]).forEach(col=>(col.cards||[]).forEach(c=>(c.checklists||[]).forEach(l=>{l.id=uid('cl');(l.items||[]).forEach(i=>i.id=uid('ck'));})));return b;};
 
 // ── 7. New board: templates, import ────────────────────────────────────────────────────
-let _r5Imp=null,_r5ImpTarget=null,_r5ImpMode='merge';
+let _r5Imp=null,_r5ImpMode='merge';
 const _r5OrigOpenCreate=bvOpenCreate;
 bvOpenCreate=function(kind){
-  _r5Imp=null;_r5ImpTarget=null;_r5ImpMode='merge';
+  _r5Imp=null;_r5ImpMode='merge';
   _r5OrigOpenCreate(kind);
   const kinds=document.querySelector('#bv-create .bv-kinds');
   if(kinds&&R5_ADMIN){
     kinds.insertAdjacentHTML('beforeend',`<div class="bv-kinds-lbl">From a file</div><button type="button" class="bv-kind" data-kind="import" onclick="bvSelectKind('import')"><span class="bv-tpl-ico" style="--col:var(--bv-grey)"><i class="ti ti-file-import"></i></span><span><span class="bv-tpl-name">Import board</span><span class="bv-tpl-desc">From a board export (.json)${R5_PROD?' — shared, admins only by default':''}.</span></span></button>`);
   }
-  if(R5_PROD&&!AUTH.admin)document.querySelector('#bv-create .bv-kind[data-kind="teamwip"]')?.classList.add('is-off');
+  if(R5_PROD&&!AUTH.admin)document.querySelector('#bv-create .bv-kind[data-kind="bizwip"]')?.classList.add('is-off');
   const hint=document.getElementById('bv-nb-hint');
   if(hint)hint.insertAdjacentHTML('afterend',`<div class="r5-imp" id="r5-imp" hidden><input type="file" accept=".json,application/json" aria-label="Board file" onchange="bvR5ReadImport(this.files[0])"><div class="r5-imp-sum" id="r5-imp-sum">Choose a board export. Nothing is created until you press Create board.</div></div>`);
   if(kind)bvSelectKind(kind);
@@ -22581,8 +22657,7 @@ bvSelectKind=function(k){
   const h=document.getElementById('bv-nb-hint'),imp=document.getElementById('r5-imp');
   if(imp)imp.hidden=k!=='import';
   const sh=R5_PROD?' Shared with the team — everyone sees the same board.':'';
-  if(h&&k==='bizwip')h.textContent=`Lists “Place for wider client opps” (a client card for each of ${R5_BIZ_CLIENTS.length} clients, linked to Clients) and “C&C roadmap + marketing”.${sh}`;
-  if(h&&k==='teamwip')h.textContent=(R5_PROD&&!AUTH.admin)?'Only admins can create Team WIP — it holds people notes.':`Lists “Performance” (a card per active team member with empty notes) and “Performance actions” (a note per month with an empty checklist).${R5_PROD?' Visible to admins only; you can change that from the board menu.':''}`;
+  if(h&&k==='bizwip')h.textContent=(R5_PROD&&!AUTH.admin)?'Only admins can create Business WIP — its Performance lists hold people notes.':`${R5_BIZ_LISTS.length} empty lists in Streamtime’s order, with a client card for each of ${R5_BIZ_CLIENTS.length} clients in “Place for wider client opps” and job 4659 + “C&C marketing” in “C&C roadmap + marketing”. Import the notes afterwards.${R5_PROD?' Shared, admins only — you can change that from the board menu.':''}`;
   if(h&&k==='import')h.textContent='';
   if(h&&k==='bwip')h.textContent='Live jobs (In play, Paused, Complete) in one column per job status. Read-only, always current.';
   if(h&&k==='twip')h.textContent='Live jobs in one column per person on the job (plus Unassigned). Read-only, always current.';
@@ -22593,7 +22668,7 @@ _bvSyncCreateName=function(){
   if(inp&&!_bvCreateNameTouched){
     if(k==='bwip'){inp.value='Live jobs by status';return;}
     if(k==='twip'){inp.value='Live jobs by person';return;}
-    if(k==='bizwip'||k==='teamwip'){inp.value=BV_TEMPLATES[k].name;return;}
+    if(k==='bizwip'){inp.value=BV_TEMPLATES[k].name;return;}
     if(k==='import'){inp.value=_r5Imp?.board?.name||'';return;}
   }
   _r5OrigSyncName();
@@ -22601,7 +22676,7 @@ _bvSyncCreateName=function(){
 const _r5OrigCreate=bvCreateBoard;
 bvCreateBoard=function(){
   const k=_bvCreateKind;
-  if(k!=='bizwip'&&k!=='teamwip'&&k!=='import')return _r5OrigCreate();
+  if(k!=='bizwip'&&k!=='import')return _r5OrigCreate();
   const name=(document.getElementById('bv-nb-name')?.value||'').trim();
   if(k==='import'){
     if(!R5_ADMIN){toast('Only admins can import boards','warn');return;}
@@ -22611,12 +22686,12 @@ bvCreateBoard=function(){
     const b=_r5BuildImport(_r5Imp,name);
     return _r5AddNewBoard(b,`Imported “${esc(b.name)}”`);
   }
-  if(k==='teamwip'&&R5_PROD&&!AUTH.admin){toast('Only admins can create Team WIP','warn');return;}
+  if(k==='bizwip'&&R5_PROD&&!AUTH.admin){toast('Only admins can create Business WIP','warn');return;}
   const nm=name||BV_TEMPLATES[k].name;
   const ex=boardsList.find(b=>b.type==='custom'&&!b.removedAt&&String(b.name).trim().toLowerCase()===nm.toLowerCase());
   if(ex){document.getElementById('bv-create')?.remove();openBoard(ex.id);toast(`“${esc(ex.name)}” already exists — opening it`,'info');return;}
   _bvJM=new Map(jobs.map(j=>[String(j.id),j]));
-  const b=k==='bizwip'?_r5BuildBizWip(nm):_r5BuildTeamWip(nm);
+  const b=_r5BuildBizWip(nm);
   _r5AddNewBoard(b,`${esc(b.name)} created`);
 };
 function _r5AddNewBoard(b,msg){
@@ -22662,10 +22737,8 @@ function _r5MergeHelpers(){
     personName:c=>(c.personRef||c.title)?_r5Person(c).name:'',
     personEmail:c=>_r5Person(c).recEmail||''};
 }
-// The board this file would merge into: the one Import notes… was opened from, else a board
-// with the same name (case-insensitive).
+// The board this file would merge into: a board with the same name (case-insensitive).
 function _r5ImpMerge(){
-  if(_r5ImpTarget){const b=_bvBoard(_r5ImpTarget);if(b&&b.type==='custom')return b;}
   const nm=String(_r5Imp?.board?.name||'').trim().toLowerCase();if(!nm)return null;
   return boardsList.find(b=>b&&b.type==='custom'&&!b.removedAt&&String(b.name).trim().toLowerCase()===nm)||null;
 }
@@ -22679,7 +22752,7 @@ function _r5ImpChoice(){
   sum.insertAdjacentHTML('beforeend',`<div class="r5-imp-merge" role="radiogroup" aria-label="Where to import">
     <label><input type="radio" name="r5-imp-mode" value="merge"${m?' checked':''} onchange="bvR5ImpMode('merge')"> Merge into existing <b>${esc(tgt.name)}</b></label>
     <div class="r5-imp-prev">${esc(prev)}${/^Will/.test(prev)?'.':''}</div>
-    ${_r5ImpTarget?'':`<label><input type="radio" name="r5-imp-mode" value="new"${m?'':' checked'} onchange="bvR5ImpMode('new')"> Create a separate board</label>`}</div>`);
+    <label><input type="radio" name="r5-imp-mode" value="new"${m?'':' checked'} onchange="bvR5ImpMode('new')"> Create a separate board</label></div>`);
   if(save)save.textContent=m?'Merge':'Create board';
   if(nameRow)nameRow.disabled=m;
 }
@@ -22690,14 +22763,6 @@ function _r5ApplyMerge(b){
   document.getElementById('bv-create')?.remove();
   openBoard(b.id);
   toast(n.changed?`Merged into “${esc(b.name)}”: ${esc(bvMergeSummary(n).replace(/^Will add /,'added '))}`:`Nothing new to add to “${esc(b.name)}” — it already has everything in that file`,n.changed?'success':'info',7000);
-}
-// Team WIP header (admins): Import notes… opens Import straight into merge mode for this board.
-function bvR5ImportNotes(id){
-  if(!R5_ADMIN)return;const b=_bvBoard(id);if(!b)return;
-  bvOpenCreate('import');_r5ImpTarget=id;_r5ImpMode='merge';
-  const sum=document.getElementById('r5-imp-sum');
-  if(sum)sum.innerHTML=`Choose a notes file (.json board export). It merges into <b>${esc(b.name)}</b>: notes are added to matching people, checklist items to matching months — nothing is duplicated.`;
-  const save=document.querySelector('#bv-create .modal-save');if(save)save.textContent='Merge';
 }
 function _r5FindPerson(c){
   if(c.personRef&&(people[c.personRef]||_r5StUser(c.personRef)))return c.personRef;   // our own export
@@ -22992,10 +23057,6 @@ _bvRenderBoard=function(){
   _r5OrigRenderBoard();
   const b=_bvCur();const tag=document.querySelector('#bv-head .bv-tag');
   if(b&&tag)tag.insertAdjacentHTML('afterend',_r5SyncHTML(b));
-  if(b&&R5_ADMIN&&_r5WipOf(b)==='team'){
-    const opt=document.querySelector('#bv-head .bv-head-actions > .bv-ibtn[title="Board options"]');
-    if(opt)opt.insertAdjacentHTML('beforebegin',`<button class="d-action" onclick="bvR5ImportNotes(${_r5A(b.id)})" title="Merge a notes file (.json) into this board"><i class="ti ti-file-import"></i> Import notes…</button>`);
-  }
 };
 const _r5OrigTile=_bvTileHTML;
 _bvTileHTML=function(b){
@@ -23035,17 +23096,30 @@ async function bvR5Restore(id){
     toast(`“${esc(j.board&&j.board.name||'Board')}” is back for everyone`,'success');
   }catch(e){toast(`Couldn’t restore: ${esc(e.message)}`,'warn');}
 }
-// "Start from Streamtime WIP": the hand-made WIP boards (templates) + import, up front on the landing.
+// "Start from Streamtime WIP": the two hand-made Streamtime boards, up front on the landing.
+// Business WIP comes from its template (then its notes from an import); Team Wip & Workflow has
+// no template and comes from its import file. Admins also see "Remove the old Team WIP board"
+// when the old auto-made board is still empty (see bvIsEmptyTeamWip) — never removed by itself.
 function _r5Landing(){
   const land=document.getElementById('boards-landing');if(!land||land.querySelector('.r5-wip'))return;
   const lbl=[...land.querySelectorAll('.bv-sec-lbl')].find(el=>/template/i.test(el.textContent));if(!lbl)return;
-  const find=n=>boardsList.find(b=>b&&b.type==='custom'&&!b.archived&&String(b.name).trim().toLowerCase()===n.toLowerCase());
-  const biz=find('Business WIP'),team=find('Team WIP');
-  const teamOff=R5_PROD&&!AUTH.admin&&!team;
-  const btn=(ex,k,icon,label,sub,off)=>`<button class="r5-wip-b${off?' is-off':''}" ${off?'disabled title="Only admins can create Team WIP"':''} onclick="${ex?`openBoard(${_r5A(ex.id)})`:`bvOpenCreate('${k}')`}"><i class="ti ${icon}"></i><span><b>${ex?'Open ':''}${esc(label)}</b><small>${esc(sub)}</small></span><i class="ti ti-${ex?'arrow-right':'plus'} r5-wip-go"></i></button>`;
+  const live=boardsList.filter(b=>b&&b.type==='custom'&&!b.archived&&!b.removedAt);
+  const biz=live.find(b=>_r5WipOf(b)==='biz'),flow=live.find(b=>_r5WipOf(b)==='flow');
+  const oldTeam=R5_PROD&&!AUTH.admin?null:live.find(b=>_r5WipOf(b)==='team'&&bvIsEmptyTeamWip(b));
+  const bizOff=R5_PROD&&!AUTH.admin&&!biz;
+  const btn=(ex,act,icon,label,sub,off,offWhy)=>`<button class="r5-wip-b${off?' is-off':''}" ${off?`disabled title="${esc(offWhy||'')}"`:''} onclick="${ex?`openBoard(${_r5A(ex.id)})`:act}"><i class="ti ${icon}"></i><span><b>${ex?'Open ':''}${esc(label)}</b><small>${esc(sub)}</small></span><i class="ti ti-${ex?'arrow-right':act.includes('import')?'file-import':'plus'} r5-wip-go"></i></button>`;
+  const flowBtn=flow?btn(flow,'','ti-users-group',R5_FLOW_NAME,'Client lists, new business, office days')
+    :R5_ADMIN?btn(null,"bvR5ImportFlow()",'ti-users-group','Import '+R5_FLOW_NAME,'From its .json file')
+    :btn(null,'','ti-users-group',R5_FLOW_NAME,'Not imported yet',true,'An admin imports this board from its file');
   lbl.insertAdjacentHTML('beforebegin',`<section class="r5-wip" aria-label="Streamtime WIP boards">
-    <div class="r5-wip-hd"><span class="r5-cico" style="background:color-mix(in srgb,var(--bv-pink) 14%,transparent);color:var(--bv-pink)"><i class="ti ti-layout-kanban"></i></span><div><div class="r5-wip-t">Start from Streamtime WIP</div><div class="r5-wip-s">Your hand-made WIP boards: client opportunities, people notes and monthly actions${R5_PROD?', shared with the team':''}.</div></div></div>
-    <div class="r5-wip-row">${btn(biz,'bizwip','ti-briefcase','Business WIP','Client opps + C&C roadmap')}${btn(team,'teamwip','ti-users-group','Team WIP','Person cards with notes',teamOff)}${R5_ADMIN?btn(null,'import','ti-file-import','Import a board','From a .json export'):''}</div></section>`);
+    <div class="r5-wip-hd"><span class="r5-cico" style="background:color-mix(in srgb,var(--bv-pink) 14%,transparent);color:var(--bv-pink)"><i class="ti ti-layout-kanban"></i></span><div><div class="r5-wip-t">Start from Streamtime WIP</div><div class="r5-wip-s">Your two hand-made Streamtime boards${R5_PROD?', shared with the team':''}.</div></div></div>
+    <div class="r5-wip-row">${btn(biz,"bvOpenCreate('bizwip')",'ti-briefcase','Business WIP','Agenda, client opps, roadmap, performance',bizOff,'Only admins can create Business WIP')}${flowBtn}${R5_ADMIN?btn(null,"bvOpenCreate('import')",'ti-file-import','Import a board','From a .json export'):''}</div>
+    ${oldTeam?`<div class="r5-wip-old"><i class="ti ti-info-circle"></i><span>The old “${esc(oldTeam.name)}” board is empty and no longer used.</span><button class="d-action sm" onclick="bvDeleteBoard(${_r5A(oldTeam.id)})"><i class="ti ti-trash"></i> Remove the old Team WIP board</button></div>`:''}</section>`);
+}
+function bvR5ImportFlow(){
+  bvOpenCreate('import');
+  const sum=document.getElementById('r5-imp-sum');
+  if(sum)sum.innerHTML=`Choose the <b>${esc(R5_FLOW_NAME)}</b> file (.json board export). It becomes a new board${R5_PROD?', shared with everyone':''}.`;
 }
 const _r5OrigOpenBoard=openBoard;
 openBoard=function(id){_r5EditDesc=null;_r5EditTitle=null;_r5OrigOpenBoard(id);const b=_bvBoard(id);if(b&&b.shared)_r5Pull();};
@@ -23058,34 +23132,32 @@ if(R5_PROD){
   window.addEventListener('pagehide',()=>{if(R5S.queue.size)_r5PersistQueue();});
   setTimeout(()=>{_r5Pull(true);if(R5S.queue.size||R5S.removed.size)_r5Flush();},1200);
 }
-// ── 9. The two WIP boards are just there ─────────────────────────────────────────────────
-// When an admin opens Boards (production: after the shared list has loaded), any missing
-// "Business WIP" (everyone) / "Team WIP" (admins) board is made from its template and saved
-// through the normal shared-save path. A board counts as existing if its name matches
-// (case-insensitive) or it carries the template marker, archived or not. Once per session;
-// if the shared list never loaded, nothing is created. On localhost it goes to local boards.
+// ── 9. Business WIP is just there ────────────────────────────────────────────────────────
+// When an admin opens Boards (production: after the shared list has loaded), a missing
+// "Business WIP" board is made from its template (admins only, as it holds HR notes once
+// imported) and saved through the normal shared-save path. It counts as existing if its name
+// matches (case-insensitive) or it carries the template marker, archived or not. Once per
+// session; if the shared list never loaded, nothing is created. On localhost it goes to local
+// boards. "Team Wip & Workflow" is never made here: it comes from its import file.
 var _r5BoardsSeen=false,_r5AutoDone=false;   // var: read by renderBoardsList and _r5Pull, which may run before this line
 function _r5AutoWip(){
   if(_r5AutoDone||!R5_ADMIN)return;
   if(R5_PROD&&(!AUTH||!AUTH.admin||!R5S.pulledOk))return;
   _r5AutoDone=true;
   const have=boardsList.filter(b=>b&&b.type==='custom'&&!b.removedAt&&!R5S.removed.has(b.id)&&(!R5_PROD||b.shared));
-  const has=k=>have.some(b=>_r5WipOf(b)===k);
-  const made=[];
+  if(have.some(b=>_r5WipOf(b)==='biz'))return;
   _bvJM=new Map(jobs.map(j=>[String(j.id),j]));
-  if(!has('biz'))made.push(_r5BuildBizWip());
-  if(!has('team'))made.push(_r5BuildTeamWip());
-  if(!made.length)return;
-  made.forEach(b=>{b.openedAt=0;if(R5_PROD){b.shared=true;b.visibilityAt=Date.now();}else delete b.visibility;boardsList.push(b);});
+  const b=_r5BuildBizWip();
+  b.openedAt=0;if(R5_PROD){b.shared=true;b.visibilityAt=Date.now();}else delete b.visibility;boardsList.push(b);
   saveBoardsData();
-  if(R5_PROD){made.forEach(b=>{R5S.snap.delete(b.id);R5S.queue.add(b.id);});_r5Stamp();_r5Flush();}
+  if(R5_PROD){R5S.snap.delete(b.id);R5S.queue.add(b.id);_r5Stamp();_r5Flush();}
   _r5RedrawLanding();
-  toast(`${made.map(b=>'“'+esc(b.name)+'”').join(' and ')} ${made.length>1?'boards are':'board is'} ready${R5_PROD?' for the team':''}`,'success');
+  toast(`“${esc(b.name)}” board is ready${R5_PROD?' (admins only)':''}`,'success');
 }
-// Pinned first on the landing: Business WIP, then Team WIP.
+// Pinned first on the landing: Business WIP, then Team Wip & Workflow.
 function _r5PinWip(){
   const g=document.getElementById('bv-grid');if(!g)return;
-  ['team','biz'].forEach(w=>g.querySelectorAll(`.bv-tile[data-r5wip="${w}"]`).forEach(el=>g.prepend(el)));
+  ['flow','biz'].forEach(w=>g.querySelectorAll(`.bv-tile[data-r5wip="${w}"]`).forEach(el=>g.prepend(el)));
 }
 
 // Other tabs: when another tab writes cc_boards (an edit there, or its pull), re-read it and
