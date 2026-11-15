@@ -7978,7 +7978,19 @@ function clearJobSelection(){toggleAllJobCbs(false);}
 // Signed in (production): "am I admin" is the session's admin flag, enforced again on the server
 // for every admin endpoint. It also holds while an admin is viewing as someone else.
 function _hasAdmins(){return Object.values(people).some(p=>p&&p.admin&&!p._archived);}
+// roles-r10: local-dev preview of the member (non-admin) experience. Only on localhost / file://
+// (IS_LOCAL_DEV, which is false whenever a real session is in play): ?role=member or
+// localStorage cc_preview_role='member'. ?role=admin clears the stored preview.
+const _CC_PREVIEW_MEMBER=(()=>{
+  if(!IS_LOCAL_DEV)return false;
+  try{
+    const m=location.search.match(/(?:^|[?&])role=(member|admin)(?:&|$)/);
+    if(m){if(m[1]==='admin')localStorage.removeItem('cc_preview_role');return m[1]==='member';}
+    return localStorage.getItem('cc_preview_role')==='member';
+  }catch(e){return false;}
+})();
 function _isAdmin(k){
+  if(_CC_PREVIEW_MEMBER&&(!k||k===MY_PERSON))return false;
   if(AUTH&&(!k||k===MY_PERSON))return !!AUTH.admin;
   k=k||MY_PERSON;return !_hasAdmins()||!!people[k]?.admin;
 }
@@ -7997,7 +8009,12 @@ function toggleAdmin(key){
   p.admin=!p.admin;savePeople();renderSettings();_applyAdminUi();
   toast(`${p.name} ${p.admin?'is now an admin':'is no longer an admin'} — publish the team config to share this`,'success');
 }
-function _applyAdminUi(){document.body.classList.toggle('not-admin',!_isAdmin());}
+// roles-r10: one gate for the member (non-admin) experience. Members see jobs and plans but
+// change nothing on them except logging time; business views and money are hidden.
+function _isMember(){return !_isAdmin();}
+function _canEdit(){return _isAdmin();}
+function _showMoney(){return _isAdmin();}
+function _applyAdminUi(){const m=!_isAdmin();document.body.classList.toggle('not-admin',m);document.body.classList.toggle('cc-member',m);}
 function bulkArchiveJobs(){
   const ids=getSelectedJobIds();if(!ids.length)return;
   if(!_needAdmin('archive jobs'))return;
@@ -8071,8 +8088,8 @@ function openJobDetail(id){
     _titleEl.replaceWith(_div);_titleEl=_div;
   }
   _titleEl.textContent=j.name;
-  _titleEl.title='Click to rename';
-  _titleEl.style.cursor='pointer';
+  _titleEl.title=_canEdit()?'Click to rename':'';
+  _titleEl.style.cursor=_canEdit()?'pointer':'';
   _titleEl.onclick=()=>editJobNameField(id);
   document.getElementById('d-hours-sell').textContent='';
   activeLabels=j.labels?[...j.labels]:[];
@@ -9515,7 +9532,7 @@ function _taskMatchesItem(tt,item,allPhases){
 function renderPhases(){
   const c=document.getElementById('phases-wrap');c.innerHTML='';
   const _j=jobs.find(x=>x.id===activeJobId);
-  const _readonly=_j&&(_j.status==='archived'||_j.status==='complete');
+  const _readonly=(_j&&(_j.status==='archived'||_j.status==='complete'))||!_canEdit();
   phases.forEach(ph=>{
     const el=document.createElement('div');el.className='phase';el.id='pw_'+ph.id;
     const sell=pSell(ph);const hrs=pHrs(ph);const cnt=ph.items.length;
@@ -9528,7 +9545,7 @@ function renderPhases(){
     const nonBillBadge=jobNonBill?`<span class="ph-nonbill-badge" title="This job is set to non-billable. You can still add rates to individual items if a line needs billing."><i class="ti ti-lock" style="font-size:10px;"></i> Non-billable</span>`:'';
     const dateRange=_phDateRangeStr(ph);
     const dateTag=dateRange?`<span class="ph-cnt" style="margin-left:6px;" title="Phase date range"><i class="ti ti-calendar" style="font-size:10px;margin-right:2px;"></i>${dateRange}</span>`:'';
-    el.innerHTML=`<div class="phase-head" onclick="togglePhase('${ph.id}')" style="${ph.paused?'opacity:.65;':''}"><i class="ti ti-chevron-down ph-chv"></i><span class="ph-n">${ph.name}</span>${pausedTag}${nonBillBadge}<span class="ph-cnt">${cnt} item${cnt!==1?'s':''}</span>${dateTag}<div class="ph-inf"><span class="ph-meta">${hrs} · ${sell}</span>${statusIcon}${phMenu}</div></div><table class="items-t" id="it_${ph.id}"><thead><tr><th style="width:22px;"></th><th>Item</th><th style="width:90px;">Team</th><th style="width:120px;text-align:right;" title="Logged / Planned hours">Hours</th><th style="width:75px;text-align:right;">Rate</th><th style="width:140px;text-align:right;">Sell</th><th style="width:90px;text-align:right;">Status</th><th style="width:26px;"></th></tr></thead><tbody id="ib_${ph.id}"></tbody></table>${addActions}`;
+    el.innerHTML=`<div class="phase-head" onclick="togglePhase('${ph.id}')" style="${ph.paused?'opacity:.65;':''}"><i class="ti ti-chevron-down ph-chv"></i><span class="ph-n">${ph.name}</span>${pausedTag}${nonBillBadge}<span class="ph-cnt">${cnt} item${cnt!==1?'s':''}</span>${dateTag}<div class="ph-inf"><span class="ph-meta">${hrs}${_showMoney()?' · '+sell:''}</span>${statusIcon}${phMenu}</div></div><table class="items-t" id="it_${ph.id}"><thead><tr><th style="width:22px;"></th><th>Item</th><th style="width:90px;">Team</th><th style="width:120px;text-align:right;" title="Logged / Planned hours">Hours</th><th style="width:75px;text-align:right;">Rate</th><th style="width:140px;text-align:right;">Sell</th><th style="width:90px;text-align:right;">Status</th><th style="width:26px;"></th></tr></thead><tbody id="ib_${ph.id}"></tbody></table>${addActions}`;
     c.appendChild(el);renderItems(ph.id,_readonly);
   });
 }
@@ -9550,7 +9567,7 @@ function pSell(ph){
 function renderItems(phId,_readonly){
   const ph=phases.find(p=>p.id===phId);const tbody=document.getElementById('ib_'+phId);tbody.innerHTML='';
   const _job=jobs.find(x=>x.id===activeJobId);
-  if(_readonly===undefined){_readonly=_job&&(_job.status==='archived'||_job.status==='complete');}
+  if(_readonly===undefined){_readonly=(_job&&(_job.status==='archived'||_job.status==='complete'))||!_canEdit();}
   // Billability is a job-level setting (default billable). A $0/missing rate just means
   // "no rate set yet" — it must stay editable so a rate can be added when needed.
   const _jobNonBill=_job&&_job.billable===false;
@@ -20333,7 +20350,9 @@ html.ds-theming *,html.ds-theming *::before,html.ds-theming *::after{transition:
     let ind=nav.querySelector('.ds-nav-ind');
     if(!ind){ind=document.createElement('div');ind.className='ds-nav-ind';ind.setAttribute('aria-hidden','true');nav.prepend(ind);}
     const place=()=>{const on=nav.querySelector('.s-btn.on');
-      if(!on){ind.classList.remove('ready');return;}
+      // Only touch the class when it changes: classList.remove() writes the attribute even when the
+      // token is absent, which re-fired this observer forever when no item was active (roles-r10).
+      if(!on){if(ind.classList.contains('ready'))ind.classList.remove('ready');return;}
       ind.style.transform=`translateY(${on.offsetTop}px)`;ind.style.height=on.offsetHeight+'px';
       if(!ind.classList.contains('ready'))raf(()=>ind.classList.add('ready'));
       nav.querySelectorAll('.s-btn').forEach(b=>b.toggleAttribute('aria-current',b===on));
@@ -24671,5 +24690,314 @@ html body.dark .task-card.tc-urgent:not(.done-c){background:color-mix(in srgb,va
 html body .task-card.tc-urgent:not(.done-c) .tc-hrs{background:color-mix(in srgb,var(--red) 14%,transparent)!important;color:var(--red)!important;font-weight:600!important;}
 html body .task-card.tc-urgent:not(.done-c) .tc-hrs::before{content:'Urgent · ';font-weight:600;}
 </style>
+<style id="roles-r10">
+/* ═══ Roles (r10): members (non-admins) get a personal, view-only experience ═══════════════════
+   body.cc-member is set by _applyAdminUi(). Hiding uses display:none so nothing hidden stays
+   in the tab order. */
+body.cc-member #snav-reporting,body.cc-member #snav-schedule{display:none!important;}
+body.cc-member .jsn-tab[data-tab="expenses"],body.cc-member .jsn-tab[data-tab="quotes"],
+body.cc-member .jsn-tab[data-tab="invoices"],body.cc-member .jsn-tab[data-tab="clients"]{display:none!important;}
+body.cc-member #jobs-cb-all,body.cc-member .job-cb,body.cc-member #bulk-bar,body.cc-member #jobs-footer-bar{display:none!important;}
+body.cc-member [onclick*="exportTimeCSV"],body.cc-member [onclick*="itemsCSV"],
+body.cc-member #jt-deadlines [onclick*="openInvoiceDetail"]{display:none!important;}
+body.cc-member #sni-team,body.cc-member #sni-defaults,body.cc-member #sni-items,body.cc-member #sni-labels,
+body.cc-member #sni-sync,body.cc-member #sni-data{display:none!important;}
+/* Job detail: read only */
+body.cc-member #view-detail .dt-iconset,
+body.cc-member #view-detail .detail-actions>[onclick="openInvoice()"],
+body.cc-member #create-item-menu>:not([onclick*="openTodoModal"]):not([onclick*="openLogTimeModal"]):not([onclick*="startTimer"]),
+body.cc-member #view-detail .label-add-btn,body.cc-member #view-detail [onclick*="removeLabel"],
+body.cc-member #view-detail [onclick*="openAddMemberPicker"],
+body.cc-member #view-detail .plan-actions,body.cc-member #view-detail .ph-add,body.cc-member #view-detail #exp-wrap,
+body.cc-member #view-detail .d-tab[onclick*="'quote'"],
+body.cc-member #view-detail .wf-badge .ti-arrow-right,
+body.cc-member #view-detail [onclick*="showAddMilestoneInline"],body.cc-member #view-detail [onclick*="inlineEditMilestone"],
+body.cc-member #view-detail [onclick*="deleteMilestoneRow"],body.cc-member #view-detail [onclick*="openReallocate"],
+body.cc-member #view-detail .act-add-row,body.cc-member #view-detail .ph-mb,
+body.cc-member .rl-money-hide{display:none!important;}
+body.cc-member #view-detail .wf-badge [onclick],body.cc-member #view-detail .paused-badge[onclick]{pointer-events:none;cursor:default!important;}
+body.cc-member #view-detail .item-note-inp[readonly]{background:transparent;}
+.rl-viewonly{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:var(--r-pill);background:var(--surface-2);border:1px solid var(--border);color:var(--muted);font:600 11px/1 var(--font);letter-spacing:.01em;white-space:nowrap;}
+.rl-viewonly i{font-size:12px;}
+/* Polite "admins only" state */
+#view-locked{align-items:center;justify-content:center;}
+#view-locked:not(.hidden){display:flex;}
+.rl-lock{max-width:380px;text-align:center;padding:40px 24px;display:flex;flex-direction:column;align-items:center;gap:10px;}
+.rl-lock-ico{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--border);color:var(--muted);font-size:22px;margin-bottom:4px;}
+.rl-lock h2{margin:0;font:700 19px/1.25 var(--display,var(--font));letter-spacing:-.02em;color:var(--ink);}
+.rl-lock p{margin:0;font-size:13px;line-height:1.55;color:var(--muted);}
+.rl-lock .d-action{margin-top:8px;}
+/* Local preview pill */
+#rl-preview{position:fixed;right:16px;bottom:16px;z-index:9001;display:flex;align-items:center;gap:8px;height:30px;padding:0 6px 0 12px;border-radius:var(--r-pill);background:var(--white);border:1px solid var(--border);box-shadow:var(--e-2);font:500 12px/1 var(--font);color:var(--ink);}
+#rl-preview button{border:0;background:var(--surface-2);color:var(--ink);font:600 11.5px/1 var(--font);padding:6px 9px;border-radius:var(--r-pill);cursor:pointer;}
+#rl-preview button:focus-visible{outline:none;box-shadow:var(--ring);}
+.rl-acct-row{display:flex;gap:8px;flex-wrap:wrap;}
+</style>
+<script id="roles-r10-script">
+// ═══ Roles (r10) ══════════════════════════════════════════════════════════════════════════════
+// Members (non-admins, the team testers) see their own work: Dashboard (personal blocks), To Do,
+// Jobs (list, items, time, deadlines; no money), job detail read only (logging time still works),
+// Boards (the server filters admin boards) and personal Settings. Admins see everything as before.
+// The front end is the gate: there is no job-editing API, platform data lives per browser and
+// Streamtime is read-only, so editing local state only ever affects that person's own browser.
+(function(){
+  const M=()=>{try{return _isMember();}catch(e){return false;}};
+  const MONEY_RE=/\$|\b(sell|rates?|budgets?|revenue|margin|costs?|value|amount|price|profit|profitability|invoiced?|invoices|fees?|expenses?|purchase orders?)\b/i;
+  let _lastToast=0;
+  function _viewOnly(silent){
+    if(silent)return;
+    const n=Date.now();if(n-_lastToast<1200)return;_lastToast=n;
+    try{toast('View only. Ask an admin to make changes.','info');}catch(e){}
+  }
+  // ── 1. One guard for every edit or business entry point ────────────────────────────────
+  const GUARD=('openAddMemberPicker toggleJobMember openJobSettingsModal saveJobSettings showJobDotMenu duplicateJob archiveJob '+
+    'deleteJobConfirm bulkLabelJobs bulkArchiveJobs bulkDeleteJobs openReallocate applyReallocate showAddMilestoneInline saveMilestoneInline '+
+    'inlineEditMilestone deleteMilestoneRow updateQuoteField cycleQuoteStatus setQuoteStatus sendQuote addLabel removeLabel toggleJobLabel '+
+    'openLabelPicker createLabelFromPicker inlineEditItem toggleItemStatus showAddItemForm saveItem showAddExpenseInline saveExpenseInline '+
+    'addPhase showCtx showPctx pctxDo showAddExpenseForm saveExpense _setExpSub _addExpSub _removeExpSub cycleExpenseStatus openCreateJob '+
+    'createJob openNewQuoteModal saveNewQuote advanceWorkflow confirmAdvanceWorkflow editJobNameField editJobDates saveJobDates '+
+    'editJobStatusField openInvoice saveInvStatus showSplitInvoiceForm saveSplitInvoice cycleSplitInvoiceStatus deleteSplitInvoice '+
+    'openLogExpense openNewClientModal saveNewClient updateClientField addClientContact deleteClientContact updateLocalContact '+
+    'openClientDetail openClientGroup openNewJobForClient openInvoiceDetail openQuoteDetail openInvoiceForJob saveInvStatusForJob '+
+    'openSaveJobTemplate saveJobTemplate deleteJobTemplate openManageTemplates _ccApplyTemplate openC2QuoteLines saveC2QuoteLines '+
+    'c2SetQuoteStatus openC2InvSource c2ApplyInvSource openC2InvLines saveC2InvLines c2InvoiceFromQuote c2AddPayment c2RemovePayment '+
+    'openFdCreditNote saveFdCreditNote fdDeleteCreditNote openFdCreditNoteDoc openFdPoModal saveFdPo fdSetPoStatus fdDeletePo openFdPoDoc '+
+    'openQuoteDocPreview openInvoiceDocPreview printQuote printInvoice copyInvoiceToXero _cmdPauseJob hideUninvoicedJob setTeamTarget '+
+    'exportReportTab exportReportingCSV exportTimeCSV publishConfig openManageTeams addSettItem addSettLabel removeGlobalLabel '+
+    'cycleLabelColor removeSettItem showAddPersonForm saveNewPerson toggleArchivePerson deletePerson saveGhToken openTeamMember '+
+    'saveC2RateCard deleteC2RateCard addActivityComment _activityFileDrop').split(/\s+/);
+  const SILENT=['updateJobNotes','_updateJobNotesNow','saveItemNote'];
+  function _guard(name,silent){
+    const f=window[name];if(typeof f!=='function'||f._rlGuarded)return;
+    const g=function(){if(M()){_viewOnly(silent);return;}return f.apply(this,arguments);};
+    g._rlGuarded=true;window[name]=g;
+  }
+  GUARD.forEach(n=>_guard(n,false));SILENT.forEach(n=>_guard(n,true));
+  // Item menu: members may still add a to-do for an item, nothing else
+  if(typeof ctxDo==='function'){const _cd=ctxDo;window.ctxDo=function(a){if(M()&&a!=='todo'){_viewOnly();return;}return _cd.apply(this,arguments);};}
+  if(typeof _fe!=='undefined'&&_fe&&typeof _fe.itemsCSV==='function'){const _ic=_fe.itemsCSV;_fe.itemsCSV=function(){if(M()){_viewOnly();return;}return _ic.apply(this,arguments);};}
+  if(typeof openStarredItem==='function'){const _os=openStarredItem;window.openStarredItem=function(type){if(M()&&type!=='job'){try{closeStarredPanel();}catch(e){}_viewOnly();return;}return _os.apply(this,arguments);};}
+
+  // ── 2. Admin-only areas: a polite state instead of the view ────────────────────────────
+  const LOCKED_VIEWS={reporting:'Reporting',schedule:'Schedule'};
+  const LOCKED_TABS={expenses:'Expenses and purchase orders',quotes:'Quotes',invoices:'Invoices',clients:'Clients'};
+  function _lockedEl(){
+    let v=document.getElementById('view-locked');
+    if(!v){v=document.createElement('div');v.id='view-locked';v.className='view hidden';(document.querySelector('.main .content')||document.body).appendChild(v);}
+    return v;
+  }
+  const _navOrig=window.navTo;
+  window._rlShowLocked=function(what,navKey){
+    _lockedEl();
+    _navOrig('locked');
+    const v=_lockedEl();
+    v.innerHTML=`<div class="rl-lock" role="status"><span class="rl-lock-ico" aria-hidden="true"><i class="ti ti-lock"></i></span>
+      <h2>${esc(what)} ${/s$/.test(what)&&what!=='Reporting'?'are':'is'} available to admins</h2>
+      <p>Your account shows your own work, jobs and time. Ask an admin if you need something from here.</p>
+      <button class="d-action" onclick="navTo('dashboard')"><i class="ti ti-arrow-left"></i> Back to dashboard</button></div>`;
+    if(navKey)document.getElementById('snav-'+navKey)?.classList.add('on');
+  };
+  window.navTo=function(v){
+    if(M()&&LOCKED_VIEWS[v]){_rlShowLocked(LOCKED_VIEWS[v]);return;}
+    const r=_navOrig.apply(this,arguments);
+    try{_scrub();}catch(e){}
+    if(v==='jobs'&&M()){try{
+      if(typeof _jobsTab!=='undefined'&&LOCKED_TABS[_jobsTab])switchJobsTab('jobs');
+      const btn=document.getElementById('jobs-primary-btn');if(btn)btn.style.display=(typeof _jobsTab!=='undefined'&&_jobsTab==='time')?'':'none';
+    }catch(e){}}
+    return r;
+  };
+  // Jobs sub-tabs
+  let _timeMine=false;
+  const _sjt=window.switchJobsTab;
+  window.switchJobsTab=function(tab){
+    if(M()&&LOCKED_TABS[tab]){_rlShowLocked(LOCKED_TABS[tab],'jobs');return;}
+    const r=_sjt.apply(this,arguments);
+    try{
+      const btn=document.getElementById('jobs-primary-btn');
+      if(btn)btn.style.display=M()&&tab!=='time'?'none':'';
+      // Time: members start on their own entries (they can still pick someone else's hours)
+      if(M()&&tab==='time'&&!_timeMine){
+        const sel=document.getElementById('tf-person');
+        if(sel&&[...sel.options].some(o=>o.value===MY_PERSON)){sel.value=MY_PERSON;_timeMine=true;renderTime();}
+      }
+      if(M()&&tab==='deadlines'){const s=document.querySelector('#jt-deadlines .view-sub');if(s)s.textContent='Job due dates';}
+      _scrub();
+    }catch(e){}
+    return r;
+  };
+  // Job detail tabs: no Quote tab for members
+  const _sdt=window.switchDTab;
+  window.switchDTab=function(el,tab){
+    if(M()&&tab==='quote')return _sdt.call(this,document.querySelector('.d-tab'),'plan');
+    return _sdt.apply(this,arguments);
+  };
+
+  // ── 3. Settings: personal customisation only ───────────────────────────────────────────
+  const MEMBER_SETT=new Set(['profile','about']);
+  const _sst=window.switchSettTab;
+  window.switchSettTab=function(tab){if(M()&&!MEMBER_SETT.has(tab))tab='profile';return _sst.call(this,tab);};
+  const _rs=window.renderSettings;
+  window.renderSettings=function(){
+    if(M()&&!MEMBER_SETT.has(_settActiveTab||'profile')){_settActiveTab='profile';
+      document.querySelectorAll('.sett-nav-item').forEach(el=>el.classList.toggle('active',el.id==='sni-profile'));}
+    const r=_rs.apply(this,arguments);
+    try{
+      if((_settActiveTab||'profile')!=='profile')return r;
+      const wrap=document.getElementById('settings-scroll');if(!wrap)return r;
+      if(M()){
+        wrap.querySelectorAll('.sett-card').forEach(c=>{
+          const hd=(c.querySelector('.sett-card-hd')?.textContent||'').trim();
+          if(/^(rates|dashboard)/i.test(hd))c.remove();
+        });
+        wrap.querySelector('input[list="my-team-dl"]')?.closest('.tm-panel-field')?.remove();
+        const sub=wrap.querySelector('.sett-tab-sub');if(sub)sub.textContent='Your identity, appearance and account.';
+      }
+      if(!document.getElementById('rl-acct-card')){
+        const c=document.createElement('div');c.className='sett-card';c.id='rl-acct-card';
+        c.innerHTML=`<div class="sett-card-hd">Account</div><div class="sett-card-body">
+          <div class="sett-row"><div><div class="sett-row-lbl">${AUTH?esc(AUTH.email||'Signed in'):'Not signed in'}</div>
+            <div class="sett-row-sub">${AUTH?(AUTH.admin?'Admin':'Team member'):(_CC_PREVIEW_MEMBER?'Local preview as a team member':'Local preview')}</div></div>
+            <div class="sett-row-val rl-acct-row">
+              <button class="d-action" onclick="_showShortcuts()"><i class="ti ti-keyboard" style="font-size:12px;"></i> Keyboard shortcuts</button>
+              ${AUTH?`<button class="d-action" onclick="openChangePassword()"><i class="ti ti-key" style="font-size:12px;"></i> Change password</button>
+              <button class="d-action" onclick="authSignOut()"><i class="ti ti-logout" style="font-size:12px;"></i> Sign out</button>`:''}
+            </div></div></div>`;
+        const app=[...wrap.querySelectorAll('.sett-card')].find(x=>/^appearance/i.test((x.querySelector('.sett-card-hd')?.textContent||'').trim()));
+        app?app.insertAdjacentElement('afterend',c):wrap.appendChild(c);
+      }
+    }catch(e){console.warn('roles settings',e);}
+    return r;
+  };
+
+  // ── 4. Dashboard: personal blocks only ─────────────────────────────────────────────────
+  const _rd=window.renderDashboard;
+  window.renderDashboard=function(){
+    const r=_rd.apply(this,arguments);
+    if(!M())return r;
+    try{
+      const wrap=document.getElementById('dash-scroll');const todos=wrap&&wrap.querySelector(':scope > .my-todos');if(!todos)return r;
+      let n=todos.nextElementSibling;while(n){const nx=n.nextElementSibling;n.remove();n=nx;}
+      const t0=new Date();t0.setHours(0,0,0,0);
+      const days=d=>Math.round((_pDate(d)-t0)/86400000);
+      const mine=jobs.filter(j=>j.status==='inplay'&&j.dueDate&&((j.members||[]).includes(MY_PERSON)||j.lead===MY_PERSON)&&days(j.dueDate)<=14)
+        .sort((a,b)=>_pDate(a.dueDate)-_pDate(b.dueDate)).slice(0,8);
+      if(mine.length){
+        const rows=mine.map(j=>{const d=days(j.dueDate);return`<div class="att-row2 click" onclick="openJobDetail('${esc(String(j.id))}')">
+          <div class="att-main"><div class="att-l1">${esc(j.name)}</div><div class="att-l2">${esc(String(j.id))}${j.company?' · '+esc(j.company):''}</div></div>
+          <span class="att-val">${d<0?`${-d}d over`:d===0?'Today':`in ${d}d`}</span></div>`;}).join('');
+        wrap.insertAdjacentHTML('beforeend',`<div class="dh-sec"><h2 class="section-label">Your deadlines</h2><span class="dh-sec-meta">Jobs you're on, next 2 weeks</span></div>
+          <div class="att-grid"><div class="att-card" style="--att:var(--warn);"><div class="att-hd"><span class="att-ico"><i class="ti ti-flag"></i></span><span class="att-title">Due or overdue</span><span class="att-count">${mine.length}</span></div><div class="att-rows">${rows}</div></div></div>`);
+      }
+      _scrub();
+    }catch(e){console.warn('roles dashboard',e);}
+    return r;
+  };
+
+  // ── 5. ⌘K: no quotes, invoices, clients, new jobs or admin areas ───────────────────────
+  const GS_DENY_CAT=new Set(['Invoices','Quotes','Clients']);
+  const GS_DENY_ACT=/^(new job|new quote|add expense|add client|expenses and purchase orders|quotes|invoices|clients|reporting|schedule|manage teams|pause |resume )/i;
+  const _rgs=window.runGlobalSearch;
+  window.runGlobalSearch=function(q){
+    const r=_rgs.apply(this,arguments);
+    if(!M())return r;
+    try{
+      const before=_gsResults.length;
+      _gsResults=_gsResults.filter(x=>!GS_DENY_CAT.has(x.cat)&&!(x.cat==='Actions'&&GS_DENY_ACT.test(x.title||''))&&!(x.cat==='Starred'&&/quote|invoice|client/i.test(x.sub||'')));
+      if(_gsResults.length!==before){_gsSel=0;renderGsResults(String(q||'').trim().toLowerCase());}
+    }catch(e){}
+    return r;
+  };
+  // Shortcut sheet: no J / Q / E for members
+  const _ss=window._showShortcuts;
+  window._showShortcuts=function(){
+    const r=_ss.apply(this,arguments);
+    if(M())try{document.querySelectorAll('#kb-modal .modal-bd > div').forEach(row=>{const k=row.querySelector('kbd')?.textContent.trim();if(/^(J|Q|E)$/.test(k||''))row.remove();});}catch(e){}
+    return r;
+  };
+
+  // ── 6. Job detail: read only, with a "View only" badge ─────────────────────────────────
+  const _ojd=window.openJobDetail;
+  window.openJobDetail=function(){
+    const r=_ojd.apply(this,arguments);
+    if(M())try{_detailReadOnly();}catch(e){console.warn('roles detail',e);}
+    return r;
+  };
+  function _detailReadOnly(){
+    const meta=document.getElementById('d-meta-line');
+    if(meta&&!meta.querySelector('.rl-viewonly'))meta.insertAdjacentHTML('beforeend','<span class="rl-viewonly" title="Team members can view jobs and log time. Admins make changes."><i class="ti ti-eye"></i>View only</span>');
+    const t=document.getElementById('d-title-text');if(t){t.onclick=null;t.style.cursor='';t.title='';}
+    const notes=document.getElementById('job-notes-inp');
+    if(notes){notes.readOnly=true;notes.tabIndex=-1;const row=document.getElementById('job-notes-row');if(row&&!notes.value.trim())row.style.display='none';}
+    _scrub();
+  }
+  // Drag in the plan, timeline and job lists does nothing for members
+  ['dragstart','drop'].forEach(type=>document.addEventListener(type,e=>{
+    if(!M())return;
+    if(e.target&&e.target.closest&&e.target.closest('#view-detail,#view-jobs')){e.preventDefault();e.stopPropagation();}
+  },true));
+
+  // ── 7. Money and edit controls, scrubbed after every render ────────────────────────────
+  function _scrub(){
+    if(!M())return;
+    // Only the screen on show (navTo and switchJobsTab scrub again when the screen changes)
+    document.querySelectorAll('.main .content > .view:not(.hidden)').forEach(v=>{if(v.id!=='view-boards'&&v.id!=='view-settings')_scrubView(v);});
+  }
+  function _scrubView(root){
+    // Tables: hide money columns by their header
+    root.querySelectorAll('table').forEach(tb=>{
+      const ths=[...(tb.tHead?.rows[0]?.cells||[])];if(!ths.length)return;
+      const idx=ths.map((th,i)=>MONEY_RE.test(th.textContent.trim())?i:-1).filter(i=>i>=0);if(!idx.length)return;
+      const money=new Set(idx);
+      [...tb.rows].forEach(row=>{let col=0;[...row.cells].forEach(c=>{const span=c.colSpan||1;
+        // A single-column cell under a money header goes; a wide cell (group or total rows) only
+        // when it holds a dollar figure
+        if(span===1?money.has(col):(/\$/.test(c.textContent)&&[...Array(span).keys()].some(k=>money.has(col+k))))c.classList.add('rl-money-hide');
+        col+=span;});});
+    });
+    // Stat tiles with money
+    root.querySelectorAll('.kpi,.stat-b,.time-stat,.r-kpi,.fe-stat,.fe-kpi').forEach(el=>{
+      if(el.classList.contains('rl-money-hide'))return;
+      const lbl=(el.firstElementChild?.textContent||'').trim();
+      if(/\$/.test(el.textContent)||MONEY_RE.test(lbl))el.classList.add('rl-money-hide');
+    });
+    // Job progress: money cards
+    root.querySelectorAll('#view-detail .prog-card').forEach(c=>{
+      const hd=(c.querySelector('.prog-card-hd')?.textContent||'');
+      if(/profit|invoice|expense|purchase|budget|sell/i.test(hd))c.classList.add('rl-money-hide');
+      const dim=c.querySelector('.prog-dim');if(dim&&/reallocate/.test(dim.textContent))dim.textContent=dim.textContent.replace(/\s*·\s*click.*reallocate/,'');
+    });
+    // Job detail inputs: read only
+    root.querySelectorAll('#view-detail textarea,#view-detail input:not([type=checkbox]):not([type=radio])').forEach(el=>{if(!el.readOnly){el.readOnly=true;el.tabIndex=-1;}});
+    root.querySelectorAll('#view-detail [contenteditable="true"]').forEach(el=>el.setAttribute('contenteditable','false'));
+    root.querySelectorAll('#view-detail tr[draggable="true"]').forEach(el=>{el.draggable=false;});
+    // Deadlines: job due dates only
+    root.querySelectorAll('#dcal-legend > span').forEach(el=>{if(/invoice/i.test(el.textContent))el.classList.add('rl-money-hide');});
+  }
+  window._rlScrub=_scrub;
+  // Runs in the observer's microtask (not rAF, which a background tab pauses). Scrubbing only
+  // touches classes and attributes, so it settles after one pass.
+  let _busy=false;
+  const mo=new MutationObserver(()=>{if(_busy||!M())return;_busy=true;try{_scrub();}catch(e){}finally{_busy=false;}});
+  const content=document.querySelector('.main .content');if(content)mo.observe(content,{childList:true,subtree:true});
+
+  // ── 8. Boot: apply now, and show a pill while previewing locally ───────────────────────
+  try{_applyAdminUi();}catch(e){}
+  if(_CC_PREVIEW_MEMBER){
+    const pill=document.createElement('div');pill.id='rl-preview';pill.setAttribute('role','status');
+    pill.innerHTML='<i class="ti ti-eye" style="font-size:13px;color:var(--muted);"></i><span>Previewing as a team member</span><button type="button">Back to admin</button>';
+    pill.querySelector('button').addEventListener('click',()=>{try{localStorage.removeItem('cc_preview_role');}catch(e){}location.href=location.pathname+'?role=admin';});
+    document.body.appendChild(pill);
+  }
+  // Booted onto an admin-only screen (cross-tab restore)? Show the polite state instead.
+  try{
+    if(M()){
+      if(!document.getElementById('view-reporting')?.classList.contains('hidden'))_rlShowLocked('Reporting');
+      if(!document.getElementById('view-schedule')?.classList.contains('hidden'))_rlShowLocked('Schedule');
+      if(!document.getElementById('view-dashboard')?.classList.contains('hidden'))renderDashboard();
+    }
+  }catch(e){}
+})();
+</script>
 </body>
 </html>
