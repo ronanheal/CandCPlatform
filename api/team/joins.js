@@ -25,7 +25,7 @@ export function recentJoins(access, selfEmail, now = Date.now()) {
 
 export async function handle(request, opts = {}) {
   const env = opts.env || process.env;
-  const o = { env, fetchImpl: opts.fetchImpl, blob: opts.blob };
+  const o = { env, fetchImpl: opts.fetchImpl, gh: opts.gh };
   if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405);
   const { user, response } = await requireUser(request, o);
   if (response) return response;

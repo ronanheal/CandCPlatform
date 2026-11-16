@@ -27,7 +27,7 @@ function actionOf(request) {
 
 export async function handle(request, opts = {}) {
   const env = opts.env || process.env;
-  const o = { env, fetchImpl: opts.fetchImpl, blob: opts.blob };
+  const o = { env, fetchImpl: opts.fetchImpl, gh: opts.gh };
   const action = actionOf(request);
   const method = request.method;
   try {

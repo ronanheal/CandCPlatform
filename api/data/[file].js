@@ -28,7 +28,7 @@ const HEADERS = {
 };
 
 export async function handle(request, opts = {}) {
-  const o = { env: opts.env || process.env, fetchImpl: opts.fetchImpl, blob: opts.blob };
+  const o = { env: opts.env || process.env, fetchImpl: opts.fetchImpl, gh: opts.gh };
   const { response } = await requireUser(request, o);
   if (response) return response;
   const file = fileFromRequest(request);

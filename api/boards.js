@@ -12,7 +12,7 @@ import { listBoards, saveBoard, restoreBoard, MAX_BOARD_BYTES } from '../lib/boa
 
 export async function handle(request, opts = {}) {
   const env = opts.env || process.env;
-  const o = { env, fetchImpl: opts.fetchImpl, blob: opts.blob };
+  const o = { env, fetchImpl: opts.fetchImpl, gh: opts.gh };
   if (request.method === 'GET') {
     const removed = new URL(request.url).searchParams.get('removed') === '1';
     const { user, response } = await requireUser(request, { ...o, admin: removed });

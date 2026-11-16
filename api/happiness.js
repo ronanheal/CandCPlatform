@@ -12,7 +12,7 @@ import { saveResponse, listResponses } from '../lib/happiness.js';
 
 export async function handle(request, opts = {}) {
   const env = opts.env || process.env;
-  const o = { env, fetchImpl: opts.fetchImpl, blob: opts.blob };
+  const o = { env, fetchImpl: opts.fetchImpl, gh: opts.gh };
   const now = opts.now || Date.now();
   if (request.method === 'GET') {
     const { user, response } = await requireUser(request, o);

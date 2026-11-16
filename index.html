@@ -22860,7 +22860,14 @@ function bvR5Export(id){
 }
 
 // ── 8. Shared boards (production only) ─────────────────────────────────────────────────
-const R5S={status:'idle',queue:new Set(),inflight:new Set(),removed:new Map(),snap:new Map(),timer:null,retryTimer:null,retry:0,err:'',lastPull:0,pulling:null};
+// Storage-call budget (the server stores boards on GitHub, 5,000 API calls/hour for everyone):
+// the list is pulled at most once a minute and only while Boards is open (the Retry button
+// forces it); saves wait for a 2.5 s pause in editing; a failing save is retried automatically
+// at most R5_MAX_TRIES times in all (backing off, honouring Retry-After), then it stops at
+// "Not saved · Retry" until the person retries or edits again.
+const R5_PULL_MS=60000,R5_SAVE_DELAY=2500,R5_MAX_TRIES=5,R5_BACKOFF=[5,15,45,120];
+const R5S={status:'idle',queue:new Set(),inflight:new Set(),removed:new Map(),snap:new Map(),timer:null,retryTimer:null,retry:0,err:'',lastPull:0,pulling:null,gaveUp:false};
+function _r5BoardsOpen(){const v=document.getElementById('view-boards');return!!v&&!v.classList.contains('hidden');}
 function _r5Fp(b){
   const cols=new Map(),cards=new Map(),colU=new Map();
   (b.columns||[]).forEach(col=>{
@@ -22907,13 +22914,13 @@ saveBoardsData=function(){
 function _r5Schedule(){
   clearTimeout(R5S.timer);
   if(R5S.status!=='saving')_r5SetStatus('pending');
-  R5S.timer=setTimeout(_r5Flush,800);
+  R5S.timer=setTimeout(_r5Flush,R5_SAVE_DELAY);
 }
 async function _r5Req(method,body,query){
   const r=await fetch('/api/boards'+(query||''),{method,credentials:'same-origin',cache:'no-store',headers:body?{'content-type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
   let j={};try{j=await r.json();}catch(e){}
   if(r.status===401){try{_authSignedOut();}catch(e){}}
-  if(!r.ok){const e=new Error(j.error||('Request failed ('+r.status+')'));e.status=r.status;throw e;}
+  if(!r.ok){const e=new Error(j.error||('Request failed ('+r.status+')'));e.status=r.status;e.retryAfter=parseInt(r.headers.get('retry-after'),10)||0;throw e;}
   return j;
 }
 function _r5Clean(b){const o=JSON.parse(JSON.stringify(b));delete o.openedAt;delete o.shared;
@@ -22951,14 +22958,18 @@ async function _r5Flush(){
   if(failed){
     R5S.err=failed.message||'error';
     _r5SetStatus(navigator.onLine===false?'offline':'error');
-    R5S.retry=Math.min(R5S.retry+1,5);
-    R5S.retryTimer=setTimeout(_r5Flush,[0,5,15,30,60,120][R5S.retry]*1000);
+    R5S.retry++;
+    // At most R5_MAX_TRIES attempts in all, then stop: no endless retry loop against the server.
+    if(R5S.retry<R5_MAX_TRIES){
+      const wait=Math.max(R5_BACKOFF[Math.min(R5S.retry-1,R5_BACKOFF.length-1)],Math.min(failed.retryAfter||0,600));
+      R5S.retryTimer=setTimeout(_r5Flush,wait*1000);
+    }else R5S.gaveUp=true;
   }else{
-    R5S.err='';R5S.retry=0;
+    R5S.err='';R5S.retry=0;R5S.gaveUp=false;
     if(R5S.queue.size)_r5Schedule();else _r5SetStatus('saved');
   }
 }
-function bvR5Retry(){R5S.retry=0;_r5Flush();}
+function bvR5Retry(){R5S.retry=0;R5S.gaveUp=false;_r5Flush();}
 // 400/403/404/413: the server will refuse this save every time (no access any more, the board
 // became admins-only, it's too large or invalid). Retrying would loop, and dropping the board
 // would lose the edits, so they move to a local-only copy in this browser and the person is told.
@@ -22995,7 +23006,8 @@ document.addEventListener('focusout',()=>{if(R5S.redraw)setTimeout(()=>{if(R5S.r
 async function _r5Pull(force){
   if(!R5_PROD)return;
   if(R5S.pulling)return R5S.pulling;
-  if(!force&&Date.now()-R5S.lastPull<10000)return;
+  // Automatic pulls: only while Boards is on screen, at most once a minute. force = the Retry button.
+  if(!force&&(!_r5BoardsOpen()||Date.now()-R5S.lastPull<R5_PULL_MS))return;
   R5S.lastPull=Date.now();
   R5S.pulling=(async()=>{
     try{
@@ -23006,7 +23018,7 @@ async function _r5Pull(force){
         if(R5S.queue.has(sb.id)||R5S.inflight.has(sb.id)||R5S.removed.has(sb.id))return;
         const local=_bvBoard(sb.id);
         if(local&&local.shared&&(local.updatedAt||0)>(sb.updatedAt||0)){R5S.queue.add(sb.id);return;}
-        if(activeBoardId===sb.id&&(_r5Editing()||_r5Ci||_bvDrag)){R5S.lastPull=0;return;}
+        if(activeBoardId===sb.id&&(_r5Editing()||_r5Ci||_bvDrag))return; // picked up by the next pull
         if(_r5Apply(sb))landingChanged=true;
       });
       const gone=boardsList.filter(b=>b&&b.shared&&!seen.has(b.id)&&!R5S.queue.has(b.id)&&!R5S.inflight.has(b.id));
@@ -23029,7 +23041,7 @@ function _r5SyncHTML(b){
   const vis=b.visibility==='admins'?`<i class="ti ti-lock" title="Admins only"></i>Admins only · `:`<i class="ti ti-users" title="Shared with everyone"></i>`;
   const s=R5S.status;
   const st=s==='saving'||s==='pending'?`<i class="ti ti-loader-2 r5-spin"></i>Saving…`
-    :s==='error'?`<i class="ti ti-cloud-off"></i>Not saved<button onclick="bvR5Retry()">Retry</button>`
+    :s==='error'?`<i class="ti ti-cloud-off"></i>Not saved ·<button onclick="bvR5Retry()">Retry</button>`
     :s==='offline'?`<i class="ti ti-wifi-off"></i>Offline — changes kept here<button onclick="bvR5Retry()">Retry</button>`
     :s==='loadfail'?`<i class="ti ti-cloud-off"></i>Couldn’t refresh<button onclick="_r5Pull(true)">Retry</button>`
     :'Saved';
@@ -23113,7 +23125,7 @@ let _r5Rm={at:0,list:null};
 async function _r5RemovedList(force){
   if(!R5_PROD||!AUTH||!AUTH.admin)return;
   _r5RemovedHTML();
-  if(!force&&_r5Rm.list&&Date.now()-_r5Rm.at<30000)return;
+  if(!force&&(Date.now()-_r5Rm.at<R5_PULL_MS||!_r5BoardsOpen()))return; // same budget as _r5Pull
   _r5Rm.at=Date.now();
   try{const j=await _r5Req('GET',null,'?removed=1');_r5Rm.list=(j.boards||[]).sort((a,b)=>(b.removedAt||0)-(a.removedAt||0));}catch(e){return;}
   _r5RemovedHTML();
@@ -23164,10 +23176,13 @@ if(R5_PROD){
   try{JSON.parse(localStorage.getItem('cc_boards_dirty')||'[]').forEach(id=>{if(_bvBoard(id)?.shared)R5S.queue.add(id);});}catch(e){}
   try{JSON.parse(localStorage.getItem('cc_boards_removed')||'[]').forEach(x=>{if(Array.isArray(x)&&typeof x[0]==='string'&&x[1]&&typeof x[1]==='object')R5S.removed.set(x[0],x[1]);});}catch(e){}
   boardsList.forEach(b=>{if(b&&b.shared)R5S.snap.set(b.id,_r5Fp(b));});
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){_r5Pull();if(R5S.queue.size)_r5Flush();}});
-  window.addEventListener('online',()=>{if(R5S.queue.size||R5S.removed.size)bvR5Retry();_r5Pull(true);});
+  // Tab focus: a throttled pull (only if Boards is open); unsaved edits go unless saving gave up.
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){_r5Pull();if(R5S.queue.size&&!R5S.gaveUp)_r5Flush();}});
+  // Back online: one new round of save attempts (offline failures shouldn't use them up).
+  window.addEventListener('online',()=>{if(R5S.queue.size||R5S.removed.size)bvR5Retry();_r5Pull();});
   window.addEventListener('pagehide',()=>{if(R5S.queue.size)_r5PersistQueue();});
-  setTimeout(()=>{_r5Pull(true);if(R5S.queue.size||R5S.removed.size)_r5Flush();},1200);
+  // Load: send edits left over from last time; pull only if the page opened on Boards.
+  setTimeout(()=>{_r5Pull();if(R5S.queue.size||R5S.removed.size)_r5Flush();},1200);
 }
 // ── 9. Business WIP is just there ────────────────────────────────────────────────────────
 // When an admin opens Boards (production: after the shared list has loaded), a missing
@@ -23332,10 +23347,11 @@ function openChangePassword(){
 (function(){
   if(!AUTH)return;
   const av=document.getElementById('s-avatar');if(av)av.title='Account';
-  fetch('/api/me',{credentials:'same-origin',cache:'no-store'}).then(async r=>{
-    if(r.status===401||r.status===403){_authSignedOut();return;}
-    if(!r.ok)return;
-    const me=await r.json();
+  // One /api/me per page load: the welcome tour (fetchMe) reuses this answer.
+  window._ccMeP=fetch('/api/me',{credentials:'same-origin',cache:'no-store'}).then(async r=>({status:r.status,ok:r.ok,me:r.ok?await r.json():null}));
+  window._ccMeP.then(async({status,ok,me})=>{
+    if(status===401||status===403){_authSignedOut();return;}
+    if(!ok||!me)return;
     const stale=AUTH._missing||me.personKey!==AUTH.personKey||!!me.admin!==AUTH.admin;
     let again=false;try{again=sessionStorage.getItem('cc_me_reloaded')==='1';}catch(e){}
     if(stale&&!again){try{sessionStorage.setItem('cc_me_reloaded','1');}catch(e){}location.reload();return;}
@@ -24814,6 +24830,8 @@ body.dark #ob-tour{--ob-dim:rgba(0,0,0,.62);}
   let meCache=null;
   async function fetchMe(){
     if(meCache)return meCache;
+    const boot=window._ccMeP?await window._ccMeP.catch(()=>null):null; // the boot check's answer
+    if(boot&&boot.ok&&boot.me)return meCache=boot.me;
     const r=await fetch('/api/me',{credentials:'same-origin',cache:'no-store'});
     if(!r.ok)throw new Error('me '+r.status);
     return meCache=await r.json();
@@ -24948,9 +24966,12 @@ body.dark #ob-tour{--ob-dim:rgba(0,0,0,.62);}
   function demoJoins(){try{return JSON.parse(LS.get('cc_demo_joins')||'[]');}catch(e){return[];}}
   async function loadJoins(){
     if(!AUTH)return demoJoins();
+    // Once per tab session at most every 30 minutes (joins change rarely; saves server calls).
+    try{const c=JSON.parse(SS.get('cc_joins')||'null');if(c&&Date.now()-c.at<30*60000&&Array.isArray(c.joins))return c.joins;}catch(e){}
     const r=await fetch('/api/team/joins',{credentials:'same-origin',cache:'no-store'});
     if(!r.ok)return[];
-    const j=await r.json();return Array.isArray(j.joins)?j.joins:[];
+    const j=await r.json();const joins=Array.isArray(j.joins)?j.joins:[];
+    SS.set('cc_joins',JSON.stringify({at:Date.now(),joins}));return joins;
   }
   async function checkJoins(){
     const seen=+LS.get(seenKey())||0;

@@ -1,6 +1,6 @@
 // Tests for the welcome-tour flag (POST /api/me), the "has joined the team" feed
 // (/api/team/joins) and the weekly check-in (/api/happiness, lib/happiness.js).
-// No network: Vercel Blob is mocked.  Run: node scripts/test_onboard.mjs   (made-up fixtures)
+// No network: the GitHub state store is mocked (scripts/mock_github.mjs).  Run: node scripts/test_onboard.mjs   (made-up fixtures)
 
 import assert from 'node:assert/strict';
 import * as A from '../lib/auth.js';
@@ -11,6 +11,7 @@ import { handle as meHandle } from '../api/me.js';
 import { handle as joinsHandle, recentJoins } from '../api/team/joins.js';
 import { handle as happyHandle } from '../api/happiness.js';
 import { handle as accessHandle } from '../api/access.js';
+import { mockGitHub } from './mock_github.mjs';
 
 const SECRET = 'x'.repeat(64);
 const KEYHEX = 'c3'.repeat(32);
@@ -24,35 +25,11 @@ async function t(name, fn) {
   catch (e) { failed++; console.log('  FAIL ' + name + '\n       ' + (e && e.stack || e).toString().split('\n').slice(0, 4).join('\n       ')); }
 }
 
-class BlobNotFoundError extends Error {}
-class BlobPreconditionFailedError extends Error {}
-function mockBlob() {
-  const files = new Map(); let n = 0; const calls = { put: 0, conflicts: 0 };
-  const m = {
-    files, calls, BlobNotFoundError, BlobPreconditionFailedError, beforePut: null,
-    async get(path, o) {
-      assert.equal(o.access, 'private');
-      const f = files.get(path); if (!f) return null;
-      return { statusCode: 200, stream: new Blob([f.body]).stream(), blob: { etag: f.etag } };
-    },
-    async put(path, body, o) {
-      calls.put++;
-      assert.equal(o.access, 'private');
-      if (m.beforePut) { const f = m.beforePut; m.beforePut = null; await f(path); }
-      const cur = files.get(path);
-      if (o.ifMatch) { if (!cur || cur.etag !== o.ifMatch) { calls.conflicts++; throw new BlobPreconditionFailedError('Precondition failed'); } }
-      else if (cur && !o.allowOverwrite) { calls.conflicts++; throw new Error('Vercel Blob: This blob already exists'); }
-      files.set(path, { body: Buffer.from(body), etag: '"e' + (++n) + '"' });
-      return { pathname: path };
-    },
-  };
-  return m;
-}
 
 const NOW = Date.parse('2026-11-16T09:00:00Z'); // a Monday: ISO week 2026-W47
 const days = (d) => new Date(NOW - d * 864e5).toISOString();
-const blob = mockBlob();
-const O = { env, blob };
+const gh = mockGitHub();
+const O = { env, gh };
 const users = [
   { email: 'owner@cc.test', name: 'Owner Person', personKey: 'st_7', pw: 'scrypt$x$ownerownerowner', addedAt: days(200) },
   { email: 'ann@cc.test', name: 'Ann Lee', personKey: 'st_2', pw: 'scrypt$x$annannannannann', addedAt: days(3) },
@@ -63,10 +40,10 @@ const users = [
   { email: 'noday@cc.test', name: 'No Date', pw: 'scrypt$x$nodaynodaynod' },
   { email: 'temp@cc.test', name: 'Temp Pass', pw: 'scrypt$x$temptemptempt', mustChangePassword: true, addedAt: days(2) },
 ];
-const seed = () => { blob.files.set('auth/access.json.enc', { body: C.encryptJson({ users, requests: [] }, KEY), etag: '"a' + Math.random() + '"' }); S._resetCaches(); };
+const seed = () => { gh.files.set('auth/access.json.enc', { body: C.encryptJson({ users, requests: [] }, KEY), sha: '"a' + Math.random() + '"' }); S._resetCaches(); };
 seed();
 const fresh = () => S._resetCaches();
-const stored = () => C.decryptJson(blob.files.get('auth/access.json.enc').body, KEY);
+const stored = () => C.decryptJson(gh.files.get('auth/access.json.enc').body, KEY);
 
 const cookieFor = async (email) => {
   const u = users.find((x) => x.email === email);
@@ -103,7 +80,7 @@ await t('POST onboarded member: saved on the caller\'s own record, returned by G
   assert.equal(a.onboarded, 'member'); assert.ok(a.onboardedAt);
   assert.equal(a.pw, 'scrypt$x$annannannannann', 'nothing else on the record changes');
   assert.ok(doc.users.filter((u) => u.email !== 'ann@cc.test').every((u) => u.onboarded === undefined), 'nobody else is touched');
-  assert.ok(!blob.files.get('auth/access.json.enc').body.toString('latin1').includes('ann@cc.test'), 'still encrypted');
+  assert.ok(!gh.files.get('auth/access.json.enc').body.toString('latin1').includes('ann@cc.test'), 'still encrypted');
   fresh();
   assert.equal((await (await me({ cookie: ann })).json()).onboarded, 'member');
 });
@@ -124,19 +101,19 @@ await t('admins can record admin; members cannot claim it; unknown role/action r
   assert.equal(stored().users.find((u) => u.email === 'boss@cc.test').onboarded, 'member');
 });
 await t('CSRF: foreign or missing Origin refused; signed out refused; forced password change refused', async () => {
-  const puts = blob.calls.put;
+  const puts = gh.calls.put;
   assert.equal((await me({ method: 'POST', cookie: ann, origin: 'https://evil.test', body: { action: 'onboarded', role: 'member' } })).status, 403);
   assert.equal((await me({ method: 'POST', cookie: ann, origin: '', body: { action: 'onboarded', role: 'member' } })).status, 403);
   assert.equal((await me({ method: 'POST', body: { action: 'onboarded', role: 'member' } })).status, 401);
   assert.equal((await me({ method: 'POST', cookie: temp, body: { action: 'onboarded', role: 'member' } })).status, 403);
   assert.equal((await me({ method: 'POST', cookie: ann, body: 'not json' })).status, 400, 'bad JSON');
   assert.equal((await me({ method: 'POST', cookie: ann, body: { action: 'onboarded', role: 'member', pad: 'x'.repeat(2000) } })).status, 413);
-  assert.equal(blob.calls.put, puts, 'nothing written');
+  assert.equal(gh.calls.put, puts, 'nothing written');
 });
 await t('a removed person\'s session cannot write', async () => {
   const gone = await cookieFor('noday@cc.test');
   const doc = stored();
-  blob.files.set('auth/access.json.enc', { body: C.encryptJson({ ...doc, users: doc.users.filter((u) => u.email !== 'noday@cc.test') }, KEY), etag: '"gone"' });
+  gh.files.set('auth/access.json.enc', { body: C.encryptJson({ ...doc, users: doc.users.filter((u) => u.email !== 'noday@cc.test') }, KEY), sha: '"gone"' });
   fresh();
   assert.equal((await me({ method: 'POST', cookie: gone, body: { action: 'onboarded', role: 'member' } })).status, 401);
   seed();
@@ -200,8 +177,8 @@ await t('POST saves the caller\'s own response, encrypted; the latest for a week
   assert.equal(r.status, 200, await r.clone().text());
   r = await happy({ method: 'POST', cookie: ann, body: { week: WK, score: 4, note: 'Better now' } });
   assert.equal((await r.json()).response.score, 4);
-  const f = blob.files.get('happiness/2026.json.enc');
-  assert.ok(f, 'one blob per ISO year');
+  const f = gh.files.get('happiness/2026.json.enc');
+  assert.ok(f, 'one gh per ISO year');
   assert.ok(!f.body.toString('latin1').includes('Better now') && !f.body.toString('latin1').includes('ann@cc.test'), 'encrypted');
   const doc = C.decryptJson(f.body, KEY);
   assert.equal(doc.responses['ann@cc.test'][WK].score, 4);
@@ -225,13 +202,13 @@ await t('POST: CSRF, auth and forced password change', async () => {
   assert.equal((await happy({ method: 'POST', cookie: temp, body: { week: WK, score: 3 } })).status, 403);
 });
 await t('concurrent writes from two people both land (ETag retry)', async () => {
-  blob.beforePut = async () => {
+  gh.beforePut = async () => {
     // someone else saves between Maya's read and write
     await H.saveResponse({ email: 'boss@cc.test', name: 'Boss Admin', personKey: null }, { week: WK, score: 5 }, O, NOW);
   };
   const r = await happy({ method: 'POST', cookie: maya, body: { week: WK, score: 1, note: 'Rough one' } });
   assert.equal(r.status, 200);
-  const doc = C.decryptJson(blob.files.get('happiness/2026.json.enc').body, KEY);
+  const doc = C.decryptJson(gh.files.get('happiness/2026.json.enc').body, KEY);
   assert.equal(doc.responses['boss@cc.test'][WK].score, 5);
   assert.equal(doc.responses['maya@cc.test'][WK].score, 1);
 });

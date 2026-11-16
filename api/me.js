@@ -14,7 +14,7 @@ const ROLES = new Set(['member', 'admin']);
 
 export async function handle(request, opts = {}) {
   const env = opts.env || process.env;
-  const o = { env, fetchImpl: opts.fetchImpl, blob: opts.blob };
+  const o = { env, fetchImpl: opts.fetchImpl, gh: opts.gh };
   if (request.method === 'POST') {
     const { user, response } = await requireUser(request, { ...o, csrf: true });
     if (response) return response;

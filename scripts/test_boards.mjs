@@ -1,4 +1,4 @@
-// Tests for shared boards (/api/boards, lib/boards.js). No network: Vercel Blob is mocked.
+// Tests for shared boards (/api/boards, lib/boards.js). No network: the GitHub state store is mocked (scripts/mock_github.mjs).
 // Run: node scripts/test_boards.mjs     (fixtures are made up — no real board content here)
 
 import assert from 'node:assert/strict';
@@ -7,6 +7,7 @@ import * as C from '../lib/crypt.js';
 import * as S from '../lib/store.js';
 import * as B from '../lib/boards.js';
 import { handle as boardsHandle } from '../api/boards.js';
+import { mockGitHub } from './mock_github.mjs';
 
 const SECRET = 'x'.repeat(64);
 const KEYHEX = 'b2'.repeat(32);
@@ -20,43 +21,16 @@ async function t(name, fn) {
   catch (e) { failed++; console.log('  FAIL ' + name + '\n       ' + (e && e.stack || e).toString().split('\n').slice(0, 4).join('\n       ')); }
 }
 
-class BlobNotFoundError extends Error {}
-class BlobPreconditionFailedError extends Error {}
-function mockBlob() {
-  const files = new Map(); let n = 0; const calls = { put: 0, conflicts: 0 };
-  const m = {
-    files, calls, BlobNotFoundError, BlobPreconditionFailedError, beforePut: null,
-    async get(path, o) {
-      assert.equal(o.access, 'private');
-      const f = files.get(path); if (!f) return null;
-      return { statusCode: 200, stream: new Blob([f.body]).stream(), blob: { etag: f.etag } };
-    },
-    async put(path, body, o) {
-      calls.put++;
-      assert.equal(o.access, 'private');
-      if (m.beforePut) { const f = m.beforePut; m.beforePut = null; await f(path); }
-      const cur = files.get(path);
-      if (o.ifMatch) { if (!cur || cur.etag !== o.ifMatch) { calls.conflicts++; throw new BlobPreconditionFailedError('Precondition failed'); } }
-      else if (cur && !o.allowOverwrite) { calls.conflicts++; throw new Error('Vercel Blob: This blob already exists'); }
-      files.set(path, { body: Buffer.from(body), etag: '"e' + (++n) + '"' });
-      return { pathname: path };
-    },
-    async list({ prefix }) {
-      return { blobs: [...files.keys()].filter((p) => p.startsWith(prefix)).map((pathname) => ({ pathname })), hasMore: false };
-    },
-  };
-  return m;
-}
 
-const blob = mockBlob();
-const O = { env, blob };
+const gh = mockGitHub();
+const O = { env, gh };
 const users = [
   { email: 'owner@cc.test', name: 'Owner', pw: 'scrypt$x$ownerownerowner', admin: false },
   { email: 'ann@cc.test', name: 'Ann', pw: 'scrypt$x$annannannannann', admin: false },
   { email: 'boss@cc.test', name: 'Boss', pw: 'scrypt$x$bossbossbossbo', admin: true },
   { email: 'cat@cc.test', name: 'Cat', pw: 'scrypt$x$catcatcatcatca', admin: false },
 ];
-blob.files.set('auth/access.json.enc', { body: C.encryptJson({ users, requests: [] }, KEY), etag: '"a0"' });
+gh.files.set('auth/access.json.enc', { body: C.encryptJson({ users, requests: [] }, KEY), sha: '"a0"' });
 S._resetCaches();
 const cookieFor = async (u) => (await A.newSession(u, A.adminEmailSet(env), env)).cookies[0].split(';')[0];
 const owner = await cookieFor(users[0]), ann = await cookieFor(users[1]), boss = await cookieFor(users[2]), cat = await cookieFor(users[3]);
@@ -82,12 +56,12 @@ console.log('auth');
 await t('signed out: GET and PUT refused', async () => {
   assert.equal((await call({})).status, 401);
   assert.equal((await call({ method: 'PUT', body: { board: board('b1') } })).status, 401);
-  assert.equal(blob.calls.put, 0);
+  assert.equal(gh.calls.put, 0);
 });
 await t('CSRF: foreign or missing Origin refused for writes', async () => {
   assert.equal((await call({ method: 'PUT', cookie: ann, origin: 'https://evil.test', body: { board: board('b1') } })).status, 403);
   assert.equal((await call({ method: 'POST', cookie: ann, origin: '', body: { board: board('b1') } })).status, 403);
-  assert.equal(blob.calls.put, 0);
+  assert.equal(gh.calls.put, 0);
 });
 await t('bad method and bad board refused', async () => {
   assert.equal((await call({ method: 'DELETE', cookie: ann })).status, 405);
@@ -102,7 +76,7 @@ await t('a member saves a board; it is stored encrypted and everyone sees it', a
   const saved = (await r.json()).board;
   assert.equal(saved.visibility, 'everyone');
   assert.equal(saved.openedAt, undefined, 'per-browser fields are not stored');
-  const raw = blob.files.get('boards/b1.json.enc').body;
+  const raw = gh.files.get('boards/b1.json.enc').body;
   assert.ok(!raw.toString('latin1').includes('First'), 'encrypted at rest');
   assert.deepEqual(C.decryptJson(raw, KEY).columns[0].cards.map((c) => c.id), ['k1', 'k2']);
   assert.deepEqual((await getBoards(owner)).map((b) => b.id), ['b1']);
@@ -112,7 +86,7 @@ console.log('admin-only visibility');
 await t('a non-admin cannot create an admins-only board', async () => {
   const r = await call({ method: 'PUT', cookie: ann, body: { board: board('hr', { visibility: 'admins' }) } });
   assert.equal(r.status, 403);
-  assert.equal(blob.files.has('boards/hr.json.enc'), false);
+  assert.equal(gh.files.has('boards/hr.json.enc'), false);
 });
 await t('an admin (ADMIN_EMAILS or access flag) creates one; non-admins cannot see it', async () => {
   assert.equal((await call({ method: 'PUT', cookie: owner, body: { board: board('hr', { visibility: 'admins' }) } })).status, 200);
@@ -121,10 +95,10 @@ await t('an admin (ADMIN_EMAILS or access flag) creates one; non-admins cannot s
   assert.deepEqual((await getBoards(boss)).map((b) => b.id).sort(), ['b1', 'hr']);
 });
 await t('a non-admin cannot write to, or overwrite, an admins-only board', async () => {
-  const before = blob.files.get('boards/hr.json.enc').etag;
+  const before = gh.files.get('boards/hr.json.enc').sha;
   assert.equal((await call({ method: 'PUT', cookie: ann, body: { board: board('hr') } })).status, 403);
   assert.equal((await call({ method: 'PUT', cookie: ann, body: { board: board('hr', { visibility: 'admins' }) } })).status, 403);
-  assert.equal(blob.files.get('boards/hr.json.enc').etag, before);
+  assert.equal(gh.files.get('boards/hr.json.enc').sha, before);
 });
 await t('a non-admin cannot change who sees a board; an admin can', async () => {
   const r = await call({ method: 'PUT', cookie: ann, body: { board: board('b1', { visibility: 'admins', visibilityAt: Date.now(), updatedAt: Date.now() }) } });
@@ -178,42 +152,42 @@ await t('deletes are tombstones: a stale copy does not bring a deleted card or c
   assert.deepEqual(out2.columns.map((c) => c.id), ['c1']);
 });
 await t('ETag conflict between read and write: re-read, merge, retry', async () => {
-  const before = blob.calls.conflicts;
+  const before = gh.calls.conflicts;
   const now = Date.now() + 1000;
-  blob.beforePut = async (path) => {
+  gh.beforePut = async (path) => {
     // Someone else's write lands between our read and our write.
-    const other = B.mergeBoards(C.decryptJson(blob.files.get(path).body, KEY), { ...board('m1'), updatedAt: now, columns: [{ id: 'c1', name: 'One', cards: [card('kz', 'Racing write', now)] }] });
-    blob.files.set(path, { body: C.encryptJson(other, KEY), etag: '"race"' });
+    const other = B.mergeBoards(C.decryptJson(gh.files.get(path).body, KEY), { ...board('m1'), updatedAt: now, columns: [{ id: 'c1', name: 'One', cards: [card('kz', 'Racing write', now)] }] });
+    gh.files.set(path, { body: C.encryptJson(other, KEY), sha: '"race"' });
   };
   const mine = board('m1', { updatedAt: now - 1 }); mine.columns[0].cards = [card('ky', 'My write', now - 1)];
   const r = await call({ method: 'PUT', cookie: ann, body: { board: mine } });
   assert.equal(r.status, 200);
-  assert.equal(blob.calls.conflicts, before + 1);
-  const ids = C.decryptJson(blob.files.get('boards/m1.json.enc').body, KEY).columns.flatMap((c) => c.cards.map((k) => k.id));
+  assert.equal(gh.calls.conflicts, before + 1);
+  const ids = C.decryptJson(gh.files.get('boards/m1.json.enc').body, KEY).columns.flatMap((c) => c.cards.map((k) => k.id));
   assert.ok(ids.includes('kz') && ids.includes('ky'), 'both writes survive');
 });
 await t('creating the same new board twice at once: second create merges instead of clobbering', async () => {
-  blob.beforePut = async (path) => {
-    blob.files.set(path, { body: C.encryptJson(board('n1', { columns: [{ id: 'c1', name: 'One', cards: [card('a', 'A')] }] }), KEY), etag: '"other"' });
+  gh.beforePut = async (path) => {
+    gh.files.set(path, { body: C.encryptJson(board('n1', { columns: [{ id: 'c1', name: 'One', cards: [card('a', 'A')] }] }), KEY), sha: '"other"' });
   };
   const r = await call({ method: 'PUT', cookie: ann, body: { board: board('n1', { columns: [{ id: 'c1', name: 'One', cards: [card('b', 'B')] }] }) } });
   assert.equal(r.status, 200);
   assert.deepEqual((await r.json()).board.columns[0].cards.map((c) => c.id).sort(), ['a', 'b']);
 });
 await t('the creator is recorded server-side and cannot be forged', async () => {
-  const stored = C.decryptJson(blob.files.get('boards/b1.json.enc').body, KEY);
+  const stored = C.decryptJson(gh.files.get('boards/b1.json.enc').body, KEY);
   assert.equal(stored.createdBy, 'ann@cc.test');
   await call({ method: 'PUT', cookie: cat, body: { board: board('b1', { createdBy: 'cat@cc.test', updatedAt: Date.now() }) } });
-  assert.equal(C.decryptJson(blob.files.get('boards/b1.json.enc').body, KEY).createdBy, 'ann@cc.test');
+  assert.equal(C.decryptJson(gh.files.get('boards/b1.json.enc').body, KEY).createdBy, 'ann@cc.test');
   const nb = (await (await call({ method: 'PUT', cookie: cat, body: { board: board('c1x', { createdBy: 'ann@cc.test' }) } })).json()).board;
   assert.equal(nb.createdBy, 'cat@cc.test');
 });
 await t('only the creator or an admin can remove a board', async () => {
-  const before = blob.files.get('boards/b1.json.enc').etag;
+  const before = gh.files.get('boards/b1.json.enc').sha;
   const r = await call({ method: 'PUT', cookie: cat, body: { board: board('b1', { removedAt: Date.now(), updatedAt: Date.now() }) } });
   assert.equal(r.status, 403);
   assert.match((await r.json()).error, /created this board, or an admin/);
-  assert.equal(blob.files.get('boards/b1.json.enc').etag, before);
+  assert.equal(gh.files.get('boards/b1.json.enc').sha, before);
   assert.ok((await getBoards(cat)).some((b) => b.id === 'b1'));
   // An admin may remove someone else's board.
   assert.equal((await call({ method: 'PUT', cookie: boss, body: { board: board('c1x', { removedAt: Date.now(), updatedAt: Date.now() }) } })).status, 200);
@@ -312,7 +286,10 @@ await t('the wip XSS payload never comes back from the API', async () => {
   assert.equal(got.columns[0].name, XSS);
 });
 await t('boards stored before the whitelist are cleaned on the way out', async () => {
-  blob.files.set('boards/old1.json.enc', { body: C.encryptJson({ id: 'old1', name: 'Old', evil: '<script>', columns: [{ id: 'c1', wip: XSS, color: 'x)', cards: [{ id: 'k1', onclick: 'x' }] }] }, KEY), etag: '"o1"' });
+  gh.files.set('boards/old1.json.enc', { body: C.encryptJson({ id: 'old1', name: 'Old', evil: '<script>', columns: [{ id: 'c1', wip: XSS, color: 'x)', cards: [{ id: 'k1', onclick: 'x' }] }] }, KEY), sha: '"o1"' });
+  // An old file arrives with the migration, which lists it in boards/index.json.
+  const idx = JSON.parse(gh.files.get('boards/index.json').body.toString('utf8'));
+  gh.files.set('boards/index.json', { body: B.indexBytes([...idx.ids, 'old1']), sha: '"i-old1"' });
   const got = (await getBoards(ann)).find((b) => b.id === 'old1');
   assert.equal(got.evil, undefined); assert.equal(got.columns[0].wip, undefined); assert.equal(got.columns[0].color, 'grey');
   assert.equal(got.columns[0].cards[0].onclick, undefined);
@@ -324,14 +301,14 @@ await t('boards use STORE_KEY when set, DATA_KEY otherwise; a mismatch is a loud
   try {
     const OTHER = 'e5'.repeat(32);
     const envS = { ...env, STORE_KEY: OTHER };
-    const r = await boardsHandle(req({ cookie: ann }), { env: envS, blob });
+    const r = await boardsHandle(req({ cookie: ann }), { env: envS, gh });
     assert.equal(r.status, 500);
     assert.deepEqual(await r.json(), { error: 'Store key mismatch' });
     // A fresh store written with STORE_KEY reads back with it, not with DATA_KEY.
-    const b2 = mockBlob();
-    b2.files.set('auth/access.json.enc', { body: C.encryptJson({ users, requests: [] }, Buffer.from(OTHER, 'hex')), etag: '"a"' });
+    const b2 = mockGitHub();
+    b2.files.set('auth/access.json.enc', { body: C.encryptJson({ users, requests: [] }, Buffer.from(OTHER, 'hex')), sha: '"a"' });
     S._resetCaches();
-    const w = await boardsHandle(req({ method: 'PUT', cookie: ann, body: { board: board('s1') } }), { env: envS, blob: b2 });
+    const w = await boardsHandle(req({ method: 'PUT', cookie: ann, body: { board: board('s1') } }), { env: envS, gh: b2 });
     assert.equal(w.status, 200);
     assert.equal(C.decryptJson(b2.files.get('boards/s1.json.enc').body, Buffer.from(OTHER, 'hex')).id, 's1');
     assert.throws(() => C.decryptJson(b2.files.get('boards/s1.json.enc').body, KEY));

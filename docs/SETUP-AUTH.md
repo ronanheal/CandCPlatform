@@ -13,14 +13,15 @@ expected to be rebuilt by another agency later.
 | `api/me.js` | `/api/me` | `{email, name, personKey, admin}` for the signed-in person. |
 | `api/access.js` | `/api/access` | Admins only: list, add, reset password, link person, admin on/off, remove, approve, decline. |
 | `api/data/[file].js` | `/api/data/<file>.json` | Fetches `<file>.json.enc` from the public branch, decrypts it with `DATA_KEY`, returns it **still gzipped** (`Content-Encoding: gzip`). Each warm instance caches files for about 60 seconds; a GitHub `429` becomes `503` with `Retry-After`. |
-| `api/boards.js` | `/api/boards` | Shared boards (one encrypted blob each). `?removed=1` and `{action:'restore'}` are for admins. |
+| `api/boards.js` | `/api/boards` | Shared boards (one encrypted file each on the `app-state` branch). `?removed=1` and `{action:'restore'}` are for admins. |
 | `scripts/data_crypt.py` + `scripts/sync_loop.sh` | GitHub Actions | The sync writes `<name>.json.enc` next to each file it owns, and (later) stops writing the readable copies. |
 | `login.html` | `/login.html` | Sign-in, request-access and forced change-password forms. |
 | Settings → Team → **Access** | `index.html` | The admin UI for the list above. |
 
-**Accounts** live in `auth/access.json.enc` in a **private Vercel Blob store**, encrypted with
-`STORE_KEY` (AES-256-GCM). Shared boards live in the same store under `boards/`, with the same
-key. While `STORE_KEY` is unset, the store uses `DATA_KEY`, so nothing breaks before you set it. Passwords are hashed with scrypt (`scrypt$N$r$p$salt$hash`).
+**Accounts** live in `auth/access.json.enc` on the repo's **`app-state` branch** (the state
+store, written through the GitHub API with `GITHUB_STATE_TOKEN`; see "State store on GitHub"
+below), encrypted with `STORE_KEY` (AES-256-GCM). Shared boards (`boards/`) and check-ins
+(`happiness/`) live in the same store, with the same key. While `STORE_KEY` is unset, the store uses `DATA_KEY`, so nothing breaks before you set it. Passwords are hashed with scrypt (`scrypt$N$r$p$salt$hash`).
 Admins never see or choose other people's passwords, and nobody chooses their own before an
 admin lets them in. Adding someone, approving a request or resetting a password creates a
 one-time temporary password, which is shown once to the admin. The person must change it at
@@ -89,13 +90,15 @@ curl -sI https://raw.githubusercontent.com/ronanheal/CandCPlatform/streamtime-da
 `DATA_KEY` unset means the sync behaves exactly as before. The workflow installs the
 `cryptography` package itself.
 
-### 3. Vercel: Blob store and environment variables
+### 3. Vercel: state store token and environment variables
+
+The server-side state (accounts, shared boards, check-ins) is stored on the `app-state` branch
+of this repo (see **State store on GitHub** below). Create the token first (3a), then add the
+variables.
 
 ```bash
-# Private Blob store for the account list, connected to this project (all environments):
-vercel blob create-store cc-platform-accounts --access private --yes
-
 # Secrets (each command asks for the value; add to Production, and Preview if you use previews):
+vercel env add GITHUB_STATE_TOKEN production   # the fine-grained token from 3a
 vercel env add SESSION_SECRET production
 vercel env add DATA_KEY production
 vercel env add STORE_KEY production        # optional; unset → the store uses DATA_KEY
@@ -107,15 +110,90 @@ vercel env add BOOTSTRAP_TOKEN production   # the setup code from step 1 (16+ ch
 |---|---|---|
 | `SESSION_SECRET` | yes | Nobody gets past the sign-in page (fails closed). |
 | `DATA_KEY` | yes | `/api/data` returns `503`. |
-| `STORE_KEY` | recommended | The Blob store (accounts, boards) uses `DATA_KEY`. |
+| `GITHUB_STATE_TOKEN` | yes | Every `/api` call that needs the account list returns `503` ("Data store is not configured"): nobody can sign in. |
+| `STATE_REPO` | no | `ronanheal/CandCPlatform`. |
+| `STATE_BRANCH` | no | `app-state`. |
+| `STORE_KEY` | recommended | The state store (accounts, boards, check-ins) uses `DATA_KEY`. |
 | `ADMIN_EMAILS` | yes | No owners; only people given admin in the Access card are admins. |
 | `BOOTSTRAP_TOKEN` | for the first sign-in | The first-admin bootstrap is off: `ADMIN_EMAILS` people just make a normal request. Shorter than 16 characters also counts as off. |
 
-Connecting the store gives the functions their Blob credentials (OIDC, or
-`BLOB_READ_WRITE_TOKEN` if you tick that option). Nothing else is needed, and there is no GitHub
-token on Vercel.
-
 Then redeploy so the new env vars apply: `vercel --prod`, or push or merge to `main`.
+
+#### 3a. Create the state token (owner, on github.com)
+
+1. github.com → your avatar → **Settings** → **Developer settings** → **Personal access tokens**
+   → **Fine-grained tokens** → **Generate new token**.
+2. **Token name:** `cc-platform state store`. **Resource owner:** `ronanheal`.
+   **Expiration:** 90 days (or a custom date up to a year; put a reminder in your calendar a
+   week before — when it expires nobody can sign in until a new one is set).
+3. **Repository access:** **Only select repositories** → `ronanheal/CandCPlatform`. Nothing else.
+4. **Permissions → Repository permissions → Contents: Read and write.** Leave everything else at
+   *No access* (Metadata: Read-only is added automatically and is required).
+5. **Generate token**, copy it once, then:
+
+   ```bash
+   vercel env add GITHUB_STATE_TOKEN production   # paste the token
+   vercel --prod                                   # redeploy so it applies
+   ```
+
+To renew: generate a new token the same way, `vercel env rm GITHUB_STATE_TOKEN production`,
+add the new one, redeploy, then delete the old token on GitHub.
+
+### State store on GitHub (since 2026-11)
+
+The account list, shared boards and check-ins used to live in a private Vercel Blob store. Blob's
+free tier allows 2,000 advanced operations (put/list/copy) a month; when they ran out Vercel
+paused the store and nobody could sign in. They now live on the **`app-state`** branch of this
+repo, written by the functions through the GitHub REST contents API (`lib/ghstore.js`):
+
+| File | What |
+|---|---|
+| `auth/access.json.enc` | the account list |
+| `boards/<id>.json.enc` | one shared board each |
+| `boards/index.json` | the board ids (plain text, ids only), so listing boards is one read |
+| `happiness/<year>.json.enc` | the weekly check-ins |
+
+- Same encryption and key as before (`STORE_KEY`, CCE1), byte for byte: a file copied from Blob
+  decrypts unchanged.
+- **The repo is public, so this branch is public too.** Every file is encrypted, but every save is
+  a commit, so all past versions stay in the branch history. If `STORE_KEY` ever leaks, treat
+  the whole history as exposed (rotate the key, re-encrypt, and rewrite or delete the branch).
+- The branch is created automatically from `main`'s HEAD on the first write if it doesn't exist.
+- **It must not deploy:** `vercel.json` has `"git": {"deploymentEnabled": {"app-state": false}}`.
+  Check once in Vercel → Project → Deployments that no `app-state` deployments appear after a save.
+  No GitHub Actions workflow runs on it (`generate-meta.yml` only runs on `main`).
+- Budget: one token has 5,000 GitHub API requests an hour, and GitHub also limits writes
+  (commits) to about 80 a minute and 500 an hour. A rate-limited call becomes `503` with
+  `Retry-After`. The page pulls boards at most once a minute and only while Boards is open,
+  waits 2.5 s after the last edit before saving, and stops retrying a failed save after 5 tries.
+
+#### Bringing the old data back (or starting fresh)
+
+Pick one:
+
+- **Fresh admin now (fastest way back in):** make sure `BOOTSTRAP_TOKEN` is set
+  (`vercel env add BOOTSTRAP_TOKEN production` with a new `openssl rand -hex 24` value if you
+  removed it, then `vercel --prod`), and follow step 4 (`/login.html?setup=1`). The empty store
+  works straight away; everyone else then needs to be added again or request access. Boards and
+  check-ins stay empty until the migration below.
+- **Migrate the old Blob data** once the Blob store is readable again (new billing month, or
+  after upgrading the plan). It copies the encrypted files byte for byte and needs no keys:
+
+  ```bash
+  vercel env pull .env.blob --environment production     # gets BLOB_READ_WRITE_TOKEN
+  export BLOB_READ_WRITE_TOKEN=$(grep ^BLOB_READ_WRITE_TOKEN .env.blob | cut -d= -f2- | tr -d '"')
+  export GITHUB_STATE_TOKEN=...                           # the token from 3a
+  node scripts/migrate_blob_to_github.mjs --dry-run       # shows what it would copy
+  node scripts/migrate_blob_to_github.mjs                 # copies, and writes boards/index.json
+  rm .env.blob
+  ```
+
+  If you already bootstrapped a fresh admin, the old `auth/access.json.enc` is **skipped** (the
+  script reports it) so the new list isn't thrown away. Add `--overwrite` to replace it with the
+  old one (the fresh admin then disappears; your old account comes back). Boards and check-ins
+  are copied either way. The migration uses one Blob list call plus one read per file.
+
+  Afterwards the Blob store can be disconnected from the project; nothing reads it any more.
 
 > Deploying this code to `main` before step 3 locks everyone out, because the middleware fails
 > closed without `SESSION_SECRET`, and the data proxy needs `DATA_KEY` and the `.enc` files.
@@ -206,7 +284,8 @@ than client financials. `vercel.json` also stays.
   the app reads `/api/data`, uses the signed-in identity and shares boards, exactly like the live
   site.
 - Tests: `node scripts/test_auth.mjs` (add `PYTHON=/path/to/python` for the Python interop
-  check), `node scripts/test_boards.mjs`, and `bash scripts/test_sync_crypt.sh` (needs a
+  check), `node scripts/test_boards.mjs`, `node scripts/test_onboard.mjs`,
+  `node scripts/test_ghstore.mjs` (state store and migration), and `bash scripts/test_sync_crypt.sh` (needs a
   `python3` with `cryptography`, or `PYTHON=/path/to/venv/bin/python`).
 
 ## What gets deployed

@@ -1,5 +1,5 @@
 // Tests for sign-in, the middleware gate, the data proxy and the account store.
-// No network: Vercel Blob and raw.githubusercontent.com are mocked.  Run: node scripts/test_auth.mjs
+// No network: the GitHub state store (scripts/mock_github.mjs) and raw.githubusercontent.com are mocked.  Run: node scripts/test_auth.mjs
 // Optional interop check with the Python helper: PYTHON=/path/to/python-with-cryptography.
 
 import assert from 'node:assert/strict';
@@ -19,6 +19,7 @@ import { handle as authHandle } from '../api/auth/[action].js';
 import { handle as accessHandle } from '../api/access.js';
 import { handle as meHandle } from '../api/me.js';
 import { handle as dataHandle, fileFromRequest } from '../api/data/[file].js';
+import { mockGitHub } from './mock_github.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SECRET = 'x'.repeat(64);
@@ -36,28 +37,6 @@ async function t(name, fn) {
 }
 
 // ── mocks ──────────────────────────────────────────────────────────────────────────────────
-class BlobNotFoundError extends Error {}
-class BlobPreconditionFailedError extends Error {}
-function mockBlob() {
-  const files = new Map(); let n = 0; const calls = { put: 0 };
-  return {
-    files, calls, BlobNotFoundError, BlobPreconditionFailedError,
-    async get(path, o) {
-      assert.equal(o.access, 'private');
-      const f = files.get(path); if (!f) return null;
-      return { statusCode: 200, stream: new Blob([f.body]).stream(), blob: { etag: f.etag } };
-    },
-    async put(path, body, o) {
-      calls.put++;
-      assert.equal(o.access, 'private');
-      const cur = files.get(path);
-      if (o.ifMatch) { if (!cur || cur.etag !== o.ifMatch) throw new BlobPreconditionFailedError('Precondition failed'); }
-      else if (cur && !o.allowOverwrite) throw new Error('Vercel Blob: This blob already exists');
-      files.set(path, { body: Buffer.from(body), etag: '"e' + (++n) + '"' });
-      return { pathname: path };
-    },
-  };
-}
 const ST_USERS = [
   { id: 114330, firstName: 'Ronan', lastName: 'Heal', email: 'ronan@cc.test', userStatus: { name: 'Active' } },
   { id: 2, firstName: 'Ann', lastName: 'Lee', email: 'ann@cc.test', userStatus: { name: 'Active' } },
@@ -289,10 +268,10 @@ await t(PY ? 'Python data_crypt.py <-> Node interop' : 'Python interop (skipped:
 // ── 7. handlers end to end (mocked Blob + raw GitHub) ─────────────────────────────────────
 console.log('handlers');
 P._resetThrottle(); S._resetCaches();
-const blob = mockBlob();
+const gh = mockGitHub();
 const raw = new Map([['users.json.enc', encFile(ST_USERS)], ['jobs.json.enc', encFile([{ id: 1 }])], ['platform_config.json', JSON.stringify({ people: {} })]]);
 const fetchImpl = mockFetch(raw);
-const O = { env, blob, fetchImpl };
+const O = { env, gh, fetchImpl };
 const auth = (path, o = {}) => authHandle(req('/api/auth/' + path, o), O);
 const access = (o = {}) => accessHandle(req('/api/access', o), O);
 const fresh = () => S._resetCaches();
@@ -301,7 +280,7 @@ let ownerCookie, annCookie, annTemp;
 await t('request access: unknown name/email', async () => {
   const r = await auth('request', { method: 'POST', body: { name: 'Nobody Known', email: 'x@y.z', password: 'longenough1' } });
   assert.equal((await r.json()).state, 'unknown');
-  assert.equal(blob.calls.put, 0);
+  assert.equal(gh.calls.put, 0);
 });
 let ownerTemp;
 await t('bootstrap: ADMIN_EMAILS email WITHOUT the setup code is only a request', async () => {
@@ -332,7 +311,7 @@ await t('bootstrap: with the setup code, creates the admin with a one-time tempo
   assert.ok(await P.verifyPassword(ownerTemp, doc.users[0].pw));
   assert.ok(!(await P.verifyPassword('ignored-password', doc.users[0].pw)));
   assert.equal(doc.requests.length, 0, 'the earlier plain request is cleared');
-  assert.ok(!blob.files.get('auth/access.json.enc').body.toString('latin1').includes('owner@cc.test'), 'stored encrypted');
+  assert.ok(!gh.files.get('auth/access.json.enc').body.toString('latin1').includes('owner@cc.test'), 'stored encrypted');
   const l = await auth('login', { method: 'POST', body: { email: 'owner@cc.test', password: ownerTemp } });
   assert.equal((await l.json()).mustChangePassword, true);
   const ch = await auth('password', { method: 'POST', cookie: cookieFrom(l), body: { current: ownerTemp, next: 'owner-password-1' } });
@@ -471,10 +450,10 @@ await t('reset password signs the person out; remove takes effect', async () => 
 });
 await t('concurrent writes: a stale ETag is retried, not lost', async () => {
   fresh();
-  const realPut = blob.put; let first = true;
-  blob.put = async (p, b, o) => { if (first) { first = false; const f = blob.files.get(p); blob.files.set(p, { ...f, etag: '"moved"' }); } return realPut(p, b, o); };
+  const realPut = gh.put; let first = true;
+  gh.put = async (p, b, o) => { if (first) { first = false; const f = gh.files.get(p); gh.files.set(p, { ...f, sha: '"moved"' }); } return realPut(p, b, o); };
   await S.mutateAccess((d) => ({ ...d, users: [...d.users, { email: 'race@x.y' }] }), 'x', O);
-  blob.put = realPut; fresh();
+  gh.put = realPut; fresh();
   assert.ok((await S.getAccess(O)).users.some((u) => u.email === 'race@x.y'));
 });
 
@@ -549,7 +528,7 @@ console.log('store key');
 await t('STORE_KEY unset → the Blob store uses DATA_KEY (nothing breaks before it is set)', async () => {
   fresh();
   assert.deepEqual(C.storeKey({ DATA_KEY: KEYHEX }), KEY);
-  const raw = blob.files.get('auth/access.json.enc').body;
+  const raw = gh.files.get('auth/access.json.enc').body;
   assert.ok(C.decryptJson(raw, KEY).users.length > 0, 'access.json is encrypted with DATA_KEY');
   assert.throws(() => C.storeKey({ STORE_KEY: 'nope', DATA_KEY: KEYHEX }), /STORE_KEY/);
   assert.throws(() => C.storeKey({}), /STORE_KEY/);
@@ -558,7 +537,7 @@ await t('STORE_KEY set but not the key the store was written with → 500 "Store
   fresh();
   const OTHER = 'c3'.repeat(32);
   const O2 = { ...O, env: { ...env, STORE_KEY: OTHER } };
-  const before = blob.files.get('auth/access.json.enc').etag;
+  const before = gh.files.get('auth/access.json.enc').sha;
   const errs = []; const ce = console.error; console.error = (m) => errs.push(String(m));
   try {
     const r = await meHandle(req('/api/me', { cookie: ownerCookie }), O2);
@@ -574,15 +553,15 @@ await t('STORE_KEY set but not the key the store was written with → 500 "Store
     const q = await authHandle(req('/api/auth/request', { method: 'POST', headers: { 'x-forwarded-for': '203.0.113.50' }, body: { name: 'Ann Lee', email: 'zz@x.y' } }), O2);
     assert.equal(q.status, 500, 'a write never replaces an unreadable store');
   } finally { console.error = ce; }
-  assert.equal(blob.files.get('auth/access.json.enc').etag, before);
+  assert.equal(gh.files.get('auth/access.json.enc').sha, before);
   assert.equal(errs.filter((m) => /store key mismatch/i.test(m)).length, 1, 'logged once');
   assert.ok(!errs.join(' ').includes(OTHER) && !errs.join(' ').includes(KEYHEX), 'keys never logged');
 });
 await t('STORE_KEY set to its own key: a store written with it reads back', async () => {
   fresh();
   const OTHER = 'd4'.repeat(32);
-  const b2 = mockBlob();
-  const O3 = { env: { ...env, STORE_KEY: OTHER }, blob: b2, fetchImpl };
+  const b2 = mockGitHub();
+  const O3 = { env: { ...env, STORE_KEY: OTHER }, gh: b2, fetchImpl };
   await S.mutateAccess((d) => ({ ...d, users: [{ email: 'k@x.y' }] }), 'x', O3);
   assert.deepEqual(C.decryptJson(b2.files.get('auth/access.json.enc').body, Buffer.from(OTHER, 'hex')).users[0].email, 'k@x.y');
   assert.throws(() => C.decryptJson(b2.files.get('auth/access.json.enc').body, KEY), 'not DATA_KEY');

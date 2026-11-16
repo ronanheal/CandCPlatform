@@ -17,7 +17,7 @@ const ACTIONS = new Set(['add', 'resetPassword', 'update', 'setAdmin', 'remove',
 
 export async function handle(request, opts = {}) {
   const env = opts.env || process.env;
-  const o = { env, fetchImpl: opts.fetchImpl, blob: opts.blob };
+  const o = { env, fetchImpl: opts.fetchImpl, gh: opts.gh };
   const adminEmails = adminEmailSet(env);
   if (request.method === 'GET') {
     const { response } = await requireUser(request, { ...o, admin: true });
