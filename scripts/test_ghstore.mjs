@@ -49,6 +49,7 @@ await t('put then get: same bytes back, sha from GitHub, request shapes as docum
   const { sha } = await gh.put('auth/access.json.enc', bytes, { message: 'state: test' });
   assert.match(sha, /^[0-9a-f]{40}$/);
   assert.ok(gh.files.get('auth/access.json.enc').body.equals(bytes), 'stored byte for byte');
+  assert.equal(gh.files.get('auth/access.json.enc').raw.subarray(0, 6).toString(), 'CCB64:', 'stored as base64 text (GitHub garbles binary on update)');
   const got = await gh.get('auth/access.json.enc');
   assert.ok(got.bytes.equals(bytes));
   assert.equal(got.sha, sha);

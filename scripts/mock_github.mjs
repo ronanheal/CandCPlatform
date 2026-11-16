@@ -52,7 +52,8 @@ export function mockGitHub({ repo = 'ronanheal/CandCPlatform', branch = 'app-sta
       const sha = p.slice(`${base}/git/blobs/`.length);
       const f = [...files.values()].find((x) => x.sha === sha);
       if (!f) return res(404, { message: 'Not Found' });
-      return res(200, { sha, size: f.body.length, encoding: 'base64', content: b64lines(f.body) });
+      const fr = f.raw || f.body;
+      return res(200, { sha, size: fr.length, encoding: 'base64', content: b64lines(fr) });
     }
     if (p.startsWith(`${base}/contents/`)) {
       const path = p.slice(`${base}/contents/`.length);
@@ -63,10 +64,11 @@ export function mockGitHub({ repo = 'ronanheal/CandCPlatform', branch = 'app-sta
         const objectType = h.accept === 'application/vnd.github.object+json';
         const f = files.get(path);
         if (f) {
-          const big = f.body.length > 1024 * 1024;
+          const fr = f.raw || f.body;
+          const big = fr.length > 1024 * 1024;
           // The default media type refuses files over 1 MB; the object one returns no content.
           if (big && !objectType) return res(403, { message: 'This API returns blobs up to 1 MB in size.', errors: [{ code: 'too_large' }] });
-          return res(200, { type: 'file', name: path.split('/').pop(), path, sha: f.sha, size: f.body.length, encoding: big ? 'none' : 'base64', content: big ? '' : b64lines(f.body) });
+          return res(200, { type: 'file', name: path.split('/').pop(), path, sha: f.sha, size: fr.length, encoding: big ? 'none' : 'base64', content: big ? '' : b64lines(fr) });
         }
         const kids = [...files.keys()].filter((k) => k.startsWith(path + '/') && !k.slice(path.length + 1).includes('/'));
         const entries = kids.map((k) => ({ type: 'file', name: k.split('/').pop(), path: k, sha: files.get(k).sha }));
@@ -87,10 +89,13 @@ export function mockGitHub({ repo = 'ronanheal/CandCPlatform', branch = 'app-sta
         if (b.sha !== undefined) {
           if (!cur || cur.sha !== b.sha) { calls.conflicts++; return res(409, { message: `${path} does not match ${b.sha}` }); }
         } else if (cur) { calls.conflicts++; return res(422, { message: 'Invalid request.\n\n"sha" wasn\'t supplied.' }); }
-        const body = Buffer.from(b.content, 'base64');
-        const sha = gitSha(body);
-        files.set(path, { body, sha });
-        return res(cur ? 200 : 201, { content: { name: path.split('/').pop(), path, sha, size: body.length }, commit: { sha: gitSha(Buffer.from(path + sha)), message: b.message } });
+        // raw = what GitHub keeps; body = the decoded payload (ciphertext) tests inspect.
+        const raw = Buffer.from(b.content, 'base64');
+        const isText = raw.subarray(0, 6).toString('latin1') === 'CCB64:';
+        const body = isText ? Buffer.from(raw.subarray(6).toString('ascii'), 'base64') : raw;
+        const sha = gitSha(raw);
+        files.set(path, { body, raw, sha });
+        return res(cur ? 200 : 201, { content: { name: path.split('/').pop(), path, sha, size: raw.length }, commit: { sha: gitSha(Buffer.from(path + sha)), message: b.message } });
       }
     }
     return res(404, { message: 'Not Found' });
