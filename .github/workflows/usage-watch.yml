@@ -1,0 +1,113 @@
+# Weekly usage watch: makes sure no storage or API limit can quietly take the site down again.
+# GitHub emails the repo owner when a scheduled workflow fails, so a failure here IS the alert.
+#
+# Checks (all read-only, built-in GITHUB_TOKEN, nothing touches Vercel):
+#   1. commits on the app-state branch in the last 7 days   → fail above 3,000
+#   2. size of every state file on app-state (auth/, boards/, happiness/) → fail if any is above
+#      900 KB (GitHub's contents API is slower and needs an extra blob call above 1 MB). The
+#      branch was cut from main, so it also holds a copy of the code; that is not counted.
+#   3. https://cand-c-platform.vercel.app/api/auth/status   → fail unless it answers 200
+# See docs/SETUP-AUTH.md → "Limits and monitoring".
+
+name: Usage watch
+
+on:
+  schedule:
+    - cron: '17 7 * * 1' # Mondays 07:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: usage-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+      STATE_BRANCH: app-state
+      MAX_COMMITS_7D: '3000'
+      MAX_FILE_BYTES: '921600' # 900 KB
+      STATE_DIRS: '^(auth|boards|happiness)/'
+      SITE_STATUS_URL: https://cand-c-platform.vercel.app/api/auth/status
+    steps:
+      - name: Check the state branch, file sizes and the live site
+        shell: bash
+        run: |
+          set -uo pipefail
+          problems=0
+          summary="$GITHUB_STEP_SUMMARY"
+          echo "## Usage watch" >> "$summary"
+
+          # ── 1. Commits on app-state in the last 7 days ────────────────────────────────
+          # per_page=1: the Link header's rel="last" page number is the commit count.
+          # (The count includes main's own commits from the week the branch was cut, a few dozen
+          # at most, and only in that first week.)
+          since=$(date -u -d '7 days ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-7d +%Y-%m-%dT%H:%M:%SZ)
+          hdrs=$(gh api -i "repos/$REPO/commits?sha=$STATE_BRANCH&since=$since&per_page=1" 2>/dev/null)
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            echo "::error::Could not list commits on $STATE_BRANCH (does the branch exist?)."
+            problems=$((problems+1)); commits="?"
+          else
+            commits=$(printf '%s\n' "$hdrs" | grep -i '^link:' | grep -o 'page=[0-9]*>; rel="last"' | grep -o '[0-9]*' | head -1)
+            if [ -z "$commits" ]; then
+              commits=$(printf '%s\n' "$hdrs" | sed -n '/^\[/,$p' | jq 'length' 2>/dev/null || echo 0)
+            fi
+            echo "State commits in the last 7 days: $commits (limit $MAX_COMMITS_7D)"
+            if [ "$commits" -gt "$MAX_COMMITS_7D" ]; then
+              echo "::error::$commits commits on $STATE_BRANCH in 7 days (over $MAX_COMMITS_7D). Something is saving far too often; GitHub's write limits are getting close."
+              problems=$((problems+1))
+            fi
+          fi
+          echo "- State commits in the last 7 days: **$commits** (fails above $MAX_COMMITS_7D)" >> "$summary"
+
+          # ── 2. State file sizes on app-state ──────────────────────────────────────────
+          tree=$(gh api "repos/$REPO/git/trees/$STATE_BRANCH?recursive=1" 2>/dev/null)
+          rc=$?
+          if [ $rc -eq 0 ] && [ -n "$tree" ]; then
+            truncated=$(jq '.truncated' <<<"$tree")
+            tree=$(jq --arg re "$STATE_DIRS" '{tree: [.tree[] | select(.type=="blob" and (.path | test($re)))]}' <<<"$tree")
+          fi
+          if [ $rc -ne 0 ] || [ -z "$tree" ]; then
+            echo "::error::Could not read the file tree of $STATE_BRANCH."
+            problems=$((problems+1))
+          else
+            total=$(jq '[.tree[] | select(.type=="blob") | .size] | add // 0' <<<"$tree")
+            count=$(jq '[.tree[] | select(.type=="blob")] | length' <<<"$tree")
+            echo "State files: $count, total $((total/1024)) KB"
+            echo "- State files: **$count**, total **$((total/1024)) KB**" >> "$summary"
+            echo "Largest files:"
+            jq -r '[.tree[] | select(.type=="blob")] | sort_by(-.size) | .[:5][] | "  \(.size/1024|floor) KB  \(.path)"' <<<"$tree"
+            big=$(jq -r --argjson max "$MAX_FILE_BYTES" '.tree[] | select(.type=="blob" and .size > $max) | "\(.path) (\(.size/1024|floor) KB)"' <<<"$tree")
+            if [ -n "$big" ]; then
+              while IFS= read -r f; do
+                echo "::error::State file over 900 KB: $f. GitHub's contents API slows down above 1 MB; split or trim it."
+                echo "- Over 900 KB: \`$f\`" >> "$summary"
+              done <<<"$big"
+              problems=$((problems+1))
+            fi
+            if [ "$truncated" = "true" ]; then
+              echo "::warning::The file list was truncated by GitHub; sizes above are partial."
+            fi
+          fi
+
+          # ── 3. The live site answers ───────────────────────────────────────────────────
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 --retry 2 --retry-delay 10 "$SITE_STATUS_URL" || echo 000)
+          echo "Site status check: HTTP $code"
+          echo "- $SITE_STATUS_URL: **HTTP $code**" >> "$summary"
+          if [ "$code" != "200" ]; then
+            echo "::error::$SITE_STATUS_URL answered HTTP $code, not 200. The site may be down (storage paused, a Vercel limit, or a bad deploy)."
+            problems=$((problems+1))
+          fi
+
+          if [ "$problems" -gt 0 ]; then
+            echo "::error::Usage watch found $problems problem(s). See docs/SETUP-AUTH.md, 'Limits and monitoring'."
+            exit 1
+          fi
+          echo "All within limits."

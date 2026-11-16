@@ -7,6 +7,9 @@
 //   beforePut(path): runs once, just before the next contents PUT is applied (simulate a race)
 //   failNext: {status, headers, message} answers the next request (rate limits etc.)
 //   branchExists: false → the branch is missing until the adapter creates it
+//   rate: {limit, remaining, reset} → sent as x-ratelimit-* headers on every answer, like GitHub;
+//         remaining (and used) move by one per request. Set remaining low to test the watch.
+//   commits: [{date: ISO}] → what GET /commits?sha=<branch>&since= counts (paged with a Link header)
 
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -19,9 +22,14 @@ const b64lines = (buf) => buf.toString('base64').replace(/.{1,60}/g, '$&\n'); //
 export function mockGitHub({ repo = 'ronanheal/CandCPlatform', branch = 'app-state', branchExists = true, cacheTtlMs = 0, now } = {}) {
   const files = new Map();
   const calls = { put: 0, conflicts: 0, get: 0, requests: 0, log: [] };
-  const m = { files, calls, beforePut: null, failNext: null, branchExists, refsCreated: [] };
+  const m = { files, calls, beforePut: null, failNext: null, branchExists, refsCreated: [], commits: [],
+    rate: { limit: 5000, remaining: 5000, reset: Math.floor(Date.now() / 1000) + 3600 } };
 
-  const res = (status, body, headers = {}) => new Response(body === undefined ? '' : JSON.stringify(body), { status, headers: { 'content-type': 'application/json', ...headers } });
+  const rateHeaders = () => ({
+    'x-ratelimit-limit': String(m.rate.limit), 'x-ratelimit-remaining': String(m.rate.remaining),
+    'x-ratelimit-reset': String(m.rate.reset), 'x-ratelimit-used': String(m.rate.limit - m.rate.remaining), 'x-ratelimit-resource': 'core',
+  });
+  const res = (status, body, headers = {}) => new Response(body === undefined ? '' : JSON.stringify(body), { status, headers: { 'content-type': 'application/json', ...rateHeaders(), ...headers } });
 
   m.fetch = async (url, init = {}) => {
     calls.requests++;
@@ -29,6 +37,7 @@ export function mockGitHub({ repo = 'ronanheal/CandCPlatform', branch = 'app-sta
     const method = init.method || 'GET';
     const h = init.headers || {};
     calls.log.push(`${method} ${u.pathname}${u.search}`);
+    if (m.rate.remaining > 0) m.rate.remaining--;
     assert.equal(u.origin, 'https://api.github.com');
     assert.equal(h.authorization, `Bearer ${TOKEN}`);
     assert.equal(h['user-agent'], 'cc-platform');
@@ -37,6 +46,19 @@ export function mockGitHub({ repo = 'ronanheal/CandCPlatform', branch = 'app-sta
     if (m.failNext) { const f = m.failNext; m.failNext = null; return res(f.status, { message: f.message || 'error' }, f.headers || {}); }
     const base = `/repos/${repo}`;
     const p = decodeURIComponent(u.pathname);
+    if (method === 'GET' && p === `${base}/commits`) {
+      assert.equal(u.searchParams.get('sha'), branch);
+      if (!m.branchExists) return res(404, { message: 'Not Found' });
+      const since = Date.parse(u.searchParams.get('since') || '1970-01-01T00:00:00Z');
+      assert.ok(Number.isFinite(since), 'since is an ISO date');
+      const per = Math.max(1, Math.min(100, parseInt(u.searchParams.get('per_page') || '30', 10)));
+      const page = Math.max(1, parseInt(u.searchParams.get('page') || '1', 10));
+      const hits = m.commits.filter((c) => Date.parse(c.date) >= since);
+      const last = Math.ceil(hits.length / per);
+      const items = hits.slice((page - 1) * per, page * per).map((c, i) => ({ sha: gitSha(Buffer.from(String(i) + c.date)), commit: { committer: { date: c.date } } }));
+      const link = last > 1 ? { link: `<https://api.github.com${base}/commits?sha=${branch}&per_page=${per}&page=${Math.min(last, page + 1)}>; rel="next", <https://api.github.com${base}/commits?sha=${branch}&per_page=${per}&page=${last}>; rel="last"` } : {};
+      return res(200, items, link);
+    }
     if (method === 'GET' && p === base) return res(200, { full_name: repo, default_branch: 'main' });
     if (method === 'GET' && p === `${base}/git/ref/heads/main`) return res(200, { ref: 'refs/heads/main', object: { sha: 'f'.repeat(40), type: 'commit' } });
     if (method === 'GET' && p === `${base}/git/ref/heads/${branch}`) return m.branchExists ? res(200, { ref: `refs/heads/${branch}`, object: { sha: 'e'.repeat(40), type: 'commit' } }) : res(404, { message: 'Not Found' });
@@ -107,5 +129,7 @@ export function mockGitHub({ repo = 'ronanheal/CandCPlatform', branch = 'app-sta
   m.put = (...a) => store.put(...a);
   m.list = (...a) => store.list(...a);
   m.invalidate = (...a) => store.invalidate(...a);
+  m.usage = (...a) => store.usage(...a);
+  m.stateCommits = (...a) => store.stateCommits(...a);
   return m;
 }
