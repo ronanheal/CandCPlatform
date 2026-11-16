@@ -277,5 +277,54 @@ t('old Team WIP: empty template board is removable; any added content is not', (
   assert.equal(bvIsEmptyTeamWip(null), false);
 });
 
+// ── Live client columns (col.live, boards-r13) ──
+t('live link: a new list from the file takes its live clients', () => {
+  const b = { id: 'b', type: 'custom', name: 'B', columns: [] };
+  const n = bvMergeBoard(b, { columns: [{ name: 'Dairyworks [BB]', live: { clients: ['Dairyworks'], completed: true }, cards: [] }] }, H());
+  assert.equal(n.columns, 1);
+  assert.deepEqual(JSON.parse(JSON.stringify(b.columns[0].live)), { clients: ['Dairyworks'], completed: true });
+});
+t('live link: an existing list gains the file\'s clients (no duplicates), keeps its own, and stamps the column', () => {
+  const b = { id: 'b', type: 'custom', name: 'B', updatedAt: 1, columns: [{ id: 'c1', name: 'NPF - global [CH]', updatedAt: 5, live: { clients: ['NPF'] }, cards: [] }] };
+  const n = bvMergeBoard(b, { columns: [{ name: 'npf - global [ch]', live: { clients: ['npf', 'NPF Australia'] }, cards: [] }] }, H());
+  assert.deepEqual(JSON.parse(JSON.stringify(b.columns[0].live)), { clients: ['NPF', 'NPF Australia'] });
+  assert.ok(b.columns[0].updatedAt > 5, 'column stamped so the server merge takes it');
+  assert.ok(n.changed > 0);
+  // Same file again: nothing changes
+  const before = JSON.stringify(b);
+  const n2 = bvMergeBoard(b, { columns: [{ name: 'NPF - global [CH]', live: { clients: ['NPF Australia'] }, cards: [] }] }, H());
+  assert.equal(JSON.stringify(b), before); assert.equal(n2.changed, 0);
+});
+t('live link: an unlinked list is linked by the file; no live in the file leaves a link alone', () => {
+  const b = { id: 'b', type: 'custom', name: 'B', columns: [{ id: 'c1', name: 'Ziwi [BB]', cards: [] }, { id: 'c2', name: 'Kept', live: { clients: ['Kept Co'], completed: true }, cards: [] }] };
+  bvMergeBoard(b, { columns: [{ name: 'Ziwi [BB]', live: { clients: ['Ziwi', ' ', null] }, cards: [] }, { name: 'Kept', cards: [] }] }, H());
+  assert.deepEqual(JSON.parse(JSON.stringify(b.columns[0].live)), { clients: ['Ziwi'] });
+  assert.deepEqual(JSON.parse(JSON.stringify(b.columns[1].live)), { clients: ['Kept Co'], completed: true });
+});
+t('live link: capped at 20 clients; junk live ignored', () => {
+  const b = { id: 'b', type: 'custom', name: 'B', columns: [{ id: 'c1', name: 'Many', live: { clients: Array.from({ length: 19 }, (_, i) => 'C' + i) }, cards: [] }] };
+  bvMergeBoard(b, { columns: [{ name: 'Many', live: { clients: ['X1', 'X2', 'X3'] }, cards: [] }, { name: 'Junk', live: 'Dairyworks', cards: [] }] }, H());
+  assert.equal(b.columns[0].live.clients.length, 20);
+  assert.equal(b.columns.find((c) => c.name === 'Junk').live, undefined);
+});
+
+// ── Shared-board change fingerprint (boards-r5 _r5Fp) sees col.live ──
+t('fingerprint: linking, unlinking and "show completed" are column changes; rebuilding the same link is not', () => {
+  const fm = html.match(/function _r5Fp\(b\)\{[\s\S]*?\n\}\n/);
+  assert.ok(fm, '_r5Fp not found');
+  const fp = vm.runInNewContext(fm[0] + ';_r5Fp');
+  const colKey = (b) => fp(b).cols.get('c1').split('|')[0];
+  const b = { id: 'b', columns: [{ id: 'c1', name: 'Dairyworks [BB]', color: 'blue', cards: [{ id: 'k1' }] }] };
+  const a0 = colKey(b);
+  b.columns[0].live = { clients: ['Dairyworks'] };
+  const a1 = colKey(b); assert.notEqual(a1, a0);
+  b.columns[0].live = { completed: undefined, clients: ['Dairyworks'] };
+  assert.equal(colKey(b), a1, 'same link rebuilt');
+  b.columns[0].live = { clients: ['Dairyworks'], completed: true };
+  assert.notEqual(colKey(b), a1);
+  b.columns[0].live = { clients: [] };
+  assert.equal(colKey(b), a0, 'empty link = unlinked');
+});
+
 console.log(`\n${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);

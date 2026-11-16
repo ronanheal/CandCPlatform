@@ -339,5 +339,31 @@ await t('boards use STORE_KEY when set, DATA_KEY otherwise; a mismatch is a loud
   assert.ok(!errs.join(' ').includes('e5e5'), 'key never logged');
 });
 
+await t('cleanBoard: live client column (col.live) kept, typed and capped', () => {
+  const out = B.cleanBoard({ id: 'lv', name: 'L', columns: [
+    { id: 'a', name: 'Dairyworks [BB]', live: { clients: ['Dairyworks', ' Dairyworks ', 'x'.repeat(300), 42, '', null, {}, 'Big\nGlory Bay'], completed: true, evil: '<b>' }, cards: [] },
+    { id: 'b', name: 'Too many', live: { clients: Array.from({ length: 30 }, (_, i) => 'Client ' + i), completed: 'yes' }, cards: [] },
+    { id: 'c', name: 'Empty', live: { clients: [] }, cards: [] },
+    { id: 'd', name: 'Junk', live: ['Dairyworks'], cards: [] },
+    { id: 'e', name: 'Plain', cards: [] },
+  ] });
+  const [a, b, c, d, e] = out.columns;
+  assert.deepEqual(Object.keys(a.live).sort(), ['clients', 'completed']);
+  assert.equal(a.live.completed, true);
+  assert.deepEqual(a.live.clients, ['Dairyworks', 'x'.repeat(120), '42', 'Big Glory Bay']);
+  assert.equal(b.live.clients.length, 20); assert.equal(b.live.completed, undefined);
+  assert.equal(c.live, undefined); assert.equal(d.live, undefined); assert.ok(!('live' in e));
+});
+await t('PUT keeps col.live and the merge takes it with the newer column', async () => {
+  const b = { ...board('lv2'), columns: [{ id: 'c1', name: 'Ziwi [BB]', updatedAt: 5, live: { clients: ['Ziwi'] }, cards: [] }] };
+  const r = await call({ method: 'PUT', cookie: ann, body: { board: b } });
+  assert.equal(r.status, 200);
+  const got = (await getBoards(ann)).find((x) => x.id === 'lv2');
+  assert.deepEqual(got.columns[0].live, { clients: ['Ziwi'] });
+  const older = { ...b, updatedAt: 1, columns: [{ id: 'c1', name: 'Ziwi [BB]', updatedAt: 9, live: { clients: ['Ziwi', 'Ziwi Peak'], completed: true }, cards: [] }] };
+  const m = B.mergeBoards(b, older);
+  assert.deepEqual(m.columns[0].live, { clients: ['Ziwi', 'Ziwi Peak'], completed: true });
+});
+
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

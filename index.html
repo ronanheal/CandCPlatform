@@ -21994,6 +21994,18 @@ function bvMergeBoard(target,src,h){
     let col=target.columns.find(c=>norm(c.name)===norm(cname));
     if(!col){col=h.newCol(cname,scol.color||null,ci);col.cards=col.cards||[];col.updatedAt=now;target.columns.push(col);fresh.add(col);n.columns++;}
     if(!seq.includes(col))seq.push(col);
+    // Live client link (col.live): the file's clients are added to the list's (by name, case-
+    // insensitive); "show completed" turns on if the file has it. A new list just takes it.
+    {const sl=scol.live&&typeof scol.live==='object'&&Array.isArray(scol.live.clients)?scol.live:null;
+     const sc=sl?sl.clients.map(x=>String(x==null?'':x).trim()).filter(Boolean):[];
+     if(sc.length){
+       const cur=col.live&&Array.isArray(col.live.clients)?col.live.clients.slice():[];
+       const have=new Set(cur.map(norm));let ch=false;
+       sc.forEach(x=>{if(cur.length<20&&!have.has(norm(x))){have.add(norm(x));cur.push(x);ch=true;}});
+       const comp=!!(col.live&&col.live.completed)||!!sl.completed;
+       if(comp!==!!(col.live&&col.live.completed))ch=true;
+       if(ch){col.live=comp?{clients:cur,completed:true}:{clients:cur};if(!fresh.has(col)){col.updatedAt=Math.max(now,(col.updatedAt||0)+1);touched.add(col);n.linked=(n.linked||0)+1;}}
+     }}
     (Array.isArray(scol.cards)?scol.cards:[]).forEach(s=>{
       if(!s||typeof s!=='object'||Array.isArray(s))return;
       const k=srcKind(s),sls=srcLists(s);
@@ -22801,6 +22813,7 @@ function _r5BuildImport(j,name){
     visibility:bd.visibility==='everyone'?'everyone':'admins'};
   b.columns=bd.columns.map((col,ci)=>{
     const c=_bvNewCol(String(col.name||'Untitled list'),BV_COLORS.includes(col.color)?col.color:BV_COLORS[(ci+1)%BV_COLORS.length]);
+    if(col.live&&Array.isArray(col.live.clients)){const cl=[...new Set(col.live.clients.map(x=>String(x==null?'':x).trim()).filter(Boolean))].slice(0,20);if(cl.length)c.live=col.live.completed?{clients:cl,completed:true}:{clients:cl};}
     c.cards=(Array.isArray(col.cards)?col.cards:[]).map(src=>{
       const base={desc:String(src.desc||''),checklists:_r5ImpLists(src),...(src.collapsed?{collapsed:true}:{}),...(Array.isArray(src.labels)?{labels:src.labels.filter(x=>x!=null&&x!=='').map(String)}:{}),...(src.due?{due:String(src.due).slice(0,10)}:{})};
       let card;
@@ -22824,7 +22837,7 @@ function _r5BuildImport(j,name){
 // Export: the same format, plus checklist headings (read back by Import)
 function bvR5Export(id){
   const b=_bvBoard(id);if(!b)return;
-  const out={format:'cc-board-import',v:1,source:'C&C Boards export',exportedAt:new Date().toISOString(),board:{name:b.name,visibility:b.visibility||'everyone',columns:(b.columns||[]).map(col=>({name:col.name,color:col.color,
+  const out={format:'cc-board-import',v:1,source:'C&C Boards export',exportedAt:new Date().toISOString(),board:{name:b.name,visibility:b.visibility||'everyone',columns:(b.columns||[]).map(col=>({name:col.name,color:col.color,...(col.live&&Array.isArray(col.live.clients)&&col.live.clients.length?{live:col.live}:{}),
     cards:(col.cards||[]).filter(c=>!c.archived).map(c=>{
       const k=_r5Kind(c),o={type:k==='note'?'card':k==='job'?'job':k==='card'?(c.jobRef?'job':'card'):k};
       const title=k==='person'?_r5Person(c).name:k==='client'?(c.clientRef||''):(c.title||'');
@@ -22851,8 +22864,11 @@ const R5S={status:'idle',queue:new Set(),inflight:new Set(),removed:new Map(),sn
 function _r5Fp(b){
   const cols=new Map(),cards=new Map(),colU=new Map();
   (b.columns||[]).forEach(col=>{
-    const{cards:cc,updatedAt:_u,...rest}=col;
-    cols.set(col.id,JSON.stringify(rest)+'|'+(cc||[]).map(k=>k.id).join(','));
+    // col.live (boards-r13 live client link) is a column prop: canonical form, so rebuilding the
+    // object with the same clients isn't a change, while linking/unlinking/editing stamps the column.
+    const{cards:cc,updatedAt:_u,live:lv,...rest}=col;
+    const lk=lv&&Array.isArray(lv.clients)&&lv.clients.length?{c:lv.clients.map(String),x:!!lv.completed}:null;
+    cols.set(col.id,JSON.stringify(lk?{...rest,live:lk}:rest)+'|'+(cc||[]).map(k=>k.id).join(','));
     colU.set(col.id,col.updatedAt||0);
     (cc||[]).forEach(k=>{const{updatedAt:_k,...kr}=k;cards.set(k.id,{j:JSON.stringify(kr),col:col.id,u:k.updatedAt||0});});
   });
@@ -25549,5 +25565,380 @@ body.cc-member #view-detail .item-note-inp[readonly]{background:transparent;}
 #view-boards .bv-tile-top .bv-ibtn{flex-shrink:0;}
 body.dark #view-boards .r5-vis{background:rgba(255,255,255,.06);}
 </style>
+<style id="boards-r13">
+/* Live client columns: header chip, divider between hand-added and automatic cards, picker. */
+.r13-sub{display:flex;align-items:center;gap:6px;padding:0 10px 6px 13px;margin-top:-4px;min-width:0;flex-shrink:0;}
+.r13-sub-n{font-size:11px;color:var(--muted);white-space:nowrap;flex-shrink:0;}
+.r13-live{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;border:0;border-radius:var(--r-pill,999px);background:var(--ok-bg);color:var(--ok-ink);font:600 11px/1 var(--font);white-space:nowrap;min-width:0;overflow:hidden;cursor:pointer;}
+.r13-live span{overflow:hidden;text-overflow:ellipsis;}
+.r13-live i{font-size:11px;flex-shrink:0;}
+.r13-live:hover{filter:brightness(.97);}
+.r13-live:focus-visible{outline:none;box-shadow:var(--ring);}
+.r13-auto-sec{display:flex;flex-direction:column;gap:8px;}
+.r13-div{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:var(--muted);padding:2px 2px 0;}
+.r13-div i{font-size:12px;}
+.r13-div::after{content:'';flex:1;height:1px;background:var(--border);}
+.r13-auto-ic{color:var(--muted);font-size:12px;display:inline-flex;}
+.r13-more{border:none;background:transparent;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;padding:6px;border-radius:8px;}
+.r13-more:hover{background:var(--bv-well);color:var(--ink);}
+.bv-col.is-collapsed .r13-cico{font-size:12px;color:var(--ok-ink);}
+/* Picker */
+.r13-help{margin:0 0 12px;font-size:12.5px;line-height:1.5;color:var(--muted);}
+.r13-sel{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;min-height:26px;align-items:center;}
+.r13-sel .r13-none{font-size:12px;color:var(--muted);}
+.r13-pill{display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 4px 0 10px;border-radius:var(--r-pill,999px);background:var(--surface-2,var(--off));border:1px solid var(--border);font-size:12px;font-weight:500;color:var(--ink);}
+.r13-pill button{border:0;background:transparent;color:var(--muted);width:20px;height:20px;border-radius:50%;display:grid;place-items:center;cursor:pointer;padding:0;}
+.r13-pill button:hover{background:var(--bv-well);color:var(--ink);}
+.r13-ck{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12.5px;color:var(--ink);cursor:pointer;}
+.r13-ck input{accent-color:var(--ink);width:15px;height:15px;}
+.r13-name{margin-bottom:12px;}
+.r13-name label{display:block;font-size:11.5px;font-weight:500;color:var(--muted);margin-bottom:4px;}
+.r13-name input{width:100%;box-sizing:border-box;}
+.r13-row-sub{color:var(--muted);font-size:11.5px;white-space:nowrap;}
+.r13-row-sub.on{color:var(--ok-ink);}
+.r13-link-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-top:1px solid var(--faint);font-size:12.5px;}
+.r13-link-row:first-child{border-top:none;}
+.r13-link-row input{accent-color:var(--ink);width:15px;height:15px;flex-shrink:0;}
+.r13-link-row .r13-cn{font-weight:600;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 1 auto;max-width:42%;}
+.r13-link-row .r13-to{flex:1;min-width:0;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.r13-link-row .r13-to i{color:var(--muted);margin-right:4px;}
+.r13-link-row.is-off{color:var(--muted);}
+.r13-link-row.is-off .r13-cn,.r13-link-row.is-off .r13-to{color:var(--muted);font-weight:500;}
+</style>
+<script id="boards-r13-script">
+// ═══ Boards r13: live client columns (restores v1.7.0's "Client column", lost in boards-v2) ═══
+// A column on a custom board can be linked to one or more clients: col.live = {clients:[name…],
+// completed?:true}. It then lists a pipeline job card for every matching job (in play by default,
+// completed too when asked, never archived), computed on every render from the synced jobs, so
+// nothing is copied into the board: new jobs appear and finished ones drop off by themselves.
+// Hand-added cards in the column stay (first, in their order); a hand-added job card for a job
+// the column already lists shows once (the hand-added one, it may carry notes).
+// Order: job number, newest first; by due date when the board is sorted by due date.
+// Set up: Add column → "Client column (updates automatically)"; column ⋯ → "Link to a client…",
+// "Edit clients", "Show completed jobs", "Unlink"; board ⋯ → "Link matching columns to clients"
+// (admins). Column names like "Dairyworks [BB]" are matched without the trailing [XX] / (XX).
+// Server: lib/boards.js cleanBoard keeps col.live (≤20 names, ≤120 chars, + completed boolean);
+// the r5 fingerprint and bvMergeBoard carry it like other column props. Everyone can see live
+// columns; Boards stays editable for everyone (roles-r10 leaves Boards alone).
+// The whole-board "Client · live view" (type 'client', _bvRenderClientView) is unchanged.
+const R13_MAX=20;
+let _r13Idx=null,_r13P=null,_r13L=null;
+function _r13Live(col){const l=col&&col.live;return l&&typeof l==='object'&&Array.isArray(l.clients)&&l.clients.length?l:null;}
+const _r13N=s=>_r5Norm(s);
+// Non-archived jobs by normalised client name; rebuilt on every board render.
+function _r13Index(){
+  if(_r13Idx)return _r13Idx;
+  const m=new Map();
+  for(const j of jobs){if(!j||j.status==='archived'||!j.company)continue;const k=_r13N(j.company);if(!k)continue;let a=m.get(k);if(!a)m.set(k,a=[]);a.push(j);}
+  return _r13Idx=m;
+}
+// A stored client is a name; a client id (from clientsData) is read as that client's name.
+function _r13Name(ref){const r=String(ref==null?'':ref).trim();if(/^\d+$/.test(r)){const rec=(clientsData||[]).find(c=>String(c.id)===r&&c.name);if(rec)return rec.name;}return r;}
+function _r13Jobs(col){
+  const l=_r13Live(col);if(!l)return[];
+  const idx=_r13Index(),seen=new Set(),out=[];
+  l.clients.forEach(ref=>(idx.get(_r13N(_r13Name(ref)))||[]).forEach(j=>{
+    if(seen.has(j.id)||(!l.completed&&j.status==='complete'))return;seen.add(j.id);out.push(j);}));
+  return out;
+}
+function _r13Sort(b,list){
+  const num=j=>parseInt(j.id,10)||0,due=j=>j.dueDate?String(j.dueDate).slice(0,10):'9999';
+  if(b.sort==='due')return list.sort((x,y)=>due(x).localeCompare(due(y))||num(y)-num(x));
+  if(b.sort==='title')return list.sort((x,y)=>String(x.name||'').localeCompare(String(y.name||''))||num(y)-num(x));
+  return list.sort((x,y)=>num(y)-num(x));
+}
+function _r13Label(l){const ns=l.clients.map(_r13Name);return ns[0]+(ns.length>1?` +${ns.length-1}`:'');}
+// The same pipeline job card as a hand-added one (Job tag, number · client, stage pill, hours,
+// due chip, people), but it opens the job and can't be dragged or edited: it isn't on the board.
+function _r13CardHTML(b,col,j){
+  const due=j.dueDate?String(j.dueDate).slice(0,10):null;
+  const dueChip=_bvDueChipHTML(due,_bvDueState(due,col),col.done,'Job due');
+  const avs=_bvAvsHTML(j.members);
+  const foot=(dueChip||avs)?`<div class="bv-card-foot">${dueChip}<span class="bv-sp"></span><span class="bv-avs">${avs}</span></div>`:'';
+  const A=_bvA(j.id);
+  return`<article class="bv-card r13-auto${col.done?' is-done':''}" data-job="${esc(j.id)}" tabindex="0" title="Open job ${esc(j.id)}" onclick="bvOpenJob(${A})" onkeydown="if(event.key==='Enter'&&event.target===this)bvOpenJob(${A})">
+    <div class="r5-top" style="margin-bottom:-4px"><span class="r5-tag blue"><i class="ti ti-briefcase"></i>Job</span><span class="bv-sp"></span><span class="r13-auto-ic" title="Listed automatically for ${esc(j.company||'')}"><i class="ti ti-refresh"></i></span></div>
+    ${_bvJobLineHTML(j,!(b.studio&&col.stage))}<div class="bv-card-title">${esc(j.name||('Job '+j.id))}</div>${_bvProgHTML(_bvStat(j))}${foot}</article>`;
+}
+const _r13OrigColHTML=_bvColHTML;
+_bvColHTML=function(b,col,f,fa){
+  const l=b&&b.type==='custom'?_r13Live(col):null;
+  let h=_r13OrigColHTML(b,col,f,fa);
+  if(!l)return h;
+  try{
+    const man=(col.cards||[]).filter(c=>!c.archived);
+    const onBoard=new Set(man.filter(c=>c.jobRef).map(c=>String(c.jobRef)));
+    const autoAll=_r13Jobs(col).filter(j=>!onBoard.has(String(j.id)));
+    const autoVis=_r13Sort(b,autoAll.filter(j=>_bvMatch({kind:'job',jobRef:String(j.id)},col,f)));
+    const visMan=man.filter(c=>_bvMatch(c,col,f)).length,n=man.length,total=n+autoAll.length;
+    const wip=_bvWip(col),over=wip>0&&total>wip,wasOver=wip>0&&n>wip;
+    const label=_r13Label(l),names=l.clients.map(_r13Name).join(', ');
+    // Count: hand-added + automatic
+    const oldCount=col.collapsed?`${n}`:fa?`${visMan}<span class="bv-of">/${n}</span>`:wip>0?`${n}<span class="bv-of">/${wip}</span>`:`${n}`;
+    const newCount=col.collapsed?`${total}`:fa?`${visMan+autoVis.length}<span class="bv-of">/${total}</span>`:wip>0?`${total}<span class="bv-of">/${wip}</span>`:`${total}`;
+    const ci=h.indexOf('class="bv-col-count');
+    if(ci>=0){const gt=h.indexOf('>',ci);if(h.startsWith(oldCount+'</span>',gt+1))h=h.slice(0,gt+1)+newCount+h.slice(gt+1+oldCount.length);}
+    if(over&&!wasOver)h=h.replace('class="bv-col ','class="bv-col is-over ').replace('class="bv-col-count"','class="bv-col-count warn"');
+    if(col.collapsed)return h.replace('<span class="bv-col-vname">',`<i class="ti ti-refresh r13-cico" title="Live · ${esc(names)}"></i><span class="bv-col-vname">`);
+    // "Live · Client" chip on its own line under the header, so long column names keep their room
+    const he=h.indexOf('</header>');
+    if(he>=0){const end=he+9;
+      h=h.slice(0,end)+`<div class="r13-sub"><button class="r13-live" draggable="false" title="Lists every ${l.completed?'live and completed':'live'} job for ${esc(names)} and updates automatically. Click to edit." onclick="bvR13Picker(${_bvA(col.id)})"><i class="ti ti-refresh"></i><span>Live · ${esc(label)}</span></button><span class="r13-sub-n">${autoAll.length} job${autoAll.length!==1?'s':''}</span></div>`+h.slice(end);}
+    // Automatic cards after the hand-added ones
+    const li=h.indexOf('<div class="bv-col-list"'),fi=h.indexOf('<div class="bv-col-ft">');
+    if(li>=0&&fi>li){
+      const open=h.indexOf('>',li)+1,close=h.lastIndexOf('</div>',fi);
+      if(close>=open){
+        let body=h.slice(open,close);
+        const key='r13:'+col.id,limit=_bvShowAll[key]?Infinity:BV_COL_PAGE;
+        let auto='';
+        if(autoVis.length){
+          body=body.replace(/<div class="bv-col-empty">[^<]*<\/div>/,'');
+          const more=autoVis.length>limit?`<button class="r13-more" onclick="_bvShowAll[${_bvA(key)}]=true;_bvRenderBody()">Show ${autoVis.length-limit} more</button>`:'';
+          auto=`<div class="r13-auto-sec">${visMan?`<div class="r13-div"><i class="ti ti-refresh"></i>Live jobs · ${autoVis.length}</div>`:''}${autoVis.slice(0,limit).map(j=>_r13CardHTML(b,col,j)).join('')}${more}</div>`;
+        }else if(!visMan){
+          body=body.replace(/<div class="bv-col-empty">[^<]*<\/div>/,`<div class="bv-col-empty">${fa&&total?'No cards match the filters':`No ${l.completed?'':'live '}jobs for ${esc(label)} right now`}</div>`);
+        }
+        h=h.slice(0,open)+body+auto+h.slice(close);
+      }
+    }
+  }catch(e){console.warn('boards-r13 column',e);}
+  return h;
+};
+const _r13OrigRenderBody=_bvRenderBody;
+_bvRenderBody=function(){_r13Idx=null;return _r13OrigRenderBody.apply(this,arguments);};
+
+// Drag a card over a live column: only hand-added cards are drop targets, and the placeholder
+// stays above the automatic cards (they aren't on the board, so a card can't go between them).
+// Same as boards-v2 bvDragOver otherwise.
+bvDragOver=function(e,colId){
+  if(!_bvDrag)return;
+  e.preventDefault();e.dataTransfer.dropEffect='move';
+  const sec=e.currentTarget;
+  if(_bvDrag.kind==='col'){
+    document.querySelectorAll('#board-detail .bv-col.drop-before,#board-detail .bv-col.drop-after').forEach(el=>{if(el!==sec)el.classList.remove('drop-before','drop-after');});
+    if(colId===_bvDrag.id)return;
+    const r=sec.getBoundingClientRect();const after=e.clientX>r.left+r.width/2;
+    sec.classList.toggle('drop-after',after);sec.classList.toggle('drop-before',!after);
+    return;
+  }
+  document.querySelectorAll('#board-detail .bv-col.drop-hi').forEach(el=>{if(el!==sec)el.classList.remove('drop-hi');});
+  sec.classList.add('drop-hi');
+  const list=sec.querySelector('.bv-col-list');
+  let ph=document.getElementById('bv-ph');
+  if(!list){ph?.remove();return;}
+  if(!ph){ph=document.createElement('div');ph.id='bv-ph';ph.className='bv-ph';}
+  ph.style.height=Math.min(_bvDrag.h||48,120)+'px';
+  let before=null;
+  for(const c of list.querySelectorAll(':scope>.bv-card:not(.is-dragging)')){const r=c.getBoundingClientRect();if(e.clientY<r.top+r.height/2){before=c;break;}}
+  if(before){if(ph.nextElementSibling!==before||ph.parentNode!==list)list.insertBefore(ph,before);}
+  else{const tail=list.querySelector(':scope>.bv-more,:scope>.bv-qa,:scope>.r13-auto-sec');if(ph.parentNode!==list||ph.nextElementSibling!==tail)list.insertBefore(ph,tail);}
+};
+
+// ── Name guessing: "Dairyworks [BB]" → Dairyworks; "Sanford - Sanford and Sons" → both ──
+function _r13Strip(name){return String(name||'').replace(/(\s*[\[(][^\[\]()]{1,16}[\])])+\s*$/,'').trim();}
+function _r13Guess(name){
+  const base=_r13Strip(name),n=_r13N(base);if(!n)return[];
+  const all=_r5AllClients();let out=[];
+  const add=c=>{if(c&&!out.includes(c))out.push(c);};
+  all.forEach(c=>{if(_r13N(c)===n)add(c);});
+  all.forEach(c=>{if(_r13N(c).startsWith(n+' '))add(c);});              // "NPF" → "NPF Australia"
+  const parts=base.split(/\s+[-–—\/&+|]\s+|\s*,\s*/).map(x=>x.trim()).filter(Boolean);
+  if(parts.length>1)parts.forEach(p=>{const pn=_r13N(p);if(pn)all.forEach(c=>{if(_r13N(c)===pn)add(c);});});
+  if(!out.length){const m=_r5MatchClient(base);if(m)add(m.name);}       // "NPF - global" → "NPF"
+  // Prefer clients that have jobs; keep it short.
+  const withJobs=out.filter(c=>_r13Index().has(_r13N(c)));
+  if(withJobs.length)out=withJobs;
+  return out.slice(0,6);
+}
+
+// ── Picker: add a client column, link a column, edit its clients ──────────────────────────
+function bvR13Picker(colId){
+  _bvClosePop();
+  const b=_bvCur();if(!b||b.type!=='custom')return;
+  const col=colId?_bvColOf(b,colId):null;if(colId&&!col)return;
+  const l=_r13Live(col);_r13Idx=null;
+  const sel=l?l.clients.map(_r13Name):col?_r13Guess(col.name):[];
+  _r13P={col:colId||null,sel,completed:!!(l&&l.completed),q:''};
+  const guessed=!l&&!!col&&sel.length>0;
+  document.getElementById('r13-pick')?.remove();
+  const title=!col?'Add a client column':l?`Clients for “${esc(col.name)}”`:`Link “${esc(col.name)}” to a client`;
+  const m=document.createElement('div');m.className='modal-bg on';m.id='r13-pick';
+  m.innerHTML=`<div class="modal bv-modal" style="max-width:540px;" role="dialog" aria-modal="true" aria-labelledby="r13-pick-t">
+    <div class="modal-hd"><span class="modal-hd-title" id="r13-pick-t">${title}</span><button class="modal-x" aria-label="Close" onclick="document.getElementById('r13-pick').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd">
+      <p class="r13-help">The column shows a job card for every live job for these clients and keeps itself up to date: new jobs appear, finished ones drop off. Cards you add by hand stay.${guessed?' The client matching the column name is picked for you. Check it’s right.':''}</p>
+      ${!col?`<div class="r13-name"><label for="r13-name">Column name</label><input class="form-inp" id="r13-name" maxlength="60" placeholder="Same as the client"></div>`:''}
+      <div class="r13-sel" id="r13-sel"></div>
+      <div class="bv-bulk-tools"><label class="bv-search"><i class="ti ti-search"></i><input id="r13-q" placeholder="Search clients" aria-label="Search clients" oninput="_r13P.q=this.value.trim().toLowerCase();_r13Draw()"></label></div>
+      <div class="bv-bulk-list" id="r13-list"></div>
+      <label class="r13-ck"><input type="checkbox" id="r13-comp"${_r13P.completed?' checked':''} onchange="_r13P.completed=this.checked;_r13Draw()"> Also show completed jobs</label>
+    </div>
+    <div class="modal-ft"><span class="bv-ft-left" id="r13-sum"></span>
+      ${l?`<button class="modal-cancel" onclick="bvR13Unlink(${_bvA(col.id)})">Unlink</button>`:''}
+      <button class="modal-cancel" onclick="document.getElementById('r13-pick').remove()">Cancel</button><button class="modal-save" id="r13-go" onclick="bvR13Save()" disabled>${!col?'Add column':l?'Save':'Link column'}</button></div>
+  </div>`;
+  m.addEventListener('mousedown',e=>{if(e.target===m)m.remove();});
+  m.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();m.remove();}});
+  document.body.appendChild(m);_r13Draw();
+  setTimeout(()=>document.getElementById(col?'r13-q':'r13-name')?.focus(),60);
+}
+function _r13Draw(){
+  const s=_r13P,list=document.getElementById('r13-list');if(!s||!list)return;
+  const idx=_r13Index(),sel=new Set(s.sel);
+  const cnt=c=>(idx.get(_r13N(c))||[]).filter(j=>s.completed||j.status!=='complete').length;
+  let pool=_r5AllClients().filter(c=>!s.q||c.toLowerCase().includes(s.q));
+  // Picked first, then clients with jobs, then the rest (A–Z within each)
+  const rank=c=>sel.has(c)?0:cnt(c)?1:2;
+  pool=pool.map(c=>[c,rank(c)]).sort((a,b)=>a[1]-b[1]||a[0].localeCompare(b[0])).map(x=>x[0]);
+  const shown=pool.slice(0,200);
+  list.innerHTML=shown.length?shown.map(c=>{const n=cnt(c),on=sel.has(c);
+    return`<label class="bv-bulk-row"><input type="checkbox"${on?' checked':''}${!on&&s.sel.length>=R13_MAX?' disabled':''} onchange="_r13Pick(${_bvA(c)},this.checked)"><span class="bv-bn">${esc(c)}</span><span class="r13-row-sub${n?' on':''}">${n?`${n} ${s.completed?'':'live '}job${n!==1?'s':''}`:'No jobs'}</span></label>`;}).join('')
+    +(pool.length>200?`<div class="bv-pop-empty" style="text-align:center;padding:10px;">Search to see more clients</div>`:'')
+    :`<div class="bv-pop-empty" style="text-align:center;padding:26px;">No clients match.</div>`;
+  const pills=s.sel.map(c=>`<span class="r13-pill">${esc(c)}<button title="Remove ${esc(c)}" aria-label="Remove ${esc(c)}" onclick="_r13Pick(${_bvA(c)},false)"><i class="ti ti-x"></i></button></span>`).join('');
+  const se=document.getElementById('r13-sel');if(se)se.innerHTML=pills||'<span class="r13-none">Pick one or more clients</span>';
+  const tot=new Set();s.sel.forEach(c=>(idx.get(_r13N(c))||[]).forEach(j=>{if(s.completed||j.status!=='complete')tot.add(j.id);}));
+  const sum=document.getElementById('r13-sum');if(sum)sum.textContent=s.sel.length?`${tot.size} job${tot.size!==1?'s':''} right now`:'';
+  const go=document.getElementById('r13-go');if(go)go.disabled=!s.sel.length;
+  const nm=document.getElementById('r13-name');if(nm)nm.placeholder=s.sel.length?_r13DefaultName(s.sel):'Same as the client';
+}
+function _r13Pick(c,on){const s=_r13P;if(!s)return;s.sel=s.sel.filter(x=>x!==c);if(on&&s.sel.length<R13_MAX)s.sel.push(c);_r13Draw();}
+function _r13DefaultName(sel){return sel.length===1?sel[0]:sel.length===2?`${sel[0]} & ${sel[1]}`:`${sel[0]} +${sel.length-1}`;}
+function _r13Set(col,clients,completed){
+  const cl=[...new Set(clients.map(x=>String(x).trim().slice(0,120)).filter(Boolean))].slice(0,R13_MAX);
+  if(cl.length)col.live=completed?{clients:cl,completed:true}:{clients:cl};else delete col.live;
+  col.updatedAt=Date.now();
+}
+function bvR13Save(){
+  const s=_r13P,b=_bvCur();if(!s||!b)return;
+  if(!s.sel.length){toast('Pick at least one client','warn');return;}
+  let col,fresh=false;
+  if(s.col){col=_bvColOf(b,s.col);if(!col)return;}
+  else{
+    const used=new Set(b.columns.map(c=>c.color));
+    const nm=(document.getElementById('r13-name')?.value||'').trim()||_r13DefaultName(s.sel);
+    col=_bvNewCol(nm.slice(0,60),BV_COLORS.find(c=>!used.has(c))||'grey');b.columns.push(col);fresh=true;
+  }
+  const was=!!_r13Live(col);
+  _r13Set(col,s.sel,s.completed);
+  document.getElementById('r13-pick')?.remove();_r13P=null;
+  _bvTouch(b);_bvRenderBody();
+  if(fresh){const w=document.getElementById('bv-cols');if(w)w.scrollLeft=w.scrollWidth;}
+  toast(fresh?`Added “${esc(col.name)}”. It updates automatically`:was?'Clients updated':`“${esc(col.name)}” is now live`,'success');
+}
+function bvR13Unlink(colId){
+  const b=_bvCur();const col=_bvColOf(b,colId);if(!col)return;
+  document.getElementById('r13-pick')?.remove();_r13P=null;_bvClosePop();
+  delete col.live;col.updatedAt=Date.now();_bvTouch(b);_bvRenderBody();
+  toast('Column unlinked. Cards you added by hand stay','info');
+}
+function bvR13SetCompleted(colId,on){
+  const b=_bvCur();const col=_bvColOf(b,colId);const l=_r13Live(col);if(!l)return;
+  _r13Set(col,l.clients,!!on);_bvTouch(b);_bvRenderBody();
+}
+
+// ── Column ⋯ menu ─────────────────────────────────────────────────────────────────────────
+const _r13OrigColMenu=bvColMenu;
+bvColMenu=function(anchor,colId){
+  if(_bvPopToggle(anchor))return;
+  _r13OrigColMenu(anchor,colId);
+  const p=document.getElementById('bv-pop'),b=_bvCur();if(!p||!b||b.type!=='custom')return;
+  const col=_bvColOf(b,colId);if(!col)return;
+  const l=_r13Live(col),A=_bvA(colId);
+  const html=`<div class="bv-mi-sep"></div><div class="bv-pop-sec">${l?`Live · ${esc(_r13Label(l))}`:'Live client column'}</div>`+(l
+    ?_bvMI('ti-building','Edit clients…',`bvR13Picker(${A})`)
+      +`<button class="bv-mi${l.completed?' on':''}" onclick="_bvClosePop();bvR13SetCompleted(${A},${!l.completed})"><i class="ti ti-circle-check"></i><span>Show completed jobs</span><i class="ti ti-check bv-mi-ck"></i></button>`
+      +_bvMI('ti-link-off','Unlink',`bvR13Unlink(${A})`)
+    :_bvMI('ti-refresh','Link to a client…',`bvR13Picker(${A})`));
+  const sep=p.querySelector('.bv-mi-sep');
+  if(sep)sep.insertAdjacentHTML('beforebegin',html);else p.insertAdjacentHTML('beforeend',html);
+  const r=p.getBoundingClientRect();if(r.bottom>innerHeight-12)p.style.top=Math.max(12,innerHeight-12-r.height)+'px';
+};
+
+// ── Add column: blank or client column ─────────────────────────────────────────────────────
+const _r13OrigAddColumn=bvAddColumn;
+function bvR13AddBlank(){_r13OrigAddColumn();}
+bvAddColumn=function(anchor){
+  const b=_bvCur();if(!b||b.type!=='custom')return;
+  const ev=window.event;
+  if(!(anchor&&anchor.nodeType===1))anchor=ev&&ev.type==='click'&&ev.target&&ev.target.closest?ev.target.closest('button'):null;
+  if(!anchor||!anchor.isConnected)return _r13OrigAddColumn();
+  if(_bvPopToggle(anchor))return;
+  _bvPop(anchor,`<div class="bv-pop-sec">Add column</div>
+    ${_bvMI('ti-layout-columns','Blank column','bvR13AddBlank()')}
+    ${_bvMI('ti-refresh','Client column (updates automatically)','bvR13Picker(null)')}`,anchor.closest('.bv-head-actions')?'right':'');
+};
+
+// ── Board ⋯ menu: link every matching column at once (admins) ──────────────────────────────
+function _r13Admin(){try{return typeof _isMember==='function'?!_isMember():!!R5_ADMIN;}catch(e){return!!R5_ADMIN;}}
+const _r13OrigBoardMenu=bvBoardMenu;
+bvBoardMenu=function(anchor,id,fromTile){
+  if(_bvPopToggle(anchor))return;
+  _r13OrigBoardMenu(anchor,id,fromTile);
+  const p=document.getElementById('bv-pop'),b=_bvBoard(id);
+  if(!p||!b||fromTile||b.type!=='custom'||!_r13Admin()||!(b.columns||[]).length)return;
+  p.insertAdjacentHTML('afterbegin',_bvMI('ti-refresh','Link matching columns to clients…',`bvR13LinkAll(${_bvA(id)})`)+'<div class="bv-mi-sep"></div>');
+  const r=p.getBoundingClientRect();if(r.bottom>innerHeight-12)p.style.top=Math.max(12,innerHeight-12-r.height)+'px';
+};
+function bvR13LinkAll(id){
+  _bvClosePop();
+  const b=id?_bvBoard(id):_bvCur();if(!b||b.type!=='custom')return;
+  _r13Idx=null;
+  _r13L={board:b.id,rows:(b.columns||[]).map(col=>{const l=_r13Live(col),g=l?[]:_r13Guess(col.name);return{id:col.id,name:col.name,live:l,guess:g,on:!l&&g.length>0};})};
+  document.getElementById('r13-all')?.remove();
+  const m=document.createElement('div');m.className='modal-bg on';m.id='r13-all';
+  m.innerHTML=`<div class="modal bv-modal" style="max-width:640px;" role="dialog" aria-modal="true" aria-labelledby="r13-all-t">
+    <div class="modal-hd"><span class="modal-hd-title" id="r13-all-t">Link matching columns to clients</span><button class="modal-x" aria-label="Close" onclick="document.getElementById('r13-all').remove()"><i class="ti ti-x"></i></button></div>
+    <div class="modal-bd">
+      <p class="r13-help">Each ticked column will list every live job for its client and keep itself up to date. Cards already in the columns stay, and a job that’s already there isn’t shown twice. Matches come from the column names, ignoring initials like [BB].</p>
+      <div class="bv-bulk-list" id="r13-all-list" style="max-height:52vh"></div>
+    </div>
+    <div class="modal-ft"><span class="bv-ft-left" id="r13-all-sum"></span>
+      <button class="modal-cancel" onclick="document.getElementById('r13-all').remove()">Cancel</button><button class="modal-save" id="r13-all-go" onclick="bvR13LinkAllCommit()" disabled>Link columns</button></div>
+  </div>`;
+  m.addEventListener('mousedown',e=>{if(e.target===m)m.remove();});
+  m.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();m.remove();}});
+  document.body.appendChild(m);_r13LinkAllDraw();
+}
+function _r13LinkAllDraw(){
+  const s=_r13L,list=document.getElementById('r13-all-list');if(!s||!list)return;
+  const rk=r=>r.live?2:r.guess.length?0:1;
+  const rows=[...s.rows].sort((a,b)=>rk(a)-rk(b));
+  list.innerHTML=rows.map(r=>{
+    const A=_bvA(r.id);
+    if(r.live)return`<div class="r13-link-row is-off"><i class="ti ti-check" style="width:15px;text-align:center"></i><span class="r13-cn">${esc(r.name)}</span><span class="r13-to"><i class="ti ti-arrow-right"></i>Already live · ${esc(_r13Label(r.live))}</span></div>`;
+    if(!r.guess.length)return`<div class="r13-link-row is-off"><input type="checkbox" disabled aria-label="No match for ${esc(r.name)}"><span class="r13-cn">${esc(r.name)}</span><span class="r13-to">No matching client</span></div>`;
+    const n=new Set();r.guess.forEach(c=>(_r13Index().get(_r13N(c))||[]).forEach(j=>{if(j.status!=='complete')n.add(j.id);}));
+    return`<label class="r13-link-row" style="cursor:pointer"><input type="checkbox"${r.on?' checked':''} onchange="_r13LinkPick(${A},this.checked)"><span class="r13-cn">${esc(r.name)}</span><span class="r13-to" title="${esc(r.guess.join(', '))}"><i class="ti ti-arrow-right"></i>${esc(r.guess.join(', '))}</span><span class="r13-row-sub${n.size?' on':''}">${n.size} live</span></label>`;
+  }).join('')||`<div class="bv-pop-empty" style="text-align:center;padding:26px;">This board has no columns.</div>`;
+  const k=s.rows.filter(r=>r.on).length,open=s.rows.filter(r=>!r.live),m=open.filter(r=>r.guess.length).length;
+  const sum=document.getElementById('r13-all-sum');if(sum)sum.textContent=`${m} of ${open.length} column${open.length!==1?'s':''} match a client`;
+  const go=document.getElementById('r13-all-go');if(go){go.disabled=!k;go.textContent=k?`Link ${k} column${k!==1?'s':''}`:'Link columns';}
+}
+function _r13LinkPick(id,on){const r=_r13L&&_r13L.rows.find(x=>x.id===id);if(r){r.on=!!on;_r13LinkAllDraw();}}
+function bvR13LinkAllCommit(){
+  const s=_r13L;const b=s&&_bvBoard(s.board);if(!b)return;
+  let n=0;
+  s.rows.forEach(r=>{if(!r.on||!r.guess.length)return;const col=_bvColOf(b,r.id);if(!col||_r13Live(col))return;_r13Set(col,r.guess,false);n++;});
+  document.getElementById('r13-all')?.remove();_r13L=null;
+  if(!n)return;
+  _bvTouch(b);if(activeBoardId===b.id)_bvRenderBody();
+  toast(`Linked ${n} column${n!==1?'s':''}. They update automatically`,'success');
+}
+
+// ── Data refresh: redraw the open board after a Streamtime load ────────────────────────────
+// Live columns (and the Client / Live jobs views) are computed from `jobs`, so a redraw is all
+// it takes. Skipped while someone is typing, a modal is open, or a card is being dragged.
+const _r13OrigStRender=_stRenderViews;
+_stRenderViews=function(){
+  const r=_r13OrigStRender.apply(this,arguments);
+  try{
+    const bd=document.getElementById('board-detail');
+    if(activeBoardId&&!_bvDrag&&bd&&bd.style.display!=='none'&&_stViewOn('view-boards')&&!_stRenderBusy())_bvRenderBody();
+  }catch(e){console.warn('boards-r13 refresh',e);}
+  return r;
+};
+</script>
 </body>
 </html>
