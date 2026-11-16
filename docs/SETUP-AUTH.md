@@ -325,3 +325,41 @@ via a GitHub token in the browser, unchanged), and the account list.
   to change that.
 - `scripts/reconcile_streamtime.py` reads plaintext files from the branch with `git show`. After
   step 6 it needs the files decrypted first (`data_crypt.py decrypt`).
+
+## Limits and monitoring
+
+In 2026-11 Vercel Blob's free tier ran out, Vercel paused the store and the whole site went down
+with no warning. Every outside limit the site depends on is listed here, with what we expect to
+use and where you would hear about it first. Figures checked on 2026-11-17. Vercel's come from
+vercel.com/docs/plans/hobby and GitHub's from docs.github.com ("Rate limits for the REST API").
+
+| Limit | Allowance | Expected use | What happens at the limit | Where the alert shows |
+|---|---|---|---|---|
+| GitHub REST API, `GITHUB_STATE_TOKEN` | 5,000 requests an hour per token (the window resets hourly) | Tens to a few hundred an hour. Reads are cached 30 s per instance and concurrent reads share one request. | `/api` answers `503` with `Retry-After`. Sign-in and saves fail until the hour resets. | Settings → About → **Service health** (meter). A Dashboard banner for admins below 25% left (warn) or 10% left (alert), or after any rate-limited answer in the last hour (alert). |
+| GitHub secondary limits (same token) | At most 80 content-creating requests (commits) a minute and 500 an hour; 900 REST points a minute; 100 concurrent requests | Each save is one commit. About 150 commits in the week of 2026-11-17, including main's commits from when the branch was cut, so roughly 20 a day. Boards wait 2.5 s after the last edit before saving. | `403`/`429` "secondary rate limit", turned into `503` with a 60 s `Retry-After`. | Same card and banner (alert for an hour). Weekly workflow fails above **3,000 commits in 7 days**. The card warns above **2,000**. |
+| State file size on `app-state` | The contents API returns files up to 1 MB inline. Larger files need a second (blob) call, up to 100 MB. | About 27 KB in total. The largest board is about 10 KB. | Above 1 MB every read costs two requests and gets slower. | Weekly workflow fails if any file under `auth/`, `boards/` or `happiness/` is over **900 KB**. |
+| `GITHUB_STATE_TOKEN` expiry | Fine-grained PATs expire on the date you chose (90 days by default, at most a year) | Not applicable | **Nobody can sign in** (every `/api` call returns `503`) until a new token is set. | Nothing automatic. Write the expiry date here: `GITHUB_STATE_TOKEN expires: ____-__-__`. Add a calendar reminder a week before. GitHub also emails the owner a few days before a PAT expires. Renewal steps are in 3a. |
+| Vercel Hobby: function invocations | First 1,000,000 a month | Roughly 5,000 to 15,000 a day for a team of about 15: every `/api` call, plus the middleware on each request. That is about 150k to 450k a month. | Hobby has no overage. In most cases the feature pauses until 30 days have passed, which takes the site down. | Not watched by the workflow, which never touches Vercel. Check Vercel → Usage once a month. The weekly workflow still fails within a week if the site stops answering. |
+| Vercel Hobby: Active CPU, provisioned memory | 4 CPU-hours and 360 GB-hours a month | Small: functions mostly wait on GitHub, and Active CPU counts only compute time. | Same as above. | Vercel → Usage |
+| Vercel Hobby: Fast Data Transfer, Fast Origin Transfer, CDN requests | 100 GB transfer, 10 GB origin transfer, 1,000,000 CDN requests a month | `index.html` is about 1.9 MB raw (much less gzipped) per uncached load. `/api/data` files are served gzipped. Expect a few GB a month. | Same as above. | Vercel → Usage. Weekly check of `/api/auth/status`. |
+| raw.githubusercontent.com (Streamtime data, `lib/store.js` `fetchDataFile`) | No published number. It is unauthenticated, so GitHub can throttle by IP, and it caches for about 5 minutes. | One fetch per data file per instance per minute (`DATA_TTL_MS` = 60 s). | `/api/data` returns 502, and the page shows stale or missing Streamtime data. Sign-in and boards keep working. | The page's own "Streamtime data couldn't be loaded" notice. Not part of the health card, because it does not use the token. |
+| Weekly workflow's `GITHUB_TOKEN` | 1,000 requests an hour per repo | 2 requests a week | Not applicable | Not applicable |
+
+**How the alerts reach you**
+
+- **Weekly email:** `.github/workflows/usage-watch.yml` runs every Monday at 07:17 UTC, and you
+  can also run it from Actions → Usage watch → Run workflow. It uses only the built-in
+  `GITHUB_TOKEN` with `contents: read`. It counts `app-state` commits in the last 7 days, lists
+  the state file sizes, and checks that `https://cand-c-platform.vercel.app/api/auth/status`
+  answers `200`. It fails with an `::error::` explaining why. GitHub emails the owner when a
+  scheduled workflow fails. Make sure Settings → Notifications → Actions is set to email.
+- **In the app (admins):** Settings → About → **Service health** shows storage calls left this
+  hour (from GitHub's `x-ratelimit-*` headers, which are per token), state saves in the last 7
+  days, and a status dot. When the status is warn or alert, admins also see a quiet banner on
+  the Dashboard. Both read `GET /api/health` (admins only), at most once every 10 minutes per
+  page. The state-save count is one API request, cached 10 minutes on the server.
+- **Thresholds:**
+  - warn: under 25% of the hour's allowance left, or more than 2,000 state commits in 7 days.
+  - alert: under 10% left, or a rate-limited answer from GitHub in the last hour.
+  - The workflow fails above 3,000 commits a week, above 900 KB for any state file, or when
+    `/api/auth/status` does not answer 200.

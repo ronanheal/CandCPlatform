@@ -25984,5 +25984,123 @@ _stRenderViews=function(){
 #r13-pick .r13-filt .form-inp{height:32px;}
 #r13-pick .r13-filt-hint{grid-column:1/-1;font-size:11.5px;color:var(--muted);}
 </style>
+<style id="health-r15">
+/* ═══ Service health (r15): Settings → About card + a quiet Dashboard banner, admins only.
+   ds-v3 tokens only; dark mode comes from the body.dark token overrides. ═════════════════════ */
+#hr15-card .hr15-body{display:flex;flex-direction:column;gap:14px;}
+#hr15-card .hr15-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+#hr15-card .hr15-lbl{font:500 13px/1.3 var(--font);color:var(--ink);}
+#hr15-card .hr15-val{font:600 13px/1.3 var(--font);color:var(--ink);font-variant-numeric:tabular-nums;}
+#hr15-card .hr15-sub{font:400 12px/1.4 var(--font);color:var(--muted);}
+#hr15-card .hr15-meter{height:8px;border-radius:var(--r-pill);background:var(--faint);overflow:hidden;margin-top:6px;}
+#hr15-card .hr15-meter i{display:block;height:100%;border-radius:inherit;background:var(--ok);transition:width var(--d-3) var(--ease-out);}
+#hr15-card[data-s="warn"] .hr15-meter i{background:var(--warn);}
+#hr15-card[data-s="alert"] .hr15-meter i{background:var(--danger-ink);}
+#hr15-card .hr15-reasons{margin:0;padding:0 0 0 18px;font:400 12px/1.5 var(--font);color:var(--ink-2);}
+.hr15-status{display:inline-flex;align-items:center;gap:6px;font:500 12px/1 var(--font);color:var(--muted);text-transform:none;letter-spacing:0;}
+.hr15-dot{width:8px;height:8px;border-radius:50%;background:var(--subtle);flex-shrink:0;}
+.hr15-dot[data-s="ok"]{background:var(--ok);}
+.hr15-dot[data-s="warn"]{background:var(--warn);}
+.hr15-dot[data-s="alert"]{background:var(--danger-ink);}
+#hr15-banner{display:flex;align-items:center;gap:10px;margin:0 0 20px;padding:10px 14px;border-radius:var(--r-ctl);border:1px solid var(--border);background:var(--warn-bg);color:var(--warn-ink);font:500 13px/1.4 var(--font);}
+#hr15-banner[data-s="alert"]{background:var(--danger-bg);color:var(--danger-ink);}
+#hr15-banner .ti{font-size:15px;flex-shrink:0;}
+#hr15-banner a{color:inherit;text-decoration:underline;cursor:pointer;}
+#hr15-banner .hr15-x{margin-left:auto;background:none;border:0;color:inherit;cursor:pointer;padding:2px;border-radius:var(--r-xs);line-height:1;}
+#hr15-banner .hr15-x:focus-visible,#hr15-banner a:focus-visible{outline:none;box-shadow:var(--ring);}
+@media (prefers-reduced-motion:reduce){#hr15-card .hr15-meter i{transition:none;}}
+</style>
+<script id="health-r15-script">
+// ═══ Service health r15 ══════════════════════════════════════════════════════════════════════
+// Admins only. GET /api/health (api/health.js) at most once every 10 minutes per page, shared by
+// the Settings → About "Service health" card and the Dashboard banner, which shows only when the
+// status is warn or alert. A 401/403 (not an admin) stops further fetches for this page.
+(function(){
+  const TTL=600000;
+  let data=null,at=0,inflight=null,off=false,dismissedAt=-1;
+  const admin=()=>{try{return typeof _isAdmin==='function'&&_isAdmin();}catch(e){return false;}};
+  const fmt=n=>{try{return Number(n).toLocaleString();}catch(e){return String(n);}};
+  const hm=iso=>{try{return iso?new Date(iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'';}catch(e){return '';}};
+  const pctLeft=d=>d&&d.store&&typeof d.store.remainingPct==='number'?Math.round(d.store.remainingPct):null;
+  const LABEL={ok:'All good',warn:'Busy',alert:'Near the limit'};
+
+  function load(){
+    if(off||!admin()||inflight)return inflight||Promise.resolve(data);
+    if(at&&Date.now()-at<TTL)return Promise.resolve(data); // fresh, or the last try failed: wait it out
+    at=Date.now();
+    inflight=fetch('/api/health',{credentials:'same-origin',cache:'no-store'}).then(async r=>{
+      if(r.status===401||r.status===403){off=true;return null;}
+      if(r.ok)data=await r.json();
+      return data;
+    }).catch(()=>data).finally(()=>{inflight=null;paint();});
+    return inflight;
+  }
+
+  function cardHtml(d){
+    if(!d)return`<div class="sett-card-hd">Service health<span class="hr15-status"><span class="hr15-dot"></span>${inflight?'Checking…':'Not available'}</span></div>
+      <div class="sett-card-body"><div class="hr15-sub">${inflight?'Checking storage usage…':'Storage usage could not be checked. Try again in a few minutes.'}</div></div>`;
+    const s=d.status||'ok',st=d.store||{},p=pctLeft(d);
+    const calls=st.limit?`${fmt(st.remaining)} of ${fmt(st.limit)}`:'Not known yet';
+    const saves=typeof d.stateCommits7d==='number'?fmt(d.stateCommits7d):'Not known';
+    const why=(d.reasons||[]).length?`<ul class="hr15-reasons">${d.reasons.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'';
+    return`<div class="sett-card-hd">Service health<span class="hr15-status"><span class="hr15-dot" data-s="${esc(s)}"></span>${esc(LABEL[s]||s)}</span></div>
+      <div class="sett-card-body hr15-body">
+        <div>
+          <div class="hr15-row"><span class="hr15-lbl">Storage calls left this hour</span><span class="hr15-val">${calls}</span></div>
+          <div class="hr15-meter" role="meter" aria-label="Storage calls left this hour" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${p===null?0:p}"><i style="width:${p===null?0:Math.max(0,Math.min(100,p))}%"></i></div>
+          <div class="hr15-sub" style="margin-top:6px;">${p===null?'Shown after the next storage call.':`${p}% left${st.reset?` · resets at ${esc(hm(st.reset))}`:''}`}</div>
+        </div>
+        <div class="hr15-row"><span class="hr15-lbl">State saves in the last 7 days</span><span class="hr15-val">${saves}</span></div>
+        ${why}
+        <div class="hr15-sub">Checked at ${esc(hm(d.checkedAt))}. A weekly check on GitHub also emails the owner if a limit gets close.</div>
+      </div>`;
+  }
+
+  function paintCard(){
+    const wrap=document.getElementById('settings-scroll');
+    if(!wrap||(_settActiveTab||'profile')!=='about'||!admin()||off){document.getElementById('hr15-card')?.remove();return;}
+    let c=document.getElementById('hr15-card');
+    if(!c){
+      c=document.createElement('div');c.className='sett-card';c.id='hr15-card';
+      const first=wrap.querySelector('.sett-card');
+      first?first.insertAdjacentElement('afterend',c):wrap.appendChild(c);
+    }
+    c.dataset.s=data?data.status||'ok':'';
+    c.innerHTML=cardHtml(data);
+  }
+
+  function paintBanner(){
+    const wrap=document.getElementById('dash-scroll');
+    const old=document.getElementById('hr15-banner');
+    const s=data&&data.status;
+    if(!wrap||!admin()||off||!s||s==='ok'||dismissedAt===at){old&&old.remove();return;}
+    const p=pctLeft(data);
+    const msg=p===null?'Storage is busy, saves may be slow for a while':`Storage is busy, ${p}% of this hour’s allowance left`;
+    const b=old||document.createElement('div');
+    b.id='hr15-banner';b.dataset.s=s;b.setAttribute('role','status');
+    b.innerHTML=`<i class="ti ti-gauge" aria-hidden="true"></i><span>${esc(msg)}. <a href="#" data-hr15="more">Details</a></span><button class="hr15-x" aria-label="Dismiss" data-hr15="x"><i class="ti ti-x"></i></button>`;
+    if(!old)b.addEventListener('click',e=>{const a=e.target.closest('[data-hr15]')?.dataset.hr15;if(!a)return;e.preventDefault();
+      if(a==='x'){dismissedAt=at;b.remove();}
+      else{try{navTo('settings');}catch(_){}try{switchSettTab('about');}catch(_){}}});
+    if(wrap.firstChild!==b)wrap.insertBefore(b,wrap.firstChild);
+  }
+
+  function paint(){try{paintCard();}catch(e){console.warn('health-r15 card',e);}try{paintBanner();}catch(e){console.warn('health-r15 banner',e);}}
+
+  const _rs=window.renderSettings;
+  if(typeof _rs==='function'){
+    window.renderSettings=function(){const r=_rs.apply(this,arguments);
+      try{if((_settActiveTab||'profile')==='about'&&admin()){load();paintCard();}}catch(e){}return r;};
+  }
+  const _rd=window.renderDashboard;
+  if(typeof _rd==='function'){
+    window.renderDashboard=function(){const r=_rd.apply(this,arguments);
+      try{if(admin()){load();paintBanner();}}catch(e){}return r;};
+  }
+  window.ccHealth={load,get:()=>data};
+  // The Dashboard may already be on screen from boot: check once shortly after load.
+  setTimeout(()=>{try{if(admin())load();}catch(e){}},2000);
+})();
+</script>
 </body>
 </html>

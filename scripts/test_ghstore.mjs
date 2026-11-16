@@ -7,8 +7,9 @@ import * as A from '../lib/auth.js';
 import * as C from '../lib/crypt.js';
 import * as S from '../lib/store.js';
 import * as B from '../lib/boards.js';
-import { createGhStore } from '../lib/ghstore.js';
+import { createGhStore, ghUsage } from '../lib/ghstore.js';
 import { handle as boardsHandle } from '../api/boards.js';
+import { handle as healthHandle, assess } from '../api/health.js';
 import { mockGitHub, TOKEN } from './mock_github.mjs';
 
 const SECRET = 'x'.repeat(64);
@@ -305,6 +306,129 @@ await t('an account list made on GitHub after the outage is not overwritten with
   assert.ok(gh.files.get('auth/access.json.enc').body.equals(fresh));
   await migrate({ blob: fakeBlob(src), gh, overwrite: true, log: quiet });
   assert.ok(gh.files.get('auth/access.json.enc').body.equals(src.get('auth/access.json.enc')));
+});
+
+console.log('usage watch');
+const healthReq = (cookie = '', method = 'GET') => { const h = new Headers(); if (cookie) h.set('cookie', cookie); if (method !== 'GET') h.set('origin', ORIGIN); return new Request(ORIGIN + '/api/health', { method, headers: h }); };
+const daysAgo = (d) => new Date(Date.now() - d * 86_400_000).toISOString();
+await t('the mock sends x-ratelimit-* headers like GitHub', async () => {
+  const gh = mockGitHub();
+  const r = await gh.fetch('https://api.github.com/repos/ronanheal/CandCPlatform', { headers: { authorization: `Bearer ${TOKEN}`, 'user-agent': 'cc-platform', 'x-github-api-version': '2022-11-28', accept: 'application/vnd.github+json' } });
+  assert.equal(r.headers.get('x-ratelimit-limit'), '5000');
+  assert.equal(r.headers.get('x-ratelimit-remaining'), '4999');
+  assert.equal(r.headers.get('x-ratelimit-used'), '1');
+  assert.match(r.headers.get('x-ratelimit-reset'), /^\d+$/);
+});
+await t('adapter remembers the last rate-limit headers and counts calls and writes', async () => {
+  const gh = mockGitHub();
+  assert.equal(gh.usage().store.limit, null, 'nothing seen yet');
+  await gh.put('x/a.json.enc', Buffer.from('one'));
+  await gh.get('x/a.json.enc');
+  await gh.get('x/b.json.enc');
+  const u = ghUsage({ gh });
+  assert.equal(u.store.limit, 5000);
+  assert.equal(u.store.remaining, 4997);
+  assert.equal(u.store.used, 3);
+  assert.equal(u.store.usedPct, 0.1);
+  assert.equal(u.store.remainingPct, 99.9);
+  assert.ok(u.store.reset > Date.now() / 1000);
+  assert.deepEqual([u.instance.calls, u.instance.writes], [3, 1]);
+  assert.ok(!Number.isNaN(Date.parse(u.instance.since)));
+  assert.equal(u.rateLimitedAt, null);
+});
+await t('instance counts start again each hour', async () => {
+  let clock = 1_800_000_000_000;
+  const gh = mockGitHub({ now: () => clock });
+  await gh.put('x/a.json.enc', Buffer.from('one'));
+  await gh.get('x/a.json.enc');
+  assert.equal(gh.usage().instance.calls, 2);
+  clock += 3_600_001;
+  assert.deepEqual([gh.usage().instance.calls, gh.usage().instance.writes], [0, 0]);
+  await gh.get('x/a.json.enc');
+  assert.equal(gh.usage().instance.calls, 1);
+  assert.equal(gh.usage().instance.since, new Date(clock).toISOString());
+});
+await t('a rate-limited answer is remembered', async () => {
+  const gh = mockGitHub();
+  gh.failNext = { status: 429, headers: { 'retry-after': '30' } };
+  await assert.rejects(gh.get('x/a.json.enc'), (e) => e.retryAfter === 30);
+  assert.ok(Date.now() - gh.usage().rateLimitedAt < 1000);
+});
+await t('state commits in 7 days: one request (Link header), since= sent, cached 10 minutes', async () => {
+  let clock = Date.now();
+  const gh = mockGitHub({ now: () => clock });
+  gh.commits = [...Array(250)].map((_, i) => ({ date: daysAgo(i % 6) })).concat([...Array(40)].map(() => ({ date: daysAgo(9) })));
+  assert.equal(await gh.stateCommits(7), 250);
+  assert.equal(gh.calls.requests, 1);
+  assert.match(gh.calls.log[0], /^GET \/repos\/ronanheal\/CandCPlatform\/commits\?sha=app-state&since=[^&]+&per_page=1$/);
+  gh.commits.push({ date: daysAgo(0) });
+  assert.equal(await gh.stateCommits(7), 250, 'cached');
+  clock += 600_001;
+  assert.equal(await gh.stateCommits(7), 251, 'refreshed after 10 minutes');
+  assert.equal(gh.calls.requests, 2);
+  const one = mockGitHub(); one.commits = [{ date: daysAgo(1) }];
+  assert.equal(await one.stateCommits(7), 1, 'no Link header: count the page');
+  assert.equal(await mockGitHub({ branchExists: false }).stateCommits(7), 0, 'no branch yet');
+});
+await t('/api/health: admins only, GET only', async () => {
+  const gh = mockGitHub(); seedAccess(gh);
+  assert.equal((await healthHandle(healthReq(), { env, gh })).status, 401);
+  assert.equal((await healthHandle(healthReq(ann), { env, gh })).status, 403);
+  assert.equal((await healthHandle(healthReq(boss, 'POST'), { env, gh })).status, 405);
+});
+await t('/api/health: shape and ok when quiet', async () => {
+  const gh = mockGitHub(); seedAccess(gh);
+  gh.commits = [{ date: daysAgo(1) }, { date: daysAgo(2) }];
+  const r = await healthHandle(healthReq(boss), { env, gh });
+  assert.equal(r.status, 200);
+  assert.equal(r.headers.get('cache-control'), 'no-store');
+  const b = await r.json();
+  assert.equal(b.status, 'ok'); assert.equal(b.ok, true); assert.equal(b.warn, false); assert.equal(b.alert, false);
+  assert.equal(b.store.limit, 5000);
+  assert.ok(b.store.remaining > 4990);
+  assert.equal(typeof b.store.usedPct, 'number');
+  assert.ok(!Number.isNaN(Date.parse(b.store.reset)), 'reset as an ISO date');
+  assert.ok(b.instance.calls >= 2, 'access list read + commits');
+  assert.equal(typeof b.instance.writes, 'number');
+  assert.ok(b.instance.since);
+  assert.equal(b.stateCommits7d, 2);
+  assert.ok(!JSON.stringify(b).includes(TOKEN), 'token never in the answer');
+});
+await t('/api/health: warn under 25% left or over 2,000 commits a week', async () => {
+  const gh = mockGitHub(); seedAccess(gh);
+  gh.rate.remaining = 1100; // 1100 - 2 requests → ~21.9%
+  let b = await (await healthHandle(healthReq(boss), { env, gh })).json();
+  assert.equal(b.status, 'warn'); assert.equal(b.warn, true);
+  assert.match(b.reasons.join(' '), /allowance left/);
+  const busy = mockGitHub(); seedAccess(busy);
+  busy.commits = [...Array(2001)].map(() => ({ date: daysAgo(3) }));
+  b = await (await healthHandle(healthReq(boss), { env, gh: busy })).json();
+  assert.equal(b.stateCommits7d, 2001);
+  assert.equal(b.status, 'warn');
+  assert.match(b.reasons.join(' '), /2001 state saves/);
+});
+await t('/api/health: alert under 10% left or after a rate-limited answer', async () => {
+  const gh = mockGitHub(); seedAccess(gh);
+  gh.rate.remaining = 400;
+  let b = await (await healthHandle(healthReq(boss), { env, gh })).json();
+  assert.equal(b.status, 'alert'); assert.equal(b.alert, true); assert.equal(b.ok, false);
+  const hit = mockGitHub(); seedAccess(hit);
+  await S.getAccess({ env, gh: hit }); // warm the access cache so the health call gets through
+  hit.failNext = { status: 403, message: 'You have exceeded a secondary rate limit' };
+  b = await (await healthHandle(healthReq(boss), { env, gh: hit })).json();
+  assert.equal(b.status, 'alert');
+  assert.ok(b.rateLimitedAt);
+  assert.equal(b.stateCommits7d, null);
+  assert.equal(b.commitsError, 'Storage is busy');
+});
+await t('assess: thresholds and the one-hour rate-limit window', async () => {
+  const n = 1_800_000_000_000;
+  assert.equal(assess({ store: { remainingPct: 25 }, stateCommits7d: 2000 }, n).status, 'ok');
+  assert.equal(assess({ store: { remainingPct: 24.9 } }, n).status, 'warn');
+  assert.equal(assess({ store: { remainingPct: 9.9 } }, n).status, 'alert');
+  assert.equal(assess({ store: { remainingPct: null } }, n).status, 'ok', 'nothing seen yet');
+  assert.equal(assess({ store: {}, rateLimitedAt: n - 3_599_000 }, n).status, 'alert');
+  assert.equal(assess({ store: {}, rateLimitedAt: n - 3_601_000 }, n).status, 'ok');
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);
