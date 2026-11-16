@@ -20,7 +20,7 @@ import { pathToFileURL } from 'node:url';
 import { createGhStore } from '../lib/ghstore.js';
 import { BOARD_INDEX, indexBytes } from '../lib/boards.js';
 
-const PREFIXES = ['auth/', 'boards/', 'happiness/'];
+let PREFIXES = ['auth/', 'boards/', 'happiness/'];
 const BOARD_RE = /^boards\/([A-Za-z0-9_-]{1,64})\.json\.enc$/;
 
 async function readAll(stream) {
@@ -66,6 +66,7 @@ export async function migrate({ blob, token, gh, dry = false, overwrite = false,
   }
 
   // boards/index.json: what is already there plus every board file from Blob.
+  if (!PREFIXES.includes('boards/')) { log(`\n${dry ? 'would copy' : 'copied'} ${done.copied}, unchanged ${done.same}, skipped ${done.skipped}, failed ${done.failed}`); return done; }
   try {
     const cur = await gh.get(BOARD_INDEX, { fresh: true });
     let have = [];
@@ -87,6 +88,9 @@ export async function migrate({ blob, token, gh, dry = false, overwrite = false,
 
 if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
   const args = new Set(process.argv.slice(2));
+  // --only=auth/,happiness/  copies just those folders (e.g. leave old boards behind).
+  const only = process.argv.slice(2).find((a) => a.startsWith('--only='));
+  if (only) PREFIXES = only.slice(7).split(',').map((x) => x.trim()).filter(Boolean);
   for (const k of ['BLOB_READ_WRITE_TOKEN', 'GITHUB_STATE_TOKEN']) {
     if (!process.env[k]) { console.error(`${k} is not set`); process.exit(2); }
   }
