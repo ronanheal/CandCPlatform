@@ -22004,7 +22004,7 @@ function bvMergeBoard(target,src,h){
        sc.forEach(x=>{if(cur.length<20&&!have.has(norm(x))){have.add(norm(x));cur.push(x);ch=true;}});
        const comp=!!(col.live&&col.live.completed)||!!sl.completed;
        if(comp!==!!(col.live&&col.live.completed))ch=true;
-       if(ch){col.live=comp?{clients:cur,completed:true}:{clients:cur};if(!fresh.has(col)){col.updatedAt=Math.max(now,(col.updatedAt||0)+1);touched.add(col);n.linked=(n.linked||0)+1;}}
+       if(ch){const _o=col.live&&col.live.only,_n=col.live&&col.live.not;col.live=comp?{clients:cur,completed:true}:{clients:cur};if(_o&&_o.length)col.live.only=_o;if(_n&&_n.length)col.live.not=_n;if(!fresh.has(col)){col.updatedAt=Math.max(now,(col.updatedAt||0)+1);touched.add(col);n.linked=(n.linked||0)+1;}}
      }}
     (Array.isArray(scol.cards)?scol.cards:[]).forEach(s=>{
       if(!s||typeof s!=='object'||Array.isArray(s))return;
@@ -22813,7 +22813,7 @@ function _r5BuildImport(j,name){
     visibility:bd.visibility==='everyone'?'everyone':'admins'};
   b.columns=bd.columns.map((col,ci)=>{
     const c=_bvNewCol(String(col.name||'Untitled list'),BV_COLORS.includes(col.color)?col.color:BV_COLORS[(ci+1)%BV_COLORS.length]);
-    if(col.live&&Array.isArray(col.live.clients)){const cl=[...new Set(col.live.clients.map(x=>String(x==null?'':x).trim()).filter(Boolean))].slice(0,20);if(cl.length)c.live=col.live.completed?{clients:cl,completed:true}:{clients:cl};}
+    if(col.live&&Array.isArray(col.live.clients)){const cl=[...new Set(col.live.clients.map(x=>String(x==null?'':x).trim()).filter(Boolean))].slice(0,20);if(cl.length){c.live=col.live.completed?{clients:cl,completed:true}:{clients:cl};const o=_r13Terms?_r13Terms(col.live.only):[],n=_r13Terms?_r13Terms(col.live.not):[];if(o.length)c.live.only=o;if(n.length)c.live.not=n;}}
     c.cards=(Array.isArray(col.cards)?col.cards:[]).map(src=>{
       const base={desc:String(src.desc||''),checklists:_r5ImpLists(src),...(src.collapsed?{collapsed:true}:{}),...(Array.isArray(src.labels)?{labels:src.labels.filter(x=>x!=null&&x!=='').map(String)}:{}),...(src.due?{due:String(src.due).slice(0,10)}:{})};
       let card;
@@ -22867,7 +22867,7 @@ function _r5Fp(b){
     // col.live (boards-r13 live client link) is a column prop: canonical form, so rebuilding the
     // object with the same clients isn't a change, while linking/unlinking/editing stamps the column.
     const{cards:cc,updatedAt:_u,live:lv,...rest}=col;
-    const lk=lv&&Array.isArray(lv.clients)&&lv.clients.length?{c:lv.clients.map(String),x:!!lv.completed}:null;
+    const lk=lv&&Array.isArray(lv.clients)&&lv.clients.length?{c:lv.clients.map(String),x:!!lv.completed,o:(lv.only||[]).map(String),n:(lv.not||[]).map(String)}:null;
     cols.set(col.id,JSON.stringify(lk?{...rest,live:lk}:rest)+'|'+(cc||[]).map(k=>k.id).join(','));
     colU.set(col.id,col.updatedAt||0);
     (cc||[]).forEach(k=>{const{updatedAt:_k,...kr}=k;cards.set(k.id,{j:JSON.stringify(kr),col:col.id,u:k.updatedAt||0});});
@@ -25634,11 +25634,21 @@ function _r13Index(){
 }
 // A stored client is a name; a client id (from clientsData) is read as that client's name.
 function _r13Name(ref){const r=String(ref==null?'':ref).trim();if(/^\d+$/.test(r)){const rec=(clientsData||[]).find(c=>String(c.id)===r&&c.name);if(rec)return rec.name;}return r;}
+// Name filters split one client across columns (e.g. "NZ" vs "USA", "AU" vs the rest).
+// A term matches as a whole word in the job name or number, case-insensitive.
+function _r13Term(t){const e=String(t).trim().toLowerCase().replace(/[.*+?^${}()|[\]\\]/g,'\\$&');return e?new RegExp('(^|[^a-z0-9])'+e+'([^a-z0-9]|$)','i'):null;}
+function _r13Pass(j,only,not){
+  const txt=(j.name||'')+' '+(j.id||'');
+  const on=(only||[]).map(_r13Term).filter(Boolean),off=(not||[]).map(_r13Term).filter(Boolean);
+  if(on.length&&!on.some(r=>r.test(txt)))return false;
+  if(off.some(r=>r.test(txt)))return false;
+  return true;
+}
 function _r13Jobs(col){
   const l=_r13Live(col);if(!l)return[];
   const idx=_r13Index(),seen=new Set(),out=[];
   l.clients.forEach(ref=>(idx.get(_r13N(_r13Name(ref)))||[]).forEach(j=>{
-    if(seen.has(j.id)||(!l.completed&&j.status==='complete'))return;seen.add(j.id);out.push(j);}));
+    if(seen.has(j.id)||(!l.completed&&j.status==='complete')||!_r13Pass(j,l.only,l.not))return;seen.add(j.id);out.push(j);}));
   return out;
 }
 function _r13Sort(b,list){
@@ -25647,7 +25657,7 @@ function _r13Sort(b,list){
   if(b.sort==='title')return list.sort((x,y)=>String(x.name||'').localeCompare(String(y.name||''))||num(y)-num(x));
   return list.sort((x,y)=>num(y)-num(x));
 }
-function _r13Label(l){const ns=l.clients.map(_r13Name);return ns[0]+(ns.length>1?` +${ns.length-1}`:'');}
+function _r13Label(l){const ns=l.clients.map(_r13Name);const f=[...(l.only||[]).map(x=>x),...(l.not||[]).map(x=>'not '+x)];return ns[0]+(ns.length>1?` +${ns.length-1}`:'')+(f.length?' · '+f.join(', '):'');}
 // The same pipeline job card as a hand-added one (Job tag, number · client, stage pill, hours,
 // due chip, people), but it opens the job and can't be dragged or edited: it isn't on the board.
 function _r13CardHTML(b,col,j){
@@ -25759,7 +25769,7 @@ function bvR13Picker(colId){
   const col=colId?_bvColOf(b,colId):null;if(colId&&!col)return;
   const l=_r13Live(col);_r13Idx=null;
   const sel=l?l.clients.map(_r13Name):col?_r13Guess(col.name):[];
-  _r13P={col:colId||null,sel,completed:!!(l&&l.completed),q:''};
+  _r13P={col:colId||null,sel,completed:!!(l&&l.completed),q:'',only:(l&&l.only||[]).join(', '),not:(l&&l.not||[]).join(', ')};
   const guessed=!l&&!!col&&sel.length>0;
   document.getElementById('r13-pick')?.remove();
   const title=!col?'Add a client column':l?`Clients for “${esc(col.name)}”`:`Link “${esc(col.name)}” to a client`;
@@ -25772,6 +25782,9 @@ function bvR13Picker(colId){
       <div class="r13-sel" id="r13-sel"></div>
       <div class="bv-bulk-tools"><label class="bv-search"><i class="ti ti-search"></i><input id="r13-q" placeholder="Search clients" aria-label="Search clients" oninput="_r13P.q=this.value.trim().toLowerCase();_r13Draw()"></label></div>
       <div class="bv-bulk-list" id="r13-list"></div>
+      <div class="r13-filt"><label>Only jobs named with <input class="form-inp" id="r13-only" placeholder="e.g. NZ, AU/NZ" value="${esc(_r13P.only)}" oninput="_r13P.only=this.value;_r13Draw()"></label>
+        <label>Except jobs named with <input class="form-inp" id="r13-not" placeholder="e.g. USA" value="${esc(_r13P.not)}" oninput="_r13P.not=this.value;_r13Draw()"></label>
+        <span class="r13-filt-hint">Optional. Split one client across columns, e.g. by region. Separate words with commas.</span></div>
       <label class="r13-ck"><input type="checkbox" id="r13-comp"${_r13P.completed?' checked':''} onchange="_r13P.completed=this.checked;_r13Draw()"> Also show completed jobs</label>
     </div>
     <div class="modal-ft"><span class="bv-ft-left" id="r13-sum"></span>
@@ -25786,7 +25799,8 @@ function bvR13Picker(colId){
 function _r13Draw(){
   const s=_r13P,list=document.getElementById('r13-list');if(!s||!list)return;
   const idx=_r13Index(),sel=new Set(s.sel);
-  const cnt=c=>(idx.get(_r13N(c))||[]).filter(j=>s.completed||j.status!=='complete').length;
+  const _o=_r13Terms(s.only),_n=_r13Terms(s.not);
+  const cnt=c=>(idx.get(_r13N(c))||[]).filter(j=>(s.completed||j.status!=='complete')&&_r13Pass(j,_o,_n)).length;
   let pool=_r5AllClients().filter(c=>!s.q||c.toLowerCase().includes(s.q));
   // Picked first, then clients with jobs, then the rest (A–Z within each)
   const rank=c=>sel.has(c)?0:cnt(c)?1:2;
@@ -25798,16 +25812,19 @@ function _r13Draw(){
     :`<div class="bv-pop-empty" style="text-align:center;padding:26px;">No clients match.</div>`;
   const pills=s.sel.map(c=>`<span class="r13-pill">${esc(c)}<button title="Remove ${esc(c)}" aria-label="Remove ${esc(c)}" onclick="_r13Pick(${_bvA(c)},false)"><i class="ti ti-x"></i></button></span>`).join('');
   const se=document.getElementById('r13-sel');if(se)se.innerHTML=pills||'<span class="r13-none">Pick one or more clients</span>';
-  const tot=new Set();s.sel.forEach(c=>(idx.get(_r13N(c))||[]).forEach(j=>{if(s.completed||j.status!=='complete')tot.add(j.id);}));
+  const tot=new Set();s.sel.forEach(c=>(idx.get(_r13N(c))||[]).forEach(j=>{if((s.completed||j.status!=='complete')&&_r13Pass(j,_o,_n))tot.add(j.id);}));
   const sum=document.getElementById('r13-sum');if(sum)sum.textContent=s.sel.length?`${tot.size} job${tot.size!==1?'s':''} right now`:'';
   const go=document.getElementById('r13-go');if(go)go.disabled=!s.sel.length;
   const nm=document.getElementById('r13-name');if(nm)nm.placeholder=s.sel.length?_r13DefaultName(s.sel):'Same as the client';
 }
 function _r13Pick(c,on){const s=_r13P;if(!s)return;s.sel=s.sel.filter(x=>x!==c);if(on&&s.sel.length<R13_MAX)s.sel.push(c);_r13Draw();}
 function _r13DefaultName(sel){return sel.length===1?sel[0]:sel.length===2?`${sel[0]} & ${sel[1]}`:`${sel[0]} +${sel.length-1}`;}
-function _r13Set(col,clients,completed){
+function _r13Terms(v){return[...new Set((Array.isArray(v)?v:String(v||'').split(',')).map(x=>String(x).trim().slice(0,40)).filter(Boolean))].slice(0,10);}
+function _r13Set(col,clients,completed,only,not){
   const cl=[...new Set(clients.map(x=>String(x).trim().slice(0,120)).filter(Boolean))].slice(0,R13_MAX);
-  if(cl.length)col.live=completed?{clients:cl,completed:true}:{clients:cl};else delete col.live;
+  if(only===undefined&&col.live)only=col.live.only;if(not===undefined&&col.live)not=col.live.not;
+  const o=_r13Terms(only),n=_r13Terms(not);
+  if(cl.length){col.live=completed?{clients:cl,completed:true}:{clients:cl};if(o.length)col.live.only=o;if(n.length)col.live.not=n;}else delete col.live;
   col.updatedAt=Date.now();
 }
 function bvR13Save(){
@@ -25821,7 +25838,7 @@ function bvR13Save(){
     col=_bvNewCol(nm.slice(0,60),BV_COLORS.find(c=>!used.has(c))||'grey');b.columns.push(col);fresh=true;
   }
   const was=!!_r13Live(col);
-  _r13Set(col,s.sel,s.completed);
+  _r13Set(col,s.sel,s.completed,_r13Terms(s.only),_r13Terms(s.not));
   document.getElementById('r13-pick')?.remove();_r13P=null;
   _bvTouch(b);_bvRenderBody();
   if(fresh){const w=document.getElementById('bv-cols');if(w)w.scrollLeft=w.scrollWidth;}
@@ -25940,5 +25957,11 @@ _stRenderViews=function(){
   return r;
 };
 </script>
+<style id="boards-r14">
+#r13-pick .r13-filt{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin:10px 0 4px;}
+#r13-pick .r13-filt label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);}
+#r13-pick .r13-filt .form-inp{height:32px;}
+#r13-pick .r13-filt-hint{grid-column:1/-1;font-size:11.5px;color:var(--muted);}
+</style>
 </body>
 </html>
