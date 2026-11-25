@@ -2760,7 +2760,8 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
       <button type="button" class="tm-btn-delete ux-del" id="edit-task-btn" onclick="uxConfirmDeleteTask()" title="Delete task" aria-label="Delete task"><i class="ti ti-trash" aria-hidden="true"></i><span>Delete</span></button>
       <span class="ux-ft-sp"></span>
       <button type="button" class="tm-btn-cancel" onclick="closeTodoModal()">Cancel</button>
-      <button type="button" class="tm-btn-timer" id="td-timer-btn" onclick="startTimerFromTask()" title="Save the task and start timing it"><i class="ti ti-player-play" aria-hidden="true"></i> Start timer</button>
+      <button type="button" class="tm-btn-timer" id="td-timer-btn" onclick="startTimerFromTask()" title="Save the task and start timing it" aria-label="Start timer"><i class="ti ti-player-play" aria-hidden="true"></i></button>
+      <button type="button" class="tm-btn-timer tm-btn-log" id="td-log-btn" onclick="fb1SaveAndLog()" title="Add the task and log its time as done, in one step"><i class="ti ti-circle-check" aria-hidden="true"></i> Save &amp; log</button>
       <button type="button" class="tm-btn-save" id="td-save-btn" onclick="saveTodo()">
         <span id="td-save-lbl">Add task</span>
         <i class="ti ti-chevron-down" style="font-size:11px;"></i>
@@ -3213,7 +3214,7 @@ if(!people[MY_PERSON]){
   const _ai=_an?_an.split(/\s+/).filter(Boolean).map(w=>w[0]).join('').slice(0,2).toUpperCase():'';
   people[MY_PERSON]={name:_an||(MY_PERSON==='st_114330'?'Ronan Heal':'…'),initials:_ai||(MY_PERSON==='st_114330'?'RH':'?'),color:'#ED1E24',days:[1,2,3,4,5],_fromStreamtime:true,_stub:true};
 }
-const APP_VERSION='2.45.0';
+const APP_VERSION='2.46.0';
 const CHANGELOG=[
   {version:'2.45.0',date:'13 Nov 2026',title:'The big redesign',items:[
     'A whole new look: one warm design system across every screen — clearer type, calmer cards, stronger contrast, and a warm charcoal dark mode.',
@@ -6026,8 +6027,13 @@ function _collapseToBucket(col,type){
   const isToday=col.closest('.day-col')?.classList.contains('today');
   col.appendChild(buildZoneBucket(type,cards,isToday));
 }
-function checkTodoOverflow(){_bucketCramped('dtodo-','.todo-bucket',ZONE_PAD_PX,'todo');}
-function checkDoneOverflow(){_bucketUniform('ddone-','.done-bucket',DONE_PAD_PX,'done');}
+// fb1: after "View done" / "View todos" the zone stays open and scrolls, even when its cards still
+// don't all fit; it used to open, then re-bucket 280ms later ("expands then retracts"). Dragging
+// the divider or changing week closes it again.
+const _zoneOpen={todo:false,done:false};
+function _zoneOpenCols(prefix,sel,on){[1,2,3,4,5].forEach(d=>{const col=document.getElementById(prefix+d);if(!col)return;if(on)restoreZoneCards(col,sel);col.classList.toggle('zone-open',!!on);});}
+function checkTodoOverflow(){if(_zoneOpen.todo){_zoneOpenCols('dtodo-','.todo-bucket',true);return;}_zoneOpenCols('dtodo-','.todo-bucket',false);_bucketCramped('dtodo-','.todo-bucket',ZONE_PAD_PX,'todo');}
+function checkDoneOverflow(){if(_zoneOpen.done){_zoneOpenCols('ddone-','.done-bucket',true);return;}_zoneOpenCols('ddone-','.done-bucket',false);_bucketUniform('ddone-','.done-bucket',DONE_PAD_PX,'done');}
 // Animate the divider/split to a target todo-zone height, then re-check buckets.
 function animateSplit(targetPx){
   targetPx=_clampSplit(targetPx);
@@ -6047,12 +6053,14 @@ function animateSplit(targetPx){
 }
 // "View todos" — glide the divider down so every to-do card fits at a comfortable size.
 function expandTodoToFit(){
+  _zoneOpen.todo=true;_zoneOpen.done=false;
   let needed=120;
   [1,2,3,4,5].forEach(d=>{const col=document.getElementById('dtodo-'+d);if(!col)return;const n=col.querySelectorAll('.task-card').length;if(n)needed=Math.max(needed,n*COMFORT_CARD_PX+(n-1)*CARD_GAP_PX+ZONE_PAD_PX);});
   animateSplit(needed);
 }
 // "View done" — glide the divider up so every done card fits.
 function shrinkDoneToFit(){
+  _zoneOpen.done=true;_zoneOpen.todo=false;
   const usable=_todoUsableH();
   let needed=120;
   [1,2,3,4,5].forEach(d=>{const col=document.getElementById('ddone-'+d);if(!col)return;restoreZoneCards(col,'.done-bucket');const n=col.querySelectorAll('.task-card').length;if(n)needed=Math.max(needed,n*COMFORT_CARD_PX+(n-1)*CARD_GAP_PX+DONE_PAD_PX);});
@@ -6271,6 +6279,7 @@ function renderTodo(){
     gd.style.top=(58+todoSplitPx)+'px'; // pre-position to avoid flash at top
     document.querySelector('.todo-body').appendChild(gd);
     gd.addEventListener('mousedown',e=>{
+      _zoneOpen.todo=_zoneOpen.done=false; // dragging the divider is the way back to normal
       isDivDrag=true;divDragStartY=e.clientY;divDragStartPx=todoSplitPx;
       document.body.style.cursor='ns-resize';document.body.style.userSelect='none';
       e.preventDefault();
@@ -6411,7 +6420,7 @@ function createTaskCard(t,day,isDone){
   const showNote=getCS('showNote');
   const metaJob=showJob&&jobLabel;
   const metaItem=showItem&&t.item;
-  const displayTitle=showNote?t.title:(t.titleNoNote||t.title);
+  const displayTitle=showNote?t.title:(t.item||(liveJob&&liveJob.name)||t.titleNoNote||t.title); // fb1: live, so changing the job or item shows
 
   card.innerHTML=`
     <div class="tc-top">
@@ -6478,7 +6487,8 @@ function createTaskCard(t,day,isDone){
         // below ~50m, so the advertised 5-minute floor was unreachable by dragging.
         const newH=Math.max(10,startH+dy);
         const _px=Math.max(24,(todoSplitPx||360)/8);
-        curHours=Math.max(5/60,Math.min(8,Math.round((newH/_px)*12)/12)); // 5-min snapping, 5m floor
+        curHours=Math.max(10/60,Math.min(8,Math.round((newH/_px)*6)/6)); // fb1: 10-minute steps, 10m floor (Maya)
+        _rzBadge(card,curHours);
         // Live height bypasses taskCardHeight's 52px readability floor so tiny durations
         // are visibly reachable while dragging; the render floor reapplies on release.
         const newCardH=Math.max(26,Math.round(curHours*_px));
@@ -6496,6 +6506,7 @@ function createTaskCard(t,day,isDone){
       const onUp=()=>{
         document.removeEventListener('mousemove',onMove);
         document.removeEventListener('mouseup',onUp);
+        document.getElementById('tc-rz-badge')?.remove();
         card.classList.remove('resizing');card.draggable=true;
         if(curHours!==startHours){
           const wd=getWeekData(currentPerson);
@@ -26103,5 +26114,187 @@ _stRenderViews=function(){
   setTimeout(()=>{try{if(admin())load();}catch(e){}},2000);
 })();
 </script>
+<script id="fb1-script">
+// ═══ Feedback batch 1: To Do and time (team feedback sheet, Nov 2026) ═══════════════════════
+// Job suggestions while typing a task (Maya, Ashlee) · "+ New task" in every day (Maya) ·
+// a Parking tray instead of the Saturday trick (Maya) · ⌘C / ⌘V and a visible ⌘-drag copy (Maya) ·
+// "Save & log" in the task form (Corine, Shelley) · resize time badge (Maya). The "View done"
+// fix, 10-minute resize steps and live card titles are in place, marked fb1.
+(function(){
+  // ── Resize: the time stays visible whatever the card's size ──
+  window._rzBadge=function(card,h){
+    let b=document.getElementById('tc-rz-badge');
+    if(!b){b=document.createElement('div');b.id='tc-rz-badge';b.className='tc-rz-badge';document.body.appendChild(b);}
+    const r=card.getBoundingClientRect();b.textContent=formatHrs(h);
+    b.style.left=Math.round(r.right+6)+'px';b.style.top=Math.round(r.bottom-12)+'px';
+  };
+
+  // ── "View done" closes again when the week or person changes ──
+  let _lastView='';
+  const _rt=renderTodo;
+  renderTodo=function(){
+    const key=weekOffset+'|'+currentPerson;
+    if(key!==_lastView){_lastView=key;if(typeof _zoneOpen!=='undefined'){_zoneOpen.todo=_zoneOpen.done=false;}}
+    const out=_rt.apply(this,arguments);
+    try{_fb1AfterRender();}catch(e){}
+    return out;
+  };
+
+  function _fb1AfterRender(){
+    if(_todoViewMode==='calendar'||window._focusToday)return;
+    // "+ New task" at the foot of every day's list (the header button is only there on hover)
+    [1,2,3,4,5].forEach(d=>{
+      const el=document.getElementById('dtodo-'+d);if(!el||el.querySelector('.fb1-new'))return;
+      const b=document.createElement('button');b.type='button';b.className='fb1-new';b.innerHTML='<i class="ti ti-plus" aria-hidden="true"></i> New task';
+      b.onclick=e=>{e.stopPropagation();openTodoModal(null,d);};el.appendChild(b);
+    });
+    _parkBtn();
+  }
+
+  // ── Parking: tasks without a day, per person, kept in this browser like the rest of To Do ──
+  const PK='cc_parked';
+  const parked=()=>{try{return JSON.parse(localStorage.getItem(PK)||'{}')||{};}catch(e){return{};}};
+  const setParked=v=>{try{localStorage.setItem(PK,JSON.stringify(v));}catch(e){toast('Couldn’t save the parked tasks: this browser’s storage is full','warn');}};
+  const mine=()=>parked()[currentPerson]||[];
+  function _parkBtn(){
+    const vsp=document.getElementById('vsp-btn');if(!vsp)return;
+    let b=document.getElementById('fb1-park-btn');
+    if(!b){b=document.createElement('button');b.className='wbtn';b.id='fb1-park-btn';b.title='Parked tasks: no day yet. Drag a task onto “Park it” to put it here.';b.onclick=e=>{e.stopPropagation();_parkTray();};vsp.parentNode.insertBefore(b,vsp);}
+    const n=mine().length;b.innerHTML=`<i class="ti ti-parking" aria-hidden="true"></i> Parked${n?` <b>${n}</b>`:''}`;
+    b.ondragover=e=>{e.preventDefault();b.classList.add('drop-ok');};b.ondragleave=()=>b.classList.remove('drop-ok');b.ondrop=e=>{b.classList.remove('drop-ok');_parkDrop(e);};
+  }
+  window._parkDrop=function(e){
+    e.preventDefault();e.stopPropagation();
+    const got=_takeDockTask();if(!got){try{const d=JSON.parse(e.dataTransfer.getData('text/plain'));const wd=getWeekData(currentPerson),arr=wd[d.fromDay]||[],i=arr.findIndex(x=>x.id===d.taskId);if(i<0)return;_park(arr.splice(i,1)[0]);}catch(x){}return;}
+    _park(got.task);
+  };
+  function _park(task){
+    const all=parked();(all[currentPerson]=all[currentPerson]||[]).push({...task,done:false,_parkedAt:Date.now()});setParked(all);
+    saveData();renderTodo();toast('Parked. Open “Parked” in the toolbar to drag it back onto a day.','success');
+  }
+  window._parkTray=function(){
+    document.getElementById('fb1-park-tray')?.remove();
+    const list=mine(),el=document.createElement('div');el.id='fb1-park-tray';el.className='fb1-park-tray';
+    el.innerHTML=`<div class="fb1-pt-hd"><b>Parked</b><span>${list.length?'Drag one onto a day':'Nothing parked'}</span><button class="tm-x" aria-label="Close" onclick="document.getElementById('fb1-park-tray').remove()"><i class="ti ti-x"></i></button></div>`
+      +(list.length?list.map(t=>`<div class="fb1-pt-card" draggable="true" data-pid="${esc(t.id)}"><div class="fb1-pt-t">${esc(String(t.title||'').split('\n')[0]||'Task')}</div><div class="fb1-pt-m">${esc([t.job,t.hours?formatHrs(t.hours):''].filter(Boolean).join(' · '))}</div><button class="fb1-pt-x" title="Delete" aria-label="Delete parked task" onclick="_parkDel('${esc(t.id)}')"><i class="ti ti-trash"></i></button></div>`).join(''):'<div class="fb1-pt-empty">While dragging a task, drop it on <b>Park it</b> in the bar at the bottom.</div>');
+    document.body.appendChild(el);
+    el.querySelectorAll('.fb1-pt-card').forEach(c=>c.addEventListener('dragstart',e=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',JSON.stringify({parkedId:c.dataset.pid}));}));
+  };
+  window._parkDel=function(id){const all=parked();all[currentPerson]=(all[currentPerson]||[]).filter(t=>t.id!==id);setParked(all);_parkTray();_parkBtn();};
+  // dropping a parked task onto a day
+  const _drop=onDropToSection;
+  onDropToSection=function(e,toDay,markDone){
+    let d=null;try{d=JSON.parse(e.dataTransfer.getData('text/plain'));}catch(x){}
+    if(d&&d.parkedId){
+      e.preventDefault();e.stopPropagation();_clearDropIndicators();document.querySelectorAll('.drop-hi').forEach(x=>x.classList.remove('drop-hi'));
+      const all=parked(),arr=all[currentPerson]||[],i=arr.findIndex(t=>t.id===d.parkedId);if(i<0)return;
+      const [t]=arr.splice(i,1);setParked(all);delete t._parkedAt;t.done=!!markDone;
+      const wd=getWeekData(currentPerson);(wd[toDay]=wd[toDay]||[]).push(t);
+      saveData();renderTodo();if(document.getElementById('fb1-park-tray'))_parkTray();toast(`Moved to ${DAY_NAMES[toDay-1]}`,'success');return;
+    }
+    return _drop.apply(this,arguments);
+  };
+  // the drag dock gets a "Park it" pad
+  const _dock=_showTaskDock;
+  _showTaskDock=function(t,day){
+    _dock.apply(this,arguments);
+    const el=document.getElementById('task-dock');if(!el)return;
+    const pad=document.createElement('div');pad.className='ss-day ss-week fb1-park-pad';pad.innerHTML='<div class="ssd-name"><i class="ti ti-parking" style="font-size:11px;vertical-align:-1px;"></i> Park it</div>';
+    pad.ondragover=e=>{e.preventDefault();pad.classList.add('drop-ok');};pad.ondragleave=()=>pad.classList.remove('drop-ok');pad.ondrop=e=>_parkDrop(e);
+    el.insertBefore(pad,el.firstChild);
+  };
+
+  // ── Copy cards: ⌘-drag shows the copy cursor; ⌘C on a card, then ⌘V on a day ──
+  let _hoverTask=null,_hoverDay=null,_clip=null;
+  document.addEventListener('mouseover',e=>{
+    if(document.getElementById('view-todo')?.classList.contains('hidden'))return;
+    const c=e.target.closest?.('.task-card');_hoverTask=c?{id:c.dataset.taskId,day:+c.dataset.day}:null;
+    const col=e.target.closest?.('.day-col[data-day]');_hoverDay=col?+col.dataset.day:null;
+  });
+  document.addEventListener('dragover',e=>{if(e.target.closest?.('.day-todo,.day-done')&&e.dataTransfer)e.dataTransfer.dropEffect=(e.altKey||e.metaKey)?'copy':'move';},true);
+  document.addEventListener('dragstart',e=>{if(e.target.classList?.contains('task-card')&&e.dataTransfer)e.dataTransfer.effectAllowed='copyMove';},true);
+  document.addEventListener('keydown',e=>{
+    if(!(e.metaKey||e.ctrlKey)||e.shiftKey||e.altKey)return;
+    if(document.getElementById('view-todo')?.classList.contains('hidden'))return;
+    if(document.querySelector('.modal-bg.on,.modal-bg.open')||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)||e.target.isContentEditable)return;
+    if(window.getSelection&&String(window.getSelection()).length)return; // copying text: leave it be
+    const k=e.key.toLowerCase();
+    if(k==='c'&&_hoverTask){const t=(getWeekData(currentPerson)[_hoverTask.day]||[]).find(x=>x.id===_hoverTask.id);if(!t)return;_clip={...t};e.preventDefault();toast('Task copied: hover a day and press ⌘V','info');}
+    else if(k==='v'&&_clip&&_hoverDay){e.preventDefault();const wd=getWeekData(currentPerson);(wd[_hoverDay]=wd[_hoverDay]||[]).push({..._clip,id:uid('t'),done:false});saveData();renderTodo();toast(`Pasted on ${DAY_NAMES[_hoverDay-1]}`,'success');}
+  });
+
+  // ── Save & log: add the task and log its time in one step ──
+  window.fb1SaveAndLog=function(){
+    if(!document.getElementById('td-task').value.trim()){toast('Give the task a name first','warn');document.getElementById('td-task').focus();return;}
+    const cb=document.getElementById('td-done');if(cb&&!cb.checked){cb.checked=true;_tdDoneChanged();}
+    saveTodo();
+  };
+
+  // ── Job suggestions while typing the task, like Streamtime ──
+  function jobMatches(q){
+    q=q.trim().toLowerCase();if(q.length<2)return[];
+    const live=jobs.filter(j=>j.status==='inplay'),rec=_recentJobIds();
+    const score=j=>{const id=String(j.id),name=String(j.name||'').toLowerCase(),co=String(j.company||'').toLowerCase();
+      if(id.startsWith(q))return 5;if(name.startsWith(q))return 4;if(co.startsWith(q))return 3;if(`${name} ${co}`.includes(q))return 2;
+      const words=q.split(/\s+/).filter(Boolean);return words.length>1&&words.every(w=>`${id} ${name} ${co}`.includes(w))?1:0;};
+    return live.map(j=>({j,s:score(j)+(rec.includes(j.id)?.5:0)})).filter(x=>x.s>=1).sort((a,b)=>b.s-a.s||Number(b.j.id)-Number(a.j.id)).slice(0,6).map(x=>x.j);
+  }
+  let sugIdx=0,sugList=[];
+  function sugBox(){let b=document.getElementById('fb1-job-sug');if(!b){const ta=document.getElementById('td-task');if(!ta)return null;b=document.createElement('div');b.id='fb1-job-sug';b.className='fb1-job-sug';b.setAttribute('role','listbox');ta.parentNode.insertBefore(b,ta.nextSibling);}return b;}
+  function hideSug(){const b=document.getElementById('fb1-job-sug');if(b)b.hidden=true;sugList=[];}
+  function showSug(){
+    const ta=document.getElementById('td-task'),b=sugBox();if(!ta||!b)return;
+    const hasJob=!!document.getElementById('td-job')?.value,personal=document.getElementById('td-personal')?.checked;
+    const q=ta.value.split('\n')[0];
+    sugList=(!hasJob&&!personal&&q.length<=60)?jobMatches(q):[];
+    if(!sugList.length){hideSug();return;}
+    sugIdx=Math.min(sugIdx,sugList.length-1);
+    b.innerHTML=`<div class="fb1-sug-hd">Job? <span>↑↓ to choose · Enter to pick · Esc to ignore</span></div>`+sugList.map((j,i)=>`<div class="fb1-sug${i===sugIdx?' on':''}" role="option" data-jid="${esc(j.id)}"><span class="fb1-sug-n">${esc(j.id)}</span><span class="fb1-sug-t">${esc(j.name)}</span>${j.company?`<span class="fb1-sug-c">${esc(j.company)}</span>`:''}</div>`).join('');
+    b.hidden=false;
+    b.querySelectorAll('.fb1-sug').forEach(r=>r.onmousedown=e=>{e.preventDefault();pickSug(r.dataset.jid);});
+  }
+  function pickSug(id){
+    const ta=document.getElementById('td-task'),j=jobs.find(x=>x.id===id);if(!j)return;
+    selectJobFromPicker(id);
+    const q=ta.value.trim().toLowerCase();
+    if(q&&(`${j.id} ${j.name} ${j.company||''}`).toLowerCase().includes(q)){ta.value='';ta.placeholder=`What needs doing on ${j.name}?`;} // they were typing the job, not the task
+    hideSug();ta.focus();
+  }
+  document.addEventListener('input',e=>{if(e.target.id==='td-task'){sugIdx=0;showSug();}});
+  document.addEventListener('keydown',e=>{
+    if(e.target.id!=='td-task'||!sugList.length)return;
+    const b=document.getElementById('fb1-job-sug');if(!b||b.hidden)return;
+    if(e.key==='ArrowDown'){e.preventDefault();sugIdx=(sugIdx+1)%sugList.length;showSug();}
+    else if(e.key==='ArrowUp'){e.preventDefault();sugIdx=(sugIdx-1+sugList.length)%sugList.length;showSug();}
+    else if((e.key==='Enter'&&!e.metaKey&&!e.ctrlKey&&!e.shiftKey)||e.key==='Tab'){e.preventDefault();pickSug(sugList[sugIdx].id);}
+    else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();hideSug();}
+  },true);
+  document.addEventListener('focusout',e=>{if(e.target.id==='td-task')setTimeout(hideSug,150);});
+  // a fresh form starts without suggestions or a job-specific placeholder
+  const _open=openTodoModal;
+  openTodoModal=function(){const r=_open.apply(this,arguments);const ta=document.getElementById('td-task');if(ta)ta.placeholder='What needs doing?';hideSug();return r;};
+})();
+</script>
+<style id="fb1-style">
+.day-todo.zone-open{overflow-y:auto!important;justify-content:flex-start!important;}
+.day-done.zone-open{overflow-y:auto!important;}
+.tc-rz-badge{position:fixed;z-index:9999;pointer-events:none;background:var(--ink);color:var(--on-ink,#fff);font:600 11px/1 var(--font);padding:4px 7px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.18);}
+.fb1-new{flex:none;display:flex;align-items:center;gap:4px;width:100%;margin-top:2px;padding:5px 8px;border:1px dashed var(--border);border-radius:8px;background:transparent;color:var(--muted);font:500 11.5px/1.2 var(--font);cursor:pointer;opacity:.75;order:99;}
+.fb1-new:hover{opacity:1;color:var(--ink);border-color:var(--muted);background:var(--white);}
+.fb1-new i{font-size:12px;}
+#fb1-park-btn b{margin-left:2px;}#fb1-park-btn.drop-ok,.fb1-park-pad.drop-ok{outline:2px solid var(--ok,#3A8A4F);}
+.fb1-park-tray{position:fixed;right:16px;top:120px;width:280px;max-height:calc(100vh - 160px);overflow:auto;z-index:900;background:var(--white);border:1px solid var(--border);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.16);padding:10px;display:flex;flex-direction:column;gap:6px;}
+.fb1-pt-hd{display:flex;align-items:center;gap:8px;padding:2px 2px 6px;}.fb1-pt-hd span{color:var(--muted);font-size:12px;flex:1;}
+.fb1-pt-card{position:relative;border:1px solid var(--border);border-radius:10px;padding:8px 30px 8px 10px;background:var(--off);cursor:grab;}
+.fb1-pt-t{font-size:13px;font-weight:500;}.fb1-pt-m{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.fb1-pt-x{position:absolute;top:6px;right:6px;border:0;background:none;color:var(--muted);cursor:pointer;}.fb1-pt-x:hover{color:var(--danger-ink,#B3261E);}
+.fb1-pt-empty{font-size:12.5px;color:var(--muted);padding:6px 4px 10px;line-height:1.45;}
+.fb1-job-sug{margin:6px 0 4px;border:1px solid var(--border);border-radius:10px;background:var(--white);box-shadow:0 6px 18px rgba(0,0,0,.08);overflow:hidden;}
+.fb1-sug-hd{font-size:11px;font-weight:600;color:var(--muted);padding:6px 10px;border-bottom:1px solid var(--faint);}.fb1-sug-hd span{font-weight:400;margin-left:6px;}
+.fb1-sug{display:flex;align-items:baseline;gap:8px;padding:7px 10px;cursor:pointer;font-size:13px;}
+.fb1-sug.on,.fb1-sug:hover{background:var(--off);}
+.fb1-sug-n{font-variant-numeric:tabular-nums;color:var(--muted);flex:none;}.fb1-sug-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.fb1-sug-c{font-size:11.5px;color:var(--muted);flex:none;}
+.tm-btn-log{display:inline-flex;align-items:center;gap:6px;}
+</style>
 </body>
 </html>
