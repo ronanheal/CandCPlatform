@@ -2187,7 +2187,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
               <option value="workflow">Group by workflow</option>
               <option value="lead">Group by lead</option>
             </select>
-            <button class="d-action" onclick="saveFilterPreset('jobs')" title="Save the current search, filters and sort as a favourite"><i class="ti ti-star" style="font-size:11px;"></i> Save favourite</button>
+            <span class="fb3-qf-wrap"><button class="d-action" id="fb3-qf-btn" onclick="_fb3QuickFilters(event)" aria-haspopup="true" aria-expanded="false" title="Ready-made filters and your saved favourites"><i class="ti ti-bolt" style="font-size:11px;"></i> Quick filters<b class="fb3-qf-n" hidden></b></button></span>
             <button class="d-action" id="jobs-clear-btn" onclick="_clearFilters('jobs')" style="display:none;"><i class="ti ti-x" style="font-size:11px;"></i> Clear</button>
             <button class="d-action" onclick="openColPicker(event,'jobs')" title="Choose columns"><i class="ti ti-columns" style="font-size:11px;"></i> Columns</button>
             <span class="jobs-count" id="jobs-count" style="margin-left:auto;">0 jobs · NZD</span>
@@ -26366,7 +26366,8 @@ _stRenderViews=function(){
   function _vspBtn(){
     const b=document.getElementById('vsp-btn');if(!b)return;
     const v=VIEWS[curView()];b.classList.add('fb1-vbtn');b.title='View settings · showing '+v[1];
-    if(!b.querySelector('.fb1-vb-l'))b.innerHTML=`<i class="ti ti-adjustments-horizontal" aria-hidden="true"></i><span class="fb1-vb-l">View settings</span>`;
+    if(!b.querySelector('.fb1-vb-i'))b.innerHTML=`<i class="ti ti-settings fb1-vb-i" aria-hidden="true"></i>`;
+    b.setAttribute('aria-label','View settings');
   }
   window._fb1SetView=function(v){
     if(v==='today'){if(!window._focusToday)toggleFocusToday();}
@@ -26553,8 +26554,11 @@ body.dark #view-todo .day-done{background:linear-gradient(180deg,color-mix(in sr
 @media (hover:none){#view-todo #day-cols .fb1-new{opacity:.9!important;}}
 /* View choices live in View settings; the toolbar keeps one button that names the view */
 #view-todo #todo-view-toggle,#view-todo #cc-mi-btn{display:none!important;}
-#vsp-btn.fb1-vbtn{display:inline-flex;align-items:center;gap:6px;padding:5px 10px!important;font:500 12.5px/1 var(--font);}
-#vsp-btn.fb1-vbtn i{font-size:13px;pointer-events:none;}#vsp-btn.fb1-vbtn span{pointer-events:none;}
+#vsp-btn.fb1-vbtn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0!important;}
+#vsp-btn.fb1-vbtn i{font-size:16px;pointer-events:none;}
+/* Week arrows + date sit in the middle of the To Do toolbar */
+#view-todo .todo-bar{position:relative;}
+@media (min-width:900px){#view-todo .todo-bar > .week-nav{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0!important;z-index:1;}}
 #vsp{width:228px!important;}
 .fb1-vsp-sec{padding:8px 12px 10px;border-bottom:1px solid var(--faint);display:flex;flex-direction:column;gap:6px;}
 .fb1-vsp-lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
@@ -26888,6 +26892,25 @@ body.dark #view-todo .day-done{background:linear-gradient(180deg,color-mix(in sr
 .fb2-arch-hint{border:0;background:none;padding:0;color:var(--ink-2);font:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer;}
 .fb2-arch-hint:focus-visible{outline:none;box-shadow:var(--ring);border-radius:4px;}
 /* Favourites bar label */
+/* Quick filters: one button with ready-made filters and saved favourites in a popup */
+#fb2-jobs-quick,#jobs-presets-bar{display:none!important;}
+.fb3-qf-wrap{position:relative;display:inline-flex;}
+#fb3-qf-btn.on{border-color:var(--ink);}
+.fb3-qf-n{margin-left:4px;min-width:16px;height:16px;padding:0 4px;border-radius:var(--r-pill);background:var(--ink);color:var(--on-ink,#fff);font:600 10px/16px var(--font);text-align:center;}
+.fb3-qf-pop{position:absolute;top:calc(100% + 6px);left:0;z-index:950;width:240px;max-height:min(70vh,460px);overflow:auto;background:var(--white);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(35,28,18,.14);padding:6px;display:flex;flex-direction:column;gap:1px;}
+.fb3-qf-lbl{padding:8px 8px 4px;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.fb3-qf-row{display:flex;align-items:center;gap:8px;width:100%;padding:7px 8px;border:0;border-radius:8px;background:none;color:var(--ink);font:500 12.5px/1.2 var(--font);text-align:left;cursor:pointer;}
+.fb3-qf-row:hover,.fb3-qf-row:focus-visible{background:var(--off);outline:none;}
+.fb3-qf-row > i:first-child{font-size:14px;color:var(--muted);flex:none;}
+.fb3-qf-row span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fb3-qf-tick{visibility:hidden;font-size:14px;}.fb3-qf-row.on .fb3-qf-tick{visibility:visible;}
+.fb3-qf-row.on{font-weight:600;}.fb3-qf-row.on > i:first-child{color:var(--ink);}
+.fb3-qf-fav{display:flex;align-items:center;}.fb3-qf-fav .ti-star{color:var(--star,#E0A800)!important;}
+.fb3-qf-del{flex:none;border:0;background:none;color:var(--muted);padding:6px;border-radius:6px;cursor:pointer;opacity:0;}
+.fb3-qf-fav:hover .fb3-qf-del,.fb3-qf-del:focus-visible{opacity:1;}.fb3-qf-del:hover{color:var(--danger-ink,#B3261E);background:var(--off);}
+.fb3-qf-empty{padding:4px 8px 8px;font-size:12px;color:var(--muted);line-height:1.45;}
+.fb3-qf-foot{border-top:1px solid var(--faint);margin-top:4px;padding-top:4px;}
+.fb3-qf-save{display:flex;align-items:center;gap:6px;width:100%;padding:7px 8px;border:0;border-radius:8px;background:none;color:var(--ink);font:600 12.5px/1.2 var(--font);cursor:pointer;}.fb3-qf-save:hover{background:var(--off);}
 #jobs-presets-bar .fb2-fav-lbl{font:600 11px/22px var(--font);color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-right:2px;}
 #jobs-presets-bar .fpreset-chip .ti-star{color:var(--star,#E0A800);}
 /* ⌘K scope selector */
@@ -27039,7 +27062,33 @@ body.dark #view-todo .day-done{background:linear-gradient(180deg,color-mix(in sr
     }
     _saveFilterState('jobs');renderJobs();
   };
+  // ── Quick filters button: ready-made filters + saved favourites in one popup ──────────
+  window._fb3QuickFilters=function(e){
+    e&&e.stopPropagation();
+    const pop=$('fb3-qf-pop');if(pop){closeQF();return;}
+    renderQF(true);
+  };
+  function closeQF(){$('fb3-qf-pop')?.remove();$('fb3-qf-btn')?.setAttribute('aria-expanded','false');}
+  function renderQF(focus){
+    const btn=$('fb3-qf-btn');if(!btn)return;
+    let pop=$('fb3-qf-pop');
+    if(!pop){pop=document.createElement('div');pop.id='fb3-qf-pop';pop.className='fb3-qf-pop';pop.setAttribute('role','dialog');pop.setAttribute('aria-label','Quick filters');btn.parentNode.appendChild(pop);pop.addEventListener('click',ev=>ev.stopPropagation());}
+    btn.setAttribute('aria-expanded','true');
+    const favs=(typeof _jobsPresets!=='undefined'?_jobsPresets:[]);
+    pop.innerHTML=`<div class="fb3-qf-lbl">Ready-made</div>`
+      +PILLS().map(x=>{const on=pillOn(x);return`<button type="button" class="fb3-qf-row${on?' on':''}" role="menuitemcheckbox" aria-checked="${on}" onclick="_fb2TogglePill('${x.k}')"><i class="ti ${x.icon}" aria-hidden="true"></i><span>${esc(x.label)}</span><i class="ti ti-check fb3-qf-tick" aria-hidden="true"></i></button>`;}).join('')
+      +`<div class="fb3-qf-lbl">Saved</div>`
+      +(favs.length?favs.map(p=>`<div class="fb3-qf-fav"><button type="button" class="fb3-qf-row" onclick="loadFilterPreset('jobs','${esc(p.id)}');document.getElementById('fb3-qf-pop')?.remove();"><i class="ti ti-star" aria-hidden="true"></i><span>${esc(p.name)}</span></button><button type="button" class="fb3-qf-del" title="Delete “${esc(p.name)}”" aria-label="Delete saved filter ${esc(p.name)}" onclick="deleteFilterPreset('jobs','${esc(p.id)}');setTimeout(()=>window._fb3QFRefresh&&window._fb3QFRefresh(),0);"><i class="ti ti-trash" aria-hidden="true"></i></button></div>`).join('')
+        :`<div class="fb3-qf-empty">Nothing saved yet. Set up a search, filters and sort, then save it here.</div>`)
+      +`<div class="fb3-qf-foot"><button type="button" class="fb3-qf-save" onclick="document.getElementById('fb3-qf-pop')?.remove();saveFilterPreset('jobs')"><i class="ti ti-plus" aria-hidden="true"></i> Save current filters</button></div>`;
+    if(focus)pop.querySelector('button')?.focus();
+  }
+  window._fb3QFRefresh=()=>{if($('fb3-qf-pop'))renderQF(false);};
+  document.addEventListener('click',e=>{if(!e.target.closest?.('.fb3-qf-wrap'))closeQF();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('fb3-qf-pop')){e.stopPropagation();closeQF();$('fb3-qf-btn')?.focus();}},true);
   function renderPills(){
+    // the count on the Quick filters button, and the popup if it's open
+    try{const n=PILLS().filter(pillOn).length,b=document.querySelector('#fb3-qf-btn .fb3-qf-n');if(b){b.hidden=!n;b.textContent=n||'';}$('fb3-qf-btn')?.classList.toggle('on',!!n);window._fb3QFRefresh();}catch(e){}
     const el=$('fb2-jobs-quick');if(!el)return;
     el.innerHTML=`<span class="fb2-quick-lbl">Quick filters</span>`+PILLS().map(x=>{const on=pillOn(x);
       return`<button type="button" class="fb2-pill${on?' on':''}" aria-pressed="${on}" onclick="_fb2TogglePill('${x.k}')"><i class="ti ${x.icon}" aria-hidden="true"></i>${esc(x.label)}</button>`;}).join('');
