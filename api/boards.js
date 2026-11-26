@@ -1,12 +1,16 @@
 // /api/boards — shared Boards (lib/boards.js).
-//   GET                 → {boards:[...]} every board this person may see (admins-only boards: admins)
+//   GET                 → {boards:[...], people:[{email,name,personKey}]} every board this person may
+//                         see (admins-only boards: admins; "specific people" boards: those people,
+//                         the creator and admins). people = the account list (no passwords), for
+//                         the Share picker; it comes from the access list requireUser just read.
 //   GET ?removed=1      → {boards:[...]} removed boards (admins only), for "Recently removed"
 //   PUT | POST {board}  → {board} the merged, saved copy. Same-origin only (CSRF).
 //   POST {action:'restore', id} → {board} brings a removed board back (admins only).
 // Removing a board is a save with board.removedAt set (kept as a tombstone so a stale copy in
 // another browser can't bring it back). Only the board's creator or an admin may do that.
 
-import { json } from '../lib/auth.js';
+import { json, normEmail } from '../lib/auth.js';
+import { getAccess } from '../lib/store.js';
 import { requireUser, errorResponse, readJsonBody } from '../lib/guard.js';
 import { listBoards, saveBoard, restoreBoard, MAX_BOARD_BYTES } from '../lib/boards.js';
 
@@ -18,7 +22,14 @@ export async function handle(request, opts = {}) {
     const { user, response } = await requireUser(request, { ...o, admin: removed });
     if (response) return response;
     try {
-      return json({ boards: await listBoards(user, { ...o, removed }), admin: !!user.admin });
+      const boards = await listBoards(user, { ...o, removed });
+      let people = [];
+      try {
+        const acc = await getAccess(o); // cached: requireUser has just read it
+        people = ((acc && acc.users) || []).filter((u) => u && u.email)
+          .map((u) => ({ email: normEmail(u.email), name: String(u.name || '').slice(0, 120), personKey: u.personKey || null }));
+      } catch (e) { /* the picker falls back to emails already on the board */ }
+      return json({ boards, people, admin: !!user.admin });
     } catch (e) { return errorResponse(e); }
   }
   if (request.method === 'PUT' || request.method === 'POST') {

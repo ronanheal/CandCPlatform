@@ -3115,7 +3115,9 @@ function toggleStarItem(type,id,name){
 }
 function isStarred(type,id){return _getStarred().some(x=>x.key===type+':'+id);}
 // Linkify URLs in display text (never used on editable inputs, only rendered HTML)
-function linkify(t){return (t||'').replace(/https?:\/\/[^\s<>"']+/g,url=>`<a href="${url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${url}</a>`);}
+// Plain text → safe HTML with http(s) links (fb2: one helper, bvLinkText in boards-merge-script,
+// which escapes everything first). Pass the raw text, not pre-escaped text.
+function linkify(t){return typeof bvLinkText==='function'?bvLinkText(t):esc(t);}
 // ── Global labels (cc_labels) ──
 const LABEL_COLORS=['#ED1E24','#6B7FA3','#7B9E87','#C4956A','#9B59B6','#E67E22','#1ABC9C','#3498DB','#2E7D32','#888888'];
 let globalLabels=JSON.parse(localStorage.getItem('cc_labels')||'null')||[];
@@ -6424,7 +6426,7 @@ function createTaskCard(t,day,isDone){
       ${metaJob&&metaItem?'<span class="tc-sep"></span>':''}
       ${metaItem?`<span class="tc-item-tag">${esc(t.item)}</span>`:''}
     </div>`:''}
-    ${(showNote&&t.note)?`<div class="tc-note">${esc(t.note)}</div>`:''}`;
+    ${(showNote&&t.note)?`<div class="tc-note">${linkify(t.note)}</div>`:''}`;
 
   const jEl=card.querySelector('.tc-job.clickable');
   if(jEl)jEl.addEventListener('click',e=>{e.stopPropagation();openJobDetail(jEl.dataset.jid);});
@@ -6785,7 +6787,7 @@ function updateJobLabel(){
   if(_jbw&&_jbd){
     if(jobId){
       const _jf=jobs.find(x=>x.id===jobId);
-      if(_jf?.notes){_jbw.style.display='';_jbd.innerHTML=linkify(_jf.notes.replace(/</g,'&lt;'));}
+      if(_jf?.notes){_jbw.style.display='';_jbd.innerHTML=linkify(_jf.notes);}
       else{_jbw.style.display='none';_jbd.innerHTML='';}
       // Paused check: is the job or any containing phase paused?
       const _itemVal=(document.getElementById('td-item')?.value||'').trim();
@@ -6855,7 +6857,7 @@ function toggleItemPicker(e){
             <span style="flex:1;">${nm}</span>
             <span style="font-size:10px;color:var(--muted);">${it.hours||''}</span>
           </div>
-          ${it.note?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${it.note.replace(/</g,'&lt;')}</div>`:''}
+          ${it.note?`<div style="font-size:11px;color:var(--muted);margin-top:1px;">${linkify(it.note)}</div>`:''}
         </div>`;
       });
     });
@@ -7872,7 +7874,7 @@ function renderJobs(){
       const hCol=hPct>=100?'var(--red)':hPct>=80?'var(--warn)':'var(--ok)';
       const billDot=j.billable===false?'<span style="width:6px;height:6px;border-radius:50%;background:#CBD5E1;display:inline-block;margin-right:5px;" title="Non-billable"></span>':'<span style="width:6px;height:6px;border-radius:50%;background:var(--ok);display:inline-block;margin-right:5px;" title="Billable"></span>';
       const labels=(j.labels||[]).slice(0,3).map(l=>{const c=labelColor(l);return`<span class="job-label-pip" style="background:${c}18;color:${c};border:1px solid ${c}44;">${esc(l)}</span>`;}).join('');
-      const notePrev=j.notes?`<div class="job-notes-preview" title="${j.notes.replace(/"/g,'&quot;')}">${linkify(j.notes.replace(/</g,'&lt;'))}</div>`:'';
+      const notePrev=j.notes?`<div class="job-notes-preview" title="${esc(j.notes)}">${linkify(j.notes)}</div>`:'';
       const pausedBadge=j.paused?`<span class="paused-badge" style="margin-left:6px;"><i class="ti ti-pause" style="font-size:10px;"></i> Paused</span>`:'';
       const jPhases=j.id===activeJobId?phases:[];
       const totalItems=jPhases.reduce((s,p)=>s+p.items.length,0);
@@ -9679,7 +9681,7 @@ ${statusCell}`;
     if(linkedTaskNotes.length>0){
       taskNotesHTML=`<div class="item-task-notes">`+linkedTaskNotes.map(tn=>{
         const p=people[tn.person];
-        return`<div class="item-task-note"><span class="itn-av" style="background:${p?.color||'#999'}">${p?.initials||'?'}</span><div class="itn-body"><div class="itn-title">${tn.title}</div><div class="itn-text">${linkify((tn.note||'').replace(/</g,'&lt;'))}</div></div></div>`;
+        return`<div class="item-task-note"><span class="itn-av" style="background:${p?.color||'#999'}">${p?.initials||'?'}</span><div class="itn-body"><div class="itn-title">${esc(tn.title)}</div><div class="itn-text">${linkify(tn.note||'')}</div></div></div>`;
       }).join('')+`</div>`;
     }
     nr.innerHTML=`<td colspan="${COLS}"><div class="item-note-wrap">
@@ -12299,7 +12301,7 @@ function renderTime(){
           <td>${statusStr}${e._local&&e._ltId?` <button class="rf-icon-btn rf-te-del" title="Delete this time entry (logged in the platform)" aria-label="Delete time entry" onclick="event.stopPropagation();rfDeleteTimeEntry('${esc(e._ltId)}')"><i class="ti ti-trash"></i></button>`:''}</td>
         </tr>`;
         if(e.note){
-          rows+=`<tr class="tg-${pKey}"><td colspan="7"><div class="te-note-row"><i class="ti ti-note" style="font-size:11px;"></i> ${esc(e.note)}</div></td></tr>`;
+          rows+=`<tr class="tg-${pKey}"><td colspan="7"><div class="te-note-row"><i class="ti ti-note" style="font-size:11px;"></i> ${linkify(e.note)}</div></td></tr>`;
         }
       });
     }
@@ -16536,7 +16538,7 @@ function _bvDrawerHTML({b,col,card:c}){
   // Activity + comments
   const feed=[...(c.comments||[]).map(m=>({ts:m.ts,m})),...(c.activity||[]).map(a=>({ts:a.ts,a}))].sort((x,y)=>y.ts-x.ts);
   const feedHTML=feed.map(x=>x.m
-    ?`<div class="bv-cm">${_bvAv(x.m.by,'')||'<span class="bv-av more">?</span>'}<div class="bv-cm-b"><div class="bv-cm-h"><b>${esc(people[x.m.by]?.name||'Someone')}</b><span>${_bvAgo(x.m.ts)}</span>${x.m.by===MY_PERSON?`<button class="bv-linkbtn" onclick="bvDelComment(${_bvA(x.m.id)})">Delete</button>`:''}</div><div class="bv-cm-t">${linkify(esc(x.m.text))}</div></div></div>`
+    ?`<div class="bv-cm">${_bvAv(x.m.by,'')||'<span class="bv-av more">?</span>'}<div class="bv-cm-b"><div class="bv-cm-h"><b>${esc(people[x.m.by]?.name||'Someone')}</b><span>${_bvAgo(x.m.ts)}</span>${x.m.by===MY_PERSON?`<button class="bv-linkbtn" onclick="bvDelComment(${_bvA(x.m.id)})">Delete</button>`:''}</div><div class="bv-cm-t">${linkify(x.m.text)}</div></div></div>`
     :`<div class="bv-act"><i class="ti ti-point"></i><span>${esc(people[x.a.by]?.name?.split(' ')[0]||'Someone')} · ${esc(x.a.text)} · ${_bvAgo(x.a.ts)}</span></div>`).join('');
   return`<div class="bv-dr-top">
       <span class="bv-dr-col" style="--col:var(--bv-${_bvColor(col.color)})"><span class="bv-dot"></span><select class="cc-select" title="Move to column" onchange="bvMoveOpenCard(this.value)">${colOpts}</select></span>
@@ -22099,7 +22101,14 @@ function bvMergeSummary(n){
 function bvLinkText(raw){
   const e=x=>String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   const t=String(raw==null?'':raw);let out='',last=0;
-  for(const m of t.matchAll(/\bhttps?:\/\/[^\s<>"'`]+/gi)){
+  // [label](https://…) shows the label as the link (fb2: the card "Link" button writes these).
+  for(const m of t.matchAll(/\[([^\[\]\n]{1,200})\]\((https?:\/\/[a-z0-9[][^\s<>"'`()]*)\)|\bhttps?:\/\/[^\s<>"'`]+/gi)){
+    if(m.index<last)continue;
+    if(m[1]!==undefined){
+      const u=e(m[2]);
+      out+=e(t.slice(last,m.index))+`<a class="bv-url" href="${u}" target="_blank" rel="noopener noreferrer" title="${u}" draggable="false" onclick="event.stopPropagation()">${e(m[1])}</a>`;
+      last=m.index+m[0].length;continue;
+    }
     let url=m[0];
     while(/[.,;:!?)\]}*]$/.test(url)){
       if(url.endsWith(')')&&(url.match(/\(/g)||[]).length>=(url.match(/\)/g)||[]).length)break;
@@ -26100,6 +26109,350 @@ _stRenderViews=function(){
   window.ccHealth={load,get:()=>data};
   // The Dashboard may already be on screen from boot: check once shortly after load.
   setTimeout(()=>{try{if(admin())load();}catch(e){}},2000);
+})();
+</script>
+<style id="fb2-boards-style">
+/* ═══ fb2 Boards: Share control, card folding everywhere, links ═══ */
+#view-boards .fb2-share{gap:6px;}
+#view-boards .fb2-share .fb2-share-st{display:inline-flex;align-items:center;gap:3px;height:18px;padding:0 7px;margin-right:-4px;border-radius:var(--r-pill,999px);background:color-mix(in srgb,var(--ink) 6%,transparent);color:var(--muted);font-size:11px;font-weight:500;}
+#view-boards .fb2-share .fb2-share-st i{font-size:11.5px;}
+body.dark #view-boards .fb2-share .fb2-share-st{background:rgba(255,255,255,.07);}
+.fb2-opts{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+.fb2-opts .bv-kind{width:100%;}
+.fb2-opts .bv-kind[disabled]{opacity:.55;cursor:default;}
+.fb2-opts .bv-tpl-desc{display:block;font-size:12px;color:var(--muted);line-height:1.4;}
+.fb2-ppl[hidden]{display:none;}
+.fb2-ppl .bv-search{display:flex;margin-bottom:8px;}
+.fb2-ppl .bv-bulk-list{max-height:38vh;}
+.fb2-ppl .fb2-em{color:var(--muted);font-size:11.5px;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fb2-ppl .bv-bulk-row.is-fixed{cursor:default;}
+.fb2-ppl .bv-bulk-row.is-fixed:hover{background:transparent;}
+.fb2-add{width:100%;border:0;background:transparent;font:inherit;color:inherit;text-align:left;}
+.fb2-av{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;font-weight:600;color:#fff;background:var(--muted);}
+.fb2-note{font-size:12px;color:var(--muted);line-height:1.5;margin:10px 0 0;}
+.fb2-empty{padding:18px;text-align:center;color:var(--muted);font-size:12.5px;}
+.fb2-ro{display:flex;flex-direction:column;gap:8px;font-size:12.5px;}
+.fb2-ro-st{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--ink);}
+.fb2-ro-st i{font-size:16px;color:var(--muted);}
+.fb2-jid{font-weight:500;color:var(--muted);margin-right:6px;font-variant-numeric:tabular-nums;}
+.fb2-link-pop{display:flex;flex-direction:column;gap:8px;padding:8px;width:260px;max-width:calc(100vw - 48px);}
+.fb2-link-pop label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;font-weight:500;color:var(--muted);}
+.fb2-link-pop .form-inp{height:32px;}
+.fb2-link-ft{display:flex;justify-content:flex-end;gap:6px;}
+#view-boards .r5-title .bv-url,#view-boards .bv-card-title .bv-url{font-weight:inherit;}
+.tc-note .bv-url,.job-notes-preview .bv-url,.itn-text .bv-url,.te-note-row .bv-url{max-width:260px;}
+</style>
+<script id="fb2-boards-script">
+// ═══ fb2 Boards (team feedback round 2) ═══════════════════════════════════════════════════
+// 1. Share: a "Share" button on every custom board header (production) opens one dialog:
+//    Team (everyone signed in) · Specific people (picked from the account list, which
+//    GET /api/boards returns as `people`) · Admins only (admins). The server enforces it
+//    (lib/boards.js canSee / saveBoard): members list, read and write only boards they may see;
+//    the board's creator or an admin changes who sees it; only admins make one admins-only.
+//    A board still "only in this browser" is shared from the same dialog.
+// 2. Folding: job cards and plain cards honour collapsed (the menu item did nothing on them),
+//    every hand-added kind has the chevron, client cards only when they have notes to hide.
+//    Live-column job cards (computed, not stored) fold per browser (localStorage). Column ⋯ →
+//    "Collapse all cards" / "Expand all cards". Folding a stored card is an ordinary card edit,
+//    saved with the usual debounce: no extra requests.
+// 3. Links: note and plain-card titles render links too (bvLinkText: escaped first, http/https
+//    only, new tab, noopener). [label](url) shows the label. A "Link" button on note and person
+//    cards adds one; pasting a URL over selected text in a board field makes a labelled link.
+(function(){
+  if(typeof _bvRenderBoard!=='function'||typeof _r5Req!=='function')return;
+  const FB2={people:null,share:null};
+  const PROD=typeof R5_PROD!=='undefined'&&R5_PROD;
+  const me=()=>String(AUTH&&AUTH.email||'').toLowerCase();
+  const isAdmin=()=>{try{return typeof _isMember==='function'?!_isMember()&&!!(AUTH&&AUTH.admin):!!(AUTH&&AUTH.admin);}catch(e){return false;}};
+  const EMAIL_RE=/^[^\s@<>"'`]{1,64}@[^\s@<>"'`]{1,189}$/;
+
+  // ── 1. Share ───────────────────────────────────────────────────────────────────────────
+  // The people for the picker come with the boards list (no extra request).
+  const _req=_r5Req;
+  _r5Req=async function(method,body,query){
+    const j=await _req(method,body,query);
+    if(method==='GET'&&!query&&j&&Array.isArray(j.people))FB2.people=j.people.filter(p=>p&&typeof p.email==='string');
+    return j;
+  };
+  const visOf=b=>b&&(b.visibility==='admins'||b.visibility==='people')?b.visibility:'everyone';
+  const canManage=b=>!b.shared||isAdmin()||(!!b.createdBy&&String(b.createdBy).toLowerCase()===me());
+  const personOf=email=>(FB2.people||[]).find(p=>p.email===email)||null;
+  const nameOf=email=>{const p=personOf(email);return(p&&p.name)||email;};
+  function avHTML(email){
+    const p=personOf(email),pk=p&&p.personKey&&people[p.personKey];
+    const ini=(pk&&pk.initials)||String((p&&p.name)||email).split(/[\s@.]+/).filter(Boolean).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    return`<span class="fb2-av"${pk&&pk.color?` style="background:${esc(pk.color)}"`:''} aria-hidden="true">${esc(ini||'?')}</span>`;
+  }
+  function stateOf(b){
+    if(!b.shared)return{icon:'ti-device-laptop',short:'Only you',long:'Only in this browser'};
+    const v=visOf(b);
+    if(v==='admins')return{icon:'ti-lock',short:'Admins',long:'Admins only'};
+    if(v==='people'){const n=(b.sharedWith||[]).length;return{icon:'ti-user-check',short:n?`${n} ${n===1?'person':'people'}`:'Private',long:n?`${n} ${n===1?'person':'people'}`:'Only the creator and admins'};}
+    return{icon:'ti-users',short:'Team',long:'Everyone on the team'};
+  }
+  visibilityLabel=function(b){const v=visOf(b);return v==='admins'?'Admins only':v==='people'?'Specific people':'Everyone';};
+
+  const _render=_bvRenderBoard;
+  _bvRenderBoard=function(){
+    _render.apply(this,arguments);
+    const b=_bvCur();if(!PROD||!b||b.type!=='custom')return;
+    const opt=document.querySelector('#bv-head .bv-head-actions > .bv-ibtn[title="Board options"]');if(!opt)return;
+    const st=stateOf(b);
+    opt.insertAdjacentHTML('beforebegin',`<button class="d-action fb2-share" title="Share this board · ${esc(st.long)}" aria-label="Share this board (${esc(st.long)})" onclick="bvFb2Share(${_bvA(b.id)})"><i class="ti ti-user-plus"></i>Share<span class="fb2-share-st"><i class="ti ${st.icon}"></i>${esc(st.short)}</span></button>`);
+  };
+  // Header sync status and landing tiles name the "specific people" setting.
+  const _sync=_r5SyncHTML;
+  _r5SyncHTML=function(b){
+    const h=_sync(b);
+    if(!(b&&b.shared&&visOf(b)==='people'))return h;
+    return h.replace('<i class="ti ti-users" title="Shared with everyone"></i>',`<i class="ti ti-user-check" title="Shared with specific people"></i>${esc(stateOf(b).short)} · `);
+  };
+  const _tile=_bvTileHTML;
+  _bvTileHTML=function(b){
+    const h=_tile(b);
+    if(!(b&&b.shared&&visOf(b)==='people'))return h;
+    return h.replace('<span class="r5-vis" title="Shared with the whole team"><i class="ti ti-users"></i>Team</span>',`<span class="r5-vis" title="Shared with specific people"><i class="ti ti-user-check"></i>${esc(stateOf(b).short)}</span>`);
+  };
+  const _clone=_bvCloneBoard;
+  _bvCloneBoard=function(src){const b=_clone(src);delete b.sharedWith;return b;};
+  // The older "Share with the team" entry points open the dialog.
+  bvR5Share=function(id){bvFb2Share(id);};
+  // Board ⋯ menu: one "Share…" item instead of "Share with the team" / Everyone / Admins only.
+  const _menu=bvBoardMenu;
+  bvBoardMenu=function(anchor,id,fromTile){
+    if(_bvPopToggle(anchor))return;
+    _menu(anchor,id,fromTile);
+    const p=document.getElementById('bv-pop'),b=_bvBoard(id);if(!p||!b||b.type!=='custom'||!PROD)return;
+    p.querySelectorAll('.bv-mi').forEach(el=>{if(/bvR5SetVisibility|bvR5Share\(/.test(el.getAttribute('onclick')||''))el.remove();});
+    p.querySelectorAll('.bv-pop-sec').forEach(el=>{if(/who can see/i.test(el.textContent))el.remove();});
+    p.insertAdjacentHTML('afterbegin',_bvMI('ti-user-plus','Share…',`bvFb2Share(${_bvA(id)})`)+'<div class="bv-mi-sep"></div>');
+    p.querySelectorAll('.bv-mi-sep').forEach(el=>{const n=el.nextElementSibling;if(!n||n.classList.contains('bv-mi-sep'))el.remove();});
+    const r=p.getBoundingClientRect();if(r.bottom>innerHeight-12)p.style.top=Math.max(12,innerHeight-12-r.height)+'px';
+  };
+
+  window.bvFb2Share=function(id){
+    _bvClosePop();
+    const b=_bvBoard(id);if(!b||b.type!=='custom')return;
+    if(!PROD){toast('Sharing works on the live site. Here, boards stay in this browser.','info');return;}
+    FB2.share={id,v:b.shared?visOf(b):'everyone',sel:new Set(b.shared&&visOf(b)==='people'?(b.sharedWith||[]):[]),q:''};
+    document.getElementById('fb2-share')?.remove();
+    const m=document.createElement('div');m.className='modal-bg on';m.id='fb2-share';
+    m.innerHTML=`<div class="modal bv-modal" style="max-width:520px;" role="dialog" aria-modal="true" aria-labelledby="fb2-share-t">
+      <div class="modal-hd"><span class="modal-hd-title" id="fb2-share-t">Share “${esc(b.name)}”</span><button class="modal-x" aria-label="Close" onclick="bvFb2ShareClose()"><i class="ti ti-x"></i></button></div>
+      <div class="modal-bd" id="fb2-share-bd"></div>
+      <div class="modal-ft" id="fb2-share-ft"></div></div>`;
+    m.addEventListener('mousedown',e=>{if(e.target===m)bvFb2ShareClose();});
+    m.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();bvFb2ShareClose();}});
+    document.body.appendChild(m);
+    drawShare();
+    // First open before Boards has loaded the list: one pull (the same request Boards makes).
+    if(!FB2.people)Promise.resolve(_r5Pull(true)).catch(()=>{}).finally(()=>{if(FB2.share&&FB2.share.id===id){if(!FB2.people)FB2.people=[];drawPeople();}});
+    setTimeout(()=>m.querySelector('.bv-kind.on')?.focus(),0);
+  };
+  window.bvFb2ShareClose=function(){document.getElementById('fb2-share')?.remove();FB2.share=null;};
+  window.bvFb2ShareSet=function(v){
+    const s=FB2.share;if(!s)return;s.v=v;
+    document.querySelectorAll('#fb2-share .fb2-opts .bv-kind').forEach(el=>{const on=el.dataset.v===v;el.classList.toggle('on',on);el.setAttribute('aria-checked',on);});
+    const ppl=document.getElementById('fb2-ppl');if(ppl)ppl.hidden=v!=='people';
+    drawFoot();if(v==='people')setTimeout(()=>document.getElementById('fb2-ppl-q')?.focus(),0);
+  };
+  window.bvFb2SharePick=function(email,on){const s=FB2.share;if(!s)return;email=String(email).toLowerCase();if(on)s.sel.add(email);else s.sel.delete(email);drawFoot();};
+  window.bvFb2ShareQ=function(q){if(!FB2.share)return;FB2.share.q=String(q||'');drawPeople();};
+  window.bvFb2ShareAddEmail=function(){
+    const s=FB2.share;if(!s)return;const e=s.q.trim().toLowerCase();if(!EMAIL_RE.test(e))return;
+    s.sel.add(e);s.q='';const q=document.getElementById('fb2-ppl-q');if(q)q.value='';drawPeople();drawFoot();
+  };
+  function drawShare(){
+    const s=FB2.share,b=s&&_bvBoard(s.id),bd=document.getElementById('fb2-share-bd'),ft=document.getElementById('fb2-share-ft');if(!b||!bd||!ft)return;
+    if(!canManage(b)){
+      const st=stateOf(b),list=visOf(b)==='people'?(b.sharedWith||[]):[];
+      const by=b.createdBy?nameOf(String(b.createdBy).toLowerCase()):'';
+      bd.innerHTML=`<div class="fb2-ro"><div class="fb2-ro-st"><i class="ti ${st.icon}"></i>${esc(st.long)}</div>
+        ${list.length?`<div class="bv-bulk-list fb2-ppl">${list.map(e=>`<div class="bv-bulk-row is-fixed">${avHTML(e)}<span class="bv-bn">${esc(nameOf(e))}</span><span class="fb2-em">${esc(e)}</span></div>`).join('')}</div>`:''}
+        <p class="fb2-note">Only ${by?esc(by)+', who created this board,':'the person who created this board'} or an admin can change who sees it.</p></div>`;
+      ft.innerHTML=`<button class="modal-save" onclick="bvFb2ShareClose()">Done</button>`;
+      return;
+    }
+    const opt=(v,icon,name,desc)=>`<button type="button" class="bv-kind${s.v===v?' on':''}" data-v="${v}" role="radio" aria-checked="${s.v===v}" onclick="bvFb2ShareSet('${v}')"><span class="bv-tpl-ico" style="--col:var(--bv-grey)"><i class="ti ${icon}"></i></span><span><span class="bv-tpl-name">${name}</span><span class="bv-tpl-desc">${desc}</span></span></button>`;
+    bd.innerHTML=`<div class="fb2-opts" role="radiogroup" aria-label="Who can see this board">
+        ${opt('everyone','ti-users','Team','Everyone signed in can see and edit it.')}
+        ${opt('people','ti-user-check','Specific people','Only the people you pick can see and edit it.')}
+        ${isAdmin()?opt('admins','ti-lock','Admins only','Only admins can see it.'):''}
+      </div>
+      <div class="fb2-ppl" id="fb2-ppl"${s.v==='people'?'':' hidden'}>
+        <label class="bv-search"><i class="ti ti-search"></i><input id="fb2-ppl-q" placeholder="Search people, or type an email" aria-label="Search people" value="${esc(s.q)}" autocomplete="off" oninput="bvFb2ShareQ(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();bvFb2ShareAddEmail();}"></label>
+        <div class="bv-bulk-list" id="fb2-ppl-list"></div>
+      </div>
+      <p class="fb2-note">You, the person who created the board, and admins always have access. Everyone it’s shared with can edit its cards.</p>`;
+    drawPeople();drawFoot();
+  }
+  function drawPeople(){
+    const s=FB2.share,b=s&&_bvBoard(s.id),el=document.getElementById('fb2-ppl-list');if(!b||!el)return;
+    const creator=String(b.createdBy||'').toLowerCase(),q=s.q.trim().toLowerCase();
+    const all=new Map();(FB2.people||[]).forEach(p=>all.set(p.email,p));s.sel.forEach(e=>{if(!all.has(e))all.set(e,{email:e,name:''});});
+    const fixed=[me(),creator].filter((e,i,a)=>e&&a.indexOf(e)===i);
+    const rows=[...all.values()].filter(p=>!fixed.includes(p.email)&&(!q||String(p.name||'').toLowerCase().includes(q)||p.email.includes(q)))
+      .sort((a,c)=>(s.sel.has(c.email)-s.sel.has(a.email))||String(a.name||a.email).localeCompare(String(c.name||c.email)));
+    let h=q?'':fixed.map(e=>`<div class="bv-bulk-row is-fixed">${avHTML(e)}<span class="bv-bn">${esc(e===me()?'You':nameOf(e))}</span><span class="fb2-em">${e===creator?'Created this board':esc(e)}</span></div>`).join('');
+    h+=rows.map(p=>`<label class="bv-bulk-row"><input type="checkbox"${s.sel.has(p.email)?' checked':''} onchange="bvFb2SharePick(${_bvA(p.email)},this.checked)">${avHTML(p.email)}<span class="bv-bn">${esc(p.name||p.email)}</span><span class="fb2-em">${esc(p.email)}</span></label>`).join('');
+    if(q&&EMAIL_RE.test(q)&&!all.has(q))h+=`<button type="button" class="bv-bulk-row fb2-add" onclick="bvFb2ShareAddEmail()"><i class="ti ti-plus"></i><span class="bv-bn">Add ${esc(q)}</span></button>`;
+    if(!rows.length&&(q||FB2.people===null))h+=`<div class="fb2-empty">${FB2.people===null?'Loading people…':'No one matches. Type their full email to add them.'}</div>`;
+    el.innerHTML=h;
+  }
+  function drawFoot(){
+    const s=FB2.share,b=s&&_bvBoard(s.id),ft=document.getElementById('fb2-share-ft');if(!b||!ft||!canManage(b))return;
+    const n=s.sel.size;
+    const sum=s.v==='people'?(n?`${n} ${n===1?'person':'people'} picked`:'No one picked: only you and admins'):'';
+    ft.innerHTML=`<span class="bv-ft-left">${esc(sum)}</span><button class="modal-cancel" onclick="bvFb2ShareClose()">Cancel</button><button class="modal-save" onclick="bvFb2ShareSave()">${b.shared?'Save':'Share'}</button>`;
+  }
+  window.bvFb2ShareSave=function(){
+    const s=FB2.share,b=s&&_bvBoard(s.id);if(!b){bvFb2ShareClose();return;}
+    if(s.v==='admins'&&!isAdmin())return;
+    const list=[...s.sel].filter(e=>EMAIL_RE.test(e)).sort();
+    const same=b.shared&&visOf(b)===s.v&&(s.v!=='people'||JSON.stringify([...(b.sharedWith||[])].sort())===JSON.stringify(list));
+    bvFb2ShareClose();
+    if(same)return;
+    b.visibility=s.v;if(s.v==='people')b.sharedWith=list;else delete b.sharedWith;
+    b.visibilityAt=Date.now();
+    if(!b.shared){
+      // Same path as the old "Share with the team": it moves to the shared space and is saved once.
+      b.shared=true;b.updatedAt=Date.now();
+      R5S.snap.delete(b.id);_r5OrigSave();_r5Stamp();R5S.queue.add(b.id);_r5Flush();
+    }else _bvTouch(b);   // a meta change: stamped and saved with the usual debounce
+    if(activeBoardId===b.id)_bvRenderBoard();else _r5RedrawLanding();
+    toast(s.v==='people'?(list.length?`Shared with ${list.length===1?esc(nameOf(list[0])):list.length+' people'}`:'Only you and admins can see this board now')
+      :s.v==='admins'?'Only admins can see this board now':`“${esc(b.name)}” is shared with the team`,'success');
+  };
+
+  // ── 2. Folding ─────────────────────────────────────────────────────────────────────────
+  const FOLD_KEY='cc_fb2_fold';
+  let fold;try{fold=new Set(JSON.parse(localStorage.getItem(FOLD_KEY)||'[]'));}catch(e){fold=new Set();}
+  const saveFold=()=>{try{localStorage.setItem(FOLD_KEY,JSON.stringify([...fold].slice(-2000)));}catch(e){}};
+  const autoKey=(b,col,j)=>`${b.id}:${col.id}:${j.id}`;
+  const hasMore=c=>!!(String(c.desc||'').trim()||_r5Lists(c).length);
+  // Hand-added cards with something to fold away.
+  function foldable(c){
+    const k=_r5Kind(c);
+    if(k==='client')return hasMore(c);
+    if(k==='job')return!!_bvJob(c.jobRef);
+    return true;
+  }
+  const _job=_r5JobHTML;
+  _r5JobHTML=function(b,col,c){
+    const j=_bvJob(c.jobRef);if(!j)return _job(b,col,c);   // missing job: already one line
+    const A=_r5A(c.id);
+    if(c.collapsed)return _r5CardShell(b,col,c,'r5-jobone r5-click',`<div class="r5-one">${_r5FoldBtn(c)}<span class="r5-oname" title="Open job ${esc(j.id)}"><span class="fb2-jid">${esc(j.id)}</span>${esc(j.name||'')}</span>${_r5MenuBtn(c.id)}</div>`,
+      `onclick="bvR5CardClick(${A})" onkeydown="if(event.key==='Enter'&&event.target===this)bvR5CardClick(${A})"`);
+    return _job(b,col,c).replace(/(<div class="r5-top"[^>]*>[\s\S]*?<span class="bv-sp"><\/span>)/,`$1${_r5FoldBtn(c)}`);
+  };
+  const _client=_r5ClientHTML;
+  _r5ClientHTML=function(b,col,c){
+    const h=_client(b,col,c);if(!hasMore(c))return h;
+    const mb=_r5MenuBtn(c.id),i=h.indexOf(mb);
+    return i<0?h:h.slice(0,i)+_r5FoldBtn(c)+h.slice(i);
+  };
+  const _title=_r5TitleHTML;
+  _r5TitleHTML=function(c,ph){
+    const h=_title(c,ph);
+    if(_r5EditTitle===c.id||!c.title||!/https?:\/\//i.test(c.title))return h;
+    return h.replace(`>${esc(c.title)}</div>`,`>${bvLinkText(c.title)}</div>`);
+  };
+  const _card=_bvCardHTML;
+  _bvCardHTML=function(b,col,c){
+    if(!b||b.type!=='custom'||_r5Kind(c)!=='card')return _card(b,col,c);
+    const A=_r5A(c.id),t=_bvTitle(c)||'';
+    if(c.collapsed)return _r5CardShell(b,col,c,'r5-plain r5-click',`<div class="r5-one">${_r5FoldBtn(c)}<span class="r5-oname">${t?bvLinkText(t):'Untitled card'}</span>${_r5MenuBtn(c.id)}</div>`,
+      `onclick="bvOpenCard(${A})" onkeydown="if(event.key==='Enter'&&event.target===this)bvOpenCard(${A})"`);
+    const h=_card(b,col,c);
+    return t&&/https?:\/\//i.test(t)?h.replace(`<div class="bv-card-title">${esc(t)}</div>`,`<div class="bv-card-title">${bvLinkText(t)}</div>`):h;
+  };
+  // Card ⋯ menu: no fold item on a card with nothing to fold (a client card without notes).
+  const _cmenu=bvR5CardMenu;
+  bvR5CardMenu=function(anchor,id){
+    _cmenu(anchor,id);
+    const ctx=_r5Ctx(id),p=document.getElementById('bv-pop');
+    if(!ctx||!p||p._anchor!==anchor||foldable(ctx.card))return;
+    p.querySelectorAll('.bv-mi').forEach(el=>{if(/bvR5Fold\(/.test(el.getAttribute('onclick')||''))el.remove();});
+  };
+  // Live-column job cards: folded per browser.
+  if(typeof _r13CardHTML==='function'){
+    const _auto=_r13CardHTML;
+    _r13CardHTML=function(b,col,j){
+      const k=autoKey(b,col,j),f=fold.has(k),K=_bvA(k),J=_bvA(j.id);
+      const btn=`<button class="r5-ib" title="${f?'Expand':'Collapse to one line'}" aria-label="${f?'Expand':'Collapse'}" aria-expanded="${!f}" draggable="false" onclick="event.stopPropagation();bvFb2FoldAuto(${K})"><i class="ti ti-chevron-${f?'right':'down'}"></i></button>`;
+      if(f)return`<article class="bv-card r5-card r5-click r13-auto is-one${col.done?' is-done':''}" data-job="${esc(j.id)}" tabindex="0" title="Open job ${esc(j.id)}" onclick="bvOpenJob(${J})" onkeydown="if(event.key==='Enter'&&event.target===this)bvOpenJob(${J})"><div class="r5-one">${btn}<span class="r5-oname"><span class="fb2-jid">${esc(j.id)}</span>${esc(j.name||'')}</span><span class="r13-auto-ic" title="Listed automatically for ${esc(j.company||'')}"><i class="ti ti-refresh"></i></span></div></article>`;
+      return _auto(b,col,j).replace('<span class="bv-sp"></span>','<span class="bv-sp"></span>'+btn);
+    };
+  }
+  window.bvFb2FoldAuto=function(k){if(fold.has(k))fold.delete(k);else fold.add(k);saveFold();_bvRenderBody();};
+  // Column ⋯ → Collapse all cards / Expand all cards
+  function colState(b,col){
+    const cards=(col.cards||[]).filter(c=>c&&!c.archived&&foldable(c));
+    const autos=typeof _r13Live==='function'&&_r13Live(col)?_r13Jobs(col):[];
+    const open=cards.some(c=>!c.collapsed)||autos.some(j=>!fold.has(autoKey(b,col,j)));
+    return{cards,autos,open,any:cards.length+autos.length>0};
+  }
+  const _colMenu=bvColMenu;
+  bvColMenu=function(anchor,colId){
+    if(_bvPopToggle(anchor))return;
+    _colMenu(anchor,colId);
+    const p=document.getElementById('bv-pop'),b=_bvCur();if(!p||!b||b.type!=='custom')return;
+    const col=_bvColOf(b,colId);if(!col)return;
+    const st=colState(b,col);if(!st.any)return;
+    p.insertAdjacentHTML('afterbegin',_bvMI(st.open?'ti-fold':'ti-fold-down',st.open?'Collapse all cards':'Expand all cards',`bvFb2FoldCol(${_bvA(colId)},${st.open})`)+'<div class="bv-mi-sep"></div>');
+    const r=p.getBoundingClientRect();if(r.bottom>innerHeight-12)p.style.top=Math.max(12,innerHeight-12-r.height)+'px';
+  };
+  window.bvFb2FoldCol=function(colId,on){
+    const b=_bvCur(),col=b&&_bvColOf(b,colId);if(!col)return;
+    const st=colState(b,col);let ch=false;
+    st.cards.forEach(c=>{if(!!c.collapsed!==!!on){if(on)c.collapsed=true;else delete c.collapsed;ch=true;}});
+    st.autos.forEach(j=>{const k=autoKey(b,col,j);if(on)fold.add(k);else fold.delete(k);});
+    if(st.autos.length)saveFold();
+    if(ch)_bvTouch(b);   // one board save for the whole column
+    _bvRenderBody();
+  };
+
+  // ── 3. Links ───────────────────────────────────────────────────────────────────────────
+  const normUrl=u=>{u=String(u||'').trim();if(!u)return'';if(!/^[a-z][a-z0-9+.-]*:/i.test(u))u='https://'+u.replace(/^\/+/,'');return/^https?:\/\/[a-z0-9[][^\s<>"'`]*$/i.test(u)?u:'';};
+  const linkLine=(url,label)=>{label=String(label||'').replace(/[\[\]\n]+/g,' ').trim().slice(0,200);return label?`[${label}](${url.replace(/[()]/g,c=>encodeURIComponent(c))})`:url;};
+  const ADD_LIST='<i class="ti ti-checklist"></i>Add checklist</button>';
+  ['_r5NoteHTML','_r5PersonHTML'].forEach(fn=>{
+    const orig=window[fn];if(typeof orig!=='function')return;
+    window[fn]=function(b,col,c){
+      const h=orig(b,col,c);if(c.collapsed)return h;
+      const i=h.lastIndexOf(ADD_LIST);if(i<0)return h;
+      const btn=`<button class="r5-link" onclick="event.stopPropagation();bvFb2LinkPop(this,${_r5A(c.id)})"><i class="ti ti-link"></i>Add link</button>`;
+      return h.slice(0,i+ADD_LIST.length)+btn+h.slice(i+ADD_LIST.length);
+    };
+  });
+  window.bvFb2LinkPop=function(anchor,id){
+    if(_bvPopToggle(anchor))return;
+    _bvPop(anchor,`<form class="fb2-link-pop" onsubmit="event.preventDefault();bvFb2AddLink(${_r5A(id)},this.url.value,this.label.value)">
+      <label>Link<input class="form-inp" name="url" placeholder="Paste a Google Doc or any web link" autocomplete="off" required></label>
+      <label>Text to show (optional)<input class="form-inp" name="label" placeholder="e.g. Brief" autocomplete="off"></label>
+      <div class="fb2-link-ft"><button type="button" class="d-action sm" onclick="_bvClosePop()">Cancel</button><button class="d-action sm primary">Add link</button></div></form>`);
+    setTimeout(()=>document.querySelector('#bv-pop input[name=url]')?.focus(),0);
+  };
+  window.bvFb2AddLink=function(id,url,label){
+    const u=normUrl(url);if(!u){toast('That doesn’t look like a web link (http or https)','warn');return;}
+    _bvClosePop();
+    const ctx=_r5Ctx(id);if(!ctx)return;const line=linkLine(u,label);
+    if(_r5Kind(ctx.card)==='person'){bvR5AddNote(id,line,'b');return;}   // person notes are dated lines
+    const cur=String(ctx.card.desc||'').replace(/\s+$/,'');
+    ctx.card.desc=cur?cur+'\n'+line:line;_r5Changed(ctx);
+  };
+  // Paste a URL over selected text in a board field → [text](url).
+  document.addEventListener('paste',e=>{
+    const t=e.target;if(!t||!t.closest||!(t.closest('#board-detail')||t.closest('#bv-drawer')))return;
+    if(!(t.tagName==='TEXTAREA'||(t.tagName==='INPUT'&&(!t.type||t.type==='text'))))return;
+    const s=t.selectionStart,en=t.selectionEnd;if(s==null||en==null||en<=s)return;
+    const sel=t.value.slice(s,en);if(/^\s*https?:\/\//i.test(sel)||/[\[\]\n]/.test(sel))return;
+    const txt=String(e.clipboardData&&e.clipboardData.getData('text/plain')||'').trim();
+    if(!/^https?:\/\/\S+$/i.test(txt))return;
+    const u=normUrl(txt);if(!u)return;
+    e.preventDefault();
+    t.setRangeText(linkLine(u,sel),s,en,'end');t.dispatchEvent(new Event('input',{bubbles:true}));
+  },true);
 })();
 </script>
 </body>

@@ -110,6 +110,81 @@ await t('a non-admin cannot change who sees a board; an admin can', async () => 
   assert.ok(!(await getBoards(ann)).some((b) => b.id === 'hr'));
 });
 
+console.log('specific people');
+await t('GET lists the account people (no password hashes) for the Share picker', async () => {
+  const j = await (await call({ cookie: ann })).json();
+  assert.deepEqual(j.people.map((p) => p.email).sort(), ['ann@cc.test', 'boss@cc.test', 'cat@cc.test', 'owner@cc.test']);
+  assert.ok(j.people.every((p) => !('pw' in p)));
+});
+await t('a member creates a board shared with specific people: only they, the creator and admins see it', async () => {
+  const r = await call({ method: 'PUT', cookie: ann, body: { board: board('sp', { visibility: 'people', sharedWith: ['Cat@CC.test', 'cat@cc.test', 'not an email', '<x>@y'], visibilityAt: Date.now() }) } });
+  assert.equal(r.status, 200);
+  const saved = (await r.json()).board;
+  assert.equal(saved.visibility, 'people');
+  assert.deepEqual(saved.sharedWith, ['cat@cc.test'], 'normalised, de-duplicated, invalid dropped');
+  assert.ok((await getBoards(ann)).some((b) => b.id === 'sp'), 'creator');
+  assert.ok((await getBoards(cat)).some((b) => b.id === 'sp'), 'invited');
+  assert.ok((await getBoards(boss)).some((b) => b.id === 'sp'), 'admin');
+});
+await t('someone not invited cannot read or write a specific-people board', async () => {
+  // a member who isn't on the list (owner is an admin via ADMIN_EMAILS)
+  const before = gh.files.get('boards/sp.json.enc').sha;
+  const extra = { email: 'eve@cc.test', name: 'Eve', pw: 'scrypt$x$eveeveeveeveev', admin: false };
+  gh.files.set('auth/access.json.enc', { body: C.encryptJson({ users: [...users, extra], requests: [] }, KEY), sha: '"a1"' });
+  S._resetCaches();
+  const eve = await cookieFor(extra);
+  assert.ok(!(await getBoards(eve)).some((b) => b.id === 'sp'));
+  assert.equal((await call({ method: 'PUT', cookie: eve, body: { board: board('sp', { visibility: 'people', sharedWith: ['cat@cc.test'], updatedAt: Date.now() }) } })).status, 403);
+  assert.equal((await call({ method: 'PUT', cookie: eve, body: { board: board('sp', { visibility: 'people', sharedWith: ['cat@cc.test', 'eve@cc.test'], visibilityAt: Date.now() + 5, updatedAt: Date.now() }) } })).status, 403);
+  assert.equal(gh.files.get('boards/sp.json.enc').sha, before);
+  // invited people can edit cards
+  const ok = await call({ method: 'PUT', cookie: cat, body: { board: board('sp', { visibility: 'people', sharedWith: ['cat@cc.test'], updatedAt: Date.now(), columns: [{ id: 'c1', name: 'One', cards: [card('k1', 'Edited by Cat', Date.now())] }] }) } });
+  assert.equal(ok.status, 200);
+  assert.equal((await ok.json()).board.columns[0].cards[0].title, 'Edited by Cat');
+});
+await t('an invited member cannot change who sees it; a stale copy keeps the stored list', async () => {
+  const sp = (await getBoards(ann)).find((b) => b.id === 'sp');
+  const add = await call({ method: 'PUT', cookie: cat, body: { board: { ...sp, sharedWith: ['cat@cc.test', 'eve@cc.test'], visibilityAt: Date.now() + 10, updatedAt: Date.now() + 10 } } });
+  assert.equal(add.status, 403);
+  const tryTeam = await call({ method: 'PUT', cookie: cat, body: { board: { ...sp, visibility: 'everyone', visibilityAt: Date.now() + 10, updatedAt: Date.now() + 10 } } });
+  assert.equal(tryTeam.status, 403);
+  // a stale copy (older visibilityAt) with a different list: saved, but the stored list stays
+  const stale = await call({ method: 'PUT', cookie: cat, body: { board: { ...sp, sharedWith: [], visibility: 'everyone', visibilityAt: 1, updatedAt: Date.now() + 20 } } });
+  assert.equal(stale.status, 200);
+  const got = (await stale.json()).board;
+  assert.equal(got.visibility, 'people'); assert.deepEqual(got.sharedWith, ['cat@cc.test']);
+});
+await t('the creator adds and removes people; removed people lose the board', async () => {
+  const sp = (await getBoards(ann)).find((b) => b.id === 'sp');
+  const r = await call({ method: 'PUT', cookie: ann, body: { board: { ...sp, sharedWith: ['eve@cc.test'], visibilityAt: Date.now() + 30, updatedAt: Date.now() + 30 } } });
+  assert.equal(r.status, 200);
+  assert.deepEqual((await r.json()).board.sharedWith, ['eve@cc.test']);
+  assert.ok(!(await getBoards(cat)).some((b) => b.id === 'sp'), 'cat removed');
+  assert.equal((await call({ method: 'PUT', cookie: cat, body: { board: { ...sp, updatedAt: Date.now() + 40 } } })).status, 403);
+});
+await t('the creator cannot make a board admins-only; an admin can move it between all three', async () => {
+  const sp = (await getBoards(ann)).find((b) => b.id === 'sp');
+  assert.equal((await call({ method: 'PUT', cookie: ann, body: { board: { ...sp, visibility: 'admins', visibilityAt: Date.now() + 50, updatedAt: Date.now() + 50 } } })).status, 403);
+  const toTeam = await call({ method: 'PUT', cookie: boss, body: { board: { ...sp, visibility: 'everyone', visibilityAt: Date.now() + 60, updatedAt: Date.now() + 60 } } });
+  const tb = (await toTeam.json()).board;
+  assert.equal(tb.visibility, 'everyone'); assert.equal(tb.sharedWith, undefined, 'list dropped when not specific people');
+  assert.ok((await getBoards(cat)).some((b) => b.id === 'sp'));
+  const toPeople = await call({ method: 'PUT', cookie: boss, body: { board: { ...tb, visibility: 'people', sharedWith: ['cat@cc.test'], visibilityAt: Date.now() + 70, updatedAt: Date.now() + 70 } } });
+  assert.deepEqual((await toPeople.json()).board.sharedWith, ['cat@cc.test']);
+  assert.equal(B.canSee({ visibility: 'people', sharedWith: ['cat@cc.test'], createdBy: 'ann@cc.test' }, { email: 'ANN@cc.test' }), true);
+  assert.equal(B.canSee({ visibility: 'people', sharedWith: ['cat@cc.test'] }, { email: 'eve@cc.test' }), false);
+  assert.equal(B.canSee({ visibility: 'people', sharedWith: [] }, { email: 'eve@cc.test', admin: true }), true);
+  // restore the original account list for the tests below
+  gh.files.set('auth/access.json.enc', { body: C.encryptJson({ users, requests: [] }, KEY), sha: '"a2"' });
+  S._resetCaches();
+});
+await t('merge: the later visibility change carries its people list', () => {
+  const a = { id: 'm', name: 'm', updatedAt: 5, visibility: 'people', sharedWith: ['a@x.y'], visibilityAt: 10, columns: [] };
+  const b = { id: 'm', name: 'm', updatedAt: 9, visibility: 'people', sharedWith: ['b@x.y'], visibilityAt: 3, columns: [] };
+  assert.deepEqual(B.mergeBoards(a, b).sharedWith, ['a@x.y']);
+  assert.equal(B.mergeBoards(a, { ...b, visibility: 'everyone', visibilityAt: 20 }).sharedWith, undefined);
+});
+
 console.log('merge');
 await t('stale save merges by card id: newest card wins, others kept, new cards from both', async () => {
   // Browser X (stale copy) edits k1 and adds k9; meanwhile browser Y already edited k2 and added k8.

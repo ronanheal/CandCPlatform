@@ -256,6 +256,17 @@ t('links: attribute breakouts stay escaped', () => {
   assert.equal(bvLinkText(null), '');
 });
 
+t('links: [label](url) shows the escaped label; only http(s) targets', () => {
+  assert.equal(bvLinkText('Brief: [The <b>brief</b>](https://docs.google.com/document/d/abc/edit?usp=a&b=1) ok'),
+    'Brief: <a class="bv-url" href="https://docs.google.com/document/d/abc/edit?usp=a&amp;b=1" target="_blank" rel="noopener noreferrer" title="https://docs.google.com/document/d/abc/edit?usp=a&amp;b=1" draggable="false" onclick="event.stopPropagation()">The &lt;b&gt;brief&lt;/b&gt;</a> ok');
+  for (const bad of ['[x](javascript:alert(1))', '[x](data:text/html,hi)', '[x]("onmouseover=alert(1))']) {
+    assert.doesNotMatch(bvLinkText(bad), /<a /, bad);
+  }
+  const h = bvLinkText('[a"b](https://example.test/x"y) and https://example.test/z');
+  assert.doesNotMatch(h, /href="[^"]*"y/);
+  assert.equal((h.match(/<a /g) || []).length, 2);
+});
+
 // ── Old auto-made Team WIP: offered for removal only when untouched ──
 t('old Team WIP: empty template board is removable; any added content is not', () => {
   const tpl = () => ({ columns: [
