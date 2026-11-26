@@ -28397,8 +28397,8 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
    Loaded last so it settles what the earlier layers disagreed on (pills vs rounded rects,
    12.5 vs 13px labels, 600 vs 500 weights, 26/28/30/32/34px heights).
 
-   Shape    Rounded rectangle at --btn-r (= --r-ctl, 10px) for everything you can press.
-            Pills (--r-pill) stay only on static status badges: "pill = label, rect = button".
+   Shape    Fully rounded (--btn-r = --r-pill) for everything you can press (owner's call, Nov 2026;
+            see section 7). Secondary buttons are quiet until hover: no bubble at rest.
    Sizes    md  --btn-h    34px  toolbars, page and section headers, modal footers
             sm  --btn-h-sm 28px  dense spots: board popovers, back link, bulk bar, chips
             Icon-only buttons are square at the same height.
@@ -28545,6 +28545,21 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
     .todo-banner-switch,.zb-view,.fb2-pill,.sched-pick-btn,.rep-end-chip,.todo-view-toggle .tvt-btn,.r-tabs .r-subtab,.c2-seg button,
     .fb2-wk-seg button,.fb2-jst button,#view-todo .person-switcher,#bv-head .bv-ibtn){transition:none!important;}
 }
+
+/* ── 7 · Owner's call (Nov 2026): fully rounded buttons, and "quiet until hover" ─────────────
+   Every button is a pill. Secondary buttons show no bubble or outline at rest: just their text
+   and icon. Pointing at one (or keyboard focus, or its menu being open, or it being "on")
+   brings the bubble up, like the To Do name picker. Primary and danger stay filled, so the main
+   action on each screen is the one thing that stands out. Inputs and selects keep their outline. */
+:root{--btn-r:var(--r-pill,999px);--btn-r-seg:var(--r-pill,999px);}
+:is(html,#btn-sys#btn-sys) :is(.d-action:not(.primary):not(.danger),.wbtn,.filter-btn:not(select),.p-btn,.dh-sec-btn,.detail-back,.inv-act,
+  .ob-btn:not(.primary),.cancel-b,.fup-n,.tm-btn-timer,#view-todo .person-switcher){
+  background:transparent!important;border-color:transparent!important;box-shadow:none!important;}
+:is(html,#btn-sys#btn-sys) :is(.d-action:not(.primary):not(.danger),.wbtn,.filter-btn:not(select),.p-btn,.dh-sec-btn,.detail-back,.inv-act,
+  .ob-btn:not(.primary),.cancel-b,.fup-n,.tm-btn-timer,#view-todo .person-switcher):is(:hover,:focus-visible,[aria-expanded="true"],.on,.open){
+  background:var(--white)!important;border-color:var(--border)!important;box-shadow:var(--e-1)!important;color:var(--ink)!important;}
+:is(html,#btn-sys#btn-sys) body.dark :is(.d-action:not(.primary):not(.danger),.wbtn,.filter-btn:not(select),.p-btn,.dh-sec-btn,.detail-back,.inv-act,
+  .ob-btn:not(.primary),.cancel-b,.fup-n,.tm-btn-timer,#view-todo .person-switcher):is(:hover,:focus-visible,[aria-expanded="true"],.on,.open){background:var(--surface-2)!important;}
 </style>
 </body>
 </html>
