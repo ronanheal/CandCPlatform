@@ -26409,6 +26409,9 @@ _stRenderViews=function(){
 .fb1-pk-body{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:6px;padding:10px;}
 .fb1-park-side .fb1-pt-card{background:var(--off);}
 .fb1-pk-hint{font-size:12px;color:var(--muted);padding:4px 2px;line-height:1.45;}
+/* "+ New task" sits on top of the day's stack, like Streamtime's Add New: a tab on the top card */
+#view-todo #day-cols .fb1-new{order:-1;justify-content:center;margin:0 0 -2px;padding:7px 8px;border:1px solid var(--faint);border-bottom-color:transparent;border-radius:10px 10px 4px 4px;background:color-mix(in srgb,var(--white) 70%,transparent);opacity:.9;}
+#view-todo #day-cols .fb1-new:hover{background:var(--white);border-color:var(--border);opacity:1;}
 /* Split task parts: shared coloured edge, a "Split 2/3" tag, siblings light up together */
 #view-todo #day-cols .task-card.fb1-split{box-shadow:inset 3px 0 0 hsl(var(--split-h) 55% 52%),0 1px 3px rgba(46,36,20,.06)!important;}
 #view-todo #day-cols .task-card.fb1-split.fb1-split-hi{box-shadow:inset 3px 0 0 hsl(var(--split-h) 55% 52%),0 0 0 2px hsl(var(--split-h) 55% 52% / .5)!important;}
