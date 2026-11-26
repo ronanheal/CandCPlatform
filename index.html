@@ -26296,5 +26296,384 @@ _stRenderViews=function(){
 .fb1-sug-n{font-variant-numeric:tabular-nums;color:var(--muted);flex:none;}.fb1-sug-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.fb1-sug-c{font-size:11.5px;color:var(--muted);flex:none;}
 .tm-btn-log{display:inline-flex;align-items:center;gap:6px;}
 </style>
+<style id="fb2-time-style">
+/* ═══ Feedback batch 2: To Do time per day, week toggles, Billables report, report favourites ═══ */
+/* Day total vs capacity, beside the day name */
+#view-todo .fb2-day-tot{margin-left:auto;margin-right:4px;align-self:center;font:600 13px/1 var(--font);color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;}
+#view-todo .fb2-day-tot span{font-weight:500;font-size:11.5px;color:var(--muted);margin-left:1px;}
+#view-todo .fb2-day-tot.over{color:var(--warn-ink);}
+#view-todo .fb2-day-tot.zero{color:var(--muted);font-weight:500;}
+.fb2-wk-cap b{color:var(--ink);}
+/* Week toggles: ‹ [week picker] ›  Last / This / Next week */
+#view-todo #wbtn-prev,#view-todo #wbtn-next{width:var(--ctl-h,32px);padding:0!important;justify-content:center;border-radius:var(--r-pill)!important;}
+#view-todo #wbtn-prev i,#view-todo #wbtn-next i{font-size:14px;pointer-events:none;}
+#view-todo .week-nav{gap:4px!important;}
+/* the Last/This/Next toggle replaces "This week" when there's room; narrower windows keep the old button */
+@media (min-width:1361px){#view-todo #wbtn-today{display:none!important;}}
+@media (max-width:1360px){.fb2-wk-seg{display:none!important;}}
+/* narrow columns: the day name truncates and "Add task" becomes its icon so the day total fits */
+#view-todo .day-head-row>div:first-child{overflow:hidden;}
+#view-todo .day-head-row .day-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+@media (max-width:1360px){#view-todo .day-head-row .day-add-btn{font-size:0!important;gap:0;padding:0 7px!important;}#view-todo .day-head-row .day-add-btn i{font-size:13px;}}
+.fb2-wk-seg{display:inline-flex;align-items:center;gap:2px;margin-left:4px;padding:2px;border:1px solid var(--border);border-radius:var(--r-pill);background:var(--white);height:var(--ctl-h,32px);box-sizing:border-box;flex-shrink:0;}
+.fb2-wk-seg button{border:0;background:transparent;font:500 12.5px/1 var(--font);color:var(--muted);padding:0 10px;height:100%;border-radius:var(--r-pill);cursor:pointer;white-space:nowrap;}
+.fb2-wk-seg button:hover{color:var(--ink);background:var(--off);}
+.fb2-wk-seg button.on{background:var(--ink);color:var(--on-ink,#fff);}
+.fb2-wk-seg button:focus-visible{outline:2px solid var(--focus);outline-offset:1px;}
+/* Task form: split the hours across days */
+#todo-modal .fb2-split-days{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;}
+#todo-modal .fb2-sd{display:flex;flex-direction:column;gap:5px;align-items:stretch;padding:6px;border:1px solid var(--faint);border-radius:var(--r-ctl,10px);background:var(--white);}
+#todo-modal .fb2-sd.off{background:transparent;opacity:.6;}
+#todo-modal .fb2-sd label{display:flex;align-items:center;gap:5px;font:500 12px/1.2 var(--font);color:var(--ink);cursor:pointer;}
+#todo-modal .fb2-sd input[type=text]{width:100%!important;min-height:28px!important;height:28px;box-sizing:border-box;padding:0 6px!important;font:500 12.5px/1 var(--font)!important;text-align:center;font-variant-numeric:tabular-nums;border:1px solid var(--border);border-radius:8px;background:var(--white);color:var(--ink);}
+#todo-modal .fb2-sd input[type=text]:disabled{background:transparent;color:var(--muted);}
+#todo-modal .fb2-split-ft{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:var(--muted);}
+#todo-modal .fb2-split-ft b{color:var(--ink);font-variant-numeric:tabular-nums;}
+#todo-modal .fb2-split-ft button{margin-left:auto;border:0;background:none;color:var(--muted);font:500 12px/1 var(--font);cursor:pointer;padding:4px 6px;border-radius:6px;}
+#todo-modal .fb2-split-ft button:hover{color:var(--ink);background:var(--white);}
+/* Reporting favourites */
+.fb2-fav-wrap{position:relative;flex-shrink:0;}
+.fb2-fav-pop{position:absolute;right:0;top:calc(100% + 6px);z-index:950;width:300px;background:var(--white);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.16);padding:8px;display:none;}
+.fb2-fav-pop.on{display:block;}
+.fb2-fav-hd{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;padding:4px 6px 6px;}
+.fb2-fav-row{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--ink);}
+.fb2-fav-row:hover,.fb2-fav-row:focus-visible{background:var(--off);outline:none;}
+.fb2-fav-row>i{color:var(--warn,#B0781A);font-size:13px;}
+.fb2-fav-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.35;}
+.fb2-fav-m{font-size:11.5px;color:var(--muted);}
+.fb2-fav-x{border:0;background:none;color:var(--muted);cursor:pointer;padding:2px 4px;border-radius:6px;}
+.fb2-fav-x:hover{color:var(--danger-ink);background:var(--white);}
+.fb2-fav-empty{font-size:12.5px;color:var(--muted);padding:4px 8px 8px;line-height:1.45;}
+.fb2-fav-save{display:flex;gap:6px;border-top:1px solid var(--faint);margin-top:6px;padding:8px 2px 2px;}
+.fb2-fav-save input{flex:1;min-width:0;height:30px;padding:0 9px;border:1px solid var(--border);border-radius:8px;font:13px var(--font);background:var(--white);color:var(--ink);}
+.fb2-fav-save .d-action{height:30px!important;}
+#view-reporting .fb2-fav-btn b{display:inline-block;min-width:16px;padding:0 4px;border-radius:99px;background:var(--off);font-size:11px;font-weight:600;color:var(--ink);text-align:center;}
+</style>
+<script id="fb2-time-script">
+// ═══ Feedback batch 2: To Do time and Reporting (team feedback sheet, Nov 2026) ═══════════════
+// 1 · Hours per day for planning (Ashlee): each day shows its planned total against capacity,
+//     the toolbar chip adds the week's planned total, and a new task can be split across days.
+// 2 · Week toggles (Maya): ‹ › either side of the week picker, plus Last / This / Next week.
+// 3 · Billables report (Maya): a Reporting tab — billable vs non-billable by person, by job
+//     and by person × job, with utilisation, for the period.
+// 4 · Report favourites (Maya): save the current tab + period + filters, load in one click.
+(function(){
+  // ─────────────── 1 · Hours per day ───────────────
+  const dayHrs=tasks=>{let t=0,d=0;(tasks||[]).forEach(x=>{if(x.done)d+=x.hours||0;else t+=x.hours||0;});return{todo:t,done:d,all:t+d};};
+  const isoOf=d=>{try{return _ccWeekDates(weekOffset)[d-1];}catch(e){return null;}};
+  function dayTot(day){
+    const col=document.querySelector(`#day-cols .day-col.workday[data-day="${day}"]`);if(!col)return;
+    const row=col.querySelector('.day-head-row');if(!row)return;
+    const h=dayHrs(getWeekData(currentPerson)[day]);const cap=_dayCap(currentPerson,isoOf(day))||0;
+    let el=row.querySelector('.fb2-day-tot');
+    if(!el){el=document.createElement('div');el.className='fb2-day-tot';row.insertBefore(el,row.querySelector('.day-add-btn'));}
+    el.className='fb2-day-tot'+(h.all>cap?' over':'')+(h.all?'':' zero');
+    el.innerHTML=`${formatHrs(h.all)||'0h'}<span>/${formatHrs(cap)||'0h'}</span>`;
+    el.title=`${DAY_NAMES[day-1]}: ${formatHrs(h.all)||'0h'} planned of ${formatHrs(cap)||'0h'} · ${formatHrs(h.todo)||'0h'} to do, ${formatHrs(h.done)||'0h'} done`+(h.all>cap?` · ${formatHrs(h.all-cap)} over`:cap>h.all?` · ${formatHrs(cap-h.all)} free`:'');
+  }
+  function weekCap(){
+    const days=people[currentPerson]?.days||[1,2,3,4,5];
+    return [1,2,3,4,5].reduce((s,d)=>s+(days.includes(d)?(_dayCap(currentPerson,isoOf(d))||0):0),0);
+  }
+  // Toolbar chip: "4h to do · 2h done · 24h/40h planned"
+  function _sumCap(){
+    const el=document.getElementById('todo-sum-text');if(!el||!people[currentPerson])return;
+    const data=getWeekData(currentPerson);let all=0,todo=0,done=0;
+    [1,2,3,4,5].forEach(d=>{const h=dayHrs(data[d]);all+=h.all;todo+=h.todo;done+=h.done;});
+    el.innerHTML=`<b>${formatHrs(todo)||'0h'}</b><span class="tb-w"> to do</span> · <b>${formatHrs(done)||'0h'}</b><span class="tb-w"> done</span><span class="fb2-wk-cap"> · <b>${formatHrs(all)||'0h'}</b>/${formatHrs(weekCap())||'0h'}<span class="tb-w"> planned</span></span>`;
+  }
+  const _rt=renderTodo;
+  renderTodo=function(){
+    const out=_rt.apply(this,arguments);
+    try{if(_todoViewMode!=='calendar'&&!window._focusToday){[1,2,3,4,5].forEach(dayTot);_sumCap();}}catch(e){}
+    try{_wkSeg();}catch(e){}
+    return out;
+  };
+  const _rth=renderTodoHeader;
+  renderTodoHeader=function(day){const out=_rth.apply(this,arguments);try{dayTot(day);_sumCap();}catch(e){}return out;};
+
+  // ── Split a new task's hours across days ──
+  const SP={on:false,days:{}}; // days: {1:{on,h}}
+  const parseH=s=>{const v=parseHrsInput(s);return isFinite(v)&&v>0?v:0;};
+  const q15=h=>Math.round(h*4)/4;
+  function evenSplit(){
+    const tot=parseH(document.getElementById('td-hours')?.value);
+    const on=[1,2,3,4,5].filter(d=>SP.days[d].on);if(!on.length)return;
+    const quarters=Math.round(tot*4),base=Math.floor(quarters/on.length);let rem=quarters-base*on.length;
+    on.forEach(d=>{SP.days[d].h=(base+(rem>0?1:0))/4;if(rem>0)rem--;});
+  }
+  const splitTotal=()=>[1,2,3,4,5].reduce((s,d)=>s+(SP.days[d].on?SP.days[d].h||0:0),0);
+  function renderSplit(){
+    const box=document.getElementById('fb2-split');if(!box)return;
+    box.classList.toggle('on',SP.on);
+    const btn=document.getElementById('fb2-split-btn');
+    if(btn){btn.classList.toggle('on',SP.on);btn.setAttribute('aria-expanded',SP.on?'true':'false');}
+    const hl=document.getElementById('td-hours-lbl');if(hl&&!document.getElementById('td-done')?.checked)hl.textContent=SP.on?'Total':'Scheduled';
+    const ds=document.getElementById('td-day');if(ds)ds.disabled=SP.on;
+    if(!SP.on){box.innerHTML='';return;}
+    const n=[1,2,3,4,5].filter(d=>SP.days[d].on).length,tot=splitTotal();
+    box.innerHTML=`<div class="fb2-split-days" role="group" aria-label="Hours per day">${[1,2,3,4,5].map(d=>{const x=SP.days[d];return`<div class="fb2-sd${x.on?'':' off'}"><label><input type="checkbox" ${x.on?'checked':''} onchange="_fb2SplitDay(${d},this.checked)">${DAY_NAMES[d-1].slice(0,3)}</label><input type="text" inputmode="decimal" aria-label="${DAY_NAMES[d-1]} hours" value="${x.on&&x.h?esc(formatHrs(x.h)):''}" placeholder="${x.on?'0h':'—'}" ${x.on?'':'disabled'} onchange="_fb2SplitHrs(${d},this.value)"></div>`;}).join('')}</div>
+      <div class="fb2-split-ft"><span><b>${formatHrs(tot)||'0h'}</b> over ${n} day${n===1?'':'s'} · one card on each day</span><button type="button" onclick="_fb2SplitEven()">Split evenly</button></div>`;
+  }
+  window._fb2SplitDay=function(d,on){SP.days[d].on=on;evenSplit();renderSplit();};
+  window._fb2SplitHrs=function(d,v){SP.days[d].h=q15(parseH(v));const hi=document.getElementById('td-hours');if(hi)hi.value=formatHrs(splitTotal());renderSplit();};
+  window._fb2SplitEven=function(){evenSplit();renderSplit();};
+  window._fb2SplitToggle=function(){
+    if(!SP.on){
+      if(document.getElementById('td-done')?.checked){toast('Splitting is for planned time. Untick “Log as done” first.','warn');return;}
+      if(document.getElementById('td-repeat-config')?.classList.contains('on')){toast('Turn Repeat off to split the hours across days','warn');return;}
+      const who=_todoAssignTo||currentPerson,work=people[who]?.days||[1,2,3,4,5];
+      const from=parseInt(document.getElementById('td-day')?.value)||1;
+      let pick=[1,2,3,4,5].filter(d=>d>=from&&work.includes(d));if(pick.length<2)pick=[1,2,3,4,5].filter(d=>work.includes(d));
+      [1,2,3,4,5].forEach(d=>SP.days[d]={on:pick.includes(d),h:0});
+      SP.on=true;evenSplit();
+    }else SP.on=false;
+    renderSplit();
+    if(SP.on){const hi=document.getElementById('td-hours');if(hi&&!hi.value)hi.focus();}
+  };
+  function resetSplit(){SP.on=false;[1,2,3,4,5].forEach(d=>SP.days[d]={on:false,h:0});renderSplit();}
+  function installSplit(){
+    const rep=document.getElementById('td-repeat-btn');if(!rep||document.getElementById('fb2-split-btn'))return;
+    const b=document.createElement('button');b.type='button';b.className='tm-repeat-btn';b.id='fb2-split-btn';
+    b.title='Split the hours across days: one card on each day';b.setAttribute('aria-controls','fb2-split');b.setAttribute('aria-expanded','false');
+    b.innerHTML='<i class="ti ti-arrows-split-2" aria-hidden="true"></i><span>Split</span>';b.onclick=window._fb2SplitToggle;
+    rep.after(b);
+    const box=document.createElement('div');box.className='tm-repeat-config fb2-split';box.id='fb2-split';
+    const cfg=document.getElementById('td-repeat-config');if(cfg)cfg.before(box);
+  }
+  installSplit();resetSplit();
+  // the total re-splits evenly as you type it
+  document.addEventListener('input',e=>{if(e.target.id==='td-hours'&&SP.on){evenSplit();renderSplit();}});
+  // new tasks only: hidden when editing, reset every time the form opens
+  const modal=document.getElementById('todo-modal');
+  if(modal)new MutationObserver(()=>{
+    if(!modal.classList.contains('on'))return;
+    installSplit();resetSplit();
+    const b=document.getElementById('fb2-split-btn');if(b)b.style.display=editingTaskId?'none':'';
+  }).observe(modal,{attributes:true,attributeFilter:['class']});
+  const _save=saveTodo;
+  saveTodo=function(){
+    if(!SP.on||editingTaskId)return _save.apply(this,arguments);
+    if(document.getElementById('td-done')?.checked){toast('Splitting is for planned time. Untick “Log as done” or turn Split off.','warn');return;}
+    if(document.getElementById('td-repeat-config')?.classList.contains('on')){toast('Turn Repeat off to split the hours across days','warn');return;}
+    const parts=[1,2,3,4,5].filter(d=>SP.days[d].on&&SP.days[d].h>0).map(d=>({d,h:SP.days[d].h}));
+    if(!parts.length){toast('Enter the total hours, then pick the days','warn');document.getElementById('td-hours')?.focus();return;}
+    const who=_todoAssignTo||currentPerson,off=weekOffset,first=parts[0];
+    const before=(getWeekData(who,off)[first.d]||[]).length;
+    const ds=document.getElementById('td-day');ds.disabled=false;ds.value=String(first.d);
+    document.getElementById('td-hours').value=formatHrs(first.h);
+    const out=_save.apply(this,arguments);
+    const wd=getWeekData(who,off),arr=wd[first.d]||[];
+    if(arr.length<=before){renderSplit();return out;} // the form stopped the save (no name, paused job…)
+    const t=arr[arr.length-1],g=uid('sp');t.splitId=g;
+    parts.slice(1).forEach(p=>{(wd[p.d]=wd[p.d]||[]).push({...t,id:uid('t'),hours:p.h,done:false,splitId:g});});
+    SP.on=false;
+    saveData();renderTodo();
+    toast(`Split ${formatHrs(parts.reduce((s,p)=>s+p.h,0))} over ${parts.length} day${parts.length===1?'':'s'}`,'success');
+    return out;
+  };
+
+  // ─────────────── 2 · Week toggles ───────────────
+  function _wkSeg(){document.querySelectorAll('#fb2-wk-seg button').forEach(b=>{const on=+b.dataset.o===weekOffset;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});}
+  function installWeekNav(){
+    const prev=document.getElementById('wbtn-prev'),next=document.getElementById('wbtn-next'),cal=document.getElementById('wbtn-cal');
+    if(!prev||!next||!cal||prev.dataset.fb2)return;
+    [[prev,'left','Previous week (←)'],[next,'right','Next week (→)']].forEach(([b,dir,lbl])=>{
+      b.dataset.fb2='1';b.style.display='';b.removeAttribute('aria-hidden');b.title=lbl;b.setAttribute('aria-label',lbl);
+      b.innerHTML=`<i class="ti ti-chevron-${dir}" aria-hidden="true"></i>`;
+    });
+    cal.after(next); // ‹ picker › reads as one control
+    const seg=document.createElement('div');seg.className='fb2-wk-seg';seg.id='fb2-wk-seg';seg.setAttribute('role','group');seg.setAttribute('aria-label','Jump to week');
+    seg.innerHTML=`<button type="button" data-o="-1">Last week</button><button type="button" data-o="0">This week</button><button type="button" data-o="1">Next week</button>`;
+    seg.querySelectorAll('button').forEach(b=>b.onclick=()=>{weekOffset=+b.dataset.o;updateWeekLabel();renderTodo();});
+    next.after(seg);
+    _wkSeg();
+  }
+  installWeekNav();
+
+  // ─────────────── 3 · Billables report ───────────────
+  const jobOf=t=>t.jobNum||t.jobId||(t.job||'').match(/^(\d+)/)?.[1]||'';
+  const isBill=t=>t.billable!==false&&!!jobOf(t); // same rule as People / Teams
+  function billTasks(range){
+    const co=document.getElementById('r-bill-client')?.value||'all';
+    let ts=getFilteredTasks(range);
+    if(co!=='all'){const by={};jobs.forEach(j=>by[j.id]=j.company||'');ts=ts.filter(t=>by[jobOf(t)]===co);}
+    return ts;
+  }
+  function renderBillables(el){
+    const R=_rvRange();const tasks=billTasks();const ptasks=R.prev?billTasks(R.prev):null;const weeks=_rvPeriodWeeks();
+    const co=document.getElementById('r-bill-client')?.value||'all';
+    const jobById={};jobs.forEach(j=>jobById[j.id]=j);
+    const add=(r,t)=>{r.h+=t.hours||0;if(isBill(t)){r.b+=t.hours||0;r.v+=t.sell||0;}};
+    const sum=ts=>{const r={h:0,b:0,v:0};ts.forEach(t=>add(r,t));return r;};
+    const cur=sum(tasks),prv=ptasks?sum(ptasks):null;
+    const P={},J={},X={};
+    tasks.forEach(t=>{
+      const k=t.personKey||t.person,id=jobOf(t)||'—',j=jobById[id];
+      const pr=P[k]||(P[k]={k,name:people[k]?.name||t.personName||k,team:people[k]?.team||'',color:people[k]?.color||'#999',h:0,b:0,v:0});add(pr,t);
+      const jn=j?.name||(id==='—'?'No job':(t.job||'').replace(/^\d+\s*/,''));
+      const jr=J[id]||(J[id]={id,name:jn,client:j?.company||'',type:j?_rvJobType(j):'',h:0,b:0,v:0,ppl:new Set()});add(jr,t);jr.ppl.add(k);
+      const xr=X[k+'|'+id]||(X[k+'|'+id]={k,id,name:pr.name,job:jn,client:j?.company||'',h:0,b:0,v:0});add(xr,t);
+    });
+    const pRows=Object.values(P),jRows=Object.values(J),xRows=Object.values(X);
+    pRows.forEach(r=>{r.cap=Math.max(0,Math.round(personWeeklyCap(r.k)*weeks-(window._ccLeaveHoursInReportPeriod?_ccLeaveHoursInReportPeriod(r.k):0)));r.u=r.cap>0?r.b/r.cap*100:null;});
+    const C=co==='all'?_rvSum(pRows,r=>r.cap):0;
+    const bp=(b,h)=>h>0?b/h*100:null;
+    const hrsCols=[{k:'b',l:'Billable',num:1,v:r=>r.b,f:_rvH,sum:1},{k:'nb',l:'Non-billable',num:1,v:r=>r.h-r.b,f:_rvH,sum:1},{k:'h',l:'Total',num:1,v:r=>r.h,f:_rvH,sum:1},
+      {k:'bp',l:'Billable %',num:1,v:r=>bp(r.b,r.h),f:_rvP,tot:(rs,T)=>bp(T.b,T.h)}];
+    const valCol={k:'v',l:'Billable value',num:1,v:r=>r.v,f:_rvMoney,sum:1,tip:'Billable time at sell rates, ex GST'};
+    const personTbl=_rvTable('bill-person',{file:'billables_by_person',sort:'b',unit:'person',units:'people',rows:pRows,empty:'No time logged in this period.',onRow:r=>people[r.k]?_rvCall('openTeamMember',r.k):'',cols:[
+      {k:'name',l:'Person',v:r=>r.name,h:r=>`<span class="sw-av" style="background:${r.color};margin-right:8px;">${esc(people[r.k]?.initials||r.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase())}</span>${esc(r.name)}`,cv:r=>r.name},
+      {k:'team',l:'Team',v:r=>r.team,cls:'rv-m'},
+      ...hrsCols,
+      ...(co==='all'?[{k:'cap',l:'Capacity',num:1,v:r=>r.cap,f:_rvH,sum:1,tip:'Contracted hours for the period less leave'},
+        {k:'u',l:'Utilisation',num:1,v:r=>r.u,h:r=>r.u==null?'<span class="rv-m">—</span>':_rvMeter(r.u,_rvUtilCol(r.u)),f:_rvP,tot:(rs,T)=>T.cap>0?T.b/T.cap*100:null,tip:'Billable hours ÷ capacity'}]:[]),
+      valCol,
+    ]});
+    const jobTbl=_rvTable('bill-job',{file:'billables_by_job',sort:'h',unit:'job',rows:jRows,empty:'No time logged in this period.',onRow:r=>jobById[r.id]?_rvCall('openJobDetail',r.id):'',cols:[
+      {k:'name',l:'Job',v:r=>r.name,h:r=>r.id==='—'?'<span class="rv-m">No job</span>':_rvJobCell(r.id,r.name),cv:r=>r.id==='—'?'No job':`${r.id} ${r.name}`,cls:'tx'},
+      {k:'client',l:'Client',v:r=>r.client,cls:'tx rv-m'},
+      {k:'type',l:'Type',v:r=>r.type,h:r=>r.type?`<span class="rv-pill${r.type==='Internal'?'':' ok'}">${esc(r.type)}</span>`:'<span class="rv-m">—</span>',cv:r=>r.type},
+      {k:'n',l:'People',num:1,v:r=>r.ppl.size,f:_rvN},
+      ...hrsCols,valCol,
+    ]});
+    const xTbl=_rvTable('bill-pj',{file:'billables_by_person_and_job',sort:'name',dir:1,unit:'row',rows:xRows,empty:'No time logged in this period.',onRow:r=>jobById[r.id]?_rvCall('openJobDetail',r.id):'',cols:[
+      // A–Z by person, then their biggest job first
+      {k:'name',l:'Person',v:r=>r.name+'\u0000'+String(Math.round(1e7-r.h*100)).padStart(9,'0'),h:r=>esc(r.name),cv:r=>r.name},
+      {k:'job',l:'Job',v:r=>r.id==='—'?'':r.id+' '+r.job,h:r=>r.id==='—'?'<span class="rv-m">No job</span>':_rvJobCell(r.id,r.job),cv:r=>r.id==='—'?'No job':`${r.id} ${r.job}`,cls:'tx'},
+      {k:'client',l:'Client',v:r=>r.client,cls:'tx rv-m'},
+      ...hrsCols,valCol,
+    ]});
+    const coTxt=co==='all'?'':` · ${esc(co)}`;
+    el.innerHTML=`<div class="rv-kpis">
+      ${_rvKpi('Billable hours',_rvH(cur.b),`of ${_rvH(cur.h)} logged`,{delta:prv&&_rvDelta(cur.b,prv.b,R,{fmt:_rvH})})}
+      ${_rvKpi('Non-billable hours',_rvH(cur.h-cur.b),'internal jobs and time without a job',{delta:prv&&_rvDelta(cur.h-cur.b,prv.h-prv.b,R,{fmt:_rvH,invert:true})})}
+      ${_rvKpi('Billable %',_rvP(bp(cur.b,cur.h)),'billable ÷ all logged time',{delta:prv&&prv.h>0&&cur.h>0?_rvDelta(bp(cur.b,cur.h),bp(prv.b,prv.h),R,{pts:true,fmt:_rvP}):''})}
+      ${co==='all'?_rvKpi('Utilisation',_rvP(C>0?cur.b/C*100:null),`billable ÷ ${_rvH(C)} capacity`):''}
+      ${_rvKpi('Billable value',_rvK(cur.v),'at sell rates, ex GST',{title:_rvMoney(cur.v)})}
+    </div>
+    ${_rvSec('By person',`Billable and non-billable time logged · ${esc(R.label.toLowerCase())}${coTxt}. Billable = time on a billable job. Click a person to open them.`,personTbl,_rvCsvBtn('bill-person'))}
+    ${_rvSec('By job',`Every job with time in the period, internal jobs included${coTxt}. Click a job to open it.`,jobTbl,_rvCsvBtn('bill-job'))}
+    ${_rvSec('By person and job',`Who logged what, on which job${coTxt}`,xTbl,_rvCsvBtn('bill-pj'))}`;
+  }
+  function installBillTab(){
+    const tabs=document.querySelector('#view-reporting .r-tabs');if(!tabs||document.getElementById('rt-billables'))return;
+    const b=document.createElement('button');b.className='tvt-btn r-subtab';b.id='rt-billables';b.setAttribute('onclick',"switchReportTab('billables')");
+    b.title='Billables';b.setAttribute('aria-label','Billables');
+    b.innerHTML='<i class="ti ti-receipt-2" style="font-size:13px;"></i><span class="rt-lbl">Billables</span>';
+    (document.getElementById('rt-people')||tabs.lastElementChild).after(b);
+    const pp=document.getElementById('rp-people');
+    if(pp&&!document.getElementById('rp-billables')){const p=document.createElement('div');p.id='rp-billables';p.style.display='none';pp.after(p);}
+  }
+  installBillTab();
+  function billFilters(){
+    const wrap=document.getElementById('r-tab-filters');if(!wrap)return;wrap.innerHTML='';
+    const mk=(id,ph,opts)=>{const s=document.createElement('select');s.className='filter-btn cc-select';s.id=id;s.innerHTML=`<option value="all">${esc(ph)}</option>`+opts.map(([v,l])=>`<option value="${esc(v)}">${esc(l||v)}</option>`).join('');s.addEventListener('change',()=>renderReporting());return s;};
+    const users=Object.values(stUsersById||{}).sort((a,b)=>a.name.localeCompare(b.name));
+    const teams=[...new Set(Object.values(people).map(p=>p.team).filter(Boolean))].sort();
+    const ppl=users.length?users.map(u=>[u.key,u.name]):Object.keys(people).filter(k=>!people[k]._archived).map(k=>[k,people[k].name]);
+    wrap.appendChild(mk('r-person','All people',[...teams.map(t=>['team:'+t,'Team: '+t]),...ppl]));
+    wrap.appendChild(mk('r-bill-client','All clients',[...new Set(jobs.map(j=>j.company).filter(Boolean))].sort().map(c=>[c])));
+  }
+  const _sw=switchReportTab;
+  window.switchReportTab=switchReportTab=function(tab){
+    const bp=document.getElementById('rp-billables');
+    if(tab!=='billables'){if(bp)bp.style.display='none';return _sw.apply(this,arguments);}
+    installBillTab();
+    _reportTab='billables';
+    document.querySelectorAll('.r-subtab').forEach(b=>b.classList.toggle('on',b.id==='rt-billables'));
+    document.querySelectorAll('#r-scroll > [id^="rp-"]').forEach(p=>p.style.display=p.id==='rp-billables'?'':'none');
+    try{_periodVis(true);}catch(e){}
+    billFilters();
+    renderReporting();
+  };
+  // navTo('reporting') rebuilds the filters with _buildTabFilters(_reportTab)
+  const _btf=_buildTabFilters;
+  _buildTabFilters=function(tab){return tab==='billables'?billFilters():_btf.apply(this,arguments);};
+  const _rr=renderReporting;
+  window.renderReporting=renderReporting=function(){
+    if(_reportTab!=='billables')return _rr.apply(this,arguments);
+    const s=document.getElementById('r-sub');if(s)s.textContent='Billables · '+(_rvRange().label||'');
+    const el=document.getElementById('rp-billables');if(el){el.style.display='';renderBillables(el);}
+  };
+  const _ex=exportReportTab;
+  window.exportReportTab=exportReportTab=function(){return _reportTab==='billables'?_rvCsv('bill-pj'):_ex.apply(this,arguments);};
+
+  // ─────────────── 4 · Report favourites ───────────────
+  // Per browser, like the Quotes/Invoices filter presets (localStorage cc_report_favs).
+  const FK='cc_report_favs';
+  const favs=()=>{try{const a=JSON.parse(localStorage.getItem(FK)||'[]');return Array.isArray(a)?a:[];}catch(e){return[];}};
+  const setFavs=a=>{try{localStorage.setItem(FK,JSON.stringify(a));return true;}catch(e){toast('Couldn’t save: this browser’s storage is full','warn');return false;}};
+  const TAB_L={business:'Business',teams:'Teams',people:'People',billables:'Billables',jobs:'Jobs',wip:'WIP',clients:'Clients',happy:'Team happiness'};
+  const PER_L={week:'Last 7 days','2weeks':'Last 2 weeks',month:'Last 30 days',quarter:'Last 90 days',year:'Last 12 months',all:'All time',custom:'Custom'};
+  function capture(){
+    const f={};document.querySelectorAll('#r-tab-filters select[id]').forEach(s=>{f[s.id]=s.value;});
+    const fav={tab:_reportTab,period:document.getElementById('r-period')?.value||'month',filters:f};
+    if(fav.period==='custom'){fav.from=document.getElementById('r-from')?.value||'';fav.to=document.getElementById('r-to')?.value||'';}
+    if(_reportTab==='clients')fav.clientsInternal=!!RV.state.clientsInternal;
+    if(_reportTab==='wip'&&typeof FE!=='undefined'&&FE.wip)fav.wip={...FE.wip};
+    return fav;
+  }
+  function describe(f){
+    const bits=[TAB_L[f.tab]||f.tab];
+    if(f.tab!=='wip'&&f.tab!=='happy')bits.push(f.period==='custom'?`${f.from?fmtDate(f.from):'…'} – ${f.to?fmtDate(f.to):'…'}`:PER_L[f.period]||f.period);
+    const n=Object.values(f.filters||{}).filter(v=>v&&v!=='all').length;if(n)bits.push(`${n} filter${n===1?'':'s'}`);
+    return bits.join(' · ');
+  }
+  function closeFav(){document.getElementById('fb2-fav-pop')?.classList.remove('on');document.getElementById('fb2-fav-btn')?.setAttribute('aria-expanded','false');}
+  window._fb2FavLoad=function(id){
+    const f=favs().find(x=>x.id===id);if(!f)return;
+    closeFav();
+    const per=document.getElementById('r-period');
+    if(per&&f.period){per.value=f.period;const cr=document.getElementById('r-custom-range');if(cr)cr.style.display=f.period==='custom'?'flex':'none';}
+    if(f.period==='custom'){const a=document.getElementById('r-from'),b=document.getElementById('r-to');if(a)a.value=f.from||'';if(b)b.value=f.to||'';}
+    if('clientsInternal' in f){RV.state.clientsInternal=!!f.clientsInternal;_rvSaveState();}
+    if(f.wip&&typeof FE!=='undefined'&&FE.wip)Object.assign(FE.wip,f.wip);
+    let tab=f.tab||'business';if(!document.getElementById('rt-'+tab))tab='business';
+    switchReportTab(tab); // builds the tab's filters
+    let missing=0;
+    Object.entries(f.filters||{}).forEach(([id,v])=>{const s=document.getElementById(id);if(!s)return;if([...s.options].some(o=>o.value===v))s.value=v;else missing++;});
+    renderReporting();
+    toast(missing?`Opened “${f.name}”, but ${missing} of its filters no longer match anything`:`Opened “${f.name}”`,missing?'warn':'success');
+  };
+  window._fb2FavDel=function(id,ev){
+    ev&&ev.stopPropagation();const a=favs(),f=a.find(x=>x.id===id);if(!f)return;
+    if(!setFavs(a.filter(x=>x.id!==id)))return;renderFav();favBtn();toast(`Removed “${f.name}”`,'info');
+  };
+  window._fb2FavSave=function(){
+    const inp=document.getElementById('fb2-fav-name');const name=(inp?.value||'').trim();
+    if(!name){toast('Name the favourite first','warn');inp?.focus();return;}
+    const a=favs();const ex=a.find(x=>String(x.name).toLowerCase()===name.toLowerCase());
+    const fav={...capture(),id:ex?ex.id:uid('rf'),name};
+    if(ex)a.splice(a.indexOf(ex),1,fav);else a.push(fav);
+    if(!setFavs(a))return;
+    renderFav();favBtn();toast(ex?`Updated “${name}”`:`Saved “${name}” to favourites`,'success');
+  };
+  function renderFav(){
+    const pop=document.getElementById('fb2-fav-pop');if(!pop)return;
+    const a=favs();
+    pop.innerHTML=`<div class="fb2-fav-hd">Favourite reports</div>`
+      +(a.length?a.map(f=>`<div class="fb2-fav-row" role="button" tabindex="0" onclick="_fb2FavLoad('${esc(f.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();_fb2FavLoad('${esc(f.id)}');}"><i class="ti ti-star-filled" aria-hidden="true"></i><span class="fb2-fav-n" title="${esc(describe(f))}">${esc(f.name)}<br><span class="fb2-fav-m">${esc(describe(f))}</span></span><button class="fb2-fav-x" title="Delete" aria-label="Delete ${esc(f.name)}" onclick="_fb2FavDel('${esc(f.id)}',event)"><i class="ti ti-trash"></i></button></div>`).join('')
+        :`<div class="fb2-fav-empty">Pick the tab, period and filters you want, then name and save them here to come back in one click.</div>`)
+      +`<form class="fb2-fav-save" onsubmit="event.preventDefault();_fb2FavSave();"><input id="fb2-fav-name" placeholder="Name this view" aria-label="Favourite name" maxlength="60" autocomplete="off"><button type="submit" class="d-action primary">Save</button></form>`;
+  }
+  function favBtn(){const b=document.getElementById('fb2-fav-btn');if(!b)return;const n=favs().length;b.innerHTML=`<i class="ti ti-star" style="font-size:12px" aria-hidden="true"></i> Favourites${n?` <b>${n}</b>`:''}`;}
+  function installFav(){
+    const exp=document.querySelector('#view-reporting .r-filters > .d-action[onclick^="exportReportTab"]');if(!exp||document.getElementById('fb2-fav-btn'))return;
+    const w=document.createElement('div');w.className='fb2-fav-wrap';
+    w.innerHTML=`<button class="d-action fb2-fav-btn" id="fb2-fav-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="fb2-fav-pop" title="Save this report view, or open a saved one"></button><div class="fb2-fav-pop" id="fb2-fav-pop" role="dialog" aria-label="Favourite reports"></div>`;
+    exp.before(w);favBtn();
+    document.getElementById('fb2-fav-btn').onclick=e=>{
+      e.stopPropagation();const pop=document.getElementById('fb2-fav-pop');
+      if(pop.classList.contains('on'))return closeFav();
+      renderFav();pop.classList.add('on');e.currentTarget.setAttribute('aria-expanded','true');
+      setTimeout(()=>document.getElementById('fb2-fav-name')?.focus(),30);
+    };
+    document.addEventListener('click',e=>{if(!e.target.closest('.fb2-fav-wrap'))closeFav();});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('fb2-fav-pop')?.classList.contains('on')){e.stopPropagation();closeFav();document.getElementById('fb2-fav-btn')?.focus();}},true);
+  }
+  installFav();
+})();
+</script>
 </body>
 </html>
