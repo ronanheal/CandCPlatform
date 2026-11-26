@@ -28251,5 +28251,160 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
   try{_applyAdminUi();}catch(e){}
 })();
 </script>
+<style id="btn-system-style">
+/* ════════════════════════════════════════════════════════════════════════════════════════
+   BUTTON SYSTEM. One shape for every button; variants change colour only.
+   Loaded last so it settles what the earlier layers disagreed on (pills vs rounded rects,
+   12.5 vs 13px labels, 600 vs 500 weights, 26/28/30/32/34px heights).
+
+   Shape    Rounded rectangle at --btn-r (= --r-ctl, 10px) for everything you can press.
+            Pills (--r-pill) stay only on static status badges: "pill = label, rect = button".
+   Sizes    md  --btn-h    34px  toolbars, page and section headers, modal footers
+            sm  --btn-h-sm 28px  dense spots: board popovers, back link, bulk bar, chips
+            Icon-only buttons are square at the same height.
+   Type     13px / 500 (sm 12.5px), sentence case, icons 14px, 6px gap.
+   States   Colour, border and shadow ease over --d-1. Press scales to .97 in 60ms.
+            focus-visible = 2px --focus outline. Disabled = .45 opacity and no press.
+   Variants (colour only)
+     primary    ink fill        .d-action.primary .tb-btn .modal-ok .modal-save .tm-btn-save .save-b .fup-y
+                                .cal-today-btn .r-export-btn .cb-create-btn .ob-btn.primary
+     secondary  white + border  .d-action .filter-btn .p-btn .wbtn .tm-btn-timer .cancel-b .fup-n .inv-act
+                                .ob-btn .dh-sec-btn .detail-back #view-todo .person-switcher
+     ghost      transparent     .tm-btn-cancel, .ds-m .modal-ft .modal-cancel, .dh-ghost, .hpr-link,
+                                .dt-iconset .dt-ibtn, #bv-head .bv-ibtn
+     danger     red             .modal-save.danger .modal-ok.danger .d-action.danger .btn-danger (fill),
+                                .tm-btn-delete (red text)
+   Segmented  Inset track at button height and radius. Segments use r7 (10 minus the 3px inset).
+              The selected segment is a white chip.  md: .todo-view-toggle .r-tabs .c2-seg .fb2-wk-seg
+              sm: .fb2-jst
+   Chips      sm height, button radius, sm type. "on" = ink.  .fb2-pill .sched-pick-btn .rep-end-chip
+   The :is(html,#btn-sys#btn-sys) prefix only raises specificity (it always matches <html>), so these
+   rules beat the id-scoped !important rules in earlier layers without renaming any class.
+   ════════════════════════════════════════════════════════════════════════════════════════ */
+:root{
+  --btn-h:var(--ctl-h,34px);--btn-h-sm:var(--ctl-h-sm,28px);
+  --btn-r:var(--r-ctl,10px);--btn-r-seg:7px;
+  --btn-fs:13px;--btn-fs-sm:12.5px;--btn-fw:500;
+  --btn-px:14px;--btn-px-sm:10px;--btn-gap:6px;--btn-icon:14px;
+  --btn-t:background-color var(--d-1,120ms) ease,border-color var(--d-1,120ms) ease,color var(--d-1,120ms) ease,box-shadow var(--d-2,180ms) ease,transform var(--d-1,120ms) var(--ease-out,ease-out);
+}
+
+/* ── 1 · Shape: medium (34px) text buttons ─────────────────────────────────────────────── */
+:is(html,#btn-sys#btn-sys) :is(.d-action,.filter-btn:not(select),.p-btn,.tb-btn,.save-b,.cancel-b,.modal-ok,.modal-save,.modal-cancel,
+  .tm-btn-save,.tm-btn-cancel,.tm-btn-delete,.tm-btn-timer,.fup-y,.fup-n,.cal-today-btn,.r-export-btn,.cb-create-btn,.inv-act,.ob-btn,
+  .wbtn,.dh-sec-btn,.dh-ghost){
+  height:var(--btn-h)!important;min-height:var(--btn-h)!important;box-sizing:border-box!important;
+  padding:0 var(--btn-px)!important;border-radius:var(--btn-r)!important;
+  font:var(--btn-fw) var(--btn-fs)/1 var(--font)!important;letter-spacing:-.005em!important;text-transform:none!important;
+  align-items:center;justify-content:center;gap:var(--btn-gap)!important;white-space:nowrap;
+  transition:var(--btn-t)!important;}
+/* the To Do person picker: same box, but no font shorthand (its dropdown menu lives inside it) */
+:is(html,#btn-sys#btn-sys) #view-todo .person-switcher{
+  height:var(--btn-h)!important;min-height:var(--btn-h)!important;box-sizing:border-box!important;
+  padding:0 10px 0 4px!important;border-radius:var(--btn-r)!important;align-items:center;gap:var(--btn-gap)!important;
+  transition:var(--btn-t)!important;}
+/* ── 2 · Shape: small (28px) ───────────────────────────────────────────────────────────── */
+:is(html,#btn-sys#btn-sys) :is(.d-action.sm,.bv-qa .d-action,.fb2-fav-save .d-action,.fb2-link-ft .d-action,.detail-back,.hpr-link,
+  .bulk-btn,.todo-banner-switch,.zb-view){
+  height:var(--btn-h-sm)!important;min-height:var(--btn-h-sm)!important;box-sizing:border-box!important;
+  padding:0 var(--btn-px-sm)!important;border-radius:var(--btn-r)!important;
+  font:var(--btn-fw) var(--btn-fs-sm)/1 var(--font)!important;letter-spacing:0!important;text-transform:none!important;
+  align-items:center;gap:var(--btn-gap)!important;white-space:nowrap;transition:var(--btn-t)!important;}
+/* ── 3 · Icons inside buttons: one size ────────────────────────────────────────────────── */
+:is(html,#btn-sys#btn-sys) :is(.d-action,.filter-btn,.p-btn,.tb-btn,.save-b,.cancel-b,.modal-ok,.modal-save,.modal-cancel,.tm-btn-save,
+  .tm-btn-cancel,.tm-btn-delete,.tm-btn-timer,.fup-y,.fup-n,.inv-act,.ob-btn,.wbtn,.dh-sec-btn,.dh-ghost,.detail-back,.hpr-link,.bulk-btn,
+  .todo-view-toggle .tvt-btn,.r-tabs .r-subtab,.c2-seg button,.sched-week button) > i{
+  font-size:var(--btn-icon)!important;line-height:1;}
+/* ── 4 · Icon-only buttons: square at the same height ─────────────────────────────────── */
+:is(html,#btn-sys#btn-sys) :is(#wbtn-prev,#wbtn-next,.d-action.dt-ibtn,#td-timer-btn,#bv-head .bv-ibtn:not(.sm)){
+  width:var(--btn-h)!important;min-width:var(--btn-h)!important;height:var(--btn-h)!important;min-height:var(--btn-h)!important;
+  padding:0!important;justify-content:center;border-radius:var(--btn-r)!important;flex-shrink:0;transition:var(--btn-t)!important;}
+:is(html,#btn-sys#btn-sys) #bv-head .bv-ibtn:not(.sm){font-size:16px!important;}
+:is(html,#btn-sys#btn-sys) :is(.rf-icon-btn,.ux-ibtn){width:var(--btn-h-sm)!important;height:var(--btn-h-sm)!important;padding:0!important;border-radius:var(--btn-r)!important;}
+/* Schedule's ‹ date › group: one bordered control, square arrow cells */
+:is(html,#btn-sys#btn-sys) .sched-week{height:var(--btn-h)!important;box-sizing:border-box;border-radius:var(--btn-r)!important;}
+:is(html,#btn-sys#btn-sys) .sched-week button{width:var(--btn-h);font-family:var(--font);}
+/* in-content "add" buttons that were pills */
+:is(html,#btn-sys#btn-sys) :is(.day-add-btn,.label-add-btn,.i-todo-btn){border-radius:var(--btn-r)!important;}
+
+/* ── 5 · Variants: colour only ─────────────────────────────────────────────────────────── */
+/* primary: same weight and motion as every other button (no hover lift); keeps the faint red glow */
+:is(html,#btn-sys#btn-sys) :is(.d-action.primary,.tb-btn:not(.ghost),.modal-ok,.modal-save,.tm-btn-save,.save-b,.fup-y,.cal-today-btn,
+  .r-export-btn,.cb-create-btn,.ob-btn.primary):hover{transform:none;}
+:is(html,#btn-sys#btn-sys) .ob-btn.primary{box-shadow:0 1px 2px rgba(28,26,22,.25),inset 0 1px 0 rgba(255,255,255,.12);}
+:is(html,#btn-sys#btn-sys) .ob-btn.primary:hover{background:var(--ink);box-shadow:0 2px 4px rgba(28,26,22,.2),0 8px 20px color-mix(in srgb,var(--red) 22%,transparent),inset 0 1px 0 rgba(255,255,255,.12);}
+/* secondary: the To Do person picker, dashboard section action and back link join the outline family */
+:is(html,#btn-sys#btn-sys) :is(#view-todo .person-switcher,.dh-sec-btn,.detail-back,.ob-btn:not(.primary)){
+  background:var(--white)!important;border:1px solid var(--border)!important;color:var(--ink)!important;box-shadow:var(--e-1)!important;}
+:is(html,#btn-sys#btn-sys) :is(#view-todo .person-switcher,.dh-sec-btn,.detail-back,.ob-btn:not(.primary),.wbtn):hover{
+  background:var(--surface-2)!important;border-color:var(--border-strong)!important;color:var(--ink)!important;}
+:is(html,#btn-sys#btn-sys) #view-todo .person-switcher{justify-content:flex-start;}
+:is(html,#btn-sys#btn-sys) #view-todo .person-switcher .person-av{width:26px!important;height:26px!important;}
+:is(html,#btn-sys#btn-sys) #view-todo .person-switcher .person-name{font:var(--btn-fw) var(--btn-fs)/1 var(--font)!important;letter-spacing:-.005em;color:var(--ink);}
+:is(html,#btn-sys#btn-sys) #view-todo #wbtn-cal{padding:0 12px!important;}
+:is(html,#btn-sys#btn-sys) #view-todo #wbtn-cal .wlabel{font:var(--btn-fw) var(--btn-fs)/1 var(--font)!important;letter-spacing:-.005em;}
+:is(html,#btn-sys#btn-sys) #view-todo #wbtn-cal > i{font-size:var(--btn-icon)!important;}
+:is(html,#btn-sys#btn-sys) #view-todo #wbtn-today{color:var(--ink)!important;}
+:is(html,#btn-sys#btn-sys) #vsp-btn{padding:0 12px!important;}
+:is(html,#btn-sys#btn-sys) #vsp-btn i{font-size:var(--btn-icon)!important;}
+:is(html,#btn-sys#btn-sys) .detail-back{color:var(--ink-2)!important;}
+/* ghost: transparent at rest, a soft ink wash on hover */
+:is(html,#btn-sys#btn-sys) :is(.hpr-link,.dh-ghost,#bv-head .bv-ibtn:not(.sm)):hover{background:color-mix(in srgb,var(--ink) 6%,transparent)!important;color:var(--ink)!important;}
+/* "actions" wrappers are containers, not buttons; an earlier layer drew a button box around them */
+:is(html,#btn-sys#btn-sys) :is(.rv-act,.bv-act:not(.primary)){height:auto!important;min-height:0!important;background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;transform:none!important;}
+:is(html,#btn-sys#btn-sys) .rv-act{padding:0!important;font:inherit!important;}
+:is(html,#btn-sys#btn-sys) .bv-act:not(.primary){padding:0 0 0 6px!important;font:400 11.5px/1.4 var(--font)!important;color:var(--muted)!important;}
+
+/* ── 6 · Segmented controls: same height, radius and type as a button ─────────────────── */
+:is(html,#btn-sys#btn-sys) :is(.todo-view-toggle,.r-tabs,.c2-seg,.fb2-wk-seg,.fb2-jst){
+  height:var(--btn-h)!important;box-sizing:border-box!important;padding:3px!important;gap:2px!important;border-radius:var(--btn-r)!important;
+  border:1px solid transparent!important;background:color-mix(in srgb,var(--ink) 5%,var(--off))!important;box-shadow:inset 0 1px 2px rgba(46,36,20,.06)!important;}
+:is(html,#btn-sys#btn-sys) .fb2-jst{height:var(--btn-h-sm)!important;padding:2px!important;}
+:is(html,#btn-sys#btn-sys) body.dark :is(.todo-view-toggle,.r-tabs,.c2-seg,.fb2-wk-seg,.fb2-jst){background:rgba(255,255,255,.05)!important;}
+:is(html,#btn-sys#btn-sys) :is(.todo-view-toggle .tvt-btn,.r-tabs .r-subtab,.c2-seg button,.fb2-wk-seg button,.fb2-jst button){
+  align-items:center;justify-content:center;gap:var(--btn-gap)!important;height:100%!important;min-height:0!important;
+  padding:0 10px!important;border:0!important;border-radius:var(--btn-r-seg)!important;background:transparent!important;
+  color:var(--muted)!important;font:var(--btn-fw) var(--btn-fs)/1 var(--font)!important;letter-spacing:-.005em!important;text-transform:none!important;
+  white-space:nowrap;box-shadow:none!important;transition:var(--btn-t)!important;}
+:is(html,#btn-sys#btn-sys) .dt-status .fb2-jst button{font-size:var(--btn-fs-sm)!important;}
+:is(html,#btn-sys#btn-sys) :is(.todo-view-toggle .tvt-btn,.r-tabs .r-subtab,.c2-seg button,.fb2-wk-seg button,.fb2-jst button:not([disabled])):hover{color:var(--ink)!important;}
+:is(html,#btn-sys#btn-sys) :is(.todo-view-toggle .tvt-btn.on,.todo-view-toggle #focus-btn.on,.r-tabs .r-subtab.on,.c2-seg button.on,.fb2-wk-seg button.on,.fb2-jst button[aria-checked="true"]){
+  background:var(--white)!important;color:var(--ink)!important;box-shadow:var(--e-1),0 0 0 1px color-mix(in srgb,var(--border) 70%,transparent)!important;}
+:is(html,#btn-sys#btn-sys) body.dark :is(.todo-view-toggle .tvt-btn.on,.todo-view-toggle #focus-btn.on,.r-tabs .r-subtab.on,.c2-seg button.on,.fb2-wk-seg button.on,.fb2-jst button[aria-checked="true"]){background:var(--surface-2)!important;}
+:is(html,#btn-sys#btn-sys) .fb2-jst button[aria-checked="true"][data-v="inplay"]{color:var(--ok-ink)!important;}
+:is(html,#btn-sys#btn-sys) .fb2-jst button[aria-checked="true"][data-v="paused"]{color:var(--warn-ink)!important;}
+:is(html,#btn-sys#btn-sys) :is(.todo-view-toggle,.r-tabs,.c2-seg,.fb2-wk-seg,.fb2-jst,.sched-week) button:focus-visible{outline:2px solid var(--focus)!important;outline-offset:-2px!important;box-shadow:none!important;}
+
+/* ── 7 · Chips (filter and quick-pick toggles): sm height, button radius, sm type ─────── */
+:is(html,#btn-sys#btn-sys) :is(.fb2-pill,.sched-pick-btn,.rep-end-chip){
+  height:var(--btn-h-sm)!important;min-height:var(--btn-h-sm)!important;box-sizing:border-box!important;padding:0 11px!important;
+  border-radius:var(--btn-r)!important;font:var(--btn-fw) var(--btn-fs-sm)/1 var(--font)!important;letter-spacing:0!important;text-transform:none!important;
+  align-items:center;gap:5px!important;white-space:nowrap;transition:var(--btn-t)!important;}
+:is(html,#btn-sys#btn-sys) :is(.fb2-pill,.sched-pick-btn,.rep-end-chip) > i{font-size:13px!important;}
+:is(html,#btn-sys#btn-sys) :is(.fb2-pill,.rep-end-chip):not(.on){background:var(--white)!important;border:1px solid var(--border)!important;color:var(--ink-2)!important;}
+:is(html,#btn-sys#btn-sys) :is(.fb2-pill,.rep-end-chip):not(.on):hover{border-color:var(--border-strong)!important;background:var(--surface-2)!important;color:var(--ink)!important;}
+:is(html,#btn-sys#btn-sys) :is(.fb2-pill,.rep-end-chip).on{background:var(--ink)!important;border:1px solid var(--ink)!important;color:var(--on-ink,#fff)!important;}
+
+/* ── 8 · Shared states ─────────────────────────────────────────────────────────────────── */
+:is(html,#btn-sys#btn-sys) :is(.d-action,.filter-btn,.p-btn,.tb-btn,.save-b,.cancel-b,.modal-ok,.modal-save,.modal-cancel,.tm-btn-save,
+  .tm-btn-cancel,.tm-btn-delete,.tm-btn-timer,.fup-y,.fup-n,.inv-act,.ob-btn,.wbtn,.dh-sec-btn,.dh-ghost,.detail-back,.hpr-link,.bulk-btn,
+  .todo-banner-switch,.zb-view,.fb2-pill,.sched-pick-btn,.rep-end-chip,.rf-icon-btn,.ux-ibtn,#view-todo .person-switcher,#bv-head .bv-ibtn):focus-visible{
+  outline:2px solid var(--focus)!important;outline-offset:2px!important;}
+:is(html,#btn-sys#btn-sys) :is(.d-action,.filter-btn,.p-btn,.tb-btn,.save-b,.cancel-b,.modal-ok,.modal-save,.modal-cancel,.tm-btn-save,
+  .tm-btn-cancel,.tm-btn-delete,.tm-btn-timer,.fup-y,.fup-n,.inv-act,.ob-btn,.wbtn,.dh-sec-btn,.dh-ghost,.detail-back,.hpr-link,.bulk-btn,
+  .todo-banner-switch,.zb-view,.fb2-pill,.sched-pick-btn,.rep-end-chip,.todo-view-toggle .tvt-btn,.r-tabs .r-subtab,.c2-seg button,
+  .fb2-wk-seg button,.sched-week button,#view-todo .person-switcher,#bv-head .bv-ibtn):active:not(:disabled){
+  transform:scale(.97)!important;transition-duration:60ms!important;}
+:is(html,#btn-sys#btn-sys) :is(.d-action,.filter-btn,.p-btn,.tb-btn,.save-b,.cancel-b,.modal-ok,.modal-save,.modal-cancel,.tm-btn-save,
+  .tm-btn-cancel,.tm-btn-delete,.tm-btn-timer,.fup-y,.fup-n,.inv-act,.ob-btn,.wbtn,.dh-sec-btn,.dh-ghost,.detail-back,.hpr-link,.bulk-btn,
+  .fb2-pill,.sched-pick-btn,.rep-end-chip,.todo-view-toggle .tvt-btn,.r-tabs .r-subtab,.c2-seg button,.fb2-wk-seg button):is(:disabled,[aria-disabled="true"]){
+  opacity:.45!important;cursor:not-allowed!important;transform:none!important;box-shadow:none!important;}
+@media (prefers-reduced-motion:reduce){
+  :is(html,#btn-sys#btn-sys) :is(.d-action,.filter-btn,.p-btn,.tb-btn,.save-b,.cancel-b,.modal-ok,.modal-save,.modal-cancel,.tm-btn-save,
+    .tm-btn-cancel,.tm-btn-delete,.tm-btn-timer,.fup-y,.fup-n,.inv-act,.ob-btn,.wbtn,.dh-sec-btn,.dh-ghost,.detail-back,.hpr-link,.bulk-btn,
+    .todo-banner-switch,.zb-view,.fb2-pill,.sched-pick-btn,.rep-end-chip,.todo-view-toggle .tvt-btn,.r-tabs .r-subtab,.c2-seg button,
+    .fb2-wk-seg button,.fb2-jst button,#view-todo .person-switcher,#bv-head .bv-ibtn){transition:none!important;}
+}
+</style>
 </body>
 </html>

@@ -171,6 +171,8 @@ The old names (`--white`, `--off`, `--ink`, `--muted`, `--faint`, `--border`, `-
 
 **Control heights.** `--ctl-h` 34px, `--ctl-h-sm` 28px.
 
+**Buttons (`<style id="btn-system-style">`, loaded last).** Every button is a rounded rectangle at `--btn-r` (10px), 34px (28px small), 13/500 (small 12.5), 14px icons, 6px gap. Variants change colour only: primary (ink), secondary (white + border), ghost (transparent), danger (red). Icon-only buttons are square. Pills are for static badges only.
+
 **Elevation.** Shadows are warm-tinted and layered, and stronger in dark mode.
 
 | Level | Token | Use |
@@ -198,13 +200,13 @@ Two motions run longer on purpose. The KPI count-up runs about 620ms, because a 
 
 | Component | Classes styled | Spec |
 |---|---|---|
-| Primary button | `.d-action.primary`, `.tb-btn`, `.modal-save`, `.modal-ok`, `.tm-btn-save`, `.save-b`, `.cb-create-btn`, `.cal-today-btn`, `.r-export-btn`, `.bv-act.primary` | Ink fill, 34px, r10, 13/600. Hover rises 1px with a faint red glow. Press scales to 0.97. Inverts in dark |
+| Primary button | `.d-action.primary`, `.tb-btn`, `.modal-save`, `.modal-ok`, `.tm-btn-save`, `.save-b`, `.cb-create-btn`, `.cal-today-btn`, `.r-export-btn`, `.bv-act.primary` | Ink fill, 34px, r10, 13/500. Hover adds a faint red glow (no lift). Press scales to 0.97. Inverts in dark |
 | Secondary button | `.d-action`, `.filter-btn`, `.p-btn`, `.modal-cancel`, `.tm-btn-cancel`, `.tm-btn-timer`, `.bv-act`, `.rv-act` | White, 1px border, e-1, 13/500. Hover gets `--border-strong` and `--surface-2` |
 | Destructive | `.modal-save.danger`, `.tm-btn-delete` | Red fill for the confirm. Danger-ink text button for an inline delete |
-| Icon button | `.wbtn`, `.mini-cal-nav-btn`, `.cc-icon-btn`, `.rf-icon-btn`, `.bv-ibtn` | r8, with a styled tooltip from `title` |
+| Icon button | `#wbtn-prev/next`, `.dt-ibtn`, `#td-timer-btn`, `#bv-head .bv-ibtn`, `.rf-icon-btn`, `.ux-ibtn` | Square at the button height (34, or 28 small), r10, with a styled tooltip from `title`. In-card 24–26px icons keep r8 |
 | Input / select | `.form-inp`, `.field input/select/textarea`, `.cc-select`, `.jobs-search input`, `.tm-*` fields, `.bv-search` | White, 34px, r10. Hover `--border-strong`. Focus: red-mixed border plus a 3px red ring |
-| Segmented | `.todo-view-toggle`, `.r-tabs`, `.c2-seg` | Inset track. Selected segment is white with e-1 |
-| Chip toggle | `.sched-pick-btn` | 28px pill. Selected is ink |
+| Segmented | `.todo-view-toggle`, `.r-tabs`, `.c2-seg`, `.fb2-wk-seg`, `.fb2-jst` (28px) | Inset track at 34px, r10; segments r7, 13/500. Selected segment is white with e-1 |
+| Chip toggle | `.fb2-pill`, `.sched-pick-btn`, `.rep-end-chip` | 28px, r10, 12.5/500. Selected is ink |
 | Tabs | `.jsn-tab`, `.d-tab` | 13.5/500, muted. Active is ink/600 with a rounded red bar that grows in |
 | Side nav | `.sett-nav-item`, `.s-btn` | r10–12 rows. Active is a white pill (the sidebar's pill glides) |
 | Pill / badge | `.inv-pill`, `.wf-badge`, `.exp-badg`, `.i-badge`, `.task-status`, `.rv-pill`, `.fd-pill`, `.fe-pill`, `.c2-chip`, `.bv-chip`, `.st-tag` | Inline-block pill, 11/600, sentence case, status tints |
