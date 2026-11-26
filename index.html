@@ -26179,7 +26179,35 @@ _stRenderViews=function(){
     document.querySelectorAll('#day-cols .day-todo > .day-done-empty, #day-cols .day-todo > .r5-empty, #day-cols .day-todo > .r8-planned-none').forEach(x=>x.remove());
     _parkCol();
     _weekFoot();
+    _dayBar();
+    _splitMarks();
   }
+  // Split tasks: the parts of one task share a coloured edge, say "Split 2/3", and light each other up on hover
+  const SPLIT_HUES=[200,150,280,30,340,95];
+  function _splitMarks(){
+    const data=getWeekData(currentPerson),groups={};
+    [1,2,3,4,5].forEach(d=>(data[d]||[]).forEach(t=>{if(t.splitId)(groups[t.splitId]=groups[t.splitId]||[]).push({t,d});}));
+    const ids=Object.keys(groups);
+    ids.forEach((g,gi)=>{
+      const parts=groups[g].sort((a,b)=>a.d-b.d);if(parts.length<2)return;
+      const total=parts.reduce((s,p)=>s+(p.t.hours||0),0),days=parts.map(p=>(DAY_NAMES[p.d-1]||'').slice(0,3)).join(', ');
+      parts.forEach((p,i)=>{
+        const card=document.querySelector(`#day-cols .task-card[data-task-id="${CSS.escape(p.t.id)}"]`);if(!card)return;
+        card.classList.add('fb1-split');card.dataset.split=g;card.style.setProperty('--split-h',SPLIT_HUES[gi%SPLIT_HUES.length]);
+        if(!card.querySelector('.fb1-split-tag')){
+          const tag=document.createElement('span');tag.className='fb1-split-tag';
+          tag.title=`Split task: ${formatHrs(total)} over ${days}`;
+          tag.innerHTML=`<i class="ti ti-arrows-split-2" aria-hidden="true"></i>${i+1}/${parts.length}`;
+          card.appendChild(tag);
+        }
+      });
+    });
+  }
+  document.addEventListener('mouseover',e=>{
+    const c=e.target.closest?.('#day-cols .task-card.fb1-split'),g=c?.dataset.split;
+    document.querySelectorAll('#day-cols .task-card.fb1-split-hi').forEach(x=>{if(x.dataset.split!==g)x.classList.remove('fb1-split-hi');});
+    if(g)document.querySelectorAll(`#day-cols .task-card[data-split="${CSS.escape(g)}"]`).forEach(x=>x.classList.add('fb1-split-hi'));
+  });
   // Week totals sit in a bar under the days (like Streamtime), not in the toolbar
   function _weekFoot(){
     const chip=document.getElementById('todo-sum-chip'),body=document.querySelector('#view-todo .todo-body');if(!chip||!body)return;
@@ -26194,22 +26222,63 @@ _stRenderViews=function(){
   const parked=()=>{try{return JSON.parse(localStorage.getItem(PK)||'{}')||{};}catch(e){return{};}};
   const setParked=v=>{try{localStorage.setItem(PK,JSON.stringify(v));}catch(e){toast('Couldn’t save the parked tasks: this browser’s storage is full','warn');}};
   const mine=()=>parked()[currentPerson]||[];
+  // Parking space: a sidebar on the right of the week that opens and closes (remembered per browser).
+  // Closed, it's a slim strip with the count; while a task is being dragged the strip is a drop target.
+  const PO='cc_park_open';
+  const parkOpen=()=>{try{return localStorage.getItem(PO)==='1';}catch(e){return false;}};
+  window._parkToggle=function(on){try{localStorage.setItem(PO,on?'1':'0');}catch(e){}_parkCol();};
   function _parkCol(){
     document.getElementById('fb1-park-btn')?.remove();
-    const cols=document.getElementById('day-cols');if(!cols)return;
-    cols.querySelector('.fb1-park-col')?.remove();
-    const list=mine(),col=document.createElement('div');col.className='day-col workday fb1-park-col';col.dataset.park='1';
-    const h=document.querySelector('#day-cols .day-col:not(.fb1-park-col) .day-head')?.offsetHeight||0;
-    col.innerHTML=`<div class="day-head fb1-pk-head"${h?` style="min-height:${h}px"`:''}><div class="fb1-pk-title"><i class="ti ti-parking" aria-hidden="true"></i> Parking space</div><div class="fb1-pk-sub">${list.length?`${list.length} task${list.length===1?'':'s'} · no day yet`:'No day yet'}</div></div>`
-      +`<div class="fb1-pk-body">`+list.map(t=>`<div class="fb1-pt-card" draggable="true" data-pid="${esc(t.id)}" title="Drag onto a day"><div class="fb1-pt-t">${esc(String(t.title||'').split('\n')[0]||'Task')}</div><div class="fb1-pt-m">${esc([t.job,t.hours?formatHrs(t.hours):''].filter(Boolean).join(' · '))}</div><button class="fb1-pt-x" title="Delete" aria-label="Delete parked task" onclick="_parkDel('${esc(t.id)}')"><i class="ti ti-trash"></i></button></div>`).join('')
-      +`<div class="fb1-pk-hint">${list.length?'Drag a task onto a day to plan it.':'Drag a task here to park it until it has a day.'}</div></div>`;
-    cols.appendChild(col);
-    col.querySelectorAll('.fb1-pt-card').forEach(c=>c.addEventListener('dragstart',e=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',JSON.stringify({parkedId:c.dataset.pid}));}));
-    const body=col.querySelector('.fb1-pk-body');
-    body.addEventListener('dragover',e=>{e.preventDefault();body.classList.add('drop-hi');});
-    body.addEventListener('dragleave',e=>{if(!body.contains(e.relatedTarget))body.classList.remove('drop-hi');});
-    body.addEventListener('drop',e=>{body.classList.remove('drop-hi');let d=null;try{d=JSON.parse(e.dataTransfer.getData('text/plain'));}catch(x){}if(d&&d.parkedId){e.preventDefault();return;}_parkDrop(e);});
+    document.querySelector('#day-cols .fb1-park-col')?.remove();
+    const body=document.querySelector('#view-todo .todo-body');if(!body)return;
+    const list=mine(),open=parkOpen();
+    body.classList.add('fb1-has-park');
+    let side=document.getElementById('fb1-park-side');
+    if(!side){
+      side=document.createElement('aside');side.id='fb1-park-side';body.appendChild(side);
+      side.addEventListener('dragover',e=>{e.preventDefault();side.classList.add('drop-ok');});
+      side.addEventListener('dragleave',e=>{if(!side.contains(e.relatedTarget))side.classList.remove('drop-ok');});
+      side.addEventListener('drop',e=>{side.classList.remove('drop-ok');let d=null;try{d=JSON.parse(e.dataTransfer.getData('text/plain'));}catch(x){}if(d&&d.parkedId){e.preventDefault();return;}_parkDrop(e);});
+    }
+    side.className='fb1-park-side'+(open?' open':'');
+    const n=list.length;
+    side.innerHTML=open
+      ?`<div class="fb1-ps-hd"><div><div class="fb1-pk-title"><i class="ti ti-parking" aria-hidden="true"></i> Parking space</div><div class="fb1-pk-sub">${n?`${n} task${n===1?'':'s'} · no day yet`:'No day yet'}</div></div><button class="tm-x" aria-label="Close the parking space" title="Close" onclick="_parkToggle(false)"><i class="ti ti-layout-sidebar-right-collapse"></i></button></div>`
+        +`<div class="fb1-pk-body">`+list.map(t=>`<div class="fb1-pt-card" draggable="true" data-pid="${esc(t.id)}" title="Drag onto a day"><div class="fb1-pt-t">${esc(String(t.title||'').split('\n')[0]||'Task')}</div><div class="fb1-pt-m">${esc([t.job,t.hours?formatHrs(t.hours):''].filter(Boolean).join(' · '))}</div><button class="fb1-pt-x" title="Delete" aria-label="Delete parked task" onclick="_parkDel('${esc(t.id)}')"><i class="ti ti-trash"></i></button></div>`).join('')
+        +`<div class="fb1-pk-hint">${n?'Drag a task onto a day to plan it.':'Drag a task here to park it until it has a day.'}</div></div>`
+      :`<button class="fb1-ps-tab" onclick="_parkToggle(true)" aria-label="Open the parking space${n?`, ${n} parked`:''}" title="Parking space: tasks with no day yet"><i class="ti ti-parking" aria-hidden="true"></i><span>Parking</span>${n?`<b>${n}</b>`:''}</button>`;
+    side.querySelectorAll('.fb1-pt-card').forEach(c=>c.addEventListener('dragstart',e=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',JSON.stringify({parkedId:c.dataset.pid}));}));
   }
+  // light the strip up while any task is being dragged
+  document.addEventListener('dragstart',e=>{if(e.target.closest?.('#view-todo .task-card'))document.getElementById('fb1-park-side')?.classList.add('dragging');},true);
+  document.addEventListener('dragend',()=>document.getElementById('fb1-park-side')?.classList.remove('dragging'),true);
+
+  // ── Day bar: day names, dates and hours sit in the Done divider, like Streamtime ──
+  // Planned work stacks down onto the bar, done work sits under it; the week totals are in the bar below.
+  function _dayBar(){
+    const gd=document.getElementById('global-divider'),cols=document.getElementById('day-cols');if(!gd||!cols)return;
+    let bar=gd.querySelector('.fb1-daybar');
+    if(!bar){bar=document.createElement('div');bar.className='fb1-daybar';gd.appendChild(bar);}
+    gd.classList.add('fb1-dbar');
+    const data=getWeekData(currentPerson),dates=(typeof _ccWeekDates==='function')?_ccWeekDates(weekOffset):[];
+    const gl=gd.getBoundingClientRect().left;
+    bar.innerHTML=[...cols.querySelectorAll('.day-col[data-day]')].map(col=>{
+      const d=+col.dataset.day,iso=dates[d-1]||'',dt=iso?new Date(iso+'T00:00:00'):null;
+      const r=col.getBoundingClientRect();
+      const work=col.classList.contains('workday'),today=col.classList.contains('today');
+      let todo=0,done=0;(data[d]||[]).forEach(t=>{if(t.done)done+=t.hours||0;else todo+=t.hours||0;});
+      const all=todo+done,cap=work?(_dayCap(currentPerson,iso)||0):0,over=work&&all>cap;
+      const nm=(DAY_NAMES[d-1]||'').slice(0,3);
+      const tip=`${DAY_NAMES[d-1]||''}: ${formatHrs(todo)||'0h'} to do · ${formatHrs(done)||'0h'} done`+(work?(over?` · ${formatHrs(all-cap)} over ${formatHrs(cap)}`:cap>all?` · ${formatHrs(cap-all)} free of ${formatHrs(cap)}`:''):' · not a work day');
+      return `<div class="fb1-db-cell${today?' today':''}${over?' over':''}${work?'':' off'}${r.width<150?' tight':''}" style="left:${Math.round(r.left-gl)}px;width:${Math.round(r.width)}px" title="${esc(tip)}">`
+        +`<span class="fb1-db-dn"><span class="fb1-db-day">${today?'Today':nm}</span><span class="fb1-db-num">${dt?dt.getDate():''}</span></span>`
+        +`<span class="fb1-db-h">${work?`${formatHrs(all)||'0h'}<i>/${formatHrs(cap)||'0h'}</i>`:'Off'}</span></div>`;
+    }).join('');
+  }
+  window._fb1DayBar=_dayBar;
+  window.addEventListener('resize',()=>{try{if(!document.getElementById('view-todo')?.classList.contains('hidden'))_dayBar();}catch(e){}});
+  const _rth1=renderTodoHeader;
+  renderTodoHeader=function(){const r=_rth1.apply(this,arguments);try{if(_todoViewMode!=='calendar'&&!window._focusToday)_dayBar();}catch(e){}return r;};
   window._parkDrop=function(e){
     e.preventDefault();e.stopPropagation();
     const got=_takeDockTask();if(!got){try{const d=JSON.parse(e.dataTransfer.getData('text/plain'));const wd=getWeekData(currentPerson),arr=wd[d.fromDay]||[],i=arr.findIndex(x=>x.id===d.taskId);if(i<0)return;_park(arr.splice(i,1)[0]);}catch(x){}return;}
@@ -26322,15 +26391,51 @@ _stRenderViews=function(){
 .fb1-new:hover{opacity:1;color:var(--ink);border-color:var(--muted);background:var(--white);}
 .fb1-new i{font-size:12px;}
 .fb1-park-pad.drop-ok{outline:2px solid var(--ok,#3A8A4F);}
-/* Parking space: a column after the days; sits above the Done divider, which doesn't apply to it */
-#day-cols .fb1-park-col{position:relative;z-index:21;background:var(--off);border-left:1px dashed var(--border);}
-.fb1-park-col .fb1-pk-head{display:flex;flex-direction:column;justify-content:center;gap:2px;padding:8px 12px;box-sizing:border-box;}
-.fb1-pk-title{font:600 14px/1.2 var(--font);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.fb1-pk-title i{font-size:14px;vertical-align:-2px;color:var(--muted);}
-.fb1-park-col .fb1-pk-sub{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.fb1-pk-body{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:10px;transition:background .15s;}
-.fb1-pk-body.drop-hi{background:var(--white);outline:2px dashed var(--border);outline-offset:-4px;}
-.fb1-park-col .fb1-pt-card{background:var(--white);}
+/* Parking space sidebar: a slim strip when closed, a panel over the right of the week when open */
+#view-todo .todo-body.fb1-has-park #day-cols{margin-right:34px;}
+#view-todo .todo-body.fb1-has-park .global-divider{right:34px!important;}
+.fb1-park-side{position:absolute;top:0;right:0;bottom:0;width:34px;z-index:25;display:flex;flex-direction:column;background:var(--off);border-left:1px solid var(--faint);transition:width .22s cubic-bezier(.4,0,.2,1),box-shadow .22s;}
+.fb1-park-side.open{width:min(280px,40vw);background:var(--white);border-left-color:var(--border);box-shadow:-12px 0 28px rgba(35,28,18,.10);}
+.fb1-ps-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;padding:14px 0;border:0;background:none;color:var(--muted);cursor:pointer;font:600 12px/1 var(--font);}
+.fb1-ps-tab span{writing-mode:vertical-rl;letter-spacing:.02em;}
+.fb1-ps-tab b{min-width:20px;height:20px;padding:0 5px;border-radius:var(--r-pill);background:var(--ink);color:var(--on-ink,#fff);display:inline-flex;align-items:center;justify-content:center;font-size:11px;}
+.fb1-ps-tab:hover{color:var(--ink);background:var(--white);}
+.fb1-park-side.dragging:not(.open){background:color-mix(in srgb,var(--ok) 10%,var(--off));border-left:2px dashed var(--ok);}
+.fb1-park-side.dragging:not(.open) .fb1-ps-tab{color:var(--ok-ink);}
+.fb1-park-side.drop-ok{outline:2px solid var(--ok);outline-offset:-2px;}
+.fb1-ps-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:12px 12px 8px;border-bottom:1px solid var(--faint);}
+.fb1-pk-title{font:600 14px/1.2 var(--font);color:var(--ink);white-space:nowrap;}.fb1-pk-title i{font-size:14px;vertical-align:-2px;color:var(--muted);}
+.fb1-pk-sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.fb1-pk-body{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:6px;padding:10px;}
+.fb1-park-side .fb1-pt-card{background:var(--off);}
 .fb1-pk-hint{font-size:12px;color:var(--muted);padding:4px 2px;line-height:1.45;}
+/* Split task parts: shared coloured edge, a "Split 2/3" tag, siblings light up together */
+#view-todo #day-cols .task-card.fb1-split{box-shadow:inset 3px 0 0 hsl(var(--split-h) 55% 52%),0 1px 3px rgba(46,36,20,.06)!important;}
+#view-todo #day-cols .task-card.fb1-split.fb1-split-hi{box-shadow:inset 3px 0 0 hsl(var(--split-h) 55% 52%),0 0 0 2px hsl(var(--split-h) 55% 52% / .5)!important;}
+.fb1-split-tag{position:absolute;left:10px;bottom:7px;display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:var(--r-pill);background:hsl(var(--split-h) 55% 52% / .13);color:hsl(var(--split-h) 45% 32%);font:600 10.5px/1.2 var(--font);font-variant-numeric:tabular-nums;pointer-events:auto;}
+.fb1-split-tag i{font-size:11px;}
+body.dark .fb1-split-tag{color:hsl(var(--split-h) 60% 75%);}
+/* Day bar: the Done divider carries each day's name, date and hours */
+.todo-view:not(.focus-today) #day-cols .day-head{display:none!important;}
+#view-todo .global-divider.fb1-dbar{height:44px!important;padding:0!important;background:var(--ink)!important;border:0!important;box-shadow:0 2px 8px rgba(35,28,18,.18)!important;}
+#view-todo .global-divider.fb1-dbar:hover{background:color-mix(in srgb,var(--ink) 90%,var(--white))!important;}
+#view-todo .global-divider.fb1-dbar.div-drop-hi{background:var(--ok-ink,#2E6B3E)!important;}
+#view-todo .global-divider.fb1-dbar > .gd-label,#view-todo .global-divider.fb1-dbar > .gd-handle{display:none!important;}
+#view-todo .day-done{padding-top:52px!important;}
+.fb1-daybar{position:absolute;inset:0;}
+.fb1-db-cell{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 12px 0 14px;color:var(--on-ink,#fff);font:600 15px/1 var(--font);white-space:nowrap;overflow:hidden;box-sizing:border-box;}
+.fb1-db-cell + .fb1-db-cell{border-left:1px solid color-mix(in srgb,var(--on-ink,#fff) 12%,transparent);}
+.fb1-db-num{font-variant-numeric:tabular-nums;}
+.fb1-db-dn{display:inline-flex;align-items:center;gap:7px;min-width:0;}
+.fb1-db-h{flex:none;font:600 11.5px/1 var(--font);opacity:.8;font-variant-numeric:tabular-nums;}.fb1-db-h i{font-style:normal;opacity:.6;}
+.fb1-db-cell.over .fb1-db-h{color:#F2B36B;opacity:1;}
+.fb1-db-cell.off{opacity:.45;}
+.fb1-db-cell.tight{gap:4px;padding:0 8px;font-size:14px;}
+.fb1-db-cell.tight .fb1-db-day{display:none;}
+.fb1-db-cell.today{background:color-mix(in srgb,var(--on-ink,#fff) 9%,transparent);}
+.fb1-db-cell.today .fb1-db-num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--red);font-size:13px;}
+/* Today's date in the header (still used in Today / focus mode): a true circle */
+#view-todo .day-num.today-red{width:30px;min-width:30px!important;padding:0!important;border-radius:50%!important;}
 /* Week totals: a bar under the days, labels always written out */
 .fb1-week-foot{flex:none;display:flex;justify-content:flex-end;padding:8px 16px;border-top:1px solid var(--faint);}
 #view-todo .fb1-week-foot #todo-sum-chip{background:none!important;border:0!important;box-shadow:none!important;padding:0;font-size:13px;}
