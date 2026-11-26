@@ -2171,6 +2171,13 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
           <div style="padding:20px 28px 4px;"><div class="view-title">Jobs</div><div class="view-sub">Every job on the books</div></div>
           <div class="jobs-toolbar">
             <div class="jobs-search"><i class="ti ti-search"></i><input id="jobs-search-inp" placeholder="Job number, name, client, PO, label…" oninput="filterJobs(this.value)" autocomplete="off"/></div>
+            <span class="fb3-qf-wrap"><button class="d-action" id="fb3-qf-btn" onclick="_fb3QuickFilters(event)" aria-haspopup="true" aria-expanded="false" title="Ready-made filters and your saved favourites"><i class="ti ti-bolt" style="font-size:11px;"></i> Quick filters<b class="fb3-qf-n" hidden></b></button></span>
+            <button class="d-action" onclick="_addFilter('jobs')" title="Add a filter"><i class="ti ti-filter-plus" style="font-size:11px;"></i> Filter</button>
+            <button class="d-action" id="jobs-clear-btn" onclick="_clearFilters('jobs')" style="display:none;"><i class="ti ti-x" style="font-size:11px;"></i> Clear</button>
+            <span class="jobs-count" id="jobs-count" style="margin-left:auto;">0 jobs · NZD</span>
+            <button class="d-action" id="fb3-sort-btn" onclick="_fb3Pop('sort',event)" aria-haspopup="true" aria-expanded="false" title="Sort"><i class="ti ti-arrows-sort" style="font-size:11px;"></i> <span id="fb3-sort-lbl">Newest first</span></button>
+            <button class="d-action" id="fb3-view-btn" onclick="_fb3Pop('view',event)" aria-haspopup="true" aria-expanded="false" title="Grouping, columns and archived jobs"><i class="ti ti-layout-list" style="font-size:11px;"></i> View<b class="fb3-dot" hidden></b></button>
+            <div class="fb3-hold" hidden>
             <select class="cc-select" id="jobs-sort" onchange="_fb2SetJobsSort(this.value)" title="Sort jobs" aria-label="Sort jobs">
               <option value="newest">Newest first</option>
               <option value="oldest">Oldest first</option>
@@ -2179,18 +2186,14 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
               <option value="client">Client A–Z</option>
             </select>
             <label class="filter-btn fb2-arch-tog" title="Show archived jobs too (greyed out)"><input type="checkbox" id="jobs-incl-arch" onchange="_fb2SetJobsArch(this.checked)"/> Include archived</label>
-            <button class="d-action" onclick="_addFilter('jobs')"><i class="ti ti-filter" style="font-size:11px;"></i> Add filter</button>
-            <select class="cc-select" id="jobs-groupby" onchange="_setGroupBy('jobs',this.value)">
+                        <select class="cc-select" id="jobs-groupby" onchange="_setGroupBy('jobs',this.value)">
               <option value="none">No grouping</option>
               <option value="company">Group by company</option>
               <option value="status">Group by status</option>
               <option value="workflow">Group by workflow</option>
               <option value="lead">Group by lead</option>
             </select>
-            <span class="fb3-qf-wrap"><button class="d-action" id="fb3-qf-btn" onclick="_fb3QuickFilters(event)" aria-haspopup="true" aria-expanded="false" title="Ready-made filters and your saved favourites"><i class="ti ti-bolt" style="font-size:11px;"></i> Quick filters<b class="fb3-qf-n" hidden></b></button></span>
-            <button class="d-action" id="jobs-clear-btn" onclick="_clearFilters('jobs')" style="display:none;"><i class="ti ti-x" style="font-size:11px;"></i> Clear</button>
-            <button class="d-action" onclick="openColPicker(event,'jobs')" title="Choose columns"><i class="ti ti-columns" style="font-size:11px;"></i> Columns</button>
-            <span class="jobs-count" id="jobs-count" style="margin-left:auto;">0 jobs · NZD</span>
+                        </div>
           </div>
           <div id="fb2-jobs-quick" class="fb2-quick" role="group" aria-label="Quick filters"></div>
           <div id="jobs-presets-bar" class="fpresets-bar" style="display:none;"></div>
@@ -26268,7 +26271,7 @@ _stRenderViews=function(){
   // The empty-week card sits in the planned area above the day bar, not behind it
   function _fitEmpty(){
     const ov=document.getElementById('todo-empty-overlay'),gd=document.getElementById('global-divider');if(!ov||!gd)return;
-    ov.style.bottom='auto';ov.style.height=Math.max(0,gd.offsetTop)+'px';
+    // anchored in the background: the day bar sits (and drags) over it
     if(document.querySelector('#view-todo .todo-body.fb1-has-park'))ov.style.right='34px';
     // a light prompt, not a boxed card: fits whatever height the planned area has
     if(!ov.querySelector('.fb1-empty')){
@@ -26549,6 +26552,10 @@ _stRenderViews=function(){
 /* No line under the To Do toolbar */
 #view-todo .todo-bar{border-bottom:0!important;box-shadow:none!important;}
 /* Empty week: a light prompt in the planned area */
+#todo-empty-overlay{z-index:3!important;}
+/* Today's tint rises from the day bar and fades out upwards, like the done green fades down */
+#view-todo #day-cols .day-col.today .day-todo{background:linear-gradient(0deg,color-mix(in srgb,var(--red) 7%,transparent) 0%,color-mix(in srgb,var(--red) 3%,transparent) 35%,transparent 80%)!important;}
+#view-todo #day-cols .day-col.today .day-done{background:linear-gradient(180deg,color-mix(in srgb,var(--red) 5%,color-mix(in srgb,var(--ok) 5%,var(--off))) 0%,transparent 100%)!important;}
 #todo-empty-overlay .fb1-empty{pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:6px;max-width:300px;padding:12px;text-align:center;}
 .fb1-empty > i{font-size:22px;color:var(--muted);margin-bottom:2px;}
 .fb1-empty-t{font:600 14.5px/1.3 var(--font);color:var(--ink);}
@@ -26924,7 +26931,7 @@ body.dark #view-todo .day-done{background:linear-gradient(180deg,color-mix(in sr
 .fb3-qf-wrap{position:relative;display:inline-flex;}
 #fb3-qf-btn.on{border-color:var(--ink);}
 .fb3-qf-n{margin-left:4px;min-width:16px;height:16px;padding:0 4px;border-radius:var(--r-pill);background:var(--ink);color:var(--on-ink,#fff);font:600 10px/16px var(--font);text-align:center;}
-.fb3-qf-pop{position:absolute;top:calc(100% + 6px);left:0;z-index:950;width:240px;max-height:min(70vh,460px);overflow:auto;background:var(--white);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(35,28,18,.14);padding:6px;display:flex;flex-direction:column;gap:1px;}
+.fb3-qf-pop{position:fixed;z-index:1200;width:240px;max-height:min(70vh,460px);overflow:auto;background:var(--white);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(35,28,18,.14);padding:6px;display:flex;flex-direction:column;gap:1px;}
 .fb3-qf-lbl{padding:8px 8px 4px;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
 .fb3-qf-row{display:flex;align-items:center;gap:8px;width:100%;padding:7px 8px;border:0;border-radius:8px;background:none;color:var(--ink);font:500 12.5px/1.2 var(--font);text-align:left;cursor:pointer;}
 .fb3-qf-row:hover,.fb3-qf-row:focus-visible{background:var(--off);outline:none;}
@@ -26935,6 +26942,11 @@ body.dark #view-todo .day-done{background:linear-gradient(180deg,color-mix(in sr
 .fb3-qf-fav{display:flex;align-items:center;}.fb3-qf-fav .ti-star{color:var(--star,#E0A800)!important;}
 .fb3-qf-del{flex:none;border:0;background:none;color:var(--muted);padding:6px;border-radius:6px;cursor:pointer;opacity:0;}
 .fb3-qf-fav:hover .fb3-qf-del,.fb3-qf-del:focus-visible{opacity:1;}.fb3-qf-del:hover{color:var(--danger-ink,#B3261E);background:var(--off);}
+.fb3-qf-sw{justify-content:space-between;cursor:pointer;}
+.fb3-qf-sw input{width:30px;height:18px;appearance:none;-webkit-appearance:none;border-radius:9px;background:var(--border);position:relative;cursor:pointer;transition:background .15s;flex:none;margin:0;}
+.fb3-qf-sw input::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:transform .15s;}
+.fb3-qf-sw input:checked{background:var(--ink);}.fb3-qf-sw input:checked::after{transform:translateX(12px);}
+.fb3-dot{width:6px;height:6px;border-radius:50%;background:var(--red);margin-left:2px;}
 .fb3-qf-empty{padding:4px 8px 8px;font-size:12px;color:var(--muted);line-height:1.45;}
 .fb3-qf-foot{border-top:1px solid var(--faint);margin-top:4px;padding-top:4px;}
 .fb3-qf-save{display:flex;align-items:center;gap:6px;width:100%;padding:7px 8px;border:0;border-radius:8px;background:none;color:var(--ink);font:600 12.5px/1.2 var(--font);cursor:pointer;}.fb3-qf-save:hover{background:var(--off);}
@@ -27090,17 +27102,57 @@ body.dark #view-todo .day-done{background:linear-gradient(180deg,color-mix(in sr
     _saveFilterState('jobs');renderJobs();
   };
   // ── Quick filters button: ready-made filters + saved favourites in one popup ──────────
+  // Popovers float on the page (outside the toolbar, so its button styles can't squash them)
+  function placePop(pop,btn){
+    const r=btn.getBoundingClientRect(),w=pop.offsetWidth||240;
+    let left=r.left;if(left+w>window.innerWidth-12)left=Math.max(12,r.right-w);
+    pop.style.left=left+'px';pop.style.top=(r.bottom+6)+'px';
+    pop.style.maxHeight=Math.max(160,window.innerHeight-r.bottom-24)+'px';
+  }
+  function getPop(id,btn,label){
+    let pop=$(id);
+    if(!pop){pop=document.createElement('div');pop.id=id;pop.className='fb3-qf-pop';pop.setAttribute('role','dialog');pop.setAttribute('aria-label',label);document.body.appendChild(pop);pop.addEventListener('click',ev=>ev.stopPropagation());}
+    btn.setAttribute('aria-expanded','true');return pop;
+  }
+  function closeAllPops(){['fb3-qf-pop','fb3-sort-pop','fb3-view-pop'].forEach(id=>$(id)?.remove());['fb3-qf-btn','fb3-sort-btn','fb3-view-btn'].forEach(id=>$(id)?.setAttribute('aria-expanded','false'));}
   window._fb3QuickFilters=function(e){
     e&&e.stopPropagation();
-    const pop=$('fb3-qf-pop');if(pop){closeQF();return;}
+    const open=!!$('fb3-qf-pop');closeAllPops();if(open)return;
     renderQF(true);
   };
-  function closeQF(){$('fb3-qf-pop')?.remove();$('fb3-qf-btn')?.setAttribute('aria-expanded','false');}
+  function closeQF(){closeAllPops();}
+  window._fb3Pop=function(kind,e){
+    e&&e.stopPropagation();
+    const id='fb3-'+kind+'-pop',open=!!$(id);closeAllPops();if(open)return;
+    renderPop(kind,true);
+  };
+  const SORT_LBL={newest:'Newest first',oldest:'Oldest first',due:'Due date (soonest)',name:'Job name A–Z',client:'Client A–Z'};
+  const GROUP_LBL={none:'None',company:'Company',status:'Status',workflow:'Workflow',lead:'Lead'};
+  function renderPop(kind,focus){
+    const btn=$('fb3-'+kind+'-btn');if(!btn)return;
+    const pop=getPop('fb3-'+kind+'-pop',btn,kind==='sort'?'Sort':'View');
+    if(kind==='sort'){
+      const cur=window._fb2JobsSortMode||'newest';
+      pop.innerHTML=`<div class="fb3-qf-lbl">Sort by</div>`+Object.entries(SORT_LBL).map(([k,l])=>`<button type="button" class="fb3-qf-row${k===cur?' on':''}" role="menuitemradio" aria-checked="${k===cur}" onclick="_fb2SetJobsSort('${k}');window._fb3PopRefresh('sort')"><span>${l}</span><i class="ti ti-check fb3-qf-tick" aria-hidden="true"></i></button>`).join('');
+    }else{
+      const g=(typeof _jobsGroupBy!=='undefined'?_jobsGroupBy:'none')||'none';
+      pop.innerHTML=`<div class="fb3-qf-lbl">Group by</div>`+Object.entries(GROUP_LBL).map(([k,l])=>`<button type="button" class="fb3-qf-row${k===g?' on':''}" role="menuitemradio" aria-checked="${k===g}" onclick="_setGroupBy('jobs','${k}');var s=document.getElementById('jobs-groupby');if(s)s.value='${k}';window._fb3PopRefresh('view')"><span>${l}</span><i class="ti ti-check fb3-qf-tick" aria-hidden="true"></i></button>`).join('')
+        +`<div class="fb3-qf-lbl">Show</div><label class="fb3-qf-row fb3-qf-sw"><span>Archived jobs</span><input type="checkbox" ${window._fb2JobsArch?'checked':''} onchange="_fb2SetJobsArch(this.checked);window._fb3PopRefresh('view')"></label>`
+        +`<div class="fb3-qf-foot"><button type="button" class="fb3-qf-save" onclick="var b=document.getElementById('fb3-view-btn');document.getElementById('fb3-view-pop')?.remove();openColPicker({currentTarget:b,target:b,stopPropagation(){},clientX:b.getBoundingClientRect().left,clientY:b.getBoundingClientRect().bottom},'jobs')"><i class="ti ti-columns" aria-hidden="true"></i> Choose columns…</button></div>`;
+    }
+    placePop(pop,btn);
+    if(focus)pop.querySelector('button,input')?.focus();
+  }
+  window._fb3PopRefresh=k=>{if($('fb3-'+k+'-pop'))renderPop(k,false);syncBtns();};
+  function syncBtns(){
+    const sl=$('fb3-sort-lbl');if(sl)sl.textContent=SORT_LBL[window._fb2JobsSortMode||'newest']||'Sort';
+    const dot=document.querySelector('#fb3-view-btn .fb3-dot');if(dot){const g=(typeof _jobsGroupBy!=='undefined'?_jobsGroupBy:'none')||'none';dot.hidden=!(g!=='none'||window._fb2JobsArch);}
+  }
+  window.addEventListener('resize',closeAllPops);
+  document.addEventListener('scroll',e=>{if(!e.target.closest?.('.fb3-qf-pop'))closeAllPops();},true);
   function renderQF(focus){
     const btn=$('fb3-qf-btn');if(!btn)return;
-    let pop=$('fb3-qf-pop');
-    if(!pop){pop=document.createElement('div');pop.id='fb3-qf-pop';pop.className='fb3-qf-pop';pop.setAttribute('role','dialog');pop.setAttribute('aria-label','Quick filters');btn.parentNode.appendChild(pop);pop.addEventListener('click',ev=>ev.stopPropagation());}
-    btn.setAttribute('aria-expanded','true');
+    const pop=getPop('fb3-qf-pop',btn,'Quick filters');
     const favs=(typeof _jobsPresets!=='undefined'?_jobsPresets:[]);
     pop.innerHTML=`<div class="fb3-qf-lbl">Ready-made</div>`
       +PILLS().map(x=>{const on=pillOn(x);return`<button type="button" class="fb3-qf-row${on?' on':''}" role="menuitemcheckbox" aria-checked="${on}" onclick="_fb2TogglePill('${x.k}')"><i class="ti ${x.icon}" aria-hidden="true"></i><span>${esc(x.label)}</span><i class="ti ti-check fb3-qf-tick" aria-hidden="true"></i></button>`;}).join('')
@@ -27108,13 +27160,15 @@ body.dark #view-todo .day-done{background:linear-gradient(180deg,color-mix(in sr
       +(favs.length?favs.map(p=>`<div class="fb3-qf-fav"><button type="button" class="fb3-qf-row" onclick="loadFilterPreset('jobs','${esc(p.id)}');document.getElementById('fb3-qf-pop')?.remove();"><i class="ti ti-star" aria-hidden="true"></i><span>${esc(p.name)}</span></button><button type="button" class="fb3-qf-del" title="Delete “${esc(p.name)}”" aria-label="Delete saved filter ${esc(p.name)}" onclick="deleteFilterPreset('jobs','${esc(p.id)}');setTimeout(()=>window._fb3QFRefresh&&window._fb3QFRefresh(),0);"><i class="ti ti-trash" aria-hidden="true"></i></button></div>`).join('')
         :`<div class="fb3-qf-empty">Nothing saved yet. Set up a search, filters and sort, then save it here.</div>`)
       +`<div class="fb3-qf-foot"><button type="button" class="fb3-qf-save" onclick="document.getElementById('fb3-qf-pop')?.remove();saveFilterPreset('jobs')"><i class="ti ti-plus" aria-hidden="true"></i> Save current filters</button></div>`;
+    placePop(pop,btn);
     if(focus)pop.querySelector('button')?.focus();
   }
   window._fb3QFRefresh=()=>{if($('fb3-qf-pop'))renderQF(false);};
-  document.addEventListener('click',e=>{if(!e.target.closest?.('.fb3-qf-wrap'))closeQF();});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('fb3-qf-pop')){e.stopPropagation();closeQF();$('fb3-qf-btn')?.focus();}},true);
+  document.addEventListener('click',e=>{if(!e.target.closest?.('.fb3-qf-pop,#fb3-qf-btn,#fb3-sort-btn,#fb3-view-btn'))closeAllPops();});
+  document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const o=['qf','sort','view'].find(k=>$('fb3-'+k+'-pop'));if(o){e.stopPropagation();closeAllPops();$('fb3-'+o+'-btn')?.focus();}},true);
   function renderPills(){
     // the count on the Quick filters button, and the popup if it's open
+    try{syncBtns();}catch(e){}
     try{const n=PILLS().filter(pillOn).length,b=document.querySelector('#fb3-qf-btn .fb3-qf-n');if(b){b.hidden=!n;b.textContent=n||'';}$('fb3-qf-btn')?.classList.toggle('on',!!n);window._fb3QFRefresh();}catch(e){}
     const el=$('fb2-jobs-quick');if(!el)return;
     el.innerHTML=`<span class="fb2-quick-lbl">Quick filters</span>`+PILLS().map(x=>{const on=pillOn(x);
