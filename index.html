@@ -26175,7 +26175,18 @@ _stRenderViews=function(){
       const b=document.createElement('button');b.type='button';b.className='fb1-new';b.innerHTML='<i class="ti ti-plus" aria-hidden="true"></i> New task';
       b.onclick=e=>{e.stopPropagation();openTodoModal(null,d);};el.appendChild(b);
     });
-    _parkBtn();
+    // "+ New task" is the prompt now, so the empty-day fillers go
+    document.querySelectorAll('#day-cols .day-todo > .day-done-empty, #day-cols .day-todo > .r5-empty, #day-cols .day-todo > .r8-planned-none').forEach(x=>x.remove());
+    _parkCol();
+    _weekFoot();
+  }
+  // Week totals sit in a bar under the days (like Streamtime), not in the toolbar
+  function _weekFoot(){
+    const chip=document.getElementById('todo-sum-chip'),body=document.querySelector('#view-todo .todo-body');if(!chip||!body)return;
+    let f=document.getElementById('fb1-week-foot');
+    if(!f){f=document.createElement('div');f.id='fb1-week-foot';f.className='fb1-week-foot';body.parentNode.insertBefore(f,body.nextSibling);}
+    if(chip.parentNode!==f){f.appendChild(chip);}
+    f.hidden=false;
   }
 
   // ── Parking: tasks without a day, per person, kept in this browser like the rest of To Do ──
@@ -26183,12 +26194,21 @@ _stRenderViews=function(){
   const parked=()=>{try{return JSON.parse(localStorage.getItem(PK)||'{}')||{};}catch(e){return{};}};
   const setParked=v=>{try{localStorage.setItem(PK,JSON.stringify(v));}catch(e){toast('Couldn’t save the parked tasks: this browser’s storage is full','warn');}};
   const mine=()=>parked()[currentPerson]||[];
-  function _parkBtn(){
-    const vsp=document.getElementById('vsp-btn');if(!vsp)return;
-    let b=document.getElementById('fb1-park-btn');
-    if(!b){b=document.createElement('button');b.className='wbtn';b.id='fb1-park-btn';b.title='Parked tasks: no day yet. Drag a task onto “Park it” to put it here.';b.onclick=e=>{e.stopPropagation();_parkTray();};vsp.parentNode.insertBefore(b,vsp);}
-    const n=mine().length;b.innerHTML=`<i class="ti ti-parking" aria-hidden="true"></i> Parked${n?` <b>${n}</b>`:''}`;
-    b.ondragover=e=>{e.preventDefault();b.classList.add('drop-ok');};b.ondragleave=()=>b.classList.remove('drop-ok');b.ondrop=e=>{b.classList.remove('drop-ok');_parkDrop(e);};
+  function _parkCol(){
+    document.getElementById('fb1-park-btn')?.remove();
+    const cols=document.getElementById('day-cols');if(!cols)return;
+    cols.querySelector('.fb1-park-col')?.remove();
+    const list=mine(),col=document.createElement('div');col.className='day-col workday fb1-park-col';col.dataset.park='1';
+    const h=document.querySelector('#day-cols .day-col:not(.fb1-park-col) .day-head')?.offsetHeight||0;
+    col.innerHTML=`<div class="day-head fb1-pk-head"${h?` style="min-height:${h}px"`:''}><div class="fb1-pk-title"><i class="ti ti-parking" aria-hidden="true"></i> Parking space</div><div class="fb1-pk-sub">${list.length?`${list.length} task${list.length===1?'':'s'} · no day yet`:'No day yet'}</div></div>`
+      +`<div class="fb1-pk-body">`+list.map(t=>`<div class="fb1-pt-card" draggable="true" data-pid="${esc(t.id)}" title="Drag onto a day"><div class="fb1-pt-t">${esc(String(t.title||'').split('\n')[0]||'Task')}</div><div class="fb1-pt-m">${esc([t.job,t.hours?formatHrs(t.hours):''].filter(Boolean).join(' · '))}</div><button class="fb1-pt-x" title="Delete" aria-label="Delete parked task" onclick="_parkDel('${esc(t.id)}')"><i class="ti ti-trash"></i></button></div>`).join('')
+      +`<div class="fb1-pk-hint">${list.length?'Drag a task onto a day to plan it.':'Drag a task here to park it until it has a day.'}</div></div>`;
+    cols.appendChild(col);
+    col.querySelectorAll('.fb1-pt-card').forEach(c=>c.addEventListener('dragstart',e=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',JSON.stringify({parkedId:c.dataset.pid}));}));
+    const body=col.querySelector('.fb1-pk-body');
+    body.addEventListener('dragover',e=>{e.preventDefault();body.classList.add('drop-hi');});
+    body.addEventListener('dragleave',e=>{if(!body.contains(e.relatedTarget))body.classList.remove('drop-hi');});
+    body.addEventListener('drop',e=>{body.classList.remove('drop-hi');let d=null;try{d=JSON.parse(e.dataTransfer.getData('text/plain'));}catch(x){}if(d&&d.parkedId){e.preventDefault();return;}_parkDrop(e);});
   }
   window._parkDrop=function(e){
     e.preventDefault();e.stopPropagation();
@@ -26197,17 +26217,9 @@ _stRenderViews=function(){
   };
   function _park(task){
     const all=parked();(all[currentPerson]=all[currentPerson]||[]).push({...task,done:false,_parkedAt:Date.now()});setParked(all);
-    saveData();renderTodo();toast('Parked. Open “Parked” in the toolbar to drag it back onto a day.','success');
+    saveData();renderTodo();toast('Parked in the Parking space. Drag it onto a day when it has one.','success');
   }
-  window._parkTray=function(){
-    document.getElementById('fb1-park-tray')?.remove();
-    const list=mine(),el=document.createElement('div');el.id='fb1-park-tray';el.className='fb1-park-tray';
-    el.innerHTML=`<div class="fb1-pt-hd"><b>Parked</b><span>${list.length?'Drag one onto a day':'Nothing parked'}</span><button class="tm-x" aria-label="Close" onclick="document.getElementById('fb1-park-tray').remove()"><i class="ti ti-x"></i></button></div>`
-      +(list.length?list.map(t=>`<div class="fb1-pt-card" draggable="true" data-pid="${esc(t.id)}"><div class="fb1-pt-t">${esc(String(t.title||'').split('\n')[0]||'Task')}</div><div class="fb1-pt-m">${esc([t.job,t.hours?formatHrs(t.hours):''].filter(Boolean).join(' · '))}</div><button class="fb1-pt-x" title="Delete" aria-label="Delete parked task" onclick="_parkDel('${esc(t.id)}')"><i class="ti ti-trash"></i></button></div>`).join(''):'<div class="fb1-pt-empty">While dragging a task, drop it on <b>Park it</b> in the bar at the bottom.</div>');
-    document.body.appendChild(el);
-    el.querySelectorAll('.fb1-pt-card').forEach(c=>c.addEventListener('dragstart',e=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',JSON.stringify({parkedId:c.dataset.pid}));}));
-  };
-  window._parkDel=function(id){const all=parked();all[currentPerson]=(all[currentPerson]||[]).filter(t=>t.id!==id);setParked(all);_parkTray();_parkBtn();};
+  window._parkDel=function(id){const all=parked();all[currentPerson]=(all[currentPerson]||[]).filter(t=>t.id!==id);setParked(all);_parkCol();};
   // dropping a parked task onto a day
   const _drop=onDropToSection;
   onDropToSection=function(e,toDay,markDone){
@@ -26217,7 +26229,7 @@ _stRenderViews=function(){
       const all=parked(),arr=all[currentPerson]||[],i=arr.findIndex(t=>t.id===d.parkedId);if(i<0)return;
       const [t]=arr.splice(i,1);setParked(all);delete t._parkedAt;t.done=!!markDone;
       const wd=getWeekData(currentPerson);(wd[toDay]=wd[toDay]||[]).push(t);
-      saveData();renderTodo();if(document.getElementById('fb1-park-tray'))_parkTray();toast(`Moved to ${DAY_NAMES[toDay-1]}`,'success');return;
+      saveData();renderTodo();toast(`Moved to ${DAY_NAMES[toDay-1]}`,'success');return;
     }
     return _drop.apply(this,arguments);
   };
@@ -26309,7 +26321,21 @@ _stRenderViews=function(){
 .fb1-new{flex:none;display:flex;align-items:center;gap:4px;width:100%;margin-top:2px;padding:5px 8px;border:1px dashed var(--border);border-radius:8px;background:transparent;color:var(--muted);font:500 11.5px/1.2 var(--font);cursor:pointer;opacity:.75;order:99;}
 .fb1-new:hover{opacity:1;color:var(--ink);border-color:var(--muted);background:var(--white);}
 .fb1-new i{font-size:12px;}
-#fb1-park-btn b{margin-left:2px;}#fb1-park-btn.drop-ok,.fb1-park-pad.drop-ok{outline:2px solid var(--ok,#3A8A4F);}
+.fb1-park-pad.drop-ok{outline:2px solid var(--ok,#3A8A4F);}
+/* Parking space: a column after the days; sits above the Done divider, which doesn't apply to it */
+#day-cols .fb1-park-col{position:relative;z-index:21;background:var(--off);border-left:1px dashed var(--border);}
+.fb1-park-col .fb1-pk-head{display:flex;flex-direction:column;justify-content:center;gap:2px;padding:8px 12px;box-sizing:border-box;}
+.fb1-pk-title{font:600 14px/1.2 var(--font);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.fb1-pk-title i{font-size:14px;vertical-align:-2px;color:var(--muted);}
+.fb1-park-col .fb1-pk-sub{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.fb1-pk-body{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:10px;transition:background .15s;}
+.fb1-pk-body.drop-hi{background:var(--white);outline:2px dashed var(--border);outline-offset:-4px;}
+.fb1-park-col .fb1-pt-card{background:var(--white);}
+.fb1-pk-hint{font-size:12px;color:var(--muted);padding:4px 2px;line-height:1.45;}
+/* Week totals: a bar under the days, labels always written out */
+.fb1-week-foot{flex:none;display:flex;justify-content:flex-end;padding:8px 16px;border-top:1px solid var(--faint);}
+#view-todo .fb1-week-foot #todo-sum-chip{background:none!important;border:0!important;box-shadow:none!important;padding:0;font-size:13px;}
+.fb1-week-foot #todo-sum-chip .tb-w{display:inline!important;}
+.fb1-week-foot #todo-sum-chip .tb-tip{top:auto;bottom:calc(100% + 8px);right:0;left:auto;}
 .fb1-park-tray{position:fixed;right:16px;top:120px;width:280px;max-height:calc(100vh - 160px);overflow:auto;z-index:900;background:var(--white);border:1px solid var(--border);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.16);padding:10px;display:flex;flex-direction:column;gap:6px;}
 .fb1-pt-hd{display:flex;align-items:center;gap:8px;padding:2px 2px 6px;}.fb1-pt-hd span{color:var(--muted);font-size:12px;flex:1;}
 .fb1-pt-card{position:relative;border:1px solid var(--border);border-radius:10px;padding:8px 30px 8px 10px;background:var(--off);cursor:grab;}
