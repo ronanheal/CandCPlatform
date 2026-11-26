@@ -28639,5 +28639,96 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
 .main{box-shadow:0 1px 2px rgba(46,36,20,.07)!important;border-color:color-mix(in srgb,var(--ink) 11%,transparent)!important;}
 .sidebar:hover{box-shadow:0 1px 2px rgba(46,36,20,.07),12px 0 32px rgba(46,36,20,.10)!important;}
 </style>
+<style id="qa-style">
+/* ═══ QA pass (Nov 2026): pipeline funnel in Reporting → Business ═══ */
+.qa-fn{display:flex;align-items:center;justify-content:flex-end;gap:10px;min-width:170px;}
+.qa-fn-bar{flex:1;height:8px;border-radius:99px;background:var(--faint);overflow:hidden;min-width:60px;max-width:180px;}
+.qa-fn-bar i{display:block;height:100%;border-radius:99px;min-width:2px;}
+.qa-fn-n{min-width:40px;text-align:right;font-variant-numeric:tabular-nums;}
+.qa-fn-st{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;}
+.qa-fn-st i{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+</style>
+<script id="qa-script">
+// ═══ QA pass (Nov 2026) ══════════════════════════════════════════════════════════════════════
+// 1. Pipeline funnel (Reporting → Business). Restores the quote→cash funnel dropped in Reporting
+//    v2 (dc02a10), drawn with the report-v2 section/table: volume and value by stage, all time,
+//    following the Business company filter. It is money, so it needs viewFinancials.
+// 2. Reporting without viewFinancials shows no money. The roles scrub already hides money table
+//    columns by header; it was written for Reporting v1 (.r-kpi), so v2's KPIs, stat tiles,
+//    money-only sections and the WIP tab stayed visible. This removes them.
+(function(){
+  const fin=()=>{try{return can('viewFinancials');}catch(e){return true;}};
+  function funnelHTML(){
+    const co=document.getElementById('r-biz-company')?.value||'all';
+    const qCo=q=>typeof q.company==='string'?q.company:q.company?.name||'';
+    const qs=q=>(typeof q.quoteStatus==='string'?q.quoteStatus:q.quoteStatus?.name||'').toLowerCase();
+    const quotes=[...(stQuotes||[]),...(typeof localQuotes!=='undefined'?localQuotes:[])].filter(q=>co==='all'||qCo(q)===co);
+    const sent=quotes.filter(q=>{const s=qs(q);return!!s&&!s.includes('draft');});
+    const appr=quotes.filter(q=>{const s=qs(q);return s.includes('approv')&&!s.includes('pending');});
+    const js=jobs.filter(j=>co==='all'||j.company===co);
+    const live=js.filter(j=>j.status==='inplay');
+    const done=js.filter(j=>j.status==='complete'||(j.status==='archived'&&/completed|invoiced/.test(j.workflowStatus||'')));
+    const inv=(stInvoices||[]).filter(i=>_rvIssued(i)&&(co==='all'||_rvInvCo(i)===co));
+    const paid=inv.filter(_rvIsPaid);
+    const jv=j=>+(j._plannedSell||j._sellUsed||0);
+    const tk=CV.t();
+    const st=[
+      {o:0,s:'Quotes sent',n:sent.length,v:_rvSum(sent,q=>q.totalAmountExTax),c:tk.graphite,tip:'Quotes past draft: sent, pending, approved or declined. Value: quote total ex GST.'},
+      {o:1,s:'Approved',n:appr.length,v:_rvSum(appr,q=>q.totalAmountExTax),c:CV.slot(1),base:0,tip:'Approved quotes. Value: quote total ex GST.'},
+      {o:2,s:'Live jobs',n:live.length,v:_rvSum(live,jv),c:CV.slot(4),tip:'Jobs in play, paused ones included. Value: job budget.'},
+      {o:3,s:'Complete',n:done.length,v:_rvSum(done,jv),c:CV.slot(3),tip:'Completed jobs, archived ones included. Value: job budget.'},
+      {o:4,s:'Invoiced',n:inv.length,v:_rvSum(inv,_rvEx),c:CV.slot(2),tip:'Issued invoices (not drafts or voided). Value ex GST.'},
+      {o:5,s:'Paid',n:paid.length,v:_rvSum(paid,_rvEx),c:CV.slot(0),base:4,tip:'Paid invoices. Value ex GST.'},
+    ];
+    const maxN=Math.max(1,...st.map(x=>x.n)),maxV=Math.max(1,...st.map(x=>x.v));
+    const conv=r=>r.base==null?null:st[r.base].n>0?r.n/st[r.base].n*100:null;
+    const convV=r=>r.base==null?null:st[r.base].v>0?r.v/st[r.base].v*100:null;
+    const bar=(w,c)=>`<span class="qa-fn-bar"><i style="width:${Math.round(w*100)}%;background:${c};"></i></span>`;
+    const tbl=_rvTable('biz-funnel',{file:'pipeline_funnel',sort:'s',dir:1,total:false,rows:st,cols:[
+      {k:'s',l:'Stage',v:r=>r.o,h:r=>`<span class="qa-fn-st" title="${esc(r.tip)}"><i style="background:${r.c}"></i>${esc(r.s)}</span>`,cv:r=>r.s,cls:'tx'},
+      {k:'n',l:'Volume',num:1,v:r=>r.n,h:r=>`<span class="qa-fn">${bar(r.n/maxN,r.c)}<span class="qa-fn-n">${_rvN(r.n)}</span></span>`,cl:'Count'},
+      {k:'v',l:'Value ex GST',num:1,v:r=>r.v,f:_rvMoney},
+      {k:'c',l:'Conversion',num:1,v:r=>conv(r),h:r=>{const c=conv(r);return c==null?'<span class="rv-m">—</span>':`${_rvP(c)} <span class="rv-m">of ${esc(st[r.base].s.toLowerCase())} · ${_rvP(convV(r))} by value</span>`;},cv:r=>conv(r)==null?'':Math.round(conv(r))+'%',tip:'Approved ÷ quotes sent, and paid ÷ invoiced'},
+    ]});
+    return _rvSec('Pipeline funnel',`Quote to cash: how many, and how much, at each stage · all time${co==='all'?'':' · '+esc(co)}. Each stage is counted on its own, so a job without a quote still counts as live.`,tbl,_rvCsvBtn('biz-funnel'));
+  }
+  window._qaFunnelHTML=funnelHTML;
+  const _biz=window._rvBusiness;
+  if(typeof _biz==='function')window._rvBusiness=_rvBusiness=function(el){
+    const r=_biz.apply(this,arguments);
+    try{
+      if(fin()&&el){
+        const grids=[...el.querySelectorAll(':scope > .rv-grid2')];
+        const after=grids.find(g=>/Quotes/.test(g.textContent))||grids[grids.length-1];
+        const h=funnelHTML();
+        if(after)after.insertAdjacentHTML('afterend',h);else el.insertAdjacentHTML('beforeend',h);
+      }
+    }catch(e){console.warn('qa funnel',e);}
+    return r;
+  };
+
+  // ── 2. Reporting without viewFinancials ──
+  const MONEY_SEC=/revenue|invoic|quote|receivable|profitab|budget|funnel|\bvalue\b|margin|\bwip\b/i;
+  const MONEY_KPI=/\$|invoic|owed|value|revenue|margin|budget|\bwip\b|work in progress|cost/i;
+  function scrubReporting(){
+    if(fin())return;
+    const v=document.getElementById('view-reporting');if(!v)return;
+    document.getElementById('rt-wip')?.style.setProperty('display','none','important');
+    v.querySelectorAll('.rv-kpi').forEach(k=>{if(MONEY_KPI.test(k.querySelector('.rv-kpi-l')?.textContent||'')||/\$/.test(k.textContent))k.style.display='none';});
+    v.querySelectorAll('.rv-stats>div,.tr-stats>*').forEach(d=>{if(/\$/.test(d.textContent)||/value/i.test(d.querySelector('span')?.textContent||''))d.style.display='none';});
+    v.querySelectorAll('.rv-card').forEach(c=>{if(MONEY_SEC.test(c.querySelector('.rv-t')?.textContent||''))c.style.display='none';});
+    v.querySelectorAll('.rv-grid2').forEach(g=>{const on=[...g.children].filter(x=>x.style.display!=='none');if(!on.length)g.style.display='none';else if(on.length===1)g.style.gridTemplateColumns='1fr';});
+  }
+  window._qaScrubReporting=scrubReporting;
+  const _rr=window.renderReporting;
+  window.renderReporting=renderReporting=function(){
+    if(!fin()&&_reportTab==='wip'){try{return switchReportTab('business');}catch(e){}}
+    const r=_rr.apply(this,arguments);
+    try{scrubReporting();}catch(e){console.warn('qa reporting scrub',e);}
+    return r;
+  };
+  try{scrubReporting();}catch(e){}
+})();
+</script>
 </body>
 </html>
