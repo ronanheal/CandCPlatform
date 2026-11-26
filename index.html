@@ -844,6 +844,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none;}
 /* Gentle entrance when switching sections (display toggle restarts the animation) */
 @keyframes viewIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .view{animation:viewIn .24s ease;}
+/* page switches: a quick fade, no slide (the slide read as lag) */
+@keyframes viewFade{from{opacity:.4}to{opacity:1}}
 
 /* CHANGELOG banner */
 .changelog{background:var(--ink);color:#ccc;font-size:11px;padding:6px 16px;text-align:center;letter-spacing:.04em;flex-shrink:0;}
@@ -5639,7 +5641,8 @@ function navTo(v){
   if(v==='boards'){initBoardsData();setTimeout(renderBoards,50);}
   if(v==='settings'){renderSettings();_updateSettSidenavProfile();}
   if(v==='schedule')renderSchedule();
-  saveData();
+  // Switching pages changes nothing, so the save waits for idle time instead of holding up the switch
+  clearTimeout(window._navSaveT);window._navSaveT=setTimeout(()=>{(window.requestIdleCallback||setTimeout)(()=>{try{saveData();}catch(e){}});},400);
 }
 let _invMode='all'; // kept for compat
 function setInvMode(mode){_invMode=mode;renderInvoices();}
@@ -6104,6 +6107,8 @@ function showSumTip(el){
     const dn=['Monday','Tuesday','Wednesday','Thursday','Friday'][i];
     rows+=`<div style="color:#BDB8AE;">${dn} ${colDate.getDate()}</div><div style="text-align:right;color:${todoH>0?'#fff':'#77736B'};">${todoH>0?formatHrs(todoH):'0h'}</div><div style="text-align:right;color:${doneH>0?'#7FD08A':'#77736B'};">${doneH>0?formatHrs(doneH):'0h'}</div>`;
   });
+  try{let t=0,dn=0;[1,2,3,4,5].forEach(d=>(data[d]||[]).forEach(x=>{if(x.done)dn+=x.hours||0;else t+=x.hours||0;}));
+    rows+=`<div class="sumtip-tot">Week</div><div class="sumtip-tot" style="text-align:right;">${formatHrs(t)||'0h'}</div><div class="sumtip-tot" style="text-align:right;">${formatHrs(dn)||'0h'}</div>`;}catch(e){}
   rows+='</div>';
   tip.innerHTML=rows;tip.style.display='block';
 }
@@ -26245,9 +26250,30 @@ _stRenderViews=function(){
     const key=weekOffset+'|'+currentPerson;
     if(key!==_lastView){_lastView=key;if(typeof _zoneOpen!=='undefined'){_zoneOpen.todo=_zoneOpen.done=false;}}
     const out=_rt.apply(this,arguments);
+    try{_whoState();}catch(e){}
     try{_fb1AfterRender();}catch(e){}
     return out;
   };
+  // Viewing someone else's week: the name pill turns blue and a switch-back icon sits beside it
+  // (instead of the banner). The person menu lives on <body> so nothing in the button can move it.
+  function _whoState(){
+    const sw=document.getElementById('ps-dropdown');if(!sw)return;
+    const menu=document.getElementById('ps-menu');
+    if(menu&&menu.parentNode!==document.body){document.body.appendChild(menu);menu.addEventListener('click',e=>e.stopPropagation());}
+    const other=typeof MY_PERSON!=='undefined'&&currentPerson!==MY_PERSON;
+    sw.classList.toggle('fb1-other',other);
+    document.getElementById('todo-banner')?.classList.add('hidden');
+    let b=document.getElementById('fb1-back-me');
+    if(other){
+      if(!b){b=document.createElement('button');b.type='button';b.id='fb1-back-me';b.className='fb1-back-me';
+        b.innerHTML='<i class="ti ti-arrow-back-up" aria-hidden="true"></i>';
+        b.onclick=e=>{e.stopPropagation();switchBackToMe();const me=people[MY_PERSON];if(me){const av=document.getElementById('current-av');if(av){av.style.background=me.color;av.textContent=me.initials;}try{_setSwitcherName(me.name);}catch(x){}}};
+        sw.insertAdjacentElement('afterend',b);}
+      const who=(people[MY_PERSON]?.name||'').split(' ')[0];
+      b.title=`Back to your own list${who?' ('+who+')':''}`;b.setAttribute('aria-label','Switch back to your own To Do list');
+      sw.title=`Viewing ${people[currentPerson]?.name||'someone else'}'s To Do`;
+    }else{b?.remove();sw.removeAttribute('title');}
+  }
 
   function _fb1AfterRender(){
     if(_todoViewMode==='calendar'||window._focusToday)return;
@@ -26272,7 +26298,7 @@ _stRenderViews=function(){
   function _fitEmpty(){
     const ov=document.getElementById('todo-empty-overlay'),gd=document.getElementById('global-divider');if(!ov||!gd)return;
     // anchored in the background: the day bar sits (and drags) over it
-    if(document.querySelector('#view-todo .todo-body.fb1-has-park'))ov.style.right='34px';
+    if(document.querySelector('#view-todo .todo-body.fb1-has-park'))ov.style.right='44px';
     // a light prompt, not a boxed card: fits whatever height the planned area has
     if(!ov.querySelector('.fb1-empty')){
       const who=(people[currentPerson]?.name||'').split(' ')[0];
@@ -26549,13 +26575,40 @@ _stRenderViews=function(){
 /* "+ New task" sits on top of the day's stack, like Streamtime's Add New: a tab on the top card */
 #view-todo #day-cols .fb1-new{order:-1;justify-content:center;margin:0 0 -2px;padding:7px 8px;border:1px solid var(--faint);border-bottom-color:transparent;border-radius:10px 10px 4px 4px;background:color-mix(in srgb,var(--white) 70%,transparent);opacity:.9;}
 #view-todo #day-cols .fb1-new:hover{background:var(--white);border-color:var(--border);opacity:1;}
+/* Done summary: a compact row in the card language, not a green box */
+#view-todo .zone-bucket.done-bucket{display:flex!important;flex-direction:row!important;align-items:center!important;gap:8px!important;height:auto!important;min-height:40px!important;padding:8px 10px 8px 12px!important;
+  background:var(--white)!important;border:1px solid var(--faint)!important;border-left:1px solid var(--faint)!important;border-radius:12px!important;box-shadow:0 1px 2px rgba(46,36,20,.04)!important;}
+#view-todo .zone-bucket.done-bucket::before{content:'';flex:none;width:18px;height:18px;border-radius:50%;background:var(--ok) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E") center/12px no-repeat;}
+#view-todo .zone-bucket.done-bucket .zb-kind{display:none!important;}
+#view-todo .zone-bucket.done-bucket .zb-count{font:600 13px/1.2 var(--font)!important;color:var(--ink)!important;margin:0!important;white-space:nowrap;}
+#view-todo .zone-bucket.done-bucket .zb-hrs{font:500 12.5px/1.2 var(--font)!important;color:var(--muted)!important;margin:0!important;white-space:nowrap;}
+#view-todo .zone-bucket.done-bucket .zb-hrs::before{content:'· ';}
+#view-todo .zone-bucket.done-bucket .zb-view{margin:0 0 0 auto!important;height:26px!important;min-height:26px!important;padding:0 10px!important;font:500 12px/1 var(--font)!important;
+  background:transparent!important;border:1px solid transparent!important;box-shadow:none!important;color:var(--muted)!important;}
+:is(html,#btn-sys#btn-sys) #view-todo .zone-bucket.done-bucket .zb-view{font-size:0!important;}#view-todo .zone-bucket.done-bucket .zb-view::after{content:'Show';font-size:12px;}
+#view-todo .zone-bucket.done-bucket:hover .zb-view,#view-todo .zone-bucket.done-bucket .zb-view:focus-visible{background:var(--off)!important;border-color:var(--faint)!important;color:var(--ink)!important;}
+body.dark #view-todo .zone-bucket.done-bucket{background:var(--surface-2,#2A2A2E)!important;}
+/* Parking strip and panel: rounded, inset from the edge */
+#view-todo .todo-body.fb1-has-park #day-cols{margin-right:44px!important;}
+#view-todo .todo-body.fb1-has-park .global-divider{right:44px!important;}
+.fb1-park-side{top:6px!important;bottom:6px!important;right:6px!important;border-radius:var(--r-pill,999px)!important;border:1px solid var(--faint)!important;overflow:hidden;}
+.fb1-park-side.open{border-radius:16px!important;border-color:var(--border)!important;}
+.fb1-park-side.dragging:not(.open){border:2px dashed var(--ok)!important;}
+.fb1-park-side.drop-ok{outline:0!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 35%,transparent)!important;}
+/* Someone else's week: blue name pill + switch-back icon; the person menu never moves with the button */
+:is(html,#btn-sys#btn-sys) #view-todo .person-switcher{transform:none!important;}
+:is(html,#btn-sys#btn-sys) #view-todo .person-switcher.fb1-other{background:color-mix(in srgb,var(--info,#2B6CB0) 12%,var(--white))!important;border-color:color-mix(in srgb,var(--info,#2B6CB0) 35%,transparent)!important;box-shadow:none!important;}
+:is(html,#btn-sys#btn-sys) #view-todo .person-switcher.fb1-other .person-name{color:var(--info-ink,#1E4E8C)!important;}
+.fb1-back-me{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;margin-left:4px;border-radius:50%;border:1px solid color-mix(in srgb,var(--info,#2B6CB0) 35%,transparent);background:color-mix(in srgb,var(--info,#2B6CB0) 12%,var(--white));color:var(--info-ink,#1E4E8C);cursor:pointer;flex:none;transition:background .12s;}
+.fb1-back-me:hover{background:color-mix(in srgb,var(--info,#2B6CB0) 20%,var(--white));}
+.fb1-back-me i{font-size:16px;}
+#view-todo .todo-banner{display:none!important;}
 /* No line under the To Do toolbar */
 #view-todo .todo-bar{border-bottom:0!important;box-shadow:none!important;}
 /* Empty week: a light prompt in the planned area */
 #todo-empty-overlay{z-index:3!important;}
 /* Today's tint rises from the day bar and fades out upwards, like the done green fades down */
-#view-todo #day-cols .day-col.today .day-todo{background:linear-gradient(0deg,color-mix(in srgb,var(--red) 7%,transparent) 0%,color-mix(in srgb,var(--red) 3%,transparent) 35%,transparent 80%)!important;}
-#view-todo #day-cols .day-col.today .day-done{background:linear-gradient(180deg,color-mix(in srgb,var(--red) 5%,color-mix(in srgb,var(--ok) 5%,var(--off))) 0%,transparent 100%)!important;}
+#view-todo #day-cols .day-col.today .day-todo{background:linear-gradient(0deg,color-mix(in srgb,var(--red) 4%,transparent) 0%,color-mix(in srgb,var(--red) 1.5%,transparent) 40%,transparent 75%)!important;}
 #todo-empty-overlay .fb1-empty{pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:6px;max-width:300px;padding:12px;text-align:center;}
 .fb1-empty > i{font-size:22px;color:var(--muted);margin-bottom:2px;}
 .fb1-empty-t{font:600 14.5px/1.3 var(--font);color:var(--ink);}
@@ -26623,7 +26676,7 @@ body.dark #view-todo .day-done{background:linear-gradient(180deg,color-mix(in sr
 .fb1-db-cell.mid{gap:4px;padding:0 9px 0 10px;font-size:13px;}.fb1-db-cell.mid .fb1-db-dn{gap:5px;}.fb1-db-cell.mid .fb1-db-h{font-size:11px;}
 .fb1-db-cell.tight{gap:4px;padding:0 8px;font-size:14px;}
 .fb1-db-cell.tight .fb1-db-day{display:none;}
-.fb1-db-cell.today{background:color-mix(in srgb,var(--red) 5%,transparent);}
+.fb1-db-cell.today{background:color-mix(in srgb,var(--red) 3%,transparent);}
 .fb1-db-cell.today .fb1-db-num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--red);color:#fff;font-size:12px;}
 /* Today's date in the header (still used in Today / focus mode): a true circle */
 #view-todo .day-num.today-red{width:30px;min-width:30px!important;padding:0!important;border-radius:50%!important;}
@@ -26631,7 +26684,9 @@ body.dark #view-todo .day-done{background:linear-gradient(180deg,color-mix(in sr
 .fb1-week-foot{flex:none;display:flex;justify-content:flex-end;padding:8px 16px 10px;}
 #view-todo .fb1-week-foot #todo-sum-chip{padding:7px 14px!important;font-size:13px;border-radius:var(--r-pill)!important;background:var(--white)!important;border:1px solid var(--border)!important;box-shadow:0 1px 3px rgba(35,28,18,.08)!important;}
 .fb1-week-foot #todo-sum-chip .tb-w{display:inline!important;}
-.fb1-week-foot #todo-sum-chip .tb-tip{top:auto;bottom:calc(100% + 8px);right:0;left:auto;}
+.fb1-week-foot #todo-sum-chip .tb-tip{top:auto!important;bottom:calc(100% + 10px)!important;right:0!important;left:auto!important;transform:none!important;min-width:280px;padding:12px 16px!important;border-radius:14px!important;box-shadow:0 12px 32px rgba(28,26,22,.22)!important;}
+.fb1-week-foot #todo-sum-chip .tb-tip::before{top:auto!important;bottom:-4px;left:auto!important;right:28px;transform:rotate(45deg)!important;border-radius:2px!important;}
+.fb1-week-foot #todo-sum-chip .tb-tip .sumtip-tot{border-top:1px solid rgba(255,255,255,.12);padding-top:6px;margin-top:2px;font-weight:600;color:#fff;}
 .fb1-park-tray{position:fixed;right:16px;top:120px;width:280px;max-height:calc(100vh - 160px);overflow:auto;z-index:900;background:var(--white);border:1px solid var(--border);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.16);padding:10px;display:flex;flex-direction:column;gap:6px;}
 .fb1-pt-hd{display:flex;align-items:center;gap:8px;padding:2px 2px 6px;}.fb1-pt-hd span{color:var(--muted);font-size:12px;flex:1;}
 .fb1-pt-card{position:relative;border:1px solid var(--border);border-radius:10px;padding:8px 30px 8px 10px;background:var(--off);cursor:grab;}
@@ -28577,6 +28632,12 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
 .sidebar .ds-nav-ind{right:auto!important;width:40px!important;}
 .sidebar:hover .ds-nav-ind{right:0!important;width:auto!important;}
 .sidebar .s-btn:hover{background:color-mix(in srgb,var(--ink) 5%,transparent)!important;}
+
+/* ── 9 · Crisp panel edges: a tight shadow and a firm hairline instead of a wide soft glow ── */
+.view{animation:viewFade .12s ease-out!important;}
+.sidebar{box-shadow:0 1px 2px rgba(46,36,20,.07)!important;border-color:color-mix(in srgb,var(--ink) 11%,transparent)!important;}
+.main{box-shadow:0 1px 2px rgba(46,36,20,.07)!important;border-color:color-mix(in srgb,var(--ink) 11%,transparent)!important;}
+.sidebar:hover{box-shadow:0 1px 2px rgba(46,36,20,.07),12px 0 32px rgba(46,36,20,.10)!important;}
 </style>
 </body>
 </html>
