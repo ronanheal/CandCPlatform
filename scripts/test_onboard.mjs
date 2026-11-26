@@ -4,6 +4,7 @@
 
 import assert from 'node:assert/strict';
 import * as A from '../lib/auth.js';
+import { essentialPerms } from '../lib/perms.js';
 import * as C from '../lib/crypt.js';
 import * as S from '../lib/store.js';
 import * as H from '../lib/happiness.js';
@@ -68,7 +69,7 @@ console.log('welcome tour flag (/api/me)');
 const me = (o = {}) => meHandle(req('/api/me', o), O);
 await t('GET leaves onboarded out until it is set', async () => {
   const j = await (await me({ cookie: ann })).json();
-  assert.deepEqual(j, { email: 'ann@cc.test', name: 'Ann Lee', personKey: 'st_2', admin: false });
+  assert.deepEqual(j, { email: 'ann@cc.test', name: 'Ann Lee', personKey: 'st_2', admin: false, perms: essentialPerms() });
 });
 await t('POST onboarded member: saved on the caller\'s own record, returned by GET', async () => {
   const r = await me({ method: 'POST', cookie: ann, body: { action: 'onboarded', role: 'member' } });

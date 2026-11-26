@@ -1,10 +1,13 @@
-// /api/access — the access list, admins only. Password hashes never leave the server.
-//   GET  → {users, requests}
+// /api/access — the access list, for people with the userPermissions permission (lib/perms.js).
+// Password hashes never leave the server.
+//   GET  → {users, requests}   users[].perms = effective permissions (derived when not stored)
 //   POST {action, email, ...}
 //        add            {email, personKey, name, admin} → also returns {tempPassword} ONCE
 //        resetPassword  {email}                         → returns a new {tempPassword} ONCE
 //        update         {email, personKey, name}
-//        setAdmin       {email, admin}
+//        setAdmin       {email, admin}       (older clients: on = every permission, off = Essentials)
+//        setPerms       {email, perms:{key:bool}} → one write. Owners can't be reduced; somebody
+//                       must keep userPermissions.
 //        approve        {email}                         → creates the account, returns {tempPassword} ONCE
 //        remove | decline  {email}
 
@@ -13,28 +16,28 @@ import { requireUser, errorResponse, readJsonBody } from '../lib/guard.js';
 import { getAccess, mutateAccess } from '../lib/store.js';
 import { hashPassword, tempPassword } from '../lib/password.js';
 
-const ACTIONS = new Set(['add', 'resetPassword', 'update', 'setAdmin', 'remove', 'approve', 'decline']);
+const ACTIONS = new Set(['add', 'resetPassword', 'update', 'setAdmin', 'setPerms', 'remove', 'approve', 'decline']);
 
 export async function handle(request, opts = {}) {
   const env = opts.env || process.env;
   const o = { env, fetchImpl: opts.fetchImpl, gh: opts.gh };
   const adminEmails = adminEmailSet(env);
   if (request.method === 'GET') {
-    const { response } = await requireUser(request, { ...o, admin: true });
+    const { response } = await requireUser(request, { ...o, perm: 'userPermissions' });
     if (response) return response;
     try {
       return json(publicAccess(await getAccess({ ...o, fresh: true }), adminEmails));
     } catch (e) { return errorResponse(e); }
   }
   if (request.method === 'POST') {
-    const { user, response } = await requireUser(request, { ...o, admin: true, csrf: true });
+    const { user, response } = await requireUser(request, { ...o, perm: 'userPermissions', csrf: true });
     if (response) return response;
     try {
       const body = await readJsonBody(request);
       if (!body || !ACTIONS.has(body.action)) return json({ error: 'Unknown action' }, 400);
       // The browser never chooses a password here (nor does a requester); the server makes one
       // and shows it once.
-      const args = { action: body.action, email: body.email, personKey: body.personKey, name: body.name, admin: body.admin };
+      const args = { action: body.action, email: body.email, personKey: body.personKey, name: body.name, admin: body.admin, perms: body.perms };
       let temp = null;
       if (body.action === 'add' || body.action === 'resetPassword' || body.action === 'approve') {
         temp = tempPassword();

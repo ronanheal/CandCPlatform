@@ -10,13 +10,13 @@ expected to be rebuilt by another agency later.
 |---|---|---|
 | `middleware.js` | Vercel Routing Middleware | Every request needs a signed session cookie, except `/login.html` and `/api/auth/{login,logout,status,request,password}`. Pages redirect to `/login.html`; API calls get `401`. A session with a pending password change only reaches those public paths. |
 | `api/auth/[action].js` | `/api/auth/*` | Sign in, sign out, status, "Request access", change password. |
-| `api/me.js` | `/api/me` | `{email, name, personKey, admin}` for the signed-in person. |
-| `api/access.js` | `/api/access` | Admins only: list, add, reset password, link person, admin on/off, remove, approve, decline. |
+| `api/me.js` | `/api/me` | `{email, name, personKey, admin, perms}` for the signed-in person. |
+| `api/access.js` | `/api/access` | Needs the **User permissions** permission: list, add, reset password, link person, set permissions (`setPerms`), remove, approve, decline. |
 | `api/data/[file].js` | `/api/data/<file>.json` | Fetches `<file>.json.enc` from the public branch, decrypts it with `DATA_KEY`, returns it **still gzipped** (`Content-Encoding: gzip`). Each warm instance caches files for about 60 seconds; a GitHub `429` becomes `503` with `Retry-After`. |
 | `api/boards.js` | `/api/boards` | Shared boards (one encrypted file each on the `app-state` branch). `?removed=1` and `{action:'restore'}` are for admins. |
 | `scripts/data_crypt.py` + `scripts/sync_loop.sh` | GitHub Actions | The sync writes `<name>.json.enc` next to each file it owns, and (later) stops writing the readable copies. |
 | `login.html` | `/login.html` | Sign-in, request-access and forced change-password forms. |
-| Settings → Team → **Access** | `index.html` | The admin UI for the list above. |
+| Settings → **Access** | `index.html` | The UI for the list above, with a **Permissions** panel per person. |
 
 **Accounts** live in `auth/access.json.enc` on the repo's **`app-state` branch** (the state
 store, written through the GitHub API with `GITHUB_STATE_TOKEN`; see "State store on GitHub"
@@ -27,7 +27,7 @@ admin lets them in. Adding someone, approving a request or resetting a password 
 one-time temporary password, which is shown once to the admin. The person must change it at
 first sign-in.
 
-**Admins** are `ADMIN_EMAILS` (always admin) plus anyone given admin in Settings → Team → Access.
+**Permissions** (`lib/perms.js`, like Streamtime's: Essentials, Plan & Manage, Admin, Finances) are set per person in Settings → Access → Permissions. Records without stored permissions get them on read: admin → everything, otherwise Essentials. "Admin" now means having **User permissions**. `ADMIN_EMAILS` owners always have every permission and can't be reduced; somebody must always keep User permissions. Invoices, quotes, expenses and rate cards need View financials; other data files are served with money fields cut without View financials, and cost rates cut without Team cost rates. Tests: `node scripts/test_perms.mjs`.
 Being in `ADMIN_EMAILS` does not create an account. The first admin account is made once, with
 the setup code (`BOOTSTRAP_TOKEN`, step 4).
 

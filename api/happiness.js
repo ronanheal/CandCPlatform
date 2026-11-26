@@ -1,9 +1,10 @@
 // /api/happiness — the weekly check-in (lib/happiness.js).
 //   POST {week:'YYYY-Www', score:1-5, note?:string ≤500} → {ok, response} the signed-in
 //        person's OWN response for that week (the latest one wins). Same-origin only (CSRF).
-//   GET  ?weeks=12 → {weeks, responses:[{name, personKey, week, score, note, at}], admin, people?}
-//        Admins get the whole team (plus people = accounts on the list, for the response rate);
-//        everyone else gets only their own history. Never any emails.
+//   GET  ?weeks=12 → {weeks, responses:[{name, personKey, week, score, note, at}], admin, team, people?}
+//        With the viewCheckinSummary permission: the whole team (plus people = accounts on the
+//        list, for the response rate); everyone else gets only their own history. Never any emails.
+//   POST needs the checkin permission.
 
 import { json } from '../lib/auth.js';
 import { requireUser, errorResponse, readJsonBody } from '../lib/guard.js';
@@ -19,13 +20,14 @@ export async function handle(request, opts = {}) {
     if (response) return response;
     try {
       const weeks = new URL(request.url).searchParams.get('weeks') || 12;
-      const access = user.admin ? await getAccess(o) : null;
+      const team = !!(user.perms && user.perms.viewCheckinSummary);
+      const access = team ? await getAccess(o) : null;
       const out = await listResponses(user, { weeks, access }, o, now);
-      return json({ ...out, admin: !!user.admin, ...(user.admin ? { people: access.users.length } : {}) });
+      return json({ ...out, admin: team, team, ...(team ? { people: access.users.length } : {}) });
     } catch (e) { return errorResponse(e); }
   }
   if (request.method === 'POST') {
-    const { user, response } = await requireUser(request, { ...o, csrf: true });
+    const { user, response } = await requireUser(request, { ...o, csrf: true, perm: 'checkin' });
     if (response) return response;
     try {
       const body = await readJsonBody(request, 4 * 1024);
