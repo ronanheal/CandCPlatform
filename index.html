@@ -10152,7 +10152,7 @@ function renderExpenses(){
         <i class="ti ti-x" onclick="_removeExpSub('${e.id}',${i})" style="cursor:pointer;color:var(--muted);font-size:12px;" title="Remove line"></i>
       </div>`).join('');
       html+=`<tr class="exp-subs-row"><td colspan="8" style="background:var(--off);padding:10px 16px;">
-        <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Itemised — edits are local until written back to Streamtime</div>
+        <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Itemised lines · kept in this browser, not written back to Streamtime</div>
         ${subRows}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
           <span class="add-e-row" style="margin:0;" onclick="_addExpSub('${e.id}')"><i class="ti ti-plus" style="font-size:11px"></i> Add line</span>
@@ -27333,8 +27333,9 @@ body.dark #view-todo .day-done{background:linear-gradient(180deg,color-mix(in sr
     const out=[];
     [...(typeof stQuotes!=='undefined'?stQuotes:[]),...(typeof localQuotes!=='undefined'?localQuotes:[])].forEach(qt=>{
       const st=(typeof qt.quoteStatus==='string'?qt.quoteStatus:qt.quoteStatus?.name||'');
-      if(!has(`${qt.quoteName||''} ${qt.quoteNumber||qt.id} ${qt.company||''} ${qt.jobNumber||''} ${qt.jobName||''} ${st}`,s))return;
-      out.push({cat:'Quotes',icon:'ti-file-text',title:qt.quoteName||qt.quoteNumber||`Quote ${qt.id}`,sub:`${qt.company||''}${qt.jobNumber?' · #'+qt.jobNumber:''}${st?' · '+st:''}`,fn:()=>openQuoteDetail(qt.id)});
+      const co=typeof qt.company==='string'?qt.company:qt.company?.name||''; // Streamtime quotes carry {name}
+      if(!has(`${qt.quoteName||''} ${qt.quoteNumber||qt.id} ${co} ${qt.jobNumber||''} ${qt.jobName||''} ${st}`,s))return;
+      out.push({cat:'Quotes',icon:'ti-file-text',title:qt.quoteName||qt.quoteNumber||`Quote ${qt.id}`,sub:`${co}${qt.jobNumber?' · #'+qt.jobNumber:''}${st?' · '+st:''}`,fn:()=>openQuoteDetail(qt.id)});
     });
     return out;
   }
@@ -28730,6 +28731,17 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
     return r;
   };
   try{scrubReporting();}catch(e){}
+
+  // 3. Itemised expense lines (the over / unallocated check against each expense's total) were
+  //    held in memory only, so they vanished on reload. Keep them in this browser.
+  const SUBS='cc_exp_subs';
+  try{const saved=JSON.parse(localStorage.getItem(SUBS)||'{}');Object.keys(saved).forEach(k=>{if(Array.isArray(saved[k])&&!_expSubEdits[k])_expSubEdits[k]=saved[k];});}catch(e){}
+  let subT=null;
+  const saveSubs=()=>{clearTimeout(subT);subT=setTimeout(()=>{try{localStorage.setItem(SUBS,JSON.stringify(_expSubEdits));}catch(e){}},250);};
+  ['_setExpSub','_addExpSub','_removeExpSub','_addExpDetailSub','_removeExpDetailSub'].forEach(n=>{
+    const f=window[n];if(typeof f!=='function')return;
+    window[n]=function(){const r=f.apply(this,arguments);saveSubs();return r;};
+  });
 })();
 </script>
 </body>
