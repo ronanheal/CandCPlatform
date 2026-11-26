@@ -26359,8 +26359,8 @@ _stRenderViews=function(){
   const VIEWS={today:['ti-focus-2','Today','F'],week:['ti-layout-list','Week',''],calendar:['ti-calendar-week','Calendar','']};
   function _vspBtn(){
     const b=document.getElementById('vsp-btn');if(!b)return;
-    const v=VIEWS[curView()];b.classList.add('fb1-vbtn');b.title='View: '+v[1]+' · settings';
-    b.innerHTML=`<i class="ti ${v[0]}" aria-hidden="true"></i><span>${v[1]}</span><i class="ti ti-chevron-down" style="font-size:11px;opacity:.6" aria-hidden="true"></i>`;
+    const v=VIEWS[curView()];b.classList.add('fb1-vbtn');b.title='View settings · showing '+v[1];
+    if(!b.querySelector('.fb1-vb-l'))b.innerHTML=`<i class="ti ti-adjustments-horizontal" aria-hidden="true"></i><span class="fb1-vb-l">View settings</span>`;
   }
   window._fb1SetView=function(v){
     if(v==='today'){if(!window._focusToday)toggleFocusToday();}
@@ -26373,7 +26373,7 @@ _stRenderViews=function(){
     if(!sec){sec=document.createElement('div');sec.id='fb1-vsp-layout';panel.insertBefore(sec,panel.firstChild);}
     const v=curView();
     sec.innerHTML=`<div class="fb1-vsp-head">View settings</div><div class="fb1-vsp-sec"><div class="fb1-vsp-lbl">View</div><div class="fb1-vsp-seg" role="radiogroup" aria-label="View">`
-      +Object.entries(VIEWS).map(([k,[ic,lb,kb]])=>`<button type="button" role="radio" aria-checked="${k===v}" class="${k===v?'on':''}" onclick="event.stopPropagation();_fb1SetView('${k}')"><i class="ti ${ic}" aria-hidden="true"></i>${lb}${kb?`<kbd>${kb}</kbd>`:''}</button>`).join('')
+      +Object.entries(VIEWS).map(([k,[ic,lb,kb]])=>`<button type="button" role="radio" aria-checked="${k===v}" class="${k===v?'on':''}"${kb?` title="${lb} (${kb})"`:''} onclick="event.stopPropagation();_fb1SetView('${k}')"><i class="ti ${ic}" aria-hidden="true"></i>${lb}${kb?`<kbd>${kb}</kbd>`:''}</button>`).join('')
       +`</div></div><div class="fb1-vsp-sec"><div class="fb1-vsp-lbl">Show</div>`
       +`<label class="fb1-vsp-tog"><span><i class="ti ti-parking" aria-hidden="true"></i>Parking space</span><input type="checkbox" ${parkShown()?'checked':''} onchange="_parkShow(this.checked)"></label>`
       +`<label class="fb1-vsp-tog"><span><i class="ti ti-list-check" aria-hidden="true"></i>My items</span><input type="checkbox" ${(typeof _ccMiOpen!=='undefined'&&_ccMiOpen)?'checked':''} onchange="if(!!this.checked!==!!_ccMiOpen)toggleMyItems()"></label>`
@@ -26531,11 +26531,12 @@ _stRenderViews=function(){
 body.dark .fb1-split-tag{color:hsl(var(--split-h) 60% 75%);}
 /* Day bar: the Done divider carries each day's name, date and hours */
 .todo-view:not(.focus-today) #day-cols .day-head{display:none!important;}
-#view-todo .global-divider.fb1-dbar{height:44px!important;padding:0!important;background:var(--ink)!important;border:0!important;box-shadow:0 2px 8px rgba(35,28,18,.18)!important;}
-#view-todo .global-divider.fb1-dbar:hover{background:color-mix(in srgb,var(--ink) 90%,var(--white))!important;}
-#view-todo .global-divider.fb1-dbar.div-drop-hi{background:var(--ok-ink,#2E6B3E)!important;}
+#view-todo .global-divider.fb1-dbar{height:40px!important;padding:0!important;background:var(--white)!important;border:0!important;border-top:1px solid var(--border)!important;border-bottom:1px solid var(--border)!important;box-shadow:0 1px 2px rgba(35,28,18,.05)!important;}
+#view-todo .global-divider.fb1-dbar:hover{background:color-mix(in srgb,var(--ink) 2%,var(--white))!important;}
+#view-todo .global-divider.fb1-dbar.div-drop-hi{background:color-mix(in srgb,var(--ok) 14%,var(--white))!important;border-color:var(--ok)!important;}
+body.dark #view-todo .global-divider.fb1-dbar{background:var(--surface-2,#2A2A2E)!important;}
 #view-todo .global-divider.fb1-dbar > .gd-label,#view-todo .global-divider.fb1-dbar > .gd-handle{display:none!important;}
-#view-todo .day-done{padding-top:52px!important;}
+#view-todo .day-done{padding-top:48px!important;}
 /* The done area's green tint fades out instead of stopping hard at the bottom */
 #view-todo .day-done{background:linear-gradient(180deg,color-mix(in srgb,var(--ok) 6%,var(--off)) 0%,color-mix(in srgb,var(--ok) 3%,var(--off)) 45%,transparent 100%)!important;}
 body.dark #view-todo .day-done{background:linear-gradient(180deg,color-mix(in srgb,var(--ok) 6%,color-mix(in srgb,#000 12%,var(--off))) 0%,transparent 100%)!important;}
@@ -26548,17 +26549,20 @@ body.dark #view-todo .day-done{background:linear-gradient(180deg,color-mix(in sr
 #view-todo #todo-view-toggle,#view-todo #cc-mi-btn{display:none!important;}
 #vsp-btn.fb1-vbtn{display:inline-flex;align-items:center;gap:6px;padding:5px 10px!important;font:500 12.5px/1 var(--font);}
 #vsp-btn.fb1-vbtn i{font-size:13px;pointer-events:none;}#vsp-btn.fb1-vbtn span{pointer-events:none;}
-#vsp{width:248px!important;}
-.fb1-vsp-sec{padding:10px 14px 12px;border-bottom:1px solid var(--faint);display:flex;flex-direction:column;gap:8px;}
+#vsp{width:228px!important;}
+.fb1-vsp-sec{padding:8px 12px 10px;border-bottom:1px solid var(--faint);display:flex;flex-direction:column;gap:6px;}
 .fb1-vsp-lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
-.fb1-vsp-head{padding:12px 14px 2px;font:600 14px/1.2 var(--font);color:var(--ink);}
-.fb1-vsp-cd{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:12px 14px 4px;}
+.fb1-vsp-head{padding:10px 12px 0;font:600 13px/1.2 var(--font);color:var(--ink);}
+.fb1-vsp-cd{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:10px 12px 2px;}
+#vsp .vsp-item{padding:5px 12px!important;font-size:12.5px;}
+.fb1-vsp-tog{font-size:12.5px!important;}
+.fb1-vsp-lbl{font-size:10.5px!important;}
 .fb1-vsp-cd span{letter-spacing:0;text-transform:none;font-size:11px;color:var(--subtle,var(--muted));}.fb1-vsp-cd span i{font-size:11px;vertical-align:-1px;}
 .fb1-vsp-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:2px;border-radius:10px;background:var(--off);border:1px solid var(--faint);}
-.fb1-vsp-seg button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 4px;border:0;border-radius:8px;background:none;color:var(--muted);font:500 11.5px/1 var(--font);cursor:pointer;}
-.fb1-vsp-seg button i{font-size:15px;}
+.fb1-vsp-seg button{display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 4px;border:0;border-radius:8px;background:none;color:var(--muted);font:500 12px/1 var(--font);cursor:pointer;}
+.fb1-vsp-seg button i{font-size:13px;}
 .fb1-vsp-seg button.on{background:var(--white);color:var(--ink);box-shadow:0 1px 2px rgba(35,28,18,.1);}
-.fb1-vsp-seg button kbd{font:500 10px/1 var(--font);color:var(--subtle,var(--muted));}
+.fb1-vsp-seg button kbd{display:none;}
 .fb1-vsp-tog{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;color:var(--ink);cursor:pointer;}
 .fb1-vsp-tog span{display:inline-flex;align-items:center;gap:7px;}.fb1-vsp-tog span i{color:var(--muted);font-size:14px;}
 .fb1-vsp-tog input{width:30px;height:18px;appearance:none;-webkit-appearance:none;border-radius:9px;background:var(--border);position:relative;cursor:pointer;transition:background .15s;flex:none;margin:0;}
@@ -26566,17 +26570,17 @@ body.dark #view-todo .day-done{background:linear-gradient(180deg,color-mix(in sr
 .fb1-vsp-tog input:checked{background:var(--ink);}.fb1-vsp-tog input:checked::after{transform:translateX(12px);}
 .fb1-vsp-tog input:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
 .fb1-daybar{position:absolute;inset:0;}
-.fb1-db-cell{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 12px 0 14px;color:var(--on-ink,#fff);font:600 15px/1 var(--font);white-space:nowrap;overflow:hidden;box-sizing:border-box;}
-.fb1-db-cell + .fb1-db-cell{border-left:1px solid color-mix(in srgb,var(--on-ink,#fff) 12%,transparent);}
+.fb1-db-cell{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 12px 0 14px;color:var(--ink);font:600 14px/1 var(--font);white-space:nowrap;overflow:hidden;box-sizing:border-box;}
+.fb1-db-cell + .fb1-db-cell{border-left:1px solid var(--faint);}
 .fb1-db-num{font-variant-numeric:tabular-nums;}
 .fb1-db-dn{display:inline-flex;align-items:center;gap:7px;min-width:0;}
-.fb1-db-h{flex:none;font:600 11.5px/1 var(--font);opacity:.8;font-variant-numeric:tabular-nums;}.fb1-db-h i{font-style:normal;opacity:.6;}
-.fb1-db-cell.over .fb1-db-h{color:#F2B36B;opacity:1;}
+.fb1-db-h{flex:none;font:600 11.5px/1 var(--font);color:var(--ink-2,var(--ink));font-variant-numeric:tabular-nums;}.fb1-db-h i{font-style:normal;color:var(--muted);}
+.fb1-db-cell.over .fb1-db-h{color:var(--warn-ink,#A15C07);}
 .fb1-db-cell.off{opacity:.45;}
 .fb1-db-cell.tight{gap:4px;padding:0 8px;font-size:14px;}
 .fb1-db-cell.tight .fb1-db-day{display:none;}
-.fb1-db-cell.today{background:color-mix(in srgb,var(--on-ink,#fff) 9%,transparent);}
-.fb1-db-cell.today .fb1-db-num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--red);font-size:13px;}
+.fb1-db-cell.today{background:color-mix(in srgb,var(--red) 5%,transparent);}
+.fb1-db-cell.today .fb1-db-num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--red);color:#fff;font-size:12px;}
 /* Today's date in the header (still used in Today / focus mode): a true circle */
 #view-todo .day-num.today-red{width:30px;min-width:30px!important;padding:0!important;border-radius:50%!important;}
 /* Week totals: a bar under the days, labels always written out */
