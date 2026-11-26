@@ -2170,7 +2170,15 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
         <div id="jt-jobs" class="jt-panel" style="display:flex;">
           <div style="padding:20px 28px 4px;"><div class="view-title">Jobs</div><div class="view-sub">Every job on the books</div></div>
           <div class="jobs-toolbar">
-            <div class="jobs-search"><i class="ti ti-search"></i><input id="jobs-search-inp" placeholder="Search jobs, clients, PO, labels…" oninput="filterJobs(this.value)"/></div>
+            <div class="jobs-search"><i class="ti ti-search"></i><input id="jobs-search-inp" placeholder="Job number, name, client, PO, label…" oninput="filterJobs(this.value)" autocomplete="off"/></div>
+            <select class="cc-select" id="jobs-sort" onchange="_fb2SetJobsSort(this.value)" title="Sort jobs" aria-label="Sort jobs">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="due">Due date (soonest)</option>
+              <option value="name">Job name A–Z</option>
+              <option value="client">Client A–Z</option>
+            </select>
+            <label class="filter-btn fb2-arch-tog" title="Show archived jobs too (greyed out)"><input type="checkbox" id="jobs-incl-arch" onchange="_fb2SetJobsArch(this.checked)"/> Include archived</label>
             <button class="d-action" onclick="_addFilter('jobs')"><i class="ti ti-filter" style="font-size:11px;"></i> Add filter</button>
             <select class="cc-select" id="jobs-groupby" onchange="_setGroupBy('jobs',this.value)">
               <option value="none">No grouping</option>
@@ -2179,11 +2187,12 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
               <option value="workflow">Group by workflow</option>
               <option value="lead">Group by lead</option>
             </select>
-            <button class="d-action" onclick="saveFilterPreset('jobs')"><i class="ti ti-bookmark" style="font-size:11px;"></i> Save</button>
+            <button class="d-action" onclick="saveFilterPreset('jobs')" title="Save the current search, filters and sort as a favourite"><i class="ti ti-star" style="font-size:11px;"></i> Save favourite</button>
             <button class="d-action" id="jobs-clear-btn" onclick="_clearFilters('jobs')" style="display:none;"><i class="ti ti-x" style="font-size:11px;"></i> Clear</button>
             <button class="d-action" onclick="openColPicker(event,'jobs')" title="Choose columns"><i class="ti ti-columns" style="font-size:11px;"></i> Columns</button>
             <span class="jobs-count" id="jobs-count" style="margin-left:auto;">0 jobs · NZD</span>
           </div>
+          <div id="fb2-jobs-quick" class="fb2-quick" role="group" aria-label="Quick filters"></div>
           <div id="jobs-presets-bar" class="fpresets-bar" style="display:none;"></div>
           <div id="jobs-fbar" class="fbar" style="display:none;"></div>
           <div class="jobs-table-wrap">
@@ -7797,15 +7806,16 @@ function renderJobs(){
   // Newest first by job number
   // Platform-created jobs (no _stId) first, newest first — sorting them by Number(id) beside
 // Streamtime ids (~2,000,000) sank them to the bottom of the list (L7).
-  const sorted=[...jobs].sort((a,b)=>{
+  // fb2: sort options + relevance ranking while searching live in fb2-jobs-script
+  const sorted=(typeof _fb2JobsSort==='function')?_fb2JobsSort([...jobs],q):[...jobs].sort((a,b)=>{
     const la=!a._stId,lb=!b._stId;if(la!==lb)return la?-1:1;
     if(la)return (b._createdAt||0)-(a._createdAt||0)||(Number(b.id)||0)-(Number(a.id)||0);
     return (Number(b._stId)||0)-(Number(a._stId)||0);
   });
   // Apply chip filters
   let filteredJobs=sorted.filter(j=>{
-    if(j.status==='archived'&&!_jobsFilters.some(f=>f.type==='status'&&f.value==='Archived'))return false;
-    if(q&&!(`${j.id} ${j.name} ${j.company} ${j.po||""} ${(j.labels||[]).join(" ")} ${j.contact||""}`).toLowerCase().includes(q))return false; // PO, labels and contact too
+    if(j.status==='archived'&&!window._fb2JobsArch&&!_jobsFilters.some(f=>f.type==='status'&&f.value==='Archived'))return false;
+    if(q&&(typeof _fb2JobMatch==='function'?!_fb2JobMatch(j,q):!(`${j.id} ${j.name} ${j.company} ${j.po||""} ${(j.labels||[]).join(" ")} ${j.contact||""}`).toLowerCase().includes(q)))return false; // PO, labels and contact too
     return true;
   });
   _jobsFilters.forEach(f=>{
@@ -7892,10 +7902,11 @@ function renderJobs(){
       const wfLabel=jWf==='quote'?'Quote':jWf==='completed'?'Completed':jWf==='invoiced'?'Invoiced':'Live job';
       const wfCls=jWf==='quote'?'wf-quote':jWf==='completed'?'wf-completed':jWf==='invoiced'?'wf-invoiced':'wf-live';
       const tr=document.createElement('tr');tr.onclick=()=>openJobDetail(j.id);
+      if(j.status==='archived')tr.className='fb2-arch';
       tr.innerHTML=`
         <td style="width:32px;"><input type="checkbox" class="job-cb" data-id="${j.id}" onclick="event.stopPropagation();updateBulkBar()" style="accent-color:var(--red);cursor:pointer;"/></td>
         <td style="min-width:220px;">
-          <div class="job-num-name"><span class="job-num">${j.id}</span><span class="job-name">${esc(j.name)}</span>${pausedBadge}</div>
+          <div class="job-num-name"><span class="job-num">${j.id}</span><span class="job-name">${esc(j.name)}</span>${pausedBadge}${j.status==='archived'?'<span class="fb2-arch-pill">Archived</span>':''}</div>
           ${notePrev}
         </td>
         <td class="cj-company"><span class="job-co" title="${esc(j.company)}">${billDot}${esc(j.company)}</span></td>
@@ -10681,7 +10692,13 @@ function renderClients(){
       saveClientsData();
     }
   });
-  const search=(document.getElementById('clients-search-inp')?.value||'').toLowerCase();
+  const _csInp=document.getElementById('clients-search-inp');
+  const searchRaw=_csInp?.value||'';
+  const search=searchRaw.toLowerCase();
+  // The toolbar is rebuilt with the list, so keep focus + caret in the search box (typing lost
+  // focus after every letter).
+  const _csFocus=!!_csInp&&document.activeElement===_csInp;
+  const _csCaret=_csFocus?[_csInp.selectionStart,_csInp.selectionEnd]:null;
   const sortBy=(document.getElementById('clients-sort')?.value)||'name';
   const activeOnly=document.getElementById('clients-active-only')?.checked;
   // Count jobs per client
@@ -10786,7 +10803,7 @@ function renderClients(){
 
   wrap.innerHTML=`
     <div class="clients-toolbar">
-      <div class="jobs-search"><i class="ti ti-search"></i><input id="clients-search-inp" placeholder="Search name, contact, email or group…" value="${search.replace(/"/g,'&quot;')}" oninput="renderClients()"/></div>
+      <div class="jobs-search"><i class="ti ti-search"></i><input id="clients-search-inp" placeholder="Search name, contact, email or group…" value="${esc(searchRaw)}" oninput="renderClients()" autocomplete="off"/></div>
       <select class="cc-select" id="clients-sort" onchange="renderClients()">
         <option value="name"${sortBy==='name'?' selected':''}>Sort: Name</option>
         <option value="jobs"${sortBy==='jobs'?' selected':''}>Sort: Most jobs</option>
@@ -10804,6 +10821,7 @@ function renderClients(){
         <i class="ti ti-plus"></i> Add new client
       </div>
     </div>`;
+  if(_csFocus){const ni=document.getElementById('clients-search-inp');if(ni){ni.focus();try{ni.setSelectionRange(_csCaret[0],_csCaret[1]);}catch(e){}}}
 }
 
 let _activeClientGroup=null;
@@ -10891,7 +10909,7 @@ function openClientDetail(id){
       <input placeholder="Phone" value="${ct.phone||''}" oninput="updateLocalContact('${id}',${i},'phone',this.value)" style="width:100%;border:none;outline:none;font-size:11px;color:var(--muted);font-family:var(--font);background:transparent;">
     </div>`).join('');
   const contactsHTML=`
-    <div style="margin-bottom:20px;">
+    <div id="cd-contacts-sec" style="margin-bottom:20px;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
         <div class="ds-sec-lbl" style="margin:0!important;">Contacts${allContactCount?` <span style="font:500 12.5px var(--font);color:var(--muted);letter-spacing:0;">${allContactCount}</span>`:''}</div>
         <button class="d-action" onclick="addClientContact('${id}')" style="margin-left:auto;"><i class="ti ti-plus" style="font-size:11px;"></i> Add contact</button>
@@ -11818,7 +11836,7 @@ function runGlobalSearch(q){
   const cmd=raw?_parseGsCommand(raw):null;
   if(cmd)out.push(cmd);
   if(q){
-    jobs.forEach(j=>{
+    if(!window._fb2OwnsGsJobs)jobs.forEach(j=>{ // fb2-jobs-script ranks jobs (and archived) itself
       if((`${j.id} ${j.name} ${j.company}`).toLowerCase().includes(q))
         out.push({cat:'Jobs',icon:'ti-briefcase',title:`${j.id} — ${j.name}`,sub:j.company,fn:()=>openJobDetail(j.id)});
     });
@@ -26553,6 +26571,440 @@ _stRenderViews=function(){
         st.insertAdjacentHTML('afterbegin',_statusCtl(j));
       }
     }catch(e){console.warn('fb2 status',e);}
+    return r;
+  };
+})();
+</script>
+<style id="fb2-jobs-style">
+/* ═══ fb2 · Jobs search, Jobs list, Clients (team feedback) ══════════════════════════════════ */
+/* Jobs list: archived rows greyed out when "Include archived" is on */
+.jobs-table tr.fb2-arch>td{opacity:.5;}
+.jobs-table tr.fb2-arch:hover>td{opacity:.8;}
+.fb2-arch-pill{display:inline-flex;align-items:center;height:18px;margin-left:6px;padding:0 7px;border-radius:var(--r-pill);background:var(--surface-2);border:1px solid var(--border);color:var(--muted);font:600 10.5px/1 var(--font);letter-spacing:.02em;vertical-align:1px;white-space:nowrap;}
+.jobs-toolbar .fb2-arch-tog{display:inline-flex;align-items:center;gap:6px;height:var(--ctl-h);padding:0 12px;cursor:pointer;user-select:none;}
+.jobs-toolbar .fb2-arch-tog input{margin:0;}
+/* Quick filter pills (they add/remove ordinary filter chips, so favourites keep them) */
+.fb2-quick{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:0 var(--gutter) 10px;}
+.fb2-quick:empty{display:none;}
+.fb2-quick-lbl{font:600 11px/1 var(--font);color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-right:2px;}
+.fb2-pill{display:inline-flex;align-items:center;gap:5px;height:var(--ctl-h-sm);padding:0 11px;border-radius:var(--r-pill);border:1px solid var(--border);background:var(--white);color:var(--ink-2);font:500 12px/1 var(--font);cursor:pointer;white-space:nowrap;transition:background-color .12s,border-color .12s,color .12s;}
+.fb2-pill i{font-size:13px;}
+.fb2-pill:hover{border-color:var(--border-strong);}
+.fb2-pill.on{background:var(--ink);border-color:var(--ink);color:var(--white);}
+.fb2-pill:focus-visible{outline:none;box-shadow:var(--ring);}
+.fb2-arch-hint{border:0;background:none;padding:0;color:var(--ink-2);font:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer;}
+.fb2-arch-hint:focus-visible{outline:none;box-shadow:var(--ring);border-radius:4px;}
+/* Favourites bar label */
+#jobs-presets-bar .fb2-fav-lbl{font:600 11px/22px var(--font);color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-right:2px;}
+#jobs-presets-bar .fpreset-chip .ti-star{color:var(--star,#E0A800);}
+/* ⌘K scope selector */
+.fb2-gs-scope{display:flex;flex-wrap:wrap;gap:6px;padding:8px 16px;border-bottom:1px solid var(--border);}
+.fb2-gs-scope .fb2-pill{height:26px;font-size:11.5px;}
+.gs-item.fb2-arch{opacity:.5;}
+.gs-item.fb2-arch.sel,.gs-item.fb2-arch:hover{opacity:.8;}
+.gs-item.fb2-arch .gs-t::after{content:'Archived';margin-left:8px;padding:1px 6px;border-radius:var(--r-pill);border:1px solid var(--border);font:600 10px/1.4 var(--font);color:var(--muted);vertical-align:1px;}
+/* Clients: contacts as a list */
+.fb2-ct-table{width:100%;border-collapse:collapse;font-size:12.5px;background:var(--white);border:1px solid var(--border);border-radius:var(--r-ctl);overflow:hidden;}
+.fb2-ct-table th{text-align:left;font:600 11px/1 var(--font);letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:9px 10px;background:var(--surface-2);border-bottom:1px solid var(--border);}
+.fb2-ct-table td{padding:4px 10px;border-bottom:1px solid var(--faint);vertical-align:middle;}
+.fb2-ct-table tr:last-child td{border-bottom:0;}
+.fb2-ct-table tr:hover td{background:var(--surface-2);}
+.fb2-ct-in{width:100%;min-width:0;height:28px;padding:0 6px;border:1px solid transparent;border-radius:var(--r-xs);background:transparent;color:var(--ink);font:inherit;outline:none;}
+.fb2-ct-in:hover{border-color:var(--border);}
+.fb2-ct-in:focus{border-color:var(--ink);background:var(--white);box-shadow:var(--ring);}
+.fb2-ct-in[readonly]{border-color:transparent!important;box-shadow:none!important;background:transparent!important;cursor:text;}
+.fb2-ct-in.nm{font-weight:500;}
+.fb2-ct-mail{display:flex;align-items:center;gap:2px;}
+.fb2-ibtn{display:inline-flex;align-items:center;justify-content:center;flex:none;width:26px;height:26px;padding:0;border:0;border-radius:var(--r-xs);background:transparent;color:var(--muted);cursor:pointer;text-decoration:none;}
+.fb2-ibtn i{font-size:14px;}
+.fb2-ibtn:hover{background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--ink);}
+.fb2-ibtn:focus-visible{outline:none;box-shadow:var(--ring);}
+.fb2-ibtn.is-done{color:var(--ok);}
+.fb2-src{display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:var(--r-pill);background:var(--surface-2);border:1px solid var(--border);color:var(--muted);font:600 10.5px/1 var(--font);white-space:nowrap;}
+.fb2-src.ed{color:var(--info-ink);background:var(--info-bg);border-color:transparent;}
+.fb2-ct-empty{padding:14px 12px;color:var(--muted);font-size:12.5px;}
+.fb2-in-wrap{display:flex;align-items:center;gap:2px;}
+.fb2-ct-table .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+/* Job detail: the job number anchors the header, with its copy button beside it */
+#d-meta-line .dt-num{display:inline-flex!important;align-items:center;height:26px;padding:0 10px!important;border-radius:var(--r-xs)!important;background:var(--surface-2)!important;border:1px solid var(--border)!important;color:var(--ink)!important;font:700 15px/1 var(--display)!important;letter-spacing:-.01em;font-variant-numeric:tabular-nums;cursor:copy;white-space:nowrap;}
+#d-meta-line .dt-num:hover{border-color:var(--border-strong)!important;}
+#d-meta-line .dt-num:focus-visible{outline:none;box-shadow:var(--ring);}
+#d-meta-line .ux-copy{opacity:1!important;transform:none!important;width:26px;height:26px;margin-left:-4px;}
+#d-meta-line .ux-copy i{font-size:14px;}
+</style>
+<script id="fb2-jobs-script">
+// ═══ fb2 · Jobs search, Jobs list, Clients (team feedback) ═══════════════════════════════════
+// · Smarter job search: every word must match (number, name, client, nickname, PO, labels, lead,
+//   contact); ranked: exact/leading job number, then name, then client.
+// · Jobs list: sort options (default newest first), "Include archived" tickbox (default off,
+//   archived rows greyed), quick filter pills, favourites remember search + sort + archived.
+// · ⌘K: scope selector All / Jobs / Archived / Quotes / Invoices (members: no Quotes/Invoices).
+// · Clients: contacts as an editable list with one-click copy email.
+// · Job detail header: prominent job number; click it to copy, copy button always visible.
+(function(){
+  const $=id=>document.getElementById(id);
+  const M=()=>{try{return _isMember();}catch(e){return false;}};
+  const lsGet=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:v;}catch(e){return d;}};
+  const lsSet=(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}};
+
+  // ── Smart job matching ──────────────────────────────────────────────────────────────────
+  const norm=s=>String(s==null?'':s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
+  let _nickMap=null,_nickN=-1;
+  function nick(co){
+    try{
+      if(_nickN!==clientsData.length){_nickMap={};clientsData.forEach(c=>{if(c&&c.name&&c.nickname)_nickMap[c.name]=c.nickname;});_nickN=clientsData.length;}
+      return _nickMap[co]||'';
+    }catch(e){return '';}
+  }
+  function score(j,nq){
+    if(!nq)return 1;
+    const id=String(j.id||'').toLowerCase();
+    const name=norm(j.name),co=norm(j.company);
+    let lead='';try{lead=j.lead&&people[j.lead]?people[j.lead].name:'';}catch(e){}
+    const other=norm([j.po,(j.labels||[]).join(' '),j.contact,lead,nick(j.company)].join(' '));
+    const all=' '+id+' '+name+' '+co+' '+other+' ';
+    const toks=nq.split(' ');
+    let s=0;
+    for(const t of toks){
+      if(!all.includes(t))return 0; // every word has to be somewhere
+      if(id===t)s+=900;else if(id.startsWith(t))s+=400;
+      if((' '+name).includes(' '+t))s+=45;else if(name.includes(t))s+=15;
+      if((' '+co).includes(' '+t))s+=25;else if(co.includes(t))s+=8;
+      if(all.includes(' '+t))s+=5;
+    }
+    if(toks.length>1){
+      if(name===nq)s+=400;else if(name.startsWith(nq))s+=250;else if((' '+name).includes(' '+nq))s+=150;else if(name.includes(nq))s+=80;
+      if(co.startsWith(nq))s+=100;
+    }else{
+      if(name===nq)s+=300;else if(name.startsWith(nq))s+=150;
+      if(co===nq)s+=120;else if(co.startsWith(nq))s+=60;
+    }
+    return s||1;
+  }
+  const qn=q=>norm(String(q||'').trim().replace(/^#/,''));
+  let _scoreQ=null,_scoreJobs=null,_scores=new Map();
+  function scoresFor(q){
+    if(_scoreQ!==q||_scoreJobs!==jobs){_scoreQ=q;_scoreJobs=jobs;_scores=new Map();const nq=qn(q);(jobs||[]).forEach(j=>_scores.set(j,score(j,nq)));}
+    return _scores;
+  }
+  window._fb2JobScore=(j,q)=>score(j,qn(q));
+  window._fb2JobMatch=function(j,q){const m=scoresFor(q);const v=m.has(j)?m.get(j):score(j,qn(q));return v>0;};
+
+  // ── Sorting ──────────────────────────────────────────────────────────────────────────────
+  // Newest first: platform-created jobs (newest created), then Streamtime jobs by job number
+  // (what people read as "newer"), Streamtime id as the tie-break.
+  function newest(a,b){
+    const la=!a._stId,lb=!b._stId;if(la!==lb)return la?-1:1;
+    if(la)return (b._createdAt||0)-(a._createdAt||0)||(Number(b.id)||0)-(Number(a.id)||0);
+    return (Number(b.id)||0)-(Number(a.id)||0)||(Number(b._stId)||0)-(Number(a._stId)||0);
+  }
+  const dueT=j=>{if(!j.dueDate)return Infinity;const t=+new Date(j.dueDate);return isNaN(t)?Infinity:t;};
+  const SORTS={
+    newest,
+    oldest:(a,b)=>-newest(a,b),
+    due:(a,b)=>dueT(a)-dueT(b)||newest(a,b),
+    name:(a,b)=>String(a.name||'').localeCompare(String(b.name||''),undefined,{sensitivity:'base',numeric:true})||newest(a,b),
+    client:(a,b)=>String(a.company||'').localeCompare(String(b.company||''),undefined,{sensitivity:'base'})||newest(a,b),
+  };
+  const savedSort=lsGet('cc_jobs_sort','newest');
+  window._fb2JobsSortMode=SORTS[savedSort]?savedSort:'newest';
+  window._fb2JobsArch=false; // off at the start of every session: archived only when ticked
+  window._fb2JobsSort=function(list,q){
+    if(q&&window._fb2JobsSortMode==='newest'){
+      // Searching with the default sort: best match first, newest breaks ties
+      const m=scoresFor(q);
+      return list.sort((a,b)=>(m.get(b)||0)-(m.get(a)||0)||newest(a,b));
+    }
+    return list.sort(SORTS[window._fb2JobsSortMode]||newest);
+  };
+  window._fb2SetJobsSort=function(v){
+    if(!SORTS[v])v='newest';window._fb2JobsSortMode=v;lsSet('cc_jobs_sort',v);renderJobs();
+  };
+  window._fb2SetJobsArch=function(on){window._fb2JobsArch=!!on;renderJobs();};
+
+  // ── Quick filter pills: add/remove ordinary filter chips (so Clear + favourites cover them) ─
+  function PILLS(){
+    const me=typeof MY_PERSON!=='undefined'?MY_PERSON:'';
+    return[
+      {k:'mine',label:'My jobs',icon:'ti-user',type:'member',value:me,show:!!me},
+      {k:'lead',label:'I lead',icon:'ti-flag',type:'lead',value:me,show:!!me},
+      {k:'inplay',label:'In play',icon:'ti-player-play',type:'status',value:'In play',show:true},
+      {k:'paused',label:'Paused',icon:'ti-player-pause',type:'status',value:'Paused',show:true},
+      {k:'complete',label:'Complete',icon:'ti-circle-check',type:'status',value:'Complete',show:true},
+      {k:'attn',label:'Needs attention',icon:'ti-alert-triangle',type:'health',value:'Needs attention',show:!M()},
+      {k:'uninv',label:'Uninvoiced',icon:'ti-file-invoice',type:'uninvoiced',value:'Yes',show:!M()},
+    ].filter(x=>x.show);
+  }
+  const pillOn=x=>_jobsFilters.some(f=>f.type===x.type&&f.value===x.value);
+  window._fb2TogglePill=function(k){
+    const x=PILLS().find(p=>p.k===k);if(!x)return;
+    if(pillOn(x))_jobsFilters=_jobsFilters.filter(f=>!(f.type===x.type&&f.value===x.value));
+    else{
+      // A job has one status, so status pills replace each other instead of AND-ing to nothing
+      if(x.type==='status')_jobsFilters=_jobsFilters.filter(f=>f.type!=='status');
+      _jobsFilters.push({id:uid('f'),type:x.type,value:x.value});
+    }
+    _saveFilterState('jobs');renderJobs();
+  };
+  function renderPills(){
+    const el=$('fb2-jobs-quick');if(!el)return;
+    el.innerHTML=`<span class="fb2-quick-lbl">Quick filters</span>`+PILLS().map(x=>{const on=pillOn(x);
+      return`<button type="button" class="fb2-pill${on?' on':''}" aria-pressed="${on}" onclick="_fb2TogglePill('${x.k}')"><i class="ti ${x.icon}" aria-hidden="true"></i>${esc(x.label)}</button>`;}).join('');
+  }
+
+  // ── renderJobs wrapper: keep controls in sync + "N archived match" hint ─────────────────
+  const _rj=window.renderJobs;
+  window.renderJobs=renderJobs=function(){
+    const r=_rj.apply(this,arguments);
+    try{
+      const ss=$('jobs-sort');if(ss&&ss.value!==window._fb2JobsSortMode)ss.value=window._fb2JobsSortMode;
+      const ab=$('jobs-incl-arch');if(ab&&ab.checked!==window._fb2JobsArch)ab.checked=window._fb2JobsArch;
+      renderPills();
+      const cnt=$('jobs-count');const q=_jobSearch;
+      const archOn=window._fb2JobsArch||_jobsFilters.some(f=>f.type==='status'&&f.value==='Archived');
+      if(cnt&&q&&!archOn){
+        const n=jobs.filter(j=>j.status==='archived'&&_fb2JobMatch(j,q)).length;
+        if(n)cnt.insertAdjacentHTML('beforeend',` · <button type="button" class="fb2-arch-hint" onclick="_fb2SetJobsArch(true)">${n} archived match${n!==1?'es':''}, show</button>`);
+      }
+    }catch(e){console.warn('fb2 jobs',e);}
+    return r;
+  };
+
+  // ── Favourites: saved views also remember search, sort and "Include archived" ──────────
+  const _sfp=window.saveFilterPreset;
+  window.saveFilterPreset=saveFilterPreset=function(mode){
+    const before=mode==='jobs'?_jobsPresets.length:-1;
+    const r=_sfp.apply(this,arguments);
+    if(mode==='jobs'&&_jobsPresets.length>before){
+      const p=_jobsPresets[_jobsPresets.length-1];
+      p.search=($('jobs-search-inp')?.value||'');p.sort=window._fb2JobsSortMode;p.arch=!!window._fb2JobsArch;
+      lsSet('cc_jobs_presets',JSON.stringify(_jobsPresets));
+      _renderPresetsBar('jobs');
+      toast(`Saved “${esc(p.name)}” to favourites`,'success');
+    }
+    return r;
+  };
+  const _lfp=window.loadFilterPreset;
+  window.loadFilterPreset=loadFilterPreset=function(mode,pid){
+    if(mode==='jobs'){
+      const p=_jobsPresets.find(x=>x.id===pid);
+      if(p){
+        if(p.sort&&SORTS[p.sort]){window._fb2JobsSortMode=p.sort;lsSet('cc_jobs_sort',p.sort);}
+        if('arch' in p)window._fb2JobsArch=!!p.arch;
+        if('search' in p){const i=$('jobs-search-inp');if(i)i.value=p.search||'';_jobSearch=(p.search||'').toLowerCase();}
+      }
+    }
+    return _lfp.apply(this,arguments);
+  };
+  const _rpb=window._renderPresetsBar;
+  window._renderPresetsBar=_renderPresetsBar=function(mode){
+    const r=_rpb.apply(this,arguments);
+    if(mode==='jobs'){const el=$('jobs-presets-bar');
+      if(el&&el.style.display!=='none'&&!el.querySelector('.fb2-fav-lbl')){
+        el.insertAdjacentHTML('afterbegin','<span class="fb2-fav-lbl">Favourites</span>');
+        el.querySelectorAll('.fpreset-chip .ti-bookmark').forEach(i=>i.className='ti ti-star');
+      }}
+    return r;
+  };
+
+  // ── ⌘K: smart job ranking + scope selector ──────────────────────────────────────────────
+  window._fb2OwnsGsJobs=true; // runGlobalSearch leaves jobs to us
+  let scope='all';
+  const SCOPES=[['all','All','ti-search'],['jobs','Jobs','ti-briefcase'],['archived','Archived','ti-archive'],['quotes','Quotes','ti-file-text'],['invoices','Invoices','ti-file-invoice']];
+  const scopesFor=()=>SCOPES.filter(s=>!(M()&&(s[0]==='quotes'||s[0]==='invoices')));
+  function renderScope(){
+    const panel=document.querySelector('#gsearch .gs-panel');if(!panel)return;
+    let bar=panel.querySelector('.fb2-gs-scope');
+    if(!bar){bar=document.createElement('div');bar.className='fb2-gs-scope';bar.setAttribute('role','group');bar.setAttribute('aria-label','Search in');
+      panel.querySelector('.gs-inp-row')?.insertAdjacentElement('afterend',bar);}
+    if(!scopesFor().some(s=>s[0]===scope))scope='all';
+    bar.innerHTML=scopesFor().map(([k,l,ic])=>`<button type="button" class="fb2-pill${k===scope?' on':''}" aria-pressed="${k===scope}" data-fb2-scope="${k}"><i class="ti ${ic}" aria-hidden="true"></i>${l}</button>`).join('');
+  }
+  window._fb2SetGsScope=function(k){
+    scope=k;renderScope();
+    const inp=$('gs-inp');runGlobalSearch(inp?inp.value:'');
+    try{inp&&inp.focus();}catch(e){}
+  };
+  // mousedown (not click) so the search box keeps focus
+  document.addEventListener('mousedown',e=>{const b=e.target.closest&&e.target.closest('[data-fb2-scope]');if(b){e.preventDefault();_fb2SetGsScope(b.dataset.fb2Scope);}});
+  document.addEventListener('keydown',e=>{
+    // Tab / Shift+Tab in the ⌘K box cycles the scope
+    if(e.key!=='Tab'||!e.target||e.target.id!=='gs-inp'||e.metaKey||e.ctrlKey||e.altKey)return;
+    const list=scopesFor().map(s=>s[0]);let i=list.indexOf(scope);
+    i=(i+(e.shiftKey?-1:1)+list.length)%list.length;e.preventDefault();_fb2SetGsScope(list[i]);
+  },true);
+  const jobRow=j=>{const a=j.status==='archived';return{cat:a?'Archived jobs':'Jobs',icon:a?'ti-archive':'ti-briefcase',title:`${j.id} — ${j.name}`,sub:j.company||'',arch:a,fn:()=>openJobDetail(j.id)};};
+  function rankedJobs(s,pred,limit){
+    const nq=qn(s);
+    if(!nq)return jobs.filter(pred).sort(newest).slice(0,limit);
+    return jobs.filter(pred).map(j=>[j,score(j,nq)]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]||newest(a[0],b[0])).slice(0,limit).map(x=>x[0]);
+  }
+  const has=(hay,s)=>{const h=norm(hay);return qn(s).split(' ').every(t=>h.includes(t));};
+  function quoteRows(s){
+    const out=[];
+    [...(typeof stQuotes!=='undefined'?stQuotes:[]),...(typeof localQuotes!=='undefined'?localQuotes:[])].forEach(qt=>{
+      const st=(typeof qt.quoteStatus==='string'?qt.quoteStatus:qt.quoteStatus?.name||'');
+      if(!has(`${qt.quoteName||''} ${qt.quoteNumber||qt.id} ${qt.company||''} ${qt.jobNumber||''} ${qt.jobName||''} ${st}`,s))return;
+      out.push({cat:'Quotes',icon:'ti-file-text',title:qt.quoteName||qt.quoteNumber||`Quote ${qt.id}`,sub:`${qt.company||''}${qt.jobNumber?' · #'+qt.jobNumber:''}${st?' · '+st:''}`,fn:()=>openQuoteDetail(qt.id)});
+    });
+    return out;
+  }
+  function invoiceRows(s){
+    const out=[];
+    (typeof stInvoices!=='undefined'?stInvoices:[]).forEach(inv=>{
+      const co=inv.company?.name||'';const st=inv.invoiceStatus?.name||inv.status||'';
+      const ij=jobs.find(x=>x._stId===inv.jobId);
+      if(!has(`${inv.number||inv.id} ${co} ${ij?.id||''} ${ij?.name||''} ${inv.reference||inv.name||''} ${st}`,s))return;
+      out.push({cat:'Invoices',icon:'ti-file-invoice',title:`Invoice ${inv.number||inv.id}`,sub:`${co}${ij?' · #'+ij.id:''}${st?' · '+st:''}`,fn:()=>openInvoiceDetail(inv.id)});
+    });
+    return out;
+  }
+  const LEAD_CATS=['Actions','People','Recent'];
+  const _rgs=window.runGlobalSearch;
+  window.runGlobalSearch=runGlobalSearch=function(q){
+    const r=_rgs.apply(this,arguments);
+    try{
+      renderScope();
+      const s=String(q||'').trim().toLowerCase();
+      if(scope==='all'&&!s)return r; // recent / starred / actions start screen stays as it is
+      let out=[];
+      if(scope==='all'){
+        const lead=_gsResults.filter(x=>LEAD_CATS.includes(x.cat));
+        const rest=_gsResults.filter(x=>!LEAD_CATS.includes(x.cat));
+        // Active jobs first, then a few archived ones (greyed), like Streamtime
+        const act=rankedJobs(s,j=>j.status!=='archived',10).map(jobRow);
+        const arc=rankedJobs(s,j=>j.status==='archived',act.length>=6?3:6).map(jobRow);
+        out=[...lead,...act,...arc,...rest];
+      }else if(scope==='jobs')out=rankedJobs(s,j=>j.status!=='archived',30).map(jobRow);
+      else if(scope==='archived')out=rankedJobs(s,j=>j.status==='archived',30).map(jobRow);
+      else if(!M()&&s&&scope==='quotes')out=quoteRows(s);
+      else if(!M()&&s&&scope==='invoices'){
+        // Platform invoices / credit notes come from the earlier search layer; Streamtime ones here
+        const plat=_gsResults.filter(x=>x.cat==='Invoices'&&/Platform|Credit note/.test((x.sub||'')+(x.title||'')));
+        out=[...plat,...invoiceRows(s)];
+      }
+      _gsResults=out.slice(0,30);_gsSel=0;renderGsResults(s);
+      if(!_gsResults.length&&scope!=='all'){
+        const el=$('gs-results');const lbl=((SCOPES.find(x=>x[0]===scope)||[])[1]||'').toLowerCase();
+        if(el)el.innerHTML=`<div class="gs-empty">${s?`No ${esc(lbl)} match “${esc(s)}”.`:`Type to search ${esc(lbl)}.`}<div style="margin-top:8px;font-size:11px;color:var(--muted);">Tab switches between ${M()?'All, Jobs and Archived':'All, Jobs, Archived, Quotes and Invoices'}.</div></div>`;
+      }
+    }catch(e){console.warn('fb2 gs',e);}
+    return r;
+  };
+  if(typeof _GS_CAT_CLS!=='undefined')_GS_CAT_CLS['Archived jobs']='gsc-jobs';
+  const _rgr=window.renderGsResults;
+  window.renderGsResults=renderGsResults=function(){
+    const r=_rgr.apply(this,arguments);
+    try{document.querySelectorAll('#gs-results .gs-item').forEach((el,i)=>{el.classList.toggle('fb2-arch',!!(_gsResults[i]&&_gsResults[i].arch));});}catch(e){}
+    return r;
+  };
+  const _ogs=window.openGlobalSearch;
+  window.openGlobalSearch=openGlobalSearch=function(){scope='all';renderScope();return _ogs.apply(this,arguments);};
+  const _ssis=window.showStarredInSearch;
+  if(_ssis)window.showStarredInSearch=showStarredInSearch=function(){scope='all';renderScope();return _ssis.apply(this,arguments);};
+  try{const f=document.querySelector('#gsearch .gs-foot');if(f&&!f.querySelector('.fb2-tabk'))f.querySelector('.gs-count')?.insertAdjacentHTML('beforebegin','<span class="fb2-tabk"><kbd>tab</kbd> scope</span>');}catch(e){}
+
+  // ── Clipboard ───────────────────────────────────────────────────────────────────────────
+  async function clip(text){
+    try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(text);return true;}}catch(e){}
+    try{const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;left:-9999px;top:0;opacity:0;';
+      document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();return ok;}catch(e){return false;}
+  }
+  async function copyWithFeedback(text,btn,what){
+    text=String(text||'').trim();
+    if(!text){toast(`No ${what} to copy`,'warn');return;}
+    if(await clip(text)){
+      toast(`Copied ${esc(text)}`,'success',2000);
+      if(btn){const i=btn.querySelector('i');btn.classList.add('is-done');if(i)i.className='ti ti-check';setTimeout(()=>{btn.classList.remove('is-done');if(i)i.className='ti ti-copy';},1400);}
+    }else toast('Couldn’t copy. Your browser blocked the clipboard','warn');
+  }
+  window._fb2Copy=copyWithFeedback;
+  // Copy buttons take their value from the input in the same cell
+  document.addEventListener('click',e=>{
+    const b=e.target.closest&&e.target.closest('[data-fb2-copy]');if(!b)return;
+    e.preventDefault();e.stopPropagation();
+    const inp=b.parentNode.querySelector('input');
+    copyWithFeedback(inp?inp.value:'',b,b.dataset.fb2Copy||'value');
+  },true);
+
+  // ── Clients: contacts as an editable list ───────────────────────────────────────────────
+  // Streamtime contacts are read-only at the source, so edits to them are kept on the client
+  // record (contactEdits[stId]) and shown over the synced values, marked "Edited".
+  const ctName=ct=>[ct.firstName,ct.lastName].filter(Boolean).join(' ')||ct.name||'';
+  window._fb2SetStContact=function(cid,ctId,field,val){
+    const c=clientsData.find(x=>x.id===cid);if(!c||!_canEdit())return;
+    c.contactEdits=c.contactEdits||{};const e=c.contactEdits[ctId]=c.contactEdits[ctId]||{};
+    e[field]=val;saveClientsData();
+  };
+  window._fb2ResetStContact=function(cid,ctId){
+    const c=clientsData.find(x=>x.id===cid);if(!c||!c.contactEdits||!_canEdit())return;
+    delete c.contactEdits[ctId];saveClientsData();openClientDetail(cid);
+  };
+  function contactsTable(c){
+    const edit=_canEdit();
+    const co=(typeof stContacts!=='undefined'?stContacts:[]).filter(ct=>ct.companyId===c._stId||ct.company?.name===c.name||ct.company?.id===c._stId);
+    const cell=(val,ph,on,cls)=>`<input class="fb2-ct-in${cls?' '+cls:''}" value="${esc(val)}" placeholder="${edit?esc(ph):''}" ${edit?`oninput="${on}"`:'readonly'} aria-label="${esc(ph)}">`;
+    const copyB='<button type="button" class="fb2-ibtn" data-fb2-copy="email" title="Copy email" aria-label="Copy email"><i class="ti ti-copy" aria-hidden="true"></i></button>';
+    const row=(v,on,src)=>`<tr>
+        <td>${cell(v.name,'Name',on('name'),'nm')}</td>
+        <td>${cell(v.role,'Role',on('role'))}</td>
+        <td><div class="fb2-ct-mail">${cell(v.email,'Email',on('email'))}${copyB}</div></td>
+        <td>${cell(v.phone,'Phone',on('phone'))}</td>
+        <td style="white-space:nowrap;">${src}</td></tr>`;
+    const rows=[];
+    co.forEach(ct=>{
+      const id=String(ct.id);const ed=(c.contactEdits||{})[id]||{};
+      const base={name:ctName(ct),role:ct.jobTitle||ct.position||'',email:ct.email||'',phone:ct.phone||ct.phoneNumber||ct.mobile||''};
+      const v={};Object.keys(base).forEach(f=>v[f]=f in ed?ed[f]:base[f]);
+      const edited=Object.keys(ed).length>0;
+      rows.push(row(v,f=>`_fb2SetStContact('${c.id}','${esc(id)}','${f}',this.value)`,
+        `<span class="fb2-src${edited?' ed':''}">${edited?'Edited':'Streamtime'}</span>${edited&&edit?`<button type="button" class="fb2-ibtn" title="Undo my edits (back to Streamtime)" aria-label="Undo edits" onclick="_fb2ResetStContact('${c.id}','${esc(id)}')"><i class="ti ti-arrow-back-up" aria-hidden="true"></i></button>`:''}`));
+    });
+    (c.localContacts||[]).forEach((ct,i)=>{
+      rows.push(row({name:ct.name||'',role:ct.role||'',email:ct.email||'',phone:ct.phone||''},f=>`updateLocalContact('${c.id}',${i},'${f}',this.value)`,
+        `<span class="fb2-src">Added here</span>${edit?`<button type="button" class="fb2-ibtn" title="Remove contact" aria-label="Remove contact" onclick="deleteClientContact('${c.id}',${i})"><i class="ti ti-trash" aria-hidden="true"></i></button>`:''}`));
+    });
+    const n=rows.length;
+    return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div class="ds-sec-lbl" style="margin:0!important;">Contacts${n?` <span style="font:500 12.5px var(--font);color:var(--muted);letter-spacing:0;">${n}</span>`:''}</div>
+        ${edit?`<button class="d-action" onclick="addClientContact('${c.id}')" style="margin-left:auto;"><i class="ti ti-plus" style="font-size:11px;"></i> Add contact</button>`:''}
+      </div>
+      ${n?`<div style="overflow-x:auto;"><table class="fb2-ct-table"><thead><tr><th style="width:24%">Name</th><th style="width:20%">Role</th><th style="width:30%">Email</th><th style="width:16%">Phone</th><th><span class="sr-only">Source</span></th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`
+        :`<div class="fb2-ct-empty">No contacts yet.</div>`}`;
+  }
+  const _ocd=window.openClientDetail;
+  window.openClientDetail=openClientDetail=function(id){
+    const r=_ocd.apply(this,arguments);
+    try{
+      const c=clientsData.find(x=>x.id===id);const sec=$('cd-contacts-sec');
+      if(c&&sec)sec.innerHTML=contactsTable(c);
+      // Copy button beside the main email field
+      const strip=$('cd-info-strip');
+      const em=strip&&[...strip.querySelectorAll('input')].find(i=>/'email'/.test(i.getAttribute('oninput')||''));
+      if(em&&!em.parentNode.classList.contains('fb2-in-wrap')){
+        const w=document.createElement('div');w.className='fb2-in-wrap';em.parentNode.insertBefore(w,em);w.appendChild(em);
+        w.insertAdjacentHTML('beforeend','<button type="button" class="fb2-ibtn" data-fb2-copy="email" title="Copy email" aria-label="Copy email"><i class="ti ti-copy" aria-hidden="true"></i></button>');
+      }
+    }catch(e){console.warn('fb2 contacts',e);}
+    return r;
+  };
+  const _acc=window.addClientContact;
+  window.addClientContact=addClientContact=function(id){
+    const r=_acc.apply(this,arguments);
+    try{document.querySelector('#cd-contacts-sec tbody tr:last-child .fb2-ct-in')?.focus();}catch(e){}
+    return r;
+  };
+
+  // ── Job detail: click (or Enter on) the job number to copy just the number ──────────────
+  const copyNum=n=>copyWithFeedback(n.textContent,null,'job number');
+  document.addEventListener('click',e=>{const n=e.target.closest&&e.target.closest('#d-meta-line .dt-num');if(n)copyNum(n);});
+  document.addEventListener('keydown',e=>{
+    if((e.key==='Enter'||e.key===' ')&&e.target&&e.target.matches&&e.target.matches('#d-meta-line .dt-num')){e.preventDefault();copyNum(e.target);}
+  });
+  const _ojd=window.openJobDetail;
+  window.openJobDetail=openJobDetail=function(){
+    const r=_ojd.apply(this,arguments);
+    try{const n=document.querySelector('#d-meta-line .dt-num');if(n&&!n.title){n.title='Copy job number';n.setAttribute('role','button');n.tabIndex=0;}}catch(e){}
     return r;
   };
 })();
