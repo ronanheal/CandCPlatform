@@ -26102,5 +26102,266 @@ _stRenderViews=function(){
   setTimeout(()=>{try{if(admin())load();}catch(e){}},2000);
 })();
 </script>
+<style id="fb2-job-style">
+/* ═══ Team feedback round 2 — job page (fb2) ═══════════════════════════════════════════════
+   Job status control in the status row, hours-vs-plan summary at the top of the job plan,
+   per-phase hours bars and status pills, and a status menu for phases and items. */
+.fb2-jst{display:inline-flex;align-items:center;gap:2px;height:28px;padding:2px;border-radius:var(--r-pill);background:var(--surface-2);border:1px solid var(--border);box-sizing:border-box;}
+.fb2-jst button{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 10px;border:0;border-radius:var(--r-pill);background:transparent;color:var(--muted);font:500 12px/1 var(--font);cursor:pointer;white-space:nowrap;}
+.fb2-jst button i{font-size:12px;}
+.fb2-jst button:hover:not([disabled]){color:var(--ink);}
+.fb2-jst button:focus-visible{outline:none;box-shadow:var(--ring);}
+.fb2-jst button[aria-checked="true"]{background:var(--white);color:var(--ink);font-weight:600;box-shadow:var(--e-1);}
+.fb2-jst button[aria-checked="true"][data-v="inplay"]{color:var(--ok-ink);}
+.fb2-jst button[aria-checked="true"][data-v="paused"]{color:var(--warn-ink);}
+.fb2-jst button[disabled]{cursor:default;}
+.fb2-jst button[disabled]:not([aria-checked="true"]){display:none;}
+.fb2-sum{margin:0 0 var(--s-4,16px);}
+.fb2-sum .stats-strip{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));padding:0!important;}
+.fb2-sum .stat-val{font-size:22px!important;}
+.fb2-sum-hd{display:flex;align-items:baseline;gap:8px;margin:0 0 10px;font:600 12.5px/1.3 var(--font);color:var(--muted);}
+.fb2-sum-hd b{color:var(--ink);font-weight:600;}
+.fb2-over{color:var(--red)!important;}
+.ph-meta .fb2-hrs{display:inline-flex;align-items:center;gap:8px;}
+.fb2-mbar{display:inline-block;width:64px;height:5px;border-radius:var(--r-pill);background:var(--faint);overflow:hidden;vertical-align:middle;}
+.fb2-mbar>i{display:block;height:100%;border-radius:inherit;background:var(--ok);}
+.fb2-mbar.warn>i{background:var(--warn);}
+.fb2-mbar.over>i{background:var(--red);}
+.i-badge.fb2-st-btn{cursor:pointer;}
+.i-badge.fb2-st-btn:focus-visible,.i-badge[onclick]:focus-visible{outline:none;box-shadow:var(--ring);}
+.fb2-menu{position:fixed;z-index:1000;min-width:150px;padding:4px;background:var(--white);border:1px solid var(--border);border-radius:var(--r-ctl);box-shadow:var(--shadow-l,0 8px 24px rgba(0,0,0,.14));}
+.fb2-menu button{display:flex;align-items:center;gap:8px;width:100%;padding:7px 10px;border:0;border-radius:8px;background:transparent;color:var(--ink);font:500 12.5px/1.2 var(--font);text-align:left;cursor:pointer;}
+.fb2-menu button:hover,.fb2-menu button:focus-visible{background:var(--surface-2);outline:none;}
+.fb2-menu button .fb2-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.fb2-menu button .ti-check{margin-left:auto;font-size:12px;}
+@media (max-width:700px){.fb2-sum .stats-strip{grid-template-columns:repeat(2,minmax(0,1fr));}}
+</style>
+<script id="fb2-job-script">
+// ═══ Team feedback round 2 — job page (fb2) ═══════════════════════════════════════════════════
+// · Job status (In play / Paused / Complete) as one control in the status row: admins change
+//   it, members see the current state.
+// · Job plan opens with a summary: hours used against planned for everyone (hours aren't money),
+//   plus job value, sell, expenses and invoiced for admins.
+// · Each phase head shows logged / planned hours with a bar, and a status pill.
+// · Phases and items get a status menu (In play / Paused / Complete; items also Not started).
+//   Status changes on Streamtime phases/items are kept in j._planStatus (via _keepJobEdits →
+//   j._native) and re-applied when the job opens, so they survive a reload or re-sync.
+(function(){
+  const admin=()=>{try{return _canEdit();}catch(e){return false;}};
+  const money=()=>{try{return _showMoney();}catch(e){return false;}};
+  const viewOnly=()=>{try{toast('View only. Ask an admin to make changes.','info');}catch(e){}};
+  const curJob=()=>jobs.find(x=>x.id===activeJobId);
+  const fmtM=m=>{m=Math.round(m||0);if(m<=0)return'0h';const h=Math.floor(m/60),r=m%60;return h?`${h}h${r?r+'m':''}`:r+'m';};
+  const $=n=>'$'+Math.round(n||0).toLocaleString();
+  const barCls=p=>p>=100?' over':p>=80?' warn':'';
+
+  // ── Status vocab ────────────────────────────────────────────────────────────────────────
+  const ST={inplay:['In play','var(--ok)','ib-ip'],paused:['Paused','var(--warn)','ib-ps'],complete:['Complete','var(--ok-ink)','ib-c'],open:['Not started','var(--muted)','ib-p']};
+  const phState=ph=>ph.status==='complete'?'complete':ph.paused?'paused':'inplay';
+  const itemState=it=>it.status==='complete'?'complete':it.status==='paused'?'paused':it.status==='inprogress'?'inplay':'open';
+  const jobState=j=>j.status==='complete'?'complete':j.paused?'paused':'inplay';
+
+  // ── Persisted plan status overlay ───────────────────────────────────────────────────────
+  function _record(kind,id,val){
+    const j=curJob();if(!j)return;
+    const ps=j._planStatus&&typeof j._planStatus==='object'?j._planStatus:{ph:{},it:{}};
+    ps.ph=ps.ph||{};ps.it=ps.it||{};ps[kind][id]=val;
+    j._planStatus=ps;
+    try{_keepJobEdits(j,['_planStatus']);}catch(e){}
+  }
+  function _applyOverlay(j){
+    const ps=j&&j._planStatus;if(!ps||!Array.isArray(j.phases))return;
+    j.phases.forEach(ph=>{
+      const p=ps.ph&&ps.ph[ph.id];if(p){ph.status=p.status;ph.paused=!!p.paused;}
+      (ph.items||[]).forEach(it=>{const s=ps.it&&ps.it[it.id];if(s)it.status=s;});
+    });
+  }
+  window._fb2ApplyPlanStatus=_applyOverlay;
+
+  // ── Logged minutes per plan item (same sources as renderItems) ──────────────────────────
+  function _loggedIndex(){
+    const done=[];
+    try{Object.keys(todoData||{}).forEach(pk=>{const pd=todoData[pk];if(!pd)return;Object.keys(pd).forEach(wk=>{const wd=pd[wk];if(!wd)return;
+      [1,2,3,4,5].forEach(d=>(wd[d]||[]).forEach(tt=>{
+        if(tt._fromST||tt._loggedEntry||!tt.done)return;
+        if(tt.jobId===activeJobId||(!!activeJobId&&tt.job?.match(/^(\d+)/)?.[1]===String(activeJobId)))done.push(tt);
+      }));});});}catch(e){}
+    const file={};
+    (stLoggedTimes||[]).forEach(lt=>{const k=lt.jobItemUser?.jobItemId;if(k!=null)file[k]=(file[k]||0)+(lt.minutes||0);});
+    return{done,file};
+  }
+  function _itemLogged(item,idx){
+    let m=0;
+    idx.done.forEach(tt=>{if(_taskMatchesItem(tt,item,phases))m+=(tt.hours||0)*60;});
+    if(item._stId){const f=idx.file[item._stId]||0;m+=Math.max(f,item._logMins||0);}
+    return m;
+  }
+
+  // ── Job status control (status row) ─────────────────────────────────────────────────────
+  function _statusCtl(j){
+    const cur=jobState(j),can=admin();
+    const btn=(v,icon)=>`<button type="button" role="radio" data-v="${v}" aria-checked="${cur===v}" ${can?`onclick="fb2SetJobStatus('${v}')"`:'disabled'} title="${can?'Set job to '+ST[v][0]:'Job is '+ST[v][0]+'. Admins change job status.'}"><i class="ti ${icon}"></i>${ST[v][0]}</button>`;
+    return`<span class="fb2-jst" role="radiogroup" aria-label="Job status">${btn('inplay','ti-player-play')}${btn('paused','ti-player-pause')}${btn('complete','ti-circle-check')}</span>`;
+  }
+  window.fb2SetJobStatus=async function(v){
+    if(!admin()){viewOnly();return;}
+    const j=curJob();if(!j||!ST[v])return;
+    if(jobState(j)===v&&j.status!=='archived')return;
+    const patch=v==='paused'?{status:'inplay',paused:true}:v==='complete'?{status:'complete',paused:false}:{status:'inplay',paused:false};
+    await dbUpdateJob(j.id,patch);
+    const nj=jobs.find(x=>x.id===j.id);if(nj)nj._manualPaused=patch.paused;
+    try{saveData();}catch(e){}
+    try{logActivity(j.id,MY_PERSON,'status_change',`Job status set to <strong>${ST[v][0]}</strong>`);}catch(e){}
+    toast(`Job set to ${ST[v][0]}`,v==='paused'?'warn':'success');
+    openJobDetail(j.id);
+  };
+
+  // ── Popover menu ────────────────────────────────────────────────────────────────────────
+  function _closeMenu(){document.getElementById('fb2-menu')?.remove();document.removeEventListener('click',_closeMenu);}
+  function _menu(anchor,opts,cur,onPick){
+    _closeMenu();
+    const r=anchor.getBoundingClientRect();
+    const m=document.createElement('div');m.id='fb2-menu';m.className='fb2-menu';m.setAttribute('role','menu');
+    m.innerHTML=opts.map(v=>`<button type="button" role="menuitemradio" aria-checked="${v===cur}" data-v="${v}"><span class="fb2-dot" style="background:${ST[v][1]};"></span>${ST[v][0]}${v===cur?'<i class="ti ti-check"></i>':''}</button>`).join('');
+    m.addEventListener('click',e=>{e.stopPropagation();const b=e.target.closest('button[data-v]');if(!b)return;_closeMenu();onPick(b.dataset.v);});
+    m.addEventListener('keydown',e=>{
+      const bs=[...m.querySelectorAll('button')];const i=bs.indexOf(document.activeElement);
+      if(e.key==='Escape'){_closeMenu();anchor.focus?.();}
+      else if(e.key==='ArrowDown'){e.preventDefault();bs[(i+1)%bs.length].focus();}
+      else if(e.key==='ArrowUp'){e.preventDefault();bs[(i-1+bs.length)%bs.length].focus();}
+    });
+    document.body.appendChild(m);
+    const w=m.offsetWidth,h=m.offsetHeight;
+    m.style.left=Math.max(8,Math.min(r.right-w,window.innerWidth-w-8))+'px';
+    m.style.top=(r.bottom+6+h>window.innerHeight?Math.max(8,r.top-h-6):r.bottom+6)+'px';
+    (m.querySelector('[aria-checked="true"]')||m.querySelector('button'))?.focus();
+    setTimeout(()=>document.addEventListener('click',_closeMenu),0);
+  }
+
+  window.fb2PhaseStatusMenu=function(e,phId){
+    e&&e.stopPropagation();
+    if(!admin()){viewOnly();return;}
+    const ph=phases.find(p=>p.id===phId);if(!ph)return;
+    _menu(e.currentTarget||e.target,['inplay','paused','complete'],phState(ph),v=>{
+      ph.status=v==='complete'?'complete':'open';ph.paused=v==='paused';
+      _record('ph',ph.id,{status:ph.status,paused:ph.paused});
+      try{logActivity(activeJobId,MY_PERSON,'phase_status',`Phase <strong>${esc(ph.name)}</strong> set to <strong>${ST[v][0]}</strong>`);}catch(err){}
+      renderPhases();saveData();
+    });
+  };
+  // Item badge: a status menu instead of a two-way toggle
+  window.toggleItemStatus=function(itemId,phId,e){
+    e&&e.stopPropagation();
+    if(!admin()){viewOnly();return;}
+    const ph=phases.find(p=>p.id===phId);if(!ph)return;
+    const item=ph.items.find(i=>i.id===itemId);if(!item)return;
+    const set=v=>{
+      item.status={inplay:'inprogress',paused:'paused',complete:'complete',open:'open'}[v];
+      _record('it',item.id,item.status);
+      try{logActivity(activeJobId,MY_PERSON,'item_status',`<strong>${esc(item.name)}</strong> set to <strong>${ST[v][0]}</strong>`);}catch(err){}
+      renderPhases();saveData();
+    };
+    const anchor=e&&(e.currentTarget||e.target);
+    if(!anchor||!anchor.getBoundingClientRect){set(itemState(item)==='complete'?'inplay':'complete');return;}
+    _menu(anchor,['open','inplay','paused','complete'],itemState(item),set);
+  };
+  // Phase "…" menu: Pause / Complete there also persist
+  if(typeof pctxDo==='function'){
+    const _pd=window.pctxDo;
+    window.pctxDo=function(a){
+      const id=pctxTarget;const r=_pd.apply(this,arguments);
+      if((a==='complete'||a==='pause')&&id){const ph=phases.find(p=>p.id===id);if(ph)_record('ph',ph.id,{status:ph.status,paused:!!ph.paused});}
+      return r;
+    };
+  }
+
+  // ── Summary at the top of the job plan ──────────────────────────────────────────────────
+  function _summary(j,phStats){
+    const s=computeJobStats(j);
+    const plan=s.plannedMins||phStats.plan,log=s.loggedMins||phStats.log;
+    const pct=plan>0?Math.round(log/plan*100):0;
+    const col=pct>=100?'var(--red)':pct>=80?'var(--warn)':'var(--ok)';
+    const left=plan-log;
+    let items=0,itemsDone=0,phDone=0;
+    phases.forEach(ph=>{if(ph.status==='complete')phDone++;(ph.items||[]).forEach(it=>{items++;if(it.status==='complete')itemsDone++;});});
+    let html=_statBlock('Hours used / planned',`${fmtM(log)} <span class="stat-of">/ ${plan>0?fmtM(plan):'—'}</span>`,plan>0?`${pct}% of plan`:'No hours planned yet',plan>0?pct:null,col)
+      +_statBlock('Hours remaining',plan>0?(left>=0?fmtM(left):`<span class="fb2-over">${fmtM(-left)} over</span>`):'—',plan>0?(left>=0?'left on the plan':'more than planned'):null,null)
+      +_statBlock('Items complete',`${itemsDone} <span class="stat-of">/ ${items}</span>`,`${phDone} of ${phases.length} phase${phases.length!==1?'s':''} complete`,items?Math.round(itemsDone/items*100):null,'var(--ok)');
+    if(money()){
+      const value=j._finalBudget||s.plannedSell;
+      const bCol=s.bPct>=100?'var(--red)':s.bPct>=80?'var(--warn)':'var(--ok)';
+      const inv=j._streamtime?(j._stInvoiced||0):((j.invStatus==='sent'||j.invStatus==='paid')?(j.invTotal||s.plannedSell||0):0);
+      html+=_statBlock('Job value',value>0?$(value):'—',j.billable!==false?'Billable':'Non-billable',null)
+        +_statBlock('Time sell used / planned',`${$(s.sellUsed)} <span class="stat-of">/ ${$(s.plannedSell)}</span>`,s.plannedSell>0?`${s.bPct}% of plan`:null,s.plannedSell>0?s.bPct:null,bCol)
+        +_statBlock('Expenses',$(s.expUsed),value>0?`${$(Math.max(0,value-s.sellUsed-s.expUsed))} budget left`:null,null)
+        +_statBlock('Invoiced ex GST',inv>0?$(inv):'—',null,null);
+    }
+    return`<div class="fb2-sum-hd"><b>Job totals</b><span>${money()?'Hours and money against the plan':'Hours logged against the plan'}</span></div><div class="stats-strip">${html}</div>`;
+  }
+
+  // ── renderPhases: phase hours bars, status pills, summary ───────────────────────────────
+  const _rp=window.renderPhases;
+  window.renderPhases=function(){
+    const r=_rp.apply(this,arguments);
+    try{_decorate();}catch(e){console.warn('fb2 plan',e);}
+    return r;
+  };
+  function _decorate(){
+    const j=curJob();if(!j)return;
+    const ro=j.status==='archived'||j.status==='complete'||!admin();
+    const idx=_loggedIndex();
+    let tPlan=0,tLog=0;
+    phases.forEach(ph=>{
+      const el=document.getElementById('pw_'+ph.id);if(!el)return;
+      let plan=0,log=0;
+      (ph.items||[]).forEach(it=>{plan+=_itemMins(it.hours);log+=_itemLogged(it,idx);});
+      tPlan+=plan;tLog+=log;
+      const head=el.querySelector('.phase-head');if(!head)return;
+      head.querySelectorAll('.paused-badge').forEach(b=>b.remove());
+      const meta=head.querySelector('.ph-meta');
+      if(meta){
+        const p=plan>0?Math.round(log/plan*100):0;
+        meta.innerHTML=`<span class="fb2-hrs" title="Hours logged / planned"><span class="${p>=100&&plan>0?'fb2-over':''}">${fmtM(log)}</span> / ${plan>0?fmtM(plan):'—'}${plan>0?`<span class="fb2-mbar${barCls(p)}" aria-hidden="true"><i style="width:${Math.min(100,p)}%"></i></span>`:''}</span>${money()?' · '+pSell(ph):''}`;
+      }
+      const inf=head.querySelector('.ph-inf');
+      const icon=inf&&inf.querySelector(':scope > i.ti-circle-check, :scope > i.ti-circle-dot');
+      if(icon){
+        const v=phState(ph);
+        const pill=document.createElement('span');
+        pill.className='i-badge '+ST[v][2]+(ro?'':' fb2-st-btn');pill.textContent=ST[v][0];
+        if(!ro){pill.setAttribute('role','button');pill.tabIndex=0;pill.title='Change phase status';
+          pill.setAttribute('onclick',`fb2PhaseStatusMenu(event,'${ph.id}')`);
+          pill.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();pill.click();}});}
+        icon.replaceWith(pill);
+      }
+      // Items: Streamtime's word is "In play"; badges become keyboard reachable
+      el.querySelectorAll('.i-badge.ib-ip').forEach(b=>{b.textContent='In play';});
+      if(!ro)el.querySelectorAll('.i-badge[onclick*="toggleItemStatus"]').forEach(b=>{b.title='Change item status';b.setAttribute('role','button');b.tabIndex=0;
+        b.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();b.click();}});});
+    });
+    const area=document.querySelector('#dtab-plan .plan-area');if(!area)return;
+    let sum=document.getElementById('fb2-sum');
+    if(!sum){sum=document.createElement('section');sum.id='fb2-sum';sum.className='fb2-sum';sum.setAttribute('aria-label','Job totals');area.insertBefore(sum,area.firstChild);}
+    sum.innerHTML=_summary(j,{plan:tPlan,log:tLog});
+  }
+
+  // ── openJobDetail: apply the status overlay first, then the status control ──────────────
+  const _ojd=window.openJobDetail;
+  window.openJobDetail=function(id){
+    try{const j=jobs.find(x=>x.id===id);if(j)_applyOverlay(j);}catch(e){}
+    const r=_ojd.apply(this,arguments);
+    try{
+      const j=jobs.find(x=>x.id===id);const st=document.getElementById('d-status');
+      if(j&&st){
+        // The separate "Paused" badge is now part of the status control
+        st.querySelectorAll('.paused-badge:not([onclick])').forEach(b=>{if(b.querySelector('.ti-pause'))b.remove();});
+        st.querySelector('.fb2-jst')?.remove();
+        st.insertAdjacentHTML('afterbegin',_statusCtl(j));
+      }
+    }catch(e){console.warn('fb2 status',e);}
+    return r;
+  };
+})();
+</script>
 </body>
 </html>
