@@ -13506,8 +13506,7 @@ setTimeout(_renderIcons,50);
 </div>
 <!-- View settings panel -->
 <div id="vsp" class="vsp">
-  <div class="vsp-title">Card details</div>
-  <div class="vsp-hint">Drag <i class="ti ti-grip-dots-vertical"></i> to reorder card details</div>
+  <div class="fb1-vsp-lbl fb1-vsp-cd">Card details <span>Drag <i class="ti ti-grip-dots-vertical"></i> to reorder</span></div>
   <div class="vsp-list" id="vsp-list"></div>
 </div>
 
@@ -26373,7 +26372,7 @@ _stRenderViews=function(){
     let sec=document.getElementById('fb1-vsp-layout');
     if(!sec){sec=document.createElement('div');sec.id='fb1-vsp-layout';panel.insertBefore(sec,panel.firstChild);}
     const v=curView();
-    sec.innerHTML=`<div class="fb1-vsp-sec"><div class="fb1-vsp-lbl">View</div><div class="fb1-vsp-seg" role="radiogroup" aria-label="View">`
+    sec.innerHTML=`<div class="fb1-vsp-head">View settings</div><div class="fb1-vsp-sec"><div class="fb1-vsp-lbl">View</div><div class="fb1-vsp-seg" role="radiogroup" aria-label="View">`
       +Object.entries(VIEWS).map(([k,[ic,lb,kb]])=>`<button type="button" role="radio" aria-checked="${k===v}" class="${k===v?'on':''}" onclick="event.stopPropagation();_fb1SetView('${k}')"><i class="ti ${ic}" aria-hidden="true"></i>${lb}${kb?`<kbd>${kb}</kbd>`:''}</button>`).join('')
       +`</div></div><div class="fb1-vsp-sec"><div class="fb1-vsp-lbl">Show</div>`
       +`<label class="fb1-vsp-tog"><span><i class="ti ti-parking" aria-hidden="true"></i>Parking space</span><input type="checkbox" ${parkShown()?'checked':''} onchange="_parkShow(this.checked)"></label>`
@@ -26552,6 +26551,9 @@ body.dark #view-todo .day-done{background:linear-gradient(180deg,color-mix(in sr
 #vsp{width:248px!important;}
 .fb1-vsp-sec{padding:10px 14px 12px;border-bottom:1px solid var(--faint);display:flex;flex-direction:column;gap:8px;}
 .fb1-vsp-lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.fb1-vsp-head{padding:12px 14px 2px;font:600 14px/1.2 var(--font);color:var(--ink);}
+.fb1-vsp-cd{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:12px 14px 4px;}
+.fb1-vsp-cd span{letter-spacing:0;text-transform:none;font-size:11px;color:var(--subtle,var(--muted));}.fb1-vsp-cd span i{font-size:11px;vertical-align:-1px;}
 .fb1-vsp-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:2px;border-radius:10px;background:var(--off);border:1px solid var(--faint);}
 .fb1-vsp-seg button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 4px;border:0;border-radius:8px;background:none;color:var(--muted);font:500 11.5px/1 var(--font);cursor:pointer;}
 .fb1-vsp-seg button i{font-size:15px;}
