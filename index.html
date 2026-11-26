@@ -3187,7 +3187,7 @@ const WORKSPACE_KEYS=['cc_people','cc_person_status','cc_clients','cc_boards','c
 // Back up every cc_* key (leave, rate cards, templates, counters, targets…), not just a fixed list —
 // the fixed list missed the invoice/PO/credit-note counters, so a restore could reissue numbers.
 // Secrets and per-device state stay out.
-const _WS_SKIP=['cc_gh_token','cc_me','cc_view_as','cc_timer','cc_bg_image','cc_last_sync','cc_seen_version','cc_config_applied_at','cc_rollover_seen'];
+const _WS_SKIP=['cc_gh_token','cc_last_view','cc_me','cc_view_as','cc_timer','cc_bg_image','cc_last_sync','cc_seen_version','cc_config_applied_at','cc_rollover_seen'];
 function _wsBackupAllowed(k){return /^cc_/.test(k)&&!_WS_SKIP.includes(k);}
 function _wsBackupKeys(){const out=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(_wsBackupAllowed(k))out.push(k);}}catch(e){}return out.length?out:WORKSPACE_KEYS;}
 function exportWorkspace(){
@@ -13160,7 +13160,15 @@ function toggleQinvDetail(cardId){
 // A cross-tab refresh (the storage listener below reloads this tab when another tab saves) used
 // to land on the Dashboard, so any screen the user was on — Reporting, an open board, a job —
 // was lost whenever another tab finished loading Streamtime. Put them back where they were.
-const _xtabRestore=(()=>{try{const s=sessionStorage.getItem('cc_xtab_restore');sessionStorage.removeItem('cc_xtab_restore');return s?JSON.parse(s):null;}catch(e){return null;}})();
+// Every refresh or fresh load comes back to the last screen too: the snapshot is written on
+// pagehide (this tab) and kept per browser as cc_last_view for a new tab or next visit.
+function _ccViewSnapshot(){
+  const v=(document.querySelector('.view:not(.hidden)')?.id||'').replace(/^view-/,'');
+  return {v,jobsTab:typeof _jobsTab!=='undefined'?_jobsTab:'',job:v==='detail'?activeJobId:null,
+    rep:typeof _reportTab!=='undefined'?_reportTab:'',sett:typeof _settActiveTab!=='undefined'?_settActiveTab:'',board:typeof activeBoardId!=='undefined'?activeBoardId:null};
+}
+window.addEventListener('pagehide',()=>{try{const snap=JSON.stringify(_ccViewSnapshot());if(!sessionStorage.getItem('cc_xtab_restore'))sessionStorage.setItem('cc_xtab_restore',snap);localStorage.setItem('cc_last_view',snap);}catch(e){}});
+const _xtabRestore=(()=>{try{const s=sessionStorage.getItem('cc_xtab_restore')||localStorage.getItem('cc_last_view');sessionStorage.removeItem('cc_xtab_restore');return s?JSON.parse(s):null;}catch(e){return null;}})();
 function _xtabRestoreView(r){
   if(!r||!r.v||r.v==='dashboard'||!document.getElementById('view-'+(r.v==='detail'?'jobs':r.v)))return;
   if(!document.querySelector('#view-dashboard:not(.hidden)'))return; // the user has already moved on
@@ -13219,9 +13227,7 @@ window.addEventListener('storage',e=>{
     if(busy){_xtabTimer=setTimeout(tryRefresh,4000);return;}
     // Remember the screen so the reload comes back to it (see _xtabRestoreView).
     try{
-      const v=(document.querySelector('.view:not(.hidden)')?.id||'').replace(/^view-/,'');
-      sessionStorage.setItem('cc_xtab_restore',JSON.stringify({v,jobsTab:typeof _jobsTab!=='undefined'?_jobsTab:'',job:v==='detail'?activeJobId:null,
-        rep:typeof _reportTab!=='undefined'?_reportTab:'',sett:typeof _settActiveTab!=='undefined'?_settActiveTab:'',board:typeof activeBoardId!=='undefined'?activeBoardId:null}));
+      sessionStorage.setItem('cc_xtab_restore',JSON.stringify(_ccViewSnapshot()));
     }catch(e){}
     location.reload();
   };
