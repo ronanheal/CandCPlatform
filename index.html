@@ -2168,13 +2168,13 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
         </div>
         <!-- JOBS panel -->
         <div id="jt-jobs" class="jt-panel" style="display:flex;">
-          <div style="padding:20px 28px 4px;"><div class="view-title">Jobs</div><div class="view-sub">Every job on the books</div></div>
+          <div class="fb3-jobs-head" style="padding:20px 28px 4px;"><div><div class="view-title">Jobs</div><div class="view-sub">Every job on the books</div></div><span class="jobs-count" id="jobs-count">0 jobs · NZD</span></div>
           <div class="jobs-toolbar">
             <div class="jobs-search"><i class="ti ti-search"></i><input id="jobs-search-inp" placeholder="Job number, name, client, PO, label…" oninput="filterJobs(this.value)" autocomplete="off"/></div>
             <span class="fb3-qf-wrap"><button class="d-action" id="fb3-qf-btn" onclick="_fb3QuickFilters(event)" aria-haspopup="true" aria-expanded="false" title="Ready-made filters and your saved favourites"><i class="ti ti-bolt" style="font-size:11px;"></i> Quick filters<b class="fb3-qf-n" hidden></b></button></span>
             <button class="d-action" onclick="_addFilter('jobs')" title="Add a filter"><i class="ti ti-filter-plus" style="font-size:11px;"></i> Filter</button>
             <button class="d-action" id="jobs-clear-btn" onclick="_clearFilters('jobs')" style="display:none;"><i class="ti ti-x" style="font-size:11px;"></i> Clear</button>
-            <span class="jobs-count" id="jobs-count" style="margin-left:auto;">0 jobs · NZD</span>
+            <span class="fb3-tb-gap" aria-hidden="true"></span>
             <button class="d-action" id="fb3-sort-btn" onclick="_fb3Pop('sort',event)" aria-haspopup="true" aria-expanded="false" title="Sort"><i class="ti ti-arrows-sort" style="font-size:11px;"></i> <span id="fb3-sort-lbl">Newest first</span></button>
             <button class="d-action" id="fb3-view-btn" onclick="_fb3Pop('view',event)" aria-haspopup="true" aria-expanded="false" title="Grouping, columns and archived jobs"><i class="ti ti-layout-list" style="font-size:11px;"></i> View<b class="fb3-dot" hidden></b></button>
             <div class="fb3-hold" hidden>
@@ -26946,6 +26946,15 @@ body.dark #view-todo .day-done{background:linear-gradient(180deg,color-mix(in sr
 .fb3-qf-sw input{width:30px;height:18px;appearance:none;-webkit-appearance:none;border-radius:9px;background:var(--border);position:relative;cursor:pointer;transition:background .15s;flex:none;margin:0;}
 .fb3-qf-sw input::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:transform .15s;}
 .fb3-qf-sw input:checked{background:var(--ink);}.fb3-qf-sw input:checked::after{transform:translateX(12px);}
+.fb3-jobs-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;}
+.fb3-jobs-head .jobs-count{margin:0 0 3px;white-space:nowrap;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.jobs-toolbar .fb3-tb-gap{margin-left:auto;}
+/* Jobs totals footer: one centred line, the bar follows the numbers */
+#jobs-footer-bar{align-items:center!important;gap:20px!important;min-height:48px!important;}
+#jobs-footer-bar .jf-lbl{display:inline-flex;align-items:baseline;line-height:1;}
+#jobs-footer-bar .jf-meter{flex:1;max-width:none;display:flex;align-items:center;gap:14px;min-width:0;}
+#jobs-footer-bar .jf-nums{margin:0!important;line-height:1;align-items:baseline;}
+#jobs-footer-bar .jf-bar{flex:1;max-width:360px;min-width:80px;}
 .fb3-dot{width:6px;height:6px;border-radius:50%;background:var(--red);margin-left:2px;}
 .fb3-qf-empty{padding:4px 8px 8px;font-size:12px;color:var(--muted);line-height:1.45;}
 .fb3-qf-foot{border-top:1px solid var(--faint);margin-top:4px;padding-top:4px;}
