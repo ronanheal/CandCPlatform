@@ -2495,6 +2495,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
           <div class="ds-sett-eyebrow">Settings</div>
           <div class="sett-nav-item active" id="sni-profile" onclick="switchSettTab('profile')"><i class="ti ti-user" style="font-size:14px;"></i> My profile</div>
           <div class="sett-nav-item" id="sni-team" onclick="switchSettTab('team')"><i class="ti ti-users" style="font-size:14px;"></i> Team</div>
+          <div class="sett-nav-item" id="sni-access" onclick="switchSettTab('access')"><i class="ti ti-shield-lock" style="font-size:14px;"></i> Access</div>
           <div class="sett-nav-item" id="sni-defaults" onclick="switchSettTab('defaults')"><i class="ti ti-adjustments" style="font-size:14px;"></i> Workspace defaults</div>
           <div class="sett-nav-item" id="sni-items" onclick="switchSettTab('items')"><i class="ti ti-list" style="font-size:14px;"></i> Job items</div>
           <div class="sett-nav-item" id="sni-labels" onclick="switchSettTab('labels')"><i class="ti ti-tag" style="font-size:14px;"></i> Labels</div>
@@ -3001,13 +3002,20 @@ function clearBgImage(){try{localStorage.removeItem('cc_bg_image');}catch(e){}ap
 // /api/data, shared boards). docs/SETUP-AUTH.md → Local testing.
 const IS_LOCAL_DEV=(location.protocol==='file:'||/^(localhost|127\.0\.0\.1|\[::1\]|0\.0\.0\.0)$/.test(location.hostname))
   &&!(location.protocol!=='file:'&&(/(?:^|[?&])api=1(?:&|$)/.test(location.search)||(()=>{try{return localStorage.getItem('cc_use_api')==='1';}catch(e){return false;}})()));
+// Per-person permissions (lib/perms.js; same keys, same order — the cc_who hint carries them as
+// a bitmask). The server is the real gate; can() only shapes the UI. Fed by /api/me at boot.
+const CC_PERM_KEYS=['todo','viewTeamTodo','viewJobs','checkin','editTeamTodo','viewFinancials','editJobs','team','viewCheckinSummary',
+  'company','userPermissions','masterSettings','contacts','reporting','accountSettings','teamCostRates','export'];
+const CC_ESSENTIALS=['todo','viewTeamTodo','viewJobs','checkin'];
+function _ccPermsOf(keys){const o={};CC_PERM_KEYS.forEach(k=>o[k]=keys.includes(k));o.todo=true;return o;}
+function _ccPermsFromMask(x){return _ccPermsOf(CC_PERM_KEYS.filter((k,i)=>x&(1<<i)));}
 const AUTH=(()=>{
   if(IS_LOCAL_DEV)return null;
   try{
-    const m=document.cookie.match(/(?:^|;\s*)cc_who=([^;]+)/);if(!m)return {email:'',name:'',personKey:null,admin:false,_missing:true};
+    const m=document.cookie.match(/(?:^|;\s*)cc_who=([^;]+)/);if(!m)return {email:'',name:'',personKey:null,admin:false,perms:null,_missing:true};
     const j=JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g,'+').replace(/_/g,'/')))));
-    return {email:j.e||'',name:j.n||'',personKey:j.p||null,admin:!!j.a};
-  }catch(e){return {email:'',name:'',personKey:null,admin:false,_missing:true};}
+    return {email:j.e||'',name:j.n||'',personKey:j.p||null,admin:!!j.a,perms:typeof j.x==='number'?_ccPermsFromMask(j.x):null};
+  }catch(e){return {email:'',name:'',personKey:null,admin:false,perms:null,_missing:true};}
 })();
 // Someone signed in whose email isn't linked to a Streamtime person still needs a people key.
 function _authGuestKey(){return 'acct_'+String(AUTH&&AUTH.email||'me').toLowerCase().replace(/[^a-z0-9]+/g,'_').slice(0,40);}
@@ -4362,7 +4370,7 @@ async function initStreamtime(silent){
     // On a fast-sync refresh the files it never writes come back as "not ok", so every block
     // below that reads them is skipped and the data already in memory stays as it is.
     const _skipped={ok:false,status:0};
-    const _get=(f,fast)=>_partial&&!fast?Promise.resolve(_skipped):fetch(`${ST_BASE}/${f}.json${_v}`);
+    const _get=(f,fast)=>(_partial&&!fast)||(/^(invoices|quotes|expenses)$/.test(f)&&!can('viewFinancials'))?Promise.resolve(_skipped):fetch(`${ST_BASE}/${f}.json${_v}`);
     const [jobsRes,coRes,ltRes,invRes,qtRes,usersRes,ctRes,expRes,assignRes,msRes,schedRes]=await Promise.all([
       _get('jobs'),
       _get('companies'),
@@ -7998,26 +8006,46 @@ function clearJobSelection(){toggleAllJobCbs(false);}
 // Signed in (production): "am I admin" is the session's admin flag, enforced again on the server
 // for every admin endpoint. It also holds while an admin is viewing as someone else.
 function _hasAdmins(){return Object.values(people).some(p=>p&&p.admin&&!p._archived);}
-// roles-r10: local-dev preview of the member (non-admin) experience. Only on localhost / file://
-// (IS_LOCAL_DEV, which is false whenever a real session is in play): ?role=member or
-// localStorage cc_preview_role='member'. ?role=admin clears the stored preview.
-const _CC_PREVIEW_MEMBER=(()=>{
-  if(!IS_LOCAL_DEV)return false;
+// Local-dev preview of limited permissions. Only on localhost / file:// (IS_LOCAL_DEV, which is
+// false whenever a real session is in play): ?role=member (Essentials only), or
+// ?perms=viewJobs,reporting,… (exactly those, plus todo); both are remembered in localStorage.
+// ?role=admin clears the preview.
+const _CC_PREVIEW_PERMS=(()=>{
+  if(!IS_LOCAL_DEV)return null;
   try{
     const m=location.search.match(/(?:^|[?&])role=(member|admin)(?:&|$)/);
-    if(m){if(m[1]==='admin')localStorage.removeItem('cc_preview_role');return m[1]==='member';}
-    return localStorage.getItem('cc_preview_role')==='member';
-  }catch(e){return false;}
+    const pm=location.search.match(/(?:^|[?&])perms=([A-Za-z,]*)(?:&|$)/);
+    if(m&&m[1]==='admin'){localStorage.removeItem('cc_preview_role');localStorage.removeItem('cc_preview_perms');return null;}
+    if(pm){localStorage.setItem('cc_preview_perms',pm[1]);localStorage.removeItem('cc_preview_role');}
+    else if(m){localStorage.setItem('cc_preview_role','member');localStorage.removeItem('cc_preview_perms');}
+    const sp=localStorage.getItem('cc_preview_perms');
+    if(sp!=null)return _ccPermsOf(sp.split(',').filter(k=>CC_PERM_KEYS.includes(k)));
+    if(localStorage.getItem('cc_preview_role')==='member')return _ccPermsOf(CC_ESSENTIALS);
+  }catch(e){}
+  return null;
 })();
-function _isAdmin(k){
-  if(_CC_PREVIEW_MEMBER&&(!k||k===MY_PERSON))return false;
-  if(AUTH&&(!k||k===MY_PERSON))return !!AUTH.admin;
-  k=k||MY_PERSON;return !_hasAdmins()||!!people[k]?.admin;
+const _CC_PREVIEW_MEMBER=!!_CC_PREVIEW_PERMS;
+// My effective permissions right now.
+function _ccMyPerms(){
+  if(_CC_PREVIEW_PERMS)return _CC_PREVIEW_PERMS;
+  if(AUTH)return AUTH.perms||_ccPermsOf(AUTH.admin?CC_PERM_KEYS:CC_ESSENTIALS);
+  // Local, not signed in: the old soft admin flags (until anyone is marked admin, everyone can)
+  let all=true;try{all=!_hasAdmins()||!!people[MY_PERSON]?.admin;}catch(e){}
+  return _ccPermsOf(all?CC_PERM_KEYS:CC_ESSENTIALS);
 }
-function _needAdmin(what){
-  if(_isAdmin())return true;
-  const names=Object.values(people).filter(p=>p.admin&&!p._archived).map(p=>p.name.split(' ')[0]);
-  toast(`Only admins can ${what}${names.length?` — ask ${names.slice(0,3).join(', ')}`:''}`,'warn');
+// can('viewFinancials') etc. — the one question every UI gate asks.
+function can(perm){if(perm==='todo')return true;return !!_ccMyPerms()[perm];}
+// "Admin" now means: may manage people and their permissions (userPermissions). For someone
+// else (k), the old local admin flag on their people record.
+function _isAdmin(k){
+  if(!k||k===MY_PERSON)return can('userPermissions');
+  return !_hasAdmins()||!!people[k]?.admin;
+}
+// _needAdmin(what, perm): true when I have perm (default userPermissions), else a polite toast.
+function _needAdmin(what,perm){
+  perm=perm||'userPermissions';
+  if(can(perm))return true;
+  toast(`You don’t have permission to ${what}. Ask someone who manages permissions.`,'warn');
   return false;
 }
 function toggleAdmin(key){
@@ -8031,13 +8059,20 @@ function toggleAdmin(key){
 }
 // roles-r10: one gate for the member (non-admin) experience. Members see jobs and plans but
 // change nothing on them except logging time; business views and money are hidden.
-function _isMember(){return !_isAdmin();}
-function _canEdit(){return _isAdmin();}
-function _showMoney(){return _isAdmin();}
-function _applyAdminUi(){const m=!_isAdmin();document.body.classList.toggle('not-admin',m);document.body.classList.toggle('cc-member',m);}
+// The old two-role helpers, kept for the code that calls them, now on top of can():
+// a "member" is someone who can't edit jobs (the read-only job experience).
+function _isMember(){return !can('editJobs');}
+function _canEdit(){return can('editJobs');}
+function _showMoney(){return can('viewFinancials');}
+// body.cc-no-<perm> for every permission I lack (CSS hides by it); cc-member / not-admin = no editJobs.
+function _applyAdminUi(){
+  const b=document.body;if(!b)return;
+  const m=!can('editJobs');b.classList.toggle('not-admin',m);b.classList.toggle('cc-member',m);
+  CC_PERM_KEYS.forEach(k=>b.classList.toggle('cc-no-'+k.toLowerCase(),!can(k)));
+}
 function bulkArchiveJobs(){
   const ids=getSelectedJobIds();if(!ids.length)return;
-  if(!_needAdmin('archive jobs'))return;
+  if(!_needAdmin('archive jobs','editJobs'))return;
   // Through dbUpdateJob (j._native), like single archiveJob — direct writes reverted on refetch
   ids.forEach(id=>dbUpdateJob(id,{status:'archived'}));
   renderJobs();
@@ -8045,7 +8080,7 @@ function bulkArchiveJobs(){
 }
 function bulkDeleteJobs(){
   const ids=getSelectedJobIds();if(!ids.length)return;
-  if(!_needAdmin('delete jobs'))return;
+  if(!_needAdmin('delete jobs','editJobs'))return;
   ccConfirm(`Delete ${ids.length} job${ids.length!==1?'s':''}? This can't be undone.`,()=>{
     // Tombstone ST-backed jobs (same as deleteJobConfirm) or they return on the next remap
     const st=jobs.filter(j=>ids.includes(j.id)&&j._stId).map(j=>j.id);
@@ -8363,7 +8398,7 @@ function toggleStarJob(id){
 }
 function archiveJob(id){
   const j=jobs.find(x=>x.id===id);if(!j)return;
-  if(!_needAdmin('archive jobs'))return;
+  if(!_needAdmin('archive jobs','editJobs'))return;
   dbUpdateJob(id,{status:'archived'}).then(()=>{ // durable — was a direct write that reverted on refetch
     navTo('jobs');
     toast('Job archived');
@@ -8371,7 +8406,7 @@ function archiveJob(id){
 }
 function deleteJobConfirm(id){
   const j=jobs.find(x=>x.id===id);if(!j)return;
-  if(!_needAdmin('delete jobs'))return;
+  if(!_needAdmin('delete jobs','editJobs'))return;
   ccConfirm(`Delete “${esc(j.name)}”? This cannot be undone.`,()=>{
     const idx=jobs.findIndex(x=>x.id===id);
     if(idx>-1)jobs.splice(idx,1);
@@ -10291,7 +10326,7 @@ async function saveJobDates(jobId){
 function editJobStatusField(jobId){
   const j=jobs.find(x=>x.id===jobId);if(!j)return;
   const el=document.querySelector(`.detail-head [onclick="editJobStatusField('${jobId}')"]`);if(!el)return;
-  const opts=[['inplay','In play'],['complete','Complete'],['archived','Archived']].filter(([v])=>v!=='archived'||_isAdmin()||j.status==='archived');
+  const opts=[['inplay','In play'],['complete','Complete'],['archived','Archived']].filter(([v])=>v!=='archived'||can('editJobs')||j.status==='archived');
   const sel=document.createElement('select');
   sel.className='filter-btn';sel.style.cssText='font-size:11px;padding:1px 4px;';
   sel.innerHTML=opts.map(([v,l])=>`<option value="${v}" ${v===j.status?'selected':''}>${l}</option>`).join('');
@@ -11191,7 +11226,7 @@ function renderSettings(){
           <div class="tm-name">${esc(p.name)}${isMe?' <span style="font-size:10px;background:var(--off);border:1px solid var(--border);border-radius:6px;padding:1px 5px;color:var(--muted);margin-left:4px;">You</span>':''}</div>
           <div class="tm-role">${esc(p.role||"No role set")}${p.team?" · "+esc(p.team):""}</div>
           <div class="tm-meta">
-            <span>$${costR}/h cost</span>${billR?`<span>$${billR}/h bill</span>`:''}
+            ${can('teamCostRates')?`<span>$${costR}/h cost</span>`:''}${billR&&can('viewFinancials')?`<span>$${billR}/h bill</span>`:''}
             <span>${p.hoursPerDay||8}h/day</span>
           </div>
         </div>
@@ -11595,7 +11630,7 @@ function saveNewPerson(){
 }
 function toggleArchivePerson(key){
   const p=people[key];if(!p||key===MY_PERSON)return;
-  if(!_needAdmin('archive team members'))return;
+  if(!_needAdmin('archive team members','team'))return;
   p._archived=!p._archived;
   if(p._archived)delete p._keepActive;else p._keepActive=true; // keep a manual restore over ST's Hibernated status (L9)
   savePeople();populatePersonSwitcher();renderSettings();
@@ -11604,7 +11639,7 @@ function toggleArchivePerson(key){
 function deletePerson(key){
   const p=people[key];if(!p)return;
   if(key===MY_PERSON){toast('You can\'t remove yourself','warn');return;}
-  if(!_needAdmin('remove team members'))return;
+  if(!_needAdmin('remove team members','team'))return;
   if(Object.keys(people).length<=1){toast('At least one team member is required','warn');return;}
   if(!confirm(`Remove ${p.name} from the team? Their scheduled tasks will be kept but hidden.`))return;
   // Streamtime users are recreated from the users sync if their entry is deleted, so they
@@ -13379,7 +13414,7 @@ function renderReporting(){
 // until Razor's backend can share them; only admins can change them.
 function _getTeamTargets(){try{return JSON.parse(localStorage.getItem('cc_team_targets')||'{}');}catch(e){return{};}}
 function setTeamTarget(team,val){
-  if(!_needAdmin('set team targets'))return;
+  if(!_needAdmin('set team targets','team'))return;
   const t=_getTeamTargets();const n=Math.max(0,Math.min(150,parseInt(val)||0));
   if(n)t[team]=n;else delete t[team];
   try{localStorage.setItem('cc_team_targets',JSON.stringify(t));}catch(e){}
@@ -18647,7 +18682,7 @@ function _rvTeams(el){
     if(t.billable!==false)T.rev+=t.sell||0; // non-billable time carries a sell value in Streamtime but is not revenue
     const jn=(t.job||'').trim();if(jn)T.jobs[jn]=(T.jobs[jn]||0)+h;
   });
-  const targets=_getTeamTargets();const admin=_isAdmin();
+  const targets=_getTeamTargets();const admin=can('team');
   const list=Object.values(teams).filter(T=>T.members.length).sort((a,b)=>(a.name==='No team')-(b.name==='No team')||b.h-a.h);
   if(!list.length){el.innerHTML=emptyStateHTML('ti-users-group','No teams yet','Give people a team in Settings → Team to see how each department is tracking.');return;}
   const pct=(a,b)=>b>0?Math.round(a/b*100):0;
@@ -19063,7 +19098,7 @@ function _rfAfterTeamChange(msg){
   if(msg)toast(esc(msg)+' — publish the team config in Settings → Workspace sync to share it','success',4200);
 }
 function openManageTeams(){
-  if(!_needAdmin('manage teams'))return;
+  if(!_needAdmin('manage teams','team'))return;
   document.getElementById('rf-teams-modal')?.remove();
   _rfEditingTeam=null;
   const m=document.createElement('div');m.className='modal-bg on';m.id='rf-teams-modal';
@@ -19164,7 +19199,7 @@ function _rfAddTeam(){
 }
 function _rfMovePerson(k,team){
   const p=people[k];if(!p)return;
-  if(!_needAdmin('manage teams')){_rfRenderTeamsModal();return;}
+  if(!_needAdmin('manage teams','team')){_rfRenderTeamsModal();return;}
   const from=p.team||'';p.team=team||'';
   // Keep a team that just lost its last person in the list, so it can be refilled or removed on purpose.
   if(from&&!_rfStoredTeams().includes(from))_rfSaveTeams(_rfStoredTeams().concat(from));
@@ -19321,10 +19356,10 @@ let _rfAllMatching=false;
    rest (_needAdmin): until anyone is an admin, everyone can. ─────────────────────────────── */
 (function(){
   const _pub=publishConfig;
-  publishConfig=function(){if(!_needAdmin('publish the team config'))return;return _pub.apply(this,arguments);};
+  publishConfig=function(){if(!_needAdmin('publish the team config','company'))return;return _pub.apply(this,arguments);};
   const _rl=removeGlobalLabel;
   removeGlobalLabel=function(i){
-    if(!_needAdmin('remove labels'))return;
+    if(!_needAdmin('remove labels','masterSettings'))return;
     const l=globalLabels[i];if(!l)return;
     const n=jobs.filter(j=>(j.labels||[]).includes(l.name)).length;
     const self=this,args=arguments;
@@ -19332,14 +19367,14 @@ let _rfAllMatching=false;
   };
   const _ri=removeSettItem;
   removeSettItem=function(type,val){
-    if(!_needAdmin('remove item types'))return;
+    if(!_needAdmin('remove item types','masterSettings'))return;
     const self=this,args=arguments;
     ccConfirm(`Remove ${esc(val)} from the ${type==='line'?'job item':'expense'} list? Existing jobs keep it.`,()=>_ri.apply(self,args),'Remove',true);
   };
   const _up=updatePerson;
   updatePerson=function(key,field,val){
-    if(key!==MY_PERSON&&!_isAdmin()){
-      _needAdmin('edit other people\'s profiles');
+    if(key!==MY_PERSON&&!can('team')){
+      _needAdmin('edit other people\'s profiles','team');
       try{if(document.getElementById('tm-panel')?.classList.contains('open'))openTeamMember(key);}catch(e){}
       return;
     }
@@ -19414,7 +19449,7 @@ function rfOpenPersonWeek(k,off){if(!people[k])return;currentPerson=k;weekOffset
     const r=_rd.apply(this,arguments);
     try{
       const dh=people[MY_PERSON]?.dashHide||[];
-      if(dh.includes('timesheets')||!_isAdmin())return r;
+      if(dh.includes('timesheets')||!can('team'))return r;
       const anchor=document.querySelector('#dash-scroll .my-todos');if(!anchor)return r;
       const html=_rfTimesheetCardHTML();if(!html)return r;
       const box=document.createElement('div');box.id='rf-ts-block';box.innerHTML=html;
@@ -23308,7 +23343,7 @@ body.dark .au-mi:hover,body.dark .au-mi:focus-visible{background:rgba(255,255,25
 <script id="auth-ui">
 // ═══ Sign-in UI (production only — AUTH is null on localhost) ═══════════════════════════════
 // Avatar menu (profile, change password, view as, sign out), the change-password modal, the
-// boot check against /api/me, and the Access card in Settings → Team for admins.
+// boot check against /api/me, and the Access card in Settings → Access (userPermissions).
 function _avatarClick(ev){
   const open=document.getElementById('au-menu');if(open){open.remove();return;}
   const me=people[MY_PERSON]||{};
@@ -23391,7 +23426,10 @@ function openChangePassword(){
   window._ccMeP.then(async({status,ok,me})=>{
     if(status===401||status===403){_authSignedOut();return;}
     if(!ok||!me)return;
-    const stale=AUTH._missing||me.personKey!==AUTH.personKey||!!me.admin!==AUTH.admin;
+    // perms: the live answer wins over the cookie hint (it may be a few minutes old)
+    const permsChanged=!!me.perms&&JSON.stringify(_ccPermsOf(CC_PERM_KEYS.filter(k=>me.perms[k])))!==JSON.stringify(AUTH.perms||null);
+    const stale=AUTH._missing||me.personKey!==AUTH.personKey||!!me.admin!==AUTH.admin||permsChanged;
+    if(me.perms){AUTH.perms=_ccPermsOf(CC_PERM_KEYS.filter(k=>me.perms[k]));AUTH.admin=!!me.admin;window._ccPermGroups=me.permGroups||null;try{_applyAdminUi();}catch(e){}}
     let again=false;try{again=sessionStorage.getItem('cc_me_reloaded')==='1';}catch(e){}
     if(stale&&!again){try{sessionStorage.setItem('cc_me_reloaded','1');}catch(e){}location.reload();return;}
     try{sessionStorage.removeItem('cc_me_reloaded');}catch(e){}
@@ -23445,7 +23483,7 @@ function _accRender(){
     ${users.length?users.map(u=>{const isMe=u.email===AUTH.email;return`<div class="au-row" data-email="${esc(u.email)}">${_accAv(u.personKey,u.name||u.email)}
         <div class="au-who"><b>${esc(u.name||u.email)}${isMe?'<span class="au-tag">You</span>':''}${u.owner?'<span class="au-tag">Owner</span>':''}${u.mustChangePassword?'<span class="au-tag warn">Temporary password</span>':''}</b><small>${esc(u.email)}</small></div>
         <select class="cc-select" data-act="link" aria-label="Linked person">${_accPeopleOptions(u.personKey)}</select>
-        <label class="au-adm" title="${u.owner?'Set by ADMIN_EMAILS on the server':''}"><input type="checkbox" data-act="admin"${u.admin||u.owner?' checked':''}${u.owner||isMe?' disabled':''}> Admin</label>
+        <button class="d-action" data-act="perms" title="${u.owner?'Owners always have every permission':'Choose what '+esc(u.name||u.email)+' can see and do'}"><i class="ti ti-shield-lock" style="font-size:12px"></i> Permissions<span class="pm-count">${esc(_pmCountLabel(u))}</span></button>
         <button class="rf-icon-btn" data-act="reset" title="Reset password" aria-label="Reset password"><i class="ti ti-key"></i></button>
         <button class="rf-icon-btn" data-act="remove" title="Remove access" aria-label="Remove access"${isMe||u.owner?' disabled':''}><i class="ti ti-trash"></i></button></div>`;}).join(''):'<div class="au-empty">Nobody yet.</div>'}
     <div style="height:14px;"></div>
@@ -23453,7 +23491,6 @@ function _accRender(){
     <form class="au-add" id="au-add-form" novalidate>
       <input class="form-inp" name="email" type="email" placeholder="Email" maxlength="254" autocomplete="off" aria-label="Email">
       <select class="cc-select" name="person" aria-label="Streamtime person">${_accPeopleOptions('')}</select>
-      <label class="au-adm"><input type="checkbox" name="admin"> Admin</label>
       <button class="d-action primary" type="submit"><i class="ti ti-plus" style="font-size:12px"></i> Add</button>
     </form>
     ${_accTemp?`<div class="au-temp" role="status">Temporary password for <b>${esc(_accTemp.email)}</b> — ${_accTemp.approved?'email it to that address now (it wasn’t verified, so only its owner should get this)':'pass it on now'}, it won't be shown again. They'll choose their own when they first sign in.<br><code>${esc(_accTemp.pw)}</code><button class="d-action" data-act="copytemp">Copy</button> <button class="d-action" data-act="hidetemp">Done</button></div>`:''}`;
@@ -23468,6 +23505,7 @@ function _accBind(card){
     else if(act==='reset')ccConfirm(`Reset the password for ${esc(email)}? Their current password stops working and they're signed out.`,()=>_accDo({action:'resetPassword',email},'Password reset'),'Reset');
     else if(act==='copytemp'){try{navigator.clipboard.writeText(_accTemp.pw);toast('Copied','success');}catch(err){}}
     else if(act==='hidetemp'){_accTemp=null;_accRender();}
+    else if(act==='perms')openPermsPanel(email);
   });
   card.addEventListener('change',e=>{
     const t=e.target,email=t.closest('[data-email]')?.dataset.email;if(!email)return;
@@ -23478,7 +23516,7 @@ function _accBind(card){
     if(e.target.id!=='au-add-form')return;e.preventDefault();
     const f=e.target,email=f.email.value.trim().toLowerCase(),pk=f.person.value||null;
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){toast('Enter a valid email','warn');f.email.focus();return;}
-    _accDo({action:'add',email,personKey:pk,name:_accPersonName(pk)||email,admin:f.admin.checked},'Added');
+    _accDo({action:'add',email,personKey:pk,name:_accPersonName(pk)||email},'Added — they start with Essentials; use Permissions to give them more');
   });
 }
 (function(){
@@ -23486,8 +23524,9 @@ function _accBind(card){
   renderSettings=function(){
     _orig.apply(this,arguments);
     try{
-      if(!AUTH||!AUTH.admin||(_settActiveTab||'profile')!=='team')return;
+      if(!AUTH||!can('userPermissions')||(_settActiveTab||'profile')!=='access')return;
       const wrap=document.getElementById('settings-scroll');if(!wrap)return;
+      wrap.innerHTML=`<div class="sett-tab-hd">Access</div><div class="sett-tab-sub">Who can sign in, and what each person can see and do.</div>`;
       const card=document.createElement('div');card.className='sett-card';card.id='au-access-card';
       card.innerHTML=`<div class="sett-card-hd">Access <span style="font-weight:400;color:var(--muted);" id="au-access-n"></span></div>
         <div class="sett-card-body" style="padding:6px 20px 18px;">
@@ -25191,7 +25230,7 @@ body.dark #ob-tour{--ob-dim:rgba(0,0,0,.62);}
       const score=typeof _hpSelectedFace!=='undefined'?_hpSelectedFace:null;
       const note=(document.getElementById('hp-note')?.value||'').trim().slice(0,500);
       const res=_sub.apply(this,arguments); // keeps the local copy (the person's own 8-week trend)
-      const mine=AUTH&&personKey===MY_PERSON&&MY_PERSON===(AUTH.personKey||_authGuestKey());
+      const mine=AUTH&&personKey===MY_PERSON&&MY_PERSON===(AUTH.personKey||_authGuestKey())&&can('checkin');
       if(score&&mine){
         fetch('/api/happiness',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},
           body:JSON.stringify({week:isoWeekOfLocal(),score,...(note?{note}:{})})})
@@ -25230,7 +25269,7 @@ body.dark #ob-tour{--ob-dim:rgba(0,0,0,.62);}
   const f1=v=>v==null||!isFinite(v)?'—':v.toFixed(1);
   async function render(){
     const el=document.getElementById('rp-happy');if(!el)return;
-    if(!role()||role()!=='admin'){el.innerHTML=`<div class="hp-empty">Team happiness is for admins.</div>`;return;}
+    if(!can('viewCheckinSummary')){el.innerHTML=`<div class="hp-empty">The team check-in summary needs the Check-in summary permission.</div>`;return;}
     if(!HP.data){el.innerHTML=`<div class="hp-empty">Loading check-ins…</div>`;}
     try{await load();}catch(e){el.innerHTML=`<div class="hp-empty">${E(e.message)}</div>`;return;}
     if(_reportTab!=='happy')return;
@@ -25268,7 +25307,7 @@ body.dark #ob-tour{--ob-dim:rgba(0,0,0,.62);}
   }
   HP.render=render;
   function installTab(){
-    if(role()!=='admin')return;
+    if(!can('viewCheckinSummary'))return;
     const tabs=document.querySelector('#view-reporting .r-tabs');if(!tabs||document.getElementById('rt-happy'))return;
     const b=document.createElement('button');b.className='tvt-btn r-subtab';b.id='rt-happy';b.setAttribute('onclick',"switchReportTab('happy')");
     b.innerHTML='<i class="ti ti-mood-smile" style="font-size:13px;"></i>Team happiness';
@@ -25281,7 +25320,7 @@ body.dark #ob-tour{--ob-dim:rgba(0,0,0,.62);}
   window.switchReportTab=switchReportTab=function(tab){
     const hp=document.getElementById('rp-happy');
     if(tab!=='happy'){if(hp)hp.style.display='none';return _sw.apply(this,arguments);}
-    if(role()!=='admin')return _sw.call(this,'business');
+    if(!can('viewCheckinSummary'))return _sw.call(this,'business');
     _reportTab='happy';
     document.querySelectorAll('.r-subtab').forEach(b=>b.classList.toggle('on',b.id==='rt-happy'));
     document.querySelectorAll('#r-scroll > [id^="rp-"]').forEach(p=>p.style.display=p.id==='rp-happy'?'':'none');
@@ -25308,29 +25347,33 @@ body.dark #ob-tour{--ob-dim:rgba(0,0,0,.62);}
 /* ═══ Roles (r10): members (non-admins) get a personal, view-only experience ═══════════════════
    body.cc-member is set by _applyAdminUi(). Hiding uses display:none so nothing hidden stays
    in the tab order. */
-body.cc-member #snav-reporting,body.cc-member #snav-schedule{display:none!important;}
-body.cc-member .jsn-tab[data-tab="expenses"],body.cc-member .jsn-tab[data-tab="quotes"],
-body.cc-member .jsn-tab[data-tab="invoices"],body.cc-member .jsn-tab[data-tab="clients"]{display:none!important;}
-body.cc-member #jobs-cb-all,body.cc-member .job-cb,body.cc-member #bulk-bar,body.cc-member #jobs-footer-bar{display:none!important;}
-body.cc-member [onclick*="exportTimeCSV"],body.cc-member [onclick*="itemsCSV"],
-body.cc-member #jt-deadlines [onclick*="openInvoiceDetail"]{display:none!important;}
-body.cc-member #sni-team,body.cc-member #sni-defaults,body.cc-member #sni-items,body.cc-member #sni-labels,
-body.cc-member #sni-sync,body.cc-member #sni-data{display:none!important;}
-/* Job detail: read only */
-body.cc-member #view-detail .dt-iconset,
-body.cc-member #view-detail .detail-actions>[onclick="openInvoice()"],
-body.cc-member #create-item-menu>:not([onclick*="openTodoModal"]):not([onclick*="openLogTimeModal"]):not([onclick*="startTimer"]),
-body.cc-member #view-detail .label-add-btn,body.cc-member #view-detail [onclick*="removeLabel"],
-body.cc-member #view-detail [onclick*="openAddMemberPicker"],
-body.cc-member #view-detail .plan-actions,body.cc-member #view-detail .ph-add,body.cc-member #view-detail #exp-wrap,
-body.cc-member #view-detail .d-tab[onclick*="'quote'"],
-body.cc-member #view-detail .wf-badge .ti-arrow-right,
-body.cc-member #view-detail [onclick*="showAddMilestoneInline"],body.cc-member #view-detail [onclick*="inlineEditMilestone"],
-body.cc-member #view-detail [onclick*="deleteMilestoneRow"],body.cc-member #view-detail [onclick*="openReallocate"],
-body.cc-member #view-detail .act-add-row,body.cc-member #view-detail .ph-mb,
-body.cc-member .rl-money-hide{display:none!important;}
-body.cc-member #view-detail .wf-badge [onclick],body.cc-member #view-detail .paused-badge[onclick]{pointer-events:none;cursor:default!important;}
-body.cc-member #view-detail .item-note-inp[readonly]{background:transparent;}
+/* perms: each rule is keyed to the permission it needs (body.cc-no-<perm>, set by _applyAdminUi).
+   body.cc-member = no editJobs (the read-only job experience). */
+body.cc-no-reporting.cc-no-viewcheckinsummary #snav-reporting,body.cc-no-team #snav-schedule,body.cc-no-viewjobs #snav-jobs{display:none!important;}
+body.cc-no-viewfinancials .jsn-tab[data-tab="expenses"],body.cc-no-viewfinancials .jsn-tab[data-tab="quotes"],
+body.cc-no-viewfinancials .jsn-tab[data-tab="invoices"],body.cc-no-contacts .jsn-tab[data-tab="clients"]{display:none!important;}
+body.cc-no-editjobs #jobs-cb-all,body.cc-no-editjobs .job-cb,body.cc-no-editjobs #bulk-bar,body.cc-no-viewfinancials #jobs-footer-bar{display:none!important;}
+body.cc-no-export [onclick*="exportTimeCSV"],body.cc-no-export [onclick*="itemsCSV"],body.cc-no-export [onclick*="exportReportTab"],
+body.cc-no-export [onclick*="exportWorkspace"],body.cc-no-export [onclick*="printQuote"],body.cc-no-export [onclick*="printInvoice"],
+body.cc-no-export [onclick*="printSplitInvoice"],
+body.cc-no-viewfinancials #jt-deadlines [onclick*="openInvoiceDetail"]{display:none!important;}
+body.cc-no-team #sni-team,body.cc-no-mastersettings #sni-defaults,body.cc-no-mastersettings #sni-items,body.cc-no-mastersettings #sni-labels,
+body.cc-no-company #sni-sync,body.cc-no-accountsettings #sni-data,body.cc-no-userpermissions #sni-access{display:none!important;}
+/* Job detail: read only without editJobs; money parts need viewFinancials */
+body.cc-no-editjobs #view-detail .dt-iconset,
+body.cc-no-editjobs #view-detail .detail-actions>[onclick="openInvoice()"],body.cc-no-viewfinancials #view-detail .detail-actions>[onclick="openInvoice()"],
+body.cc-no-editjobs #create-item-menu>:not([onclick*="openTodoModal"]):not([onclick*="openLogTimeModal"]):not([onclick*="startTimer"]),
+body.cc-no-editjobs #view-detail .label-add-btn,body.cc-no-editjobs #view-detail [onclick*="removeLabel"],
+body.cc-no-editjobs #view-detail [onclick*="openAddMemberPicker"],
+body.cc-no-editjobs #view-detail .plan-actions,body.cc-no-editjobs #view-detail .ph-add,body.cc-no-viewfinancials #view-detail #exp-wrap,body.cc-no-editjobs #view-detail #exp-wrap,
+body.cc-no-viewfinancials #view-detail .d-tab[onclick*="'quote'"],
+body.cc-no-editjobs #view-detail .wf-badge .ti-arrow-right,
+body.cc-no-editjobs #view-detail [onclick*="showAddMilestoneInline"],body.cc-no-editjobs #view-detail [onclick*="inlineEditMilestone"],
+body.cc-no-editjobs #view-detail [onclick*="deleteMilestoneRow"],body.cc-no-editjobs #view-detail [onclick*="openReallocate"],
+body.cc-no-editjobs #view-detail .act-add-row,body.cc-no-editjobs #view-detail .ph-mb,
+body.cc-no-viewfinancials .rl-money-hide{display:none!important;}
+body.cc-no-editjobs #view-detail .wf-badge [onclick],body.cc-no-editjobs #view-detail .paused-badge[onclick]{pointer-events:none;cursor:default!important;}
+body.cc-no-editjobs #view-detail .item-note-inp[readonly]{background:transparent;}
 .rl-viewonly{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:var(--r-pill);background:var(--surface-2);border:1px solid var(--border);color:var(--muted);font:600 11px/1 var(--font);letter-spacing:.01em;white-space:nowrap;}
 .rl-viewonly i{font-size:12px;}
 /* Polite "admins only" state */
@@ -25349,52 +25392,69 @@ body.cc-member #view-detail .item-note-inp[readonly]{background:transparent;}
 </style>
 <script id="roles-r10-script">
 // ═══ Roles (r10) ══════════════════════════════════════════════════════════════════════════════
-// Members (non-admins, the team testers) see their own work: Dashboard (personal blocks), To Do,
-// Jobs (list, items, time, deadlines; no money), job detail read only (logging time still works),
-// Boards (the server filters admin boards) and personal Settings. Admins see everything as before.
+// perms: every gate here is keyed to one permission (can(), #perms-script): editJobs for changes
+// to jobs (M() = "no editJobs", the read-only job experience), viewFinancials for money,
+// contacts, team, reporting, export, masterSettings, company, accountSettings, userPermissions.
 // The front end is the gate: there is no job-editing API, platform data lives per browser and
 // Streamtime is read-only, so editing local state only ever affects that person's own browser.
 (function(){
   const M=()=>{try{return _isMember();}catch(e){return false;}};
+  const C=k=>{try{return can(k);}catch(e){return true;}};
+  const NOFIN=()=>!C('viewFinancials');
+  const FULL_DASH=()=>C('team')||C('viewFinancials')||C('reporting');
   const MONEY_RE=/\$|\b(sell|rates?|budgets?|revenue|margin|costs?|value|amount|price|profit|profitability|invoiced?|invoices|fees?|expenses?|purchase orders?)\b/i;
   let _lastToast=0;
-  function _viewOnly(silent){
+  function _viewOnly(silent,perm){
     if(silent)return;
     const n=Date.now();if(n-_lastToast<1200)return;_lastToast=n;
-    try{toast('View only. Ask an admin to make changes.','info');}catch(e){}
+    try{toast(perm&&perm!=='editJobs'?`That needs the “${_ccPermLabel(perm)}” permission. Ask someone who manages permissions.`:'View only. Ask someone who manages permissions to make changes.','info');}catch(e){}
   }
   // ── 1. One guard for every edit or business entry point ────────────────────────────────
-  const GUARD=('openAddMemberPicker toggleJobMember openJobSettingsModal saveJobSettings showJobDotMenu duplicateJob archiveJob '+
-    'deleteJobConfirm bulkLabelJobs bulkArchiveJobs bulkDeleteJobs openReallocate applyReallocate showAddMilestoneInline saveMilestoneInline '+
-    'inlineEditMilestone deleteMilestoneRow updateQuoteField cycleQuoteStatus setQuoteStatus sendQuote addLabel removeLabel toggleJobLabel '+
-    'openLabelPicker createLabelFromPicker inlineEditItem toggleItemStatus showAddItemForm saveItem showAddExpenseInline saveExpenseInline '+
-    'addPhase showCtx showPctx pctxDo showAddExpenseForm saveExpense _setExpSub _addExpSub _removeExpSub cycleExpenseStatus openCreateJob '+
-    'createJob openNewQuoteModal saveNewQuote advanceWorkflow confirmAdvanceWorkflow editJobNameField editJobDates saveJobDates '+
-    'editJobStatusField openInvoice saveInvStatus showSplitInvoiceForm saveSplitInvoice cycleSplitInvoiceStatus deleteSplitInvoice '+
-    'openLogExpense openNewClientModal saveNewClient updateClientField addClientContact deleteClientContact updateLocalContact '+
-    'openClientDetail openClientGroup openNewJobForClient openInvoiceDetail openQuoteDetail openInvoiceForJob saveInvStatusForJob '+
-    'openSaveJobTemplate saveJobTemplate deleteJobTemplate openManageTemplates _ccApplyTemplate openC2QuoteLines saveC2QuoteLines '+
-    'c2SetQuoteStatus openC2InvSource c2ApplyInvSource openC2InvLines saveC2InvLines c2InvoiceFromQuote c2AddPayment c2RemovePayment '+
-    'openFdCreditNote saveFdCreditNote fdDeleteCreditNote openFdCreditNoteDoc openFdPoModal saveFdPo fdSetPoStatus fdDeletePo openFdPoDoc '+
-    'openQuoteDocPreview openInvoiceDocPreview printQuote printInvoice copyInvoiceToXero _cmdPauseJob hideUninvoicedJob setTeamTarget '+
-    'exportReportTab exportReportingCSV exportTimeCSV publishConfig openManageTeams addSettItem addSettLabel removeGlobalLabel '+
-    'cycleLabelColor removeSettItem showAddPersonForm saveNewPerson toggleArchivePerson deletePerson saveGhToken openTeamMember '+
-    'saveC2RateCard deleteC2RateCard addActivityComment _activityFileDrop').split(/\s+/);
+  // Function → the permission(s) it needs (all of them).
+  const GUARD={
+    editJobs:'openAddMemberPicker toggleJobMember openJobSettingsModal saveJobSettings showJobDotMenu duplicateJob archiveJob '+
+      'deleteJobConfirm bulkLabelJobs bulkArchiveJobs bulkDeleteJobs openReallocate applyReallocate showAddMilestoneInline saveMilestoneInline '+
+      'inlineEditMilestone deleteMilestoneRow addLabel removeLabel toggleJobLabel openLabelPicker createLabelFromPicker inlineEditItem '+
+      'toggleItemStatus showAddItemForm saveItem addPhase showCtx showPctx pctxDo openCreateJob createJob advanceWorkflow '+
+      'confirmAdvanceWorkflow editJobNameField editJobDates saveJobDates editJobStatusField _cmdPauseJob openSaveJobTemplate '+
+      'saveJobTemplate deleteJobTemplate openManageTemplates _ccApplyTemplate addActivityComment _activityFileDrop',
+    'editJobs viewFinancials':'updateQuoteField cycleQuoteStatus setQuoteStatus sendQuote showAddExpenseInline saveExpenseInline '+
+      'showAddExpenseForm saveExpense _setExpSub _addExpSub _removeExpSub cycleExpenseStatus openNewQuoteModal saveNewQuote openInvoice '+
+      'saveInvStatus showSplitInvoiceForm saveSplitInvoice cycleSplitInvoiceStatus deleteSplitInvoice openLogExpense openInvoiceForJob '+
+      'saveInvStatusForJob openC2QuoteLines saveC2QuoteLines c2SetQuoteStatus openC2InvSource c2ApplyInvSource openC2InvLines '+
+      'saveC2InvLines c2InvoiceFromQuote c2AddPayment c2RemovePayment openFdCreditNote saveFdCreditNote fdDeleteCreditNote openFdPoModal '+
+      'saveFdPo fdSetPoStatus fdDeletePo copyInvoiceToXero hideUninvoicedJob',
+    viewFinancials:'openInvoiceDetail openQuoteDetail openFdCreditNoteDoc openFdPoDoc openQuoteDocPreview openInvoiceDocPreview',
+    'viewFinancials export':'printQuote printInvoice printSplitInvoice',
+    contacts:'openNewClientModal saveNewClient updateClientField addClientContact deleteClientContact updateLocalContact '+
+      'openClientDetail openClientGroup openNewJobForClient',
+    export:'exportReportTab exportReportingCSV exportTimeCSV exportWorkspace',
+    team:'setTeamTarget openManageTeams showAddPersonForm saveNewPerson toggleArchivePerson deletePerson openTeamMember',
+    masterSettings:'addSettItem addSettLabel removeGlobalLabel cycleLabelColor removeSettItem',
+    'masterSettings viewFinancials':'saveC2RateCard deleteC2RateCard',
+    company:'publishConfig saveGhToken',
+  };
   const SILENT=['updateJobNotes','_updateJobNotesNow','saveItemNote'];
-  function _guard(name,silent){
+  function _guard(name,silent,perms){
     const f=window[name];if(typeof f!=='function'||f._rlGuarded)return;
-    const g=function(){if(M()){_viewOnly(silent);return;}return f.apply(this,arguments);};
+    const g=function(){const miss=perms.find(k=>!C(k));if(miss){_viewOnly(silent,miss);return;}return f.apply(this,arguments);};
     g._rlGuarded=true;window[name]=g;
   }
-  GUARD.forEach(n=>_guard(n,false));SILENT.forEach(n=>_guard(n,true));
+  Object.entries(GUARD).forEach(([perms,names])=>names.split(/\s+/).forEach(n=>_guard(n,false,perms.split(' '))));
+  SILENT.forEach(n=>_guard(n,true,['editJobs']));
   // Item menu: members may still add a to-do for an item, nothing else
   if(typeof ctxDo==='function'){const _cd=ctxDo;window.ctxDo=function(a){if(M()&&a!=='todo'){_viewOnly();return;}return _cd.apply(this,arguments);};}
-  if(typeof _fe!=='undefined'&&_fe&&typeof _fe.itemsCSV==='function'){const _ic=_fe.itemsCSV;_fe.itemsCSV=function(){if(M()){_viewOnly();return;}return _ic.apply(this,arguments);};}
-  if(typeof openStarredItem==='function'){const _os=openStarredItem;window.openStarredItem=function(type){if(M()&&type!=='job'){try{closeStarredPanel();}catch(e){}_viewOnly();return;}return _os.apply(this,arguments);};}
+  if(typeof _fe!=='undefined'&&_fe&&typeof _fe.itemsCSV==='function'){const _ic=_fe.itemsCSV;_fe.itemsCSV=function(){if(!C('export')){_viewOnly(false,'export');return;}return _ic.apply(this,arguments);};}
+  if(typeof openStarredItem==='function'){const _os=openStarredItem;window.openStarredItem=function(type){
+    const need=type==='job'?'viewJobs':type==='client'?'contacts':'viewFinancials';
+    if(!C(need)){try{closeStarredPanel();}catch(e){}_viewOnly(false,need);return;}return _os.apply(this,arguments);};}
 
   // ── 2. Admin-only areas: a polite state instead of the view ────────────────────────────
-  const LOCKED_VIEWS={reporting:'Reporting',schedule:'Schedule'};
-  const LOCKED_TABS={expenses:'Expenses and purchase orders',quotes:'Quotes',invoices:'Invoices',clients:'Clients'};
+  // view → [name, is it locked for me?]
+  const LOCKED_VIEWS={reporting:['Reporting',()=>!C('reporting')&&!C('viewCheckinSummary')],schedule:['Schedule',()=>!C('team')],
+    jobs:['Jobs',()=>!C('viewJobs')],detail:['Jobs',()=>!C('viewJobs')]};
+  const LOCKED_TABS={expenses:['Expenses and purchase orders','viewFinancials'],quotes:['Quotes','viewFinancials'],invoices:['Invoices','viewFinancials'],clients:['Clients','contacts']};
+  const tabLocked=t=>!!LOCKED_TABS[t]&&!C(LOCKED_TABS[t][1]);
   function _lockedEl(){
     let v=document.getElementById('view-locked');
     if(!v){v=document.createElement('div');v.id='view-locked';v.className='view hidden';(document.querySelector('.main .content')||document.body).appendChild(v);}
@@ -25406,17 +25466,17 @@ body.cc-member #view-detail .item-note-inp[readonly]{background:transparent;}
     _navOrig('locked');
     const v=_lockedEl();
     v.innerHTML=`<div class="rl-lock" role="status"><span class="rl-lock-ico" aria-hidden="true"><i class="ti ti-lock"></i></span>
-      <h2>${esc(what)} ${/s$/.test(what)&&what!=='Reporting'?'are':'is'} available to admins</h2>
-      <p>Your account shows your own work, jobs and time. Ask an admin if you need something from here.</p>
+      <h2>${esc(what)} ${/s$/.test(what)&&what!=='Reporting'?'aren’t':'isn’t'} part of your permissions</h2>
+      <p>Ask someone who manages permissions if you need something from here.</p>
       <button class="d-action" onclick="navTo('dashboard')"><i class="ti ti-arrow-left"></i> Back to dashboard</button></div>`;
     if(navKey)document.getElementById('snav-'+navKey)?.classList.add('on');
   };
   window.navTo=function(v){
-    if(M()&&LOCKED_VIEWS[v]){_rlShowLocked(LOCKED_VIEWS[v]);return;}
+    if(LOCKED_VIEWS[v]&&LOCKED_VIEWS[v][1]()){_rlShowLocked(LOCKED_VIEWS[v][0]);return;}
     const r=_navOrig.apply(this,arguments);
     try{_scrub();}catch(e){}
+    if(v==='jobs')try{if(typeof _jobsTab!=='undefined'&&tabLocked(_jobsTab))switchJobsTab('jobs');}catch(e){}
     if(v==='jobs'&&M()){try{
-      if(typeof _jobsTab!=='undefined'&&LOCKED_TABS[_jobsTab])switchJobsTab('jobs');
       const btn=document.getElementById('jobs-primary-btn');if(btn)btn.style.display=(typeof _jobsTab!=='undefined'&&_jobsTab==='time')?'':'none';
     }catch(e){}}
     return r;
@@ -25425,7 +25485,7 @@ body.cc-member #view-detail .item-note-inp[readonly]{background:transparent;}
   let _timeMine=false;
   const _sjt=window.switchJobsTab;
   window.switchJobsTab=function(tab){
-    if(M()&&LOCKED_TABS[tab]){_rlShowLocked(LOCKED_TABS[tab],'jobs');return;}
+    if(tabLocked(tab)){_rlShowLocked(LOCKED_TABS[tab][0],'jobs');return;}
     const r=_sjt.apply(this,arguments);
     try{
       const btn=document.getElementById('jobs-primary-btn');
@@ -25435,7 +25495,7 @@ body.cc-member #view-detail .item-note-inp[readonly]{background:transparent;}
         const sel=document.getElementById('tf-person');
         if(sel&&[...sel.options].some(o=>o.value===MY_PERSON)){sel.value=MY_PERSON;_timeMine=true;renderTime();}
       }
-      if(M()&&tab==='deadlines'){const s=document.querySelector('#jt-deadlines .view-sub');if(s)s.textContent='Job due dates';}
+      if(NOFIN()&&tab==='deadlines'){const s=document.querySelector('#jt-deadlines .view-sub');if(s)s.textContent='Job due dates';}
       _scrub();
     }catch(e){}
     return r;
@@ -25443,35 +25503,38 @@ body.cc-member #view-detail .item-note-inp[readonly]{background:transparent;}
   // Job detail tabs: no Quote tab for members
   const _sdt=window.switchDTab;
   window.switchDTab=function(el,tab){
-    if(M()&&tab==='quote')return _sdt.call(this,document.querySelector('.d-tab'),'plan');
+    if(NOFIN()&&tab==='quote')return _sdt.call(this,document.querySelector('.d-tab'),'plan');
     return _sdt.apply(this,arguments);
   };
 
   // ── 3. Settings: personal customisation only ───────────────────────────────────────────
-  const MEMBER_SETT=new Set(['profile','about']);
+  // Settings tab → the permission it needs (profile and about: everyone)
+  const SETT_PERM={team:'team',defaults:'masterSettings',items:'masterSettings',labels:'masterSettings',sync:'company',data:'accountSettings',access:'userPermissions'};
+  const settOk=t=>!SETT_PERM[t]||C(SETT_PERM[t]);
   const _sst=window.switchSettTab;
-  window.switchSettTab=function(tab){if(M()&&!MEMBER_SETT.has(tab))tab='profile';return _sst.call(this,tab);};
+  window.switchSettTab=function(tab){if(!settOk(tab))tab='profile';return _sst.call(this,tab);};
   const _rs=window.renderSettings;
   window.renderSettings=function(){
-    if(M()&&!MEMBER_SETT.has(_settActiveTab||'profile')){_settActiveTab='profile';
+    if(!settOk(_settActiveTab||'profile')){_settActiveTab='profile';
       document.querySelectorAll('.sett-nav-item').forEach(el=>el.classList.toggle('active',el.id==='sni-profile'));}
     const r=_rs.apply(this,arguments);
     try{
       if((_settActiveTab||'profile')!=='profile')return r;
       const wrap=document.getElementById('settings-scroll');if(!wrap)return r;
-      if(M()){
+      {
+        let cut=false;
         wrap.querySelectorAll('.sett-card').forEach(c=>{
           const hd=(c.querySelector('.sett-card-hd')?.textContent||'').trim();
-          if(/^(rates|dashboard)/i.test(hd))c.remove();
+          if((/^rates/i.test(hd)&&!C('teamCostRates'))||(/^dashboard/i.test(hd)&&!FULL_DASH())){c.remove();cut=true;}
         });
-        wrap.querySelector('input[list="my-team-dl"]')?.closest('.tm-panel-field')?.remove();
-        const sub=wrap.querySelector('.sett-tab-sub');if(sub)sub.textContent='Your identity, appearance and account.';
+        if(!C('team'))wrap.querySelector('input[list="my-team-dl"]')?.closest('.tm-panel-field')?.remove();
+        const sub=wrap.querySelector('.sett-tab-sub');if(sub&&cut)sub.textContent='Your identity, appearance and account.';
       }
       if(!document.getElementById('rl-acct-card')){
         const c=document.createElement('div');c.className='sett-card';c.id='rl-acct-card';
         c.innerHTML=`<div class="sett-card-hd">Account</div><div class="sett-card-body">
           <div class="sett-row"><div><div class="sett-row-lbl">${AUTH?esc(AUTH.email||'Signed in'):'Not signed in'}</div>
-            <div class="sett-row-sub">${AUTH?(AUTH.admin?'Admin':'Team member'):(_CC_PREVIEW_MEMBER?'Local preview as a team member':'Local preview')}</div></div>
+            <div class="sett-row-sub">${AUTH?_ccPermSummary():(_CC_PREVIEW_MEMBER?'Local preview with limited permissions':'Local preview')}</div></div>
             <div class="sett-row-val rl-acct-row">
               <button class="d-action" onclick="_showShortcuts()"><i class="ti ti-keyboard" style="font-size:12px;"></i> Keyboard shortcuts</button>
               ${AUTH?`<button class="d-action" onclick="openChangePassword()"><i class="ti ti-key" style="font-size:12px;"></i> Change password</button>
@@ -25488,7 +25551,7 @@ body.cc-member #view-detail .item-note-inp[readonly]{background:transparent;}
   const _rd=window.renderDashboard;
   window.renderDashboard=function(){
     const r=_rd.apply(this,arguments);
-    if(!M())return r;
+    if(FULL_DASH())return r;
     try{
       const wrap=document.getElementById('dash-scroll');const todos=wrap&&wrap.querySelector(':scope > .my-todos');if(!todos)return r;
       let n=todos.nextElementSibling;while(n){const nx=n.nextElementSibling;n.remove();n=nx;}
@@ -25509,15 +25572,23 @@ body.cc-member #view-detail .item-note-inp[readonly]{background:transparent;}
   };
 
   // ── 5. ⌘K: no quotes, invoices, clients, new jobs or admin areas ───────────────────────
-  const GS_DENY_CAT=new Set(['Invoices','Quotes','Clients']);
-  const GS_DENY_ACT=/^(new job|new quote|add expense|add client|expenses and purchase orders|quotes|invoices|clients|reporting|schedule|manage teams|pause |resume )/i;
+  const GS_CAT={Invoices:['viewFinancials'],Quotes:['viewFinancials'],Clients:['contacts'],Jobs:['viewJobs']};
+  const GS_ACT=[[/^new job/i,['editJobs']],[/^(new quote|add expense)/i,['editJobs','viewFinancials']],[/^add client/i,['contacts']],
+    [/^(expenses and purchase orders|quotes|invoices)/i,['viewFinancials']],[/^clients/i,['contacts']],[/^reporting/i,['reporting']],
+    [/^schedule/i,['team']],[/^manage teams/i,['team']],[/^(pause |resume )/i,['editJobs']]];
+  const all_=ks=>ks.every(C);
+  const gsOk=x=>{
+    if(GS_CAT[x.cat]&&!all_(GS_CAT[x.cat]))return false;
+    if(x.cat==='Actions'){const m=GS_ACT.find(([re])=>re.test(x.title||''));if(m&&!all_(m[1]))return false;}
+    if(x.cat==='Starred'){const sub=x.sub||'';if(/quote|invoice/i.test(sub)&&NOFIN())return false;if(/client/i.test(sub)&&!C('contacts'))return false;}
+    return true;
+  };
   const _rgs=window.runGlobalSearch;
   window.runGlobalSearch=function(q){
     const r=_rgs.apply(this,arguments);
-    if(!M())return r;
     try{
       const before=_gsResults.length;
-      _gsResults=_gsResults.filter(x=>!GS_DENY_CAT.has(x.cat)&&!(x.cat==='Actions'&&GS_DENY_ACT.test(x.title||''))&&!(x.cat==='Starred'&&/quote|invoice|client/i.test(x.sub||'')));
+      _gsResults=_gsResults.filter(gsOk);
       if(_gsResults.length!==before){_gsSel=0;renderGsResults(String(q||'').trim().toLowerCase());}
     }catch(e){}
     return r;
@@ -25526,20 +25597,21 @@ body.cc-member #view-detail .item-note-inp[readonly]{background:transparent;}
   const _ss=window._showShortcuts;
   window._showShortcuts=function(){
     const r=_ss.apply(this,arguments);
-    if(M())try{document.querySelectorAll('#kb-modal .modal-bd > div').forEach(row=>{const k=row.querySelector('kbd')?.textContent.trim();if(/^(J|Q|E)$/.test(k||''))row.remove();});}catch(e){}
+    try{document.querySelectorAll('#kb-modal .modal-bd > div').forEach(row=>{const k=row.querySelector('kbd')?.textContent.trim();if((k==='J'&&M())||(/^(Q|E)$/.test(k||'')&&(M()||NOFIN())))row.remove();});}catch(e){}
     return r;
   };
 
   // ── 6. Job detail: read only, with a "View only" badge ─────────────────────────────────
   const _ojd=window.openJobDetail;
   window.openJobDetail=function(){
+    if(!C('viewJobs')){_rlShowLocked('Jobs');return;}
     const r=_ojd.apply(this,arguments);
     if(M())try{_detailReadOnly();}catch(e){console.warn('roles detail',e);}
     return r;
   };
   function _detailReadOnly(){
     const meta=document.getElementById('d-meta-line');
-    if(meta&&!meta.querySelector('.rl-viewonly'))meta.insertAdjacentHTML('beforeend','<span class="rl-viewonly" title="Team members can view jobs and log time. Admins make changes."><i class="ti ti-eye"></i>View only</span>');
+    if(meta&&!meta.querySelector('.rl-viewonly'))meta.insertAdjacentHTML('beforeend','<span class="rl-viewonly" title="You can view this job and log time. Editing jobs needs the Edit jobs permission."><i class="ti ti-eye"></i>View only</span>');
     const t=document.getElementById('d-title-text');if(t){t.onclick=null;t.style.cursor='';t.title='';}
     const notes=document.getElementById('job-notes-inp');
     if(notes){notes.readOnly=true;notes.tabIndex=-1;const row=document.getElementById('job-notes-row');if(row&&!notes.value.trim())row.style.display='none';}
@@ -25553,11 +25625,13 @@ body.cc-member #view-detail .item-note-inp[readonly]{background:transparent;}
 
   // ── 7. Money and edit controls, scrubbed after every render ────────────────────────────
   function _scrub(){
-    if(!M())return;
+    if(!M()&&!NOFIN())return;
     // Only the screen on show (navTo and switchJobsTab scrub again when the screen changes)
     document.querySelectorAll('.main .content > .view:not(.hidden)').forEach(v=>{if(v.id!=='view-boards'&&v.id!=='view-settings')_scrubView(v);});
   }
   function _scrubView(root){
+    const fin=NOFIN(),ro=M();
+    if(fin){
     // Tables: hide money columns by their header
     root.querySelectorAll('table').forEach(tb=>{
       const ths=[...(tb.tHead?.rows[0]?.cells||[])];if(!ths.length)return;
@@ -25579,37 +25653,37 @@ body.cc-member #view-detail .item-note-inp[readonly]{background:transparent;}
     root.querySelectorAll('#view-detail .prog-card').forEach(c=>{
       const hd=(c.querySelector('.prog-card-hd')?.textContent||'');
       if(/profit|invoice|expense|purchase|budget|sell/i.test(hd))c.classList.add('rl-money-hide');
-      const dim=c.querySelector('.prog-dim');if(dim&&/reallocate/.test(dim.textContent))dim.textContent=dim.textContent.replace(/\s*·\s*click.*reallocate/,'');
     });
+    // Deadlines: job due dates only
+    root.querySelectorAll('#dcal-legend > span').forEach(el=>{if(/invoice/i.test(el.textContent))el.classList.add('rl-money-hide');});
+    }
+    if(!ro)return;
+    root.querySelectorAll('#view-detail .prog-card .prog-dim').forEach(dim=>{if(/reallocate/.test(dim.textContent))dim.textContent=dim.textContent.replace(/\s*·\s*click.*reallocate/,'');});
     // Job detail inputs: read only
     root.querySelectorAll('#view-detail textarea,#view-detail input:not([type=checkbox]):not([type=radio])').forEach(el=>{if(!el.readOnly){el.readOnly=true;el.tabIndex=-1;}});
     root.querySelectorAll('#view-detail [contenteditable="true"]').forEach(el=>el.setAttribute('contenteditable','false'));
     root.querySelectorAll('#view-detail tr[draggable="true"]').forEach(el=>{el.draggable=false;});
-    // Deadlines: job due dates only
-    root.querySelectorAll('#dcal-legend > span').forEach(el=>{if(/invoice/i.test(el.textContent))el.classList.add('rl-money-hide');});
   }
   window._rlScrub=_scrub;
+  window._rlViewOnly=_viewOnly;
   // Runs in the observer's microtask (not rAF, which a background tab pauses). Scrubbing only
   // touches classes and attributes, so it settles after one pass.
   let _busy=false;
-  const mo=new MutationObserver(()=>{if(_busy||!M())return;_busy=true;try{_scrub();}catch(e){}finally{_busy=false;}});
+  const mo=new MutationObserver(()=>{if(_busy||(!M()&&!NOFIN()))return;_busy=true;try{_scrub();}catch(e){}finally{_busy=false;}});
   const content=document.querySelector('.main .content');if(content)mo.observe(content,{childList:true,subtree:true});
 
   // ── 8. Boot: apply now, and show a pill while previewing locally ───────────────────────
   try{_applyAdminUi();}catch(e){}
   if(_CC_PREVIEW_MEMBER){
     const pill=document.createElement('div');pill.id='rl-preview';pill.setAttribute('role','status');
-    pill.innerHTML='<i class="ti ti-eye" style="font-size:13px;color:var(--muted);"></i><span>Previewing as a team member</span><button type="button">Back to admin</button>';
-    pill.querySelector('button').addEventListener('click',()=>{try{localStorage.removeItem('cc_preview_role');}catch(e){}location.href=location.pathname+'?role=admin';});
+    pill.innerHTML='<i class="ti ti-eye" style="font-size:13px;color:var(--muted);"></i><span>Previewing with limited permissions</span><button type="button">Back to admin</button>';
+    pill.querySelector('button').addEventListener('click',()=>{try{localStorage.removeItem('cc_preview_role');localStorage.removeItem('cc_preview_perms');}catch(e){}location.href=location.pathname+'?role=admin';});
     document.body.appendChild(pill);
   }
   // Booted onto an admin-only screen (cross-tab restore)? Show the polite state instead.
   try{
-    if(M()){
-      if(!document.getElementById('view-reporting')?.classList.contains('hidden'))_rlShowLocked('Reporting');
-      if(!document.getElementById('view-schedule')?.classList.contains('hidden'))_rlShowLocked('Schedule');
-      if(!document.getElementById('view-dashboard')?.classList.contains('hidden'))renderDashboard();
-    }
+    Object.entries(LOCKED_VIEWS).forEach(([v,[name,locked]])=>{if(locked()&&!document.getElementById('view-'+v)?.classList.contains('hidden'))_rlShowLocked(name);});
+    if(!FULL_DASH()&&!document.getElementById('view-dashboard')?.classList.contains('hidden'))renderDashboard();
   }catch(e){}
 })();
 </script>
@@ -25948,7 +26022,7 @@ bvAddColumn=function(anchor){
 };
 
 // ── Board ⋯ menu: link every matching column at once (admins) ──────────────────────────────
-function _r13Admin(){try{return typeof _isMember==='function'?!_isMember():!!R5_ADMIN;}catch(e){return!!R5_ADMIN;}}
+function _r13Admin(){try{return typeof can==='function'?can('userPermissions'):!!R5_ADMIN;}catch(e){return!!R5_ADMIN;}}
 const _r13OrigBoardMenu=bvBoardMenu;
 bvBoardMenu=function(anchor,id,fromTile){
   if(_bvPopToggle(anchor))return;
@@ -26057,7 +26131,7 @@ _stRenderViews=function(){
 (function(){
   const TTL=600000;
   let data=null,at=0,inflight=null,off=false,dismissedAt=-1;
-  const admin=()=>{try{return typeof _isAdmin==='function'&&_isAdmin();}catch(e){return false;}};
+  const admin=()=>{try{return typeof can==='function'&&can('userPermissions');}catch(e){return false;}};
   const fmt=n=>{try{return Number(n).toLocaleString();}catch(e){return String(n);}};
   const hm=iso=>{try{return iso?new Date(iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'';}catch(e){return '';}};
   const pctLeft=d=>d&&d.store&&typeof d.store.remainingPct==='number'?Math.round(d.store.remainingPct):null;
@@ -26421,7 +26495,7 @@ _stRenderViews=function(){
   // ── Job status control (status row) ─────────────────────────────────────────────────────
   function _statusCtl(j){
     const cur=jobState(j),can=admin();
-    const btn=(v,icon)=>`<button type="button" role="radio" data-v="${v}" aria-checked="${cur===v}" ${can?`onclick="fb2SetJobStatus('${v}')"`:'disabled'} title="${can?'Set job to '+ST[v][0]:'Job is '+ST[v][0]+'. Admins change job status.'}"><i class="ti ${icon}"></i>${ST[v][0]}</button>`;
+    const btn=(v,icon)=>`<button type="button" role="radio" data-v="${v}" aria-checked="${cur===v}" ${can?`onclick="fb2SetJobStatus('${v}')"`:'disabled'} title="${can?'Set job to '+ST[v][0]:'Job is '+ST[v][0]+'. Changing it needs the Edit jobs permission.'}"><i class="ti ${icon}"></i>${ST[v][0]}</button>`;
     return`<span class="fb2-jst" role="radiogroup" aria-label="Job status">${btn('inplay','ti-player-play')}${btn('paused','ti-player-pause')}${btn('complete','ti-circle-check')}</span>`;
   }
   window.fb2SetJobStatus=async function(v){
@@ -26652,7 +26726,7 @@ _stRenderViews=function(){
 // · Job detail header: prominent job number; click it to copy, copy button always visible.
 (function(){
   const $=id=>document.getElementById(id);
-  const M=()=>{try{return _isMember();}catch(e){return false;}};
+  const M=()=>{try{return !_showMoney();}catch(e){return false;}}; // perms: these are the money parts (viewFinancials)
   const lsGet=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:v;}catch(e){return d;}};
   const lsSet=(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}};
 
@@ -26941,16 +27015,16 @@ _stRenderViews=function(){
   // record (contactEdits[stId]) and shown over the synced values, marked "Edited".
   const ctName=ct=>[ct.firstName,ct.lastName].filter(Boolean).join(' ')||ct.name||'';
   window._fb2SetStContact=function(cid,ctId,field,val){
-    const c=clientsData.find(x=>x.id===cid);if(!c||!_canEdit())return;
+    const c=clientsData.find(x=>x.id===cid);if(!c||!can('contacts'))return;
     c.contactEdits=c.contactEdits||{};const e=c.contactEdits[ctId]=c.contactEdits[ctId]||{};
     e[field]=val;saveClientsData();
   };
   window._fb2ResetStContact=function(cid,ctId){
-    const c=clientsData.find(x=>x.id===cid);if(!c||!c.contactEdits||!_canEdit())return;
+    const c=clientsData.find(x=>x.id===cid);if(!c||!c.contactEdits||!can('contacts'))return;
     delete c.contactEdits[ctId];saveClientsData();openClientDetail(cid);
   };
   function contactsTable(c){
-    const edit=_canEdit();
+    const edit=can('contacts');
     const co=(typeof stContacts!=='undefined'?stContacts:[]).filter(ct=>ct.companyId===c._stId||ct.company?.name===c.name||ct.company?.id===c._stId);
     const cell=(val,ph,on,cls)=>`<input class="fb2-ct-in${cls?' '+cls:''}" value="${esc(val)}" placeholder="${edit?esc(ph):''}" ${edit?`oninput="${on}"`:'readonly'} aria-label="${esc(ph)}">`;
     const copyB='<button type="button" class="fb2-ibtn" data-fb2-copy="email" title="Copy email" aria-label="Copy email"><i class="ti ti-copy" aria-hidden="true"></i></button>';
@@ -27449,7 +27523,7 @@ body.dark #view-boards .fb2-share .fb2-share-st{background:rgba(255,255,255,.07)
   const FB2={people:null,share:null};
   const PROD=typeof R5_PROD!=='undefined'&&R5_PROD;
   const me=()=>String(AUTH&&AUTH.email||'').toLowerCase();
-  const isAdmin=()=>{try{return typeof _isMember==='function'?!_isMember()&&!!(AUTH&&AUTH.admin):!!(AUTH&&AUTH.admin);}catch(e){return false;}};
+  const isAdmin=()=>{try{return typeof can==='function'?can('userPermissions'):!!(AUTH&&AUTH.admin);}catch(e){return false;}};
   const EMAIL_RE=/^[^\s@<>"'`]{1,64}@[^\s@<>"'`]{1,189}$/;
 
   // ── 1. Share ───────────────────────────────────────────────────────────────────────────
@@ -27739,6 +27813,242 @@ body.dark #view-boards .fb2-share .fb2-share-st{background:rgba(255,255,255,.07)
     e.preventDefault();
     t.setRangeText(linkLine(u,sel),s,en,'end');t.dispatchEvent(new Event('input',{bubbles:true}));
   },true);
+})();
+</script>
+<style id="perms-style">
+/* ═══ Per-person permissions: the Permissions panel (Settings → Access) and the To Do / check-in
+   gates. body.cc-no-<perm> classes come from _applyAdminUi(). ds-v3 tokens only. ═══════════════ */
+body.cc-no-viewteamtodo #ps-dropdown{display:none!important;}
+body.cc-no-reporting #view-reporting .r-subtab:not(#rt-happy){display:none!important;}
+.pm-count{margin-left:6px;padding:1px 7px;border-radius:var(--r-pill,999px);background:var(--surface-2);color:var(--muted);font:500 11px/1.5 var(--font);}
+.pm-count:empty{display:none;}
+.pm-modal{max-width:980px!important;width:calc(100vw - 32px);}
+.pm-intro{display:flex;align-items:center;gap:12px;margin:0 0 16px;}
+.pm-intro b{display:block;font-size:14px;font-weight:600;color:var(--ink);}
+.pm-intro small{display:block;font-size:12px;color:var(--muted);}
+.pm-intro .pm-presets{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+.pm-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;}
+.pm-col{border:1px solid var(--border);border-radius:var(--r-card,12px);background:var(--white);padding:12px 12px 8px;min-width:0;}
+.pm-col.is-on{border-color:var(--border-strong,var(--border));}
+.pm-ck{display:flex;align-items:flex-start;gap:9px;padding:7px 6px;border-radius:var(--r-sm,6px);cursor:pointer;color:var(--ink);font:400 13px/1.35 var(--font);}
+.pm-ck:hover{background:var(--surface-2);}
+.pm-ck input{width:15px;height:15px;margin:1px 0 0;flex-shrink:0;accent-color:var(--ink);cursor:pointer;}
+.pm-ck input:disabled{cursor:default;}
+.pm-ck input:focus-visible{outline:none;box-shadow:var(--ring);}
+.pm-ck small{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;}
+.pm-ck.is-locked{cursor:default;}
+.pm-ck.is-locked:hover{background:transparent;}
+.pm-head{font-weight:600;border-bottom:1px solid var(--faint);border-radius:var(--r-sm,6px) var(--r-sm,6px) 0 0;margin-bottom:4px;padding-bottom:10px;}
+.pm-head span{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2);}
+.pm-note{margin-top:14px;font-size:12px;line-height:1.5;color:var(--muted);}
+.pm-warn{margin-top:12px;font-size:12.5px;line-height:1.45;padding:8px 10px;border-radius:var(--r-ctl,8px);background:var(--warn-bg);color:var(--warn-ink);}
+.pm-warn[hidden]{display:none;}
+body.dark .pm-col{background:transparent;}
+body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
+@media (max-width:900px){.pm-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media (max-width:560px){.pm-grid{grid-template-columns:1fr;}.pm-intro{flex-wrap:wrap;}.pm-intro .pm-presets{margin-left:0;justify-content:flex-start;}}
+</style>
+<script id="perms-script">
+// ═══ Per-person permissions (client) ════════════════════════════════════════════════════════
+// can(perm) and the cc-no-<perm> body classes live by _isAdmin() (first script); the server
+// (lib/perms.js, lib/guard.js, /api/data) is the real gate. This block adds:
+//   1. labels and the Settings → Access → Permissions panel (one setPerms write per save)
+//   2. To Do: other people's weeks need viewTeamTodo; changing them needs editTeamTodo
+//   3. the weekly check-in needs checkin; a check-in summary without Reporting opens on that tab
+//   4. cost rates (team panel, workspace default) need teamCostRates
+(function(){
+  const E=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  // Same groups, keys and order as lib/perms.js PERM_GROUPS (/api/me sends them as permGroups).
+  const GROUPS=[
+    {key:'essentials',label:'Essentials',perms:[['todo','To Do','Their own To Do and time'],['viewTeamTodo','View team To Do','See other people’s weeks'],['viewJobs','View jobs','Jobs list and job pages, read only'],['checkin','Weekly check-in','Submit the weekly check-in']]},
+    {key:'plan',label:'Plan & Manage',perms:[['editTeamTodo','Edit team To Do','Add, move and edit other people’s tasks'],['viewFinancials','View financials','Values, budgets, expenses, quotes, invoices'],['editJobs','Edit jobs','Create, edit and archive jobs; status; labels'],['team','Team & Schedule','Team page and Schedule'],['viewCheckinSummary','Check-in summary','The team happiness report']]},
+    {key:'admin',label:'Admin',perms:[['company','Company settings','Workspace sync and company setup'],['userPermissions','User permissions','Approve access requests and set permissions'],['masterSettings','Master settings','Rates, labels and task types'],['contacts','Clients & contacts','Clients and their contacts'],['reporting','Reporting','The Reporting screen']]},
+    {key:'finances',label:'Finances',perms:[['accountSettings','Account settings','Data connections and backups'],['teamCostRates','Team cost rates','See and change cost rates'],['export','Export','CSV and print exports']]},
+  ].map(g=>({key:g.key,label:g.label,perms:g.perms.map(([key,label,hint])=>({key,label,hint}))}));
+  const groups=()=>Array.isArray(window._ccPermGroups)&&window._ccPermGroups.length===4?window._ccPermGroups:GROUPS;
+  const LABEL={};GROUPS.forEach(g=>g.perms.forEach(p=>LABEL[p.key]=p.label));
+  window._ccPermLabel=k=>LABEL[k]||k;
+  const effPerms=u=>{
+    if(!u)return _ccPermsOf([]);
+    if(u.owner)return _ccPermsOf(CC_PERM_KEYS);
+    if(u.perms)return _ccPermsOf(CC_PERM_KEYS.filter(k=>u.perms[k]));
+    return _ccPermsOf(u.admin?CC_PERM_KEYS:CC_ESSENTIALS);
+  };
+  const isAll=p=>CC_PERM_KEYS.every(k=>p[k]);
+  const isEss=p=>CC_PERM_KEYS.every(k=>!!p[k]===CC_ESSENTIALS.includes(k));
+  const summary=p=>isAll(p)?'All':isEss(p)?'Essentials':`${CC_PERM_KEYS.filter(k=>p[k]).length} of ${CC_PERM_KEYS.length}`;
+  window._pmCountLabel=u=>summary(effPerms(u));
+  window._ccPermSummary=()=>{const p=_ccMyPerms();return isAll(p)?'Every permission':isEss(p)?'Essentials (To Do, jobs, check-in)':`Permissions: ${CC_PERM_KEYS.filter(k=>p[k]).map(k=>LABEL[k]).join(', ')}`;};
+
+  // ── 1. The Permissions panel ─────────────────────────────────────────────────────────────
+  // Local preview (no sign-in): a demo list from the team, saved to this tab only.
+  const LOCAL={users:null};
+  function localUsers(){
+    if(!LOCAL.users)LOCAL.users=Object.entries(people||{}).filter(([,p])=>p&&!p._archived&&!p._stub).slice(0,8)
+      .map(([k,p],i)=>({email:(String(p.name||k).toLowerCase().replace(/[^a-z]+/g,'.').replace(/^\.|\.$/g,'')||k)+'@example.test',name:p.name||k,personKey:k,owner:i===0,perms:i===0?null:_ccPermsOf(CC_ESSENTIALS)}));
+    return LOCAL.users;
+  }
+  function findUser(email){
+    const list=AUTH?((typeof _acc!=='undefined'&&_acc&&_acc.users)||[]):localUsers();
+    return list.find(u=>u.email===email)||null;
+  }
+  window.openPermsPanel=function(email){
+    if(!can('userPermissions')){_needAdmin('change permissions');return;}
+    const u=findUser(email);if(!u)return;
+    const owner=!!u.owner;
+    const isMe=AUTH&&u.email===AUTH.email;
+    const cur=effPerms(u);
+    document.getElementById('pm-modal')?.remove();
+    const m=document.createElement('div');m.className='modal-bg on';m.id='pm-modal';
+    const col=g=>`<div class="pm-col" data-g="${E(g.key)}">
+        <label class="pm-ck pm-head${owner?' is-locked':''}"><input type="checkbox" data-group="${E(g.key)}"${owner?' disabled':''}><span>${E(g.label)}</span></label>
+        ${g.perms.map(p=>{const locked=owner||p.key==='todo';return`<label class="pm-ck${locked?' is-locked':''}"><input type="checkbox" data-perm="${E(p.key)}"${cur[p.key]?' checked':''}${locked?' disabled':''}><span>${E(p.label)}<small>${E(p.hint||'')}${p.key==='todo'?' · always on':''}</small></span></label>`;}).join('')}
+      </div>`;
+    m.innerHTML=`<div class="modal pm-modal" role="dialog" aria-modal="true" aria-labelledby="pm-t">
+      <div class="modal-hd"><span class="modal-hd-title" id="pm-t">Permissions</span><button class="modal-x" data-x aria-label="Close"><i class="ti ti-x"></i></button></div>
+      <div class="modal-bd">
+        <div class="pm-intro">${typeof _accAv==='function'?_accAv(u.personKey,u.name||u.email):''}<div><b>${E(u.name||u.email)}</b><small>${E(u.email)}${owner?' · Owner':''}</small></div>
+          ${owner?'':`<div class="pm-presets"><button class="d-action" data-preset="ess">Essentials only</button><button class="d-action" data-preset="all">Everything</button></div>`}</div>
+        <div class="pm-grid">${groups().map(col).join('')}</div>
+        <div class="pm-warn" hidden></div>
+        <div class="pm-note">${owner?'Owners are set on the server (ADMIN_EMAILS) and always have every permission.':'Changes apply on their next page load or within a minute. Admin used to mean all of these; User permissions is what lets someone manage access.'}${AUTH?'':' <b>Local preview:</b> nothing is saved to the server.'}</div>
+      </div>
+      <div class="modal-ft"><button class="modal-cancel" data-x>${owner?'Close':'Cancel'}</button>${owner?'':'<button class="modal-ok" data-save>Save permissions</button>'}</div>
+    </div>`;
+    document.body.appendChild(m);
+    const close=()=>{m.remove();document.removeEventListener('keydown',onKey);};
+    const onKey=e=>{if(e.key==='Escape')close();};
+    document.addEventListener('keydown',onKey);
+    m.addEventListener('click',e=>{if(e.target===m)close();});
+    m.querySelectorAll('[data-x]').forEach(b=>b.addEventListener('click',close));
+    const boxes=()=>[...m.querySelectorAll('input[data-perm]')];
+    const read=()=>{const o={};boxes().forEach(b=>o[b.dataset.perm]=b.checked);o.todo=true;return o;};
+    const warn=m.querySelector('.pm-warn');
+    function sync(){
+      m.querySelectorAll('.pm-col').forEach(c=>{
+        const items=[...c.querySelectorAll('input[data-perm]')],head=c.querySelector('input[data-group]');
+        const n=items.filter(b=>b.checked).length;
+        head.checked=n===items.length;head.indeterminate=n>0&&n<items.length;
+        head.setAttribute('aria-checked',head.indeterminate?'mixed':String(head.checked));
+        c.classList.toggle('is-on',n>0);
+      });
+      const p=read();
+      const msg=isMe&&cur.userPermissions&&!p.userPermissions?'You are removing your own User permissions: you won’t be able to open Settings → Access after saving. The server refuses this if nobody else could.'
+        :!p.viewJobs&&(p.editJobs||p.viewFinancials)?'Edit jobs and View financials work on job pages, which also need View jobs.':'';
+      warn.textContent=msg;warn.hidden=!msg;
+    }
+    m.addEventListener('change',e=>{
+      const t=e.target;
+      if(t.dataset.group){const c=t.closest('.pm-col');c.querySelectorAll('input[data-perm]:not(:disabled)').forEach(b=>b.checked=t.checked);}
+      sync();
+    });
+    m.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>{
+      const all=b.dataset.preset==='all';boxes().forEach(x=>{if(!x.disabled)x.checked=all||CC_ESSENTIALS.includes(x.dataset.perm);});sync();
+    }));
+    const save=m.querySelector('[data-save]');
+    if(save)save.addEventListener('click',async()=>{
+      const p=read();
+      if(!AUTH){u.perms=p;close();toast('Local preview: permissions not saved to the server','info');try{_pmLocalRender();}catch(e){}return;}
+      save.disabled=true;
+      await _accDo({action:'setPerms',email:u.email,perms:p},'Permissions saved');
+      close();
+      if(isMe&&!p.userPermissions){try{navTo('settings');switchSettTab('profile');}catch(e){}}
+    });
+    sync();
+    setTimeout(()=>(m.querySelector('input[data-perm]:not(:disabled)')||m.querySelector('[data-x]'))?.focus(),30);
+  };
+
+  // Settings → Access in a local preview (the real card needs the server's account list)
+  window._pmLocalRender=function(){
+    const wrap=document.getElementById('settings-scroll');if(!wrap||AUTH||(_settActiveTab||'')!=='access')return;
+    const rows=localUsers().map(u=>`<div class="au-row" data-email="${E(u.email)}">${typeof _accAv==='function'?_accAv(u.personKey,u.name):''}
+      <div class="au-who"><b>${E(u.name)}${u.owner?'<span class="au-tag">Owner</span>':''}</b><small>${E(u.email)}</small></div>
+      <button class="d-action" data-act="perms"><i class="ti ti-shield-lock" style="font-size:12px"></i> Permissions<span class="pm-count">${E(window._pmCountLabel(u))}</span></button></div>`).join('');
+    wrap.innerHTML=`<div class="sett-tab-hd">Access</div><div class="sett-tab-sub">Who can sign in, and what each person can see and do.</div>
+      <div class="sett-card"><div class="sett-card-hd">Access</div><div class="sett-card-body" style="padding:6px 20px 18px;">
+      <div class="au-foot" style="margin:6px 0 8px;">Local preview: sample people from the team. Accounts live on the server, so changes here aren’t saved.</div>${rows}</div></div>`;
+    wrap.querySelector('.sett-card').addEventListener('click',e=>{const b=e.target.closest('[data-act="perms"]');if(b)openPermsPanel(b.closest('[data-email]').dataset.email);});
+  };
+  const _rs=window.renderSettings;
+  window.renderSettings=renderSettings=function(){
+    const r=_rs.apply(this,arguments);
+    try{
+      const tab=_settActiveTab||'profile';
+      if(tab==='access'&&!AUTH)_pmLocalRender();
+      // Cost rates need teamCostRates
+      if(tab==='defaults'&&!can('teamCostRates'))document.querySelectorAll('#settings-scroll .sett-row').forEach(row=>{if(/default cost rate/i.test(row.querySelector('.sett-row-lbl')?.textContent||''))row.remove();});
+    }catch(e){console.warn('perms settings',e);}
+    return r;
+  };
+
+  // ── 2. To Do: other people's weeks ──────────────────────────────────────────────────────
+  const me=()=>MY_PERSON;
+  const other=()=>typeof currentPerson!=='undefined'&&currentPerson!==MY_PERSON;
+  const deny=()=>{try{toast('You can view this week but not change it. Editing other people’s tasks needs the Edit team To Do permission.','info');}catch(e){}};
+  const wrap=(name,blocked)=>{
+    const f=window[name];if(typeof f!=='function'||f._pmWrapped)return;
+    const g=function(){if(!can('editTeamTodo')&&blocked.apply(this,arguments)){deny();return;}return f.apply(this,arguments);};
+    g._pmWrapped=true;window[name]=g;
+  };
+  wrap('openTodoModal',(jobId,day,personOverride)=>(personOverride||currentPerson)!==me());
+  wrap('saveTodo',()=>other()||((typeof _todoAssignTo!=='undefined'&&_todoAssignTo)||currentPerson)!==me());
+  ['deleteTodo','deleteTodoById','toggleTaskDone','duplicateTask','_splitTaskAcross'].forEach(n=>wrap(n,()=>other()));
+  wrap('reassignTask',(t,fromDay,to)=>other()||to!==me());
+  wrap('moveScheduleTask',(from,fd,to)=>from!==me()||to!==me());
+  wrap('toggleScheduleTaskDone',pk=>pk!==me());
+  wrap('openTodoAssignMenu',()=>true);
+  const _rt=window.renderTodo;
+  if(typeof _rt==='function')window.renderTodo=renderTodo=function(){
+    if(!can('viewTeamTodo')&&other()){
+      currentPerson=MY_PERSON;
+      try{const p=people[MY_PERSON];const av=document.getElementById('current-av');if(av&&p){av.style.background=p.color;av.textContent=p.initials;}if(p)_setSwitcherName(p.name);}catch(e){}
+    }
+    return _rt.apply(this,arguments);
+  };
+  // Dragging tasks around someone else's week
+  ['dragstart','drop'].forEach(type=>document.addEventListener(type,e=>{
+    if(can('editTeamTodo')||!other())return;
+    if(e.target&&e.target.closest&&e.target.closest('#view-todo')){e.preventDefault();e.stopPropagation();if(type==='drop')deny();}
+  },true));
+
+  // ── 3. Weekly check-in ───────────────────────────────────────────────────────────────────
+  const _hc=window._happinessCardHTML;
+  if(typeof _hc==='function')window._happinessCardHTML=_happinessCardHTML=function(){return can('checkin')?_hc.apply(this,arguments):'';};
+  ['maybeShowHappinessPrompt','maybeShowHappinessPromptNow'].forEach(n=>{const f=window[n];if(typeof f==='function')window[n]=function(){if(!can('checkin'))return;return f.apply(this,arguments);};});
+  const _sh=window.submitHappiness;
+  if(typeof _sh==='function')window.submitHappiness=submitHappiness=function(){if(!can('checkin'))return;return _sh.apply(this,arguments);};
+  // The check-in summary without Reporting: Reporting opens on Team happiness and stays there.
+  const _nav=window.navTo;
+  window.navTo=function(v){
+    if(v==='reporting'&&!can('reporting')&&can('viewCheckinSummary')){try{_reportTab='happy';}catch(e){}}
+    const r=_nav.apply(this,arguments);
+    if(v==='reporting'&&!can('reporting')&&can('viewCheckinSummary'))try{switchReportTab('happy');}catch(e){}
+    return r;
+  };
+  const _srt=window.switchReportTab;
+  if(typeof _srt==='function')window.switchReportTab=switchReportTab=function(tab){
+    if(!can('reporting')&&tab!=='happy'&&can('viewCheckinSummary'))tab='happy';
+    return _srt.call(this,tab);
+  };
+
+  // ── 4. Cost rates ────────────────────────────────────────────────────────────────────────
+  const _otm=window.openTeamMember;
+  if(typeof _otm==='function')window.openTeamMember=function(){
+    const r=_otm.apply(this,arguments);
+    try{
+      const panel=document.getElementById('tm-panel');
+      if(panel&&!can('teamCostRates'))panel.querySelectorAll('input[onchange*="\'rate\'"]').forEach(i=>i.closest('.tm-panel-field')?.remove());
+      if(panel&&!can('viewFinancials'))panel.querySelectorAll('.tm-panel-field label').forEach(l=>{if(/^billable rate/i.test(l.textContent.trim()))l.closest('.tm-panel-field')?.remove();});
+    }catch(e){}
+    return r;
+  };
+  const _up=window.updatePerson;
+  if(typeof _up==='function')window.updatePerson=updatePerson=function(key,field){
+    if(field==='rate'&&!can('teamCostRates')){_needAdmin('change cost rates','teamCostRates');return;}
+    return _up.apply(this,arguments);
+  };
+
+  try{_applyAdminUi();}catch(e){}
 })();
 </script>
 </body>

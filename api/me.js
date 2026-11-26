@@ -1,4 +1,4 @@
-// /api/me → {email, name, personKey, admin, onboarded?} for the signed-in person, from the signed
+// /api/me → {email, name, personKey, admin, perms, onboarded?} for the signed-in person, from the signed
 // session plus the live access list. Also refreshes the readable cc_who hint cookie the front end
 // uses to pick "me" at load.
 //
@@ -6,7 +6,8 @@
 // the welcome tour for that role: {onboarded, onboardedAt} on their OWN access-list record only.
 // Same-origin only (CSRF), session re-checked against the live access list like every endpoint.
 
-import { whoCookie, json, findUser, normEmail } from '../lib/auth.js';
+import { whoCookie, json, findUser, normEmail, permMask } from '../lib/auth.js';
+import { PERM_GROUPS } from '../lib/perms.js';
 import { requireUser, errorResponse, readJsonBody } from '../lib/guard.js';
 import { getAccess, mutateAccess } from '../lib/store.js';
 
@@ -38,8 +39,10 @@ export async function handle(request, opts = {}) {
   const { user, response } = await requireUser(request, o);
   if (response) return response;
   const h = new Headers({ 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
-  h.append('set-cookie', whoCookie({ e: user.email, n: user.name, p: user.personKey, a: user.admin, exp: user.exp }));
-  const out = { email: user.email, name: user.name, personKey: user.personKey, admin: user.admin };
+  h.append('set-cookie', whoCookie({ e: user.email, n: user.name, p: user.personKey, a: user.admin, x: permMask(user.perms), exp: user.exp }));
+  // perms: live from the access list (lib/perms.js). permGroups: the labels for the Permissions panel.
+  const out = { email: user.email, name: user.name, personKey: user.personKey, admin: user.admin, perms: user.perms };
+  if (user.perms && user.perms.userPermissions) out.permGroups = PERM_GROUPS.map((g) => ({ key: g.key, label: g.label, perms: g.perms.map(([key, label, hint]) => ({ key, label, hint })) }));
   try {
     const entry = findUser(await getAccess(o), user.email); // just read by requireUser, so cached
     if (entry && ROLES.has(entry.onboarded)) out.onboarded = entry.onboarded;

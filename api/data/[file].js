@@ -9,10 +9,15 @@
 // segment, so the proxy cannot be pointed anywhere else. The few files written by other things
 // than the sync (platform_config.json, changelog.json, ...) stay plaintext on the branch and are
 // passed through as-is when no .enc exists.
+//
+// Permissions (lib/perms.js): invoices, quotes, expenses and rate cards need viewFinancials (403
+// otherwise). Every other file is served with its money fields cut for someone without
+// viewFinancials, and its cost-rate fields cut for someone without teamCostRates.
 
 import { isAllowedDataFile, json } from '../../lib/auth.js';
 import { requireUser, errorResponse } from '../../lib/guard.js';
-import { fetchDataFile } from '../../lib/store.js';
+import { fetchDataFileFor } from '../../lib/store.js';
+import { fileNeeds } from '../../lib/perms.js';
 
 export function fileFromRequest(request) {
   const { pathname } = new URL(request.url);
@@ -29,12 +34,14 @@ const HEADERS = {
 
 export async function handle(request, opts = {}) {
   const o = { env: opts.env || process.env, fetchImpl: opts.fetchImpl, gh: opts.gh };
-  const { response } = await requireUser(request, o);
+  const { user, response } = await requireUser(request, o);
   if (response) return response;
   const file = fileFromRequest(request);
   if (!isAllowedDataFile(file)) return json({ error: 'Not found' }, 404);
+  const need = fileNeeds(file);
+  if (need && !(user.perms && user.perms[need])) return json({ error: "You don't have permission for that", perm: need }, 403);
   try {
-    const r = await fetchDataFile(file, o);
+    const r = await fetchDataFileFor(file, user.perms, o);
     if (r.gz) return new Response(r.gz, { status: 200, headers: { ...HEADERS, 'content-encoding': 'gzip', 'content-length': String(r.gz.length) } });
     return new Response(r.plain, { status: 200, headers: HEADERS });
   } catch (e) {

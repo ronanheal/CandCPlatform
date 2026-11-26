@@ -11,6 +11,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import * as A from '../lib/auth.js';
+import { essentialPerms } from '../lib/perms.js';
 import * as P from '../lib/password.js';
 import * as C from '../lib/crypt.js';
 import * as S from '../lib/store.js';
@@ -386,7 +387,7 @@ await t('first sign-in with a temporary password must change it before anything 
   assert.equal(ch.status, 200);
   annCookie = cookieFrom(ch);
   const me = await meHandle(req('/api/me', { cookie: annCookie }), O);
-  assert.deepEqual(await me.json(), { email: 'ann@cc.test', name: 'Ann Lee', personKey: 'st_2', admin: false });
+  assert.deepEqual(await me.json(), { email: 'ann@cc.test', name: 'Ann Lee', personKey: 'st_2', admin: false, perms: essentialPerms() });
   fresh();
   assert.equal((await meHandle(req('/api/me', { cookie: tmpCookie }), O)).status, 401, 'old session dies with the old password');
 });
