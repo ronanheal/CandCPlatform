@@ -6447,7 +6447,7 @@ function createTaskCard(t,day,isDone){
   const showNote=getCS('showNote');
   const metaJob=showJob&&jobLabel;
   const metaItem=showItem&&t.item;
-  const displayTitle=showNote?t.title:(t.item||(liveJob&&liveJob.name)||t.titleNoNote||t.title); // fb1: live, so changing the job or item shows
+  const displayTitle=showNote?(t.title||t.item||(liveJob&&liveJob.name)||''):(t.item||(liveJob&&liveJob.name)||t.titleNoNote||t.title); // fb1: live, so changing the job or item shows
 
   card.innerHTML=`
     <div class="tc-top">
@@ -26370,7 +26370,7 @@ _stRenderViews=function(){
     const n=list.length;
     side.innerHTML=open
       ?`<div class="fb1-ps-hd"><div><div class="fb1-pk-title"><i class="ti ti-parking" aria-hidden="true"></i> Parking space</div><div class="fb1-pk-sub">${n?`${n} task${n===1?'':'s'} · no day yet`:'No day yet'}</div></div><button class="tm-x" aria-label="Close the parking space" title="Close" onclick="_parkToggle(false)"><i class="ti ti-layout-sidebar-right-collapse"></i></button></div>`
-        +`<div class="fb1-pk-body">`+list.map(t=>`<div class="fb1-pt-card" draggable="true" data-pid="${esc(t.id)}" title="Drag onto a day"><div class="fb1-pt-t">${esc(String(t.title||'').split('\n')[0]||'Task')}</div><div class="fb1-pt-m">${esc([t.job,t.hours?formatHrs(t.hours):''].filter(Boolean).join(' · '))}</div><button class="fb1-pt-x" title="Delete" aria-label="Delete parked task" onclick="_parkDel('${esc(t.id)}')"><i class="ti ti-trash"></i></button></div>`).join('')
+        +`<div class="fb1-pk-body">`+list.map(t=>`<div class="fb1-pt-card" draggable="true" data-pid="${esc(t.id)}" title="Drag onto a day"><div class="fb1-pt-t">${esc(String(t.title||'').split('\n')[0]||t.item||'Task')}</div><div class="fb1-pt-m">${esc([t.job,t.hours?formatHrs(t.hours):''].filter(Boolean).join(' · '))}</div><button class="fb1-pt-x" title="Delete" aria-label="Delete parked task" onclick="_parkDel('${esc(t.id)}')"><i class="ti ti-trash"></i></button></div>`).join('')
         +`<div class="fb1-pk-hint">${n?'Drag a task onto a day to plan it.':'Drag a task here to park it until it has a day.'}</div></div>`
       :`<button class="fb1-ps-tab" onclick="_parkToggle(true)" aria-label="Open the parking space${n?`, ${n} parked`:''}" title="Parking space: tasks with no day yet"><i class="ti ti-parking" aria-hidden="true"></i><span>Parking</span>${n?`<b>${n}</b>`:''}</button>`;
     side.querySelectorAll('.fb1-pt-card').forEach(c=>c.addEventListener('dragstart',e=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',JSON.stringify({parkedId:c.dataset.pid}));}));
@@ -26400,6 +26400,8 @@ _stRenderViews=function(){
         +`<span class="fb1-db-dn"><span class="fb1-db-day">${today?'Today':nm}</span><span class="fb1-db-num">${dt?dt.getDate():''}</span></span>`
         +`<span class="fb1-db-h">${work?`${formatHrs(all)||'0h'}<i>/${formatHrs(cap)||'0h'}</i>`:'Off'}</span></div>`;
     }).join('');
+    // qa: "1h 30m/8h" is wider than "0h/8h": drop the day name wherever the hours don't fit
+    bar.querySelectorAll('.fb1-db-cell:not(.tight)').forEach(c=>{if(c.scrollWidth>c.clientWidth+1)c.classList.add('tight');});
   }
   window._fb1DayBar=_dayBar;
 
@@ -26669,7 +26671,7 @@ body.dark #view-todo .day-done{background:linear-gradient(180deg,color-mix(in sr
 .fb1-db-cell{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 12px 0 14px;color:var(--ink);font:600 14px/1 var(--font);white-space:nowrap;overflow:hidden;box-sizing:border-box;}
 .fb1-db-cell + .fb1-db-cell{border-left:1px solid var(--faint);}
 .fb1-db-num{font-variant-numeric:tabular-nums;}
-.fb1-db-dn{display:inline-flex;align-items:center;gap:7px;min-width:0;}
+.fb1-db-dn{display:inline-flex;align-items:center;gap:7px;min-width:0;flex-shrink:0;}
 .fb1-db-h{flex:none;font:600 11.5px/1 var(--font);color:var(--ink-2,var(--ink));font-variant-numeric:tabular-nums;}.fb1-db-h i{font-style:normal;color:var(--muted);}
 .fb1-db-cell.over .fb1-db-h{color:var(--warn-ink,#A15C07);}
 .fb1-db-cell.off{opacity:.45;}
