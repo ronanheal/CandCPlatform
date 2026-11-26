@@ -26261,6 +26261,16 @@ _stRenderViews=function(){
     _dayBar();
     _splitMarks();
     _vspBtn();
+    _fitEmpty();
+    // columns can still be settling (first paint, coming back to the tab): measure the bar again
+    requestAnimationFrame(()=>{try{_dayBar();_fitEmpty();}catch(e){}});
+  }
+  // The empty-week card sits in the planned area above the day bar, not behind it
+  function _fitEmpty(){
+    const ov=document.getElementById('todo-empty-overlay'),gd=document.getElementById('global-divider');if(!ov||!gd)return;
+    ov.style.bottom='auto';ov.style.height=Math.max(0,gd.offsetTop)+'px';
+    if(document.querySelector('#view-todo .todo-body.fb1-has-park'))ov.style.right='34px';
+    const card=ov.firstElementChild;if(card){card.style.maxHeight=Math.max(0,gd.offsetTop-24)+'px';card.style.overflow='auto';}
   }
   // Split tasks: the parts of one task share a coloured edge, say "Split 2/3", and light each other up on hover
   const SPLIT_HUES=[200,150,280,30,340,95];
@@ -26353,7 +26363,7 @@ _stRenderViews=function(){
       const all=todo+done,cap=work?(_dayCap(currentPerson,iso)||0):0,over=work&&all>cap;
       const nm=(DAY_NAMES[d-1]||'').slice(0,3);
       const tip=`${DAY_NAMES[d-1]||''}: ${formatHrs(todo)||'0h'} to do · ${formatHrs(done)||'0h'} done`+(work?(over?` · ${formatHrs(all-cap)} over ${formatHrs(cap)}`:cap>all?` · ${formatHrs(cap-all)} free of ${formatHrs(cap)}`:''):' · not a work day');
-      return `<div class="fb1-db-cell${today?' today':''}${over?' over':''}${work?'':' off'}${r.width<150?' tight':''}" style="left:${Math.round(r.left-gl)}px;width:${Math.round(r.width)}px" title="${esc(tip)}">`
+      return `<div class="fb1-db-cell${today?' today':''}${over?' over':''}${work?'':' off'}${r.width<116?' tight':r.width<165?' mid':''}" style="left:${Math.round(r.left-gl)}px;width:${Math.round(r.width)}px" title="${esc(tip)}">`
         +`<span class="fb1-db-dn"><span class="fb1-db-day">${today?'Today':nm}</span><span class="fb1-db-num">${dt?dt.getDate():''}</span></span>`
         +`<span class="fb1-db-h">${work?`${formatHrs(all)||'0h'}<i>/${formatHrs(cap)||'0h'}</i>`:'Off'}</span></div>`;
     }).join('');
@@ -26395,6 +26405,8 @@ _stRenderViews=function(){
   const _tvsp=toggleVSP;
   toggleVSP=function(e){const r=_tvsp.apply(this,arguments);try{const p=document.getElementById('vsp'),b=document.getElementById('vsp-btn');if(p&&b){let l=b.getBoundingClientRect().right-248;p.style.left=Math.max(8,l)+'px';}}catch(x){}return r;};
   window.addEventListener('resize',()=>{try{if(!document.getElementById('view-todo')?.classList.contains('hidden'))_dayBar();}catch(e){}});
+  try{let _ro=null;const watch=()=>{const c=document.getElementById('day-cols');if(!c||_ro)return;_ro=new ResizeObserver(()=>{try{if(c.offsetWidth&&_todoViewMode!=='calendar'&&!window._focusToday){_dayBar();_fitEmpty();}}catch(e){}});_ro.observe(c);};
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',watch,{once:true});else watch();}catch(e){}
   const _rth1=renderTodoHeader;
   renderTodoHeader=function(){const r=_rth1.apply(this,arguments);try{if(_todoViewMode!=='calendar'&&!window._focusToday)_dayBar();}catch(e){}return r;};
   window._parkDrop=function(e){
@@ -26530,6 +26542,8 @@ _stRenderViews=function(){
 /* "+ New task" sits on top of the day's stack, like Streamtime's Add New: a tab on the top card */
 #view-todo #day-cols .fb1-new{order:-1;justify-content:center;margin:0 0 -2px;padding:7px 8px;border:1px solid var(--faint);border-bottom-color:transparent;border-radius:10px 10px 4px 4px;background:color-mix(in srgb,var(--white) 70%,transparent);opacity:.9;}
 #view-todo #day-cols .fb1-new:hover{background:var(--white);border-color:var(--border);opacity:1;}
+/* No divider lines between the day columns: the day bar and cards carry the structure */
+#view-todo #day-cols .day-col{border-right:0!important;border-left:0!important;}
 /* Split task parts: shared coloured edge, a "Split 2/3" tag, siblings light up together */
 #view-todo #day-cols .task-card.fb1-split{box-shadow:inset 3px 0 0 hsl(var(--split-h) 55% 52%),0 1px 3px rgba(46,36,20,.06)!important;}
 #view-todo #day-cols .task-card.fb1-split.fb1-split-hi{box-shadow:inset 3px 0 0 hsl(var(--split-h) 55% 52%),0 0 0 2px hsl(var(--split-h) 55% 52% / .5)!important;}
@@ -26587,6 +26601,7 @@ body.dark #view-todo .day-done{background:linear-gradient(180deg,color-mix(in sr
 .fb1-db-h{flex:none;font:600 11.5px/1 var(--font);color:var(--ink-2,var(--ink));font-variant-numeric:tabular-nums;}.fb1-db-h i{font-style:normal;color:var(--muted);}
 .fb1-db-cell.over .fb1-db-h{color:var(--warn-ink,#A15C07);}
 .fb1-db-cell.off{opacity:.45;}
+.fb1-db-cell.mid{gap:4px;padding:0 9px 0 10px;font-size:13px;}.fb1-db-cell.mid .fb1-db-dn{gap:5px;}.fb1-db-cell.mid .fb1-db-h{font-size:11px;}
 .fb1-db-cell.tight{gap:4px;padding:0 8px;font-size:14px;}
 .fb1-db-cell.tight .fb1-db-day{display:none;}
 .fb1-db-cell.today{background:color-mix(in srgb,var(--red) 5%,transparent);}
