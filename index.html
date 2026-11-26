@@ -28569,6 +28569,14 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
   background:var(--white)!important;border-color:var(--border)!important;box-shadow:var(--e-1)!important;color:var(--ink)!important;}
 :is(html,#btn-sys#btn-sys) body.dark :is(.d-action:not(.primary):not(.danger),.wbtn,.filter-btn:not(select),.p-btn,.dh-sec-btn,.detail-back,.inv-act,
   .ob-btn:not(.primary),.cancel-b,.fup-n,.tm-btn-timer,#view-todo .person-switcher):is(:hover,:focus-visible,[aria-expanded="true"],.on,.open){background:var(--surface-2)!important;}
+
+/* ── 8 · Sidebar speaks the same language: round bubbles, quiet until hover ─────────────── */
+.sidebar .s-btn,.sidebar .ds-nav-ind{border-radius:var(--r-pill,999px)!important;}
+.sidebar .s-btn{width:40px;}
+.sidebar:hover .s-btn{width:auto;}
+.sidebar .ds-nav-ind{right:auto!important;width:40px!important;}
+.sidebar:hover .ds-nav-ind{right:0!important;width:auto!important;}
+.sidebar .s-btn:hover{background:color-mix(in srgb,var(--ink) 5%,transparent)!important;}
 </style>
 </body>
 </html>
