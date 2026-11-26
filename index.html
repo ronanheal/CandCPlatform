@@ -13506,7 +13506,7 @@ setTimeout(_renderIcons,50);
 </div>
 <!-- View settings panel -->
 <div id="vsp" class="vsp">
-  <div class="vsp-title">View settings</div>
+  <div class="vsp-title">Card details</div>
   <div class="vsp-hint">Drag <i class="ti ti-grip-dots-vertical"></i> to reorder card details</div>
   <div class="vsp-list" id="vsp-list"></div>
 </div>
@@ -26255,6 +26255,7 @@ _stRenderViews=function(){
     _weekFoot();
     _dayBar();
     _splitMarks();
+    _vspBtn();
   }
   // Split tasks: the parts of one task share a coloured edge, say "Split 2/3", and light each other up on hover
   const SPLIT_HUES=[200,150,280,30,340,95];
@@ -26298,7 +26299,9 @@ _stRenderViews=function(){
   const mine=()=>parked()[currentPerson]||[];
   // Parking space: a sidebar on the right of the week that opens and closes (remembered per browser).
   // Closed, it's a slim strip with the count; while a task is being dragged the strip is a drop target.
-  const PO='cc_park_open';
+  const PO='cc_park_open',PS='cc_park_show';
+  const parkShown=()=>{try{return localStorage.getItem(PS)!=='0';}catch(e){return true;}};
+  window._parkShow=function(on){try{localStorage.setItem(PS,on?'1':'0');}catch(e){}_parkCol();};
   const parkOpen=()=>{try{return localStorage.getItem(PO)==='1';}catch(e){return false;}};
   window._parkToggle=function(on){try{localStorage.setItem(PO,on?'1':'0');}catch(e){}_parkCol();};
   function _parkCol(){
@@ -26306,6 +26309,7 @@ _stRenderViews=function(){
     document.querySelector('#day-cols .fb1-park-col')?.remove();
     const body=document.querySelector('#view-todo .todo-body');if(!body)return;
     const list=mine(),open=parkOpen();
+    if(!parkShown()){document.getElementById('fb1-park-side')?.remove();body.classList.remove('fb1-has-park');return;}
     body.classList.add('fb1-has-park');
     let side=document.getElementById('fb1-park-side');
     if(!side){
@@ -26350,6 +26354,40 @@ _stRenderViews=function(){
     }).join('');
   }
   window._fb1DayBar=_dayBar;
+
+  // ── View settings: the view (Today / Week / Calendar) and what's shown (Parking space, My items) ──
+  const curView=()=>window._focusToday?'today':(_todoViewMode==='calendar'?'calendar':'week');
+  const VIEWS={today:['ti-focus-2','Today','F'],week:['ti-layout-list','Week',''],calendar:['ti-calendar-week','Calendar','']};
+  function _vspBtn(){
+    const b=document.getElementById('vsp-btn');if(!b)return;
+    const v=VIEWS[curView()];b.classList.add('fb1-vbtn');b.title='View: '+v[1]+' · settings';
+    b.innerHTML=`<i class="ti ${v[0]}" aria-hidden="true"></i><span>${v[1]}</span><i class="ti ti-chevron-down" style="font-size:11px;opacity:.6" aria-hidden="true"></i>`;
+  }
+  window._fb1SetView=function(v){
+    if(v==='today'){if(!window._focusToday)toggleFocusToday();}
+    else{if(window._focusToday)toggleFocusToday();setTodoView(v==='calendar'?'calendar':'list');}
+    _vspBtn();_vspLayout();
+  };
+  function _vspLayout(){
+    const panel=document.getElementById('vsp');if(!panel)return;
+    let sec=document.getElementById('fb1-vsp-layout');
+    if(!sec){sec=document.createElement('div');sec.id='fb1-vsp-layout';panel.insertBefore(sec,panel.firstChild);}
+    const v=curView();
+    sec.innerHTML=`<div class="fb1-vsp-sec"><div class="fb1-vsp-lbl">View</div><div class="fb1-vsp-seg" role="radiogroup" aria-label="View">`
+      +Object.entries(VIEWS).map(([k,[ic,lb,kb]])=>`<button type="button" role="radio" aria-checked="${k===v}" class="${k===v?'on':''}" onclick="event.stopPropagation();_fb1SetView('${k}')"><i class="ti ${ic}" aria-hidden="true"></i>${lb}${kb?`<kbd>${kb}</kbd>`:''}</button>`).join('')
+      +`</div></div><div class="fb1-vsp-sec"><div class="fb1-vsp-lbl">Show</div>`
+      +`<label class="fb1-vsp-tog"><span><i class="ti ti-parking" aria-hidden="true"></i>Parking space</span><input type="checkbox" ${parkShown()?'checked':''} onchange="_parkShow(this.checked)"></label>`
+      +`<label class="fb1-vsp-tog"><span><i class="ti ti-list-check" aria-hidden="true"></i>My items</span><input type="checkbox" ${(typeof _ccMiOpen!=='undefined'&&_ccMiOpen)?'checked':''} onchange="if(!!this.checked!==!!_ccMiOpen)toggleMyItems()"></label>`
+      +`</div>`;
+  }
+  const _rvsp=renderVSP;
+  renderVSP=function(){const r=_rvsp.apply(this,arguments);try{_vspLayout();}catch(e){}return r;};
+  const _ftd=toggleFocusToday;
+  toggleFocusToday=function(){const r=_ftd.apply(this,arguments);try{_vspBtn();}catch(e){}return r;};
+  const _stv=setTodoView;
+  setTodoView=function(){const r=_stv.apply(this,arguments);try{_vspBtn();}catch(e){}return r;};
+  const _tvsp=toggleVSP;
+  toggleVSP=function(e){const r=_tvsp.apply(this,arguments);try{const p=document.getElementById('vsp'),b=document.getElementById('vsp-btn');if(p&&b){let l=b.getBoundingClientRect().right-248;p.style.left=Math.max(8,l)+'px';}}catch(x){}return r;};
   window.addEventListener('resize',()=>{try{if(!document.getElementById('view-todo')?.classList.contains('hidden'))_dayBar();}catch(e){}});
   const _rth1=renderTodoHeader;
   renderTodoHeader=function(){const r=_rth1.apply(this,arguments);try{if(_todoViewMode!=='calendar'&&!window._focusToday)_dayBar();}catch(e){}return r;};
@@ -26499,6 +26537,32 @@ body.dark .fb1-split-tag{color:hsl(var(--split-h) 60% 75%);}
 #view-todo .global-divider.fb1-dbar.div-drop-hi{background:var(--ok-ink,#2E6B3E)!important;}
 #view-todo .global-divider.fb1-dbar > .gd-label,#view-todo .global-divider.fb1-dbar > .gd-handle{display:none!important;}
 #view-todo .day-done{padding-top:52px!important;}
+/* The done area's green tint fades out instead of stopping hard at the bottom */
+#view-todo .day-done{background:linear-gradient(180deg,color-mix(in srgb,var(--ok) 6%,var(--off)) 0%,color-mix(in srgb,var(--ok) 3%,var(--off)) 45%,transparent 100%)!important;}
+body.dark #view-todo .day-done{background:linear-gradient(180deg,color-mix(in srgb,var(--ok) 6%,color-mix(in srgb,#000 12%,var(--off))) 0%,transparent 100%)!important;}
+/* "+ New task" only shows on the day you're pointing at (and for keyboard focus) */
+#view-todo #day-cols .fb1-new{opacity:0!important;transition:opacity .15s;}
+#view-todo #day-cols .day-col:hover .fb1-new,#view-todo #day-cols .fb1-new:focus-visible{opacity:.9!important;}
+#view-todo #day-cols .day-col:hover .fb1-new:hover{opacity:1!important;}
+@media (hover:none){#view-todo #day-cols .fb1-new{opacity:.9!important;}}
+/* View choices live in View settings; the toolbar keeps one button that names the view */
+#view-todo #todo-view-toggle,#view-todo #cc-mi-btn{display:none!important;}
+#vsp-btn.fb1-vbtn{display:inline-flex;align-items:center;gap:6px;padding:5px 10px!important;font:500 12.5px/1 var(--font);}
+#vsp-btn.fb1-vbtn i{font-size:13px;pointer-events:none;}#vsp-btn.fb1-vbtn span{pointer-events:none;}
+#vsp{width:248px!important;}
+.fb1-vsp-sec{padding:10px 14px 12px;border-bottom:1px solid var(--faint);display:flex;flex-direction:column;gap:8px;}
+.fb1-vsp-lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.fb1-vsp-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:2px;border-radius:10px;background:var(--off);border:1px solid var(--faint);}
+.fb1-vsp-seg button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 4px;border:0;border-radius:8px;background:none;color:var(--muted);font:500 11.5px/1 var(--font);cursor:pointer;}
+.fb1-vsp-seg button i{font-size:15px;}
+.fb1-vsp-seg button.on{background:var(--white);color:var(--ink);box-shadow:0 1px 2px rgba(35,28,18,.1);}
+.fb1-vsp-seg button kbd{font:500 10px/1 var(--font);color:var(--subtle,var(--muted));}
+.fb1-vsp-tog{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;color:var(--ink);cursor:pointer;}
+.fb1-vsp-tog span{display:inline-flex;align-items:center;gap:7px;}.fb1-vsp-tog span i{color:var(--muted);font-size:14px;}
+.fb1-vsp-tog input{width:30px;height:18px;appearance:none;-webkit-appearance:none;border-radius:9px;background:var(--border);position:relative;cursor:pointer;transition:background .15s;flex:none;margin:0;}
+.fb1-vsp-tog input::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:transform .15s;}
+.fb1-vsp-tog input:checked{background:var(--ink);}.fb1-vsp-tog input:checked::after{transform:translateX(12px);}
+.fb1-vsp-tog input:focus-visible{outline:2px solid var(--ink);outline-offset:2px;}
 .fb1-daybar{position:absolute;inset:0;}
 .fb1-db-cell{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 12px 0 14px;color:var(--on-ink,#fff);font:600 15px/1 var(--font);white-space:nowrap;overflow:hidden;box-sizing:border-box;}
 .fb1-db-cell + .fb1-db-cell{border-left:1px solid color-mix(in srgb,var(--on-ink,#fff) 12%,transparent);}
@@ -26514,8 +26578,8 @@ body.dark .fb1-split-tag{color:hsl(var(--split-h) 60% 75%);}
 /* Today's date in the header (still used in Today / focus mode): a true circle */
 #view-todo .day-num.today-red{width:30px;min-width:30px!important;padding:0!important;border-radius:50%!important;}
 /* Week totals: a bar under the days, labels always written out */
-.fb1-week-foot{flex:none;display:flex;justify-content:flex-end;padding:8px 16px;border-top:1px solid var(--faint);}
-#view-todo .fb1-week-foot #todo-sum-chip{background:none!important;border:0!important;box-shadow:none!important;padding:0;font-size:13px;}
+.fb1-week-foot{flex:none;display:flex;justify-content:flex-end;padding:8px 16px 10px;}
+#view-todo .fb1-week-foot #todo-sum-chip{padding:7px 14px!important;font-size:13px;border-radius:var(--r-pill)!important;background:var(--white)!important;border:1px solid var(--border)!important;box-shadow:0 1px 3px rgba(35,28,18,.08)!important;}
 .fb1-week-foot #todo-sum-chip .tb-w{display:inline!important;}
 .fb1-week-foot #todo-sum-chip .tb-tip{top:auto;bottom:calc(100% + 8px);right:0;left:auto;}
 .fb1-park-tray{position:fixed;right:16px;top:120px;width:280px;max-height:calc(100vh - 160px);overflow:auto;z-index:900;background:var(--white);border:1px solid var(--border);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.16);padding:10px;display:flex;flex-direction:column;gap:6px;}
