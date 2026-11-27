@@ -2693,11 +2693,17 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
               <i class="ti ti-calendar" aria-hidden="true"></i>
               <span id="td-date-label">—</span>
             </button>
+          </div>
+        </div>
+        <!-- Options: Repeat, Split, Urgent, Personal as matching quiet pills -->
+        <div class="ux-prop us-opts-prop">
+          <div class="tm-lbl ux-prop-l"><i class="ti ti-adjustments-horizontal" aria-hidden="true"></i><span>Options</span></div>
+          <div class="us-opts">
             <button type="button" class="tm-repeat-btn" id="td-repeat-btn" onclick="toggleRepeatSection()">
               <i class="ti ti-repeat" aria-hidden="true"></i>
               <span id="td-repeat-label">Repeat</span>
             </button>
-      <!-- Urgent / Personal sit on the Scheduled row -->
+      <!-- Urgent / Personal -->
       <div class="tm-urgent-row ux-seg" role="group" aria-label="Task options">
         <label class="tm-urgent-lbl" id="td-urgent-lbl">
           <input type="checkbox" id="td-urgent" onchange="document.getElementById('td-urgent-lbl').classList.toggle('on',this.checked)">
@@ -30795,13 +30801,20 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
 :is(html,#us#us) #todo-modal :is(.ux-ft,.tm-footer,.tm-ft){gap:8px!important;}
 :is(html,#us#us) #todo-modal #td-log-btn,:is(html,#us#us) #todo-modal .tm-btn-cancel{padding:0 14px!important;gap:6px!important;}
 /* Task form: Urgent / Personal on the Scheduled row, a compact hours box */
-:is(html,#us#us) #todo-modal .ux-when{flex-wrap:nowrap!important;gap:4px!important;min-width:0;}
-:is(html,#us#us) #todo-modal .ux-when > :is(.tm-date-btn,.tm-repeat-btn,.fb2-split-btn,[id*="split"]){padding:0 8px!important;flex:none;}
-:is(html,#us#us) #todo-modal .ux-when > .ux-seg{order:99;margin:0 0 0 auto!important;padding:2px!important;}
-:is(html,#us#us) #todo-modal .ux-when > .ux-seg{flex:none;}
-:is(html,#us#us) #todo-modal .ux-when > .ux-seg .tm-urgent-lbl{padding:0 8px!important;height:28px!important;font-size:12.5px!important;gap:4px!important;}
 :is(html,#us#us) #todo-modal #td-hours{width:68px!important;min-width:0!important;flex:none!important;text-align:center;}
-:is(html,#us#us) #todo-modal .tm-modal.ux-tm{width:688px!important;}
+:is(html,#us#us) #todo-modal .us-opts{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0;}
+:is(html,#us#us) #todo-modal .us-opts .ux-seg{display:contents!important;}
+:is(html,#us#us) #todo-modal .us-opts :is(.tm-repeat-btn,.tm-urgent-lbl){display:inline-flex!important;align-items:center;gap:6px!important;height:30px!important;min-height:30px!important;padding:0 12px!important;
+  border-radius:var(--r-pill,999px)!important;border:1px solid transparent!important;background:transparent!important;box-shadow:none!important;color:var(--ink-2,var(--ink))!important;font:500 13px/1 var(--font)!important;cursor:pointer;
+  transition:background-color .15s cubic-bezier(.22,1,.36,1),border-color .15s cubic-bezier(.22,1,.36,1),color .15s cubic-bezier(.22,1,.36,1);}
+:is(html,#us#us) #todo-modal .us-opts :is(.tm-repeat-btn,.tm-urgent-lbl) i{font-size:15px!important;color:var(--muted)!important;}
+:is(html,#us#us) #todo-modal .us-opts :is(.tm-repeat-btn,.tm-urgent-lbl):hover{background:var(--off)!important;border-color:var(--faint)!important;color:var(--ink)!important;}
+:is(html,#us#us) #todo-modal .us-opts :is(.tm-urgent-lbl.on,.tm-repeat-btn.on,.tm-repeat-btn[aria-expanded="true"]){background:var(--white)!important;border-color:var(--border)!important;color:var(--ink)!important;box-shadow:0 1px 2px rgba(46,36,20,.06)!important;}
+:is(html,#us#us) #todo-modal .us-opts .tm-urgent-lbl.on i{color:var(--ink)!important;}
+:is(html,#us#us) #todo-modal .us-opts #td-urgent-lbl.on{color:var(--danger-ink,#B3261E)!important;}:is(html,#us#us) #todo-modal .us-opts #td-urgent-lbl.on i{color:var(--danger-ink,#B3261E)!important;}
+:is(html,#us#us) #todo-modal .us-opts input[type=checkbox]{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none;}
+:is(html,#us#us) #todo-modal .us-opts :is(.tm-repeat-btn,.tm-urgent-lbl){outline:none!important;}
+:is(html,#us#us) #todo-modal .us-opts .tm-urgent-lbl:has(input:focus-visible),:is(html,#us#us) #todo-modal .us-opts .tm-repeat-btn:focus-visible{outline:2px solid var(--focus,var(--ink))!important;outline-offset:2px!important;}
 </style>
 <script id="us-script">
 // unslop polish pass (unslop by Damir Sokolovsky, @heydamir, CC BY 4.0) — behaviour the CSS can't do.
