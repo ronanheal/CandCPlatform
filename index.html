@@ -29409,5 +29409,458 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
   };
 })();
 </script>
+<style id="pfm-style">
+/* ═══ Plan for me + quick typing in the task form (To Do, Nov 2026) ═══ */
+#view-todo .pfm-btn i{font-size:14px;}
+.pfm-modal{width:660px!important;max-width:96vw;display:flex;flex-direction:column;max-height:88vh;}
+.pfm-modal .modal-hd{flex:none;}
+.pfm-hd-sub{font-size:12.5px;color:var(--muted);margin-top:4px;font-weight:400;line-height:1.4;}
+.pfm-sum{display:flex;flex-wrap:wrap;gap:6px;padding:12px 24px;border-bottom:1px solid var(--faint);flex:none;}
+.pfm-pill{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 10px;border-radius:var(--r-pill,999px);background:var(--off);color:var(--ink);font:500 12px/1 var(--font);}
+.pfm-pill i{font-size:13px;}
+.pfm-pill.warn{background:var(--warn-bg,#FFF4E0);color:var(--warn-ink,#8A5A00);}
+.pfm-pill.bad{background:var(--danger-bg,#FDECEA);color:var(--danger-ink,#B71C1C);}
+.pfm-body{overflow-y:auto;padding:6px 24px 16px;flex:1;min-height:0;}
+.pfm-day{margin-top:14px;}
+.pfm-day-hd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding-bottom:6px;border-bottom:1px solid var(--faint);font:600 12.5px/1.2 var(--font);color:var(--ink);}
+.pfm-day-hd span{font-weight:400;color:var(--muted);font-size:12px;}
+.pfm-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--faint);}
+.pfm-row-main{flex:1;min-width:0;}
+.pfm-row-t{font:500 13px/1.3 var(--font);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pfm-row-m{font-size:11.5px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pfm-row-m b{font-weight:500;color:var(--ink);}
+.pfm-tag{display:inline-flex;align-items:center;gap:3px;height:18px;padding:0 7px;border-radius:999px;font:600 10.5px/1 var(--font);margin-left:6px;vertical-align:1px;}
+.pfm-tag.urg{background:var(--danger-bg,#FDECEA);color:var(--danger-ink,#B71C1C);}
+.pfm-tag.late{background:var(--warn-bg,#FFF4E0);color:var(--warn-ink,#8A5A00);}
+.pfm-tag.part{background:var(--off);color:var(--muted);}
+.pfm-h{flex:none;font:600 12px/1 var(--font);color:var(--ink);background:var(--off);border-radius:999px;padding:5px 9px;}
+.pfm-x{flex:none;width:26px;height:26px;border:0;border-radius:999px;background:none;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;}
+.pfm-x:hover{background:var(--off);color:var(--ink);}
+.pfm-x:focus-visible{outline:2px solid var(--focus,var(--ink));outline-offset:1px;}
+.pfm-unfit .pfm-day-hd{color:var(--danger-ink,#B71C1C);}
+.pfm-empty{padding:28px 0;text-align:center;color:var(--muted);font-size:13px;}
+.pfm-modal .modal-ft{flex:none;align-items:center;}
+.pfm-ft-note{margin-right:auto;font-size:12px;color:var(--muted);}
+.pfm-more{padding-top:8px;}
+.pfm-ft-note button{border:0;background:none;padding:0;color:var(--ink);text-decoration:underline;cursor:pointer;font:inherit;}
+.pfm-mini{display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 10px;border:1px solid transparent;border-radius:999px;background:none;color:var(--muted);font:500 12px/1 var(--font);cursor:pointer;white-space:nowrap;}
+.pfm-mini:hover{border-color:var(--border);background:var(--white);color:var(--ink);}
+.pfm-mini i{font-size:13px;}
+.pfm-mi-bar{display:flex;justify-content:flex-end;margin-top:6px;}
+.fb1-ps-hd .pfm-mini{margin-left:auto;margin-right:4px;}
+.fb1-pt-card .pfm-pt-plan{position:absolute;top:6px;right:30px;}
+/* quick typing chips under the task title */
+.pfm-qt{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:6px 0 2px;font-size:11.5px;color:var(--muted);}
+.pfm-qt[hidden]{display:none;}
+.pfm-qt-lbl{margin-right:2px;}
+.pfm-chip{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 3px 0 8px;border-radius:999px;background:var(--off);border:1px solid var(--faint);color:var(--ink);font:500 11.5px/1 var(--font);max-width:260px;}
+.pfm-chip>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pfm-chip i{font-size:12px;color:var(--muted);}
+.pfm-chip button{width:18px;height:18px;border:0;border-radius:999px;background:none;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;}
+.pfm-chip button:hover{background:var(--white);color:var(--ink);}
+.pfm-chip button i{font-size:11px;color:inherit;}
+.pfm-qt-title{margin-left:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px;}
+.pfm-qt-title b{font-weight:500;color:var(--ink);}
+</style>
+<script id="pfm-script">
+// ═══ To Do: "Plan for me" and quick typing in the task form (Nov 2026) ═══════════════════════
+// Plan for me (Streamtime has it): takes the person's unplanned work (My items: assigned job items
+// with hours left that aren't on the board; Parking: tasks with no day) and fills their free time
+// from today through the next two weeks. Urgent jobs first, then soonest due, then biggest; 15-minute
+// steps; never past a due date while there's room before it; split over days like Split (splitId).
+// A preview comes first; Apply adds the tasks to the in-memory week data (To Do re-seeds from
+// Streamtime on each load, by design: nothing new is stored).
+// Quick typing: "2h 7291 amends tomorrow" in the task title fills hours, job, day and Log as done,
+// shown as removable chips under the title. New tasks only; editing a task is unchanged.
+(function(){
+  const HORIZON=14; // calendar days after today
+  const DAY=864e5;
+  const q4up=h=>Math.ceil(h*4-1e-9)/4;
+  const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;};
+  const isoOf=d=>_localISO(d);
+  const dateOf=iso=>new Date(iso+'T00:00:00');
+  const offOf=d=>Math.round((_ccMonday(d)-_ccMonday(new Date()))/(7*DAY));
+  const shortD=iso=>{const d=dateOf(iso);return`${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]} ${d.getDate()} ${_FMT_MONTHS[d.getMonth()]}`;};
+  const dueStr=iso=>{const d=dateOf(iso);return`${d.getDate()} ${_FMT_MONTHS[d.getMonth()]}${d.getFullYear()!==new Date().getFullYear()?' '+d.getFullYear():''}`;};
+  const URG=/urgent|priority|rush|asap/i;
+  const jobUrgent=j=>!!j&&(j.labels||[]).some(l=>URG.test(l));
+  const jobById=id=>id?jobs.find(j=>String(j.id)===String(id)):null;
+  const parkedAll=()=>{try{return JSON.parse(localStorage.getItem('cc_parked')||'{}')||{};}catch(e){return{};}};
+  const setParked=v=>{try{localStorage.setItem('cc_parked',JSON.stringify(v));}catch(e){}};
+
+  // ─────────────── Plan for me ───────────────
+  // The working days in the window, with what's free on each (capacity net of leave, minus planned).
+  function freeDays(pk){
+    const work=people[pk]?.days||[1,2,3,4,5],out=[];
+    const t0=new Date();t0.setHours(0,0,0,0);
+    for(let i=0;i<=HORIZON;i++){
+      const d=addDays(t0,i),dow=d.getDay();if(dow<1||dow>5||!work.includes(dow))continue;
+      const iso=isoOf(d),off=offOf(d),cap=_dayCap(pk,iso)||0;
+      const used=(getWeekData(pk,off)[dow]||[]).reduce((s,t)=>s+(+t.hours||0),0);
+      out.push({iso,off,dow,cap,used,free:Math.max(0,Math.floor((cap-used)*4+1e-9)/4),today:i===0});
+    }
+    return out;
+  }
+  // Items already somewhere on the board in the window don't get planned twice.
+  function onBoardItems(pk){
+    const s=new Set(),offs=new Set(freeDays(pk).map(d=>d.off));offs.add(0);
+    offs.forEach(o=>{const wd=getWeekData(pk,o);[1,2,3,4,5].forEach(d=>(wd[d]||[]).forEach(t=>{
+      if(t._stItemId)s.add(String(t._stItemId));if(t.itemId)s.add(String(t.itemId).replace(/^st-it-/,''));}));});
+    return s;
+  }
+  function itemSource(x,board){
+    if(board&&(board.has(String(x.item._stId))||board.has(String(x.item.id).replace(/^st-it-/,''))))return null;
+    if(x.job.paused)return null;
+    let h,noPlan=false;
+    if(x.plannedM>0){const left=(x.plannedM-x.loggedM)/60;if(left<=0)return null;h=q4up(left);}else{h=1;noPlan=true;}
+    const due=String(x.item.dueDate||x.end||x.job.dueDate||'').slice(0,10)||null;
+    return{key:'it:'+x.item.id,kind:'item',title:x.item.name,job:x.job,item:x.item,hours:h,due,urgent:jobUrgent(x.job),noPlan};
+  }
+  function parkedSource(t){
+    const j=jobById(_taskJobId(t));
+    if(j&&j.paused)return null;
+    return{key:'pk:'+t.id,kind:'parked',title:String(t.title||'').split('\n')[0]||t.item||'Task',task:t,job:j||null,jobLabel:t.job||'',hours:q4up(+t.hours>0?+t.hours:1),
+      due:j&&j.dueDate?String(j.dueDate).slice(0,10):null,urgent:!!t.urgent||jobUrgent(j)};
+  }
+  function gather(pk,scope){
+    const board=onBoardItems(pk),out=[];
+    if(scope.items)scope.items.forEach(x=>{const s=itemSource(x,board);if(s)out.push(s);});
+    else if(scope.kind!=='parked')_ccMyItems(pk).forEach(x=>{const s=itemSource(x,board);if(s)out.push(s);});
+    if(scope.parked)scope.parked.forEach(t=>{const s=parkedSource(t);if(s)out.push(s);});
+    else if(scope.kind!=='items'&&!scope.items)(parkedAll()[pk]||[]).forEach(t=>{const s=parkedSource(t);if(s)out.push(s);});
+    return out;
+  }
+  const order=(a,b)=>(b.urgent-a.urgent)||((a.due||'9999')<(b.due||'9999')?-1:(a.due||'9999')>(b.due||'9999')?1:0)||(b.hours-a.hours)||String(a.title).localeCompare(String(b.title));
+  // Greedy, earliest-due-first: each piece of work takes the earliest free time up to its due
+  // date; only what doesn't fit by then goes after it (flagged); the rest is reported as not fitting.
+  function plan(pk,srcs){
+    const days=freeDays(pk).map(d=>({...d,left:d.free}));
+    const rows=[],unfit=[];
+    srcs.slice().sort(order).forEach(s=>{
+      let need=Math.round(s.hours*4);const parts=[];
+      const take=(d,late)=>{const q=Math.min(need,Math.round(d.left*4));if(q<=0)return;d.left-=q/4;need-=q;parts.push({day:d,h:q/4,late});};
+      days.forEach(d=>{if(need>0&&(!s.due||d.iso<=s.due))take(d,false);});
+      days.forEach(d=>{if(need>0&&s.due&&d.iso>s.due)take(d,true);});
+      parts.forEach((p,i)=>rows.push({src:s,...p,part:i+1,of:parts.length}));
+      if(need>0)unfit.push({src:s,h:need/4,placed:parts.length>0});
+    });
+    return{days,rows,unfit};
+  }
+
+  let P=null; // the open preview: {pk,srcs,excluded,result}
+  window.pfmOpen=function(scope){
+    scope=scope||{};
+    const pk=currentPerson;if(!people[pk])return;
+    const srcs=gather(pk,scope);
+    if(!srcs.length){toast(scope.kind==='parked'?'Nothing in the Parking space to plan':'Nothing to plan: no assigned items with hours left, and nothing parked','info');return;}
+    P={pk,srcs,excluded:new Set(),scope};
+    render();
+  };
+  window.pfmExclude=function(key){if(!P)return;P.excluded.add(key);render();};
+  window.pfmShowAllUnfit=function(){if(!P)return;P.allUnfit=true;render();};
+  window.pfmRestore=function(){if(!P)return;P.excluded.clear();render();};
+  window.pfmClose=function(){document.getElementById('pfm-modal')?.remove();P=null;};
+  function render(){
+    const pk=P.pk,who=people[pk],first=(who?.name||'').split(' ')[0];
+    const res=P.result=plan(pk,P.srcs.filter(s=>!P.excluded.has(s.key)));
+    let m=document.getElementById('pfm-modal');
+    if(!m){
+      m=document.createElement('div');m.className='modal-bg on';m.id='pfm-modal';
+      m.addEventListener('mousedown',e=>{if(e.target===m)pfmClose();});
+      m.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();pfmClose();}});
+      document.body.appendChild(m);
+    }
+    const last=res.days.length?res.days[res.days.length-1].iso:isoOf(addDays(new Date(),HORIZON));
+    const byDay=new Map();res.rows.forEach(r=>{(byDay.get(r.day.iso)||byDay.set(r.day.iso,[]).get(r.day.iso)).push(r);});
+    const nTasks=res.rows.length,hrs=res.rows.reduce((s,r)=>s+r.h,0);
+    const lateKeys=new Set(res.rows.filter(r=>r.late).map(r=>r.src.key));
+    const overdue=new Set(res.rows.filter(r=>r.src.due&&r.src.due<isoOf(new Date())).map(r=>r.src.key));
+    const jobTxt=s=>s.job?`${esc(s.job.id)} ${esc(s.job.name)}`:esc(s.jobLabel||'No job');
+    const tags=r=>(r.src.urgent?'<span class="pfm-tag urg">Urgent</span>':'')
+      +(r.late?`<span class="pfm-tag late" title="Due ${esc(dueStr(r.src.due))}: no free time left before then"><i class="ti ti-alert-triangle" aria-hidden="true"></i>${r.src.due<isoOf(new Date())?'Overdue':'After due date'}</span>`:'')
+      +(r.of>1?`<span class="pfm-tag part" title="Split over ${r.of} days">${r.part}/${r.of}</span>`:'');
+    const row=r=>`<div class="pfm-row"><div class="pfm-row-main"><div class="pfm-row-t">${esc(r.src.title)}${tags(r)}</div>`
+      +`<div class="pfm-row-m">${jobTxt(r.src)}${r.src.due?` · <b>due ${esc(dueStr(r.src.due))}</b>`:' · no due date'}${r.src.kind==='parked'?' · from Parking':r.src.noPlan?' · no planned hours (1h)':''}</div></div>`
+      +`<span class="pfm-h">${formatHrs(r.h)}</span><button type="button" class="pfm-x" title="Leave this out" aria-label="Leave ${esc(r.src.title)} out" onclick="pfmExclude('${esc(r.src.key)}')"><i class="ti ti-x" aria-hidden="true"></i></button></div>`;
+    const daysHtml=res.days.filter(d=>byDay.has(d.iso)).map(d=>{
+      const rs=byDay.get(d.iso),add=rs.reduce((s,r)=>s+r.h,0);
+      return`<div class="pfm-day"><div class="pfm-day-hd">${d.today?'Today · ':''}${esc(shortD(d.iso))}<span>${formatHrs(add)} added · ${formatHrs(d.used)||'0h'} already planned of ${formatHrs(d.cap)||'0h'}</span></div>${rs.map(row).join('')}</div>`;
+    }).join('');
+    const unfitHtml=res.unfit.length?`<div class="pfm-day pfm-unfit"><div class="pfm-day-hd">Doesn’t fit by ${esc(shortD(last))}<span>no free time left in the next two weeks</span></div>`
+      +res.unfit.slice(0,P.allUnfit?1e9:8).map(u=>`<div class="pfm-row"><div class="pfm-row-main"><div class="pfm-row-t">${esc(u.src.title)}${u.src.urgent?'<span class="pfm-tag urg">Urgent</span>':''}</div><div class="pfm-row-m">${jobTxt(u.src)}${u.src.due?` · <b>due ${esc(dueStr(u.src.due))}</b>`:''} · ${u.placed?formatHrs(u.h)+' still to place':'not planned'}${u.src.kind==='parked'?' · stays in Parking':''}</div></div><span class="pfm-h">${formatHrs(u.h)}</span><button type="button" class="pfm-x" title="Leave this out" aria-label="Leave ${esc(u.src.title)} out" onclick="pfmExclude('${esc(u.src.key)}')"><i class="ti ti-x" aria-hidden="true"></i></button></div>`).join('')
+      +(res.unfit.length>8&&!P.allUnfit?`<div class="pfm-ft-note pfm-more">and ${res.unfit.length-8} more · <button type="button" onclick="pfmShowAllUnfit()">Show all</button></div>`:'')+'</div>':'';
+    const freeTot=res.days.reduce((s,d)=>s+d.free,0);
+    const sum=`<span class="pfm-pill"><i class="ti ti-list-check" aria-hidden="true"></i>${nTasks} task${nTasks===1?'':'s'} · ${formatHrs(hrs)||'0h'}</span>`
+      +`<span class="pfm-pill"><i class="ti ti-clock" aria-hidden="true"></i>${formatHrs(freeTot)||'0h'} free before`+` ${esc(shortD(last))}</span>`
+      +(lateKeys.size?`<span class="pfm-pill warn"><i class="ti ti-alert-triangle" aria-hidden="true"></i>${lateKeys.size} after due date${overdue.size?` (${overdue.size} already overdue)`:''}</span>`:'')
+      +(res.unfit.length?`<span class="pfm-pill bad"><i class="ti ti-calendar-x" aria-hidden="true"></i>${res.unfit.length} don’t fit</span>`:'');
+    const ex=P.excluded.size;
+    m.innerHTML=`<div class="modal pfm-modal" role="dialog" aria-modal="true" aria-labelledby="pfm-t">
+      <div class="modal-hd"><div><div class="modal-hd-title" id="pfm-t">Plan for ${pk===MY_PERSON?'me':esc(first)}</div>
+        <div class="pfm-hd-sub">${pk===MY_PERSON?'Your':esc(first)+'’s'} assigned items and parked tasks, placed in free time from today to ${esc(shortD(last))}. Urgent jobs first, then the soonest due date, then the biggest.</div></div>
+        <button class="modal-x" onclick="pfmClose()" aria-label="Close" title="Close (Esc)"><i class="ti ti-x"></i></button></div>
+      <div class="pfm-sum">${sum}</div>
+      <div class="pfm-body">${daysHtml||(freeTot?'':'<div class="pfm-empty">No free time in the next two weeks: every working day is already full.</div>')}${unfitHtml}${!daysHtml&&!unfitHtml?'<div class="pfm-empty">Nothing left to plan.</div>':''}</div>
+      <div class="modal-ft">${ex?`<span class="pfm-ft-note">${ex} left out · <button type="button" onclick="pfmRestore()">Put back</button></span>`:''}<button class="modal-cancel" onclick="pfmClose()">Cancel</button><button class="modal-ok" id="pfm-apply" onclick="pfmApply()" ${nTasks?'':'disabled'}>${nTasks?`Add ${nTasks} task${nTasks===1?'':'s'}`:'Nothing to add'}</button></div>
+    </div>`;
+    setTimeout(()=>document.getElementById('pfm-apply')?.focus(),30);
+  }
+  window.pfmApply=function(){
+    if(!P||!P.result)return;
+    const {pk,result}=P;const groups=new Map();
+    result.rows.forEach(r=>{(groups.get(r.src.key)||groups.set(r.src.key,[]).get(r.src.key)).push(r);});
+    const parked=parkedAll();let n=0;const touched=new Set();
+    groups.forEach(rs=>{
+      const s=rs[0].src,sid=rs.length>1?uid('sp'):null;
+      const base=s.kind==='parked'
+        ?(()=>{const t={...s.task};delete t._parkedAt;t.done=false;return t;})()
+        :{title:s.title,job:`${s.job.id} ${s.job.name}`,jobId:s.job.id,item:s.item.name,itemId:s.item.id,urgent:!!s.urgent,personal:false,person:pk};
+      rs.forEach((r,i)=>{
+        const t={...base,id:(s.kind==='parked'&&i===0)?base.id:uid('t'),hours:r.h,done:false};
+        if(sid)t.splitId=sid;else delete t.splitId;
+        const wd=getWeekData(pk,r.day.off);(wd[r.day.dow]=wd[r.day.dow]||[]).push(t);n++;
+      });
+      if(s.kind==='parked'){
+        const arr=parked[pk]||[],i=arr.findIndex(t=>t.id===s.task.id);
+        const left=result.unfit.find(u=>u.src.key===s.key);
+        if(i>=0){if(left)arr[i]={...arr[i],hours:left.h};else arr.splice(i,1);}
+      }else if(s.job)touched.add(s.job.id);
+    });
+    setParked(parked);
+    touched.forEach(id=>{try{logActivity(id,MY_PERSON,'task_add',`Planned with Plan for me for ${esc(people[pk]?.name||'')}`);}catch(e){}});
+    pfmClose();
+    saveData();renderTodo();try{_refreshJobStats();}catch(e){}
+    toast(`Planned ${n} task${n===1?'':'s'} over the next two weeks`,'success');
+  };
+
+  // Entry points: a quiet toolbar button, "Plan these" on My items and Parking, and per row.
+  function toolbarBtn(){
+    const add=document.querySelector('#view-todo .todo-bar .todo-add-btn');if(!add||document.getElementById('pfm-btn'))return;
+    const b=document.createElement('button');b.type='button';b.id='pfm-btn';b.className='d-action pfm-btn';
+    b.title='Plan for me: fill your free time over the next two weeks with your assigned items and parked tasks';
+    b.innerHTML='<i class="ti ti-wand" aria-hidden="true"></i> Plan for me';b.onclick=()=>pfmOpen();
+    add.parentNode.insertBefore(b,add);
+  }
+  function miDecorate(){
+    const hd=document.querySelector('#cc-mi-panel .cc-mi-hd');
+    if(hd&&!hd.querySelector('.pfm-mi-bar')){
+      const bar=document.createElement('div');bar.className='pfm-mi-bar';
+      bar.innerHTML='<button type="button" class="pfm-mini" title="Plan the items listed here into free time" onclick="pfmOpen({items:(window._ccMiRows||[]).slice(),kind:\'items\'})"><i class="ti ti-wand" aria-hidden="true"></i>Plan these</button>';
+      hd.appendChild(bar);
+    }
+    const bar=hd?.querySelector('.pfm-mi-bar');if(bar)bar.hidden=!(window._ccMiRows||[]).length;
+    document.querySelectorAll('#cc-mi-list .cc-mi-row[data-mi]').forEach(r=>{
+      if(r.querySelector('.pfm-row-plan'))return;
+      const b=document.createElement('button');b.type='button';b.className='cc-icon-btn pfm-row-plan';b.title='Plan this into free time';b.setAttribute('aria-label','Plan this into free time');
+      b.innerHTML='<i class="ti ti-wand" aria-hidden="true"></i>';
+      b.onclick=e=>{e.stopPropagation();const x=window._ccMiRows?.[+r.dataset.mi];if(x)pfmOpen({items:[x],kind:'items'});};
+      const sch=r.querySelector('.cc-icon-btn');r.insertBefore(b,sch||null);
+    });
+  }
+  function parkDecorate(){
+    const side=document.getElementById('fb1-park-side');if(!side||!side.classList.contains('open'))return;
+    const list=parkedAll()[currentPerson]||[];
+    const hd=side.querySelector('.fb1-ps-hd');
+    if(hd&&list.length&&!hd.querySelector('.pfm-mini')){
+      const b=document.createElement('button');b.type='button';b.className='pfm-mini';b.title='Plan the parked tasks into free time';
+      b.innerHTML='<i class="ti ti-wand" aria-hidden="true"></i>Plan these';b.onclick=()=>pfmOpen({kind:'parked'});
+      hd.insertBefore(b,hd.querySelector('.tm-x'));
+    }
+    side.querySelectorAll('.fb1-pt-card[data-pid]').forEach(c=>{
+      if(c.querySelector('.pfm-pt-plan'))return;
+      const b=document.createElement('button');b.type='button';b.className='fb1-pt-x pfm-pt-plan';b.title='Plan this into free time';b.setAttribute('aria-label','Plan this parked task');
+      b.innerHTML='<i class="ti ti-wand"></i>';
+      b.onclick=e=>{e.stopPropagation();const t=(parkedAll()[currentPerson]||[]).find(x=>x.id===c.dataset.pid);if(t)pfmOpen({parked:[t],kind:'parked'});};
+      c.appendChild(b);
+    });
+  }
+  const _rt=renderTodo;
+  renderTodo=function(){const r=_rt.apply(this,arguments);try{toolbarBtn();parkDecorate();miDecorate();}catch(e){}return r;};
+  const _mil=_ccRenderMyItemsList;
+  _ccRenderMyItemsList=function(){const r=_mil.apply(this,arguments);try{miDecorate();}catch(e){}return r;};
+  ['_parkToggle','_parkShow','_parkDel'].forEach(n=>{const f=window[n];if(typeof f!=='function')return;window[n]=function(){const r=f.apply(this,arguments);try{parkDecorate();}catch(e){}return r;};});
+  try{toolbarBtn();}catch(e){}
+
+  // ─────────────── Quick typing in the task form ───────────────
+  const WD={sun:0,mon:1,monday:1,tue:2,tues:2,tuesday:2,wed:3,weds:3,wednesday:3,thu:4,thur:4,thurs:4,thursday:4,fri:5,friday:5};
+  const MON={jan:0,january:0,feb:1,february:1,mar:2,march:2,apr:3,april:3,may:4,jun:5,june:5,jul:6,july:6,aug:7,august:7,sep:8,sept:8,september:8,oct:9,october:9,nov:10,november:10,dec:11,december:11};
+  const norm=w=>w.toLowerCase().replace(/^[(\["']+|[)\]"'.,;:!?]+$/g,'');
+  const nextWorkday=d=>{d=new Date(d);while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()+1);return d;};
+  function hoursOf(w){
+    if(!/^\d+(?:\.\d+)?(?:h|hr|hrs|hour|hours|m|min|mins)$|^\d+h\d+m?$/.test(w))return 0;
+    const h=parseHrsInput(w.replace(/^(\d+)h(\d+)m?$/,'$1h $2m'));return h>0&&h<=24?h:0;
+  }
+  function dayOf(words,i){
+    const w=words[i].n,t0=new Date();t0.setHours(0,0,0,0);
+    if(w==='today'||w==='tod')return{len:1,d:nextWorkday(t0)};
+    if(w==='tomorrow'||w==='tmrw'||w==='tmr'||w==='tomoz')return{len:1,d:nextWorkday(addDays(t0,1))};
+    if(w==='next'&&words[i+1]&&WD[words[i+1].n]>0){const k=WD[words[i+1].n];const d=addDays(_ccMonday(t0),7+k-1);return{len:2,d};}
+    if(WD[w]>0){const k=WD[w];let n=(k-t0.getDay()+7)%7;return{len:1,d:addDays(t0,n)};}
+    let m=w.match(/^(\d{4})-(\d{2})-(\d{2})$/);if(m)return wk({len:1,d:new Date(+m[1],+m[2]-1,+m[3])});
+    m=w.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
+    if(m){const y=m[3]?(+m[3]<100?2000+ +m[3]:+m[3]):t0.getFullYear();let d=new Date(y,+m[2]-1,+m[1]);if(!m[3]&&d<addDays(t0,-60))d=new Date(y+1,+m[2]-1,+m[1]);if(d.getDate()!==+m[1])return null;return wk({len:1,d});}
+    const nx=words[i+1]?.n;
+    const mk=(dd,mo)=>{let d=new Date(t0.getFullYear(),mo,dd);if(d<addDays(t0,-60))d=new Date(t0.getFullYear()+1,mo,dd);return d.getDate()===dd?d:null;};
+    if(/^\d{1,2}(?:st|nd|rd|th)?$/.test(w)&&nx in MON){const d=mk(parseInt(w),MON[nx]);return d?wk({len:2,d}):null;}
+    if(w in MON&&nx&&/^\d{1,2}(?:st|nd|rd|th)?$/.test(nx)){const d=mk(parseInt(nx),MON[w]);return d?wk({len:2,d}):null;}
+    return null;
+  }
+  const wk=r=>(r.d.getDay()===0||r.d.getDay()===6)?null:r; // the board has Mon–Fri only
+  let JOBIX=null; // [{phrase, job, rank}] for name matching
+  function jobIndex(){
+    if(JOBIX)return JOBIX;
+    const rec=_recentJobIds();JOBIX=[];
+    jobs.forEach(j=>{
+      if(j.status!=='inplay')return;
+      const r=rec.indexOf(j.id),rank=(r<0?0:1000-r)*1e7+(parseInt(j.id,10)||0);
+      const add=(p,w)=>{p=String(p||'').toLowerCase().replace(/\s+/g,' ').trim();if(p.length>=4&&!/^\d+$/.test(p))JOBIX.push({p,j,rank:rank+w});};
+      add(j.name,5e6);
+      if(j.company){add(j.company,0);const s=String(j.company).replace(/\s+(ltd|limited|inc|co|nz|llc|pty|group)\.?$/i,'');if(s!==j.company)add(s,0);}
+    });
+    return JOBIX;
+  }
+  // Parse the first line of the title into tokens. `settled` leaves out a word still being typed.
+  function parse(text,settled){
+    const line=text.split('\n')[0];
+    const words=[];line.replace(/\S+/g,(m,at)=>{words.push({raw:m,n:norm(m),at,end:at+m.length});return m;});
+    if(settled&&!/\s$/.test(line))words.pop();
+    const out={},used=new Set(),dis=QT.dismissed;
+    const take=(kind,i,len,val)=>{if(out[kind])return false;const raw=words.slice(i,i+len).map(w=>w.n).join(' ');const key=kind+':'+raw;if(dis.has(key))return false;out[kind]={...val,key,raw};for(let k=0;k<len;k++)used.add(i+k);return true;};
+    for(let i=0;i<words.length;i++){
+      if(used.has(i))continue;
+      const w=words[i].n;
+      let h=hoursOf(w);
+      if(h){let len=1;const n2=words[i+1]?.n;if(/h$/.test(w)&&n2&&/^\d+(?:m|min|mins)$/.test(n2)){h+=parseHrsInput(n2);len=2;}
+        if(take('hours',i,len,{h}))i+=len-1;continue;}
+      const jm=w.match(/^#?(\d{3,7})$/);
+      if(jm){const j=jobById(jm[1]);if(j&&take('job',i,1,{j}))continue;}
+      if(w==='done'&&i===words.length-1&&words.some((x,k)=>k<i&&hoursOf(x.n))){take('done',i,1,{});continue;} // only with a time: "1.5h amends done"
+      const d=dayOf(words,i);
+      if(d&&take('day',i,d.len,{d:d.d}))i+=d.len-1;
+    }
+    // a job by name (or client), when no number was typed and no job is picked yet
+    if(!out.job&&(!document.getElementById('td-job')?.value||QT.applied.job)&&!document.getElementById('td-personal')?.checked){
+      const low=words.map(w=>w.n);let best=null;
+      jobIndex().forEach(x=>{
+        const pw=x.p.split(' '),L=pw.length;
+        for(let i=0;i+L<=low.length;i++){
+          let ok=true;for(let k=0;k<L;k++){if(used.has(i+k)||low[i+k]!==pw[k]){ok=false;break;}}
+          if(!ok)continue;
+          if(!best||x.p.length>best.p.length||(x.p.length===best.p.length&&x.rank>best.rank))best={...x,i,L};
+          break;
+        }
+      });
+      if(best&&take('job',best.i,best.L,{j:best.j,byName:true})){}
+    }
+    // title = the first line minus the understood words, plus any further lines
+    const keep=[];line.replace(/\S+/g,(m,at)=>{const idx=words.findIndex(w=>w.at===at);if(idx<0||!used.has(idx))keep.push(m);return m;});
+    out._title=[keep.join(' ').replace(/^[\s,;:–—-]+|[\s,;:–—-]+$/g,''),...text.split('\n').slice(1)].join('\n').trim();
+    out._any=used.size>0;
+    return out;
+  }
+  const QT={applied:{},dismissed:new Set(),openOff:null,saved:false,timer:null};
+  const $=id=>document.getElementById(id);
+  const fields={
+    hours:{
+      get:()=>$('td-hours').value,
+      apply(t){const v=formatHrs(t.h);$('td-hours').value=v;$('td-hours').dispatchEvent(new Event('input',{bubbles:true}));return v;},
+      revert(prev){$('td-hours').value=prev;$('td-hours').dispatchEvent(new Event('input',{bubbles:true}));},
+      label:t=>formatHrs(t.h),icon:'ti-clock'},
+    job:{
+      get:()=>({job:$('td-job').value,item:$('td-item').value,itemId:$('td-item-id')?.value||'',label:$('td-item-label')?.textContent}),
+      apply(t){_setJobPickerValue(t.j.id,`${t.j.id} ${t.j.name}`);$('td-item').value='';_setItemPickerLabel('','');updateJobLabel();const sg=$('fb1-job-sug');if(sg)sg.hidden=true;return t.j.id;},
+      revert(prev){const j=jobById(prev.job);_setJobPickerValue(j?j.id:'',j?`${j.id} ${j.name}`:'');$('td-item').value=prev.item||'';_setItemPickerLabel(prev.item||'',prev.itemId||'');updateJobLabel();},
+      now:()=>$('td-job').value,
+      label:t=>`${t.j.id} ${t.j.name}`,icon:'ti-briefcase'},
+    day:{
+      get:()=>({off:weekOffset,day:$('td-day').value}),
+      apply(t){const d=t.d;weekOffset=offOf(d);$('td-day').value=String(d.getDay());_updateDateLabel();return weekOffset+'|'+d.getDay();},
+      revert(prev){weekOffset=prev.off;$('td-day').value=prev.day;_updateDateLabel();},
+      now:()=>weekOffset+'|'+$('td-day').value,
+      label:t=>{const s=isoOf(t.d),td=isoOf(new Date()),tm=isoOf(addDays(new Date(),1));return s===td?'Today':s===tm?'Tomorrow':shortD(s);},icon:'ti-calendar'},
+    done:{
+      get:()=>!!$('td-done')?.checked,
+      apply(){setDone(true);return true;},
+      revert(prev){setDone(prev);},
+      now:()=>!!$('td-done')?.checked,
+      label:()=>'Log as done',icon:'ti-circle-check'},
+  };
+  fields.hours.now=fields.hours.get;
+  // Same as ticking the toggle, minus moving the cursor out of the title.
+  function setDone(on){
+    const cb=$('td-done');if(!cb||$('td-done-lbl')?.style.display==='none')return;
+    cb.checked=on;$('td-done-lbl')?.classList.toggle('on',on);
+    const hl=$('td-hours-lbl');if(hl)hl.textContent=on?'Time spent':'Scheduled';
+    const tb=$('td-timer-btn');if(tb)tb.style.display=on?'none':'';
+  }
+  function chipsBox(){
+    let b=$('pfm-qt');
+    if(!b){const ta=$('td-task');if(!ta)return null;b=document.createElement('div');b.id='pfm-qt';b.className='pfm-qt';b.hidden=true;b.setAttribute('aria-live','polite');
+      const hint=$('td-task-hint');(hint||ta).after(b);}
+    return b;
+  }
+  function sync(settled){
+    if(editingTaskId||!$('todo-modal')?.classList.contains('on')){clearQT();return null;}
+    const p=parse($('td-task').value,settled);
+    Object.keys(fields).forEach(k=>{
+      const f=fields[k],want=p[k],cur=QT.applied[k];
+      if(cur&&want&&cur.key===want.key)return;
+      if(cur){if(f.now()===cur.set)f.revert(cur.prev);delete QT.applied[k];}
+      if(want){const prev=f.get();const set=f.apply(want);QT.applied[k]={key:want.key,prev,set,label:f.label(want)};}
+    });
+    QT.title=p._title;
+    drawChips();
+    return p;
+  }
+  function drawChips(){
+    const b=chipsBox();if(!b)return;
+    const ks=Object.keys(QT.applied);
+    if(!ks.length){b.hidden=true;b.innerHTML='';return;}
+    b.hidden=false;
+    b.innerHTML=`<span class="pfm-qt-lbl">Understood</span>`+['hours','job','day','done'].filter(k=>QT.applied[k]).map(k=>`<span class="pfm-chip" title="${esc(QT.applied[k].label)}"><i class="ti ${fields[k].icon}" aria-hidden="true"></i><span>${esc(QT.applied[k].label)}</span><button type="button" aria-label="Undo ${esc(QT.applied[k].label)}" title="Undo: keep “${esc(QT.applied[k].key.split(':').slice(1).join(':'))}” in the title" onmousedown="event.preventDefault()" onclick="pfmQtUndo('${k}')"><i class="ti ti-x"></i></button></span>`).join('')
+      +(QT.title?`<span class="pfm-qt-title">Task: <b>${esc(QT.title.split('\n')[0])}</b></span>`:'');
+  }
+  window.pfmQtUndo=function(k){
+    const a=QT.applied[k];if(!a)return;
+    if(fields[k].now()===a.set)fields[k].revert(a.prev);
+    QT.dismissed.add(a.key);delete QT.applied[k];
+    sync(false);$('td-task')?.focus();
+  };
+  function clearQT(){QT.applied={};QT.dismissed=new Set();QT.title='';clearTimeout(QT.timer);const b=$('pfm-qt');if(b){b.hidden=true;b.innerHTML='';}}
+  document.addEventListener('input',e=>{
+    if(e.target.id!=='td-task'||editingTaskId)return;
+    sync(true);clearTimeout(QT.timer);QT.timer=setTimeout(()=>sync(false),600);
+  });
+  document.addEventListener('focusout',e=>{if(e.target.id==='td-task'&&!editingTaskId){clearTimeout(QT.timer);sync(false);}});
+  // Each fresh form starts clean; a cancelled form puts back a week it moved the board to.
+  const _open=openTodoModal;
+  openTodoModal=function(){clearQT();JOBIX=null;QT.saved=false;const r=_open.apply(this,arguments);QT.openOff=weekOffset;return r;};
+  const _edit=editTask;
+  editTask=function(){clearQT();return _edit.apply(this,arguments);};
+  const _close=closeTodoModal;
+  closeTodoModal=function(){
+    if(!QT.saved&&QT.applied.day&&QT.openOff!=null&&weekOffset!==QT.openOff){weekOffset=QT.openOff;try{updateWeekLabel();}catch(e){}}
+    clearQT();return _close.apply(this,arguments);
+  };
+  // On save, the understood words come out of the title.
+  const _save=saveTodo;
+  saveTodo=function(){
+    if(editingTaskId||!$('todo-modal')?.classList.contains('on'))return _save.apply(this,arguments);
+    clearTimeout(QT.timer);sync(false);
+    const ta=$('td-task'),raw=ta.value;
+    if(Object.keys(QT.applied).length){
+      let t=QT.title;
+      if(!t){const j=jobById($('td-job').value);t=$('td-item').value||(j?j.name:'');}
+      if(t)ta.value=t;
+    }
+    QT.saved=true;
+    const out=_save.apply(this,arguments);
+    if($('todo-modal')?.classList.contains('on')){QT.saved=false;ta.value=raw;} // the form stopped the save
+    return out;
+  };
+  window._pfmParse=t=>{const p=parse(t,false);return{hours:p.hours?.h,job:p.job?.j?.id,day:p.day?isoOf(p.day.d):undefined,done:!!p.done,title:p._title};};
+  window._pfmPlan=(pk,scope)=>{const r=plan(pk||currentPerson,gather(pk||currentPerson,scope||{}));return r;};
+})();
+</script>
 </body>
 </html>
