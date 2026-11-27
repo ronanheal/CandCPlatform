@@ -2697,6 +2697,24 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
               <i class="ti ti-repeat" aria-hidden="true"></i>
               <span id="td-repeat-label">Repeat</span>
             </button>
+      <!-- Urgent / Personal sit on the Scheduled row -->
+      <div class="tm-urgent-row ux-seg" role="group" aria-label="Task options">
+        <label class="tm-urgent-lbl" id="td-urgent-lbl">
+          <input type="checkbox" id="td-urgent" onchange="document.getElementById('td-urgent-lbl').classList.toggle('on',this.checked)">
+          <i class="ti ti-alert-circle" aria-hidden="true"></i>
+          Urgent
+        </label>
+        <label class="tm-urgent-lbl tm-done-lbl" id="td-done-lbl">
+          <input type="checkbox" id="td-done" onchange="_tdDoneChanged()">
+          <i class="ti ti-circle-check" aria-hidden="true"></i>
+          Log as done
+        </label>
+        <label class="tm-urgent-lbl" id="td-personal-lbl">
+          <input type="checkbox" id="td-personal" onchange="togglePersonalMode(this.checked);document.getElementById('td-personal-lbl').classList.toggle('on',this.checked)">
+          <i class="ti ti-lock" aria-hidden="true"></i>
+          Personal
+        </label>
+      </div>
           </div>
         </div>
       </div>
@@ -2739,24 +2757,6 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
           </div>
         </div>
         <div id="rep-preview" class="ux-rep-prev"></div>
-      </div>
-      <!-- Toggles: one segmented row -->
-      <div class="tm-urgent-row ux-seg" role="group" aria-label="Task options">
-        <label class="tm-urgent-lbl" id="td-urgent-lbl">
-          <input type="checkbox" id="td-urgent" onchange="document.getElementById('td-urgent-lbl').classList.toggle('on',this.checked)">
-          <i class="ti ti-alert-circle" aria-hidden="true"></i>
-          Urgent
-        </label>
-        <label class="tm-urgent-lbl tm-done-lbl" id="td-done-lbl">
-          <input type="checkbox" id="td-done" onchange="_tdDoneChanged()">
-          <i class="ti ti-circle-check" aria-hidden="true"></i>
-          Log as done
-        </label>
-        <label class="tm-urgent-lbl" id="td-personal-lbl">
-          <input type="checkbox" id="td-personal" onchange="togglePersonalMode(this.checked);document.getElementById('td-personal-lbl').classList.toggle('on',this.checked)">
-          <i class="ti ti-lock" aria-hidden="true"></i>
-          Personal
-        </label>
       </div>
       <!-- Job brief (read-only, shown when a job with notes is selected) -->
       <div id="td-job-brief-wrap" class="tm-job-brief-wrap" style="display:none;">
@@ -30794,6 +30794,14 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
 :is(html,#us#us) #todo-modal #td-timer-btn{width:auto!important;min-width:0!important;padding:0 14px!important;gap:6px!important;}
 :is(html,#us#us) #todo-modal :is(.ux-ft,.tm-footer,.tm-ft){gap:8px!important;}
 :is(html,#us#us) #todo-modal #td-log-btn,:is(html,#us#us) #todo-modal .tm-btn-cancel{padding:0 14px!important;gap:6px!important;}
+/* Task form: Urgent / Personal on the Scheduled row, a compact hours box */
+:is(html,#us#us) #todo-modal .ux-when{flex-wrap:nowrap!important;gap:4px!important;min-width:0;}
+:is(html,#us#us) #todo-modal .ux-when > :is(.tm-date-btn,.tm-repeat-btn,.fb2-split-btn,[id*="split"]){padding:0 8px!important;flex:none;}
+:is(html,#us#us) #todo-modal .ux-when > .ux-seg{order:99;margin:0 0 0 auto!important;padding:2px!important;}
+:is(html,#us#us) #todo-modal .ux-when > .ux-seg{flex:none;}
+:is(html,#us#us) #todo-modal .ux-when > .ux-seg .tm-urgent-lbl{padding:0 8px!important;height:28px!important;font-size:12.5px!important;gap:4px!important;}
+:is(html,#us#us) #todo-modal #td-hours{width:68px!important;min-width:0!important;flex:none!important;text-align:center;}
+:is(html,#us#us) #todo-modal .tm-modal.ux-tm{width:688px!important;}
 </style>
 <script id="us-script">
 // unslop polish pass (unslop by Damir Sokolovsky, @heydamir, CC BY 4.0) — behaviour the CSS can't do.
