@@ -29920,16 +29920,41 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
       if(want){const prev=f.get();const set=f.apply(want);QT.applied[k]={key:want.key,prev,set,label:f.label(want)};}
     });
     QT.title=p._title;
+    QT.multi=multiPlan($('td-task').value);
     drawChips();
     return p;
+  }
+  // Several tasks in one go: the first line carries the shared details (job, item, hours); every later
+  // line with a date ("v1 due 27th", "v2 5 dec") becomes its own task, scheduled on that date.
+  function lineDate(line){
+    const words=line.split(/\s+/).filter(Boolean).map(raw=>({raw,n:norm(raw)}));
+    const t0=new Date();t0.setHours(0,0,0,0);
+    for(let i=0;i<words.length;i++){
+      let dd=null,from=i,len=0;
+      if(words[i].n==='due'&&words[i+1]){
+        dd=dayOf(words,i+1);len=dd?1+dd.len:0;
+        const o=!dd&&words[i+1].n.match(/^(\d{1,2})(?:st|nd|rd|th)$/);
+        if(o){let d=new Date(t0.getFullYear(),t0.getMonth(),+o[1]);if(d<t0)d=new Date(t0.getFullYear(),t0.getMonth()+1,+o[1]);if(d.getDate()===+o[1]){dd={d};len=2;}}
+      }else{dd=dayOf(words,i);len=dd?dd.len:0;}
+      if(dd){let d=new Date(dd.d);while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()-1); // a weekend date lands on the Friday before
+        const rest=words.filter((w,k)=>k<from||k>=from+len).map(w=>w.raw).join(' ').replace(/[\s,;:–—-]+$/,'').trim();
+        return{d,rest};}
+    }
+    return null;
+  }
+  function multiPlan(text){
+    const lines=String(text||'').split('\n').map(l=>l.trim()).filter(Boolean);if(lines.length<3&&lines.length<2)return null;
+    const tasks=[];lines.slice(1).forEach(l=>{const r=lineDate(l);if(r)tasks.push(r);});
+    return tasks.length>=2?{tasks}:null;
   }
   function drawChips(){
     const b=chipsBox();if(!b)return;
     const ks=Object.keys(QT.applied);
-    if(!ks.length){b.hidden=true;b.innerHTML='';return;}
+    if(!ks.length&&!QT.multi){b.hidden=true;b.innerHTML='';return;}
     b.hidden=false;
     b.innerHTML=`<span class="pfm-qt-lbl">Understood</span>`+['hours','job','item','day','due','urgent','done'].filter(k=>QT.applied[k]).map(k=>`<span class="pfm-chip" title="${esc(QT.applied[k].label)}"><i class="ti ${fields[k].icon}" aria-hidden="true"></i><span>${esc(QT.applied[k].label)}</span><button type="button" aria-label="Undo ${esc(QT.applied[k].label)}" title="Undo: keep “${esc(QT.applied[k].key.split(':').slice(1).join(':'))}” in the title" onmousedown="event.preventDefault()" onclick="pfmQtUndo('${k}')"><i class="ti ti-x"></i></button></span>`).join('')
-      +(QT.title?`<span class="pfm-qt-title">Task: <b>${esc(QT.title.split('\n')[0])}</b></span>`:'');
+      +(QT.multi?`<span class="pfm-qt-title">Adds <b>${QT.multi.tasks.length} tasks</b>: ${QT.multi.tasks.map(t=>esc((t.rest||'task')+' · '+shortD(isoOf(t.d)))).join(', ')}</span>`
+        :(QT.title?`<span class="pfm-qt-title">Task: <b>${esc(QT.title.split('\n')[0])}</b></span>`:''));
   }
   window.pfmQtUndo=function(k){
     const a=QT.applied[k];if(!a)return;
@@ -29937,7 +29962,7 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
     QT.dismissed.add(a.key);delete QT.applied[k];
     sync(false);$('td-task')?.focus();
   };
-  function clearQT(){QT.applied={};QT.dismissed=new Set();QT.title='';QT.due=null;clearTimeout(QT.timer);const b=$('pfm-qt');if(b){b.hidden=true;b.innerHTML='';}}
+  function clearQT(){QT.applied={};QT.dismissed=new Set();QT.title='';QT.due=null;QT.multi=null;clearTimeout(QT.timer);const b=$('pfm-qt');if(b){b.hidden=true;b.innerHTML='';}}
   document.addEventListener('input',e=>{
     if(e.target.id!=='td-task'||editingTaskId)return;
     sync(true);clearTimeout(QT.timer);QT.timer=setTimeout(()=>sync(false),600);
@@ -29958,6 +29983,24 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
   saveTodo=function(){
     if(editingTaskId||!$('todo-modal')?.classList.contains('on'))return _save.apply(this,arguments);
     clearTimeout(QT.timer);sync(false);
+    if(QT.multi&&!$('td-done')?.checked){
+      const jobId=$('td-job').value,job=jobs.find(j=>j.id===jobId),item=$('td-item').value,itemId=$('td-item-id')?.value||null;
+      const hr=($('td-hours').value||'').trim(),hours=hr?parseHrsInput(hr):1;
+      const urgent=!!$('td-urgent')?.checked,personal=!!$('td-personal')?.checked,who=(typeof _todoAssignTo!=='undefined'&&_todoAssignTo)||currentPerson;
+      if(job?.paused){toast('This job is paused, so tasks can’t be added to it','warn');return;}
+      const lead=String(QT.title||'').split('\n')[0].replace(/[\s,;:–—-]+$/,'').trim();
+      const added=[];
+      QT.multi.tasks.forEach(t=>{
+        const off=offOf(t.d),day=t.d.getDay(),wd=getWeekData(who,off);
+        const title=[lead,t.rest].filter(Boolean).join(' ')||(item||job?.name||'Task');
+        const task={id:uid('t'),title,job:job?`${job.id} ${job.name}`:'',jobId:jobId||null,item,itemId,hours,urgent,personal,repeat:false,due:isoOf(t.d)};
+        (wd[day]=wd[day]||[]).push(task);added.push(shortD(isoOf(t.d)));
+        if(jobId)try{logActivity(jobId,who,'task_add',`Added task <strong>${esc(title)}</strong>${item?` (${esc(item)})`:''} — ${shortD(isoOf(t.d))}`);}catch(e){}
+      });
+      QT.saved=true;closeTodoModal();renderTodo();saveData();try{_refreshJobStats();}catch(e){}
+      toast(`Added ${added.length} tasks: ${added.join(', ')}`,'success');
+      return;
+    }
     const ta=$('td-task'),raw=ta.value;
     if(Object.keys(QT.applied).length){
       let t=QT.title;
@@ -30815,6 +30858,13 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
 :is(html,#us#us) #todo-modal .us-opts input[type=checkbox]{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none;}
 :is(html,#us#us) #todo-modal .us-opts :is(.tm-repeat-btn,.tm-urgent-lbl){outline:none!important;}
 :is(html,#us#us) #todo-modal .us-opts .tm-urgent-lbl:has(input:focus-visible),:is(html,#us#us) #todo-modal .us-opts .tm-repeat-btn:focus-visible{outline:2px solid var(--focus,var(--ink))!important;outline-offset:2px!important;}
+/* Urgent tasks: always at the foot of the day's stack (next to the day bar) and pinned there when the day scrolls;
+   a clearer red edge, tint and ring so they read at a glance */
+:is(html,#us#us) #day-cols .day-todo > .task-card.tc-urgent:not(.done-c){order:50;position:sticky;bottom:0;z-index:3;
+  background:color-mix(in srgb,var(--red) 9%,var(--white))!important;border-left:4px solid var(--red)!important;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--red) 30%,transparent),0 2px 8px color-mix(in srgb,var(--red) 14%,transparent)!important;}
+:is(html,#us#us) #day-cols .day-todo > .task-card.tc-urgent:not(.done-c) .tc-hrs{background:var(--red)!important;color:#fff!important;}
+:is(html,#us#us) body.dark #day-cols .day-todo > .task-card.tc-urgent:not(.done-c){background:color-mix(in srgb,var(--red) 16%,var(--white))!important;}
 </style>
 <script id="us-script">
 // unslop polish pass (unslop by Damir Sokolovsky, @heydamir, CC BY 4.0) — behaviour the CSS can't do.
@@ -30919,6 +30969,15 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
     k.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openTrendModal(m[1]);}});
   });}catch(e){}};
   if(typeof renderDashboard==='function'){const _rd=renderDashboard;renderDashboard=function(){const r=_rd.apply(this,arguments);hook();return r;};}
+})();
+
+// Several urgent cards in one day: pin them one above another at the foot of the stack
+(function(){
+  const pin=()=>{try{document.querySelectorAll('#day-cols .day-todo').forEach(z=>{
+    const u=[...z.querySelectorAll(':scope > .task-card.tc-urgent:not(.done-c)')];let off=0;
+    for(let k=u.length-1;k>=0;k--){u[k].style.bottom=off+'px';off+=u[k].offsetHeight+4;}
+  });}catch(e){}};
+  if(typeof renderTodo==='function'){const _r=renderTodo;renderTodo=function(){const r=_r.apply(this,arguments);requestAnimationFrame(pin);return r;};}
 })();
 </script>
 </body>
