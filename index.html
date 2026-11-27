@@ -7998,7 +7998,7 @@ function renderJobs(){
           </div>
         </td>
         <td class="cj-labels"><div class="job-labels-cell">${labels||'<span style="font-size:12px;color:var(--muted);">—</span>'}</div>${progHTML}</td>
-        <td class="cj-status">${wfCls==='wf-live'?`<span class="wf-quiet"><i></i>Live</span>`:`<span class="wf-badge ${wfCls}">${wfLabel}</span>`}${j.po?`<div style="font-size:10px;color:var(--muted);margin-top:3px;">PO ${esc(j.po)}</div>`:''}</td>`;
+        <td class="cj-status">${wfCls==='wf-live'?`<span class="wf-quiet"><i></i>Live</span>`:`<span class="wf-badge ${wfCls}">${wfLabel}</span>`}${j.po?`<div style="font-size:10px;color:var(--muted);margin-top:3px;">${/^po\b/i.test(String(j.po).trim())?'':'PO '}${esc(j.po)}</div>`:''}</td>`;
       frag.appendChild(tr);
       _jobsRenderedCount=i+1;
     }
@@ -8043,7 +8043,7 @@ function renderJobs(){
   if(footerEl){
     const overallPct=totalBudget>0?Math.round(totalUsed/totalBudget*100):0;
     const barCls=overallPct>=100?'over':overallPct>=80?'warn':'';
-    footerEl.innerHTML=`<span class="jf-lbl">Total <span>${shown} job${shown!==1?'s':''}</span></span><div class="jf-meter"><div class="jf-nums"><strong>$${(totalUsed||0).toLocaleString('en-NZ',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong><span>of $${(totalBudget||0).toLocaleString('en-NZ',{minimumFractionDigits:2,maximumFractionDigits:2})} budget · ${overallPct}%</span></div><div class="jf-bar ${barCls}"><i style="width:${Math.min(100,overallPct)}%"></i></div></div>${overBudgetCount?`<span class="jf-over"><i class="ti ti-alert-triangle"></i>${overBudgetCount} over budget</span>`:''}`;
+    footerEl.innerHTML=`<span class="jf-lbl">Total <span>${shown} job${shown!==1?'s':''}</span></span><div class="jf-meter"><div class="jf-nums"><strong>$${Math.round(totalUsed||0).toLocaleString('en-NZ')}</strong><span>of $${Math.round(totalBudget||0).toLocaleString('en-NZ')} budget · ${overallPct}%</span></div><div class="jf-bar ${barCls}"><i style="width:${Math.min(100,overallPct)}%"></i></div></div>${overBudgetCount?`<span class="jf-over"><i class="ti ti-alert-triangle"></i>${overBudgetCount} over budget</span>`:''}`;
   }
   _renderIcons();
 }
@@ -18016,7 +18016,7 @@ function _fdWithInvoices(extra,fn,self,args){
         const days=j.invIssueDate?Math.round((_pDate(j.invDueDate)-_pDate(j.invIssueDate))/86400000):null;
         setMv(3,fmtDate(j.invDueDate)+(days!=null&&days>0?` · ${days} days`:''));
       }
-      if(j.po){const ref=wrap.querySelector('#inv-ref');if(ref&&!ref.dataset.fdPo){ref.dataset.fdPo='1';ref.insertAdjacentHTML('afterend',`<div class="c2-inv-q">PO ${esc(j.po)}</div>`);}}
+      if(j.po){const ref=wrap.querySelector('#inv-ref');if(ref&&!ref.dataset.fdPo){ref.dataset.fdPo='1';ref.insertAdjacentHTML('afterend',`<div class="c2-inv-q">${/^po\b/i.test(String(j.po).trim())?'':'PO '}${esc(j.po)}</div>`);}}
       // An empty deposit / split box is UI, not part of the document.
       const title=wrap.querySelector(':scope > .inv-job-title');const split=title?.nextElementSibling;
       if(split&&!split.classList.contains('inv-sec')&&!split.classList.contains('inv-tot')&&!(j.splitInvoices||[]).length)split.classList.add('no-print');
@@ -18743,10 +18743,13 @@ function _rvBusiness(el){
   const bA=wkInfo.map(w=>wk[w.wk]?.b||0),nA=wkInfo.map(w=>wk[w.wk]?.n||0);
   const fade=(c,i)=>wkInfo[i].partial?CV.alpha(c,.42):c;
   const anyPartial=wkInfo.some(w=>w.partial);
+  // us: one highlight — this week's billable bar in the chart accent (CV slot 1), the rest warm ink
+  const isCurWk=w=>!!(w.live||(typeof today==='string'&&(w.days||[]).includes(today)));
+  const hiC=CV.slot(1),anyLive=wkInfo.some(isCurWk),billC=i=>isCurWk(wkInfo[i])?hiC:red;
   _makeChart('rc-trend',{type:'bar',cvEmpty:'No time logged in this period.',
-    cvCaption:[anyPartial?'Faded bars are weeks the period only partly covers.':'',showCap?'Grey rule: capacity (contracted hours less leave).':'',preSync?`Logged time starts ${fmtDate(t0)}.`:''].filter(Boolean).join(' '),
+    cvCaption:[anyLive?'This week in ochre.':'',anyPartial?'Faded bars are weeks the period only partly covers.':'',showCap?'Grey rule: capacity (contracted hours less leave).':'',preSync?`Logged time starts ${fmtDate(t0)}.`:''].filter(Boolean).join(' '),
     data:{labels:wkInfo.map(w=>CV.dShort(w.wk)),datasets:[
-      {label:'Billable',data:bA,backgroundColor:bA.map((v,i)=>fade(red,i)),hoverBackgroundColor:bA.map((v,i)=>fade(red,i)),cvColor:red,cvTotal:_rvH(_rvSum(bA,x=>x))},
+      {label:'Billable',data:bA,backgroundColor:bA.map((v,i)=>fade(billC(i),i)),hoverBackgroundColor:bA.map((v,i)=>fade(billC(i),i)),cvColor:red,cvTotal:_rvH(_rvSum(bA,x=>x))},
       {label:'Non-billable',data:nA,backgroundColor:nA.map((v,i)=>fade(tk.stone,i)),hoverBackgroundColor:nA.map((v,i)=>fade(tk.stone,i)),cvColor:tk.stone,cvTotal:_rvH(_rvSum(nA,x=>x))},
       // capacity: a short rule over each week's column (handles partial weeks without a staircase)
       ...(showCap?[{type:'line',label:'Capacity',stack:'cap',data:capW.map(v=>Math.round(v*100)/100),cvRef:true,cvKey:'ln',cvNoTip:true,cvColor:tk.ink2,showLine:false,
@@ -18758,9 +18761,10 @@ function _rvBusiness(el){
         return w.live?`Week in progress — ${CV.dDay(a)} to ${CV.dDay(b)} so far.`:`Partial week — only ${CV.dDay(a)} to ${CV.dDay(b)} is in ${R.label.toLowerCase()} (${w.wd} of 5 working days).`;}})});
   // Revenue by month — paid drawn inside invoiced: the wash above the solid bar is what's unpaid.
   const invA=months.map(m=>mInv[m.key]||0),paidA=months.map(m=>mPaid[m.key]||0);const curMo=today.slice(0,7);
-  _makeChart('rc-month',{type:'bar',cvEmpty:'No issued invoices in these 12 months.',data:{labels:months.map(m=>m.label),datasets:[
+  const paidC=months.map(m=>m.key===curMo?CV.slot(1):red);
+  _makeChart('rc-month',{type:'bar',cvEmpty:'No issued invoices in these 12 months.',cvCaption:months.some(m=>m.key===curMo)?'This month in ochre.':'',data:{labels:months.map(m=>m.label),datasets:[
     {label:'Invoiced',data:invA,backgroundColor:CV.alpha(red,tk.wash),hoverBackgroundColor:CV.alpha(red,tk.wash+.08),cvColor:CV.alpha(red,tk.wash+.12),cvWash:true,cvTotal:_rvK(_rvSum(invA,x=>x)),grouped:false,barPercentage:1,maxBarThickness:28,order:2},
-    {label:'Paid',data:paidA,backgroundColor:red,hoverBackgroundColor:red,grouped:false,barPercentage:.5,maxBarThickness:12,cvTotal:_rvK(_rvSum(paidA,x=>x)),order:1}]},
+    {label:'Paid',data:paidA,backgroundColor:paidC,hoverBackgroundColor:paidC,cvColor:red,grouped:false,barPercentage:.5,maxBarThickness:12,cvTotal:_rvK(_rvSum(paidA,x=>x)),order:1}]},
     options:_rvBarOpts({money:true,legend:true,
       title:i=>CV.monthLong(months[i].key)+(months[i].key===curMo?' (so far)':''),
       extra:i=>invA[i]>0?[['Unpaid',_rvMoney(invA[i]-paidA[i])],['Paid share',_rvP(paidA[i]/invA[i]*100)]]:[]})});
@@ -23714,8 +23718,10 @@ function _accBind(card){
       bar.style.transform='scaleX(1)';
       lineTimer=setTimeout(()=>{line.classList.remove('on');setTimeout(()=>{if(_stLoad.phase!=='loading')bar.style.transform='scaleX(0)';},300);},380);
       splashMsg('');
-      setPill('<span class="perf-dot" aria-hidden="true"></span>Updated just now');
-      clearTimeout(hideTimer);hideTimer=setTimeout(hidePill,2600);
+      // us: the first load needs no "Updated" (the page is the news); later refreshes say it briefly
+      clearTimeout(hideTimer);
+      if(!draw._loadedOnce){draw._loadedOnce=true;hidePill();}
+      else{setPill('<span class="perf-dot" aria-hidden="true"></span>Updated just now');hideTimer=setTimeout(hidePill,1800);}
     }else if(st.phase==='error'){
       line.classList.remove('on');bar.style.transform='scaleX(0)';
       splashMsg('');
@@ -30424,6 +30430,348 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
     pending=location.hash;
     if(loaded())openLink(pending);else whenLoaded();
   });
+})();
+</script>
+<style id="us-style">
+/* unslop by Damir Sokolovsky (@heydamir) — https://heydamir.design/unslop — CC BY 4.0.
+   ═══ Polish pass ("unslop", polish mode). Keeps the palette, Inter Tight, pills, features and order.
+   Direction: the team's day-to-day tool for planning the week, running jobs and seeing how the studio
+   is tracking. Calm, practical, a little warm. A studio desk: paper, pencil, a wall planner.
+   Moments: the To Do week board and Reporting's main chart. Signature: C&C red means "today / now"
+   only (today's date circle, the current page in the sidebar, today's tint); it leaves tab underlines,
+   checkboxes, focus rings and washes. Errors and destructive actions keep their red.
+   Every rule sits behind :is(html,#us#us) so it outranks the older !important layers.
+   Passes: 1 spacing · 2 colour · 3 icons · 4 copy · 5 type · 6 layout · 7 details · 9 motion ══════ */
+
+/* ── tokens ── */
+:is(html,#us#us) body{
+  --us-ease:cubic-bezier(.22,1,.36,1);
+  --ease-out:var(--us-ease);--ease-std:var(--us-ease);--ease-spring:var(--us-ease);--ease-in-out:var(--us-ease);--ease-exit:var(--us-ease);
+  --focus:color-mix(in srgb,var(--ink) 55%,transparent);
+  --ring:0 0 0 3px color-mix(in srgb,var(--ink) 16%,transparent);
+  --tile-v:600 26px/1.05 var(--display);
+  --chart-1:#3A342C;
+  --us-title-top:76px;   /* every page title's top, from the top of the page panel (Jobs: 52 tab bar + 24) */
+}
+:is(html,#us#us) body.dark{--chart-1:#ECE5D9;--ring:0 0 0 3px color-mix(in srgb,var(--ink) 22%,transparent);}
+
+/* ── 1 · Spacing: one page-header rhythm. Title top 76 below the panel top on every page (on Jobs
+   the sub-tab bar fills that band), subtitle 4 under, toolbar 16 under the subtitle. ── */
+:is(html,#us#us) #view-reporting .r-head-wrap,
+:is(html,#us#us) #schedule-scroll,
+:is(html,#us#us) #boards-landing,
+:is(html,#us#us) #settings-scroll{padding-top:var(--us-title-top)!important;}
+:is(html,#us#us) .view-sub{margin-top:4px!important;}
+:is(html,#us#us) .sett-tab-hd{margin-bottom:0!important;}
+:is(html,#us#us) .sett-tab-hd+*{margin-top:4px!important;}
+:is(html,#us#us) .jobs-toolbar,
+:is(html,#us#us) .qinv-toolbar{padding-top:16px!important;}
+:is(html,#us#us) #view-reporting .r-toolbar,
+:is(html,#us#us) #jt-time .time-head-bar>div:not(:first-child),
+:is(html,#us#us) #jt-deadlines>div:first-child>div:not(:first-child){padding-top:16px!important;}
+:is(html,#us#us) #schedule-scroll>div:has(+#sched-toolbar){margin-bottom:16px!important;}
+:is(html,#us#us) #jt-clients .clients-toolbar{margin-top:-2px!important;}
+:is(html,#us#us) #dtab-plan .plan-actions{padding-top:0!important;}
+/* primary action on the title line, right — Jobs and its sub-tabs, like Boards, Schedule and a job */
+:is(html,#us#us) #view-jobs{position:relative;}
+:is(html,#us#us) #view-jobs #jobs-primary-btn{position:absolute!important;top:var(--us-title-top);right:var(--gutter,28px);margin:0!important;z-index:3;}
+/* a job: meta line at the title top, title 4 under, one row of status, dates, team and labels */
+:is(html,#us#us) #view-detail .detail-title-row{padding-top:20px!important;}
+:is(html,#us#us) #view-detail .dt-meta{margin-bottom:4px!important;}
+:is(html,#us#us) #view-detail .detail-meta-line{padding:12px 0!important;gap:8px 16px!important;}
+:is(html,#us#us) #view-detail #job-notes-row{padding-bottom:12px!important;}
+/* stat tiles: one padding, one gap */
+:is(html,#us#us) .stats-strip{gap:12px!important;}
+:is(html,#us#us) .stats-strip .stat-b{padding:16px 20px!important;}
+:is(html,#us#us) #dtab-progress .stats-strip{grid-template-columns:repeat(auto-fit,minmax(156px,1fr))!important;}
+:is(html,#us#us) #dash-scroll .kpi{padding:20px 24px!important;}
+
+/* ── 2 · Colour: red is today / now. Tabs, checkboxes and focus use ink; no pink washes. ── */
+:is(html,#us#us) .jsn-tab::after,
+:is(html,#us#us) .d-tab::after{background:var(--ink)!important;}
+:is(html,#us#us) #jobs-cb-all,
+:is(html,#us#us) .jobs-table input[type=checkbox],
+:is(html,#us#us) #view-jobs input[type=checkbox]{accent-color:var(--ink)!important;}
+:is(html,#us#us) body:not(.has-bg){background:var(--desk)!important;}
+:is(html,#us#us) .dh-hero::after{display:none!important;}
+:is(html,#us#us) .fchip-x:hover{color:var(--ink)!important;}
+
+/* ── 3 · Icons: Boards' template and source tiles share one quiet treatment ── */
+:is(html,#us#us) .bv-tpl-ico,
+:is(html,#us#us) .r5-cico{background:color-mix(in srgb,var(--ink) 6%,transparent)!important;color:var(--ink-2)!important;}
+
+/* ── 5 · Type: titles medium at normal tracking; figures 600; nothing heavier than 600;
+   uppercase tracked labels become sentence case ── */
+:is(html,#us#us) .view-title,
+:is(html,#us#us) .boards-head,
+:is(html,#us#us) .sett-tab-hd,
+:is(html,#us#us) .detail-title,
+:is(html,#us#us) .dash-greeting{font-weight:500!important;letter-spacing:normal!important;}
+:is(html,#us#us) .detail-title{font-size:30px!important;line-height:1.1!important;}
+:is(html,#us#us) .kpi-val,
+:is(html,#us#us) .rv-kpi-v,
+:is(html,#us#us) .r-kpi-val,
+:is(html,#us#us) .stat-val,
+:is(html,#us#us) .ls-kpi-v,
+:is(html,#us#us) .time-stat .ts-val,
+:is(html,#us#us) .dh-ring-val{font-weight:600!important;letter-spacing:-.01em!important;}
+:is(html,#us#us) .section-label,
+:is(html,#us#us) .att-title,
+:is(html,#us#us) .sett-card-hd,
+:is(html,#us#us) .ph-n,
+:is(html,#us#us) .prog-card-hd,
+:is(html,#us#us) .sc-pn,
+:is(html,#us#us) .jf-lbl,
+:is(html,#us#us) .dt-num,
+:is(html,#us#us) .jf-nums strong,
+:is(html,#us#us) .cv-tip-t,
+:is(html,#us#us) .dh-hero strong,
+:is(html,#us#us) .dh-hero b{font-weight:600!important;}
+:is(html,#us#us) .tb-section,
+:is(html,#us#us) .tb-btn,
+:is(html,#us#us) .kpi-label,
+:is(html,#us#us) .section-label,
+:is(html,#us#us) .micro-lbl,
+:is(html,#us#us) .day-name,
+:is(html,#us#us) .day-add-btn,
+:is(html,#us#us) .zb-kind,
+:is(html,#us#us) .gd-label,
+:is(html,#us#us) .filter-btn,
+:is(html,#us#us) .jobs-table thead th,
+:is(html,#us#us) .status-pill,
+:is(html,#us#us) .d-action,
+:is(html,#us#us) .d-tab,
+:is(html,#us#us) .stat-label,
+:is(html,#us#us) .p-btn,
+:is(html,#us#us) .items-t thead th,
+:is(html,#us#us) .i-badge,
+:is(html,#us#us) .exp-t thead th,
+:is(html,#us#us) .exp-badg,
+:is(html,#us#us) .act-date-hd,
+:is(html,#us#us) .r-card-t,
+:is(html,#us#us) .r-chart-h,
+:is(html,#us#us) .r-table-h,
+:is(html,#us#us) .r-table th,
+:is(html,#us#us) .r-p-name,
+:is(html,#us#us) .r-filter-row label,
+:is(html,#us#us) .r-subtab,
+:is(html,#us#us) .r-kpi-lbl,
+:is(html,#us#us) .r-section-hd,
+:is(html,#us#us) .r-job-hd,
+:is(html,#us#us) .r-export-btn,
+:is(html,#us#us) .board-col-h,
+:is(html,#us#us) .bc-tag,
+:is(html,#us#us) .board-list-card .blc-type,
+:is(html,#us#us) .cb-modal-eyebrow,
+:is(html,#us#us) .bdet-col-name,
+:is(html,#us#us) .pboard-stat .ps-lbl,
+:is(html,#us#us) .field label,
+:is(html,#us#us) .tm-lbl,
+:is(html,#us#us) .tm-col-lbl,
+:is(html,#us#us) .inv-act,
+:is(html,#us#us) .inv-ml,
+:is(html,#us#us) .sett-card-hd,
+:is(html,#us#us) .tm-panel-section-lbl,
+:is(html,#us#us) .tm-panel-field label,
+:is(html,#us#us) .item-note-lbl,
+:is(html,#us#us) .time-stat .ts-lbl,
+:is(html,#us#us) .time-table th,
+:is(html,#us#us) .time-group-row td,
+:is(html,#us#us) .qinv-head-row > span,
+:is(html,#us#us) .qinv-detail-table th,
+:is(html,#us#us) .dd-section-lbl,
+:is(html,#us#us) .grp-hd,
+:is(html,#us#us) .inv-pill,
+:is(html,#us#us) .ps-co-hd,
+:is(html,#us#us) .vsp-title,
+:is(html,#us#us) .cal-today-btn,
+:is(html,#us#us) .cal-week-header-cell,
+:is(html,#us#us) .task-status,
+:is(html,#us#us) .tt-urgent,
+:is(html,#us#us) .jsn-tab,
+:is(html,#us#us) .wf-badge,
+:is(html,#us#us) .tm-job-brief-lbl,
+:is(html,#us#us) .inv-th,
+:is(html,#us#us) .tao-team-hdr,
+:is(html,#us#us) .bc-bar-lbl,
+:is(html,#us#us) .bc-section-lbl,
+:is(html,#us#us) .cal-filter-label,
+:is(html,#us#us) .cal-day-head-name,
+:is(html,#us#us) .item-pick-group,
+:is(html,#us#us) .todo-drawer-label,
+:is(html,#us#us) .prog-card-hd,
+:is(html,#us#us) .prog-lbl,
+:is(html,#us#us) .prog-table th,
+:is(html,#us#us) .gs-cat,
+:is(html,#us#us) .colpick-title,
+:is(html,#us#us) .sched-strip .ss-lbl,
+:is(html,#us#us) .ss-day .ssd-name,
+:is(html,#us#us) .split-zone .sz-lbl,
+:is(html,#us#us) .kpi-spark .ks-lbl,
+:is(html,#us#us) .focus-dayname,
+:is(html,#us#us) .hp-card-eyebrow,
+:is(html,#us#us) .swp-sec,
+:is(html,#us#us) .tr-sec,
+:is(html,#us#us) .time-table thead th,
+:is(html,#us#us) #exp-list-wrap thead th,
+:is(html,#us#us) .qinv-head-row,
+:is(html,#us#us) .prog-table thead th,
+:is(html,#us#us) .cc-mi-job,
+:is(html,#us#us) .c2-lines th,
+:is(html,#us#us) .c2-pay-hd,
+:is(html,#us#us) .c2-sg th,
+:is(html,#us#us) .fd-tbl th,
+:is(html,#us#us) .rv-table th,
+:is(html,#us#us) .rf-sec-lbl,
+:is(html,#us#us) .r5-cl-t,
+:is(html,#us#us) .fb1-vsp-lbl,
+:is(html,#us#us) .fb2-quick-lbl,
+:is(html,#us#us) .fb3-qf-lbl,
+:is(html,#us#us) #jobs-presets-bar .fb2-fav-lbl,
+:is(html,#us#us) .fb2-ct-table th,
+:is(html,#us#us) .fb2-fav-hd,
+:is(html,#us#us) .pm-head span,
+:is(html,#us#us) [style*="text-transform:uppercase"],
+:is(html,#us#us) [style*="text-transform: uppercase"]{text-transform:none!important;letter-spacing:normal!important;}
+/* popover group labels (View, Show, Card details, Ready-made, Saved, Group by…) */
+:is(html,#us#us) .fb3-qf-lbl,
+:is(html,#us#us) .fb1-vsp-lbl,
+:is(html,#us#us) .fb2-quick-lbl,
+:is(html,#us#us) .colpick-title,
+:is(html,#us#us) .vsp-title{font-size:12px!important;font-weight:500!important;color:var(--muted)!important;}
+:is(html,#us#us) .fb3-qf-lbl{padding:12px 8px 4px!important;}
+:is(html,#us#us) .fb3-qf-lbl:first-child{padding-top:4px!important;}
+
+/* ── 6/7 · Dashboard number cards are numbers: label, figure, comparison line ── */
+:is(html,#us#us) #dash-scroll .kpi :is(.kpi-spark,.kpi-bar){display:none!important;}
+
+/* ── 7 · Job page: the workflow stage stops repeating the status toggle ── */
+:is(html,#us#us) #d-status .wf-badge.wf-live{display:none!important;}
+:is(html,#us#us) #d-status .wf-badge:not(.wf-live){background:none!important;border:0!important;padding:0!important;color:var(--muted)!important;font:500 12.5px/1.2 var(--font)!important;}
+:is(html,#us#us) #d-status .paused-badge[onclick*="editJobDates"]{background:transparent!important;border-color:var(--border)!important;}
+/* Job plan: totals live on Progress now; New phase sits right like every other action */
+:is(html,#us#us) #fb2-sum{display:none!important;}
+:is(html,#us#us) #dtab-plan .plan-actions{justify-content:flex-end!important;}
+
+/* ── 7 · Filter chips: on the gutter, one height, the value reads first, "+" adds another ── */
+:is(html,#us#us) .fbar{gap:8px!important;padding:0 var(--gutter,28px) 12px!important;background:transparent!important;border-bottom:0!important;align-items:center!important;}
+:is(html,#us#us) .fchip{height:28px;box-sizing:border-box;padding:0 4px 0 10px!important;gap:4px!important;border-radius:8px!important;background:var(--white)!important;border:1px solid var(--border)!important;}
+:is(html,#us#us) .fchip select{field-sizing:content;max-width:200px!important;font-size:12px!important;padding:0!important;}
+:is(html,#us#us) .fchip>select:first-child{color:var(--muted)!important;font-weight:400!important;}
+:is(html,#us#us) .fchip>span{margin:0 0 0 -4px!important;color:var(--muted)!important;}
+:is(html,#us#us) .fchip-x{width:20px;height:20px;display:grid!important;place-items:center;padding:0!important;margin:0!important;border-radius:6px!important;}
+:is(html,#us#us) .fchip-x:hover{background:var(--off)!important;}
+:is(html,#us#us) .us-fadd{flex:none;width:28px;height:28px;display:grid;place-items:center;padding:0;border:1px dashed var(--border);border-radius:8px;background:none;color:var(--muted);cursor:pointer;font-size:14px;}
+:is(html,#us#us) .us-fadd:hover{color:var(--ink);border-color:var(--muted);background:var(--white);}
+:is(html,#us#us) .us-fadd:focus-visible{outline:none;box-shadow:var(--ring);}
+
+/* ── 7 · Sync status: quieter, and only after a background refresh (not on first load) ── */
+:is(html,#us#us) #perf-pill{box-shadow:none!important;min-height:28px!important;padding:0 12px 0 8px!important;font-size:12px!important;color:var(--muted)!important;border-color:var(--faint)!important;}
+
+/* ── 9 · Motion: colour, background, border, opacity and transform only, one curve ── */
+/* (a bare universal selector on purpose: an ancestor-qualified one costs a walk up the tree per element) */
+*,*::before,*::after{
+  transition-property:color,background-color,border-color,outline-color,text-decoration-color,fill,stroke,opacity,transform,box-shadow,stroke-dashoffset!important;
+  transition-timing-function:var(--us-ease,cubic-bezier(.22,1,.36,1))!important;}
+/* To Do parking: no width animation. The panel slides and fades in at its full width, then out. */
+:is(html,#us#us) .fb1-park-side{transition:background-color .18s,border-color .18s,box-shadow .24s!important;border-radius:12px!important;}
+:is(html,#us#us) .fb1-park-side.open{border-radius:16px!important;}
+:is(html,#us#us) .fb1-park-side.us-entering{animation:usParkIn .26s var(--us-ease) both;}
+:is(html,#us#us) .fb1-park-side.us-closing{animation:usParkOut .16s var(--us-ease) both;pointer-events:none;}
+@keyframes usParkIn{from{opacity:0;transform:translateX(16px);}to{opacity:1;transform:none;}}
+@keyframes usParkOut{from{opacity:1;transform:none;}to{opacity:0;transform:translateX(16px);}}
+@media (prefers-reduced-motion:reduce){:is(html,#us#us) .fb1-park-side:is(.us-entering,.us-closing){animation:none!important;}}
+</style>
+<script id="us-script">
+// unslop polish pass (unslop by Damir Sokolovsky, @heydamir, CC BY 4.0) — behaviour the CSS can't do.
+(function(){
+  // 1 · Charts: warm ink leads, light warm greys compare, ochre is the one highlight; semantic colours
+  //     (green ok, amber over, red error) stay as they are. CV hands out its palette arrays by
+  //     reference, so they are re-stepped in place (as ds-r5 did); charts read them at render time.
+  try{
+    if(typeof CV!=='undefined'&&CV.t){
+      const body=document.body,had=body.classList.contains('dark');
+      const set=(dark,pal,heat)=>{body.classList.toggle('dark',dark);const t=CV.t();pal.forEach((c,i)=>{t.pal[i]=c;});heat.forEach((c,i)=>{t.heat[i]=c;});};
+      set(false,['#3A342C','#B0781A','#9C9384','#C9C1B3','#6F675B','#2E8F6E'],['#F7F4EF','#EDE7DD','#DED5C6','#C6BAA6','#A69883','#7E715E','#564B3D']);
+      set(true, ['#ECE5D9','#D49B3F','#9F978A','#6B645A','#C4BBAC','#3FA37F'],['#2A2825','#36332E','#47423B','#5F584F','#7E766A','#A69D8F','#D3CABB']);
+      body.classList.toggle('dark',had);
+    }
+  }catch(e){}
+
+  // 2 · Filter chips: never two empty ones (the Filter button added a blank "Status: Any" chip per
+  //     click, and blanks were saved and came back next visit); a new chip takes the next unused
+  //     kind and opens on its value; a "+" after the chips adds another.
+  const MODES=['jobs','qt','inv'];
+  const barId=m=>m==='qt'?'qt-fbar':m==='inv'?'inv-fbar':'jobs-fbar';
+  const blank=f=>!f||f.value===''||f.value==null;
+  function setArr(m,a){if(m==='qt')_qtFilters=a;else if(m==='inv')_invFilters=a;else _jobsFilters=a;}
+  try{MODES.forEach(m=>{const a=_filterArr(m);if(a.some(blank)){setArr(m,a.filter(f=>!blank(f)));_saveFilterState(m);}});}catch(e){}
+  if(typeof _addFilter==='function'){
+    window._addFilter=_addFilter=function(mode){
+      const defs=_filterDefs(mode),arr=_filterArr(mode).filter(f=>!blank(f));
+      const used=new Set(arr.map(f=>f.type));
+      const def=defs.find(d=>!used.has(d.type))||defs[0];
+      const f={id:uid('f'),type:def.type,value:''};arr.push(f);setArr(mode,arr);
+      _saveFilterState(mode);_filterRender(mode);
+      requestAnimationFrame(()=>{const chips=document.querySelectorAll('#'+barId(mode)+' .fchip');const c=chips[chips.length-1];const v=c&&c.querySelectorAll('select,input')[1];if(v){v.focus();try{if(v.tagName==='SELECT'&&v.showPicker)v.showPicker();}catch(e){}}});
+    };
+  }
+  if(typeof saveFilterPreset==='function'){
+    const _sfp=saveFilterPreset;
+    window.saveFilterPreset=saveFilterPreset=function(mode){const a=_filterArr(mode);if(a.some(blank))setArr(mode,a.filter(f=>!blank(f)));return _sfp.apply(this,arguments);};
+  }
+  if(typeof _renderFilterBar==='function'){
+    const _rfb=_renderFilterBar;
+    window._renderFilterBar=_renderFilterBar=function(mode){
+      const r=_rfb.apply(this,arguments);
+      try{const el=document.getElementById(barId(mode));if(el&&_filterArr(mode).length&&!el.querySelector('.us-fadd'))
+        el.insertAdjacentHTML('beforeend',`<button type="button" class="us-fadd" onclick="_addFilter('${mode}')" title="Add another filter" aria-label="Add another filter"><i class="ti ti-plus" aria-hidden="true"></i></button>`);}catch(e){}
+      return r;
+    };
+  }
+
+  // 3 · Job totals: one set of tiles on Progress (they were on Job plan and Progress, half of them
+  //     twice). Hours for everyone; money only with View financials.
+  if(typeof _jobStatTilesHTML==='function'&&typeof computeJobStats==='function'){
+    window._jobStatTilesHTML=_jobStatTilesHTML=function(j){
+      const s=computeJobStats(j),fmtH=s.fmtH;
+      const plan=s.plannedMins||0,log=s.loggedMins||0,pct=plan>0?Math.round(log/plan*100):0,left=plan-log;
+      const col=v=>v>=100?'var(--red)':v>=80?'var(--warn)':'var(--ok)';
+      const $=n=>'$'+Math.round(n||0).toLocaleString('en-NZ');
+      const phs=(typeof activeJobId!=='undefined'&&j.id===activeJobId&&typeof phases!=='undefined'&&Array.isArray(phases))?phases:(j.phases||[]);
+      let items=0,done=0,phDone=0;
+      phs.forEach(ph=>{if(ph.status==='complete')phDone++;(ph.items||[]).forEach(it=>{items++;if(it.status==='complete')done++;});});
+      let h=_statBlock('Hours used / planned',`${fmtH(log)} <span class="stat-of">/ ${plan>0?fmtH(plan):'—'}</span>`,plan>0?`${pct}% of plan`:'No hours planned yet',plan>0?pct:null,col(pct))
+        +_statBlock('Hours remaining',plan>0?(left>=0?fmtH(left):`<span class="fb2-over">${fmtH(-left)} over</span>`):'—',plan>0?(left>=0?'Left on the plan':'More than planned'):null,null)
+        +_statBlock('Items complete',`${done} <span class="stat-of">/ ${items}</span>`,`${phDone} of ${phs.length} phase${phs.length!==1?'s':''} done`,items?Math.round(done/items*100):null,'var(--ok)');
+      let money=false;try{money=_showMoney();}catch(e){}
+      if(money){
+        const value=j._finalBudget||s.plannedSell;
+        const st=!!j._streamtime,sent=j.invStatus==='sent'||j.invStatus==='paid';
+        const inv=st?(j._stInvoiced||0):(sent?(j.invTotal||s.plannedSell||0):0);
+        const invSub=st?(j._stInvoiced>0?(j._stPaid>=j._stInvoiced?'Paid':j._stAwaitingPayment>0?'Awaiting payment':'Sent'):null):(sent?(j.invStatus==='paid'?'Paid':'Sent'):null);
+        h+=_statBlock('Job value',value>0?$(value):'—',j.billable!==false?'Billable':'Non-billable',null)
+          +_statBlock('Sell used / planned',`${$(s.sellUsed)} <span class="stat-of">/ ${s.plannedSell>0?$(s.plannedSell):'—'}</span>`,s.plannedSell>0?`${s.bPct}% of plan`:null,s.plannedSell>0?s.bPct:null,col(s.bPct))
+          +_statBlock('Expenses',$(s.expUsed),value>0?`${$(Math.max(0,value-s.sellUsed-s.expUsed))} budget left`:null,null)
+          +_statBlock('Invoiced ex GST',inv>0?$(inv):'—',invSub,null);
+      }
+      return h;
+    };
+  }
+
+  // 4 · To Do parking: open slides in at full width, close slides out, no width tween.
+  if(typeof window._parkToggle==='function'){
+    const _pt=window._parkToggle;
+    const reduced=()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}};
+    window._parkToggle=function(on){
+      const side=document.getElementById('fb1-park-side');
+      if(!on&&side&&side.classList.contains('open')&&!reduced()){
+        side.classList.add('us-closing');setTimeout(()=>_pt(false),150);return;
+      }
+      _pt(on);
+      if(on&&!reduced()){const s=document.getElementById('fb1-park-side');if(s){s.classList.remove('us-entering');void s.offsetWidth;s.classList.add('us-entering');setTimeout(()=>s.classList.remove('us-entering'),300);}}
+    };
+  }
 })();
 </script>
 </body>
