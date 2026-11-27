@@ -4901,7 +4901,8 @@ function openTrendModal(kind){
   // Bars in the series colour; the current week is still filling, so it's drawn faded and
   // labelled; dashed line = the 26-week average.
   const today=new Date();today.setHours(0,0,0,0);const daysIn=((today.getDay()+6)%7)+1;const cur=n-1;
-  const fill=vals.map((v,i)=>i===cur&&daysIn<7?CV.alpha(color,.42):color);
+  // this week in the highlight (amber), faded while it's still filling
+  const hi=CV.slot(1),fill=vals.map((v,i)=>i===cur?(daysIn<7?CV.alpha(hi,.42):hi):color);
   _makeChart('trend-big',{type:'bar',cvEmpty:'No time logged in the last 26 weeks.',data:{labels,datasets:[{label,data:vals.map(v=>Math.round(v*100)/100),backgroundColor:fill,hoverBackgroundColor:fill,cvColor:color}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{cvRefs:avg>0?[{v:avg,label:`Avg ${fmtHrs(avg)}`}]:[],
@@ -18747,16 +18748,17 @@ function _rvBusiness(el){
 
   const tk=CV.t(),red=CV.slot(0);
   const bA=wkInfo.map(w=>wk[w.wk]?.b||0),nA=wkInfo.map(w=>wk[w.wk]?.n||0);
-  const fade=(c,i)=>wkInfo[i].partial?CV.alpha(c,.42):c;
+  // partial weeks: the main series faded; sand steps to its lighter sand (vf)
+  const fade=(c,i)=>wkInfo[i].partial?(c===tk.sand&&tk.sandLite?tk.sandLite:CV.alpha(c,.42)):c;
   const anyPartial=wkInfo.some(w=>w.partial);
-  // us: one highlight — this week's billable bar in the chart accent (CV slot 1), the rest warm ink
+  // one highlight — this week's billable bar in amber (CV slot 1), the rest slate blue; non-billable in sand
   const isCurWk=w=>!!(w.live||(typeof today==='string'&&(w.days||[]).includes(today)));
   const hiC=CV.slot(1),anyLive=wkInfo.some(isCurWk),billC=i=>isCurWk(wkInfo[i])?hiC:red;
   _makeChart('rc-trend',{type:'bar',cvEmpty:'No time logged in this period.',
-    cvCaption:[anyLive?'This week in ochre.':'',anyPartial?'Faded bars are weeks the period only partly covers.':'',showCap?'Grey rule: capacity (contracted hours less leave).':'',preSync?`Logged time starts ${fmtDate(t0)}.`:''].filter(Boolean).join(' '),
+    cvCaption:[anyLive?'This week in amber.':'',anyPartial?'Faded bars are weeks the period only partly covers.':'',showCap?'Grey rule: capacity (contracted hours less leave).':'',preSync?`Logged time starts ${fmtDate(t0)}.`:''].filter(Boolean).join(' '),
     data:{labels:wkInfo.map(w=>CV.dShort(w.wk)),datasets:[
       {label:'Billable',data:bA,backgroundColor:bA.map((v,i)=>fade(billC(i),i)),hoverBackgroundColor:bA.map((v,i)=>fade(billC(i),i)),cvColor:red,cvTotal:_rvH(_rvSum(bA,x=>x))},
-      {label:'Non-billable',data:nA,backgroundColor:nA.map((v,i)=>fade(tk.stone,i)),hoverBackgroundColor:nA.map((v,i)=>fade(tk.stone,i)),cvColor:tk.stone,cvTotal:_rvH(_rvSum(nA,x=>x))},
+      {label:'Non-billable',data:nA,backgroundColor:nA.map((v,i)=>fade(tk.sand||tk.stone,i)),hoverBackgroundColor:nA.map((v,i)=>fade(tk.sand||tk.stone,i)),cvColor:tk.sand||tk.stone,cvTotal:_rvH(_rvSum(nA,x=>x))},
       // capacity: a short rule over each week's column (handles partial weeks without a staircase)
       ...(showCap?[{type:'line',label:'Capacity',stack:'cap',data:capW.map(v=>Math.round(v*100)/100),cvRef:true,cvKey:'ln',cvNoTip:true,cvColor:tk.ink2,showLine:false,
         pointStyle:'line',pointRadius:CV.colRadius,pointHoverRadius:CV.colRadius,pointBorderWidth:2,pointHoverBorderWidth:2,pointBorderColor:tk.ink2,pointHoverBorderColor:tk.ink2,pointBackgroundColor:tk.ink2,order:-1}]:[])]},
@@ -18768,8 +18770,8 @@ function _rvBusiness(el){
   // Revenue by month — paid drawn inside invoiced: the wash above the solid bar is what's unpaid.
   const invA=months.map(m=>mInv[m.key]||0),paidA=months.map(m=>mPaid[m.key]||0);const curMo=today.slice(0,7);
   const paidC=months.map(m=>m.key===curMo?CV.slot(1):red);
-  _makeChart('rc-month',{type:'bar',cvEmpty:'No issued invoices in these 12 months.',cvCaption:months.some(m=>m.key===curMo)?'This month in ochre.':'',data:{labels:months.map(m=>m.label),datasets:[
-    {label:'Invoiced',data:invA,backgroundColor:CV.alpha(red,tk.wash),hoverBackgroundColor:CV.alpha(red,tk.wash+.08),cvColor:CV.alpha(red,tk.wash+.12),cvWash:true,cvTotal:_rvK(_rvSum(invA,x=>x)),grouped:false,barPercentage:1,maxBarThickness:28,order:2},
+  _makeChart('rc-month',{type:'bar',cvEmpty:'No issued invoices in these 12 months.',cvCaption:months.some(m=>m.key===curMo)?'This month in amber.':'',data:{labels:months.map(m=>m.label),datasets:[
+    {label:'Invoiced',data:invA,backgroundColor:tk.sand||CV.alpha(red,tk.wash),hoverBackgroundColor:tk.sand||CV.alpha(red,tk.wash+.08),cvColor:tk.sand||CV.alpha(red,tk.wash+.12),cvTotal:_rvK(_rvSum(invA,x=>x)),grouped:false,barPercentage:1,maxBarThickness:28,order:2},
     {label:'Paid',data:paidA,backgroundColor:paidC,hoverBackgroundColor:paidC,cvColor:red,grouped:false,barPercentage:.5,maxBarThickness:12,cvTotal:_rvK(_rvSum(paidA,x=>x)),order:1}]},
     options:_rvBarOpts({money:true,legend:true,
       title:i=>CV.monthLong(months[i].key)+(months[i].key===curMo?' (so far)':''),
@@ -30990,6 +30992,107 @@ document.addEventListener('keydown',e=>{
   const side=document.getElementById('fb1-park-side');if(!side||typeof _parkToggle!=='function')return;
   e.preventDefault();_parkToggle(!side.classList.contains('open'));
 });
+</script>
+<style id="vf-style">
+/* ═══ Visual fixes from the owner's review (after the polish pass). Same specificity trick as
+   us-style, one id deeper so these win: :is(html,#vf#vf#vf). ═══════════════════════════════════ */
+:is(html,#vf#vf#vf) body{
+  --vf-title-top:32px;    /* page title's top on pages without a sub-tab bar, from the page panel's top */
+  --chart-1:#5B7395;      /* slate blue: the main chart series (mirrors CV slot 0, set in vf-script) */
+}
+:is(html,#vf#vf#vf) body.dark{--chart-1:#8EA5C8;}
+
+/* 1 · Display headings: bold Inter Tight with a slight negative tracking, as before the polish pass */
+:is(html,#vf#vf#vf) :is(.view-title,.boards-head,.sett-tab-hd,.detail-title,.dash-greeting){
+  font-family:var(--display)!important;font-weight:700!important;letter-spacing:-.02em!important;}
+
+/* 2 · Top padding: pages without a tab bar start their title block 32px under the panel top.
+   Jobs keeps its sub-tab bar with the title 24px under it (--us-title-top). */
+:is(html,#vf#vf#vf) :is(#view-reporting .r-head-wrap,#schedule-scroll,#boards-landing,#settings-scroll){padding-top:var(--vf-title-top)!important;}
+/* a job: the back link plays the tab bar's part, so the meta line + title sit where Jobs' title does */
+:is(html,#vf#vf#vf) #view-detail .detail-title-row{padding-top:8px!important;}
+/* dashboard: the greeting block sits on the card's top line, level with "Your day" */
+:is(html,#vf#vf#vf) .dh-hero .dh-hero-main{align-self:start!important;}
+
+/* 4 · Task form: the hours field reads like the other fields (text on the same column, quiet until
+   hover / focus), still compact */
+:is(html,#vf#vf#vf) #todo-modal .ux-tm .ux-when #td-hours{width:68px!important;text-align:left!important;padding:0 10px!important;
+  background-color:transparent!important;border-color:transparent!important;}
+:is(html,#vf#vf#vf) #todo-modal .ux-tm .ux-when #td-hours:hover{background-color:var(--surface-2)!important;border-color:var(--faint)!important;}
+:is(html,#vf#vf#vf) #todo-modal .ux-tm .ux-when #td-hours:focus{background-color:var(--white)!important;border-color:color-mix(in srgb,var(--red) 55%,var(--border))!important;box-shadow:var(--ring)!important;}
+:is(html,#vf#vf#vf) #todo-modal .ux-tm .ux-when #td-hours::placeholder{color:var(--muted);}
+:is(html,#vf#vf#vf) #todo-modal .us-opts :is(.tm-repeat-btn,.tm-urgent-lbl){padding:0 10px!important;}
+
+/* 5 · View settings popup: one 16px inner padding, one section rhythm, one left edge */
+:is(html,#vf#vf#vf) #vsp{width:248px!important;padding:0 0 8px!important;}
+:is(html,#vf#vf#vf) #vsp .fb1-vsp-head{padding:14px 16px 2px!important;}
+:is(html,#vf#vf#vf) #vsp .fb1-vsp-sec{padding:12px 16px!important;gap:8px!important;}
+:is(html,#vf#vf#vf) #vsp .fb1-vsp-sec .fb1-vsp-lbl{padding:0!important;}
+:is(html,#vf#vf#vf) #vsp .vsp-item{position:relative;}
+:is(html,#vf#vf#vf) #vsp .vsp-item .vsp-grip{position:absolute;left:2px;top:50%;transform:translateY(-50%);} /* out of the row's flow: checkboxes on the 16px edge */
+:is(html,#vf#vf#vf) #vsp .fb1-vsp-cd{padding:12px 16px 4px!important;}
+:is(html,#vf#vf#vf) #vsp .vsp-item{padding:6px 16px!important;gap:8px!important;}
+</style>
+<script id="vf-script">
+// Visual fixes from the owner's review — behaviour the CSS can't do.
+(function(){
+  // 3 · Charts: slate blue leads, sand compares, amber is the one highlight (this week / this month).
+  //     Semantic colours (green ok, amber over, red error) stay. CV hands out its palette and heat
+  //     arrays by reference, so they are re-stepped in place (as ds-r5 and us did); the neutral
+  //     tokens (stone = comparison, graphite = a lone neutral series) are copied per call, so CV.t
+  //     is wrapped to hand out the new ones plus sand / sandLite (partial-period comparison bars).
+  try{
+    if(typeof CV!=='undefined'&&CV.t){
+      const body=document.body,had=body.classList.contains('dark');
+      const set=(dark,pal,heat)=>{body.classList.toggle('dark',dark);const t=CV.t();pal.forEach((c,i)=>{t.pal[i]=c;});heat.forEach((c,i)=>{t.heat[i]=c;});};
+      //               slate      amber      deep sand  pale slate deep slate green
+      set(false,['#5B7395','#D08A2E','#A89878','#A9B8CC','#344A6B','#2E8F6E'],['#F4F6F9','#E2E8F0','#C8D2E0','#A6B5CA','#8094B0','#5B7395','#3E5272']);
+      set(true, ['#8EA5C8','#E3A04B','#A8997C','#55657E','#C3D0E3','#3FA37F'],['#26292E','#2C333D','#344050','#3F5067','#506684','#6A82A6','#93A8C8']);
+      body.classList.toggle('dark',had);
+      const NEU={light:{stone:'#D9CDB8',sand:'#D9CDB8',sandLite:'#E8DFCF',graphite:'#A89878'},
+                 dark:{stone:'#645C4D',sand:'#645C4D',sandLite:'#46413A',graphite:'#A8997C'}};
+      const _t=CV.t;
+      CV.t=function(){const o=_t.apply(this,arguments);return Object.assign(o,NEU[o.mode==='dark'?'dark':'light']);};
+    }
+  }catch(e){}
+
+  // 6 · Week picker: open right under the date button, centred on it (kept on screen)
+  if(typeof toggleCalPopup==='function'){
+    const _tcp=toggleCalPopup;
+    window.toggleCalPopup=toggleCalPopup=function(e){
+      const r=_tcp.apply(this,arguments);
+      try{const p=document.getElementById('cal-popup'),b=document.getElementById('wbtn-cal');
+        if(p&&b&&p.classList.contains('on')){const br=b.getBoundingClientRect(),w=p.offsetWidth||256;
+          const l=Math.round(br.left+br.width/2-w/2);p.style.left=Math.max(8,Math.min(innerWidth-w-8,l))+'px';p.style.top=Math.round(br.bottom+6)+'px';}}catch(x){}
+      return r;
+    };
+  }
+
+  // 7 · Escape on To Do: closes the week picker / view settings if open, else the Parking space
+  //     (only when no sheet, menu or popover is open and you're not typing in a field)
+  if(typeof window.uxEscape==='function'){
+    const _ux=window.uxEscape;
+    const OPEN='.modal-bg.on,.gs-bg.on,.inv-bg.on,.cb-overlay.on,#fup.on,#todo-modal.on,.tm-overlay.on,#starred-panel.on,#tm-panel.open,#detail-drawer.open,'
+      +'.au-menu,#cc-confirm-modal,#task-ctx-menu,.task-ctx-menu,#label-picker,#tm-assign-menu.open,.item-pick-dd.on,#td-job-dropdown.on,#create-item-menu,#ctx.on,#pctx.on,#inv-ctx.on,#ps-menu.on,#jp-pop,#fb2-fav-pop.on';
+    const shown=el=>!!el&&el.isConnected&&el.getClientRects().length>0&&getComputedStyle(el).visibility!=='hidden';
+    window.uxEscape=function(e){
+      try{
+        const onTodo=!document.getElementById('view-todo')?.classList.contains('hidden');
+        if(onTodo&&!e.repeat){
+          const t=e.target,typing=t&&t.nodeType===1&&(/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)||t.isContentEditable)&&document.activeElement===t;
+          if(!typing&&![...document.querySelectorAll(OPEN)].some(shown)){
+            const cal=document.getElementById('cal-popup'),vsp=document.getElementById('vsp');
+            if(cal&&cal.classList.contains('on')){cal.classList.remove('on');document.getElementById('wbtn-cal')?.focus();e.preventDefault();return;}
+            if(vsp&&vsp.classList.contains('on')){vsp.classList.remove('on');document.getElementById('vsp-btn')?.focus();e.preventDefault();return;}
+            const side=document.getElementById('fb1-park-side');
+            if(side&&side.classList.contains('open')&&typeof window._parkToggle==='function'){window._parkToggle(false);e.preventDefault();return;}
+          }
+        }
+      }catch(x){}
+      return _ux.apply(this,arguments);
+    };
+  }
+})();
 </script>
 </body>
 </html>
