@@ -29715,6 +29715,20 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
     return null;
   }
   const wk=r=>(r.d.getDay()===0||r.d.getDay()===6)?null:r; // the board has Mon–Fri only
+  const STOP=new Set('the and for with from into onto this that job jobs task tasks up out on in of to a an at by do re v1 v2 v3 r1 r2 eod due urgent asap done today tomorrow'.split(' '));
+  const stem=w=>w.replace(/[^a-z0-9]/g,'').replace(/(ing|ies|es|s)$/,m=>m==='ies'?'y':'');
+  const tok=t=>String(t||'').toLowerCase().split(/[^a-z0-9]+/).map(stem).filter(x=>x.length>=3&&!STOP.has(x));
+  const tok2=t=>String(t||'').toLowerCase().split(/[^a-z0-9]+/).map(stem).filter(x=>x.length>=2&&!STOP.has(x));
+  let FUZ=null;
+  function fuzzyIndex(){
+    if(FUZ)return FUZ;
+    const rec=_recentJobIds(),words=new Map(),rank=new Map();
+    jobs.forEach(j=>{if(j.status!=='inplay')return;
+      const r=rec.indexOf(j.id);rank.set(j,(r<0?0:1000-r)*1e7+(parseInt(j.id,10)||0));
+      const set=new Set([...tok(j.name),...tok(String(j.company||'').replace(/\s+(ltd|limited|inc|co|nz|llc|pty|group)\.?$/i,''))]);
+      set.forEach(w=>{if(!words.has(w))words.set(w,new Set());words.get(w).add(j);});});
+    return FUZ={words,rank};
+  }
   let JOBIX=null; // [{phrase, job, rank}] for name matching
   function jobIndex(){
     if(JOBIX)return JOBIX;
@@ -29734,7 +29748,8 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
     const words=[];line.replace(/\S+/g,(m,at)=>{words.push({raw:m,n:norm(m),at,end:at+m.length});return m;});
     if(settled&&!/\s$/.test(line))words.pop();
     const out={},used=new Set(),dis=QT.dismissed;
-    const take=(kind,i,len,val)=>{if(out[kind])return false;const raw=words.slice(i,i+len).map(w=>w.n).join(' ');const key=kind+':'+raw;if(dis.has(key))return false;out[kind]={...val,key,raw};for(let k=0;k<len;k++)used.add(i+k);return true;};
+    const take=(kind,i,len,val,keep)=>{if(out[kind])return false;const raw=words.slice(i,i+len).map(w=>w.n).join(' ');const key=kind+':'+raw;if(dis.has(key))return false;out[kind]={...val,key,raw};for(let k=0;k<len;k++)(keep?kept:used).add(i+k);return true;};
+    const kept=new Set(); // understood but left in the title (e.g. "due 27th")
     for(let i=0;i<words.length;i++){
       if(used.has(i))continue;
       const w=words[i].n;
@@ -29744,6 +29759,14 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
       const jm=w.match(/^#?(\d{3,7})$/);
       if(jm){const j=jobById(jm[1]);if(j&&take('job',i,1,{j}))continue;}
       if(w==='done'&&i===words.length-1&&words.some((x,k)=>k<i&&hoursOf(x.n))){take('done',i,1,{});continue;} // only with a time: "1.5h amends done"
+      if(w==='urgent'||w==='asap'){take('urgent',i,1,{});continue;}
+      // "due 27th", "due fri", "due 3/12", "due tomorrow": a deadline, kept in the title
+      if(w==='due'&&words[i+1]){
+        let dd=dayOf(words,i+1),len=dd?dd.len:0;
+        const o=words[i+1].n.match(/^(\d{1,2})(?:st|nd|rd|th)$/);
+        if(!dd&&o){const t0=new Date();t0.setHours(0,0,0,0);let d=new Date(t0.getFullYear(),t0.getMonth(),+o[1]);if(d<t0)d=new Date(t0.getFullYear(),t0.getMonth()+1,+o[1]);if(d.getDate()===+o[1]){dd={d};len=1;}}
+        if(dd){take('due',i,1+len,{d:dd.d},true);i+=len;continue;}
+      }
       const d=dayOf(words,i);
       if(d&&take('day',i,d.len,{d:d.d}))i+=d.len-1;
     }
@@ -29760,11 +29783,43 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
         }
       });
       if(best&&take('job',best.i,best.L,{j:best.j,byName:true})){}
+      // Not the full name: distinctive words from the job or client name, e.g. "london fog" → London Fog foils & pack artwork.
+      // Rare words count for more; a single word only counts when it belongs to one job.
+      if(!out.job){
+        const ix=fuzzyIndex(),cand=new Map();
+        low.forEach((w0,i)=>{const w=stem(w0);if(used.has(i)||kept.has(i)||w.length<3||STOP.has(w))return;const js=ix.words.get(w);if(!js||js.size>25)return;
+          js.forEach(j=>{const c=cand.get(j)||{j,score:0,idx:[]};c.score+=1/js.size;c.idx.push(i);cand.set(j,c);});});
+        let fb=null;
+        cand.forEach(c=>{const idx=[...new Set(c.idx)].sort((a,b)=>a-b);
+          let run=1,bestRun=1;for(let k=1;k<idx.length;k++){run=idx[k]===idx[k-1]+1?run+1:1;bestRun=Math.max(bestRun,run);}
+          const single=idx.length===1&&c.score>=1&&low[idx[0]].length>=5;
+          if(!(idx.length>=2&&(bestRun>=2||c.score>=0.6))&&!single)return;
+          const sc=c.score+bestRun*0.5+(ix.rank.get(c.j)||0)*1e-12;
+          if(!fb||sc>fb.sc)fb={...c,idx,sc};});
+        if(fb){const raw=fb.idx.map(i=>low[i]).join(' ');const key='job:'+raw;
+          if(!dis.has(key)){out.job={j:fb.j,byName:true,key,raw};
+            // the matched run leaves the title; scattered words stay
+            let a=fb.idx[0],b=a;for(const i of fb.idx){if(i===b+1)b=i;}if(b>a)for(let i=a;i<=b;i++)used.add(i);}}
+      }
     }
+    // 3. the line item: words in the title matched to the job's plan items (phase names help pick between twins)
+    {const j=out.job?.j||(document.getElementById('td-job')?.value?jobById(document.getElementById('td-job').value):null);
+      const curItem=document.getElementById('td-item')?.value;
+      if(j&&(!curItem||QT.applied.item)){
+        const tw=words.map((w,i)=>used.has(i)?'':stem(w.n)).filter(x=>x&&x.length>=2&&!STOP.has(x));
+        let bi=null;
+        (j.phases||[]).forEach(ph=>{const pw=new Set(tok2(ph.name));(ph.items||[]).forEach(it=>{
+          const iw=tok2(it.name);if(!iw.length)return;
+          const hit=iw.filter(x=>tw.includes(x)).length;if(!hit)return;
+          const sc=hit/iw.length+hit+[...pw].filter(x=>tw.includes(x)).length*0.6+(it.status==='complete'||it.done?-0.5:0);
+          if(!bi||sc>bi.sc)bi={it,ph,sc};});});
+        if(bi){const key='item:'+(bi.it.id||bi.it.name);if(!dis.has(key))out.item={it:bi.it,ph:bi.ph,key,raw:bi.it.name};}
+      }}
     // title = the first line minus the understood words, plus any further lines
     const keep=[];line.replace(/\S+/g,(m,at)=>{const idx=words.findIndex(w=>w.at===at);if(idx<0||!used.has(idx))keep.push(m);return m;});
+    if(out.urgent)for(let k=keep.length-1;k>=0;k--){if(/^(urgent|asap)[.,;:!]*$/i.test(keep[k]))keep.splice(k,1);}
     out._title=[keep.join(' ').replace(/^[\s,;:–—-]+|[\s,;:–—-]+$/g,''),...text.split('\n').slice(1)].join('\n').trim();
-    out._any=used.size>0;
+    out._any=used.size>0||kept.size>0||!!out.item;
     return out;
   }
   const QT={applied:{},dismissed:new Set(),openOff:null,saved:false,timer:null};
@@ -29787,6 +29842,24 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
       revert(prev){weekOffset=prev.off;$('td-day').value=prev.day;_updateDateLabel();},
       now:()=>weekOffset+'|'+$('td-day').value,
       label:t=>{const s=isoOf(t.d),td=isoOf(new Date()),tm=isoOf(addDays(new Date(),1));return s===td?'Today':s===tm?'Tomorrow':shortD(s);},icon:'ti-calendar'},
+    urgent:{
+      get:()=>!!$('td-urgent')?.checked,
+      apply(){const c=$('td-urgent');if(c){c.checked=true;$('td-urgent-lbl')?.classList.add('on');}return true;},
+      revert(prev){const c=$('td-urgent');if(c){c.checked=!!prev;$('td-urgent-lbl')?.classList.toggle('on',!!prev);}},
+      now:()=>!!$('td-urgent')?.checked,
+      label:()=>'Urgent',icon:'ti-alert-circle'},
+    due:{
+      get:()=>QT.due||null,
+      apply(t){QT.due=isoOf(t.d);return QT.due;},
+      revert(prev){QT.due=prev;},
+      now:()=>QT.due||null,
+      label:t=>'Due '+shortD(isoOf(t.d)),icon:'ti-flag'},
+    item:{
+      get:()=>({item:$('td-item').value,itemId:$('td-item-id')?.value||''}),
+      apply(t){$('td-item').value=t.it.name;_setItemPickerLabel(t.it.name,t.it.id||'');return (t.it.id||t.it.name);},
+      revert(prev){$('td-item').value=prev.item||'';_setItemPickerLabel(prev.item||'',prev.itemId||'');},
+      now:()=>$('td-item-id')?.value||$('td-item').value,
+      label:t=>t.it.name+(t.ph?.name?' · '+t.ph.name:''),icon:'ti-list-details'},
     done:{
       get:()=>!!$('td-done')?.checked,
       apply(){setDone(true);return true;},
@@ -29826,7 +29899,7 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
     const ks=Object.keys(QT.applied);
     if(!ks.length){b.hidden=true;b.innerHTML='';return;}
     b.hidden=false;
-    b.innerHTML=`<span class="pfm-qt-lbl">Understood</span>`+['hours','job','day','done'].filter(k=>QT.applied[k]).map(k=>`<span class="pfm-chip" title="${esc(QT.applied[k].label)}"><i class="ti ${fields[k].icon}" aria-hidden="true"></i><span>${esc(QT.applied[k].label)}</span><button type="button" aria-label="Undo ${esc(QT.applied[k].label)}" title="Undo: keep “${esc(QT.applied[k].key.split(':').slice(1).join(':'))}” in the title" onmousedown="event.preventDefault()" onclick="pfmQtUndo('${k}')"><i class="ti ti-x"></i></button></span>`).join('')
+    b.innerHTML=`<span class="pfm-qt-lbl">Understood</span>`+['hours','job','item','day','due','urgent','done'].filter(k=>QT.applied[k]).map(k=>`<span class="pfm-chip" title="${esc(QT.applied[k].label)}"><i class="ti ${fields[k].icon}" aria-hidden="true"></i><span>${esc(QT.applied[k].label)}</span><button type="button" aria-label="Undo ${esc(QT.applied[k].label)}" title="Undo: keep “${esc(QT.applied[k].key.split(':').slice(1).join(':'))}” in the title" onmousedown="event.preventDefault()" onclick="pfmQtUndo('${k}')"><i class="ti ti-x"></i></button></span>`).join('')
       +(QT.title?`<span class="pfm-qt-title">Task: <b>${esc(QT.title.split('\n')[0])}</b></span>`:'');
   }
   window.pfmQtUndo=function(k){
@@ -29835,7 +29908,7 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
     QT.dismissed.add(a.key);delete QT.applied[k];
     sync(false);$('td-task')?.focus();
   };
-  function clearQT(){QT.applied={};QT.dismissed=new Set();QT.title='';clearTimeout(QT.timer);const b=$('pfm-qt');if(b){b.hidden=true;b.innerHTML='';}}
+  function clearQT(){QT.applied={};QT.dismissed=new Set();QT.title='';QT.due=null;clearTimeout(QT.timer);const b=$('pfm-qt');if(b){b.hidden=true;b.innerHTML='';}}
   document.addEventListener('input',e=>{
     if(e.target.id!=='td-task'||editingTaskId)return;
     sync(true);clearTimeout(QT.timer);QT.timer=setTimeout(()=>sync(false),600);
@@ -29843,7 +29916,7 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
   document.addEventListener('focusout',e=>{if(e.target.id==='td-task'&&!editingTaskId){clearTimeout(QT.timer);sync(false);}});
   // Each fresh form starts clean; a cancelled form puts back a week it moved the board to.
   const _open=openTodoModal;
-  openTodoModal=function(){clearQT();JOBIX=null;QT.saved=false;const r=_open.apply(this,arguments);QT.openOff=weekOffset;return r;};
+  openTodoModal=function(){clearQT();JOBIX=null;FUZ=null;QT.saved=false;const r=_open.apply(this,arguments);QT.openOff=weekOffset;return r;};
   const _edit=editTask;
   editTask=function(){clearQT();return _edit.apply(this,arguments);};
   const _close=closeTodoModal;
@@ -29863,7 +29936,10 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
       if(t)ta.value=t;
     }
     QT.saved=true;
+    const due=QT.due,before=new Set();
+    if(due)try{Object.values(getWeekData(currentPerson)).forEach(a=>(a||[]).forEach(t=>before.add(t.id)));}catch(e){}
     const out=_save.apply(this,arguments);
+    if(due)try{Object.values(getWeekData(currentPerson)).forEach(a=>(a||[]).forEach(t=>{if(!before.has(t.id))t.due=due;}));}catch(e){}
     if($('todo-modal')?.classList.contains('on')){QT.saved=false;ta.value=raw;} // the form stopped the save
     return out;
   };
@@ -30681,6 +30757,11 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
 @keyframes usParkIn{from{opacity:0;transform:translateX(16px);}to{opacity:1;transform:none;}}
 @keyframes usParkOut{from{opacity:1;transform:none;}to{opacity:0;transform:translateX(16px);}}
 @media (prefers-reduced-motion:reduce){:is(html,#us#us) .fb1-park-side:is(.us-entering,.us-closing){animation:none!important;}}
+:is(html,#us#us) #dash-scroll .kpi.us-kpi-link{cursor:pointer;transition:border-color .15s cubic-bezier(.22,1,.36,1),box-shadow .15s cubic-bezier(.22,1,.36,1);}
+:is(html,#us#us) #dash-scroll .kpi.us-kpi-link:hover{border-color:var(--border)!important;box-shadow:0 1px 2px rgba(46,36,20,.06),0 8px 24px rgba(46,36,20,.06)!important;}
+:is(html,#us#us) #jt-time .time-head-bar{flex-wrap:nowrap!important;gap:8px!important;min-width:0;}
+:is(html,#us#us) #jt-time .time-head-bar .cc-select{flex:1 1 0!important;min-width:96px!important;max-width:176px!important;width:auto!important;}
+:is(html,#us#us) #jt-time .time-head-bar > *{min-width:0;}
 </style>
 <script id="us-script">
 // unslop polish pass (unslop by Damir Sokolovsky, @heydamir, CC BY 4.0) — behaviour the CSS can't do.
@@ -30772,6 +30853,19 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
       if(on&&!reduced()){const s=document.getElementById('fb1-park-side');if(s){s.classList.remove('us-entering');void s.offsetWidth;s.classList.add('us-entering');setTimeout(()=>s.classList.remove('us-entering'),300);}}
     };
   }
+})();
+
+// The number cards lost their sparklines; the card itself now opens the 8-week trend
+(function(){
+  const hook=()=>{try{document.querySelectorAll('#dash-scroll .kpi').forEach(k=>{
+    const sp=k.querySelector('.kpi-spark[onclick]');if(!sp||k.dataset.trend)return;
+    const m=/openTrendModal\('([a-z]+)'\)/.exec(sp.getAttribute('onclick')||'');if(!m)return;
+    k.dataset.trend=m[1];k.classList.add('us-kpi-link');k.tabIndex=0;k.setAttribute('role','button');
+    k.title='Show the 8-week trend';
+    k.addEventListener('click',()=>openTrendModal(m[1]));
+    k.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openTrendModal(m[1]);}});
+  });}catch(e){}};
+  if(typeof renderDashboard==='function'){const _rd=renderDashboard;renderDashboard=function(){const r=_rd.apply(this,arguments);hook();return r;};}
 })();
 </script>
 </body>
