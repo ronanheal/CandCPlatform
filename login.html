@@ -165,6 +165,15 @@ p strong{color:var(--ink);font-weight:600;}
   // First-admin setup: /login.html?setup=1 shows the "Setup code" field (BOOTSTRAP_TOKEN).
   var SETUP=/(?:^|[?&])setup=1(?:&|$)/.test(location.search);
   function $(id){return document.getElementById(id);}
+  // A shared filter link (/#view=…) survives the trip through sign-in: the redirect here keeps
+  // the hash, and it's kept in sessionStorage (index.html reads the same key) for after sign-in.
+  var LINK=/^#view=[a-z]+(&s=[A-Za-z0-9_-]*)?$/;
+  try{if(LINK.test(location.hash))sessionStorage.setItem('cc_sf_link',JSON.stringify({h:location.hash,t:Date.now()}));}catch(e){}
+  function home(){
+    var h='';
+    try{var s=JSON.parse(sessionStorage.getItem('cc_sf_link')||'null');if(s&&LINK.test(s.h)&&Date.now()-s.t<30*60*1000)h=s.h;}catch(e){}
+    location.replace('/'+h);
+  }
   function show(id){
     VIEWS.forEach(function(v){$(v).hidden=v!==id;});
     var f=$(id).querySelector('input');if(f)setTimeout(function(){f.focus();},30);
@@ -188,7 +197,7 @@ p strong{color:var(--ink);font-weight:600;}
     post('/api/auth/login',{email:email,password:password}).then(function(x){
       if(!x.ok){busy(f,false);f.password.value='';err(f,(x.j&&x.j.error)||'Sign-in failed. Please try again.');return;}
       if(x.j.mustChangePassword){busy(f,false);$('f-change').current.value=password;f.password.value='';show('v-change');$('f-change').next.focus();return;}
-      location.replace('/');
+      home();
     }).catch(function(){busy(f,false);err(f,'Network error. Please try again.');});
   });
 
@@ -216,10 +225,11 @@ p strong{color:var(--ink);font-weight:600;}
     busy(f,true,'Saving…');
     post('/api/auth/password',{current:f.current.value,next:f.next.value}).then(function(x){
       if(!x.ok){busy(f,false);err(f,(x.j&&x.j.error)||'Could not change the password.');return;}
-      location.replace('/');
+      home();
     }).catch(function(){busy(f,false);err(f,'Network error. Please try again.');});
   });
 
+  try{var _pl=JSON.parse(sessionStorage.getItem('cc_sf_link')||'null');var _a=document.querySelector('#v-in a.btn.primary');if(_a&&_pl&&LINK.test(_pl.h))_a.setAttribute('href','/'+_pl.h);}catch(e){}
   if(SETUP)$('setup-fld').hidden=false;
   if(location.hash==='#request'||SETUP)show('v-request');
   fetch('/api/auth/status',{credentials:'same-origin',cache:'no-store'})
