@@ -4565,6 +4565,9 @@ async function initStreamtime(silent){
     if(invRes.ok)stInvoices=await invRes.json();
     // Quotes
     if(qtRes.ok)stQuotes=await qtRes.json();
+    // The sync slims a quote's company to {id,name}; the app reads it as text everywhere (lists,
+    // filters, search), which showed "[object Object]". Keep the name as text and the id beside it.
+    try{stQuotes.forEach(q=>{if(q&&q.company&&typeof q.company==='object'){q.companyId=q.companyId||q.company.id;q.company=q.company.name||'';}});}catch(e){}
     await _stYield();
     // Expenses
     if(expRes.ok)stExpenses=await expRes.json();
