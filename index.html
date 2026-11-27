@@ -21880,10 +21880,10 @@ body.dark #todo-modal .ux-tm .ux-seg .tm-urgent-lbl.on{background:var(--surface-
     // Job picker label → client + actions
     const sj=window._setJobPickerValue;
     if(typeof sj==='function'&&!sj._ux){const w=function(){const r=sj.apply(this,arguments);try{syncJobField();}catch(e){}return r;};w._ux=1;window._setJobPickerValue=_setJobPickerValue=w;}
-    // The date chip sits beside the day select, so it carries the date only ("13 Nov")
+    // The date chip is the only day control now, so it shows the weekday too ("Mon 13 Nov")
     const ud=window._updateDateLabel;
     if(typeof ud==='function'&&!ud._ux){const w=function(){const r=ud.apply(this,arguments);
-      try{const l=$('td-date-label');if(l)l.textContent=l.textContent.replace(/^[A-Z][a-z]{2}\s+/,'');}catch(e){}return r;};
+      return r;}; // the day select is hidden now (us-style), so the chip keeps its weekday: "Mon 23 Nov"
       w._ux=1;window._updateDateLabel=_updateDateLabel=w;}
     // Navigation memory for Escape → back
     const nt=window.navTo;
@@ -26445,7 +26445,30 @@ _stRenderViews=function(){
   const PK='cc_parked';
   const parked=()=>{try{return JSON.parse(localStorage.getItem(PK)||'{}')||{};}catch(e){return{};}};
   const setParked=v=>{try{localStorage.setItem(PK,JSON.stringify(v));}catch(e){toast('Couldn’t save the parked tasks: this browser’s storage is full','warn');}};
-  const mine=()=>parked()[currentPerson]||[];
+  const mine=()=>{try{_importWeekendParking(currentPerson);}catch(e){}return parked()[currentPerson]||[];};
+  // People have been parking work on Saturdays in Streamtime. Weekend blocks (8 weeks either side)
+  // come into the Parking space once each, so moving or deleting one sticks. Streamtime is unchanged.
+  const SATK='cc_sat_imported';
+  function _importWeekendParking(pk){
+    if(typeof stScheduledTodos==='undefined'||!stScheduledTodos.length)return;
+    const u=Object.values(stUsersById||{}).find(x=>x.key===pk);if(!u)return;
+    let seen;try{seen=new Set(JSON.parse(localStorage.getItem(SATK)||'[]'));}catch(e){seen=new Set();}
+    const t0=new Date();t0.setHours(0,0,0,0);const lo=new Date(t0);lo.setDate(lo.getDate()-56);const hi=new Date(t0);hi.setDate(hi.getDate()+56);
+    const all=parked(),arr=all[pk]=all[pk]||[];let added=0;
+    stScheduledTodos.forEach(t=>{
+      if(t.userId!==u.id||!t.date)return;
+      const d=new Date(String(t.date).slice(0,10)+'T00:00:00');const wd=d.getDay();
+      if((wd!==6&&wd!==0)||d<lo||d>hi)return;
+      const id='st-sat-'+t.id;if(seen.has(id))return;seen.add(id);
+      const jNum=t.jobNumber?String(t.jobNumber):'';
+      arr.push({id,title:t.notes||t.scheduleNotes||t.itemName||t.jobName||'Parked task',job:jNum?`${jNum} ${t.jobName||''}`.trim():'',jobId:jNum||null,
+        item:t.itemName||'',itemId:t.jobItemId?('st-it-'+t.jobItemId):null,hours:(t.minutes||0)/60,done:false,urgent:false,personal:false,
+        billable:t.isBillable!==false,_fromWeekend:String(t.date).slice(0,10),_parkedAt:Date.now()});
+      added++;
+    });
+    try{localStorage.setItem(SATK,JSON.stringify([...seen]));}catch(e){}
+    if(added)setParked(all);
+  }
   // Parking space: a sidebar on the right of the week that opens and closes (remembered per browser).
   // Closed, it's a slim strip with the count; while a task is being dragged the strip is a drop target.
   const PO='cc_park_open',PS='cc_park_show';
@@ -26471,7 +26494,7 @@ _stRenderViews=function(){
     const n=list.length;
     side.innerHTML=open
       ?`<div class="fb1-ps-hd"><div><div class="fb1-pk-title"><i class="ti ti-parking" aria-hidden="true"></i> Parking space</div><div class="fb1-pk-sub">${n?`${n} task${n===1?'':'s'} · no day yet`:'No day yet'}</div></div><button class="tm-x" aria-label="Close the parking space" title="Close" onclick="_parkToggle(false)"><i class="ti ti-layout-sidebar-right-collapse"></i></button></div>`
-        +`<div class="fb1-pk-body">`+list.map(t=>`<div class="fb1-pt-card" draggable="true" data-pid="${esc(t.id)}" title="Drag onto a day"><div class="fb1-pt-t">${esc(String(t.title||'').split('\n')[0]||t.item||'Task')}</div><div class="fb1-pt-m">${esc([t.job,t.hours?formatHrs(t.hours):''].filter(Boolean).join(' · '))}</div><button class="fb1-pt-x" title="Delete" aria-label="Delete parked task" onclick="_parkDel('${esc(t.id)}')"><i class="ti ti-trash"></i></button></div>`).join('')
+        +`<div class="fb1-pk-body">`+list.map(t=>`<div class="fb1-pt-card" draggable="true" data-pid="${esc(t.id)}" title="Drag onto a day"><div class="fb1-pt-t">${esc(String(t.title||'').split('\n')[0]||t.item||'Task')}</div><div class="fb1-pt-m">${esc([t.job,t.hours?formatHrs(t.hours):'',t._fromWeekend?'from '+(()=>{const d=new Date(t._fromWeekend+'T00:00:00');return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+' '+d.getDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];})():''].filter(Boolean).join(' · '))}</div><button class="fb1-pt-x" title="Delete" aria-label="Delete parked task" onclick="_parkDel('${esc(t.id)}')"><i class="ti ti-trash"></i></button></div>`).join('')
         +`<div class="fb1-pk-hint">${n?'Drag a task onto a day to plan it.':'Drag a task here to park it until it has a day.'}</div></div>`
       :`<button class="fb1-ps-tab" onclick="_parkToggle(true)" aria-label="Open the parking space${n?`, ${n} parked`:''}" title="Parking space: tasks with no day yet"><i class="ti ti-parking" aria-hidden="true"></i><span>Parking</span>${n?`<b>${n}</b>`:''}</button>`;
     side.querySelectorAll('.fb1-pt-card').forEach(c=>c.addEventListener('dragstart',e=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',JSON.stringify({parkedId:c.dataset.pid}));}));
@@ -30767,6 +30790,10 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
 :is(html,#us#us) #todo-modal #td-done-lbl{display:none!important;}
 :is(html,#us#us) #todo-modal:has(#td-done:checked) #td-save-btn{display:none!important;}
 :is(html,#us#us) #todo-modal:has(#td-done:checked) #td-log-btn{background:var(--ink)!important;color:var(--on-ink,#fff)!important;border-color:var(--ink)!important;box-shadow:0 1px 2px rgba(25,23,20,.22)!important;}
+:is(html,#us#us) #todo-modal #td-day{display:none!important;} /* the date chip is the day control */
+:is(html,#us#us) #todo-modal #td-timer-btn{width:auto!important;min-width:0!important;padding:0 14px!important;gap:6px!important;}
+:is(html,#us#us) #todo-modal :is(.ux-ft,.tm-footer,.tm-ft){gap:8px!important;}
+:is(html,#us#us) #todo-modal #td-log-btn,:is(html,#us#us) #todo-modal .tm-btn-cancel{padding:0 14px!important;gap:6px!important;}
 </style>
 <script id="us-script">
 // unslop polish pass (unslop by Damir Sokolovsky, @heydamir, CC BY 4.0) — behaviour the CSS can't do.
