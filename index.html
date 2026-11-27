@@ -28835,5 +28835,566 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
   });
 })();
 </script>
+<style id="sf-style">
+/* ═══ Saved filters everywhere + shareable filter links ═══════════════════════════════════════ */
+/* The old per-list "Save" buttons and presets bars: favourites live in the Quick filters popup */
+#qt-presets-bar,#inv-presets-bar{display:none!important;}
+.sf-hold{display:none!important;}
+.sf-qf-btn.on{border-color:var(--ink);}
+.sf-tb-gap{margin-left:auto;}
+.qinv-toolbar .jobs-count.sf-count{margin-left:0!important;}
+.fb3-qf-pop.sf-pop{width:264px;}
+.sf-qf-link{flex:none;border:0;background:none;color:var(--muted);padding:6px;border-radius:6px;cursor:pointer;opacity:0;}
+.fb3-qf-fav:hover .sf-qf-link,.sf-qf-link:focus-visible{opacity:1;}
+.sf-qf-link:hover{color:var(--ink);background:var(--off);}
+.sf-qf-link:focus-visible,.fb3-qf-save:focus-visible{outline:none;box-shadow:var(--ring);}
+.sf-qf-link.is-done,.fb3-qf-save.is-done{color:var(--ok-ink,var(--ok));}
+.sf-save{display:flex;gap:6px;padding:6px 4px 4px;margin:0;}
+.sf-save input{flex:1;min-width:0;height:30px;padding:0 9px;border:1px solid var(--border);border-radius:8px;font:13px var(--font);background:var(--white);color:var(--ink);}
+.sf-save input:focus{outline:none;border-color:var(--ink);box-shadow:var(--ring);}
+.sf-save .d-action{height:30px!important;}
+.sf-qf-hint{padding:2px 8px 6px;font-size:11.5px;color:var(--muted);line-height:1.4;}
+#jt-time .sf-qf-wrap{margin-right:2px;}
+</style>
+<script id="sf-script">
+// ═══ Saved filters everywhere + shareable filter links ═══════════════════════════════════════
+// Every list (Jobs, Items, Time, Expenses, Quotes, Invoices, Clients) gets the Jobs toolbar's
+// "Quick filters" button: ready-made filters for that list, saved favourites (per browser) and
+// "Save current filters". "Copy link" puts the list, search, filters, sort and grouping in the
+// URL hash (#view=invoices&s=…); opening the link restores that exact view once the data has
+// loaded, including after the sign-in page (login.html carries the hash through). Nothing is
+// stored on a server: a link is how a filtered list is shared with the team. Permissions still
+// apply: a link to a list someone can't see shows the usual locked screen.
+// Each list keeps its own filter logic; an adapter here only reads and writes its controls.
+(function(){
+  const $=id=>document.getElementById(id);
+  const MONEY=()=>{try{return can('viewFinancials');}catch(e){return true;}};
+  const ME=()=>typeof MY_PERSON!=='undefined'?MY_PERSON:'';
+  const lsGet=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}};
+  const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){toast('Couldn’t save: this browser’s storage is full or blocked','warn');return false;}};
+  const pad=n=>String(n).padStart(2,'0');
+  const iso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const monthStart=()=>{const d=new Date();return iso(new Date(d.getFullYear(),d.getMonth(),1));};
+  const daysAgo=n=>{const d=new Date();d.setDate(d.getDate()-n);return iso(d);};
+  // Values arriving from a link are untrusted: search text loses angle brackets, everything is capped
+  const cleanQ=v=>String(v==null?'':v).replace(/[<>]/g,'').slice(0,200);
+  const str=v=>String(v==null?'':v).slice(0,200);
+  const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+
+  // ── Filter-chip lists (Jobs, Quotes, Invoices): the shared filter engine ────────────────
+  // "Unpaid" invoices = sent, awaiting payment or overdue (one chip instead of three)
+  try{const d=INV_FILTER_DEFS.find(x=>x.type==='status');if(d&&!d.opts.includes('Unpaid'))d.opts.splice(1,0,'Unpaid');}catch(e){}
+  const _aif=window._applyInvFilters;
+  if(typeof _aif==='function')window._applyInvFilters=_applyInvFilters=function(inv,jobByStId,getSt){
+    const unpaid=_invFilters.some(f=>f.type==='status'&&f.value==='Unpaid');
+    if(!unpaid)return _aif.apply(this,arguments);
+    const keep=_invFilters;
+    try{_invFilters=keep.filter(f=>!(f.type==='status'&&f.value==='Unpaid'));inv=_aif.call(this,inv,jobByStId,getSt);}
+    finally{_invFilters=keep;}
+    return inv.filter(i=>['sent','awaiting','overdue'].includes(getSt(i)));
+  };
+  const setChips=(mode,arr)=>{if(mode==='qt')_qtFilters=arr;else if(mode==='inv')_invFilters=arr;else _jobsFilters=arr;};
+  const setGroup=(mode,g)=>{if(mode==='qt')_qtGroupBy=g;else if(mode==='inv')_invGroupBy=g;else _jobsGroupBy=g;const s=$(_filterGbId(mode));if(s)s.value=g;};
+  const GROUPS={jobs:['none','company','status','workflow','lead'],qt:['none','status','company','job'],inv:['none','status','company','job']};
+  const MONEY_CHIPS={jobs:['health','uninvoiced','budget_min','budget_max']};
+  function cleanChips(mode,list){
+    const defs=_filterDefs(mode);const hide=MONEY()?[]:(MONEY_CHIPS[mode]||[]);
+    return (Array.isArray(list)?list:[]).map(x=>{
+      if(!x||typeof x!=='object')return null;
+      const type=str(x.type),def=defs.find(d=>d.type===type);if(!def||hide.includes(type))return null;
+      let v=str(x.value);if(!v)return null;
+      if(def.input==='select'&&!(def.opts||[]).includes(v))return null;
+      if(def.input==='date'&&!/^\d{4}-\d{2}-\d{2}$/.test(v))return null;
+      if(def.input==='number'&&!isFinite(+v))return null;
+      if(def.input==='lead'&&!(typeof people!=='undefined'&&people[v]))return null;
+      if(def.input==='text')v=v.replace(/["<>&]/g,''); // the chip puts it straight into value="…"
+      const o={id:uid('f'),type,value:v};if(typeof x.qf==='string'&&/^[a-z0-9_]{1,20}$/.test(x.qf))o.qf=x.qf;
+      return o;
+    }).filter(Boolean);
+  }
+  const chipsOut=mode=>_filterArr(mode).filter(f=>f.value!==''&&f.value!=null).map(f=>{const o={type:f.type,value:f.value};if(f.qf)o.qf=f.qf;return o;});
+  // A ready-made chip filter: on when its chips are there. Chips with a date worked out on the day
+  // ("this month") are recognised by the tag they were added with.
+  const chip=(type,value,dyn)=>({type,value,dyn:!!dyn});
+  function chipMatch(f,c,k){return f.type===c.type&&(f.qf?f.qf===k&&(c.dyn||f.value===c.value):(!c.dyn&&f.value===c.value));}
+  function chipOn(mode,x){const arr=_filterArr(mode);return x.chips().every(c=>arr.some(f=>chipMatch(f,c,x.k)));}
+  function chipToggle(mode,x){
+    let arr=_filterArr(mode).slice();const cs=x.chips();
+    if(chipOn(mode,x))arr=arr.filter(f=>!cs.some(c=>chipMatch(f,c,x.k)));
+    else{
+      // A quick filter replaces filters of the same kind (one status at a time, one lead…)
+      const types=cs.map(c=>c.type);arr=arr.filter(f=>!types.includes(f.type));
+      cs.forEach(c=>arr.push({id:uid('f'),type:c.type,value:c.value,qf:x.k}));
+    }
+    setChips(mode,arr);_saveFilterState(mode);_filterRender(mode);
+  }
+
+  // ── Field lists (Time, Expenses, Items, Clients): their own selects and tickboxes ───────
+  function fieldOn(A,x){const st=A.get();return Object.entries(x.set()).every(([k,v])=>same(st[k],v));}
+  function fieldToggle(A,x){
+    const st=A.get(),d=A.defaults(),set=x.set();
+    if(fieldOn(A,x))Object.keys(set).forEach(k=>{if(!(x.keep||[]).includes(k))st[k]=d[k];});
+    else Object.assign(st,set);
+    A.set(st);
+  }
+  // Reads/writes a set of form controls: kind 'sel' (only values the select offers), 'txt', 'bool'
+  function domGet(spec){const o={};Object.entries(spec).forEach(([k,[id,kind,d]])=>{const el=$(id);o[k]=el?(kind==='bool'?!!el.checked:el.value):d;});return o;}
+  function domPut(spec,st){Object.entries(spec).forEach(([k,[id,kind,d]])=>{const el=$(id);if(!el)return;const v=k in st?st[k]:d;
+    if(kind==='bool')el.checked=!!v;else if(kind==='txt')el.value=cleanQ(v);else{const s=str(v);el.value=[...el.options].some(o=>o.value===s)?s:d;}});}
+  const RANGES={thismonth:'This month',lastmonth:'Last month',thisquarter:'This quarter',thisyear:'This year'};
+  function rangeOf(r){const d=new Date(),y=d.getFullYear(),m=d.getMonth();
+    if(r==='thismonth')return[iso(new Date(y,m,1)),iso(new Date(y,m+1,0))];
+    if(r==='lastmonth')return[iso(new Date(y,m-1,1)),iso(new Date(y,m,0))];
+    if(r==='thisquarter'){const q=Math.floor(m/3)*3;return[iso(new Date(y,q,1)),iso(new Date(y,q+3,0))];}
+    if(r==='thisyear')return[y+'-01-01',y+'-12-31'];
+    return null;}
+  const overBudget=j=>{if(!j)return false;try{if(j._bPct===undefined)computeJobStats(j);}catch(e){}return Math.max(j._bPct||0,j._hPct||0)>=100;};
+
+  // ── The lists ───────────────────────────────────────────────────────────────────────────
+  const TIME_SPEC={p:['tf-person','sel','all'],c:['tf-client','sel','all'],j:['tf-job','sel','all'],r:['tf-range','sel','all'],b:['tf-bill','sel','all'],st:['tf-status','sel','all'],g:['tf-group','sel','person']};
+  const EXP_SPEC={q:['exp-search-inp','txt',''],s:['exp-status-filter','sel','all'],c:['exp-client-filter','sel','all'],r:['sf-exp-range','sel','all'],o:['sf-exp-over','bool',false],ps:['fd-po-status-f','sel','all'],pu:['fd-po-sup-f','sel','all']};
+  const CLI_SPEC={q:['clients-search-inp','txt',''],s:['clients-sort','sel','name'],a:['clients-active-only','bool',false]};
+  const ITEM_SORTS=['job','client','item','phase','who','plan','log','planSell','usedSell','pct','status','due'];
+  const specDefaults=spec=>Object.fromEntries(Object.entries(spec).map(([k,[,,d]])=>[k,d]));
+  const AD={
+    jobs:{tab:'jobs',label:'Jobs',chips:true,
+      defaults:()=>({q:'',f:[],g:'none',s:'newest',a:false}),
+      get:()=>({q:$('jobs-search-inp')?.value||'',f:chipsOut('jobs'),g:_jobsGroupBy||'none',s:window._fb2JobsSortMode||'newest',a:!!window._fb2JobsArch}),
+      set(st){
+        setChips('jobs',cleanChips('jobs',st.f));setGroup('jobs',GROUPS.jobs.includes(st.g)?st.g:'none');
+        const s=['newest','oldest','due','name','client'].includes(st.s)?st.s:'newest';window._fb2JobsSortMode=s;try{localStorage.setItem('cc_jobs_sort',s);}catch(e){}
+        window._fb2JobsArch=!!st.a;_saveFilterState('jobs');
+        const q=cleanQ(st.q),i=$('jobs-search-inp');if(i)i.value=q;filterJobs(q);
+      },
+      ready:()=>[
+        {k:'mine',label:'My jobs',icon:'ti-user',chips:()=>[chip('member',ME())],show:!!ME()},
+        {k:'lead',label:'I lead',icon:'ti-flag',chips:()=>[chip('lead',ME())],show:!!ME()},
+        {k:'inplay',label:'In play',icon:'ti-player-play',chips:()=>[chip('status','In play')]},
+        {k:'paused',label:'Paused',icon:'ti-player-pause',chips:()=>[chip('status','Paused')]},
+        {k:'complete',label:'Complete',icon:'ti-circle-check',chips:()=>[chip('status','Complete')]},
+        {k:'attn',label:'Needs attention',icon:'ti-alert-triangle',chips:()=>[chip('health','Needs attention')],show:MONEY()},
+        {k:'uninv',label:'Uninvoiced',icon:'ti-file-invoice',chips:()=>[chip('uninvoiced','Yes')],show:MONEY()},
+      ]},
+    qt:{tab:'quotes',label:'Quotes',chips:true,
+      defaults:()=>({q:'',f:[],g:'none'}),
+      get:()=>({q:$('quotes-search-inp')?.value||'',f:chipsOut('qt'),g:_qtGroupBy||'none'}),
+      set(st){
+        setChips('qt',cleanChips('qt',st.f));setGroup('qt',GROUPS.qt.includes(st.g)?st.g:'none');_saveFilterState('qt');
+        const i=$('quotes-search-inp');if(i)i.value=cleanQ(st.q);renderQuotes();
+      },
+      ready:()=>[
+        {k:'awaiting',label:'Awaiting approval',icon:'ti-hourglass',chips:()=>[chip('status','Sent')]},
+        {k:'stale',label:'Sent 30+ days, no answer',icon:'ti-clock-exclamation',chips:()=>[chip('status','Sent'),chip('sent_before',daysAgo(30),1)]},
+        {k:'approved',label:'Approved',icon:'ti-circle-check',chips:()=>[chip('status','Approved')]},
+        {k:'apprmonth',label:'Approved this month',icon:'ti-calendar-check',chips:()=>[chip('status','Approved'),chip('approved_after',monthStart(),1)]},
+        {k:'drafts',label:'Drafts',icon:'ti-pencil',chips:()=>[chip('status','Draft')]},
+        {k:'mine',label:'On jobs I lead',icon:'ti-flag',chips:()=>[chip('lead',ME())],show:!!ME()},
+      ]},
+    inv:{tab:'invoices',label:'Invoices',chips:true,
+      defaults:()=>({q:'',f:[],g:'none',u:false,sc:null,sd:1}),
+      get:()=>({q:$('invoices-search-inp')?.value||'',f:chipsOut('inv'),g:_invGroupBy||'none',u:!!$('inv-show-tbi')?.checked,sc:_invSortCol||null,sd:_invSortDir===-1?-1:1}),
+      set(st){
+        setChips('inv',cleanChips('inv',st.f));setGroup('inv',GROUPS.inv.includes(st.g)?st.g:'none');_saveFilterState('inv');
+        _invSortCol=typeof st.sc==='string'&&/^[A-Za-z_]{1,24}$/.test(st.sc)?st.sc:null;_invSortDir=st.sd===-1?-1:1;
+        const i=$('invoices-search-inp');if(i)i.value=cleanQ(st.q);
+        const u=$('inv-show-tbi');if(u)u.checked=!!st.u;
+        renderInvoices();
+      },
+      ready:()=>[
+        {k:'overdue',label:'Overdue',icon:'ti-alert-circle',chips:()=>[chip('status','Overdue')]},
+        {k:'unpaid',label:'Unpaid',icon:'ti-clock-dollar',chips:()=>[chip('status','Unpaid')]},
+        {k:'paidmonth',label:'Paid this month',icon:'ti-cash',chips:()=>[chip('status','Paid'),chip('paid_after',monthStart(),1)]},
+        {k:'drafts',label:'Drafts',icon:'ti-pencil',chips:()=>[chip('status','Draft')]},
+        {k:'mine',label:'On jobs I lead',icon:'ti-flag',chips:()=>[chip('lead',ME())],show:!!ME()},
+      ]},
+    time:{tab:'time',label:'Time',
+      defaults:()=>specDefaults(TIME_SPEC),
+      get:()=>domGet(TIME_SPEC),
+      set(st){
+        domPut(TIME_SPEC,st);
+        try{if(typeof _ccSave==='function'&&typeof CC_TIME_GB_KEY!=='undefined')_ccSave(CC_TIME_GB_KEY,$('tf-group')?.value||'person');}catch(e){}
+        renderTime();
+      },
+      ready:()=>[
+        {k:'thisweek',label:'This week',icon:'ti-calendar-week',set:()=>({r:'thisweek'})},
+        {k:'lastweek',label:'Last week',icon:'ti-calendar-minus',set:()=>({r:'lastweek'})},
+        {k:'thismonth',label:'This month',icon:'ti-calendar-month',set:()=>({r:'thismonth'})},
+        {k:'billable',label:'Billable',icon:'ti-currency-dollar',set:()=>({b:'billable'})},
+        {k:'planned',label:'Planned, not logged yet',icon:'ti-clock-pause',set:()=>({st:'planned'})},
+        {k:'mine',label:'Mine',icon:'ti-user',set:()=>({p:ME()}),show:!!ME()},
+      ]},
+    exp:{tab:'expenses',label:'Expenses',
+      defaults:()=>Object.assign({m:'exp'},specDefaults(EXP_SPEC)),
+      get:()=>Object.assign({m:_fdExpMode==='po'?'po':'exp'},domGet(EXP_SPEC)),
+      set(st){
+        const m=st.m==='po'?'po':'exp';
+        if(m!==_fdExpMode){_fdExpMode=m;try{localStorage.setItem('cc_exp_mode',m);}catch(e){}}
+        renderExpensesList(); // builds the mode's controls and client / supplier options first
+        domPut(EXP_SPEC,st);renderExpensesList();
+      },
+      ready:()=>[
+        {k:'thismonth',label:'This month',icon:'ti-calendar-month',set:()=>({m:'exp',r:'thismonth'}),keep:['m']},
+        {k:'lastmonth',label:'Last month',icon:'ti-calendar-minus',set:()=>({m:'exp',r:'lastmonth'}),keep:['m']},
+        {k:'over',label:'On over-budget jobs',icon:'ti-alert-triangle',set:()=>({m:'exp',o:true}),keep:['m']},
+        {k:'draft',label:'Draft',icon:'ti-pencil',set:()=>({m:'exp',s:'draft'}),keep:['m']},
+        {k:'approved',label:'Approved',icon:'ti-circle-check',set:()=>({m:'exp',s:'approved'}),keep:['m']},
+      ]},
+    items:{tab:'items',label:'Items',
+      defaults:()=>({q:'',scope:'live',status:'open',person:'all',client:'all',over:false,overdue:false,sort:'due',dir:1}),
+      get(){const s=(window._fe&&window._fe.items)||{};const d=this.defaults();return Object.fromEntries(Object.keys(d).map(k=>[k,k in s?s[k]:d[k]]));},
+      set(st){
+        const FE=window._fe;if(!FE||!FE.items)return;const s=FE.items;
+        s.q=cleanQ(st.q);s.scope=['live','paused','all'].includes(st.scope)?st.scope:'live';
+        s.status=['open','all','inprogress','paused','complete'].includes(st.status)?st.status:'open';
+        s.person=str(st.person)||'all';s.client=str(st.client)||'all';s.over=!!st.over;s.overdue=!!st.overdue;
+        s.sort=ITEM_SORTS.includes(st.sort)?st.sort:'due';s.dir=st.dir===-1?-1:1;
+        FE.itemsSet('scope',s.scope); // saves and re-renders
+      },
+      ready:()=>[
+        {k:'mine',label:'Assigned to me',icon:'ti-user',set:()=>({person:ME()}),show:!!ME()},
+        {k:'overdue',label:'Overdue',icon:'ti-calendar-exclamation',set:()=>({overdue:true})},
+        {k:'over',label:'Over plan',icon:'ti-alert-triangle',set:()=>({over:true})},
+        {k:'inprog',label:'In progress',icon:'ti-player-play',set:()=>({status:'inprogress'})},
+        {k:'paused',label:'Include paused jobs',icon:'ti-player-pause',set:()=>({scope:'paused'})},
+      ]},
+    clients:{tab:'clients',label:'Clients',
+      defaults:()=>specDefaults(CLI_SPEC),
+      get:()=>domGet(CLI_SPEC),
+      set(st){
+        if(!$('clients-sort'))renderClients();
+        try{closeClientDetail();}catch(e){}
+        domPut(CLI_SPEC,st);renderClients();
+      },
+      ready:()=>[
+        {k:'active',label:'Active clients',icon:'ti-activity',set:()=>({a:true})},
+        {k:'mostjobs',label:'Most jobs first',icon:'ti-briefcase',set:()=>({s:'jobs'})},
+        {k:'revenue',label:'Highest revenue first',icon:'ti-chart-bar',set:()=>({s:'revenue'}),show:MONEY()},
+      ]},
+  };
+  const TAB2MODE=Object.fromEntries(Object.entries(AD).map(([m,a])=>[a.tab,m]));
+  const fill=(mode,st)=>Object.assign(AD[mode].defaults(),st&&typeof st==='object'&&!Array.isArray(st)?st:{});
+  const readyOf=mode=>AD[mode].ready().filter(x=>x.show!==false);
+  const isOn=(mode,x)=>AD[mode].chips?chipOn(mode,x):fieldOn(AD[mode],x);
+
+  // ── Favourites (per browser). Jobs / Quotes / Invoices keep their existing storage ───────
+  const LEGACY={jobs:'cc_jobs_presets',qt:'cc_qt_presets',inv:'cc_inv_presets'};
+  const FKEY={...LEGACY,time:'cc_time_presets',exp:'cc_exp_presets',items:'cc_items_presets',clients:'cc_clients_presets'};
+  const _fav={};
+  function favs(mode){
+    if(LEGACY[mode])return _filterPresets(mode);
+    if(!Array.isArray(_fav[mode]))_fav[mode]=lsGet(FKEY[mode],[]);
+    if(!Array.isArray(_fav[mode]))_fav[mode]=[];
+    return _fav[mode];
+  }
+  function favState(mode,p){
+    if(p.state&&typeof p.state==='object')return p.state;
+    const st={q:p.search||'',f:p.filters||[],g:p.groupBy||'none'}; // saved before this, by the old Save button
+    if(mode==='jobs'){if(p.sort)st.s=p.sort;if('arch' in p)st.a=!!p.arch;}
+    return st;
+  }
+
+  // ── Links ───────────────────────────────────────────────────────────────────────────────
+  const b64e=s=>btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const b64d=s=>{s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return decodeURIComponent(escape(atob(s)));};
+  function prune(mode,st){const d=AD[mode].defaults(),o={};Object.keys(d).forEach(k=>{if(k in st&&!same(st[k],d[k]))o[k]=st[k];});return o;}
+  function linkFor(mode,st){
+    const u=new URL(location.href);['perf','as','tour'].forEach(k=>u.searchParams.delete(k));
+    const p=prune(mode,fill(mode,st));
+    u.hash='view='+AD[mode].tab+(Object.keys(p).length?'&s='+b64e(JSON.stringify(p)):'');
+    return u.toString();
+  }
+  function parseLink(h){
+    const m=/^#view=([a-z]+)(?:&s=([A-Za-z0-9_-]{0,6000}))?$/.exec(String(h||''));
+    if(!m||!TAB2MODE[m[1]])return null;
+    let st={};if(m[2]){try{st=JSON.parse(b64d(m[2]));}catch(e){st={};}}
+    return{mode:TAB2MODE[m[1]],state:st&&typeof st==='object'&&!Array.isArray(st)?st:{}};
+  }
+  window._sfLink=mode=>AD[mode]?linkFor(mode,AD[mode].get()):'';
+  window._sfParse=parseLink;
+  async function copyText(t){
+    try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(t);return true;}}catch(e){}
+    try{const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;left:-9999px;top:0;opacity:0;';
+      document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();return ok;}catch(e){return false;}
+  }
+  async function copyLink(url,btn,what){
+    window._sfLastLink=url;
+    if(await copyText(url)){
+      toast(`Link to ${what} copied. Anyone with access opens this same list`,'success',3200);
+      if(btn){const i=btn.querySelector('i');btn.classList.add('is-done');const was=i&&i.className;if(i)i.className='ti ti-check';setTimeout(()=>{btn.classList.remove('is-done');if(i)i.className=was;},1400);}
+    }else{try{window.prompt('Your browser blocked the clipboard. Copy this link:',url);}catch(e){toast('Couldn’t copy the link. Your browser blocked the clipboard','warn');}}
+  }
+
+  // ── Popups (floating on <body>: the toolbar's button styles would squash them) ──────────
+  let saving=null,quiet=0;
+  const popId=mode=>mode==='jobs'?'fb3-qf-pop':'sf-qf-pop';
+  const qfBtn=mode=>mode==='jobs'?$('fb3-qf-btn'):$('sf-qf-btn-'+mode);
+  function placePop(pop,btn){
+    const r=btn.getBoundingClientRect(),w=pop.offsetWidth||260;
+    let left=r.left;if(left+w>window.innerWidth-12)left=Math.max(12,r.right-w);
+    pop.style.left=left+'px';pop.style.top=(r.bottom+6)+'px';
+    pop.style.maxHeight=Math.max(160,window.innerHeight-r.bottom-24)+'px';
+  }
+  function getPop(id,btn,label){
+    let pop=$(id);
+    if(!pop){pop=document.createElement('div');pop.id=id;pop.className='fb3-qf-pop sf-pop';pop.setAttribute('role','dialog');pop.setAttribute('aria-label',label);document.body.appendChild(pop);pop.addEventListener('click',ev=>ev.stopPropagation());}
+    btn.setAttribute('aria-expanded','true');return pop;
+  }
+  function closeSf(){
+    ['sf-qf-pop','sf-view-pop'].forEach(id=>$(id)?.remove());
+    document.querySelectorAll('.sf-qf-btn,.sf-view-btn').forEach(b=>b.setAttribute('aria-expanded','false'));
+    saving=null;
+  }
+  function closeAll(){closeSf();$('fb3-qf-pop')?.remove();['fb3-qf-btn','fb3-sort-btn','fb3-view-btn'].forEach(id=>$(id)?.setAttribute('aria-expanded','false'));['fb3-sort-pop','fb3-view-pop'].forEach(id=>$(id)?.remove());}
+  function renderPop(mode,focus){
+    const btn=qfBtn(mode);if(!btn||!btn.offsetParent)return;
+    const prevName=$('sf-save-name');const keepName=prevName?prevName.value:'';const hadFocus=prevName&&document.activeElement===prevName;
+    const pop=getPop(popId(mode),btn,'Quick filters');pop.dataset.mode=mode;
+    const m=`'${mode}'`;
+    const list=favs(mode);
+    pop.innerHTML=`<div class="fb3-qf-lbl">Ready-made</div>`
+      +readyOf(mode).map(x=>{const on=isOn(mode,x);return`<button type="button" class="fb3-qf-row${on?' on':''}" role="menuitemcheckbox" aria-checked="${on}" onclick="_sfToggle(${m},'${x.k}')"><i class="ti ${x.icon}" aria-hidden="true"></i><span>${esc(x.label)}</span><i class="ti ti-check fb3-qf-tick" aria-hidden="true"></i></button>`;}).join('')
+      +`<div class="fb3-qf-lbl">Saved</div>`
+      +(list.length?list.map(p=>`<div class="fb3-qf-fav"><button type="button" class="fb3-qf-row" onclick="_sfLoadFav(${m},'${esc(p.id)}')"><i class="ti ti-star" aria-hidden="true"></i><span>${esc(p.name)}</span></button><button type="button" class="sf-qf-link" title="Copy link to “${esc(p.name)}”" aria-label="Copy link to saved filter ${esc(p.name)}" onclick="_sfCopyFav(${m},'${esc(p.id)}',this)"><i class="ti ti-link" aria-hidden="true"></i></button><button type="button" class="fb3-qf-del" title="Delete “${esc(p.name)}”" aria-label="Delete saved filter ${esc(p.name)}" onclick="_sfDelFav(${m},'${esc(p.id)}')"><i class="ti ti-trash" aria-hidden="true"></i></button></div>`).join('')
+        :`<div class="fb3-qf-empty">Nothing saved yet. Set up a search, filters and sort, then save it here.</div>`)
+      +`<div class="fb3-qf-foot">`
+      +(saving===mode
+        ?`<form class="sf-save" onsubmit="event.preventDefault();_sfSave(${m})"><input id="sf-save-name" placeholder="Name these filters" aria-label="Name for the saved filters" maxlength="60" autocomplete="off"><button type="submit" class="d-action primary">Save</button></form>`
+        :`<button type="button" class="fb3-qf-save" onclick="_sfStartSave(${m})"><i class="ti ti-plus" aria-hidden="true"></i> Save current filters</button>`)
+      +`<button type="button" class="fb3-qf-save" onclick="_sfCopyLink(${m},this)" title="A link that opens this list with the same search, filters, sort and grouping"><i class="ti ti-link" aria-hidden="true"></i> Copy link to this view</button>`
+      +`<div class="sf-qf-hint">Saved filters stay in this browser. Share a link to show someone the same list.</div></div>`;
+    placePop(pop,btn);
+    const ni=$('sf-save-name');
+    if(ni){ni.value=keepName;if(focus||hadFocus||saving===mode)ni.focus();}
+    else if(focus)pop.querySelector('button')?.focus();
+  }
+  function refresh(mode){
+    // count of ready-made filters in use, on the button; and the popup if it's open
+    if(mode!=='jobs'){
+      const b=qfBtn(mode);if(b){let n=0;try{n=readyOf(mode).filter(x=>isOn(mode,x)).length;}catch(e){}
+        const nb=b.querySelector('.fb3-qf-n');if(nb){nb.hidden=!n;nb.textContent=n||'';}b.classList.toggle('on',!!n);}
+    }
+    const pop=$(popId(mode));if(pop&&pop.dataset.mode===mode)renderPop(mode,false);
+    if(mode==='qt'||mode==='inv'){syncView(mode);if($('sf-view-pop')?.dataset.mode===mode)renderView(mode,false);}
+  }
+  window._sfOpen=function(mode,e){
+    e&&e.stopPropagation();
+    const open=!!$(popId(mode))&&$(popId(mode)).dataset.mode===mode;closeAll();if(open)return;
+    saving=null;renderPop(mode,true);
+  };
+  window._sfToggle=function(mode,k){
+    const x=readyOf(mode).find(r=>r.k===k);if(!x)return;quiet=Date.now();
+    if(AD[mode].chips)chipToggle(mode,x);else fieldToggle(AD[mode],x);
+    refresh(mode);
+  };
+  window._sfStartSave=function(mode){saving=mode;renderPop(mode,true);};
+  window._sfSave=function(mode){
+    const inp=$('sf-save-name');const name=(inp?.value||'').trim().slice(0,60);
+    if(!name){toast('Name the filters first','warn');inp?.focus();return;}
+    const arr=favs(mode),st=AD[mode].get();
+    const ex=arr.find(p=>String(p.name).toLowerCase()===name.toLowerCase());
+    let p;
+    if(LEGACY[mode]){
+      p={id:ex?ex.id:uid('p'),name,filters:(st.f||[]).map(x=>({id:uid('f'),...x})),groupBy:st.g||'none',search:st.q||'',state:st};
+      if(mode==='jobs'){p.sort=st.s;p.arch=!!st.a;}
+    }else p={id:ex?ex.id:uid('p'),name,state:st};
+    if(ex)arr.splice(arr.indexOf(ex),1,p);else arr.push(p);
+    if(!lsSet(FKEY[mode],arr))return;
+    saving=null;renderPop(mode,false);
+    toast(ex?`Updated “${esc(name)}”`:`Saved “${esc(name)}” to your filters`,'success');
+  };
+  window._sfLoadFav=function(mode,id){
+    const p=favs(mode).find(x=>x.id===id);if(!p)return;
+    closeAll();AD[mode].set(fill(mode,favState(mode,p)));refresh(mode);
+    toast(`Opened “${esc(p.name)}”`,'success',1800);
+  };
+  window._sfDelFav=function(mode,id){
+    const p=favs(mode).find(x=>x.id===id);if(!p)return;
+    if(LEGACY[mode])deleteFilterPreset(mode,id);
+    else{_fav[mode]=favs(mode).filter(x=>x.id!==id);lsSet(FKEY[mode],_fav[mode]);}
+    renderPop(mode,false);toast(`Removed “${esc(p.name)}”`,'info');
+  };
+  window._sfCopyFav=function(mode,id,btn){
+    const p=favs(mode).find(x=>x.id===id);if(!p)return;
+    copyLink(linkFor(mode,favState(mode,p)),btn,`“${esc(p.name)}”`);
+  };
+  window._sfCopyLink=function(mode,btn){copyLink(linkFor(mode,AD[mode].get()),btn,`this ${AD[mode].label.toLowerCase()} view`);};
+  // Jobs: its Quick filters button opens this popup too (same ready-made filters as before)
+  window._fb3QuickFilters=e=>window._sfOpen('jobs',e);
+  window._fb3QFRefresh=()=>{const p=$('fb3-qf-pop');if(p&&p.dataset.mode==='jobs')renderPop('jobs',false);};
+  document.addEventListener('click',e=>{if(!e.target.closest?.('.fb3-qf-pop,.sf-qf-btn,.sf-view-btn'))closeSf();});
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Escape')return;
+    const p=$('sf-qf-pop')||$('sf-view-pop');if(!p)return;
+    e.stopPropagation();const mode=p.dataset.mode,isView=p.id==='sf-view-pop';closeSf();
+    (isView?$('sf-view-btn-'+mode):qfBtn(mode))?.focus();
+  },true);
+  // Lists re-render (and may scroll) right after a click in the popup; only a real scroll closes it
+  document.addEventListener('scroll',e=>{if(Date.now()-quiet<600||e.target.closest?.('.fb3-qf-pop'))return;closeSf();},true);
+  window.addEventListener('resize',closeSf);
+
+  // ── Quotes / Invoices: the Jobs toolbar pattern ─────────────────────────────────────────
+  // search · Quick filters · Filter · Clear ········ count · View (group by, columns, toggles)
+  const GLBL={none:'None',status:'Status',company:'Company',job:'Job'};
+  function renderView(mode,focus){
+    const btn=$('sf-view-btn-'+mode);if(!btn||!btn.offsetParent)return;
+    const pop=getPop('sf-view-pop',btn,'View');pop.dataset.mode=mode;
+    const g=_filterGroupBy(mode)||'none';
+    pop.innerHTML=`<div class="fb3-qf-lbl">Group by</div>`+GROUPS[mode].map(k=>`<button type="button" class="fb3-qf-row${k===g?' on':''}" role="menuitemradio" aria-checked="${k===g}" onclick="_sfGroup('${mode}','${k}')"><span>${GLBL[k]}</span><i class="ti ti-check fb3-qf-tick" aria-hidden="true"></i></button>`).join('')
+      +(mode==='inv'?`<div class="fb3-qf-lbl">Show</div><label class="fb3-qf-row fb3-qf-sw"><span>Uninvoiced jobs</span><input type="checkbox" ${$('inv-show-tbi')?.checked?'checked':''} onchange="var c=document.getElementById('inv-show-tbi');if(c){c.checked=this.checked;renderInvoices();}"></label>`:'')
+      +`<div class="fb3-qf-foot"><button type="button" class="fb3-qf-save" onclick="_sfColumns('${mode}')"><i class="ti ti-columns" aria-hidden="true"></i> Choose columns…</button></div>`;
+    placePop(pop,btn);
+    if(focus)pop.querySelector('button,input')?.focus();
+  }
+  function syncView(mode){
+    const dot=document.querySelector('#sf-view-btn-'+mode+' .fb3-dot');if(!dot)return;
+    dot.hidden=!((_filterGroupBy(mode)||'none')!=='none'||(mode==='inv'&&$('inv-show-tbi')?.checked));
+  }
+  window._sfView=function(mode,e){
+    e&&e.stopPropagation();const open=$('sf-view-pop')?.dataset.mode===mode;closeAll();if(open)return;renderView(mode,true);
+  };
+  window._sfGroup=function(mode,g){quiet=Date.now();_setGroupBy(mode,g);refresh(mode);};
+  window._sfColumns=function(mode){
+    const b=$('sf-view-btn-'+mode);closeSf();if(!b)return;const r=b.getBoundingClientRect();
+    openColPicker({currentTarget:b,target:b,stopPropagation(){},preventDefault(){},clientX:r.left,clientY:r.bottom},mode);
+  };
+  const QF_BTN=mode=>`<span class="fb3-qf-wrap sf-qf-wrap"><button type="button" class="d-action sf-qf-btn" id="sf-qf-btn-${mode}" onclick="_sfOpen('${mode}',event)" aria-haspopup="true" aria-expanded="false" title="Ready-made filters, your saved filters and a link to share this view"><i class="ti ti-bolt" style="font-size:11px;"></i> Quick filters<b class="fb3-qf-n" hidden></b></button></span>`;
+  function installChipToolbar(mode,panel){
+    const bar=document.querySelector(`#${panel} .qinv-toolbar`);if(!bar||bar.dataset.sf)return;bar.dataset.sf='1';
+    const search=bar.querySelector('.jobs-search');if(!search)return;
+    search.insertAdjacentHTML('afterend',QF_BTN(mode));
+    const qf=bar.querySelector('.sf-qf-wrap');
+    const add=bar.querySelector(`[onclick^="_addFilter"]`);
+    if(add){add.innerHTML='<i class="ti ti-filter-plus" style="font-size:11px;"></i> Filter';add.title='Add a filter';qf.after(add);}
+    const clear=$(mode+'-clear-btn');if(clear)(add||qf).after(clear);
+    const hold=document.createElement('div');hold.className='sf-hold';hold.hidden=true;
+    [$(mode+'-groupby'),bar.querySelector('[onclick^="saveFilterPreset"]'),bar.querySelector('[onclick^="openColPicker"]'),$('inv-show-tbi')?.closest('label')].forEach(el=>{if(el&&bar.contains(el))hold.appendChild(el);});
+    const count=bar.querySelector('.jobs-count');
+    const gap=document.createElement('span');gap.className='sf-tb-gap';gap.setAttribute('aria-hidden','true');
+    bar.appendChild(gap);
+    if(count){count.classList.add('sf-count');bar.appendChild(count);}
+    bar.insertAdjacentHTML('beforeend',`<button type="button" class="d-action sf-view-btn" id="sf-view-btn-${mode}" onclick="_sfView('${mode}',event)" aria-haspopup="true" aria-expanded="false" title="Grouping and columns"><i class="ti ti-layout-list" style="font-size:11px;"></i> View<b class="fb3-dot" hidden></b></button>`);
+    bar.appendChild(hold);
+  }
+  installChipToolbar('qt','jt-quotes');
+  installChipToolbar('inv','jt-invoices');
+  try{const jb=$('fb3-qf-btn');if(jb)jb.title='Ready-made filters, your saved filters and a link to share this view';}catch(e){}
+
+  // ── Time, Expenses, Items, Clients: a Quick filters button beside their own filters ────
+  function installTime(){
+    const bill=$('tf-bill');if(!bill)return;
+    // Done / planned: set from Quick filters ("Planned, not logged yet"); the row has no room for another select
+    if(!$('tf-status'))bill.insertAdjacentHTML('afterend',`<select class="cc-select sf-hold" id="tf-status" onchange="renderTime()" aria-label="Status" hidden><option value="all">Done and planned</option><option value="done">Done (logged)</option><option value="planned">Planned, not logged</option></select>`);
+    if(!$('sf-qf-btn-time'))$('tf-person')?.insertAdjacentHTML('beforebegin',QF_BTN('time'));
+  }
+  function installExp(){
+    const bar=document.querySelector('#jt-expenses .qinv-toolbar');if(!bar)return;
+    if(!$('sf-qf-btn-exp'))bar.querySelector('.jobs-search')?.insertAdjacentHTML('afterend',QF_BTN('exp'));
+    if(!$('sf-exp-range'))$('exp-client-filter')?.insertAdjacentHTML('afterend',`<select class="cc-select" id="sf-exp-range" onchange="renderExpensesList()" aria-label="Date"><option value="all">All dates</option>${Object.entries(RANGES).map(([k,l])=>`<option value="${k}">${l}</option>`).join('')}</select><label class="filter-btn fe-check" id="sf-exp-over-l" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;"><input type="checkbox" id="sf-exp-over" style="accent-color:var(--red)" onchange="renderExpensesList()"> Over-budget jobs</label>`);
+    const po=_fdExpMode==='po';['sf-exp-range','sf-exp-over-l'].forEach(id=>{const e=$(id);if(e)e.style.display=po?'none':'';});
+  }
+  function installItems(){
+    const bar=document.querySelector('#jt-items .qinv-toolbar');if(!bar||$('sf-qf-btn-items'))return;
+    bar.querySelector('.jobs-search')?.insertAdjacentHTML('afterend',QF_BTN('items'));
+  }
+  function installClients(){
+    const bar=document.querySelector('#clients-wrap .clients-toolbar');if(!bar||bar.querySelector('.sf-qf-btn'))return;
+    bar.querySelector('.jobs-search')?.insertAdjacentHTML('afterend',QF_BTN('clients'));
+  }
+
+  // ── Render hooks: keep the buttons in place and their counts current ────────────────────
+  const _rq=window.renderQuotes;
+  window.renderQuotes=renderQuotes=function(){const r=_rq.apply(this,arguments);try{refresh('qt');}catch(e){}return r;};
+  const _ri=window.renderInvoices;
+  window.renderInvoices=renderInvoices=function(){const r=_ri.apply(this,arguments);try{refresh('inv');}catch(e){}return r;};
+  // Time: "Planned, not logged" / "Done" (the list's own filters run on the narrowed entries)
+  const _rt=window.renderTime;
+  window.renderTime=renderTime=function(){
+    try{installTime();}catch(e){}
+    const st=$('tf-status')?.value||'all';
+    let r;
+    if(st==='all')r=_rt.apply(this,arguments);
+    else{
+      const g=window._getTimeEntries;
+      window._getTimeEntries=function(){return g.apply(this,arguments).filter(e=>st==='done'?!!e.done:!e.done);};
+      try{r=_rt.apply(this,arguments);}finally{window._getTimeEntries=g;}
+      const sub=$('time-sub-lbl');if(sub)sub.textContent+=st==='done'?' · Done only':' · Planned, not logged yet';
+    }
+    try{refresh('time');}catch(e){}
+    return r;
+  };
+  // Expenses: date range + over-budget jobs, by narrowing what the list reads for this render
+  const _rel=window.renderExpensesList;
+  window.renderExpensesList=renderExpensesList=function(){
+    try{installExp();}catch(e){}
+    const rg=rangeOf($('sf-exp-range')?.value||'all'),over=!!$('sf-exp-over')?.checked;
+    let r;
+    if(_fdExpMode==='po'||(!rg&&!over))r=_rel.apply(this,arguments);
+    else{
+      const ok=(date,j)=>{if(rg){const d=String(date||'').slice(0,10);if(!d||d<rg[0]||d>rg[1])return false;}return !over||overBudget(j);};
+      const byId=new Map((jobs||[]).map(j=>[String(j.id),j]));
+      const keep=stExpenses,saved=[];
+      try{
+        stExpenses=(keep||[]).filter(e=>ok(e.date,e.jobNumber?byId.get(String(e.jobNumber)):null));
+        (jobs||[]).forEach(j=>{if(j.expenses&&j.expenses.length){saved.push([j,j.expenses]);j.expenses=j.expenses.filter(e=>ok(e.date,j));}});
+        r=_rel.apply(this,arguments);
+      }finally{stExpenses=keep;saved.forEach(([j,a])=>{j.expenses=a;});}
+    }
+    try{installExp();refresh('exp');}catch(e){}
+    return r;
+  };
+  if(window._fe&&typeof window._fe.renderItems==='function'){
+    const _rit=window._fe.renderItems;
+    window._fe.renderItems=function(){const r=_rit.apply(this,arguments);try{installItems();refresh('items');}catch(e){}return r;};
+  }
+  const _rc=window.renderClients;
+  window.renderClients=renderClients=function(){const r=_rc.apply(this,arguments);try{installClients();refresh('clients');}catch(e){}return r;};
+  const _sjt=window.switchJobsTab;
+  window.switchJobsTab=switchJobsTab=function(){closeAll();return _sjt.apply(this,arguments);};
+
+  // ── Opening a link ──────────────────────────────────────────────────────────────────────
+  // The hash is kept in sessionStorage too, so it survives a trip through the sign-in page.
+  const PEND='cc_sf_link';
+  let pending=null;
+  try{
+    if(parseLink(location.hash)){pending=location.hash;sessionStorage.setItem(PEND,JSON.stringify({h:pending,t:Date.now()}));}
+    else{const s=JSON.parse(sessionStorage.getItem(PEND)||'null');if(s&&Date.now()-s.t<30*60*1000&&parseLink(s.h))pending=s.h;else sessionStorage.removeItem(PEND);}
+  }catch(e){}
+  // A link decides where to land, not the "back to your last screen" restore
+  if(pending&&typeof window._xtabRestoreView==='function')window._xtabRestoreView=function(){};
+  const loaded=()=>typeof _stLoad!=='undefined'&&(_stLoad.phase==='done'||_stLoad.phase==='error'||!!_stLoad.doneAt);
+  function clearHash(){try{if(parseLink(location.hash))history.replaceState(history.state,'',location.pathname+location.search);}catch(e){}}
+  function openLink(h){
+    const p=parseLink(h);pending=null;
+    try{sessionStorage.removeItem(PEND);}catch(e){}
+    clearHash();if(!p)return;
+    const A=AD[p.mode];
+    try{
+      closeAll();
+      if(typeof closeAllModals==='function')try{closeAllModals();}catch(e){}
+      navTo('jobs');switchJobsTab(A.tab);
+      // No access: switchJobsTab has shown the locked screen and stayed put
+      if(typeof _jobsTab!=='undefined'&&_jobsTab!==A.tab)return;
+      A.set(fill(p.mode,p.state));refresh(p.mode);
+      const n=Object.keys(prune(p.mode,fill(p.mode,p.state))).length;
+      toast(n?`Opened a shared ${A.label.toLowerCase()} view`:`Opened ${A.label}`,'success',2200);
+    }catch(e){console.warn('sf link',e);toast('Couldn’t open that link’s filters','warn');}
+  }
+  let waiting=false;
+  function whenLoaded(){
+    if(waiting)return;waiting=true;const t0=Date.now();
+    (function tick(){
+      if(!pending){waiting=false;return;}
+      if(loaded()||Date.now()-t0>120000){waiting=false;setTimeout(()=>{if(pending)openLink(pending);},400);return;}
+      setTimeout(tick,200);
+    })();
+  }
+  if(pending)whenLoaded();
+  window.addEventListener('hashchange',()=>{
+    if(!parseLink(location.hash))return;
+    pending=location.hash;
+    if(loaded())openLink(pending);else whenLoaded();
+  });
+})();
+</script>
 </body>
 </html>
