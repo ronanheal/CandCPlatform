@@ -9824,7 +9824,7 @@ function inlineEditItem(e,itemId,phId,field){
     if(item){
       if(val!==current){
         if(field==='name')logActivity(activeJobId,MY_PERSON,'item_rename',`Renamed <strong>${esc(current)}</strong> to <strong>${esc(val)}</strong>`);
-        else logActivity(activeJobId,MY_PERSON,'item_edit',`Changed ${esc(field)} on <strong>${esc(item.name)}</strong> to <strong>${esc(val)}</strong>`);
+        else logActivity(activeJobId,MY_PERSON,'item_edit',`Changed ${esc(field)} on <strong>${esc(item.name)}</strong> from <strong>${esc(current)}</strong> to <strong>${esc(val)}</strong>`);
       }
       item[field]=val;
       // Recalculate total if hours or rate changed
@@ -28833,6 +28833,580 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
     const f=window[n];if(typeof f!=='function')return;
     window[n]=function(){const r=f.apply(this,arguments);saveSubs();return r;};
   });
+})();
+</script>
+<style id="jp-style">
+/* ═══ Job plan gaps (jp): job contacts, client rates, item type library, activity "who" ═══ */
+/* Job contacts in the header meta line */
+#d-meta-line .jp-cts{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap;}
+#d-meta-line .jp-cts::before{content:'';width:3px;height:3px;border-radius:50%;background:var(--subtle);margin-right:2px;}
+.jp-ct{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 9px;border-radius:var(--r-pill);border:1px solid transparent;background:transparent;color:var(--ink-2);font:500 12.5px/1 var(--font);cursor:pointer;white-space:nowrap;transition:background-color .12s,border-color .12s;}
+.jp-ct:hover,.jp-ct:focus-visible,.jp-ct[aria-expanded="true"]{background:var(--white);border-color:var(--border);}
+.jp-ct .ti-star{font-size:12px;color:var(--warn-ink,#B7791F);}
+.jp-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+.jp-ct.add{color:var(--muted);font-weight:400;}
+.jp-ct.add i{font-size:12px;}
+.jp-pop:focus{outline:none;}
+.jp-pop{position:fixed;z-index:1200;background:var(--white);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-l);padding:12px;width:290px;max-width:calc(100vw - 32px);font-size:12.5px;color:var(--ink);}
+.jp-pop-name{font:600 14px/1.3 var(--font);display:flex;align-items:center;gap:6px;}
+.jp-pop-role{color:var(--muted);font-size:12px;margin-top:2px;}
+.jp-pop-line{display:flex;align-items:center;gap:6px;margin-top:8px;min-height:26px;}
+.jp-pop-line>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.jp-pop-line .ti{color:var(--muted);}
+.jp-pop-acts{display:flex;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid var(--faint);}
+.jp-pop-tag{font-size:11px;font-weight:500;color:var(--warn-ink,#B7791F);background:var(--warn-bg);border-radius:var(--r-pill);padding:2px 7px;}
+.jp-pop input.form-inp{width:100%;font-size:12.5px;}
+.jp-pick{max-height:240px;overflow-y:auto;margin-top:8px;display:flex;flex-direction:column;gap:2px;}
+.jp-pick button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;text-align:left;padding:7px 9px;border:0;border-radius:8px;background:transparent;cursor:pointer;font:500 12.5px/1.3 var(--font);color:var(--ink);}
+.jp-pick button:hover,.jp-pick button:focus-visible{background:var(--off);}
+.jp-pick button small{font-weight:400;color:var(--muted);font-size:11.5px;}
+.jp-pick-empty{color:var(--muted);padding:8px 4px;font-size:12px;line-height:1.5;}
+/* Settings → Job items: item type library */
+.jp-lib{border:1px solid var(--border);border-radius:var(--r-ctl);overflow:hidden;}
+.jp-lib-row{display:grid;grid-template-columns:56px minmax(0,1fr) 110px 92px;align-items:center;gap:8px;padding:3px 10px;min-height:38px;border-top:1px solid var(--faint);background:var(--white);}
+.jp-lib-row:first-child{border-top:0;}
+.jp-lib.nofin .jp-lib-row{grid-template-columns:56px minmax(0,1fr) 92px;}
+.jp-lib-hd{background:var(--off);font-size:11.5px;font-weight:500;color:var(--muted);padding-top:8px;padding-bottom:8px;}
+.jp-lib-row .form-inp{width:100%;font-size:13px;padding:4px 8px;height:30px;border-color:transparent;background:transparent;box-shadow:none;}
+#jp-lib-card .jp-lib-row .form-inp{border-color:transparent!important;background:transparent!important;box-shadow:none!important;}
+#jp-lib-card .jp-lib-row .form-inp:hover{border-color:var(--border)!important;}
+#jp-lib-card .jp-lib-row .form-inp:focus{border-color:var(--ink-2)!important;background:var(--white)!important;}
+#jp-lib-card .jp-lib-row .form-inp[readonly]{border-color:transparent!important;}
+.jp-lib-row .jp-rate{text-align:right;}
+.jp-lib-mv{display:flex;gap:2px;}
+.jp-lib-mv .fb2-ibtn[disabled]{opacity:.3;cursor:default;}
+.jp-lib-row .d-action{justify-self:end;}
+.jp-lib-add{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;gap:8px;margin-top:12px;}
+.jp-lib.nofin+.jp-lib-add{grid-template-columns:minmax(0,1fr) auto;}
+.jp-lib-arch{margin-top:14px;}
+.jp-lib-arch summary{cursor:pointer;font-size:12.5px;color:var(--muted);padding:4px 0;}
+.jp-lib-arch .jp-lib-row{grid-template-columns:minmax(0,1fr) 110px 92px;}
+.jp-lib.nofin .jp-lib-arch .jp-lib-row{grid-template-columns:minmax(0,1fr) 92px;}
+/* Client page: rates */
+.jp-crate{margin:22px 0;}
+.jp-crate-hd{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+.jp-crate-hd select{max-width:280px;}
+.jp-crate table{width:100%;border-collapse:collapse;font-size:12.5px;background:var(--white);border:1px solid var(--border);border-radius:var(--r-ctl);overflow:hidden;}
+.jp-crate th{font-weight:500;color:var(--muted);text-align:left;padding:8px 12px;background:var(--off);font-size:11.5px;}
+.jp-crate td{padding:3px 12px;height:36px;border-top:1px solid var(--faint);}
+.jp-crate th.n,.jp-crate td.n{text-align:right;width:130px;font-variant-numeric:tabular-nums;}
+.jp-crate td.n .form-inp{width:100px;text-align:right;font-size:12.5px;padding:3px 8px;height:28px;}
+.jp-crate tr.set td:first-child{font-weight:500;}
+.jp-crate-note{font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.5;}
+/* Activity: who, when, what changed */
+.jp-act-filters{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 6px;}
+.act-card .jp-act-hd{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-bottom:3px;flex-wrap:wrap;}
+.act-card .jp-act-hd b{color:var(--ink);font-weight:600;}
+.act-card .jp-act-hd .sep{color:var(--subtle);}
+.jp-chg{margin:6px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px;}
+.jp-chg li{display:flex;gap:8px;align-items:baseline;font-size:12px;line-height:1.45;}
+.jp-chg .k{color:var(--muted);min-width:84px;flex:none;}
+.jp-chg .o{color:var(--muted);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--muted) 55%,transparent);}
+.jp-chg .a{color:var(--subtle);}
+.jp-chg .v{color:var(--ink);font-weight:500;}
+@media (max-width:640px){.jp-lib-row{grid-template-columns:48px minmax(0,1fr) 80px;}.jp-lib-row .jp-rate-cell{display:none;}}
+</style>
+<script id="jp-script">
+// ═══ Job plan gaps (jp, Nov 2026) ═══════════════════════════════════════════════════════════════
+// Feedback: job plans should mirror Streamtime's; job details (contacts, rates) need changing or
+// adding to; activity should say who did what, with more detail.
+// 1. Job contacts: a job holds several of its client's contacts (j.contacts, one primary). The old
+//    single field j.contact is kept as the primary's name, so everything that read it still works.
+//    Shown in the job header with copy-email; editing needs editJobs. Kept via _keepJobEdits.
+// 2. Client rates: a client can carry its own $/h per item type (client.rates) and/or a named rate
+//    card (client.rateCard, from feat-c2's cc_rate_cards). New plan items on that client's jobs are
+//    priced: client rate → client's card → library default → $150. A job's own rate card (Job
+//    settings) still applies on top, as before. Seeing needs viewFinancials; setting also editJobs.
+// 3. Item type library (Settings → Job items, masterSettings): add, rename, archive/restore and
+//    reorder item types, each with a default rate. LINE_ITEMS stays the active list every picker
+//    reads; rates and archived types live in cc_item_types (this browser).
+// 4. Activity "who": every entry records the signed-in person (by/byName) and, for the job being
+//    edited, what changed (old → new) in status, dates, workflow, name, client, contacts, labels,
+//    lead, billable, rate card and plan value. The feed shows "Name · time", the change list and
+//    filters (All / Changes / Notes / Time). Per job only.
+// All of it is saved in this browser only (localStorage overlays), like the rest of platform edits.
+(function(){
+  const C=k=>{try{return can(k);}catch(e){return true;}};
+  const canEdit=()=>C('editJobs');
+  const fin=()=>C('viewFinancials');
+  const num=v=>{if(typeof v==='number')return isFinite(v)?v:0;const n=parseFloat(String(v??'').replace(/[$,\s]/g,''));return isFinite(n)?n:0;};
+  const money=n=>'$'+Math.round(n||0).toLocaleString();
+  const curJob=()=>jobs.find(x=>x.id===activeJobId);
+  const clientOf=j=>j&&j.company?clientsData.find(c=>c.name===j.company)||null:null;
+  const viewOnly=perm=>{try{toast(perm&&perm!=='editJobs'?`That needs the “${_ccPermLabel(perm)}” permission.`:'View only. Ask someone who manages permissions to make changes.','info');}catch(e){}};
+  const myName=()=>{
+    try{if(AUTH&&AUTH.name&&MY_PERSON===(AUTH.personKey||_authGuestKey()))return AUTH.name;}catch(e){}
+    return people[MY_PERSON]?.name||(typeof AUTH!=='undefined'&&AUTH&&AUTH.email)||'Someone';
+  };
+
+  // ── Small popover ────────────────────────────────────────────────────────────────────────
+  let popAnchor=null;
+  function closePop(){document.getElementById('jp-pop')?.remove();if(popAnchor){popAnchor.setAttribute('aria-expanded','false');popAnchor=null;}}
+  function openPop(anchor,html,label){
+    closePop();
+    const p=document.createElement('div');p.id='jp-pop';p.className='jp-pop';p.setAttribute('role','dialog');p.setAttribute('aria-label',label||'Details');
+    p.innerHTML=html;document.body.appendChild(p);
+    const r=anchor.getBoundingClientRect();const w=p.offsetWidth,h=p.offsetHeight;
+    let left=Math.min(Math.max(16,r.left),window.innerWidth-w-16),top=r.bottom+6;
+    if(top+h>window.innerHeight-12)top=Math.max(12,r.top-h-6);
+    p.style.left=left+'px';p.style.top=top+'px';
+    popAnchor=anchor;anchor.setAttribute('aria-expanded','true');
+    p.addEventListener('click',e=>e.stopPropagation());
+    p.tabIndex=-1;setTimeout(()=>{(p.querySelector('input')||p).focus?.({preventScroll:true});},0);
+    return p;
+  }
+  document.addEventListener('click',e=>{if(document.getElementById('jp-pop')&&!e.target.closest?.('#jp-pop')&&!e.target.closest?.('[data-jp-pop]'))closePop();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('jp-pop')){const a=popAnchor;closePop();a?.focus?.();}});
+
+  // ═══ 1 · Job contacts ═══════════════════════════════════════════════════════════════════
+  const ctName=ct=>[ct.firstName,ct.lastName].filter(Boolean).join(' ')||ct.name||'';
+  const lc=s=>String(s||'').trim().toLowerCase();
+  // Every contact of a client: Streamtime contacts (with this browser's edits), contacts added
+  // here, and the client's main contact field.
+  function clientContacts(c){
+    if(!c)return[];
+    const out=[],seen=new Set();
+    const add=x=>{if(!x.name&&!x.email)return;const k=lc(x.email)||lc(x.name);if(seen.has(k))return;seen.add(k);out.push(x);};
+    (typeof stContacts!=='undefined'?stContacts:[]).filter(ct=>ct.companyId===c._stId||ct.company?.name===c.name||ct.company?.id===c._stId).forEach(ct=>{
+      if(/archived/i.test(ct.contactStatus?.name||''))return;
+      const ed=(c.contactEdits||{})[String(ct.id)]||{};
+      const v={name:ctName(ct),role:ct.jobTitle||ct.position||'',email:ct.email||'',phone:ct.phone||ct.phoneNumber||ct.mobile||''};
+      Object.keys(v).forEach(f=>{if(f in ed)v[f]=ed[f];});
+      add({key:'st:'+ct.id,...v});
+    });
+    (c.localContacts||[]).forEach(ct=>add({key:'loc:'+(lc(ct.email)||lc(ct.name)),name:ct.name||'',role:ct.role||'',email:ct.email||'',phone:ct.phone||''}));
+    if(c.contact||c.email)add({key:'main',name:c.contact||'',role:c.contactTitle||'',email:c.email||'',phone:c.phone||''});
+    return out;
+  }
+  // The job's contacts, freshest details from the client. Legacy jobs with only j.contact show it
+  // as the primary.
+  function jobContacts(j){
+    const cc=clientContacts(clientOf(j));
+    const fresh=x=>{const m=cc.find(c=>c.key===x.key)||(x.email&&cc.find(c=>lc(c.email)===lc(x.email)))||cc.find(c=>lc(c.name)===lc(x.name));return m?{...x,...m,key:x.key,primary:!!x.primary}:x;};
+    if(Array.isArray(j.contacts)&&j.contacts.length){
+      const l=j.contacts.map(fresh);if(!l.some(x=>x.primary))l[0].primary=true;
+      return l.sort((a,b)=>(b.primary?1:0)-(a.primary?1:0));
+    }
+    if(j.contact){
+      const m=cc.find(c=>lc(c.name)===lc(j.contact));
+      return[m?{...m,primary:true}:{key:'txt:'+lc(j.contact),name:j.contact,email:'',role:'',phone:'',primary:true}];
+    }
+    return[];
+  }
+  window._jpJobContacts=jobContacts;
+  function saveContacts(j,list){
+    j.contacts=list.map(x=>({key:x.key,name:x.name||'',email:x.email||'',role:x.role||'',phone:x.phone||'',primary:!!x.primary}));
+    if(j.contacts.length&&!j.contacts.some(x=>x.primary))j.contacts[0].primary=true;
+    j.contact=(j.contacts.find(x=>x.primary)||{}).name||'';
+    _keepJobEdits(j,['contacts','contact']);
+  }
+  function contactsHTML(j){
+    const l=jobContacts(j),edit=canEdit();
+    if(!l.length&&!edit)return'';
+    const chips=l.map((x,i)=>`<button type="button" class="jp-ct" data-jp-pop data-jp-ct="${i}" aria-haspopup="dialog" aria-expanded="false" title="${esc(x.email||x.name)}">${x.primary?'<i class="ti ti-star" aria-hidden="true"></i><span class="jp-sr">Primary: </span>':''}${esc(x.name||x.email)}</button>`).join('');
+    const add=edit&&j.company?`<button type="button" class="jp-ct add" data-jp-pop data-jp-ct-add aria-haspopup="dialog" aria-expanded="false" aria-label="Add contact" title="Add a contact from ${esc(j.company)}"><i class="ti ti-user-plus" aria-hidden="true"></i>${l.length?'':' Add contact'}</button>`:'';
+    return`<span class="jp-cts" aria-label="Job contacts">${chips}${add}</span>`;
+  }
+  function renderJobContacts(){
+    const j=curJob(),ml=document.getElementById('d-meta-line');if(!j||!ml)return;
+    ml.querySelector('.jp-cts')?.remove();
+    const h=contactsHTML(j);if(!h)return;
+    const co=ml.querySelector('.dt-co');
+    if(co)co.insertAdjacentHTML('afterend',h);else ml.insertAdjacentHTML('beforeend',h);
+  }
+  window._jpRenderJobContacts=renderJobContacts;
+  function contactPop(btn,i){
+    const j=curJob();if(!j)return;const x=jobContacts(j)[i];if(!x)return;
+    const edit=canEdit();
+    openPop(btn,`<div class="jp-pop-name">${esc(x.name||x.email)}${x.primary?'<span class="jp-pop-tag">Primary</span>':''}</div>
+      ${x.role?`<div class="jp-pop-role">${esc(x.role)}</div>`:''}
+      ${x.email?`<div class="jp-pop-line"><i class="ti ti-mail" aria-hidden="true"></i><span><a href="mailto:${esc(x.email)}" style="color:inherit;">${esc(x.email)}</a></span><button type="button" class="fb2-ibtn" data-jp-copy="${esc(x.email)}" title="Copy email" aria-label="Copy email"><i class="ti ti-copy" aria-hidden="true"></i></button></div>`:'<div class="jp-pop-line"><span style="color:var(--muted);">No email on file</span></div>'}
+      ${x.phone?`<div class="jp-pop-line"><i class="ti ti-phone" aria-hidden="true"></i><span>${esc(x.phone)}</span></div>`:''}
+      ${edit?`<div class="jp-pop-acts">${x.primary?'':`<button type="button" class="d-action" data-jp-act="primary">Make primary</button>`}<button type="button" class="d-action" data-jp-act="remove">Remove from job</button></div>`:''}`,'Contact');
+    const p=document.getElementById('jp-pop');
+    p.querySelector('[data-jp-copy]')?.addEventListener('click',e=>{const b=e.currentTarget;try{window._fb2Copy?window._fb2Copy(b.dataset.jpCopy,b,'email'):navigator.clipboard.writeText(b.dataset.jpCopy);}catch(err){}});
+    p.querySelectorAll('[data-jp-act]').forEach(b=>b.addEventListener('click',()=>{
+      if(!canEdit()){viewOnly();return;}
+      const l=jobContacts(j);const t=l[i];if(!t)return;
+      if(b.dataset.jpAct==='primary'){l.forEach(y=>y.primary=y===t);saveContacts(j,l);logActivity(j.id,MY_PERSON,'contact_primary',`Made <strong>${esc(t.name||t.email)}</strong> the primary contact`);}
+      else{l.splice(i,1);saveContacts(j,l);logActivity(j.id,MY_PERSON,'contact_remove',`Removed contact <strong>${esc(t.name||t.email)}</strong>`);}
+      closePop();renderJobContacts();
+    }));
+  }
+  function addPop(btn){
+    const j=curJob();if(!j)return;if(!canEdit()){viewOnly();return;}
+    const c=clientOf(j);const have=jobContacts(j);
+    const keys=new Set(have.map(x=>x.key)),mails=new Set(have.map(x=>lc(x.email)).filter(Boolean)),names=new Set(have.map(x=>lc(x.name)));
+    const avail=clientContacts(c).filter(x=>!keys.has(x.key)&&!(x.email&&mails.has(lc(x.email)))&&!names.has(lc(x.name)));
+    const list=q=>{q=lc(q);const l=avail.filter(x=>!q||lc(x.name+' '+x.email+' '+x.role).includes(q));
+      return l.length?l.map(x=>`<button type="button" data-k="${esc(x.key)}">${esc(x.name||x.email)}<small>${esc([x.role,x.email].filter(Boolean).join(' · ')||'No email')}</small></button>`).join('')
+        :`<div class="jp-pick-empty">${avail.length?'No match.':`No more contacts for ${esc(j.company)}.`}${C('contacts')&&c?` <a href="#" data-jp-client style="color:var(--ink);">Add one on the client page</a>`:''}</div>`;};
+    const p=openPop(btn,`<div class="jp-pop-name">Add contact</div><div class="jp-pop-role">From ${esc(j.company)}</div>
+      ${avail.length>6?'<input class="form-inp" id="jp-ct-q" placeholder="Search contacts…" aria-label="Search contacts" style="margin-top:8px;">':''}
+      <div class="jp-pick" id="jp-ct-list">${list('')}</div>`,'Add contact');
+    const wire=()=>{
+      p.querySelectorAll('#jp-ct-list button[data-k]').forEach(b=>b.addEventListener('click',()=>{
+        const x=avail.find(y=>y.key===b.dataset.k);if(!x)return;
+        const l=jobContacts(j);l.push({...x,primary:!l.length});saveContacts(j,l);
+        logActivity(j.id,MY_PERSON,'contact_add',`Added contact <strong>${esc(x.name||x.email)}</strong>${l.length===1?' as primary':''}`);
+        closePop();renderJobContacts();
+      }));
+      p.querySelector('[data-jp-client]')?.addEventListener('click',e=>{e.preventDefault();closePop();try{navTo('jobs');switchJobsTab('clients');openClientDetail(c.id);}catch(err){}});
+    };
+    wire();
+    p.querySelector('#jp-ct-q')?.addEventListener('input',e=>{p.querySelector('#jp-ct-list').innerHTML=list(e.target.value);wire();});
+  }
+  document.addEventListener('click',e=>{
+    const b=e.target.closest?.('#d-meta-line [data-jp-pop]');if(!b)return;
+    e.stopPropagation();
+    if(popAnchor===b){closePop();return;}
+    if(b.hasAttribute('data-jp-ct-add'))addPop(b);else contactPop(b,+b.dataset.jpCt);
+  });
+  // Job settings' Contact field edits the primary
+  const _sjs=window.saveJobSettings;
+  window.saveJobSettings=saveJobSettings=function(){
+    const j=curJob();const before=j?j.contact||'':'';
+    const r=_sjs.apply(this,arguments);
+    try{
+      if(j&&(j.contact||'')!==before&&Array.isArray(j.contacts)&&j.contacts.length){
+        const l=jobContacts({...j,contact:before});const nm=j.contact.trim();
+        if(!nm){l.forEach(x=>x.primary=false);const k=l.findIndex(x=>lc(x.name)===lc(before));if(k>=0)l.splice(k,1);}
+        else{let t=l.find(x=>lc(x.name)===lc(nm));
+          if(!t){const m=clientContacts(clientOf(j)).find(x=>lc(x.name)===lc(nm));t=m?{...m}:{key:'txt:'+lc(nm),name:nm,email:'',role:'',phone:''};l.unshift(t);}
+          l.forEach(x=>x.primary=x===t);}
+        saveContacts(j,l);renderJobContacts();
+      }
+    }catch(e){console.warn('jp contact sync',e);}
+    return r;
+  };
+
+  // ═══ 3 · Item type library ═══════════════════════════════════════════════════════════════
+  const LIB_KEY='cc_item_types';
+  function lib(){const v=_ccLoad(LIB_KEY,{});return{rates:v&&typeof v.rates==='object'&&v.rates?v.rates:{},archived:Array.isArray(v&&v.archived)?v.archived:[]};}
+  function saveLib(l){return _ccSave(LIB_KEY,l);}
+  function saveLineItems(){try{localStorage.setItem('cc_line_items',JSON.stringify(LINE_ITEMS));}catch(e){toast('Couldn’t save in this browser','warn');}}
+  // An item type in LINE_ITEMS is active (a published config may bring one back from archive).
+  (function normalise(){const l=lib();const n=l.archived.filter(a=>!LINE_ITEMS.includes(a));if(n.length!==l.archived.length){l.archived=n;saveLib(l);}})();
+  function defaultRate(type){const v=num(lib().rates[type]);return v>0?v:0;}
+  window._jpDefaultRate=defaultRate;
+  const libMsg=()=>{if(!C('masterSettings')){viewOnly('masterSettings');return true;}return false;};
+  function libHTML(){
+    const l=lib(),f=fin(),ed=C('masterSettings');
+    const rateCell=(t)=>f?`<div class="jp-rate-cell"><input class="form-inp jp-rate" type="number" min="0" step="1" inputmode="decimal" value="${l.rates[t]>0?esc(num(l.rates[t])):''}" placeholder="$/h" aria-label="Default rate for ${esc(t)}" data-jp-lib="rate" data-t="${esc(t)}" ${ed?'':'readonly'}></div>`:'';
+    const rows=LINE_ITEMS.map((t,i)=>`<div class="jp-lib-row">
+        <div class="jp-lib-mv"><button type="button" class="fb2-ibtn" data-jp-lib="up" data-i="${i}" ${i===0?'disabled':''} title="Move up" aria-label="Move ${esc(t)} up"><i class="ti ti-arrow-up" aria-hidden="true"></i></button><button type="button" class="fb2-ibtn" data-jp-lib="down" data-i="${i}" ${i===LINE_ITEMS.length-1?'disabled':''} title="Move down" aria-label="Move ${esc(t)} down"><i class="ti ti-arrow-down" aria-hidden="true"></i></button></div>
+        <input class="form-inp" value="${esc(t)}" aria-label="Item type name" data-jp-lib="name" data-t="${esc(t)}">
+        ${rateCell(t)}
+        <button type="button" class="d-action" data-jp-lib="archive" data-t="${esc(t)}" title="Hide from job plan pickers. Items already on jobs keep it.">Archive</button>
+      </div>`).join('');
+    const arch=l.archived.map(t=>`<div class="jp-lib-row"><span>${esc(t)}</span>${f?`<span class="jp-rate-cell" style="text-align:right;color:var(--muted);">${l.rates[t]>0?money(l.rates[t])+'/h':'—'}</span>`:''}<button type="button" class="d-action" data-jp-lib="restore" data-t="${esc(t)}">Restore</button></div>`).join('');
+    return`<div class="sett-card" id="jp-lib-card">
+      <div class="sett-card-hd">Item types <span style="font:500 12.5px var(--font);color:var(--muted);">${LINE_ITEMS.length} active</span></div>
+      <div class="sett-card-body">
+        <div class="c2-hint" style="margin-bottom:10px;">The tasks and items you can add to a job plan, in picker order.${f?' The default rate prices new items unless the client has its own rate (set on the client’s page).':''} Renaming doesn’t change items already on jobs.</div>
+        <div class="jp-lib${f?'':' nofin'}">
+          <div class="jp-lib-row jp-lib-hd"><span>Order</span><span>Name</span>${f?'<span class="jp-rate-cell" style="text-align:right;">Default rate</span>':''}<span></span></div>
+          ${rows||'<div class="jp-lib-row"><span></span><span style="color:var(--muted);">No item types. Add one below.</span></div>'}
+        </div>
+        <div class="jp-lib-add">
+          <input id="jp-lib-new" class="form-inp" placeholder="New item type, e.g. Motion design" aria-label="New item type" onkeydown="if(event.key==='Enter')_jpLibAdd()">
+          ${f?'<input id="jp-lib-new-rate" class="form-inp" type="number" min="0" step="1" placeholder="$/h" aria-label="Default rate" style="text-align:right;" onkeydown="if(event.key===\'Enter\')_jpLibAdd()">':''}
+          <button type="button" class="d-action" onclick="_jpLibAdd()"><i class="ti ti-plus" aria-hidden="true"></i> Add type</button>
+        </div>
+        ${l.archived.length?`<details class="jp-lib-arch"><summary>Archived (${l.archived.length})</summary><div class="jp-lib${f?'':' nofin'}" style="margin-top:8px;">${arch}</div></details>`:''}
+      </div></div>`;
+  }
+  function rerenderSettings(){try{const y=document.getElementById('settings-scroll')?.scrollTop;renderSettings();const s=document.getElementById('settings-scroll');if(s&&y!=null)s.scrollTop=y;}catch(e){}}
+  window._jpLibAdd=function(){
+    if(libMsg())return;
+    const inp=document.getElementById('jp-lib-new');const name=(inp?.value||'').trim();if(!name){inp?.focus();return;}
+    const l=lib();
+    if(LINE_ITEMS.some(t=>lc(t)===lc(name))){toast('That item type already exists','warn');return;}
+    const ai=l.archived.findIndex(t=>lc(t)===lc(name));if(ai>=0)l.archived.splice(ai,1);
+    const rate=num(document.getElementById('jp-lib-new-rate')?.value);
+    if(rate>0&&fin())l.rates[name]=Math.round(rate);
+    LINE_ITEMS.push(name);saveLineItems();saveLib(l);
+    toast(`Added “${esc(name)}”`,'success');rerenderSettings();
+    setTimeout(()=>document.getElementById('jp-lib-new')?.focus(),30);
+  };
+  function renameType(from,to){
+    to=to.trim();if(!to||to===from)return false;
+    if(LINE_ITEMS.some(t=>t!==from&&lc(t)===lc(to))){toast('That item type already exists','warn');return false;}
+    const i=LINE_ITEMS.indexOf(from);if(i<0)return false;
+    LINE_ITEMS[i]=to;saveLineItems();
+    const l=lib();if(from in l.rates){l.rates[to]=l.rates[from];delete l.rates[from];}saveLib(l);
+    // Keep the per-type rates on clients and rate cards attached to the renamed type
+    let cd=false;clientsData.forEach(c=>{if(c.rates&&from in c.rates){c.rates[to]=c.rates[from];delete c.rates[from];cd=true;}});if(cd)saveClientsData();
+    try{const cards=_c2Cards();let ch=false;cards.forEach(c=>{if(c.rates&&from in c.rates){c.rates[to]=c.rates[from];delete c.rates[from];ch=true;}});if(ch)_c2SaveCards(cards);}catch(e){}
+    toast(`Renamed to “${esc(to)}”`,'success');return true;
+  }
+  document.addEventListener('change',e=>{
+    const el=e.target.closest?.('#jp-lib-card [data-jp-lib]');if(!el)return;
+    if(libMsg()){rerenderSettings();return;}
+    if(el.dataset.jpLib==='name'){if(!renameType(el.dataset.t,el.value))el.value=el.dataset.t;else rerenderSettings();}
+    if(el.dataset.jpLib==='rate'){
+      if(!fin()){viewOnly('viewFinancials');return;}
+      const l=lib(),v=num(el.value);
+      if(v>0)l.rates[el.dataset.t]=Math.round(v);else delete l.rates[el.dataset.t];
+      if(saveLib(l))toast(`Default rate for ${esc(el.dataset.t)} ${v>0?'set to '+money(v)+'/h':'cleared'}`,'success');
+    }
+  });
+  document.addEventListener('click',e=>{
+    const b=e.target.closest?.('#jp-lib-card button[data-jp-lib]');if(!b)return;
+    if(libMsg())return;
+    const a=b.dataset.jpLib,t=b.dataset.t;
+    if(a==='up'||a==='down'){
+      const i=+b.dataset.i,k=a==='up'?i-1:i+1;if(k<0||k>=LINE_ITEMS.length)return;
+      [LINE_ITEMS[i],LINE_ITEMS[k]]=[LINE_ITEMS[k],LINE_ITEMS[i]];saveLineItems();rerenderSettings();
+      setTimeout(()=>{const nb=document.querySelector(`#jp-lib-card [data-jp-lib="${a}"][data-i="${k}"]`)||document.querySelector(`#jp-lib-card [data-i="${k}"]`);nb?.focus();},20);
+    }else if(a==='archive'){
+      LINE_ITEMS=LINE_ITEMS.filter(x=>x!==t);saveLineItems();const l=lib();if(!l.archived.includes(t))l.archived.push(t);saveLib(l);
+      toast(`Archived “${esc(t)}”. It’s no longer offered on job plans`,'success');rerenderSettings();
+    }else if(a==='restore'){
+      const l=lib();l.archived=l.archived.filter(x=>x!==t);saveLib(l);if(!LINE_ITEMS.includes(t))LINE_ITEMS.push(t);saveLineItems();
+      toast(`Restored “${esc(t)}”`,'success');rerenderSettings();
+    }
+  });
+  // The old chip list stays for removeSettItem callers; the library replaces its card.
+  const _rs=window.renderSettings;
+  window.renderSettings=renderSettings=function(){
+    const r=_rs.apply(this,arguments);
+    try{
+      if((_settActiveTab||'profile')==='items'){
+        const old=document.getElementById('sett-items-chips')?.closest('.sett-card');
+        if(old){const t=document.createElement('div');t.innerHTML=libHTML();old.replaceWith(t.firstElementChild);}
+        const sub=document.querySelector('#settings-scroll .sett-tab-sub');if(sub)sub.textContent='Item types and default rates for job plans, expense categories and rate cards.';
+      }
+    }catch(e){console.error('jp library',e);}
+    return r;
+  };
+
+  // ═══ 2 · Client rates ════════════════════════════════════════════════════════════════════
+  // Rate for a new item of `type` on job j (before any job-level rate card). 0 = no opinion.
+  function rateFor(j,type){
+    const c=clientOf(j),base=defaultRate(type);
+    if(c){
+      const own=num((c.rates||{})[type]);if(own>0)return{rate:own,src:'client'};
+      let card=null;try{card=c.rateCard?_c2Card(c.rateCard):null;}catch(e){}
+      if(card){
+        const ov=num((card.rates||{})[type]);if(ov>0)return{rate:Math.round(ov),src:'card'};
+        if(base>0)return{rate:Math.round(base*(num(card.multiplier)||100)/100),src:'card'};
+      }
+    }
+    return base>0?{rate:base,src:'default'}:{rate:0,src:''};
+  }
+  window._jpRateFor=rateFor;
+  // Job plan "Add item" row: fill the rate from the client / library once a type is picked,
+  // unless the person typed a rate themselves.
+  const _sai=window.showAddItemForm;
+  window.showAddItemForm=showAddItemForm=function(){
+    const r=_sai.apply(this,arguments);
+    try{
+      const n=document.getElementById('ni-n'),rt=document.getElementById('ni-r');const j=curJob();
+      if(n&&rt&&j){
+        rt.addEventListener('input',()=>{rt.dataset.jpTouched='1';});
+        const fill=()=>{
+          if(rt.dataset.jpTouched)return;
+          const x=rateFor(j,n.value.trim());
+          if(x.rate>0){if(fin()){rt.value='$'+x.rate;rt.title=x.src==='client'?`${j.company}’s rate`:x.src==='card'?`${j.company}’s rate card`:'Default rate';}rt.dataset.jpRate=x.rate;}
+          else{if(fin()&&rt.dataset.jpRate)rt.value='';delete rt.dataset.jpRate;rt.title='';}
+        };
+        n.addEventListener('input',fill);n.addEventListener('change',fill);
+      }
+    }catch(e){console.warn('jp add item',e);}
+    return r;
+  };
+  const _si=window.saveItem;
+  window.saveItem=saveItem=function(){
+    try{
+      const n=document.getElementById('ni-n'),rt=document.getElementById('ni-r');const j=curJob();
+      if(n&&rt&&j&&canEdit()&&(!rt.value.trim()||(rt.dataset.jpRate&&!rt.dataset.jpTouched))){const x=rateFor(j,n.value.trim());if(x.rate>0)rt.value='$'+x.rate;}
+    }catch(e){}
+    return _si.apply(this,arguments);
+  };
+  function clientRatesHTML(c){
+    if(!fin())return'';
+    const ed=canEdit()&&fin();const l=lib();
+    let cards=[];try{cards=_c2Cards();}catch(e){}
+    const card=c.rateCard?cards.find(x=>x.id===c.rateCard):null;
+    const types=[...new Set([...LINE_ITEMS,...Object.keys(c.rates||{})])];
+    const nSet=Object.keys(c.rates||{}).filter(k=>num(c.rates[k])>0).length;
+    const fallback=t=>{const b=num(l.rates[t]);if(card){const ov=num((card.rates||{})[t]);if(ov>0)return ov;if(b>0)return Math.round(b*(num(card.multiplier)||100)/100);}return b;};
+    const rows=types.map(t=>{const own=num((c.rates||{})[t]),fb=fallback(t);
+      return`<tr class="${own>0?'set':''}"><td>${esc(t)}${l.archived.includes(t)?' <span style="color:var(--muted);font-size:11px;">archived</span>':''}</td><td class="n" style="color:var(--muted);">${fb>0?money(fb)+'/h':'—'}</td>
+        <td class="n">${ed?`<input class="form-inp" type="number" min="0" step="1" inputmode="decimal" value="${own>0?esc(own):''}" placeholder="${fb>0?esc(fb):'$/h'}" aria-label="${esc(c.name)} rate for ${esc(t)}" data-jp-crate="${esc(t)}">`:(own>0?money(own)+'/h':'—')}</td></tr>`;}).join('');
+    return`<div class="jp-crate" id="jp-crate">
+      <div class="jp-crate-hd"><div class="ds-sec-lbl" style="margin:0!important;">Rates${nSet?` <span style="font:500 12.5px var(--font);color:var(--muted);letter-spacing:0;">${nSet} set</span>`:''}</div>
+        ${cards.length||card?`<label style="display:flex;align-items:center;gap:6px;margin-left:auto;font-size:12.5px;color:var(--muted);">Rate card <select class="cc-select" id="jp-crate-card" ${ed?'':'disabled'}><option value="">None (default rates)</option>${cards.map(x=>`<option value="${esc(x.id)}"${c.rateCard===x.id?' selected':''}>${esc(x.name)}</option>`).join('')}</select></label>`:''}
+      </div>
+      <table><thead><tr><th>Item type</th><th class="n">${card?'Card / default':'Default'}</th><th class="n">${esc(c.nickname||'Client')} rate</th></tr></thead><tbody>${rows}</tbody></table>
+      <div class="jp-crate-note">New items on ${esc(c.name)}’s jobs use these rates: the client rate when set, otherwise ${card?'the rate card':'the default'}. A job’s own rate card (Job settings) still applies on top. Items already on jobs keep their rates. Saved in this browser.</div>
+    </div>`;
+  }
+  document.addEventListener('change',e=>{
+    const inp=e.target.closest?.('#jp-crate [data-jp-crate], #jp-crate-card');if(!inp)return;
+    const c=clientsData.find(x=>x.id===_activeClientId);if(!c)return;
+    if(!canEdit()||!fin()){viewOnly(!fin()?'viewFinancials':'editJobs');return;}
+    if(inp.id==='jp-crate-card'){c.rateCard=inp.value||null;saveClientsData();toast(c.rateCard?'Rate card set for this client':'Rate card removed','success');refreshClientRates(c);return;}
+    const t=inp.dataset.jpCrate,v=num(inp.value);
+    c.rates=c.rates||{};if(v>0)c.rates[t]=Math.round(v);else delete c.rates[t];
+    saveClientsData();toast(`${esc(t)}: ${v>0?money(v)+'/h for '+esc(c.name):'back to the default'}`,'success');
+    inp.closest('tr')?.classList.toggle('set',v>0);
+  });
+  function refreshClientRates(c){
+    const old=document.getElementById('jp-crate');const h=clientRatesHTML(c);
+    if(old){if(h)old.outerHTML=h;else old.remove();return;}
+    if(!h)return;
+    const sec=document.getElementById('cd-contacts-sec');
+    if(sec)sec.insertAdjacentHTML('afterend',h);else document.getElementById('cd-jobs-list')?.insertAdjacentHTML('afterbegin',h);
+  }
+  const _ocd=window.openClientDetail;
+  window.openClientDetail=openClientDetail=function(id){
+    const r=_ocd.apply(this,arguments);
+    try{const c=clientsData.find(x=>x.id===id);if(c)refreshClientRates(c);}catch(e){console.warn('jp client rates',e);}
+    return r;
+  };
+
+  // ═══ 4 · Activity: who, when, and what changed ══════════════════════════════════════════
+  const WF={quote:'Quote',live:'Live job',completed:'Completed',invoiced:'Invoiced'};
+  const fmtD=d=>d?fmtDate(d):'none';
+  // What the activity watches on the open job. Values are display strings ($ marks money).
+  function snap(j){
+    if(!j)return null;
+    let plan=0;try{(j.id===activeJobId&&Array.isArray(phases)?phases:j.phases||[]).forEach(p=>(p.items||[]).forEach(it=>plan+=num(it.total)));}catch(e){}
+    let card='';try{card=j.rateCard?(_c2Card(j.rateCard)?.name||''):'';}catch(e){}
+    return{
+      'Status':j.status==='archived'?'Archived':j.status==='complete'?'Complete':j.paused?'Paused':'In play',
+      'Stage':WF[j.workflowStatus]||'Live job',
+      'Name':j.name||'',
+      'Client':j.company||'none',
+      'Start date':fmtD(j.startDate),
+      'Due date':fmtD(j.dueDate),
+      'Lead':j.lead?(people[j.lead]?.name||j.lead):'none',
+      'Billable':j.billable===false?'No':'Yes',
+      'Contacts':(()=>{const l=jobContacts(j);return l.length?l.map(x=>(x.primary?'★ ':'')+(x.name||x.email)).join(', '):'none';})(),
+      'Labels':(j.labels||[]).length?j.labels.join(', '):'none',
+      'Rate card':card||'none',
+      'Plan value':money(plan),
+    };
+  }
+  let _snap=null,_snapId=null;
+  const takeSnap=()=>{const j=curJob();_snapId=j?j.id:null;_snap=snap(j);};
+  window._jpTakeSnap=takeSnap;
+  logActivity=window.logActivity=function(jobId,personKey,action,detail){
+    const j=jobs.find(x=>x.id===jobId);if(!j)return;
+    if(!j.activity)j.activity=[];
+    const e={ts:Date.now(),personKey:personKey||MY_PERSON,action,detail,by:MY_PERSON,byName:myName()};
+    if(jobId===_snapId&&_snap&&action!=='comment'){
+      const now=snap(j),ch=[];
+      Object.keys(now).forEach(k=>{if(now[k]!==_snap[k])ch.push({f:k,from:_snap[k],to:now[k]});});
+      if(ch.length)e.changes=ch;
+      _snap=now;
+    }
+    j.activity.unshift(e);
+    saveData();
+    try{if(jobId===activeJobId&&!document.getElementById('dtab-activity')?.classList.contains('hidden'))renderActivityTab();}catch(err){}
+  };
+  // Edits that changed the job but logged nothing: one entry with the before/after list.
+  // (saveJobSettings re-opens the job, which takes a fresh baseline, so the "before" is held here.)
+  function logIfChanged(j,pre,action,text){
+    if(!j||!pre)return;
+    const now=snap(j);if(!Object.keys(now).some(k=>now[k]!==pre[k]))return;
+    _snapId=j.id;_snap=pre;logActivity(j.id,MY_PERSON,action,text);
+  }
+  const _sjs2=window.saveJobSettings;
+  window.saveJobSettings=saveJobSettings=function(){
+    const j=curJob();const pre=j&&j.id===_snapId?_snap:snap(j);
+    const r=_sjs2.apply(this,arguments);
+    try{logIfChanged(jobs.find(x=>x.id===(j&&j.id)),pre,'settings','Updated job settings');}catch(e){}
+    return r;
+  };
+  const _pal=window._persistActiveLabels;
+  if(typeof _pal==='function')window._persistActiveLabels=_persistActiveLabels=function(){
+    const j=curJob();const before=j?[...(j.labels||[])]:[];
+    const r=_pal.apply(this,arguments);
+    try{
+      if(j){const after=j.labels||[];const add=after.filter(x=>!before.includes(x)),rem=before.filter(x=>!after.includes(x));
+        if(add.length||rem.length)logActivity(j.id,MY_PERSON,'labels',[add.length?`Added label${add.length>1?'s':''} <strong>${add.map(esc).join(', ')}</strong>`:'',rem.length?`Removed label${rem.length>1?'s':''} <strong>${rem.map(esc).join(', ')}</strong>`:''].filter(Boolean).join(' · '));}
+    }catch(e){}
+    return r;
+  };
+  // Job open: contacts in the header, and the baseline for the change list.
+  const _ojd=window.openJobDetail;
+  window.openJobDetail=openJobDetail=function(){
+    const r=_ojd.apply(this,arguments);
+    try{renderJobContacts();}catch(e){console.warn('jp contacts',e);}
+    try{takeSnap();}catch(e){}
+    return r;
+  };
+
+  // The feed
+  let _actFilter='all';
+  const KIND=a=>a._st||a.action==='time_log'?'time':a.action==='comment'||a.action==='attach'?'notes':'changes';
+  const tStr=ts=>{if(!ts)return'';const d=new Date(ts);let h=d.getHours();const ap=h<12?'am':'pm';h=h%12||12;return`${h}:${String(d.getMinutes()).padStart(2,'0')}${ap}`;};
+  const full=ts=>ts?new Date(ts).toLocaleString('en-NZ',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit'}):'';
+  const isMoney=k=>k==='Plan value'||k==='Rate card';
+  window._jpActFilter=function(f){_actFilter=f;renderActivityTab();};
+  window.renderActivityTab=renderActivityTab=function(){
+    const el=document.getElementById('dtab-activity');if(!el)return;
+    const j=curJob();if(!j){el.innerHTML='';return;}
+    const showMoney=fin();
+    const events=[];
+    (j.activity||[]).forEach(a=>events.push({ts:a.ts,personKey:a.by||a.personKey,subject:a.by&&a.personKey!==a.by?a.personKey:null,byName:a.byName,detail:a.detail,action:a.action,changes:a.changes,_comment:a.action==='comment',img:a.img||null}));
+    el.ondragover=ev=>{if(ev.dataTransfer?.types?.includes('Files')){ev.preventDefault();el.classList.add('file-drop-hi');}};
+    el.ondragleave=()=>el.classList.remove('file-drop-hi');
+    el.ondrop=ev=>{if(ev.dataTransfer?.files?.length){ev.preventDefault();el.classList.remove('file-drop-hi');_activityFileDrop(ev,j.id);}};
+    if(j._stId){
+      (_perfLT().byStJob.get(j._stId)||[]).forEach(lt=>{
+        if((lt.job?.id||lt.jobId)!==j._stId)return;
+        const stUser=stUsersById[lt.userId];if(!stUser)return;
+        const ts=lt.date?new Date(lt.date.slice(0,10)+'T12:00:00').getTime():0;
+        const note=lt.notes||lt.scheduleNotes||'';
+        const item=lt.itemName?` on <strong>${esc(lt.itemName)}</strong>`:'';
+        const billable=lt.job?.isBillable!==false;
+        const value=showMoney&&lt.totalExTax!=null?Math.round(lt.totalExTax):null;
+        const billTag=`<span style="font-size:10px;background:${billable?'var(--ok-bg)':'var(--off)'};color:${billable?'var(--ok-ink)':'var(--muted)'};border-radius:6px;padding:1px 5px;margin-left:4px;">${billable?'Billable':'Non-billable'}</span>`;
+        events.push({ts,personKey:stUser.key,detail:`Logged <strong>${formatHrs((lt.minutes||0)/60)||'0h'}</strong>${item}${value?` — $${value.toLocaleString()}`:''}${note?` — ${esc(note)}`:''}${billTag}`,_st:true,_noTime:true});
+      });
+    }
+    const counts={all:events.length,changes:0,notes:0,time:0};events.forEach(a=>counts[KIND(a)]++);
+    const shown=_actFilter==='all'?events:events.filter(a=>KIND(a)===_actFilter);
+    const composerHTML=canEdit()?`<div class="act-add-row">
+      <textarea id="act-comment-inp" rows="1" placeholder="Add a note for the team to reference later…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addActivityComment('${esc(j.id)}');}"></textarea>
+      <button class="d-action primary" onclick="addActivityComment('${esc(j.id)}')"><i class="ti ti-send" style="font-size:12px;"></i> Add</button>
+    </div>`:'';
+    const filters=`<div class="jp-act-filters" role="group" aria-label="Show">${[['all','All'],['changes','Changes'],['notes','Notes'],['time','Time logged']].map(([k,l])=>`<button type="button" class="fb2-pill${_actFilter===k?' on':''}" aria-pressed="${_actFilter===k}" onclick="_jpActFilter('${k}')">${l} <span style="opacity:.6;">${counts[k]}</span></button>`).join('')}</div>`;
+    const head=`<div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;">Activity (${events.length})</div>${composerHTML}${filters}`;
+    if(!shown.length){el.innerHTML=`${head}<div style="font-size:13px;color:var(--muted);margin-top:12px;">${events.length?'Nothing of this kind yet.':'No activity yet on this job.'}</div>`;return;}
+    shown.sort((a,b)=>b.ts-a.ts);
+    const today=new Date();today.setHours(0,0,0,0);const yest=new Date(today);yest.setDate(today.getDate()-1);
+    const bucket=ts=>{if(!ts)return'Unknown';const d=new Date(ts);d.setHours(0,0,0,0);
+      if(+d===+today)return'Today';if(+d===+yest)return'Yesterday';const diff=Math.floor((today-d)/86400000);
+      if(diff<7)return d.toLocaleDateString('en-NZ',{weekday:'long'});
+      if(diff<365)return d.toLocaleDateString('en-NZ',{day:'numeric',month:'long'});
+      return d.toLocaleDateString('en-NZ',{day:'numeric',month:'long',year:'numeric'});};
+    const buckets=[],map={};
+    // Long feeds: draw the newest 400 (older ones behind a button) so a big job stays quick
+    const LIMIT=window._jpActAll?Infinity:400;
+    shown.slice(0,LIMIT).forEach(a=>{const k=bucket(a.ts);if(!map[k]){map[k]=[];buckets.push({k,rows:map[k]});}map[k].push(a);});
+    const html=buckets.map(({k,rows})=>`<div class="act-date-hd">${k}</div><div class="act-timeline">${rows.map(a=>{
+      const p=people[a.personKey]||{initials:'?',color:'#999',name:a.byName||a.personKey||'Unknown'};
+      const name=a.byName||p.name;
+      const subj=a.subject&&people[a.subject]?` <span class="sep">·</span> for ${esc(people[a.subject].name)}`:'';
+      const ch=(a.changes||[]).filter(c=>showMoney||!isMoney(c.f));
+      const chHTML=ch.length?`<ul class="jp-chg">${ch.map(c=>`<li><span class="k">${esc(c.f)}</span><span><span class="${c.from==='none'?'a':'o'}">${esc(c.from)}</span> <span class="a">→</span> <span class="v">${esc(c.to)}</span></span></li>`).join('')}</ul>`:'';
+      return`<div class="act-row">
+        <div class="act-dot ${a._comment?'comment':a._st?'st':'local'}"></div>
+        <div class="act-card">
+          <div class="jp-act-hd"><span class="act-av-xs" style="background:${p.color};">${esc(p.initials)}</span><b>${esc(name)}</b>${subj}${a._noTime?'':`<span class="sep">·</span><time title="${esc(full(a.ts))}">${tStr(a.ts)}</time>`}${a._st?'<span class="sep">·</span><span class="st-tag" style="margin-left:0;">Streamtime</span>':''}</div>
+          <div class="act-text">${a._comment?'<i class="ti ti-message-circle-2" style="font-size:11px;color:#7B9E87;margin-right:4px;"></i>':''}${a.detail}</div>
+          ${chHTML}
+          ${a.img?`<img class="act-img" src="${a.img}" onclick="_openActImg(this.src)" alt="attachment">`:''}
+        </div>
+      </div>`;}).join('')}</div>`).join('');
+    const more=shown.length>LIMIT?`<button type="button" class="d-action" style="margin:12px 0 0 26px;" onclick="window._jpActAll=true;renderActivityTab();window._jpActAll=false;">Show ${shown.length-LIMIT} older</button>`:'';
+    el.innerHTML=head+html+more;
+  };
 })();
 </script>
 </body>
