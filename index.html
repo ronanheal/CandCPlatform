@@ -29529,7 +29529,7 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
     const j=jobById(_taskJobId(t));
     if(j&&j.paused)return null;
     return{key:'pk:'+t.id,kind:'parked',title:String(t.title||'').split('\n')[0]||t.item||'Task',task:t,job:j||null,jobLabel:t.job||'',hours:q4up(+t.hours>0?+t.hours:1),
-      due:j&&j.dueDate?String(j.dueDate).slice(0,10):null,urgent:!!t.urgent||jobUrgent(j)};
+      due:t.due?String(t.due).slice(0,10):(j&&j.dueDate?String(j.dueDate).slice(0,10):null),urgent:!!t.urgent||jobUrgent(j)};
   }
   function gather(pk,scope){
     const board=onBoardItems(pk),out=[];
