@@ -2775,7 +2775,7 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
       <button type="button" class="tm-btn-delete ux-del" id="edit-task-btn" onclick="uxConfirmDeleteTask()" title="Delete task" aria-label="Delete task"><i class="ti ti-trash" aria-hidden="true"></i><span>Delete</span></button>
       <span class="ux-ft-sp"></span>
       <button type="button" class="tm-btn-cancel" onclick="closeTodoModal()">Cancel</button>
-      <button type="button" class="tm-btn-timer" id="td-timer-btn" onclick="startTimerFromTask()" title="Save the task and start timing it" aria-label="Start timer"><i class="ti ti-player-play" aria-hidden="true"></i></button>
+      <button type="button" class="tm-btn-timer" id="td-timer-btn" onclick="startTimerFromTask()" title="Save the task and start timing it"><i class="ti ti-player-play" aria-hidden="true"></i> Start timer</button>
       <button type="button" class="tm-btn-timer tm-btn-log" id="td-log-btn" onclick="fb1SaveAndLog()" title="Add the task and log its time as done, in one step"><i class="ti ti-circle-check" aria-hidden="true"></i> Save &amp; log</button>
       <button type="button" class="tm-btn-save" id="td-save-btn" onclick="saveTodo()">
         <span id="td-save-lbl">Add task</span>
@@ -30762,6 +30762,11 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
 :is(html,#us#us) #jt-time .time-head-bar{flex-wrap:nowrap!important;gap:8px!important;min-width:0;}
 :is(html,#us#us) #jt-time .time-head-bar .cc-select{flex:1 1 0!important;min-width:96px!important;max-width:176px!important;width:auto!important;}
 :is(html,#us#us) #jt-time .time-head-bar > *{min-width:0;}
+/* Task form: "Save & log" replaces the Log as done toggle; the timer is a labelled action.
+   When typing "done" (or editing) sets the task to log, Save & log becomes the main button. */
+:is(html,#us#us) #todo-modal #td-done-lbl{display:none!important;}
+:is(html,#us#us) #todo-modal:has(#td-done:checked) #td-save-btn{display:none!important;}
+:is(html,#us#us) #todo-modal:has(#td-done:checked) #td-log-btn{background:var(--ink)!important;color:var(--on-ink,#fff)!important;border-color:var(--ink)!important;box-shadow:0 1px 2px rgba(25,23,20,.22)!important;}
 </style>
 <script id="us-script">
 // unslop polish pass (unslop by Damir Sokolovsky, @heydamir, CC BY 4.0) — behaviour the CSS can't do.
