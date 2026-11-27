@@ -29751,12 +29751,14 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
   let FUZ=null;
   function fuzzyIndex(){
     if(FUZ)return FUZ;
-    const rec=_recentJobIds(),words=new Map(),rank=new Map();
+    const rec=_recentJobIds(),words=new Map(),rank=new Map(),nameW=new Map(),clientW=new Set();
     jobs.forEach(j=>{if(j.status!=='inplay')return;
-      const r=rec.indexOf(j.id);rank.set(j,(r<0?0:1000-r)*1e7+(parseInt(j.id,10)||0));
-      const set=new Set([...tok(j.name),...tok(String(j.company||'').replace(/\s+(ltd|limited|inc|co|nz|llc|pty|group)\.?$/i,''))]);
+      const r=rec.indexOf(j.id);rank.set(j,(r<0?0:1000-r)*1e7+((j.members||[]).includes(MY_PERSON)?5e9:0)+(parseInt(j.id,10)||0)); // recent, then mine, then newest
+      const nw=tok(j.name),cw=tok(String(j.company||'').replace(/\s+(ltd|limited|inc|co|nz|llc|pty|group)\.?$/i,''));nameW.set(j,new Set(nw));
+      cw.forEach(w=>clientW.add(w));
+      const set=new Set([...nw,...cw]);
       set.forEach(w=>{if(!words.has(w))words.set(w,new Set());words.get(w).add(j);});});
-    return FUZ={words,rank};
+    return FUZ={words,rank,nameW,clientW};
   }
   let JOBIX=null; // [{phrase, job, rank}] for name matching
   function jobIndex(){
@@ -29779,9 +29781,12 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
     const out={},used=new Set(),dis=QT.dismissed;
     const take=(kind,i,len,val,keep)=>{if(out[kind])return false;const raw=words.slice(i,i+len).map(w=>w.n).join(' ');const key=kind+':'+raw;if(dis.has(key))return false;out[kind]={...val,key,raw};for(let k=0;k<len;k++)(keep?kept:used).add(i+k);return true;};
     const kept=new Set(); // understood but left in the title (e.g. "due 27th")
+    // Several tasks on one line ("v1 due 27th v2 5th"): qt2-script finds the segments; their words leave the title
+    {const seg=window._qt2Seg&&!text.trim().includes('\n')?window._qt2Seg(words,dayOf):null;if(seg){seg.idx.forEach(i=>used.add(i));out._seg=seg.tasks;}}
     for(let i=0;i<words.length;i++){
       if(used.has(i))continue;
       const w=words[i].n;
+      if(/^@[a-z]/i.test(words[i].raw)&&window._qt2Who){const pk=window._qt2Who(w.slice(1));if(pk&&take('person',i,1,{pk}))continue;} // "@jb" assigns the task
       let h=hoursOf(w);
       if(h){let len=1;const n2=words[i+1]?.n;if(/h$/.test(w)&&n2&&/^\d+(?:m|min|mins)$/.test(n2)){h+=parseHrsInput(n2);len=2;}
         if(take('hours',i,len,{h}))i+=len-1;continue;}
@@ -29792,7 +29797,7 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
       // "due 27th", "due fri", "due 3/12", "due tomorrow": a deadline, kept in the title
       if(w==='due'&&words[i+1]){
         let dd=dayOf(words,i+1),len=dd?dd.len:0;
-        const o=words[i+1].n.match(/^(\d{1,2})(?:st|nd|rd|th)$/);
+        const o=words[i+1].n.match(/^(\d{1,2})(?:st|nd|rd|th)?$/); // "due 27th" or "due 27" = the next 27th
         if(!dd&&o){const t0=new Date();t0.setHours(0,0,0,0);let d=new Date(t0.getFullYear(),t0.getMonth(),+o[1]);if(d<t0)d=new Date(t0.getFullYear(),t0.getMonth()+1,+o[1]);if(d.getDate()===+o[1]){dd={d};len=1;}}
         if(dd){take('due',i,1+len,{d:dd.d},true);i+=len;continue;}
       }
@@ -29816,19 +29821,25 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
       // Rare words count for more; a single word only counts when it belongs to one job.
       if(!out.job){
         const ix=fuzzyIndex(),cand=new Map();
-        low.forEach((w0,i)=>{const w=stem(w0);if(used.has(i)||kept.has(i)||w.length<3||STOP.has(w))return;const js=ix.words.get(w);if(!js||js.size>25)return;
+        low.forEach((w0,i)=>{const w=stem(w0);if(used.has(i)||kept.has(i)||w.length<3||STOP.has(w))return;const js=ix.words.get(w);if(!js||js.size>(ix.clientW.has(w)?60:25))return; // a big client's name is weak, not common
           js.forEach(j=>{const c=cand.get(j)||{j,score:0,idx:[]};c.score+=1/js.size;c.idx.push(i);cand.set(j,c);});});
         let fb=null;
         cand.forEach(c=>{const idx=[...new Set(c.idx)].sort((a,b)=>a-b);
           let run=1,bestRun=1;for(let k=1;k<idx.length;k++){run=idx[k]===idx[k-1]+1?run+1:1;bestRun=Math.max(bestRun,run);}
           const single=idx.length===1&&c.score>=1&&low[idx[0]].length>=5;
-          if(!(idx.length>=2&&(bestRun>=2||c.score>=0.6))&&!single)return;
-          const sc=c.score+bestRun*0.5+(ix.rank.get(c.j)||0)*1e-12;
-          if(!fb||sc>fb.sc)fb={...c,idx,sc};});
+          // Scattered words ("pure december paid" → PSN PAID Jan Retainer, PURE Group): two or more different
+          // words, one at least 4 letters, rare enough together; a hit on both the job name and the client counts extra.
+          const distinct=new Set(idx.map(i=>stem(low[i]))).size;
+          const nm=ix.nameW.get(c.j),both=nm&&idx.some(i=>nm.has(stem(low[i])))&&idx.some(i=>!nm.has(stem(low[i])));
+          const loose=distinct>=2&&idx.some(i=>low[i].length>=4)&&c.score+(both?0.15:0)>=0.35;
+          if(!(idx.length>=2&&(bestRun>=2||c.score>=0.6||loose))&&!single)return;
+          const sc=c.score+(both?0.15:0)+bestRun*0.5+(ix.rank.get(c.j)||0)*1e-12;
+          if(!fb||sc>fb.sc)fb={...c,idx,sc,bestRun,loose:loose&&bestRun<2&&c.score<0.6};});
         if(fb){const raw=fb.idx.map(i=>low[i]).join(' ');const key='job:'+raw;
           if(!dis.has(key)){out.job={j:fb.j,byName:true,key,raw};
-            // the matched run leaves the title; scattered words stay
-            let a=fb.idx[0],b=a;for(const i of fb.idx){if(i===b+1)b=i;}if(b>a)for(let i=a;i<=b;i++)used.add(i);}}
+            // the matched run leaves the title; scattered words stay (a match made only from scattered words takes them out)
+            if(fb.loose)fb.idx.forEach(i=>used.add(i));
+            else{let a=fb.idx[0],b=a;for(const i of fb.idx){if(i===b+1)b=i;}if(b>a)for(let i=a;i<=b;i++)used.add(i);}}}
       }
     }
     // 3. the line item: words in the title matched to the job's plan items (phase names help pick between twins)
@@ -29920,7 +29931,7 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
       if(want){const prev=f.get();const set=f.apply(want);QT.applied[k]={key:want.key,prev,set,label:f.label(want)};}
     });
     QT.title=p._title;
-    QT.multi=multiPlan($('td-task').value);
+    QT.multi=multiPlan($('td-task').value)||(p._seg&&$('td-task').value.trim().split('\n').length===1?{tasks:p._seg,one:true}:null);
     drawChips();
     return p;
   }
@@ -29933,12 +29944,12 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
       let dd=null,from=i,len=0;
       if(words[i].n==='due'&&words[i+1]){
         dd=dayOf(words,i+1);len=dd?1+dd.len:0;
-        const o=!dd&&words[i+1].n.match(/^(\d{1,2})(?:st|nd|rd|th)$/);
+        const o=!dd&&words[i+1].n.match(/^(\d{1,2})(?:st|nd|rd|th)?$/);
         if(o){let d=new Date(t0.getFullYear(),t0.getMonth(),+o[1]);if(d<t0)d=new Date(t0.getFullYear(),t0.getMonth()+1,+o[1]);if(d.getDate()===+o[1]){dd={d};len=2;}}
       }else{dd=dayOf(words,i);len=dd?dd.len:0;}
       if(dd){let d=new Date(dd.d);while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()-1); // a weekend date lands on the Friday before
         const rest=words.filter((w,k)=>k<from||k>=from+len).map(w=>w.raw).join(' ').replace(/[\s,;:–—-]+$/,'').trim();
-        return{d,rest};}
+        return{d,rest,due:isoOf(dd.d)};} // due stays the date as typed
     }
     return null;
   }
@@ -29952,8 +29963,9 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
     const ks=Object.keys(QT.applied);
     if(!ks.length&&!QT.multi){b.hidden=true;b.innerHTML='';return;}
     b.hidden=false;
-    b.innerHTML=`<span class="pfm-qt-lbl">Understood</span>`+['hours','job','item','day','due','urgent','done'].filter(k=>QT.applied[k]).map(k=>`<span class="pfm-chip" title="${esc(QT.applied[k].label)}"><i class="ti ${fields[k].icon}" aria-hidden="true"></i><span>${esc(QT.applied[k].label)}</span><button type="button" aria-label="Undo ${esc(QT.applied[k].label)}" title="Undo: keep “${esc(QT.applied[k].key.split(':').slice(1).join(':'))}” in the title" onmousedown="event.preventDefault()" onclick="pfmQtUndo('${k}')"><i class="ti ti-x"></i></button></span>`).join('')
-      +(QT.multi?`<span class="pfm-qt-title">Adds <b>${QT.multi.tasks.length} tasks</b>: ${QT.multi.tasks.map(t=>esc((t.rest||'task')+' · '+shortD(isoOf(t.d)))).join(', ')}</span>`
+    const lead=QT.multi?.one?String(QT.title||'').split('\n')[0].trim():''; // one line: shared words + each version
+    b.innerHTML=`<span class="pfm-qt-lbl">Understood</span>`+['person','hours','job','item','day','due','urgent','done'].filter(k=>QT.applied[k]).map(k=>`<span class="pfm-chip" title="${esc(QT.applied[k].label)}"><i class="ti ${fields[k].icon}" aria-hidden="true"></i><span>${esc(QT.applied[k].label)}</span><button type="button" aria-label="Undo ${esc(QT.applied[k].label)}" title="Undo: keep “${esc(QT.applied[k].key.split(':').slice(1).join(':'))}” in the title" onmousedown="event.preventDefault()" onclick="pfmQtUndo('${k}')"><i class="ti ti-x"></i></button></span>`).join('')
+      +(QT.multi?(ml=>`<span class="pfm-qt-title" title="${esc(ml)}">Adds <b>${QT.multi.tasks.length} tasks</b>: ${esc(ml)}</span>`)(QT.multi.tasks.map(t=>(([lead,t.rest].filter(Boolean).join(' ')||'task')+' · '+shortD(isoOf(t.d))+(t.due&&t.due!==isoOf(t.d)?' (due '+shortD(t.due)+')':''))).join(', '))
         :(QT.title?`<span class="pfm-qt-title">Task: <b>${esc(QT.title.split('\n')[0])}</b></span>`:''));
   }
   window.pfmQtUndo=function(k){
@@ -29993,7 +30005,7 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
       QT.multi.tasks.forEach(t=>{
         const off=offOf(t.d),day=t.d.getDay(),wd=getWeekData(who,off);
         const title=[lead,t.rest].filter(Boolean).join(' ')||(item||job?.name||'Task');
-        const task={id:uid('t'),title,job:job?`${job.id} ${job.name}`:'',jobId:jobId||null,item,itemId,hours,urgent,personal,repeat:false,due:isoOf(t.d)};
+        const task={id:uid('t'),title,job:job?`${job.id} ${job.name}`:'',jobId:jobId||null,item,itemId,hours,urgent,personal,repeat:false,due:t.due||isoOf(t.d)};
         (wd[day]=wd[day]||[]).push(task);added.push(shortD(isoOf(t.d)));
         if(jobId)try{logActivity(jobId,who,'task_add',`Added task <strong>${esc(title)}</strong>${item?` (${esc(item)})`:''} — ${shortD(isoOf(t.d))}`);}catch(e){}
       });
@@ -30016,6 +30028,7 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
     return out;
   };
   window._pfmParse=t=>{const p=parse(t,false);return{hours:p.hours?.h,job:p.job?.j?.id,day:p.day?isoOf(p.day.d):undefined,done:!!p.done,title:p._title};};
+  window._pfmKit={fields,QT,sync,parse,dayOf,norm}; // qt2-script adds the Person field and reads the plan
   window._pfmPlan=(pk,scope)=>{const r=plan(pk||currentPerson,gather(pk||currentPerson,scope||{}));return r;};
 })();
 </script>
@@ -30991,5 +31004,179 @@ document.addEventListener('keydown',e=>{
   e.preventDefault();_parkToggle(!side.classList.contains('open'));
 });
 </script>
+<script id="qt2-script">
+// ═══ Quick typing, round 2 + ⌘K actions ═══════════════════════════════════════════════════
+// 1. Several tasks on ONE line: "pure paid 2h v1 due 27 v2 due 5th animation design" → two tasks.
+//    A version / round word (v1, r2, round 2, draft, final) followed by a date (27th, due 27, 5 dec,
+//    fri, 3/12) is one task; everything else on the line (job, item words, hours) is shared, and each
+//    title is the shared words + its version ("animation design v1"). A weekend date is scheduled on
+//    the Friday before; its due date stays as typed. pfm-script's parse() calls _qt2Seg first.
+// 2. "@jb" / "@ronan": assigns the task to that person (same as the Person picker), with an undo chip.
+// 3. ⌘K: "add task …" / "task …" / "t: …" opens the task form pre-filled (quick typing reads it),
+//    "new job …" / "create job …" opens New job with the name, "add to board …" / "board …" adds a
+//    card to a board's first list. No results → "Add task: <query>" instead of only "No matches".
+(function(){
+  const MON={jan:0,january:0,feb:1,february:1,mar:2,march:2,apr:3,april:3,may:4,jun:5,june:5,jul:6,july:6,aug:7,august:7,sep:8,sept:8,september:8,oct:9,october:9,nov:10,november:10,dec:11,december:11};
+  const today=()=>{const t=new Date();t.setHours(0,0,0,0);return t;};
+  const NUM=/^(\d{1,2})(st|nd|rd|th)?$/;
+  // A version / round label at word i: {len}
+  function verAt(words,i){
+    const n=words[i]?.n;if(!n)return null;
+    if(/^[vr]\d{1,2}$/.test(n))return{len:1};
+    if(/^(round|rd|draft|version)$/.test(n)&&words[i+1]&&/^\d{1,2}$/.test(words[i+1].n))return{len:2};
+    if(n==='draft'||n==='final')return{len:1};
+    return null;
+  }
+  // A date at word j. A bare ordinal ("27th") counts here (right after a version); a plain number
+  // only after due / on / by. Weekend dates are allowed (they move to the Friday later).
+  function dateAt(words,j,conn,dayOf){
+    const n=words[j]?.n;if(!n)return null;
+    const nx=words[j+1]?.n,t0=today(),Y=t0.getFullYear();
+    const mk=(dd,mo)=>{let d=new Date(Y,mo,dd);if(d<new Date(Y,t0.getMonth(),t0.getDate()-60))d=new Date(Y+1,mo,dd);return d.getDate()===dd?d:null;};
+    const num=n.match(NUM);
+    if(num&&nx&&Object.prototype.hasOwnProperty.call(MON,nx)){const d=mk(+num[1],MON[nx]);return d?{len:2,d}:null;}
+    if(Object.prototype.hasOwnProperty.call(MON,n)&&nx&&NUM.test(nx)){const d=mk(parseInt(nx,10),MON[n]);return d?{len:2,d}:null;}
+    if(num&&(num[2]||conn)){
+      const dd=+num[1];if(dd<1||dd>31)return null;
+      for(let k=0;k<3;k++){const d=new Date(Y,t0.getMonth()+k,dd);if(d.getDate()===dd&&d>=t0)return{len:1,d};}
+      return null;
+    }
+    const m=n.match(/^(\d{1,2})\/(\d{1,2})$/);
+    if(m){const d=mk(+m[1],+m[2]-1);return d?{len:1,d}:null;}
+    try{const r=dayOf(words,j);if(r)return{len:r.len,d:r.d};}catch(e){}
+    return null;
+  }
+  window._qt2Seg=function(words,dayOf){
+    const segs=[];
+    for(let i=0;i<words.length;i++){
+      const v=verAt(words,i);if(!v)continue;
+      let j=i+v.len,conn=false;
+      if(words[j]&&/^(due|on|by)$/.test(words[j].n)){conn=true;j++;}
+      const dt=dateAt(words,j,conn,dayOf);if(!dt)continue;
+      const label=words.slice(i,i+v.len).map(w=>w.raw).join(' ').replace(/[,;:]+$/,'');
+      const due=new Date(dt.d),d=new Date(dt.d);
+      while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()-1); // weekend → the Friday before
+      const idx=[];for(let k=i;k<j+dt.len;k++)idx.push(k);
+      segs.push({rest:label,d,due:_localISO(due),idx});
+      i=j+dt.len-1;
+    }
+    if(segs.length<2)return null;
+    return{idx:segs.flatMap(s=>s.idx),tasks:segs.map(({rest,d,due})=>({rest,d,due}))};
+  };
+
+  // ── @person ──────────────────────────────────────────────────────────────────────────
+  const active=()=>Object.keys(people||{}).filter(k=>people[k]&&!people[k]._archived);
+  window._qt2Who=function(word){
+    const s=String(word||'').toLowerCase().replace(/[^a-z0-9]/g,'');if(s.length<2)return null;
+    const ks=active();
+    const one=a=>a.length===1?a[0]:null;
+    const ini=ks.filter(k=>String(people[k].initials||'').toLowerCase()===s||String(people[k].nickname||'').toLowerCase()===s);
+    if(ini.length)return one(ini);
+    const first=k=>String(people[k].name||'').trim().split(/\s+/)[0].toLowerCase();
+    const exact=ks.filter(k=>first(k)===s);
+    if(exact.length)return one(exact);
+    return one(ks.filter(k=>first(k).startsWith(s)));
+  };
+  function setPerson(key){
+    const p=people[key];if(!p)return;
+    _todoAssignTo=key;
+    const $=id=>document.getElementById(id);
+    const av=$('td-pav');if(av){av.style.background=p.color;av.textContent=p.initials;}
+    const nm=$('td-pname');if(nm)nm.textContent=p.name;
+    const pgl=$('td-pav-lg');if(pgl){pgl.textContent=p.initials;pgl.style.background=p.color;}
+    const pnl=$('td-pname-lg');if(pnl)pnl.textContent=p.name;
+  }
+  const K=window._pfmKit;
+  if(K&&K.fields)K.fields.person={
+    get:()=>_todoAssignTo,
+    apply(t){setPerson(t.pk);return t.pk;},
+    revert(prev){setPerson(prev);},
+    now:()=>_todoAssignTo,
+    label:t=>people[t.pk]?.name||'Person',icon:'ti-user'};
+
+  // ── ⌘K actions ───────────────────────────────────────────────────────────────────────
+  function openTaskWith(text){
+    weekOffset=0;openTodoModal(null,_todayDayNum());
+    const ta=document.getElementById('td-task');if(!ta)return;
+    ta.value=text;
+    ta.dispatchEvent(new Event('input',{bubbles:true}));
+    try{K&&K.sync(false);}catch(e){}
+    setTimeout(()=>{try{ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);}catch(e){}},60);
+  }
+  window._qt2OpenTask=openTaskWith;
+  function createJobWith(name){
+    openCreateJob();
+    const n=document.getElementById('nj-name');if(n){n.value=name;n.dispatchEvent(new Event('input',{bubbles:true}));}
+  }
+  const canJobs=()=>{try{return can('editJobs');}catch(e){return false;}};
+  // Boards that take a plain card: custom boards (not the studio pipeline) with a list that isn't fed live
+  function cardBoards(){
+    return(typeof boardsList!=='undefined'?boardsList:[]).filter(b=>b&&b.type==='custom'&&!b.studio&&!b.archived&&!b.removedAt&&!b.deleted&&(b.columns||[]).some(c=>c&&!c.live));
+  }
+  function addToBoard(id,text){
+    const b=boardsList.find(x=>x.id===id);if(!b)return;
+    const col=(b.columns||[]).find(c=>c&&!c.live);if(!col)return;
+    navTo('boards');openBoard(id);
+    if(_bvCur()?.id!==id){toast('Couldn’t open that board','warn');return;}
+    const card=_bvAddCard(col.id,text,'bottom');
+    if(card)toast(`Added to ${esc(b.name)} · ${esc(col.name)}`,'success');
+    setTimeout(()=>{if(activeBoardId!==id&&_bvBoard(id))openBoard(id);},250); // the boards page can redraw its list just after opening
+  }
+  window._qt2AddToBoard=addToBoard;
+  function actionRows(raw){
+    const out=[];let m;
+    if((m=raw.match(/^(?:add\s+task|task|t:)\s*:?\s+(.+)$/i)||raw.match(/^t:\s*(.+)$/i))&&m[1].trim()){
+      const t=m[1].trim();
+      out.push({cat:'Actions',icon:'ti-square-plus',title:`Add task: ${t}`,sub:'Opens the task form with this filled in: job, hours, dates and @people are read from it',fn:()=>openTaskWith(t),_qt2:1});
+    }
+    if((m=raw.match(/^(?:new|create)\s+job\s*:?\s+(.+)$/i))&&m[1].trim()&&canJobs()){
+      const t=m[1].trim();
+      out.push({cat:'Actions',icon:'ti-briefcase',title:`Create job: ${t}`,sub:'Opens New job with this name',fn:()=>createJobWith(t),_qt2:1});
+    }
+    if((m=raw.match(/^(?:add\s+to\s+board|board)\s*:?\s+(.+)$/i))&&m[1].trim()){
+      let t=m[1].trim();let bs=cardBoards();
+      // "board Business WIP: call Sam" → just that board
+      const lt=t.toLowerCase();
+      const named=bs.filter(b=>{const n=String(b.name||'').toLowerCase();return n&&lt.startsWith(n)&&/^[\s:,–—-]/.test(t.slice(n.length));}).sort((a,b)=>b.name.length-a.name.length)[0];
+      if(named){const rest=t.slice(named.name.length).replace(/^[\s:,–—-]+/,'').trim();if(rest){bs=[named];t=rest;}}
+      bs.slice(0,8).forEach(b=>{const col=(b.columns||[]).find(c=>c&&!c.live);
+        out.push({cat:'Actions',icon:'ti-layout-kanban',title:`Add to ${b.name}: ${t}`,sub:`New card in ${col?.name||'the first list'}`,fn:()=>addToBoard(b.id,t),_qt2:1});});
+    }
+    return out;
+  }
+  // The old "task Call printer 30m" verb dropped a task straight on today; "task …" now opens the form.
+  if(typeof _parseGsCommand==='function'){
+    const _pc=_parseGsCommand;
+    _parseGsCommand=function(raw){if(/^task\s/i.test(String(raw||'').trim()))return null;return _pc.apply(this,arguments);};
+  }
+  const scopeAll=()=>{const on=document.querySelector('#gsearch .fb2-gs-scope .fb2-pill.on');return!on||on.dataset.fb2Scope==='all';};
+  const _rgs=window.runGlobalSearch;
+  window.runGlobalSearch=runGlobalSearch=function(q){
+    const r=_rgs.apply(this,arguments);
+    try{
+      const raw=String(q||'').trim();if(!raw)return r;
+      const acts=actionRows(raw);
+      if(acts.length){_gsResults=[...acts,..._gsResults.filter(x=>!x._qt2)].slice(0,30);_gsSel=0;renderGsResults(raw.toLowerCase());}
+      else if(!_gsResults.length&&scopeAll()){
+        _gsResults=[{cat:'Actions',icon:'ti-square-plus',title:`Add task: ${raw}`,sub:`No matches for “${raw}”. Enter adds it as a task`,fn:()=>openTaskWith(raw),_qt2:1}];
+        _gsSel=0;renderGsResults(raw.toLowerCase());
+      }
+    }catch(e){console.warn('qt2 gs',e);}
+    return r;
+  };
+  // Start screen hint names the new actions
+  const _ogs=window.openGlobalSearch;
+  window.openGlobalSearch=openGlobalSearch=function(){
+    const r=_ogs.apply(this,arguments);
+    try{const el=document.getElementById('gs-results');const hint=el&&[...el.querySelectorAll('.gs-empty')].pop();
+      if(hint&&/Try a job number/.test(hint.textContent)&&!hint.querySelector('.qt2-hint'))hint.insertAdjacentHTML('beforeend',`<div class="qt2-hint">Or <strong>add task</strong> Logo 2h v1 fri v2 3 dec @name · <strong>new job</strong> … · <strong>board</strong> …</div>`);}catch(e){}
+    return r;
+  };
+})();
+</script>
+<style id="qt2-style">
+.qt2-hint{margin-top:6px;font-size:11px;color:var(--muted);}
+.qt2-hint strong{color:var(--ink);font-weight:500;}
+</style>
 </body>
 </html>
