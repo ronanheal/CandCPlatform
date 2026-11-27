@@ -283,6 +283,16 @@ than client financials. `vercel.json` also stays.
   `localStorage.setItem('cc_use_api','1')` in the console (remove it to go back). With either,
   the app reads `/api/data`, uses the signed-in identity and shares boards, exactly like the live
   site.
+- Fake data at production scale, no secrets, no network: `node scripts/make_fake_data.mjs`
+  writes ~2,500 jobs, 60k logged-time rows, 1,500 invoices, 800 quotes, 40 people etc. (all
+  obviously fake names) to the gitignored `.devdata/`, and `node scripts/dev_server.mjs` serves
+  the app at `http://localhost:5178/?api=1` with `/api/data` read from there, `/api/me` signed in
+  as an admin (`&as=member`, or `DEV_AS=member`, for a member without financial permissions) and
+  empty answers for boards, happiness, health and access; it never calls GitHub or Vercel. For
+  timings, `node scripts/dev_profile.mjs [--throttle 4]` drives headless Chrome through load, every
+  page switch, opening a job, searches, To Do and Reporting tabs and prints a table
+  (`--cpu "navTo('schedule')"` prints the hottest functions instead); in a normal browser, add
+  `&perf=1` to the URL and run `await __H.pages()` in the console.
 - Tests: `node scripts/test_auth.mjs` (add `PYTHON=/path/to/python` for the Python interop
   check), `node scripts/test_boards.mjs`, `node scripts/test_onboard.mjs`,
   `node scripts/test_ghstore.mjs` (state store and migration), and `bash scripts/test_sync_crypt.sh` (needs a

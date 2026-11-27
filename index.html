@@ -2876,6 +2876,56 @@ body.dark .todo-view-toggle #focus-btn.on,body.dark .todo-view-toggle .tvt-btn.o
   </div>
 </div>
 
+<script id="perf-script">
+// ═══ perf — shared caches for hot paths (measured with scripts/dev_server.mjs + dev_profile.mjs,
+// production-scale fake data: 2,500 jobs, 60k logged-time rows). Helpers only: the call sites are
+// small in-place edits that read these instead of re-scanning big arrays. Every cache re-checks
+// its source on each call (same array, same length, same first/last row), so a reload, a sync or
+// a natively logged/removed entry is picked up immediately and results never go stale.
+// Cached number formatters: toLocaleString(loc,opts) builds a new Intl.NumberFormat per call
+// (thousands per Reporting render); NumberFormat#format returns the identical string.
+const _PF_NZ=new Intl.NumberFormat('en-NZ');
+const _PF_NZ2=new Intl.NumberFormat('en-NZ',{minimumFractionDigits:2,maximumFractionDigits:2});
+const _PF_DEF2=new Intl.NumberFormat(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+// stLoggedTimes grouped once: rows by plan item (jobItemUser.jobItemId), by user (String(userId))
+// and by Streamtime job id (job.id || jobId), each in file order, plus minutes per plan item.
+// Replaces full 60k-row scans that ran once per item / person / job on every render.
+let _perfLTc=null;
+function _perfLT(){
+  const a=stLoggedTimes||[],n=a.length,c=_perfLTc;
+  if(c&&c.a===a&&c.n===n&&c.f===a[0]&&c.l===a[n-1])return c;
+  const byItem=new Map(),byUser=new Map(),byStJob=new Map(),itemMins={};
+  const add=(m,k,lt)=>{const r=m.get(k);if(r)r.push(lt);else m.set(k,[lt]);};
+  for(let i=0;i<n;i++){const lt=a[i];if(!lt)continue;
+    const it=lt.jobItemUser?.jobItemId;
+    if(it!==undefined)add(byItem,it,lt);
+    if(it!=null)itemMins[it]=(itemMins[it]||0)+(lt.minutes||0);
+    add(byUser,String(lt.userId),lt);
+    add(byStJob,lt.job?.id||lt.jobId,lt);
+  }
+  return(_perfLTc={a,n,f:a[0],l:a[n-1],byItem,byUser,byStJob,itemMins});
+}
+// Run fn once the browser has painted the frame in progress (the view appears first, then its
+// heavy render), and never later than the fixed 50 ms the Reporting/Boards renders used to wait.
+function _perfAfterPaint(fn){
+  let done=false;const go=()=>{if(done)return;done=true;fn();};
+  try{requestAnimationFrame(()=>setTimeout(go,0));}catch(e){}
+  setTimeout(go,50);
+}
+// jobs.find(x=>x._stId===id) without the scan: an index of the first job per _stId. jobs[i] may be
+// replaced in place (dbUpdateJob), so the index holds positions and re-checks the job it finds.
+let _perfJobIdx=null;
+function _perfJobByStId(id){
+  if(id==null)return jobs.find(x=>x._stId===id);
+  let c=_perfJobIdx;
+  if(!c||c.a!==jobs||c.n!==jobs.length){const m=new Map();jobs.forEach((j,i)=>{if(j&&!m.has(j._stId))m.set(j._stId,i);});c=_perfJobIdx={a:jobs,n:jobs.length,m};}
+  const i=c.m.get(id);
+  if(i===undefined)return undefined;
+  const j=jobs[i];
+  if(j&&j._stId===id)return j;
+  _perfJobIdx=null;return jobs.find(x=>x._stId===id); // moved under us: answer the slow way, rebuild next call
+}
+</script>
 <script>
 const DEFAULT_LINE_ITEMS=['Creative Direction','Design & Artwork','Briefing & coordination','Copywriting','Video Editing','Proofing & spell check','Artwork & file despatch','Contingency','Shot listing','Website build','Strategy & Planning','Project Management','Photography','Illustration','Animation','Social Content','Email Marketing','Print Production'];
 let LINE_ITEMS=JSON.parse(localStorage.getItem('cc_line_items')||'null')||[...DEFAULT_LINE_ITEMS];
@@ -4145,7 +4195,7 @@ function _getStWeekEntries(personKey,offset){
   }
   const result={};
   const _uid=String(stUser.id);
-  stLoggedTimes.forEach(lt=>{
+  (_perfLT().byUser.get(_uid)||[]).forEach(lt=>{ // perf: this person's rows only (was all rows, per person)
     if(String(lt.userId)!==_uid)return;
     const dateStr=(lt.date||'').slice(0,10);
     const day=dateToDay[dateStr];
@@ -5637,8 +5687,10 @@ function navTo(v){
   if(v==='dashboard')renderDashboard();
   if(v==='todo')renderTodo();
   if(v==='jobs')renderJobs();
-  if(v==='reporting'){_buildTabFilters(_reportTab||'business');wireReportingFilters();setTimeout(renderReporting,50);}
-  if(v==='boards'){initBoardsData();setTimeout(renderBoards,50);}
+  // perf: Reporting renders in the same task as the switch (it used to wait 50 ms, so the old report
+  // was laid out and painted first and then everything was laid out again for the new one).
+  if(v==='reporting'){_buildTabFilters(_reportTab||'business');wireReportingFilters();try{renderReporting();}catch(e){console.error(e);}}
+  if(v==='boards'){initBoardsData();_perfAfterPaint(renderBoards);}
   if(v==='settings'){renderSettings();_updateSettSidenavProfile();}
   if(v==='schedule')renderSchedule();
   // Switching pages changes nothing, so the save waits for idle time instead of holding up the switch
@@ -8616,7 +8668,7 @@ function switchDTab(el,tab){
 function _jobStMemberKeys(j){
   if(!j||!j._stId)return [];
   const ids=new Set();
-  stLoggedTimes.forEach(lt=>{if((lt.job?.id||lt.jobId)===j._stId&&lt.userId)ids.add(lt.userId);});
+  (_perfLT().byStJob.get(j._stId)||[]).forEach(lt=>{if((lt.job?.id||lt.jobId)===j._stId&&lt.userId)ids.add(lt.userId);});
   stScheduledTodos.forEach(td=>{if((String(td.jobId)===String(j._stId)||String(td.jobNumber)===String(j.id))&&td.userId)ids.add(td.userId);});
   return [...ids].map(uid=>stUsersById[uid]?.key).filter(k=>k&&people[k]);
 }
@@ -8669,7 +8721,7 @@ function _jobTimeEntries(jobId){
   }
   // Logged (done) entries for this job
   if(stLoggedTimes.length&&j._stId){
-    stLoggedTimes.forEach(lt=>{
+    (_perfLT().byStJob.get(j._stId)||[]).forEach(lt=>{ // perf: this job's rows only
       if((lt.job?.id||lt.jobId)!==j._stId)return;
       const stUser=stUsersById[lt.userId];if(!stUser)return;
       const itemId=lt.jobItemUser?.jobItemId;
@@ -9659,7 +9711,7 @@ function renderItems(phId,_readonly){
     // Also add ST logged time for this item, and build per-person breakdown
     const _personMins={};
     if(item._stId&&stLoggedTimes.length){
-      stLoggedTimes.forEach(lt=>{
+      (_perfLT().byItem.get(item._stId)||[]).forEach(lt=>{ // perf: this item's rows only (was all rows, per item)
         if(lt.jobItemUser?.jobItemId!==item._stId)return;
         _loggedH+=(lt.minutes||0)/60;
         const u=stUsersById[lt.userId];if(!u)return;
@@ -9670,7 +9722,7 @@ function renderItems(phId,_readonly){
     // Streamtime's own item total is authoritative. The logged-time file can lag behind it
     // (e.g. during a backfill), which showed "— / 5h" hours beside a real sell figure (review A1).
     if(item._stId&&item._logMins){
-      let _stFileH=0;(stLoggedTimes||[]).forEach(lt=>{if(lt.jobItemUser?.jobItemId===item._stId)_stFileH+=(lt.minutes||0)/60;});
+      let _stFileH=0;(_perfLT().byItem.get(item._stId)||[]).forEach(lt=>{if(lt.jobItemUser?.jobItemId===item._stId)_stFileH+=(lt.minutes||0)/60;});
       if(item._logMins/60>_stFileH+0.01)_loggedH+=item._logMins/60-_stFileH;
     }
     // Build avatar stack — active users shown as avatars, inactive included in +N tooltip only
@@ -10464,7 +10516,7 @@ function renderActivityTab(){
   el.ondragleave=()=>el.classList.remove('file-drop-hi');
   el.ondrop=ev=>{if(ev.dataTransfer?.files?.length){ev.preventDefault();el.classList.remove('file-drop-hi');_activityFileDrop(ev,j.id);}};
   if(j._stId){
-    stLoggedTimes.forEach(lt=>{
+    (_perfLT().byStJob.get(j._stId)||[]).forEach(lt=>{ // perf: this job's rows only
       if((lt.job?.id||lt.jobId)!==j._stId)return;
       const stUser=stUsersById[lt.userId];if(!stUser)return;
       const ts=lt.date?new Date(lt.date.slice(0,10)+'T12:00:00').getTime():0;
@@ -11919,7 +11971,7 @@ function runGlobalSearch(q){
       const co=inv.company?.name||'';
       const st=inv.invoiceStatus?.name||inv.status||'';
       // invoices.json has no jobNumber/jobName — resolve the job from its ST id (bug audit M13)
-      const ij=jobs.find(x=>x._stId===inv.jobId);
+      const ij=_perfJobByStId(inv.jobId); // perf: was jobs.find per invoice, per keystroke
       const ijNum=ij?.id||'';
       if((`${inv.number||inv.id} ${co} ${ijNum} ${ij?.name||''} ${inv.reference||inv.name||''} ${st}`).toLowerCase().includes(q))
         out.push({cat:'Invoices',icon:'ti-file-invoice',title:`Invoice ${inv.number||inv.id}`,sub:`${co}${ijNum?' · #'+ijNum:''}${st?' · '+st:''}`,fn:()=>openInvoiceDetail(inv.id)});
@@ -13310,7 +13362,29 @@ function _getPeriodCeiling(){const r=_reportDates();const d=_pDate(r.to);d.setHo
 
 // Logged time for the report period (or an explicit {from,to} ISO range — used for the
 // previous-period comparisons), honouring the People/Jobs filters on the toolbar.
+// perf: Reporting asks for the same period's tasks on every tab and every re-render (and twice
+// per render: this period and the previous one), each time mapping all 60k logged-time rows.
+// Answers are memoised per (period, People/Jobs filter) while the inputs are unchanged: the
+// same logged-time array (length, first/last row), the same users and cost rates, the same
+// teams and default cost rate. Callers only read the result; each gets its own array.
+const _gftMemo=new Map();
 function getFilteredTasks(range){
+  if(!stLoggedTimes.length)return _getFilteredTasks(range);
+  const a=stLoggedTimes,r=range||_reportDates();
+  const person=(document.getElementById('r-person')?.value)||'all';
+  const jobFilter=(document.getElementById('r-job')?.value)||'all';
+  let sig=a.length+'|'+_defCostRate();
+  for(const id in stUsersById){const u=stUsersById[id];sig+='|'+id+':'+u.key+':'+u.name+':'+u.costRate+':'+(u.costRateIsDefault?1:0);}
+  if(person.startsWith('team:'))for(const k in people)sig+='|'+k+':'+(people[k]?.team||'');
+  const key=person+'\u0000'+jobFilter+'\u0000'+(r.from||'')+'\u0000'+(r.to||'');
+  const hit=_gftMemo.get(key);
+  if(hit&&hit.a===a&&hit.f===a[0]&&hit.l===a[a.length-1]&&hit.sig===sig)return hit.tasks.slice();
+  const tasks=_getFilteredTasks(range);
+  if(_gftMemo.size>24)_gftMemo.clear();
+  _gftMemo.set(key,{a,f:a[0],l:a[a.length-1],sig,tasks});
+  return tasks.slice();
+}
+function _getFilteredTasks(range){
   const person=(document.getElementById('r-person')?.value)||'all';
   const jobFilter=(document.getElementById('r-job')?.value)||'all';
   const r=range||_reportDates();
@@ -13383,7 +13457,7 @@ function getFilteredTasks(range){
 
 function fmtHrs(h){if(!h||h===0)return'0h';const m=Math.round(h*60);const hh=Math.floor(m/60);const mm=m%60;return hh&&mm?`${hh}h ${mm}m`:hh?`${hh}h`:`${mm}m`;}
 // $217.80 / $1,200 — cents only when there are any
-function _money(n){n=+n||0;return '$'+(n%1?n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):n.toLocaleString());}
+function _money(n){n=+n||0;return '$'+(n%1?_PF_DEF2.format(n):_stNumFmt.format(n));}
 function _bigH(h){return h>=100?Math.round(h).toLocaleString()+'h':formatHrs(h)||'0h';}
 function fmtDollar(n){if(!n)return'$0';return n>=1000000?`$${(n/1000000).toFixed(n>=10000000?0:1)}M`:n>=1000?`$${(n/1000).toFixed(0)}k`:`$${Math.round(n).toLocaleString()}`;}
 function destroyChart(c){if(c&&typeof c.destroy==='function'){try{c.destroy();}catch(e){}}return null;}
@@ -18291,24 +18365,24 @@ const _RV_MINUS='−';
 // ── number formats ──
 function _rvH(h){
   h=+h||0;const neg=h<0;h=Math.abs(h);let s;
-  if(h>=100)s=Math.round(h).toLocaleString('en-NZ')+'h';
+  if(h>=100)s=_PF_NZ.format(Math.round(h))+'h';
   else{const m=Math.round(h*60);const hh=Math.floor(m/60),mm=m%60;s=!m?'0h':hh&&mm?`${hh}h ${mm}m`:hh?`${hh}h`:`${mm}m`;}
   return(neg&&s!=='0h'?_RV_MINUS:'')+s;
 }
 function _rvMoney(n){
   n=+n||0;const neg=n<=-0.005;
-  const s='$'+Math.abs(n).toLocaleString('en-NZ',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const s='$'+_PF_NZ2.format(Math.abs(n));
   return neg?_RV_MINUS+s:s;
 }
 function _rvK(n){
   n=+n||0;const neg=n<=-0.5;const a=Math.abs(n);let s;
-  if(a<999.5)s='$'+Math.round(a).toLocaleString('en-NZ');
+  if(a<999.5)s='$'+_PF_NZ.format(Math.round(a));
   else if(a<9950)s='$'+(a/1000).toFixed(1).replace(/\.0$/,'')+'k';
   else if(a<999500)s='$'+Math.round(a/1000)+'k';
-  else{const m=a/1e6;s='$'+(m<9.95?m.toFixed(1).replace(/\.0$/,''):Math.round(m).toLocaleString('en-NZ'))+'M';}
+  else{const m=a/1e6;s='$'+(m<9.95?m.toFixed(1).replace(/\.0$/,''):_PF_NZ.format(Math.round(m)))+'M';}
   return(neg?_RV_MINUS:'')+s;
 }
-function _rvN(n){return Math.round(+n||0).toLocaleString('en-NZ');}
+function _rvN(n){return _PF_NZ.format(Math.round(+n||0));}
 function _rvP(n){if(n==null||!isFinite(n))return'—';const r=Math.round(n);return(r<0?_RV_MINUS:'')+Math.abs(r)+'%';}
 // Earliest synced date per source — a comparison is only shown when the previous period is
 // fully inside the data we have (logged time is synced from mid-2025, so "vs previous
@@ -18442,13 +18516,26 @@ function _rvTable(id,cfg){
   if(!rows.length)return`<div class="rv-empty">${cfg.empty||'Nothing in this period.'}</div>`;
   const fmt=(c,v)=>c.f?c.f(v):v==null||v===''?'—':esc(String(v));
   const th=cols.map(c=>`<th class="s${c.num?' n':''}${c.k===st.k?' on':''}"${c.tip?` title="${esc(c.tip)}"`:''} onclick="_rvSort('${id}','${c.k}')">${esc(c.l)}${c.k===st.k?` <i class="ti ti-chevron-${st.dir===1?'up':'down'}" style="font-size:10px;"></i>`:''}</th>`).join('');
-  const body=sorted.map(r=>{
+  const rowHtml=r=>{
     const on=cfg.onRow?cfg.onRow(r):'';
     return`<tr${on?` class="go" onclick="${_rvAttr(on)}"`:''}>${cols.map(c=>`<td class="${[c.num?'n':'',c.cls||''].join(' ').trim()}">${c.h?c.h(r):fmt(c,c.v(r))}</td>`).join('')}</tr>`;
-  }).join('');
+  };
+  // perf: long tables (hundreds of unpaid invoices / uninvoiced jobs) draw their first
+  // _RV_ROW_CAP rows, sorted, inside the table's own 540px scroll box; the rest come in on
+  // "Show all" at the bottom of it. Totals, sorting and CSV export still use every row.
+  const capped=!(RV.showAll&&RV.showAll[id])&&sorted.length>_RV_ROW_CAP;
+  const body=(capped?sorted.slice(0,_RV_ROW_CAP):sorted).map(rowHtml).join('')
+    +(capped?`<tr class="rv-more-row"><td colspan="${cols.length}"><button type="button" class="att-more" onclick="_rvShowAll('${id}',this)">Show all ${_rvN(sorted.length)} ${cfg.units||(cfg.unit?cfg.unit+'s':'rows')}<i class="ti ti-chevron-down"></i></button></td></tr>`:'');
+  if(capped)RV.tables[id].rest=()=>sorted.slice(_RV_ROW_CAP).map(rowHtml).join('');
   const label=cfg.totalLabel||`Total · ${_rvN(rows.length)} ${rows.length===1?(cfg.unit||'row'):(cfg.units||(cfg.unit?cfg.unit+'s':'rows'))}`;
   const foot=hasTotal?`<tfoot><tr>${cols.map((c,i)=>`<td class="${c.num?'n':''}">${i===0?esc(label):(c.k in T)?(c.ft?c.ft(T[c.k],T):fmt(c,T[c.k])):''}</td>`).join('')}</tr></tfoot>`:'';
   return`<div class="rv-tw"><table class="rv-table"><thead><tr>${th}</tr></thead><tbody>${body}</tbody>${foot}</table></div>`;
+}
+const _RV_ROW_CAP=100;
+function _rvShowAll(id,btn){
+  (RV.showAll=RV.showAll||{})[id]=1;
+  const t=RV.tables[id],tr=btn&&btn.closest('tr');
+  if(t&&t.rest&&tr){tr.insertAdjacentHTML('beforebegin',t.rest());tr.remove();t.rest=null;}else _rvRerender();
 }
 function _rvSort(id,k){
   const t=RV.tables[id];const c=t&&t.cols.find(x=>x.k===k);
@@ -20432,8 +20519,12 @@ html.ds-theming *,html.ds-theming *::before,html.ds-theming *::after{transition:
       if(!ind.classList.contains('ready'))raf(()=>ind.classList.add('ready'));
       nav.querySelectorAll('.s-btn').forEach(b=>b.toggleAttribute('aria-current',b===on));
       nav.querySelectorAll('.s-btn.on').forEach(b=>b.setAttribute('aria-current','page'));};
-    new MutationObserver(place).observe(nav,{subtree:true,attributes:true,attributeFilter:['class']});
-    window.addEventListener('resize',place);place();
+    // perf: measured in the next animation frame, not straight after the class change. Reading
+    // offsetTop there forced a full layout of the view that navTo had just drawn, mid-task, and
+    // the browser then laid it out again for the frame (twice per page switch).
+    let placeQ=0;const placeSoon=()=>{if(placeQ)return;placeQ=1;raf(()=>{placeQ=0;place();});};
+    new MutationObserver(placeSoon).observe(nav,{subtree:true,attributes:true,attributeFilter:['class']});
+    window.addEventListener('resize',placeSoon);place();
     document.querySelectorAll('.s-btn,.s-avatar').forEach(b=>{
       b.setAttribute('role','button');b.tabIndex=0;
       const lbl=(b.querySelector('.s-tip')?.textContent||b.title||'').trim();if(lbl)b.setAttribute('aria-label',lbl);
@@ -24681,8 +24772,9 @@ body.dark #r7-load .r7-tb i::after,body.dark #r7-load .r7-cards i::after,body.da
     replaying=true;
     try{t.el.click();}catch(e){console.warn('[tabs-r7]',e);}
     finally{replaying=false;}
-    // Reporting and Boards render on a 50ms timer inside navTo: wait it out before revealing.
-    const late=t.kind==='view'&&/^snav-(reporting|boards)$/.test(t.el.id);
+    // Boards renders on a timer inside navTo (after the next paint, 50 ms at most): wait it out
+    // before revealing. Reporting renders inside navTo now (perf), so it needs no wait.
+    const late=t.kind==='view'&&/^snav-boards$/.test(t.el.id);
     setTimeout(()=>requestAnimationFrame(()=>{if(!pending)unmount();}),late?70:0);
   }
   window.addEventListener('click',e=>{
@@ -26786,8 +26878,7 @@ body.dark #view-todo .day-done{background:linear-gradient(180deg,color-mix(in sr
         if(tt._fromST||tt._loggedEntry||!tt.done)return;
         if(tt.jobId===activeJobId||(!!activeJobId&&tt.job?.match(/^(\d+)/)?.[1]===String(activeJobId)))done.push(tt);
       }));});});}catch(e){}
-    const file={};
-    (stLoggedTimes||[]).forEach(lt=>{const k=lt.jobItemUser?.jobItemId;if(k!=null)file[k]=(file[k]||0)+(lt.minutes||0);});
+    const file=_perfLT().itemMins; // perf: minutes per plan item, built once per logged-time load (read-only)
     return{done,file};
   }
   function _itemLogged(item,idx){
