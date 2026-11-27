@@ -11788,7 +11788,7 @@ function _parseGsCommand(raw){
 // matching entry (same person + job + date + minutes) arrives, so nothing double-counts.
 function _showShortcuts(){
   document.getElementById('kb-modal')?.remove();
-  const rows=[['L','Add a task (or stop the running timer)'],['N','New task on the To Do board'],['J','New job'],['Q','New quote'],['E','Add an expense'],['F','Focus mode — today only (To Do)'],['← →','Previous / next week (To Do)'],['⌘K','Search and commands'],['Esc','Close'],['?','This list']];
+  const rows=[['L','Add a task (or stop the running timer)'],['N','New task on the To Do board'],['J','New job'],['Q','New quote'],['E','Add an expense'],['F','Focus mode — today only (To Do)'],['P','Open or close the Parking space (To Do)'],['← →','Previous / next week (To Do)'],['⌘K','Search and commands'],['Esc','Close'],['?','This list']];
   const m=document.createElement('div');m.className='modal-bg on';m.id='kb-modal';
   m.innerHTML=`<div class="modal" style="max-width:440px;"><div class="modal-hd"><span class="modal-hd-title">Keyboard shortcuts</span><button class="modal-x" onclick="this.closest('.modal-bg').remove()"><i class="ti ti-x"></i></button></div>
     <div class="modal-bd" style="padding-top:10px;">${rows.map(([k,d])=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 0;border-bottom:1px solid var(--faint);font-size:13px;"><span>${d}</span><kbd class="kb-key">${k}</kbd></div>`).join('')}</div></div>`;
@@ -26502,7 +26502,7 @@ _stRenderViews=function(){
       ?`<div class="fb1-ps-hd"><div><div class="fb1-pk-title"><i class="ti ti-parking" aria-hidden="true"></i> Parking space</div><div class="fb1-pk-sub">${n?`${n} task${n===1?'':'s'} · no day yet`:'No day yet'}</div></div><button class="tm-x" aria-label="Close the parking space" title="Close" onclick="_parkToggle(false)"><i class="ti ti-layout-sidebar-right-collapse"></i></button></div>`
         +`<div class="fb1-pk-body">`+list.map(t=>`<div class="fb1-pt-card" draggable="true" data-pid="${esc(t.id)}" title="Drag onto a day"><div class="fb1-pt-t">${esc(String(t.title||'').split('\n')[0]||t.item||'Task')}</div><div class="fb1-pt-m">${esc([t.job,t.hours?formatHrs(t.hours):'',t._fromWeekend?'from '+(()=>{const d=new Date(t._fromWeekend+'T00:00:00');return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+' '+d.getDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];})():''].filter(Boolean).join(' · '))}</div><button class="fb1-pt-x" title="Delete" aria-label="Delete parked task" onclick="_parkDel('${esc(t.id)}')"><i class="ti ti-trash"></i></button></div>`).join('')
         +`<div class="fb1-pk-hint">${n?'Drag a task onto a day to plan it.':'Drag a task here to park it until it has a day.'}</div></div>`
-      :`<button class="fb1-ps-tab" onclick="_parkToggle(true)" aria-label="Open the parking space${n?`, ${n} parked`:''}" title="Parking space: tasks with no day yet"><i class="ti ti-parking" aria-hidden="true"></i><span>Parking</span>${n?`<b>${n}</b>`:''}</button>`;
+      :`<button class="fb1-ps-tab" onclick="_parkToggle(true)" aria-label="Open the parking space${n?`, ${n} parked`:''}" title="Parking space: tasks with no day yet (P)"><i class="ti ti-parking" aria-hidden="true"></i><span>Parking</span>${n?`<b>${n}</b>`:''}</button>`;
     side.querySelectorAll('.fb1-pt-card').forEach(c=>c.addEventListener('dragstart',e=>{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',JSON.stringify({parkedId:c.dataset.pid}));}));
   }
   // light the strip up while any task is being dragged
@@ -30979,6 +30979,17 @@ body.dark .pm-ck:hover{background:rgba(255,255,255,.06);}
   });}catch(e){}};
   if(typeof renderTodo==='function'){const _r=renderTodo;renderTodo=function(){const r=_r.apply(this,arguments);requestAnimationFrame(pin);return r;};}
 })();
+
+// P opens or closes the Parking space on To Do (not while typing, and not with a modifier)
+document.addEventListener('keydown',e=>{
+  if(e.key!=='p'&&e.key!=='P')return;
+  if(e.metaKey||e.ctrlKey||e.altKey)return;
+  const t=e.target;if(t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)))return;
+  if(document.querySelector('.modal-bg.on,#todo-modal.on,.tm-overlay.on'))return;
+  if(document.getElementById('view-todo')?.classList.contains('hidden'))return;
+  const side=document.getElementById('fb1-park-side');if(!side||typeof _parkToggle!=='function')return;
+  e.preventDefault();_parkToggle(!side.classList.contains('open'));
+});
 </script>
 </body>
 </html>
